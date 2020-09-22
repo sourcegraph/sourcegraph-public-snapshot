@@ -50,11 +50,6 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 				renderIssue(child, depth+1)
 			}
 		}
-
-		for _, pr := range issue.LinkedPRs {
-			b.WriteString(indent(depth + 1)) // Nested list
-			b.WriteString(pr.Markdown())
-		}
 	}
 
 	for _, issue := range wl.Issues {

@@ -1,787 +1,1463 @@
 {
-  "ID": "MDU6SXNzdWU2MDExOTMyMzk=",
-  "Title": "Code intelligence: 3.16 tracking issue",
-  "Body": "\u003c!-- LABEL: lsif-reliability --\u003e\n\u003c!-- BEGIN WORK --\u003e\n\u003c!-- BEGIN ASSIGNEE: Unassigned --\u003e\n@Unassigned\n\n- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) \n\u003c!-- END ASSIGNEE --\u003e\n\n\n\u003c!-- BEGIN ASSIGNEE: efritz --\u003e\n@efritz\n\n- [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) \n- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛\n- [x] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) \n- [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛\n- [ ] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛\n- [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) \n- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) \n- [ ] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛\n- [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) \n- [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) \n- [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) \n- [ ] Create docs page for codeintel showcase repos [#9609](https://github.com/sourcegraph/sourcegraph/issues/9609) \n- [ ] Finished processing timestamp on LSIF upload details page is wrong [#9596](https://github.com/sourcegraph/sourcegraph/issues/9596) \n- [ ] Improve performance of LSIF upload processing [#9593](https://github.com/sourcegraph/sourcegraph/issues/9593) \n- [ ] Test discarded issue [#1000000](https://github.com/sourcegraph/sourcegraph/issues/1000000) \n- [ ] RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories [#9288](https://github.com/sourcegraph/sourcegraph/issues/9288) \n- [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) \n- [ ] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛\n- [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) \n\u003c!-- END ASSIGNEE --\u003e\n\n\u003c!-- BEGIN ASSIGNEE: gbrik --\u003e\n@gbrik\n\n- [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) \n- [ ] Improve visual clarity and add CTAs re code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) \n- [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) \n  - [ ] Update tracking issue tool to preserve issue order and display allowed labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:\n- [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) \n- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) \n- [ ] Prototype a new LSIF indexer for C++ based on clangd-indexer [#10175](https://github.com/sourcegraph/sourcegraph/issues/10175) \n- [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) \n- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) \n- [x] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n\u003c!-- END WORK --\u003e",
+  "ID": "",
+  "Title": "",
+  "Body": "",
   "Number": 9917,
-  "URL": "https://github.com/sourcegraph/sourcegraph/issues/9917",
-  "State": "OPEN",
-  "Repository": "sourcegraph/sourcegraph",
+  "URL": "",
+  "State": "",
+  "Repository": "",
   "Private": false,
   "Labels": [
-    "team/code-intelligence",
-    "tracking"
+   "tracking",
+   "team/code-intelligence"
   ],
-  "Assignees": [
-    "efritz",
-    "gbrik"
-  ],
-  "Milestone": "3.16",
-  "Author": "creachadair",
-  "CreatedAt": "2020-04-16T15:53:22Z",
+  "Assignees": null,
+  "Milestone": "3.19",
+  "Author": "",
+  "CreatedAt": "0001-01-01T00:00:00Z",
   "UpdatedAt": "0001-01-01T00:00:00Z",
   "ClosedAt": "0001-01-01T00:00:00Z",
-  "Issues": [{
-      "ID": "MDU6SXNzdWU2MDg1NTU0ODU=",
-      "Title": "Add metrics (and dashboard) to new precise-code-intel services",
-      "Body": "- [ ] api-server\r\n- [ ] bundle-manager\r\n- [ ] worker",
-      "Number": 10238,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10238",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-28T19:23:06Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDg1NTQ4Mzc=",
-      "Title": "Add tracing to new precise-code-intel services",
-      "Body": "- [ ] api-server\r\n- [ ] bundle-manager\r\n- [ ] worker",
-      "Number": 10237,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10237",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-28T19:21:59Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDU2MTA4Mzc=",
-      "Title": "Add Cobol support (lang filters, codeintel, and syntax highlighting)",
-      "Body": "Requested by https://app.hubspot.com/contacts/2762526/company/2428850551 (now a customer, but not urgent)\r\n\r\n* Looks like we don't have a Cobol basic code intel extension: https://sourcegraph.com/extensions?query=cobol\r\n\r\n* And just doing a search shows we don't provide a `lang:` filter option for them.\r\n\r\n* And finally, I don't see syntax highlighting: https://sourcegraph.com/github.com/leachim6/hello-world@c46bbf3c38b3b98a78ee1bd38b89f4a888e271bb/-/blob/c/cobol.cbl\r\n\r\nI believe the file extensions are .cbl or .cob or .cpy\r\n\r\n@christinaforney Am I missing any steps here? it would be awesome if we had a checklist/process in the dev handbook for \"how to add a language\"! I have no idea who to file that issue on though :)",
-      "Number": 10154,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10154",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "feature-request",
-        "syntect_server",
-        "team/code-intelligence",
-        "team/web"
-      ],
-      "Assignees": [
-        "efritz",
-        "slimsag",
-        "attfarhan"
-      ],
-      "Milestone": "3.16",
-      "Author": "dadlerj",
-      "CreatedAt": "2020-04-23T14:59:55Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDQ5ODQyNzE=",
-      "Title": "Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com",
-      "Body": "",
-      "Number": 10137,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10137",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-22T18:52:02Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDQxMTE2ODI=",
-      "Title": "Precise code intel mono repo support",
-      "Body": "Currently our tooling \u0026 docs are written assuming the user will be uploading LSIF indexes for the entire repo on each commit. This works for repos with a small number of projects, but would probably make precise code intel unusable on a large monorepo 10s or 100s of projects. This issue is to create an RFC drawing on [RFC 101](https://docs.google.com/document/d/15UxJMWUy40hnoA7Eb35BwMfEtOcWmHTSiC_5N-xD36U/edit) proposing tooling features to address this use case.",
-      "Number": 10087,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10087",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "future-vision",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-21T16:27:51Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDQwNjE2MDY=",
-      "Title": "Improve visual clarity and add CTAs re code intel",
-      "Body": "The current UI leaves a lot of room for confusion when using hovers, go-to-defs, and find-refs. I want  the status of code intelligence to be visually clear both passively and when doing code intel things. I also want there to be specific explanations/instructions to improve the status of code intel when relevant. Some of this already exists.\r\n\r\nIf I were purely optimizing for precise code intel usability and adoption, I would want the following specific things:\r\n- Badge/indicator somewhere prominent on the page, with 3 states: basic code intel, loading precise code intel, precise code intel\r\n  - The basic code intel badge shouldn't be angry, but the precise code intel badge should be very happy :)\r\n  - On the website, this lives in the top right bar next to git blame. (Or somewhere better? I don't UI enough to know how to place buttons).\r\n  - In the code host extensions, this lives in the sourcegraph badge.\r\n  - When hovering the badge:\r\n    - the basic code intel state contains an explanation + CTA to add LSIF data\r\n    - the loading badge contains more information about indexing progress\r\n    - the precise code intel badge says which commit the data is coming from\r\n  - This information is only relevant for source files in languages we currently have good precise code intel support, so we should show it selectively\r\n- When hovering symbols:\r\n  - When code intel isn't yet available, there is an error/loading indicator with an explanation for why it's not available\r\n  - Otherwise, the hover card + find-ref results both also have the above badge\r\n\r\nBut I'm open to pushback/alternatives on everything.\r\n\r\ncc @sourcegraph/web, thoughts on all of this? and if you were to implement it, what would the timeline be?\r\n\r\nassigned to me while in planning phase, will re-assign/re-assess milestone when we decide what implementation looks like.",
-      "Number": 10083,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10083",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "needs-design",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-21T14:52:03Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDQwMzc2MzY=",
-      "Title": "improve our issue tracking process",
-      "Body": "- [ ] create a prototype of an improved issue tracker\r\n- [ ] review with relevant parties\r\n- [ ] decide whether to scrap or update and move to",
-      "Number": 10082,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10082",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-21T14:21:27Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDQwMTkxMjE=",
-      "Title": "Write precise code intel delivery plans",
-      "Body": "",
-      "Number": 10081,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10081",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-21T13:56:15Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDIzMzE4NjM=",
-      "Title": "Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES",
-      "Body": "Reported by https://app.hubspot.com/contacts/2762526/company/2931649618\r\n\r\nA user reported that their LSIF uploads page seemed to be oddly empty — a bunch of uploads processing, but zero \"current\" uploads appearing.\r\n\r\nAfter reading our docs (and first being confused by https://github.com/sourcegraph/sourcegraph/issues/9987) he realized that disk space could be the problem:\r\n\r\n\u003eok i'd guess we have to up ours, because we've enabled lsif on a separate repository, and uncompressed, our lsif is 7.2G\r\n\r\n\u003eso i'm guessing the decompression of a new lsif kicks the recently processed lsif out\r\n\r\nSo basically every successful upload would cause the previous one to be evicted. \r\n\r\nI know we don't have (as far as I know) any way to expose asynchronous errors to site admins, but this seems like a good use case for it. Perhaps in the meantime simply returning an error or warning from the LSIF upload endpoint if the compressed upload exceeds some percentage (e.g. 10%?) of the current `DBS_DIR_MAXIMUM_SIZE_BYTES`?",
-      "Number": 9989,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9989",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "lsif",
-        "lsif-reliability",
-        "team/code-intelligence"
-      ],
-      "Assignees": [],
-      "Milestone": "3.16",
-      "Author": "dadlerj",
-      "CreatedAt": "2020-04-18T00:34:21Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-22T17:04:57Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDIzMjkyMTk=",
-      "Title": "Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES",
-      "Body": "Reported by https://app.hubspot.com/contacts/2762526/company/2931649618\r\n\r\nOur docs (https://docs.sourcegraph.com/user/code_intelligence/lsif#data-retention-policy) say:\r\n\r\n\u003eThe bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data **if the amount of disk space falls below a configurable threshold**. This value defaults to 10 GiB (10⨉2^30 = 10737418240 bytes), and can be changed via the DBS_DIR_MAXIMUM_SIZE_BYTES environment variable.\r\n\r\nBut this is incorrect. The `DBS_DIR_MAXIMUM_SIZE_BYTES` reflects the maximum size of uploads on disk, not a minimum amount of extra  space required (as the bolded words above indicate).",
-      "Number": 9987,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9987",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "bug",
-        "docs",
-        "lsif",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "dadlerj",
-      "CreatedAt": "2020-04-18T00:30:17Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-22T20:13:24Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDIyODQ3MzM=",
-      "Title": "Process pending LSIF uploads in reverse-chronological order?",
-      "Body": "Reported by https://app.hubspot.com/contacts/2762526/company/2931649618\r\n\r\nA user shared the image below. This is for a large C++ monorepo, so uploads are VERY large. At the time, the user had set up CI to start generating and then upload a new dump whenever the previous one completed building (which was every ~40 minutes). Sourcegraph apparently wasn't able to keep up\r\n\r\n![image](https://user-images.githubusercontent.com/5589410/79621406-245b5000-80c8-11ea-969c-0e64da283b6f.png)\r\n\r\nIt's also possible that their instance got into a weird state (there were some previous uploads that \"failed to process\").",
-      "Number": 9985,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9985",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "lsif",
-        "lsif-reliability",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "dadlerj",
-      "CreatedAt": "2020-04-17T23:28:23Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDIxMTIzMTA=",
-      "Title": "Port precise-code-intel-worker to Go",
-      "Body": "Rewrite the precise-code-intel-worker in Go, but do not yet replace the TS entrypoint.",
-      "Number": 9965,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9965",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-17T17:00:24Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDIxMTIxMzQ=",
-      "Title": "Port precise-code-intel-bundle-manager to Go",
-      "Body": "Rewrite the precise-code-intel-bundle-manager in Go, but do not yet replace the TS entrypoint.",
-      "Number": 9964,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9964",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-17T17:00:04Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-24T19:33:38Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDIxMTE3Mzc=",
-      "Title": "Port precise-code-intel-api-server to Go",
-      "Body": "Rewrite the precise-code-intel-api-server in Go, but do not yet replace the TS entrypoint.",
-      "Number": 9963,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9963",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-17T16:59:24Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-24T19:33:36Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDE5NDgzNDM=",
-      "Title": "TypeScript cross-repository go to definition broken with LSIF",
-      "Body": "### Actual\r\n\r\n- Go to https://sourcegraph.com/github.com/sourcegraph/about/-/blob/website/src/components/Header.tsx\r\n- Hover over `Link` in the first line\r\n- Get no hover or go to definition\r\n\r\n### Expected\r\n\r\nAs an example of what would be expected, this is how the language server behaves:\r\n- Add to your user settings:\r\n  ```json\r\n  \"codeIntel.lsif\": false,\r\n  \"typescript.serverUrl\": \"wss://typescript.sourcegraph.com\"\r\n  ```\r\n- Navigate to https://sourcegraph.com/github.com/sourcegraph/sourcegraph-typescript/-/blob/src/tracing.ts\r\n- Hover over `Span` in the first line\r\n- Wait for dependency installation to finish (this would not be expected for LSIF of course 🙂 )\r\n![image](https://user-images.githubusercontent.com/10532611/79569825-a9d70400-80b8-11ea-89ac-5c6734c80ced.png)\r\n- Hover again, click go to definition\r\n- Get taken to https://sourcegraph.com/github.com/opentracing/opentracing-javascript@cb74683fefe5bd4d711eaa0c273f3fc17a6c3781/-/blob/src/span.ts#L11:1 \r\n![image](https://user-images.githubusercontent.com/10532611/79570049-09cdaa80-80b9-11ea-8e1d-92ae29e0473c.png)\r\n\r\nThere are some special cases here that are considered too, like JS-only libraries that jump to the definition of the typings in https://github.com/DefinitelyTyped/DefinitelyTyped, or references to the standard library, that jump to the lib.d.ts in https://github.com/Microsoft/TypeScript (at the right TypeScript version)",
-      "Number": 9952,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9952",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "bug",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "felixfbecker",
-      "CreatedAt": "2020-04-17T12:42:03Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDE3MjM1ODU=",
-      "Title": "Basic code intel definition ranges are off",
-      "Body": "\r\n- Go to https://sourcegraph.com/github.com/microsoft/TypeScript@deb5bac520a1134e188fc6f01fa4f52b66d2899b/-/blob/src/tsserver/server.ts?action#L505:23\u0026tab=def\r\n- Definition panel should pop up, select the result in nodeTypingsInstaller.js\r\n- Notice the range does not match the class name\r\n- When clicking it, no hover tooltip pops up because the column number linked to is off\r\n\r\n![image](https://user-images.githubusercontent.com/10532611/79536813-36fe6680-8081-11ea-9ec1-57f775614696.png)\r\n\r\n@sourcegraph/code-intel ",
-      "Number": 9936,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9936",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "bug",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "felixfbecker",
-      "CreatedAt": "2020-04-17T06:00:47Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-28T16:39:16Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDE0NDU0NTg=",
-      "Title": "Update and expand the code intelligence team roadmap",
-      "Body": "Our current [team roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.dimwsc9ccmwq) is out-of-date. \r\n\r\nIn addition, during our recent [discussion on planning \u0026 organization](https://docs.google.com/document/d/16IyVmOgYGJ06xfZFgt3zEXVdak6h6UaDOIZ5lcBBdEQ/edit) we identified a need to document a higher level view of our plans. What we call a \"Roadmap\" today is a list of work items, some of which are concretely tied to product deliverables and some of which are more aspirational. \r\n\r\nI wrote https://github.com/sourcegraph/about/pull/784 as a first attempt at documenting some of our higher-level aspirations, but I think we should probably expand on this also.",
-      "Number": 9922,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9922",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "creachadair",
-      "CreatedAt": "2020-04-16T20:36:26Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDExOTMyMzk=",
-      "Title": "Code intelligence: 3.16 tracking issue",
-      "Body": "\u003c!-- BEGIN WORK --\u003e\n@Unassigned\n\n- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) \n\n@efritz\n\n- [ ] Add metrics (and dashboard) to new precise-code-intel services [#10238](https://github.com/sourcegraph/sourcegraph/issues/10238) \n- [ ] Add tracing to new precise-code-intel services [#10237](https://github.com/sourcegraph/sourcegraph/issues/10237) \n- [ ] Add Cobol support (lang filters, codeintel, and syntax highlighting) [#10154](https://github.com/sourcegraph/sourcegraph/issues/10154) \n- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛\n- [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) \n- [x] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) \n- [x] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) \n- [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛\n- [x] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛\n- [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) \n- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) \n- [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) \n- [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) \n- [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) \n- [ ] Create docs page for codeintel showcase repos [#9609](https://github.com/sourcegraph/sourcegraph/issues/9609) \n- [ ] Finished processing timestamp on LSIF upload details page is wrong [#9596](https://github.com/sourcegraph/sourcegraph/issues/9596) \n- [ ] Improve performance of LSIF upload processing [#9593](https://github.com/sourcegraph/sourcegraph/issues/9593) \n- [ ] RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories [#9288](https://github.com/sourcegraph/sourcegraph/issues/9288) \n- [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) \n- [x] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛\n- [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) \n\n@gbrik\n\n- [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) \n- [ ] Improve visual clarity and add CTAs re code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) \n- [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) \n  - [ ] Update tracking issue tool to preserve issue order and display allowed labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:\n- [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) \n- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) \n- [ ] Prototype a new LSIF indexer for C++ based on clangd-indexer [#10175](https://github.com/sourcegraph/sourcegraph/issues/10175) \n- [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) \n- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) \n- [x] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n\n@keegancsmith\n\n- [x] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛\n\u003c!-- END WORK --\u003e",
-      "Number": 9917,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9917",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence",
-        "tracking"
-      ],
-      "Assignees": [
-        "efritz",
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "creachadair",
-      "CreatedAt": "2020-04-16T15:53:22Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTgyNTI5NDY=",
-      "Title": "GraphQL code intel doesn't work",
-      "Body": "I have the [GraphQL extension](https://sourcegraph.com/extensions/sourcegraph/graphql) enabled, and with https://github.com/sourcegraph/sourcegraph/pull/8099 and https://github.com/sourcegraph/code-intel-extensions/pull/206 my understanding is that GraphQL schema files like https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/schema.graphql#L541:12 (latest master) should have code intel.\r\n\r\nBut there are no symbols found in the symbols sidebar, and no hovers for types from the schema - instead, I do get hovers that point to same-name symbols found in Go code:\r\n\r\n![image](https://user-images.githubusercontent.com/10532611/79043015-afd26e00-7bfc-11ea-9a0a-11d830a6b4e6.png)\r\n\r\nThe symbols query comes back empty:\r\n\r\n![image](https://user-images.githubusercontent.com/10532611/79043084-35561e00-7bfd-11ea-81f4-73b53ffd6e5e.png)\r\n\r\n![image](https://user-images.githubusercontent.com/10532611/79043092-3c7d2c00-7bfd-11ea-942d-e7e8e35fec6e.png)\r\n\r\nIt seems like then the codeintel extension falls back to searching the whole repo, but it doesn't filter it to only GraphQL files (I could see why this _may_ be desirable, but am curious if this is as-designed).\r\n\r\nNow, what's weird is that on _some_ commits, I do get symbols and also same-file hovers:\r\n\r\n![image](https://user-images.githubusercontent.com/10532611/79043071-1eafc700-7bfd-11ea-9f41-d7ddb647b043.png)\r\n\r\nhttps://sourcegraph.com/github.com/sourcegraph/sourcegraph@133f9631a97f991328048f455f69b62cb38a9c16/-/blob/cmd/frontend/graphqlbackend/schema.graphql#L541:12\r\n\r\nAlso, the extension page of the GraphQL page seems to show screenshots of Python code?",
-      "Number": 9756,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9756",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "bug",
-        "symbols",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "keegancsmith"
-      ],
-      "Milestone": "3.16",
-      "Author": "felixfbecker",
-      "CreatedAt": "2020-04-11T12:07:42Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-29T07:39:19Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU2MDY1NTU2MjE=",
-      "Title": "Prototype a new LSIF indexer for C++ based on clangd-indexer",
-      "Body": "https://clangd.llvm.org/design/indexing.html",
-      "Number": 10175,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/10175",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-10T21:11:16Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTgwOTU2MDA=",
-      "Title": "Index a super cool Go repo and its transitive dependencies",
-      "Body": "- [ ] Identify repo to index\r\n- [ ] Determine its transitive dependencies\r\n- [ ] Upload LSIF indices of all of the project and all of those dependencies\r\n- [ ] Automate doing 2 \u0026 3 given 1\r\n- [ ] Stick it in CI for continuous update.",
-      "Number": 9746,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9746",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-10T21:08:08Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTgwMTEzODA=",
-      "Title": "RFC 139: Remove language servers",
-      "Body": "This issue tracks the work to remove language servers as documented in [RFC 139][1].\r\n\r\n- [x] Disable language servers in the global settings on sourcegraph.com.\r\n- [ ] Down the language server pods and recover their resources in k8s.\r\n- [ ] Update deploy-sourcegraph/configure to remove language server deplyments.\r\n- [ ] Remove language server support from the Go and TypeScript extensions.\r\n- [ ] (cleanup) Consolidate the Go and TypeScript extensions to remove unnecessary duplication.\r\n\r\n[1]: https://docs.google.com/document/d/1dl5u03dD63-RZB7S1p2IqFTiVcdx6On0aeIOXgsTehA/edit",
-      "Number": 9742,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9742",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "creachadair",
-      "CreatedAt": "2020-04-10T17:50:27Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTc5MTQ3NzE=",
-      "Title": "LSIF upload: 413 Request Entity Too Large",
-      "Body": "aws-sdk-go and TypeScript/testRunner indexes are too large to upload to dotcom.",
-      "Number": 9739,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9739",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-10T14:23:23Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTc1ODMzOTg=",
-      "Title": "Document LSIF data expectations",
-      "Body": "From [slack thread](https://sourcegraph.slack.com/archives/CHXHX7XAS/p1586462406237200).\r\n\r\nIs there documentation somewhere explaining which LSIF data tuples we accept and which we ignore?",
-      "Number": 9719,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9719",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "docs",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "christinaforney",
-      "CreatedAt": "2020-04-09T22:12:15Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTczMjUxNzc=",
-      "Title": "Minor: Retry lsif index upload when clone is in progress",
-      "Body": "When uploading lsif indices to a sourcegraph instance via src-cli, the command fails if cloning the repo is still in progress. The user would pretty much always retry the command, so we should just do that for them.\r\n\r\nIt'd be really simple to add this retry to the src-cli command, but could we alternately have the instance accept the upload instantly but not start processing until the repo is cloned? I assume this would be more work but not sure how much more. @creachadair @efritz ",
-      "Number": 9700,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9700",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "lsif-reliability",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-09T14:31:30Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTU0MzI2OTI=",
-      "Title": "Create docs page for codeintel showcase repos",
-      "Body": "Update LSIF docs with links to codeintel showcase repos.",
-      "Number": 9609,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9609",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "docs",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-04-06T21:15:52Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTUyNTY2MTM=",
-      "Title": "Finished processing timestamp on LSIF upload details page is wrong",
-      "Body": "- **Sourcegraph version:** 3.14.1\r\n- **Platform information:** Docker\r\n\r\n#### Steps to reproduce:\r\n\r\n1.  Visit the LSIF Upload details page for a particular upload.\r\n2. Hover over the \"Began processing\" timestamp and the \"Finished processing\" timestamp and notice they are the same. I wish it was that fast but it wasn't :)\r\n\r\n#### Expected behavior:\r\n\r\nThe Finished processing timestamp reports the actual time it finished processing.\r\n\r\n#### Actual behavior:\r\n\r\nIt reports the same timestamp as the \"Began processing\"",
-      "Number": 9596,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9596",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "lsif",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "benhansenslc",
-      "CreatedAt": "2020-04-06T16:30:59Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1OTUyMzI3NTU=",
-      "Title": "Improve performance of LSIF upload processing",
-      "Body": "Converting LSIF uploads into SQLite databases can be a bottleneck for indexing large repositories. Processing a large upload can cause worker processes to exceed their RAM budget and terminate, and throttle or starve the processing queue.  \r\n\r\nUpload conversion currently runs on Node, mainly for historical reasons. As a step toward understanding and improving the performance of the conversion, we are going to start by re-implementing the [`convertLsif` function](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@206177ad9c4aa5bd266e73d554c82628a95eeb8a/-/blob/cmd/precise-code-intel/src/worker/conversion/importer.ts#L40:23) that handles the core conversion logic in Go. This will make it easier for us to hook up CPU and memory profiling, without disrupting the existing worker logic too much.\r\n\r\nAs a temporary step, the worker will communicate with the converter via a pipe. Later, if this is fruitful, we'll investigate replacing more of the worker and remove that dependency.",
-      "Number": 9593,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9593",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "creachadair",
-      "CreatedAt": "2020-04-06T15:56:51Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1ODczMTYyMjQ=",
-      "Title": "RFC 122: Write detailed LSIF integration instructions for Go and TypeScript",
-      "Body": "See [Milestone 3 of RFC 122](https://docs.google.com/document/d/1W8uR0vQBYtdkNynMxEq24CFdzPTWkGijCURsosdvzAM/edit#heading=h.ylem6ffdsey1).",
-      "Number": 9289,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9289",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "creachadair",
-      "CreatedAt": "2020-03-24T22:23:55Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-24T15:43:16Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1ODczMTUyOTk=",
-      "Title": "RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories",
-      "Body": "See [Milestone 3 of RFC 122](https://docs.google.com/document/d/1W8uR0vQBYtdkNynMxEq24CFdzPTWkGijCURsosdvzAM/edit#heading=h.ylem6ffdsey1).",
-      "Number": 9288,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/9288",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "creachadair",
-      "CreatedAt": "2020-03-24T22:21:44Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1NjQxNTU2NDY=",
-      "Title": "Improve LSIF root boundaries",
-      "Body": "Specifically for detection of overlapping dumps, we may treat the following as conflicting:\r\n\r\n- `alpha/bravo/charlie`\r\n- `alpha/bravo/charliefoxtrot`\r\n\r\nBecause one is a prefix of the other, even though one path does not subsume the other. This may also be an issue in finding roots for closest dumps.\r\n\r\nWe could simply require that all roots end with a normalized separator to fix this issue.",
-      "Number": 8383,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/8383",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2020-02-12T17:34:13Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1NDg1ODk5Nzc=",
-      "Title": "Weird highlighting on multiple go to definition results with basic code intel",
-      "Body": "https://sourcegraph.com/github.com/libgit2/libgit2sharp@7cdddd267ca4f2a555acf6cfb98b588a72f33d67/-/blob/LibGit2Sharp/Diff.cs#L202:140\u0026tab=def\r\n\r\n![image](https://user-images.githubusercontent.com/10532611/72221708-5efb9c80-355d-11ea-92f6-e7dd387b7459.png)\r\n",
-      "Number": 7668,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/7668",
-      "State": "CLOSED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "bug",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "felixfbecker",
-      "CreatedAt": "2020-01-12T16:03:04Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-28T19:56:06Z"
-    },
-    {
-      "ID": "MDU6SXNzdWU1MzQyNjU1MTk=",
-      "Title": "LSIF plaintext hover support",
-      "Body": "We currently assume everything is formatted as markdown. See https://github.com/sourcegraph/sourcegraph/blob/5e425cfec07790e8f4836738629c5ec2b0dd2e6a/lsif/src/worker/importer/correlator.ts#L452",
-      "Number": 7099,
-      "URL": "https://github.com/sourcegraph/sourcegraph/issues/7099",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "lsif",
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "efritz"
-      ],
-      "Milestone": "3.16",
-      "Author": "efritz",
-      "CreatedAt": "2019-12-06T21:27:38Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z"
-    }
+  "Issues": [
+   {
+    "ID": "MDU6SXNzdWU2Nzk4MDY2MDM=",
+    "Title": "Create quick-start video for setting up Code Intelligence in CI/CD",
+    "Body": "Creating a quick start video in response to user feedback that integration of code intelligence in CI/CD workflows seems cumbersome or difficult. The goal will be to post a short video of duration \u003c 10 mins on Sourcegraph Youtube channel that highlight benefits, demonstrate ease of use and provide links to our more in-depth/detailed documentation.",
+    "Number": 13049,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/13049",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "docs",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz",
+     "aidaeology"
+    ],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-16T18:56:55Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-19T23:29:28Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzMyMDA1NjQ=",
+    "Title": "Research language usage among customers and projects",
+    "Body": "We currently do not have a broad view of which primary languages are used by our customer base and overall user base, and this makes it difficult for the team to prioritize the work required to build \u0026 ship LSIF indexers with consideration to overall impact. Once we have this information we will be able to confidently plan support for precise code intel that can unblock the most users or increases its adoption based on the language popularity.\r\n\r\nThis task for researching and creating a programming language ranking in terms of global usage as reflected in Github project and usage by our enterprise customers. The outcome of this task is report for the code intel team that includes ranking of top 10 languages and reference to data sources.",
+    "Number": 12726,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12726",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "lsif",
+     "team/code-intelligence",
+     "user research"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-05T02:18:15Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-13T00:39:10Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzI4MDg2MTY=",
+    "Title": "RFC 199: Build indexer service",
+    "Body": "Split the portion of the current precise-code-intel-indexer that runs lsif-go into a separate service as described in [RFC 199: User code execution in the auto-indexer](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE). For the first pass, this should simply subprocess docker so that we can test in dev, then later add a shim to use firecracker instead.",
+    "Number": 12707,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12707",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-04T13:51:40Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-10T19:30:58Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzIxOTEyMjI=",
+    "Title": "RFC 199: Expose internal routes for the indexer",
+    "Body": "The new indexer service will be deployed outside of the k8s cluster which means that it will not have access to the APIs that it needs out of the box.\r\n\r\nWe need to create a shared-token-authenticated proxy in the external frontend API that allows requests to a small set of gitserver endopints (for project cloning), as well as the index queue API defined in https://github.com/sourcegraph/sourcegraph/issues/12664.\r\n\r\nSee [this slack thread](https://sourcegraph.slack.com/archives/C07KZF47K/p1596042304002000) for additional context.",
+    "Number": 12666,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12666",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T16:20:16Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-05T00:53:47Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzIxODgwMzE=",
+    "Title": "RFC 199: Index queue client",
+    "Body": "Create a client package so that the new (VM-based) indexer service can communicate with the index queue API defiend in https://github.com/sourcegraph/sourcegraph/issues/12664.",
+    "Number": 12665,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12665",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T16:14:53Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-04T13:39:50Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzIxODE5NDM=",
+    "Title": "RFC 199: Index queue API",
+    "Body": "Add API endpoints in the precise-code-intel indexer that dequeues and tracks index job records as described in [RFC 199: User code execution in the auto-indexer](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE).",
+    "Number": 12664,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12664",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T16:04:40Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-04T13:48:56Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NTk4MjE5ODQ=",
+    "Title": "Determine state of LSIF-java",
+    "Body": " https://github.com/sourcegraph/lsif-java/\r\n\r\n- [x] Check the current [issues](https://github.com/sourcegraph/lsif-java/issues) and see what is no longer reproducible with the latest version. Close the issues which are not reproducible. Comment on the ones that are.\r\n- [x] Choose a set of three to six OSS repositories not listed there and ensure generation does not crash the indexer.\r\n- [x] Upload the resulting indexes to a local Sourcegraph instance and get hover tooltips on the code. Catalog which language features are missing results or have incorrect results (e.g. enums, jump to def into inner classes, etc).",
+    "Number": 12306,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12306",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-18T02:09:53Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-01T03:32:13Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NTYxNTc4MjA=",
+    "Title": "Query definition and hover provider so we can correctly badge results",
+    "Body": "In the code intel extensions, the definition may be imprecise but a hover may be precise (this occurs with go stdlib values where definitions aren't resolvable via LSIF the hovers are). We need to query the definition along with the hover in order to send back a properly badged value.",
+    "Number": 12133,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12133",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-13T21:30:12Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-04T13:25:25Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NTYxMDAxNDc=",
+    "Title": "Code Intelligence 3.19 Tracking issue",
+    "Body": "### Plan\r\n\r\n**Goal 1: [Add support for monorepos](https://github.com/orgs/sourcegraph/projects/76)**\r\n\r\nUnblock customers [C1](https://app.hubspot.com/contacts/2762526/company/464956351/) \u0026 [C2](https://app.hubspot.com/contacts/2762526/company/554275594/) from adopting LSIF by removing known blockers for large repositories with high commit rates. This milestone will make progress of removing the known blockers for these companies by following tasks (will still need a follow-up in (at least) the 3.20 milestone):\r\n\r\nBuilding a prototype to speed up indexing on all repos. This is necessary for large monorepos as indexing the entire codebase is infeasible. This prototype will act as the feasibility study referenced in the [RFC 170](https://docs.google.com/document/d/1NPu0Vc7FpdoYwCrtpnu-8KB4OPbw7L0KBTqw96JVc8w). If we determine that this technique is viable, then the 3.20 milestone will focus on a proper implementation of the prototype (which also requires updating indexers to create patch indexes). @efritz @gbrik \r\n\r\n**Goal 2: Improve developer experience for use of LSIF in CI**\r\n\r\nUsers aren't configuring LSIF in CI because it is technically cumbersome, carries a maintenance burden, difficult to explain, and may involve red tape. We are aiming to alleviate these issues by automating the process and reduce number setup steps needed by developers to deploy. To support this effort we are also going to create additional quickstart documentation.\r\n\r\n**Goal 3: Increase LSIF adoption**\r\n\r\nUsers are blocked from adopting LSIF because existing indexers don't support their use case, or there is no indexer for their language. We plan to distribute lsif-clang to customers that already have precise C++ support to ensure that it continues to meet their use case and is ready for wider distribution. We will also write a plan for precise SWIFT \u0026 Java support. \r\n\r\n**Goal 4: Resolve technical debt to improve quality and reliability**\r\n\r\nThis work is to improve overall quality of code intel components, including fixing worker concurrency bug, UI hover experience and implementing graceful failover for bundle manager.\r\n\r\n\r\n### Availability\r\n\r\nPeriod is from **2020-07-20** to **2020-08-20**. Please write the days you won't be working and the number of working days for the period.\r\n\r\n- Aida: 24d\r\n- Eric: 17d (out 07/23-07/24)\r\n- Garo: 11d (out first week)\r\n\r\n### Workload\r\n\r\n\u003c!-- BEGIN WORK --\u003e\n\u003c!-- BEGIN ASSIGNEE: aidaeology --\u003e\n@aidaeology\n\n- [x] Determine state of LSIF-java [#12306](https://github.com/sourcegraph/sourcegraph/issues/12306) \n- [ ] ~Make bundle manager janitor more lenient during disaster recovery~ [#12168](https://github.com/sourcegraph/sourcegraph/issues/12168) 🧶\n- [x] Research language usage among customers and projects [#12726](https://github.com/sourcegraph/sourcegraph/issues/12726) \n- [ ] ~Programatically create regular data about code intel activity~ [#11746](https://github.com/sourcegraph/sourcegraph/issues/11746) \n- [x] Update left side navigation [#13188](https://github.com/sourcegraph/sourcegraph/pull/13188) :shipit:\n- [x] Edit of language guide page to improve phrasing [#13108](https://github.com/sourcegraph/sourcegraph/pull/13108) :shipit:\n- [x] Updated adding lsif to workflows docs [#13078](https://github.com/sourcegraph/sourcegraph/pull/13078) :shipit:\n- [x] Improving code intelligence docs and LSIF indexer installation instructions [#13041](https://github.com/sourcegraph/sourcegraph/pull/13041) :shipit:\n- [x] Added goals to code intel team page [#1369](https://github.com/sourcegraph/about/pull/1369) :shipit:\n- [x] Updated code intel page with NEO [#1327](https://github.com/sourcegraph/about/pull/1327) :shipit:\n\u003c!-- END ASSIGNEE --\u003e\n\n\u003c!-- BEGIN ASSIGNEE: efritz --\u003e\n@efritz\n\n- [x] Implement better nearest commit queries [#12098](https://github.com/sourcegraph/sourcegraph/issues/12098) \n- [x] Visible at tip calculation is racy [#12095](https://github.com/sourcegraph/sourcegraph/issues/12095) 🐛\n- [x] Query definition and hover provider so we can correctly badge results [#12133](https://github.com/sourcegraph/sourcegraph/issues/12133) \n- [x] RFC 199: Index queue API [#12664](https://github.com/sourcegraph/sourcegraph/issues/12664) \n- [x] RFC 199: Index queue client [#12665](https://github.com/sourcegraph/sourcegraph/issues/12665) \n- [x] RFC 199: Expose internal routes for the indexer [#12666](https://github.com/sourcegraph/sourcegraph/issues/12666) \n- [x] RFC 199: Build indexer service [#12707](https://github.com/sourcegraph/sourcegraph/issues/12707) \n- [ ] ~RFC 199: Use firecracker~ [#12708](https://github.com/sourcegraph/sourcegraph/issues/12708) \n- [ ] RFC 199: Deploy new indexer service [#12709](https://github.com/sourcegraph/sourcegraph/issues/12709) \n- [ ] codeintel: Alert on failure to open database [#12712](https://github.com/sourcegraph/sourcegraph/issues/12712) 🧶\n- [x] Create quick-start video for setting up Code Intelligence in CI/CD [#13049](https://github.com/sourcegraph/sourcegraph/issues/13049) \n- [ ] ~UI Tooltips for asymmetric precision of hover and definition results~ [#12706](https://github.com/sourcegraph/sourcegraph/issues/12706) \n- [ ] Remove -endpoint from src-cli usage [#11878](https://github.com/sourcegraph/sourcegraph/issues/11878) 🧶\n- [x] codeintel: Install and use the LSIF upload route on the codeintel internal API [#13157](https://github.com/sourcegraph/sourcegraph/pull/13157) :shipit:\n- [x] Add -upload-route flag to lsif upload [#267](https://github.com/sourcegraph/src-cli/pull/267) :shipit:\n- [x] Add hover alert for partial precise results [#459](https://github.com/sourcegraph/code-intel-extensions/pull/459) :shipit:\n- [x] codeintel: Install docker inside precise-code-intel-indexer-vm docker image [#13119](https://github.com/sourcegraph/sourcegraph/pull/13119) :shipit:\n- [x] docker-images: Add ignite-ubuntu [#12919](https://github.com/sourcegraph/sourcegraph/pull/12919) :shipit:\n- [x] codeintel: Add fast-path edge unmarshalling [#12878](https://github.com/sourcegraph/sourcegraph/pull/12878) :shipit:🧶\n- [x] codeintel: Add disable indexer flag [#12800](https://github.com/sourcegraph/sourcegraph/pull/12800) :shipit:\n- [x] codeintel: Add mocks for queue client [#12798](https://github.com/sourcegraph/sourcegraph/pull/12798) :shipit:\n- [x] internal API proxy: Remove verb allowlist in gitservice proxy [#12797](https://github.com/sourcegraph/sourcegraph/pull/12797) :shipit:\n- [x] codeintel: Collapse worker handler and processor [#12795](https://github.com/sourcegraph/sourcegraph/pull/12795) :shipit:\n- [x] workerutil: Make generic store [#12792](https://github.com/sourcegraph/sourcegraph/pull/12792) :shipit:\n- [x] Fix default host for SRC_HTTP_ADDR_INTERNAL [#12768](https://github.com/sourcegraph/sourcegraph/pull/12768) :shipit:\n- [x] Revert \"Revert \"codeintel: Internal API proxy (#12691)\" (#12728)\" [#12758](https://github.com/sourcegraph/sourcegraph/pull/12758) :shipit:\n- [x] codeintel: VM-based indexer service [#12723](https://github.com/sourcegraph/sourcegraph/pull/12723) :shipit:\n- [x] codeintel: Internal API proxy [#12691](https://github.com/sourcegraph/sourcegraph/pull/12691) :shipit:\n- [x] codeintel: Index queue client [#12688](https://github.com/sourcegraph/sourcegraph/pull/12688) :shipit:\n- [x] workerutil: Move store into own package [#12663](https://github.com/sourcegraph/sourcegraph/pull/12663) :shipit:\n- [x] workerutil: Add DequeueWithIndependentTransactionContext to store [#12661](https://github.com/sourcegraph/sourcegraph/pull/12661) :shipit:\n- [x] codeintel: Index queue API [#12657](https://github.com/sourcegraph/sourcegraph/pull/12657) :shipit:\n- [x] Remove committed binary [#12594](https://github.com/sourcegraph/sourcegraph/pull/12594) :shipit:\n- [x] Add index on repo name column [#12591](https://github.com/sourcegraph/sourcegraph/pull/12591) :shipit:\n- [x] Categorize enterprise frontend startup behaviors [#12539](https://github.com/sourcegraph/sourcegraph/pull/12539) :shipit:\n- [x] Move [enterprise/]cmd/frontend/authz to [enterprise/]internal/authz [#12538](https://github.com/sourcegraph/sourcegraph/pull/12538) :shipit:\n- [x] codeintel: Remove ErrMalformedBundle [#12497](https://github.com/sourcegraph/sourcegraph/pull/12497) :shipit:\n- [x] codeintel: Remove unused store, gitserver code [#12425](https://github.com/sourcegraph/sourcegraph/pull/12425) :shipit:\n- [x]  codeintel: Update store to target new nearest upload tables [#12422](https://github.com/sourcegraph/sourcegraph/pull/12422) :shipit:\n- [x] codeintel: Add commit updater utility [#12411](https://github.com/sourcegraph/sourcegraph/pull/12411) :shipit:\n- [x] codeintel: Add CalculateVisibleUploads to store [#12408](https://github.com/sourcegraph/sourcegraph/pull/12408) :shipit:\n- [x] workerutil: Fix nil-deref in when using worker store transactionally [#12407](https://github.com/sourcegraph/sourcegraph/pull/12407) :shipit:\n- [x] codeintel: Add tables for denormalizing nearest upload data [#12406](https://github.com/sourcegraph/sourcegraph/pull/12406) :shipit:\n- [x] codeintel: Add CommitGraph to gitserver client [#12404](https://github.com/sourcegraph/sourcegraph/pull/12404) :shipit:\n- [x] codeintel: Add commit graph utilities [#12402](https://github.com/sourcegraph/sourcegraph/pull/12402) :shipit:\n- [x] codeintel: Add Lock to store [#12401](https://github.com/sourcegraph/sourcegraph/pull/12401) :shipit:\n- [x] workerutil: Make all column names customizable [#12398](https://github.com/sourcegraph/sourcegraph/pull/12398) :shipit:\n- [x] codeintel: Apply rate limit to gitserver requests from indexability scheduler [#12379](https://github.com/sourcegraph/sourcegraph/pull/12379) :shipit:\n- [x] codeintel: Group code intel data for serialization on-demand [#12125](https://github.com/sourcegraph/sourcegraph/pull/12125) :shipit:\n- [x] codeintel: Additional worker memory improvements [#12108](https://github.com/sourcegraph/sourcegraph/pull/12108) :shipit:\n\u003c!-- END ASSIGNEE --\u003e\n\n\u003c!-- BEGIN ASSIGNEE: gbrik --\u003e\n@gbrik\n\n- [ ] ~🚚 LSIF-clang Delivery~ [#12349](https://github.com/sourcegraph/sourcegraph/issues/12349) \n- [ ] ~Create a code intel user survey~ [#11747](https://github.com/sourcegraph/sourcegraph/issues/11747) \n- [ ] ~update lsif.dev~ [#12501](https://github.com/sourcegraph/sourcegraph/issues/12501) \n- [ ] ~Investigate effort for a new LSIF-swift indexer~ [#12350](https://github.com/sourcegraph/sourcegraph/issues/12350) 🕵️\n\u003c!-- END ASSIGNEE --\u003e\n\u003c!-- END WORK --\u003e\r\n\r\n#### Legend\r\n\r\n- 👩 Customer issue\r\n- 🐛 Bug\r\n- 🧶 Technical debt\r\n- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)\r\n- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))\r\n- 🔒 Security issue\r\n- :shipit: Pull Request\r\n",
+    "Number": 12132,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12132",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence",
+     "tracking"
+    ],
+    "Assignees": [
+     "efritz",
+     "aidaeology",
+     "gbrik"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-13T19:57:39Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-21T02:14:05Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NTQ4ODAyMjk=",
+    "Title": "Implement better nearest commit queries",
+    "Body": "[RFC 186](https://docs.google.com/document/d/1NiAQG4muTljgk8qirYs2aN5Zt3lfk4lgwNqOm9WOH4s) outlines a new implementation for nearest commit queries.\r\n\r\nThis is fairly well-defined, but deals with some hairy edge cases and touches a handful of places in the codebase.",
+    "Number": 12098,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12098",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-10T16:00:52Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T15:33:33Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NTQ4MTMyMzM=",
+    "Title": "Visible at tip calculation is racy",
+    "Body": "When enabling more than one worker (via https://github.com/sourcegraph/sourcegraph/pull/10912, but also with horizontal scaling of worker pods), the visibility calculation for LSIF dumps is racy. This will likely be solved by implementing [RFC \r\n186](https://docs.google.com/document/d/1NiAQG4muTljgk8qirYs2aN5Zt3lfk4lgwNqOm9WOH4s), which changes the way nearest queries are calculated.\r\n\r\nThis issue is used to track the racy behavior to ensure it doesn't exist after updating the implementation.",
+    "Number": 12095,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12095",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "bug",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-10T14:15:38Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T15:33:33Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzI4Mjc3Nzk=",
+    "Title": "codeintel: Alert on failure to open database",
+    "Body": "A customer has recently reported 500 errors due to permissions of certain SQLite files in the bundle manager. This happened due to a strange migration path that has now been documented.\r\n\r\nWe should add a metric for failure to open a database file and alert on any increase with a proposed resolution.",
+    "Number": 12712,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12712",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "debt",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "Backlog",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-04T14:15:58Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzI4MTA2MTE=",
+    "Title": "RFC 199: Deploy new indexer service",
+    "Body": "Deploy the new indexer service introduced in https://github.com/sourcegraph/sourcegraph/issues/12707 onto a compute node so that it can interface with the Cloud instance.",
+    "Number": 12709,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12709",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.20",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-04T13:53:53Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-26T18:35:55Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzI4MDk4OTc=",
+    "Title": "RFC 199: Replace docker commands with firecracker commands",
+    "Body": "Modify the new indexer service introduced in https://github.com/sourcegraph/sourcegraph/issues/12707 to run code within VMs via weaveworks ignite instead of docker, as described in [RFC 199: User code execution in the auto-indexer](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE).",
+    "Number": 12708,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12708",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "estimate/5d",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.20",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-04T13:53:03Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-28T14:46:18Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NzI3OTIzOTU=",
+    "Title": "UI Tooltips for asymmetric precision of hover and definition results",
+    "Body": "Fill out tooltip text for the following conditions:\r\n\r\nhttps://github.com/sourcegraph/code-intel-extensions/blob/master/shared/providers.ts#L328\r\nhttps://github.com/sourcegraph/code-intel-extensions/blob/master/shared/providers.ts#L338",
+    "Number": 12706,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12706",
+    "State": "CLOSED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "estimate/0.5d",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.20",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-04T13:26:35Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-24T14:24:15Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NjY1NzE2OTk=",
+    "Title": "update lsif.dev",
+    "Body": "",
+    "Number": 12501,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12501",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "docs",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.20",
+    "Author": "gbrik",
+    "CreatedAt": "2020-07-27T20:41:54Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NjIzODA2MDA=",
+    "Title": "Investigate effort for a new LSIF-swift indexer",
+    "Body": "Start work on Swift support by evaluating implementation effort for implementation - time box research to 2 hours.",
+    "Number": 12350,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12350",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "lsif-swift",
+     "planned/3.19",
+     "spike",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "gbrik"
+    ],
+    "Milestone": "Backlog",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-07-20T23:39:46Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NjIzNzg2ODU=",
+    "Title": "🚚 LSIF-clang Delivery",
+    "Body": "The goal of this task is to ship LSIF-clang v0.1 to customers:\r\n\r\n1. Fix any [outstanding bugs and issues](https://github.com/sourcegraph/lsif-clang/issues) for LSIF-clang.\r\n1. Benchmark and test LSIF-clang for performance, determine if there are any bottlenecks that need to be resolved.\r\n1. Validate lsif-clang works as expected for C and Objective C by [indexing OSS projects](https://github.com/sourcegraph/sourcegraph/issues/12773).\r\n1. Work with three existing customers below to deploy LSIF-java successfully and work out any potential technical blockers or usability issues so that LSIF-java can be used by all customers as part of a wide release.\r\n\r\n- [ ] Customer 1: https://github.com/sourcegraph/customer/issues/86\r\n- [ ] Customer 2: https://github.com/sourcegraph/customer/issues/87\r\n- [ ] Customer 3: https://github.com/sourcegraph/customer/issues/88\r\n\r\nOnce this is complete for all three update status for LSIF-clang as appropriate (beta? ready?) and indicate its readiness for general availability.",
+    "Number": 12349,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12349",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "estimate/4d",
+     "lsif-clang",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "gbrik"
+    ],
+    "Milestone": "3.20",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-07-20T23:36:48Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NTY3ODg0NTc=",
+    "Title": "Make bundle manager janitor more lenient during disaster recovery",
+    "Body": "In order to prevent the deletion of ... everything, we need to make the janitor have a small grace period between marking a record as deletable and actually deleting it. Forgetting to set a flag to disable the janitor during migrations, postgres failover, or persistent volume resizes can cause a cascading data deletion which is extremely undesirable.\r\n\r\nImplementation details in [RFC 205](https://docs.google.com/document/d/1kwmhGIj9Vi_v9AQYEHjKd2Ok-Lk_e4FKc_cNs88CGK8/edit#heading=h.trqab8y0kufp)",
+    "Number": 12168,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/12168",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "debt",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.20",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-14T17:47:36Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NDkyNTMzODY=",
+    "Title": "Remove -endpoint from src-cli usage",
+    "Body": "The endpoint flag has been deprecated and we should update all docker containers, github actions, and tools that depend on this flag to use the `SRC_ENDPOINT` envvar instead.",
+    "Number": 11878,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/11878",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "debt",
+     "planned/3.19",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.20",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-01T19:29:31Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NDYzODk3MzA=",
+    "Title": "Create a code intel user survey",
+    "Body": "Rough draft:\r\n\r\n# Code intelligence user survey\r\n\r\n- Do you use Sourcegraph?\r\n- Do you use Sourcegraph's code browser?\r\n- Do you use Sourcegraph code host extensions?\r\n- Are you aware of Sourcegraph's semantic code intelligence capabilities?\r\n- For which languages are you interested in semantic code navigation?\r\n  - multiselect including: go, ts/js, java, c++, python, ruby, more semi popular langs, and an other field\r\n- What barriers prevent you from enabling semantic code intelligence on Sourcegraph?\r\n  - unaware of option\r\n  - not available for my languages\r\n  - don't know how\r\n  - too much effort to set up\r\n  - maintenance is too hard\r\n  - indexing takes too long\r\n  - existing solutions don't work with my project structure\r\n  - [freeform field]\r\n- Which features of your IDE do you wish you could use when browsing code online?",
+    "Number": 11747,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/11747",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "planned/3.18",
+     "planned/3.19",
+     "team/code-intelligence",
+     "user research"
+    ],
+    "Assignees": [
+     "gbrik"
+    ],
+    "Milestone": "",
+    "Author": "gbrik",
+    "CreatedAt": "2020-06-26T16:55:10Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   },
+   {
+    "ID": "MDU6SXNzdWU2NDYzNzUxNjI=",
+    "Title": "Programatically create regular data about code intel activity ",
+    "Body": "To help direct code intel work, we should create the following metrics:\r\n- number of search-based code intel queries\r\n- proportion of search-based code intel queries\r\n\r\nsplit by the following dimensions:\r\n- language\r\n- project/repo\r\n- project/repo size",
+    "Number": 11746,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/11746",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "planned/3.18",
+     "planned/3.19",
+     "team/code-intelligence",
+     "user research"
+    ],
+    "Assignees": [
+     "aidaeology",
+     "gbrik"
+    ],
+    "Milestone": "Backlog",
+    "Author": "gbrik",
+    "CreatedAt": "2020-06-26T16:27:40Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z"
+   }
   ],
-  "PRs": [{
-      "ID": "MDExOlB1bGxSZXF1ZXN0NDA4MzQxMzYz",
-      "Title": "Update tracking issue tool to preserve issue order and display allowed labels",
-      "Body": "new features on the tracking issue tool:\r\n- preserves order of issues that were already in the tracking issue body (new issues go to the bottom, but I can put them on top if we prefer)\r\n- you can add a new comment `\u003c!-- LABEL: \u003clabel name\u003e --\u003e`, and then issues with that label will have it appended as an inline code element on the end (couldn't figure out a way to embed the pretty colored label block). i want to use this to track issue phase (planning, implementing, blocked, etc) but could see plenty of different uses.\r\n\r\nso won't change anything (other than new issues going to the bottom) for people who continue using as is, but a couple nifty new features.\r\n\r\npotential drawbacks:\r\n- requires re-parsing the issue markdown which is super inelegant, but it does it based on the issue URLs which i think are reasonably canonical\r\n- adding the labels will make it way more likely for issues to take up multiple lines, which might look ugly. but it's opt in\r\n\r\ni wasn't super duper careful about code hygiene given the context the code lives in, let me know if you think it's worth the time to clean it up a bit\r\n\r\nCloses #10082 ",
-      "Number": 10166,
-      "URL": "https://github.com/sourcegraph/sourcegraph/pull/10166",
-      "State": "OPEN",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-24T05:38:11Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "0001-01-01T00:00:00Z",
-      "BeganAt": "2020-04-24T05:23:10Z"
-    },
-    {
-      "ID": "MDExOlB1bGxSZXF1ZXN0NDA3NDc0Mjkx",
-      "Title": "Update LSIF documentation and associated CI workflows",
-      "Body": "`lsif.yml` shows what an LSIF workflow looks like with the new recommended CI setup.\r\n\r\nThe main doc update is the addition of language specific guides. Also removed references to lang servers and made a few small changes throughout the code intel doc tree.\r\n\r\nOnce this is merged I'll work on trying to write a campaign to get all of our repos indexing with the same method #10137\r\n\r\nCloses #9289 ",
-      "Number": 10138,
-      "URL": "https://github.com/sourcegraph/sourcegraph/pull/10138",
-      "State": "MERGED",
-      "Repository": "sourcegraph/sourcegraph",
-      "Private": false,
-      "Labels": [
-        "team/code-intelligence"
-      ],
-      "Assignees": [
-        "gbrik"
-      ],
-      "Milestone": "3.16",
-      "Author": "gbrik",
-      "CreatedAt": "2020-04-22T18:53:07Z",
-      "UpdatedAt": "0001-01-01T00:00:00Z",
-      "ClosedAt": "2020-04-24T15:43:17Z",
-      "BeganAt": "2020-04-20T15:01:29Z"
-    }
+  "PRs": [
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDcxMTIxNzMz",
+    "Title": "Update left side navigation",
+    "Body": "Add a link to the standalone Features page.",
+    "Number": 13188,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13188",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-20T17:42:09Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-20T17:57:12Z",
+    "BeganAt": "2020-08-20T17:41:41Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDcwNDc5NjE4",
+    "Title": "codeintel: Install and use the LSIF upload route on the codeintel internal API",
+    "Body": "The precise-code-intel-indexer-vm goes through the public API, but this requires that a sudo sourcegraph access token be given to the indexer. Instead, we can use the same token-based auth we have for the other routes hit by this service and install the same handler to a second route.",
+    "Number": 13157,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13157",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-19T21:57:12Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-20T14:23:35Z",
+    "BeganAt": "2020-08-19T21:54:56Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDcwNDc5NTQ0",
+    "Title": "Add -upload-route flag to lsif upload",
+    "Body": "This will be used by the precise code intel indexer to target a different upload route which will be authenticated via shared token rather than a github or sourcegraph (sudo) access token.",
+    "Number": 267,
+    "URL": "https://github.com/sourcegraph/src-cli/pull/267",
+    "State": "MERGED",
+    "Repository": "sourcegraph/src-cli",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-19T21:57:02Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-19T23:41:56Z",
+    "BeganAt": "2020-08-19T21:53:38Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY5ODU5MzQ2",
+    "Title": "codeintel: Install docker inside precise-code-intel-indexer-vm docker image",
+    "Body": "We're use docker until we transition to firecracker on the google compute node. Doing this will allow it to function outside of k8s so we can continue the transition described in [RFC 199](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE/edit).",
+    "Number": 13119,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13119",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-19T00:47:55Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-19T14:22:03Z",
+    "BeganAt": "2020-08-19T00:46:56Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY5Njc1OTE4",
+    "Title": "Edit of language guide page to improve phrasing",
+    "Body": "",
+    "Number": 13108,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13108",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "docs",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-18T18:51:16Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-18T23:20:44Z",
+    "BeganAt": "2020-08-18T18:50:18Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY5MDkyMTgy",
+    "Title": "Updated adding lsif to workflows docs",
+    "Body": "Updated the docs to make the feature \"precise code intelligence\" more prominent than the underlying tech implementation (LSIF). Directly highlighted the benefits section and added quick jump links to examples for specific CI tools at the top.",
+    "Number": 13078,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13078",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "docs",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "aidaeology"
+    ],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-17T22:09:55Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-17T22:42:08Z",
+    "BeganAt": "2020-08-17T22:07:32Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY4MjQ4MzEx",
+    "Title": "Improving code intelligence docs and LSIF indexer installation instructions",
+    "Body": "Updating the code intel docs to make precise code intelligence feature more prominent.\r\nUpdated language to be more concise and user friendly.\r\nAdd separate links for each language indexer in quickstart instead of pointing to lsif.dev\r\n",
+    "Number": 13041,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/13041",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "3.19-release-announcement",
+     "docs",
+     "team/code-intelligence"
+    ],
+    "Assignees": [],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-15T02:29:36Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-15T22:22:38Z",
+    "BeganAt": "2020-08-15T02:18:25Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY2MjY2Mjc5",
+    "Title": "docker-images: Add ignite-ubuntu",
+    "Body": "Verified to work when the image is created locally on the compute node containing firecracker.\r\n\r\n```\r\ndocker build -t ignite-ubuntu-local .\r\nsudo ignite create ignite-ubuntu-local --name test --cpus 1 --memory 1GB --size 4GB --ssh --runtime docker\r\nsudo ignite test\r\nsudo ignite exec test \"docker run sourcegraph/lsif-go lsif-go -h\"\r\n```\r\n",
+    "Number": 12919,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12919",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-11T18:04:43Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-11T21:42:31Z",
+    "BeganAt": "2020-08-11T18:03:34Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY1NTM1NzEy",
+    "Title": "codeintel: Add fast-path edge unmarshalling",
+    "Body": "For LSIF inputs with integer identifiers, it's much faster to deserialize them directly into structs via json.Unmarshal rather than try to unmarshal them into byte slices and do it by hand (which is what the interner does).",
+    "Number": 12878,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12878",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "debt",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-10T14:27:04Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-14T18:27:28Z",
+    "BeganAt": "2020-08-10T14:26:01Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY0MTI3ODg3",
+    "Title": "codeintel: Add disable indexer flag",
+    "Body": "Once we deploy the VM-based indexer, we'll need to ensure that we're not continuing to process indexes inside the cluster. This flag will help us in this transition:\r\n\r\n- Process all indexes within cluster\r\n- Deploy new VM-based service\r\n- Disable indexing within cluster\r\n- Start new VM-based service\r\n- Check health; reset flag on issues, continue if the new service works well\r\n- Remove in-cluster index code",
+    "Number": 12800,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12800",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-06T16:18:45Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-06T17:28:35Z",
+    "BeganAt": "2020-08-06T16:16:37Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY0MTIzNTc1",
+    "Title": "codeintel: Add mocks for queue client",
+    "Body": "",
+    "Number": 12798,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12798",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-06T16:10:11Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-06T16:24:18Z",
+    "BeganAt": "2020-08-06T16:07:24Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY0MTIzMzYz",
+    "Title": "internal API proxy: Remove verb allowlist in gitservice proxy",
+    "Body": "These methods require more than GET, turns out.",
+    "Number": 12797,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12797",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-06T16:09:47Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-06T17:28:23Z",
+    "BeganAt": "2020-08-06T16:08:21Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY0MTEzNjM3",
+    "Title": "codeintel: Collapse worker handler and processor",
+    "Body": "This is a small refactor that collapses a few layers. Previously a processor was called by a handler called by a worker instance. Now the worker instance calls the handler (previously the processor) directly and we got rid of a useless struct, interface, and set of mocks.",
+    "Number": 12795,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12795",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-06T15:51:50Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-10T13:41:10Z",
+    "BeganAt": "2020-08-06T15:51:35Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDY0MDk3MjYx",
+    "Title": "workerutil: Make generic store",
+    "Body": "When implementing the VM-based code intel indexer (progress in https://github.com/sourcegraph/sourcegraph/pull/12723), I realized that I needed to copy all of the functionality of the workerutil Worker but targeting a different non-database persistence layer (it polls an API rather than Postgres).\r\n\r\nThis PR moves some code around to make it possible to supply small \"shims\" around persistence layers for use by the worker. \r\n\r\nSummary of changes:\r\n\r\n- Create a more generic \"Handler\" and \"Store\" interface in the workerutil package. The handler changes only in the type of the (transactional) store argument it accepts, and the store is a subset of the database store that's used by the worker.\r\n- Move the store and database-specific handlers into a dbworker package.\r\n- Create a \"refined\" handler and store for the database layer.\r\n- Add small shims to translate db handler into a generic handler, and a generic store into a db store.\r\n- Update uses (code intel worker and indexer; campaigns reconciler)",
+    "Number": 12792,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12792",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-06T15:23:11Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-06T15:38:20Z",
+    "BeganAt": "2020-08-06T15:17:08Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYzOTE3NDU5",
+    "Title": "Added goals to code intel team page",
+    "Body": "Added the code intel team goals section. The content is a combination of our goal planning and our team culture workshop. Each goal includes a task overview.",
+    "Number": 1369,
+    "URL": "https://github.com/sourcegraph/about/pull/1369",
+    "State": "MERGED",
+    "Repository": "sourcegraph/about",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-06T09:47:40Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-16T04:33:48Z",
+    "BeganAt": "2020-08-06T09:45:44Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYzNjU3Nzgz",
+    "Title": "Fix default host for SRC_HTTP_ADDR_INTERNAL",
+    "Body": "`localhost` makes the container inaccessible outside of a container, which makes the frontends unreachable from other services in the cloud instance.\r\n\r\nThis makes it accessible everywhere serving from the current host. See https://github.com/sourcegraph/sourcegraph/pull/12758 and the chain of discussion ending there.",
+    "Number": 12768,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12768",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-05T21:42:43Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-05T21:46:26Z",
+    "BeganAt": "2020-08-05T21:41:53Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYzMzk3MjYx",
+    "Title": "Revert \"Revert \"codeintel: Internal API proxy (#12691)\" (#12728)\"",
+    "Body": "See https://github.com/sourcegraph/sourcegraph/pull/12728.",
+    "Number": 12758,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12758",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-05T13:49:47Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-05T14:07:48Z",
+    "BeganAt": "2020-08-05T13:47:43Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYzMDkzMDk0",
+    "Title": "codeintel: VM-based indexer service",
+    "Body": "This PR creates a new service that does the work of indexing source code and uploading the resulting LSIF uploads to the instance. This service will be deployed outside of k8s for the cloud environment. Currently this implementation shells out to `docker` instead of firecracker so that we can ensure that the new indexer API and proxies are working correctly. We still only run lsif-go, which is considered trusted code.\r\n\r\nIn next steps, we will be removing the indexing code from the precise-code-intel-indexer service, renaming it to precise-code-intel-index-manager, and then renaming this new service precise-code-intel-indexer. We're doing this in multiple steps to prevent auto-indexing from stopping for a number of days during development/deployment.\r\n\r\nThis PR closes https://github.com/sourcegraph/sourcegraph/issues/12707.",
+    "Number": 12723,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12723",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-05T01:36:11Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-10T19:30:58Z",
+    "BeganAt": "2020-08-06T17:21:16Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYyNDYzNjU1",
+    "Title": "codeintel: Internal API proxy",
+    "Body": "This PR implements part of [RFC 199: User code execution in the auto-indexer](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE) and closes https://github.com/sourcegraph/sourcegraph/issues/12666.\r\n\r\nThis PR adds a token-authenticated set of routes in the internally exposed frontend API that will perform requests to select routes on gitserver and to the precise-code-intel-indexer API introduced in https://github.com/sourcegraph/sourcegraph/pull/12657.\r\n\r\nThings of note: we are planning on having the precise-code-intel-indexer that runs Firecracker VMs to be completely firewalled off from the rest of the application so that code running within the VMs cannot reach internal-only APIs and exfiltrate or modify data. This requires that all of the APIs required by the indexer be authenticated via shared tokens, and be exposed as part of the client/public-internet facing surface of Sourcegraph. Additionally, we cannot simply reverse proxy as the built-in support for reverse proxying in Go is fairly poor when supporting HTTP 307 responses with a POST request. We cannot simply return a Location header to an internal API, as that's useless for the firewalled service.\r\n\r\nAdditional note: I have a TODO in there about tracing requests. I plan to make an httputil package that will consolidate some of the tracing/observation logic that's pretty much copy-pasted in the queue index, bundle manager, and internal proxy client. Other existing clients can make use of this over time as well.",
+    "Number": 12691,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12691",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-04T00:39:55Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-05T00:53:48Z",
+    "BeganAt": "2020-08-04T00:34:59Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYyNDUwNTMw",
+    "Title": "codeintel: Index queue client",
+    "Body": "This PR implements part of [RFC 199: Arbitrary code execution in the auto-indexer](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE) and closes https://github.com/sourcegraph/sourcegraph/issues/12665.\r\n\r\nThis PR adds a client for the new endpoints that were added in https://github.com/sourcegraph/sourcegraph/pull/12657 for use by a new precise-code-intel-indexer service that manages tasks within firecracker VMs.",
+    "Number": 12688,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12688",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T23:47:36Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-04T13:39:51Z",
+    "BeganAt": "2020-08-03T23:46:08Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYyMjYwNTU4",
+    "Title": "workerutil: Move store into own package",
+    "Body": "This solves a common issue with mock generation where tests require a mock of something defined in its own package. Having a separate mocks package would add a cyclic dependency.\r\n\r\nThis PR moves the workerutil store into its own package so we can generate a mock for it (which is needed by the precise code intel indexer). Callers do not need to be aware of this change as we import all the relevant exports from the new package into the workerutil base package.",
+    "Number": 12663,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12663",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T15:56:25Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-03T15:59:48Z",
+    "BeganAt": "2020-08-03T15:53:27Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYyMjE4MTIw",
+    "Title": "workerutil: Add DequeueWithIndependentTransactionContext to store",
+    "Body": "The precise-code-intel-indexer API will need to create transactions that outlive the context of the request that creates them in order to serve them to the Firecracker VM scheduler.",
+    "Number": 12661,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12661",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T14:40:31Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-03T14:43:27Z",
+    "BeganAt": "2020-08-03T14:39:24Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYyMTg2Mzk1",
+    "Title": "codeintel: Index queue API",
+    "Body": "This PR implements part of [RFC 199: Arbitrary code execution in the auto-indexer](https://docs.google.com/document/d/1rCduWqaLAbMu2s43RwJTBbRlhL6qS3oqq4iawiGdoVE) and closes https://github.com/sourcegraph/sourcegraph/issues/12664.\r\n\r\nThis PR exposes additional endpoints in the precise-code-intel-indexer API that will allow downstream (internal) consumers to dequeue index job records for processing, mark them as complete or errored (possibly eventually streaming progress for visibility by end users), and keep actively processed jobs alive via heartbeat requests.",
+    "Number": 12657,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12657",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "RFC-199",
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-08-03T13:43:39Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-04T13:48:56Z",
+    "BeganAt": "2020-08-03T16:01:04Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYxOTMwMzk4",
+    "Title": "Updated code intel page with NEO",
+    "Body": "Adding a (NEO) new engineer onboarding section to the code intel page that covers the items we believe are worthwhile supplements to the general engineering onboarding. Modified the pair programming, first task, and feedback sections to refer to the general engineering onboarding guide to help keep our team process aligned with rest of engineering org.",
+    "Number": 1327,
+    "URL": "https://github.com/sourcegraph/about/pull/1327",
+    "State": "MERGED",
+    "Repository": "sourcegraph/about",
+    "Private": false,
+    "Labels": [
+     "handbook",
+     "team/code-intelligence"
+    ],
+    "Assignees": [],
+    "Milestone": "3.19",
+    "Author": "aidaeology",
+    "CreatedAt": "2020-08-03T04:12:39Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-04T05:13:13Z",
+    "BeganAt": "2020-08-03T04:12:11Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYwNDY5ODQ4",
+    "Title": "Remove committed binary",
+    "Body": ":(",
+    "Number": 12594,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12594",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-31T20:14:38Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T20:37:00Z",
+    "BeganAt": "2020-07-31T20:14:17Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDYwNDQxOTI2",
+    "Title": "Add index on repo name column",
+    "Body": "This index seems to be *very* beneficial for repo operations, as proven by its existence on dotcom. We should ensure that this index would survive a schema or cluster disaster, and should also be available to private instances.",
+    "Number": 12591,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12591",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-31T19:44:11Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T20:35:58Z",
+    "BeganAt": "2020-07-31T19:42:14Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU4NTE1NzY3",
+    "Title": "Categorize enterprise frontend startup behaviors",
+    "Body": "This moves the startup logic from the enterprise frontend into the packages where the behaviors belong.\r\n\r\nAffected:\r\n- authz\r\n- campaigns\r\n- codeintel\r\n- licensing\r\n\r\nLicensing is a bit messy here and needs to be in a subpackage to avoid a circular import. I'll try to deal with this in a future pass.",
+    "Number": 12539,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12539",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-29T15:30:27Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-29T15:40:53Z",
+    "BeganAt": "2020-07-29T15:29:14Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU4NDg1MDAy",
+    "Title": "Move [enterprise/]cmd/frontend/authz to [enterprise/]internal/authz",
+    "Body": "The `cmd/frontend/authz` package is referenced by `cmd/frontend` as well as `cmd/repo-updater` and `internal/db`.\r\n\r\nIt's weird that a service and/or internal packages would reach into another service's code. There are other instances of this, but will handle them as time permits.",
+    "Number": 12538,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12538",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-29T14:41:01Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-29T15:08:37Z",
+    "BeganAt": "2020-07-29T14:40:23Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU3MzY4OTYw",
+    "Title": "codeintel: Remove ErrMalformedBundle",
+    "Body": "Do not throw a 500 error from the bundle manager if there is a missing identifier or document in the database. This tends to block code intel from pages in which document references exist to documents that were not indexed (imports of json files, in one specific example).",
+    "Number": 12497,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12497",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-27T19:53:42Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-28T20:58:36Z",
+    "BeganAt": "2020-07-28T14:47:10Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1NDI3OTU2",
+    "Title": "codeintel: Remove unused store, gitserver code",
+    "Body": "This PR removes dead code/db data.",
+    "Number": 12425,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12425",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-23T01:02:10Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T15:48:53Z",
+    "BeganAt": "2020-07-22T16:32:03Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1NDE3MTQ3",
+    "Title": " codeintel: Update store to target new nearest upload tables",
+    "Body": "This PR updates the store (and the uses in the worker processor, the code intel API layer, and the code intel resolver layer) to target the new tables which were introduced in https://github.com/sourcegraph/sourcegraph/pull/12406.\r\n\r\nThis PR closes https://github.com/sourcegraph/sourcegraph/issues/12098 and closes https://github.com/sourcegraph/sourcegraph/issues/12095.\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12422,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12422",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-23T00:17:04Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T15:33:33Z",
+    "BeganAt": "2020-07-22T16:32:03Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1Mjg5MDg2",
+    "Title": "codeintel: Add commit updater utility",
+    "Body": "This PR adds utilities to update the commit graph for a repository. There is a general utility struct that can (blocking) update a repository in the query path (use in the code intel API will come in another PR), and a periodic background updater that will update all repositories marked as dirty (which is wired up to run in the worker in this PR).\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12411,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12411",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T18:41:58Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-31T14:37:59Z",
+    "BeganAt": "2020-07-22T16:32:03Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MjYwNzEx",
+    "Title": "codeintel: Add CalculateVisibleUploads to store",
+    "Body": "This PR adds methods to the store that populate/read some of the nearest upload data in the new tables defined in [RFC 186](https://docs.google.com/document/d/1NiAQG4muTljgk8qirYs2aN5Zt3lfk4lgwNqOm9WOH4s).\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12408,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12408",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T17:38:40Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-27T14:27:06Z",
+    "BeganAt": "2020-07-22T22:04:21Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MjQyOTIw",
+    "Title": "workerutil: Fix nil-deref in when using worker store transactionally",
+    "Body": "@uwedeportivo noticed a crashloop backoff in the worker/indexer:\r\n\r\n```\r\n│ t=2020-07-22T16:52:08+0000 lvl=dbug msg=\"TRACE gitserver\" host=gitserver-6.gitserver:3178 path=/exec code=200 duration=689.332µs                                                                                     │\r\n│ panic: runtime error: invalid memory address or nil pointer dereference                                                                                                                                              │\r\n│ [signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x4fbbf6]                                                                                                                                               │\r\n│ goroutine 156 [running]:                                                                                                                                                                                             │\r\n│ strings.(*Replacer).Replace(0x0, 0xdbbe28, 0xb7, 0xc2b5a0, 0xc000558a00)                                                                                                                                             │\r\n│     strings/replace.go:96 +0x26                                                                                                                                                                                      │\r\n│ github.com/sourcegraph/sourcegraph/internal/workerutil.(*store).formatQuery(0xc0002def50, 0xdbbe28, 0xb7, 0xc0005fbc88, 0x2, 0x2, 0x0)                                                                               │\r\n│     github.com/sourcegraph/sourcegraph/internal/workerutil/store.go:436 +0x43                                                                                                                                        │\r\n│ github.com/sourcegraph/sourcegraph/internal/workerutil.(*store).MarkComplete(0xc0002def50, 0xf15d00, 0xc0002af320, 0x8e8, 0xc0002def50, 0xeff960, 0xc0004e62d0)                                                      │\r\n│     github.com/sourcegraph/sourcegraph/internal/workerutil/store.go:338 +0xe0                                                                                                                                        │\r\n│ github.com/sourcegraph/sourcegraph/internal/workerutil.(*Worker).handle(0xc0002ac1b0, 0xf1cae0, 0xc0002def50, 0xeff960, 0xc0004e62d0, 0xc0004cf750, 0xc0004cf750)                                                    │\r\n│     github.com/sourcegraph/sourcegraph/internal/workerutil/worker.go:254 +0x6e7                                                                                                                                      │\r\n│ github.com/sourcegraph/sourcegraph/internal/workerutil.(*Worker).dequeueAndHandle.func2(0xc0002ac1b0, 0xeff960, 0xc0004e62d0, 0xf1cae0, 0xc0002def50)                                                                │\r\n│     github.com/sourcegraph/sourcegraph/internal/workerutil/worker.go:221 +0xb8                                                                                                                                       │\r\n│ created by github.com/sourcegraph/sourcegraph/internal/workerutil.(*Worker).dequeueAndHandle                                                                                                                         │\r\n│     github.com/sourcegraph/sourcegraph/internal/workerutil/worker.go:211 +0x46e                                                                                                                                      │\r\n│ stream closed                                                                                                                                                                                                        │\r\n```\r\n\r\nWhen returning a transactional store I wasn't copying over the string replacer, which made queries fail in the copied struct.",
+    "Number": 12407,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12407",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T17:02:20Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-22T17:06:47Z",
+    "BeganAt": "2020-07-22T17:01:43Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MjQwNDgw",
+    "Title": "codeintel: Add tables for denormalizing nearest upload data",
+    "Body": "This PR adds new tables which will hold the data described by [RFC 186](https://docs.google.com/document/d/1NiAQG4muTljgk8qirYs2aN5Zt3lfk4lgwNqOm9WOH4s).\r\n\r\n- The table `lsif_nearest_uploads` denotes which uploads are visible for each commit within a repository and the number of commits between that commit and the commit where the upload is defined.\r\n- The table `lsif_uploads_visible_at_tip` will hold the set of uploads which are visible at the tip of the default branch for each repository.\r\n- The table `lsif_dirty_repositories` will mark repositories as \"dirty\" when they receive new upload data. The tables above will be refreshed periodically.\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12406,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12406",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T16:57:21Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-22T18:01:45Z",
+    "BeganAt": "2020-07-22T16:53:37Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MjM0OTc3",
+    "Title": "codeintel: Add CommitGraph to gitserver client",
+    "Body": "This PR adds a method to the codeintel gitserver client that requests the parents of each commit known to the gitserver's clone. This will be used to construct a full commit graph for a repository.\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12404,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12404",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T16:46:15Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-22T22:02:02Z",
+    "BeganAt": "2020-07-22T16:45:02Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MjI5NDM2",
+    "Title": "codeintel: Add commit graph utilities",
+    "Body": "This PR adds utilities used to calculate which uploads are visible to which commits given a commit graph and the complete set of uploads for a repository. This will be used to re-calculate visibility on each update of a repository's LSIF data, and on-demand when an unknown (newer) commit is requested. We currently do the same thing but at query time using the recursively defined CTEs in cte.go.\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12402,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12402",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T16:34:51Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-22T22:02:31Z",
+    "BeganAt": "2020-07-22T16:32:03Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MjI0ODcx",
+    "Title": "codeintel: Add Lock to store",
+    "Body": "This PR adds an advisory lock mechanism to the codeintel store which will be used to ensure that only one service is updating the commit graph for a repository at a time.\r\n\r\nThis is part of a larger effort towards https://github.com/sourcegraph/sourcegraph/issues/12098.",
+    "Number": 12401,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12401",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T16:25:50Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-22T22:05:35Z",
+    "BeganAt": "2020-07-22T16:24:54Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU1MTQwMTAy",
+    "Title": "workerutil: Make all column names customizable",
+    "Body": "",
+    "Number": 12398,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12398",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-22T14:03:23Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-07-22T14:08:03Z",
+    "BeganAt": "2020-07-22T14:03:00Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDU0ODAxNzM4",
+    "Title": "codeintel: Apply rate limit to gitserver requests from indexability scheduler",
+    "Body": "The indexability scheduler is pretty bursty and may be the cause of some \"spikes\" that I saw discussion about in slack.\r\n\r\nA better solution would be to rate limit the client itself, which I'll open an issue for doing across the board in all codeintel services which are not in the query path.",
+    "Number": 12379,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12379",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-21T23:45:15Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-12T01:46:30Z",
+    "BeganAt": "2020-07-21T23:44:23Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDQ4MzU3OTIy",
+    "Title": "codeintel: Group code intel data for serialization on-demand",
+    "Body": "This changes the grouping layer that converts correlated raw LSIF data into the format that is written to disk from being pre-computed to being computed when needed by the batch writer.\r\n\r\nThis saves us from grouping everything in memory all at once (which requires that we have both the correlated data in memory, AND the grouped data before beginning to write it to disk). We now correlate everything in memory, and return only the batches that are going to be immediately serialized, keeping our resident memory down.\r\n\r\nThis will help us with concurrent serialization, as more processors can run at once with a lower memory requirement.",
+    "Number": 12125,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12125",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-13T16:19:40Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-10T13:46:02Z",
+    "BeganAt": "2020-07-13T16:01:32Z"
+   },
+   {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDQ3NjY4Njc0",
+    "Title": "codeintel: Additional worker memory improvements",
+    "Body": "This PR reorganizes some data structures to be a bit more memory-efficient. Most of these changes are mechanical.\r\n\r\n- Collapse document data (which was a struct containing single field) into a string\r\n- Collapse diagnostic result (which was a struct containing single field) into a list of diagnostics\r\n- Move contains, moniker, and diagnostic relations out of documents/ranges and into a global map in the correlation state\r\n- Create a more memory-efficient version of DefaultIDSetMap that optimizes singleton sets (of which there are multiple orders of magnitude more in proportion to other sized maps)\r\n- Change the order in which result chunk are populated (by result chunk, not by random ordering of result identifiers)\r\n- Change the order in which moniker locations are pouplated (remove need for string-hashing for uniqueness)\r\n",
+    "Number": 12108,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/12108",
+    "State": "MERGED",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "efritz"
+    ],
+    "Milestone": "3.19",
+    "Author": "efritz",
+    "CreatedAt": "2020-07-10T22:27:21Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-08-10T13:37:35Z",
+    "BeganAt": "2020-07-13T16:01:32Z"
+   }
   ],
   "LabelAllowlist": null
-}
+ }

@@ -44,11 +44,23 @@ func (issue *Issue) Markdown(labelAllowlist []string) string {
 
 	labels := issue.RenderedLabels(labelAllowlist)
 
-	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s%s\n",
+	var summaries []string
+	for _, pr := range issue.LinkedPRs {
+		summaries = append(summaries, pr.Summary())
+	}
+
+	pullRequestsPrefix := ""
+	if len(summaries) > 0 {
+		pullRequestsPrefix = "; PRs: "
+	}
+
+	return fmt.Sprintf("- [%s] %s ([#%d](%s)%s%s) %s%s%s\n",
 		state,
 		issue.title(),
 		issue.Number,
 		issue.URL,
+		pullRequestsPrefix,
+		strings.Join(summaries, ", "),
 		labels,
 		estimate,
 		issue.Emojis(),

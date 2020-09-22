@@ -27,6 +27,15 @@ type PullRequest struct {
 	LinkedIssues []*Issue `json:"-"`
 }
 
+func (pr *PullRequest) Summary() string {
+	prefixSuffix := ""
+	if strings.EqualFold(pr.State, "merged") {
+		prefixSuffix = "~"
+	}
+
+	return fmt.Sprintf("%s[#%d](%s)%s", prefixSuffix, pr.Number, pr.URL, prefixSuffix)
+}
+
 func (pr *PullRequest) Markdown() string {
 	state := " "
 	if strings.EqualFold(pr.State, "merged") {
