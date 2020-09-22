@@ -57,6 +57,7 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({className, aut
 
     function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
+        telemetryService.log('RecentFilesPanelShowMoreClicked')
     }
 
     const contentDisplay = (

@@ -66,12 +66,13 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({ className, a
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (repoFilterValues && itemsToLoad === pageSize) {
-            telemetryService.log('RecentFilesPanelLoaded', {empty: repoFilterValues.length === 0})
+            telemetryService.log('RepositoriesPanelLoaded', {empty: repoFilterValues.length === 0})
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
     function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
+        telemetryService.log('RepositoriesPanelShowMoreClicked')
     }
 
     const contentDisplay = (

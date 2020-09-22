@@ -109,6 +109,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({ className,
 
     function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
+        telemetryService.log('RecentSearchesPanelShowMoreClicked')
     }
 
     const contentDisplay = (
