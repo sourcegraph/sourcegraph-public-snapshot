@@ -1,24 +1,34 @@
-import React, { useMemo, useState } from 'react'
 import classNames from 'classnames'
-import { PanelContainer } from './PanelContainer'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { Link } from '../../../../shared/src/components/Link'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { SearchPatternType, ISavedSearch } from '../../../../shared/src/graphql/schema'
-import { AuthenticatedUser } from '../../auth'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { Observable } from 'rxjs'
+import React, { useEffect, useMemo, useState } from 'react'
+import { AuthenticatedUser } from '../../auth'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { ISavedSearch, SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
+import { Observable } from 'rxjs'
+import { PanelContainer } from './PanelContainer'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
-export const SavedSearchesPanel: React.FunctionComponent<{
-    patternType: SearchPatternType
+interface Props extends TelemetryProps {
+    className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
-    className?: string
-}> = ({ patternType, authenticatedUser, fetchSavedSearches, className }) => {
+    patternType: SearchPatternType
+}
+
+export const SavedSearchesPanel: React.FunctionComponent<Props> = ({ patternType, authenticatedUser, fetchSavedSearches, className, telemetryService }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
+
+    useEffect(() => {
+        // Only log the first load (when items to load is equal to the page size)
+        if (savedSearches) {
+            telemetryService.log('SavedSearchesPanelLoaded', {empty: savedSearches.length === 0, showAllSearches })
+        }
+    }, [savedSearches, telemetryService, showAllSearches])
 
     const emptyDisplay = (
         <div className="panel-container__empty-container text-muted">

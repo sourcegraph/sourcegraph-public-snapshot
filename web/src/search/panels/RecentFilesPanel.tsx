@@ -3,18 +3,21 @@ import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import React, { useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
-import { Observable } from 'rxjs'
-import { PanelContainer } from './PanelContainer'
-import { useObservable } from '../../../../shared/src/util/useObservable'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
+import { Observable } from 'rxjs'
+import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
-export const RecentFilesPanel: React.FunctionComponent<{
+interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
-}> = ({ className, authenticatedUser, fetchRecentFileViews }) => {
+}
+
+export const RecentFilesPanel: React.FunctionComponent<Props> = ({className, authenticatedUser, fetchRecentFileViews, telemetryService}) => {
     const pageSize = 20
 
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
@@ -35,6 +38,13 @@ export const RecentFilesPanel: React.FunctionComponent<{
             setProcessedResults(processRecentFiles(recentFiles))
         }
     }, [recentFiles])
+
+    useEffect(() => {
+        // Only log the first load (when items to load is equal to the page size)
+        if (processedResults && itemsToLoad === pageSize) {
+            telemetryService.log('RecentFilesPanelLoaded', {empty: processedResults.length === 0})
+        }
+    }, [processedResults, telemetryService, itemsToLoad])
 
     const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
