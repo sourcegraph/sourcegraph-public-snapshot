@@ -22,9 +22,46 @@ type Namespace struct {
 	User, Organization int32 // exactly 1 is non-zero
 }
 
-var ErrNamespaceNotFound = errors.New("namespace not found")
+var (
+	ErrNamespaceMultipleIDs = errors.New("multiple namespace IDs provided")
+	ErrNamespaceNoID        = errors.New("no namespace ID provided")
+	ErrNamespaceNotFound    = errors.New("namespace not found")
+)
 
 type namespaces struct{}
+
+// GetByID looks up the namespace by an ID.
+//
+// One of orgID and userID must be 0: whichever ID is non-zero will be used to
+// look up the namespace. If both are given, ErrNamespaceMultipleIDs is
+// returned; if neither are given, ErrNamespaceNoID is returned.
+//
+// If no namespace is found, ErrNamespaceNotFound is returned.
+func (*namespaces) GetByID(
+	ctx context.Context,
+	orgID, userID int32,
+) (*Namespace, error) {
+	if Mocks.Namespaces.GetByID != nil {
+		return Mocks.Namespaces.GetByID(ctx, orgID, userID)
+	}
+
+	preds := []*sqlf.Query{}
+	if orgID != 0 && userID != 0 {
+		return nil, ErrNamespaceMultipleIDs
+	} else if orgID != 0 {
+		preds = append(preds, sqlf.Sprintf("org_id = %s", orgID))
+	} else if userID != 0 {
+		preds = append(preds, sqlf.Sprintf("user_id = %s", userID))
+	} else {
+		return nil, ErrNamespaceNoID
+	}
+
+	var n Namespace
+	if err := getNamespace(ctx, &n, preds); err != nil {
+		return nil, err
+	}
+	return &n, nil
+}
 
 // GetByName looks up the namespace by a name. The name is matched
 // case-insensitively against all namespaces, which is the set of usernames and
