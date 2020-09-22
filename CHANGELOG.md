@@ -17,6 +17,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+## 3.20.1
+
+### Fixed
+
+- gomod: rollback go-diff to v0.5.3 (v0.6.0 causes panic in certain cases) [#13973](https://github.com/sourcegraph/sourcegraph/pull/13973).
 - Fixed an issue causing the scoped query in the search field to be erased when viewing files. [#13954](https://github.com/sourcegraph/sourcegraph/pull/13954).
 
 ## 3.20.0
