@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -35,9 +34,9 @@ type Event struct {
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
-	var esArgument secret.StringValue
-	if e.Argument != nil {
-		esArgument = secret.StringValue(e.Argument)
+	argument := e.Argument
+	if argument == nil {
+		argument = json.RawMessage([]byte(`{}`))
 	}
 
 	_, err := dbconn.Global.ExecContext(
@@ -48,7 +47,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
-		esArgument,
+		argument,
 		version.Version(),
 		e.Timestamp.UTC(),
 	)
@@ -68,12 +67,10 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 	events := []*types.Event{}
 	for rows.Next() {
 		r := types.Event{}
-		var esArg secret.StringValue
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &esArg, &r.Version, &r.Timestamp)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
 		}
-		r.Argument = esArg.String()
 		events = append(events, &r)
 	}
 	if err = rows.Err(); err != nil {
