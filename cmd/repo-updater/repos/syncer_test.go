@@ -1404,6 +1404,21 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 	}
 }
 
+// storeWrapper executes arbitrary code before store methods.
+type storeWrapper struct {
+	repos.Store
+
+	onUpsertRepos func()
+}
+
+func (s *storeWrapper) UpsertRepos(ctx context.Context, rs ...*repos.Repo) error {
+	if s.onUpsertRepos != nil {
+		s.onUpsertRepos()
+	}
+
+	return s.Store.UpsertRepos(ctx, rs...)
+}
+
 func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -1510,22 +1525,25 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}
 
 			errChan := make(chan error)
+			upsertCalledCh := make(chan struct{})
 			go func() {
 				// Start syncing using tx2
 				syncer2 := &repos.Syncer{
 					Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
 						s := repos.NewFakeSource(svc2, nil, updatedRepo.With(func(r *repos.Repo) {
-							r.Description = "foo"
+							r.Description = newDescription
 						}))
 						return repos.Sources{s}, nil
 					},
 					Now: time.Now,
 				}
-				err := syncer2.SyncExternalService(ctx, tx2, svc2.ID, 10*time.Second)
+				err := syncer2.SyncExternalService(ctx, &storeWrapper{Store: tx2, onUpsertRepos: func() {
+					close(upsertCalledCh)
+				}}, svc2.ID, 10*time.Second)
 				errChan <- err
 			}()
 
-			time.Sleep(1 * time.Second)
+			<-upsertCalledCh
 			tx1.Done()
 
 			err = <-errChan
