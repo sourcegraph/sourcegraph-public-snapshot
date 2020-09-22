@@ -1,0 +1,4 @@
+# ctags already supports CSS. We just map extra extensions to the CSS parse
+--map-CSS=+.scss
+--map-CSS=+.less
+--map-CSS=+.sass

@@ -61,10 +61,13 @@ func New() (Parser, error) {
 	//  opt = "sandbox"
 	// }
 
-	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*", fmt.Sprintf("--pattern-length-limit=%d", patternLengthLimit),
-		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,GraphQL,Groovy,haskell,Java,JavaScript,Jsonnet,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Pascal,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,SystemVerilog,Tcl,Thrift,typescript,tsx,Verilog,VHDL,Vim",
-		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass",
-	)
+	// ctagsArgs is the contents of .ctags.d. ctags.d needs to be in a
+	// specific location to be read correctly. We have accidently regressed on
+	// this twice. Instead we pass in the arguments here.
+	args := []string{"--_interactive=" + opt, "--fields=*", fmt.Sprintf("--pattern-length-limit=%d", patternLengthLimit)}
+	args = append(args, ctagsArgs...)
+
+	cmd := exec.Command(ctagsCommand, args...)
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
