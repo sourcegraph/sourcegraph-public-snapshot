@@ -204,7 +204,7 @@ export function searchStream(
 
     return transformedQuery
         .pipe(switchMap(query => SearchStream.search(query, version, patternType, versionContext)))
-        .pipe(SearchStream.switchToGQLISearchResults())
+        .pipe(SearchStream.switchToGQLISearchResults)
 }
 
 /**

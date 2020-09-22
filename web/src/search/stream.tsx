@@ -1,6 +1,6 @@
 /* eslint-disable id-length */
-import { Observable, fromEvent, Subscription, OperatorFunction } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
+import { map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -96,12 +96,11 @@ const toGQLSearchResults = (results: GQL.SearchResult[]): GQL.ISearchResults => 
 /**
  * Converts a stream of SearchEvents into an aggregated GQL.ISearchResult
  */
-export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = searchEvents =>
-    searchEvents.pipe(
-        map(fileMatches => fileMatches.map(toGQLFileMatch)),
-        scan((allFileMatches, newFileMatches) => allFileMatches.concat(newFileMatches), []),
-        map(toGQLSearchResults)
-    )
+export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
+    map(fileMatches => fileMatches.map(toGQLFileMatch)),
+    scan((allFileMatches: GQL.IFileMatch[], newFileMatches) => allFileMatches.concat(newFileMatches), []),
+    map(toGQLSearchResults)
+)
 
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
