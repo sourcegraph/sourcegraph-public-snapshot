@@ -12,8 +12,8 @@ if ! vagrant plugin list --no-tty | grep vagrant-google; then
   vagrant plugin install vagrant-google
 fi
 
-vagrant up $box --provider=google || exit_code=$?
-vagrant destroy -f $box
+vagrant up "$box" --provider=google || exit_code=$?
+vagrant destroy -f "$box"
 
 if [ "$exit_code" != 0 ]; then
   exit 1

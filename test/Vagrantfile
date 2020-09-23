@@ -48,7 +48,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         o.ssh.username = username
         o.ssh.private_key_path = ssh_key_path
       end
-      test = "this is a new  #{ssh_key_path}"
       srv.vm.provision 'shell', inline: <<-SHELL
         #!/usr/bin/env bash
         apt-get update -y

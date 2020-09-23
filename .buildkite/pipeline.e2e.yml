@@ -12,6 +12,6 @@ env:
 steps:
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
   command:
-    - test.sh e2e
+    - test.sh sourcegraph-e2e
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
