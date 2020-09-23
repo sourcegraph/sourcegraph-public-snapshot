@@ -24,10 +24,8 @@ interface BaseBreadcrumb {
 }
 
 interface ElementBreadcrumb extends BaseBreadcrumb {
-
     /** The breadcrumb element being displayed. */
     element: React.ReactNode
-
 }
 
 interface LinkBreadcrumb extends BaseBreadcrumb {
@@ -165,7 +163,13 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (
-                    <span key={breadcrumb.key} className={classNames('text-muted d-flex align-items-center test-breadcrumb', breadcrumb.className)}>
+                    <span
+                        key={breadcrumb.key}
+                        className={classNames(
+                            'text-muted d-flex align-items-center test-breadcrumb',
+                            breadcrumb.className
+                        )}
+                    >
                         <span className="font-weight-semibold">{divider}</span>
                         {isElementBreadcrumb(breadcrumb) ? (
                             breadcrumb.element
