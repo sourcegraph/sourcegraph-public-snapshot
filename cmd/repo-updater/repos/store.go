@@ -783,6 +783,10 @@ ORDER BY id ASC LIMIT %s
 }
 
 func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
+	if len(inserts)+len(updates)+len(deletes) == 0 {
+		return nil
+	}
+
 	type source struct {
 		ExternalServiceID int64  `json:"external_service_id"`
 		RepoID            int64  `json:"repo_id"`
