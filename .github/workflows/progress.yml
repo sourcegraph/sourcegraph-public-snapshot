@@ -23,10 +23,10 @@ jobs:
         shell: bash
       - run: |
           if [ -z "$(cat /tmp/diff.json)" ]; then
+            echo "Diff was empty, not posting to Slack";
+          else
             echo "Posting diff to #progress channel in Slack";
             curl -XPOST $WEBHOOK_URL -d "{ \"text\": $(cat /tmp/diff.json) }";
-          else
-            echo "Diff was empty, not posting to Slack";
           fi
         shell: bash
 # - run: echo $WEBHOOK_URL -d '{ "text": "hello world" }'
