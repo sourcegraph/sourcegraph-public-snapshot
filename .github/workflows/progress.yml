@@ -20,7 +20,7 @@ jobs:
         shell: bash
       - run: export COMMIT=HEAD; git diff $COMMIT~1..$COMMIT CHANGELOG.md | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/diff.json
         shell: bash
-      - run: curl -XPOST $WEBHOOK_URL -d \"{ \\\"text\\\": \\\"blah\\\" }\"
+      - run: "curl -XPOST $WEBHOOK_URL -d \"{ \\\"text\\\": \\\"blah\\\" }\""
         shell: bash
 # - run: echo $WEBHOOK_URL -d '{ "text": "hello world" }'
 #   shell: bash
