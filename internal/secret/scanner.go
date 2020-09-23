@@ -53,7 +53,10 @@ type NullStringValue struct {
 func (nv *NullStringValue) Scan(value interface{}) error {
 	switch v := value.(type) {
 	case string:
-		*nv.S = StringValue(v)
+		err := nv.S.Scan(v)
+		if err != nil {
+			return err
+		}
 		nv.Valid = true
 	}
 	return nil
@@ -63,5 +66,6 @@ func (nv NullStringValue) Value() (driver.Value, error) {
 	if nv.S == nil {
 		return nil, nil
 	}
-	return *nv.S, nil
+
+	return nv.S.Value()
 }
