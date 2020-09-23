@@ -399,10 +399,8 @@ func (r *changesetRewirer) loadAssociations() (err error) {
 		return err
 	}
 
-	// Load all Changesets attached to this Campaign.
-	r.changesets, _, err = r.tx.ListChangesets(r.ctx, ListChangesetsOpts{
-		CampaignID: r.campaign.ID,
-	})
+	// Load all Changesets attached to this campaign, or owned by this campaign but detached.
+	r.changesets, err = r.tx.ListChangesetsAttachedOrOwnedByCampaign(r.ctx, r.campaign.ID)
 	if err != nil {
 		return err
 	}
@@ -457,6 +455,7 @@ func (r *changesetRewirer) indexAssociations() (err error) {
 			r.changesetsByRepoHeadRef[k] = c
 		}
 	}
+
 	return nil
 }
 

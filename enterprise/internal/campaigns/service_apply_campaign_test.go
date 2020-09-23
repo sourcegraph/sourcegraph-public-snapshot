@@ -424,7 +424,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
 			c := ownerChangesets[0]
-			setChangesetPublished(t, ctx, store, c, "refs/heads/repo-0-branch-0", "88888")
+			setChangesetPublished(t, ctx, store, c, "88888", "refs/heads/repo-0-branch-0")
 
 			// This other campaign tracks the changeset created by the first one
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
@@ -605,7 +605,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
 			c := changesets[0]
-			setChangesetPublished(t, ctx, store, c, specOpts.headRef, "995544")
+			setChangesetPublished(t, ctx, store, c, "995544", specOpts.headRef)
 
 			assertions := changesetAssertions{
 				repo:             c.RepoID,
@@ -636,10 +636,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 			assertions.externalState = campaigns.ChangesetExternalStateClosed
 			reloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-			// STEP 3: We apply the spec and expect _the same changeset_ to be re-attached.
+			// STEP 3: We apply a new campaign spec with a changeset spec that
+			// matches the old changeset and expect _the same changeset_ to be
+			// re-attached.
 			campaignSpec3 := createCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
+
 			specOpts.campaignSpec = campaignSpec3.ID
-			createChangesetSpec(t, ctx, store, specOpts)
+			spec2 := createChangesetSpec(t, ctx, store, specOpts)
 
 			campaign, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
@@ -647,6 +650,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if have, want := attachedChangeset.ID, c.ID; have != want {
 				t.Fatalf("attached changeset has wrong ID. want=%d, have=%d", want, have)
 			}
+
+			// Assert that the changeset has been updated to point to the new spec
+			assertions.currentSpec = spec2.ID
+			assertions.previousSpec = spec1.ID
+			assertions.reconcilerState = campaigns.ReconcilerStateQueued
+			assertChangeset(t, attachedChangeset, assertions)
 		})
 	})
 
