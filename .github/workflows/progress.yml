@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - master
+      - bl/progress-action
 
 jobs:
   sync-progress-channel:
@@ -16,13 +17,22 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
-      - run: export COMMIT=HEAD; git diff $COMMIT~1..$COMMIT $DIFF_PATH | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/diff.json
+      - run: |
+          export COMMIT=HEAD; git diff $COMMIT~1..$COMMIT $DIFF_PATH >> /tmp/diff.txt;
+          if [ "$( cat /tmp/diff.txt )" ]; then
+            exit 0;
+          fi
+          echo "CHANGELOG.md has been updated:" > /tmp/message.txt;
+          echo "```" >> /tmp/message.txt;
+          cat /tmp/diff.txt >> /tmp/message.txt;
+          echo "```" >> /tmp/message.txt
+          cat /tmp/message.txt | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/message.json;
         shell: bash
       - run: |
-          if [ -z "$(cat /tmp/diff.json)" ]; then
+          if [ -z "$(cat /tmp/diff.txt)" ]; then
             echo "Diff was empty, not posting to Slack";
           else
             echo "Posting diff to #progress channel in Slack";
-            curl -XPOST $WEBHOOK_URL -d "{ \"text\": $(cat /tmp/diff.json) }";
+            curl -XPOST $WEBHOOK_URL -d "{ \"text\": $(cat /tmp/message.json) }";
           fi
         shell: bash
