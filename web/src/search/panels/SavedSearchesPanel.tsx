@@ -19,21 +19,26 @@ interface Props extends TelemetryProps {
     patternType: SearchPatternType
 }
 
-export const SavedSearchesPanel: React.FunctionComponent<Props> = ({ patternType, authenticatedUser, fetchSavedSearches, className, telemetryService }) => {
+export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
+    patternType,
+    authenticatedUser,
+    fetchSavedSearches,
+    className,
+    telemetryService,
+}) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (savedSearches) {
-            telemetryService.log('SavedSearchesPanelLoaded', {empty: savedSearches.length === 0, showAllSearches })
+            telemetryService.log('SavedSearchesPanelLoaded', { empty: savedSearches.length === 0, showAllSearches })
         }
     }, [savedSearches, telemetryService, showAllSearches])
 
-    const logEvent = useCallback(
-        (event: string, props?: any) => (): void => telemetryService.log(event, props),
-        [telemetryService]
-    )
+    const logEvent = useCallback((event: string, props?: any) => (): void => telemetryService.log(event, props), [
+        telemetryService,
+    ])
 
     const emptyDisplay = (
         <div className="panel-container__empty-container text-muted">
@@ -43,7 +48,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({ patternType
             {authenticatedUser && (
                 <Link
                     to={`/users/${authenticatedUser.username}/searches/add`}
-                    onClick={logEvent('SavedSearchesPanelCreateButtonClicked', {source: 'empty view'})}
+                    onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
                     className="btn btn-secondary mt-2 align-self-center"
                 >
                     <PlusIcon className="icon-inline" />
@@ -75,12 +80,17 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({ patternType
                                 </Link>
                                 {authenticatedUser &&
                                     (search.namespace.__typename === 'User' ? (
-                                        <Link to={`/users/${search.namespace.namespaceName}/searches/${search.id}`} onClick={logEvent('SavedSearchesPanelEditClicked')}>
+                                        <Link
+                                            to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
+                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                        >
                                             <PencilOutlineIcon className="icon-inline" />
                                         </Link>
                                     ) : (
                                         <Link
-                                            to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`} onClick={logEvent('SavedSearchesPanelEditClicked')}>
+                                            to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
+                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                        >
                                             <PencilOutlineIcon className="icon-inline" />
                                         </Link>
                                     ))}
@@ -107,7 +117,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({ patternType
                     <Link
                         to={`/users/${authenticatedUser.username}/searches/add`}
                         className="btn btn-outline-secondary panel-container__action-button mr-2"
-                        onClick={logEvent('SavedSearchesPanelCreateButtonClicked', {source: 'toolbar'})}
+                        onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
                     >
                         +
                     </Link>
