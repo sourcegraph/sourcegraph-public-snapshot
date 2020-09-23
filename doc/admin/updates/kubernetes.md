@@ -7,7 +7,7 @@ Follow the [recommended method](../install/kubernetes/update.md) of upgrading a 
 
 ## 3.20.x -> 3.21.0
 
-A new database instance `codeintel-db` has been introduced. If you have previously configured Sourcegraph to connect to an external database and would like to do the same for thsi new instance, then update the `CODEINTEL_PG*` environment variables as described in the [external database documentation](../external_database.md). Otherwise, no manual steps are necessary.
+A new database instance `codeintel-db` has been introduced. If you have previously configured Sourcegraph to connect to an external database and would like to do the same for this new instance, then update the `CODEINTEL_PG*` environment variables as described in the [external database documentation](../external_database.md). Otherwise, no manual steps are necessary.
 
 ## 3.19
 
