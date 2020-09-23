@@ -87,7 +87,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				return err
 			}
 
-			pullCommand := concatAll(
+			pullCommand := flatten(
 				"docker", "pull",
 				fmt.Sprintf("sourcegraph/%s:latest", image),
 			)
@@ -95,7 +95,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				return errors.Wrap(err, fmt.Sprintf("failed to pull sourcegraph/%s:latest", image))
 			}
 
-			saveCommand := concatAll(
+			saveCommand := flatten(
 				"docker", "save",
 				"-o", tarfile,
 				fmt.Sprintf("sourcegraph/%s:latest", image),
@@ -105,7 +105,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			}
 		}
 
-		startCommand := concatAll(
+		startCommand := flatten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "docker-bridge",
@@ -121,7 +121,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			return errors.Wrap(err, "failed to start firecracker vm")
 		}
 		defer func() {
-			stopCommand := concatAll(
+			stopCommand := flatten(
 				"ignite", "stop",
 				"--runtime", "docker",
 				"--network-plugin", "docker-bridge",
@@ -131,7 +131,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
 			}
 
-			removeCommand := concatAll(
+			removeCommand := flatten(
 				"ignite", "rm", "-f",
 				"--runtime", "docker",
 				"--network-plugin", "docker-bridge",
@@ -143,7 +143,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		}()
 
 		for _, image := range images {
-			loadCommand := concatAll(
+			loadCommand := flatten(
 				"ignite", "exec", name.String(), "--",
 				"docker", "load",
 				"-i", fmt.Sprintf("/%s.tar", image),
@@ -154,7 +154,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		}
 	}
 
-	indexCommand := concatAll(
+	indexCommand := flatten(
 		"docker", "run", "--rm",
 		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
@@ -165,7 +165,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"--no-animation",
 	)
 	if h.options.UseFirecracker {
-		indexCommand = concatAll(
+		indexCommand = flatten(
 			"ignite", "exec", name.String(), "--",
 			indexCommand,
 		)
@@ -174,7 +174,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		return errors.Wrap(err, "failed to index repository")
 	}
 
-	uploadCommand := concatAll(
+	uploadCommand := flatten(
 		"docker", "run", "--rm",
 		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
@@ -189,7 +189,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-upload-route", "/.internal-code-intel/lsif/upload",
 	)
 	if h.options.UseFirecracker {
-		uploadCommand = concatAll(
+		uploadCommand = flatten(
 			"ignite", "exec", name.String(), "--",
 			uploadCommand,
 		)
@@ -267,7 +267,7 @@ func makeUploadURL(baseURL, authToken string) (*url.URL, error) {
 	return base, nil
 }
 
-func concatAll(values ...interface{}) (union []string) {
+func flatten(values ...interface{}) (union []string) {
 	for _, value := range values {
 		switch v := value.(type) {
 		case string:
