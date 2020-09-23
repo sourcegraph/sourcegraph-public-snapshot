@@ -4,9 +4,9 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
-## -> 3.21.0
+## 3.20.x -> 3.21.0
 
-TODO(slimsag) - update
+TODO(slimsag) - update - seems like there's more going on here than the other two
 
 ## 3.17.2 -> 3.18.0 changes
 
