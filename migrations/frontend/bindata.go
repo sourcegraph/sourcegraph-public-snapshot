@@ -72,6 +72,8 @@
 // 1528395718_user_invalidate_session.up.sql (1.252kB)
 // 1528395719_migration_sql.down.sql (308B)
 // 1528395719_migration_sql.up.sql (53B)
+// 1528395720_drop_repo_sources_column.down.sql (574B)
+// 1528395720_drop_repo_sources_column.up.sql (196B)
 
 package migrations
 
@@ -1580,6 +1582,46 @@ func _1528395719_migration_sqlUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395720_drop_repo_sources_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x51\xc1\x6e\x9c\x30\x14\xbc\xfb\x2b\xa6\xd2\x4a\x24\x87\xcd\x07\x04\xf5\xe0\xc5\xcf\xc4\x92\xb1\x57\xc6\x56\xf6\x86\x68\x8a\xe8\x36\x04\xb6\x90\x3d\x54\x55\xff\xbd\x32\x14\xb6\x87\x1e\xf2\x4e\xcf\x4f\x33\xa3\x99\xf1\x81\x72\x65\x52\xc6\xb8\xf6\xe4\xe0\xf9\x41\x13\xc6\xe6\x32\x30\x80\x0b\x81\xcc\xea\x50\x18\x28\x09\x63\x3d\xe8\xa4\x4a\x5f\x62\x1a\xae\xe3\x4b\x33\xe1\xfb\x34\xf4\x5f\x20\x48\xf2\xa0\x3d\x92\x5f\xbf\x93\xc7\xc7\xe5\x16\xc1\x26\x68\x9d\x32\xb6\xdf\xa3\xa8\xc7\x57\xbc\x7f\x6b\x36\xe2\xcb\xd0\x5d\xdf\xfa\x09\xf5\x84\xb1\xa9\xbf\xee\x87\xbe\xfb\x89\xeb\x74\xee\x5b\xd4\x78\x1f\xcf\x6d\xdb\x8c\x0f\x2c\x73\xc4\x3d\x41\x06\x93\x79\x65\x0d\xde\xea\xd7\xa6\x8a\xde\xaa\xbf\x3a\xd5\xa2\x53\x45\x8d\x2a\x6a\xdc\xdd\xc3\x91\x0f\xce\x94\xab\x0a\x03\x00\xcd\x4d\x1e\x78\x4e\xb8\x74\x97\x76\xfa\xd1\xcd\x47\x5e\x62\xb7\x9b\xb7\xb9\x82\x79\x8b\xa3\x24\xee\xac\x16\x0f\xab\xd7\x4f\x9f\x61\xe8\x79\x7d\xde\xc3\x3f\xd1\x0d\x1c\xc7\x71\x55\x12\xe8\x94\xd1\x71\xb6\x99\xac\xcc\xf3\x3f\xe9\x92\x74\xe3\x90\x11\x50\x32\x65\xdb\x61\xb1\x0c\xab\xc5\x02\x22\x23\x52\xb6\xdb\xa5\x6c\x6d\xc0\x3b\x95\xe7\xe4\xe6\x4c\xb7\xb0\xff\xab\x02\x07\x92\xd6\x11\xc2\x51\x44\xa2\x95\x5b\xe5\xd6\xcc\xdf\x0a\x69\x1d\x88\x67\x4f\x70\xf6\x19\x74\xa2\x2c\x78\xc2\xd1\xd9\x8c\x44\x70\xf4\xa1\x8e\xa3\x31\x5b\x14\xca\xa7\xec\x4f\x00\x00\x00\xff\xff\xc3\x19\x98\x3b\x3e\x02\x00\x00")
+
+func _1528395720_drop_repo_sources_columnDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395720_drop_repo_sources_columnDownSql,
+		"1528395720_drop_repo_sources_column.down.sql",
+	)
+}
+
+func _1528395720_drop_repo_sources_columnDownSql() (*asset, error) {
+	bytes, err := _1528395720_drop_repo_sources_columnDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395720_drop_repo_sources_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x78, 0xad, 0x16, 0x1f, 0xfd, 0xc4, 0x33, 0xcd, 0x65, 0x38, 0xf8, 0x3, 0x6, 0x6, 0x15, 0x29, 0xec, 0xe1, 0xb7, 0x53, 0x64, 0x4f, 0x64, 0x59, 0x6f, 0x96, 0x1, 0x9a, 0xfb, 0x60, 0x17, 0xde}}
+	return a, nil
+}
+
+var __1528395720_drop_repo_sources_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xcc\xbf\x0a\xc2\x30\x10\x80\xf1\xfd\x9e\xe2\x46\x7d\x86\x4c\x6d\x4d\xc3\x41\xfe\x48\x7a\x05\xb7\x50\x6a\x10\xb1\x6d\x24\xb5\x83\x6f\x2f\x16\xc5\x0e\xae\x1f\x7c\xbf\x52\x2a\xb2\x02\xe0\xe0\xdd\x11\xd9\x93\x52\xd2\x23\xd5\x28\x4f\xd4\x70\x83\x8f\x7c\xbd\x84\x1c\xbb\x73\x48\xd3\xf0\x0c\x39\xde\x53\x98\xd3\x92\xfb\x38\x87\x3e\x0d\xcb\x38\xa1\xb3\xf8\xce\x5f\xa3\x6e\x6d\xc5\xe4\xec\x06\x19\xbb\x5b\xfc\xb7\xfe\xe0\xdd\x5e\x00\x14\x9a\xa5\x47\x2e\x4a\x2d\x57\x11\x57\xaf\x72\xba\x35\x5b\xed\x63\x08\x80\xca\x19\x43\x2c\xe0\x15\x00\x00\xff\xff\x0a\x08\xdb\x8d\xc4\x00\x00\x00")
+
+func _1528395720_drop_repo_sources_columnUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395720_drop_repo_sources_columnUpSql,
+		"1528395720_drop_repo_sources_column.up.sql",
+	)
+}
+
+func _1528395720_drop_repo_sources_columnUpSql() (*asset, error) {
+	bytes, err := _1528395720_drop_repo_sources_columnUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395720_drop_repo_sources_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf8, 0x44, 0x27, 0x9c, 0xe4, 0x3b, 0x8d, 0xed, 0x8f, 0x14, 0x4a, 0xd0, 0xe0, 0xf0, 0xc7, 0x30, 0xc, 0xbf, 0x88, 0x47, 0xf4, 0xf3, 0x95, 0x81, 0x34, 0x95, 0x41, 0xad, 0x6e, 0x76, 0xcd, 0x80}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1743,6 +1785,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395718_user_invalidate_session.up.sql":                                    _1528395718_user_invalidate_sessionUpSql,
 	"1528395719_migration_sql.down.sql":                                            _1528395719_migration_sqlDownSql,
 	"1528395719_migration_sql.up.sql":                                              _1528395719_migration_sqlUpSql,
+	"1528395720_drop_repo_sources_column.down.sql":                                 _1528395720_drop_repo_sources_columnDownSql,
+	"1528395720_drop_repo_sources_column.up.sql":                                   _1528395720_drop_repo_sources_columnUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1861,6 +1905,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395718_user_invalidate_session.up.sql":                                    {_1528395718_user_invalidate_sessionUpSql, map[string]*bintree{}},
 	"1528395719_migration_sql.down.sql":                                            {_1528395719_migration_sqlDownSql, map[string]*bintree{}},
 	"1528395719_migration_sql.up.sql":                                              {_1528395719_migration_sqlUpSql, map[string]*bintree{}},
+	"1528395720_drop_repo_sources_column.down.sql":                                 {_1528395720_drop_repo_sources_columnDownSql, map[string]*bintree{}},
+	"1528395720_drop_repo_sources_column.up.sql":                                   {_1528395720_drop_repo_sources_columnUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
