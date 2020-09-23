@@ -34,10 +34,11 @@ type campaignsApplyFlags struct {
 	tempDir          string
 	clearCache       bool
 	file             string
-	keep             bool
+	keepLogs         bool
 	namespace        string
 	parallelism      int
 	timeout          time.Duration
+	cleanArchives    bool
 }
 
 func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *campaignsApplyFlags {
@@ -55,22 +56,22 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 	)
 	flagSet.StringVar(
 		&caf.cacheDir, "cache", cacheDir,
-		"Directory for caching results.",
+		"Directory for caching results and repository archives.",
 	)
 	flagSet.BoolVar(
 		&caf.clearCache, "clear-cache", false,
-		"If true, clears the cache and executes all steps anew.",
+		"If true, clears the execution cache and executes all steps anew.",
 	)
 	flagSet.StringVar(
 		&caf.tempDir, "tmp", tempDir,
-		"Directory for storing temporary data, such as repository archives when executing campaign specs or log files. Default is /tmp. Can also be set with environment variable SRC_CAMPAIGNS_TMP_DIR; if both are set, this flag will be used and not the environment variable.",
+		"Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_CAMPAIGNS_TMP_DIR; if both are set, this flag will be used and not the environment variable.",
 	)
 	flagSet.StringVar(
 		&caf.file, "f", "",
 		"The campaign spec file to read.",
 	)
 	flagSet.BoolVar(
-		&caf.keep, "keep-logs", false,
+		&caf.keepLogs, "keep-logs", false,
 		"Retain logs after executing steps.",
 	)
 	flagSet.StringVar(
@@ -86,6 +87,10 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 	flagSet.DurationVar(
 		&caf.timeout, "timeout", 60*time.Minute,
 		"The maximum duration a single set of campaign steps can take.",
+	)
+	flagSet.BoolVar(
+		&caf.cleanArchives, "clean-archives", true,
+		"If true, deletes downloaded repository archives after executing campaign steps.",
 	)
 
 	return caf
@@ -159,8 +164,9 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 
 	opts := campaigns.ExecutorOpts{
 		Cache:      svc.NewExecutionCache(flags.cacheDir),
+		Creator:    svc.NewWorkspaceCreator(flags.cacheDir, flags.cleanArchives),
 		ClearCache: flags.clearCache,
-		KeepLogs:   flags.keep,
+		KeepLogs:   flags.keepLogs,
 		Timeout:    flags.timeout,
 		TempDir:    flags.tempDir,
 	}
@@ -283,7 +289,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		progress.Complete()
 	}
 
-	if logFiles := executor.LogFiles(); len(logFiles) > 0 && flags.keep {
+	if logFiles := executor.LogFiles(); len(logFiles) > 0 && flags.keepLogs {
 		func() {
 			block := out.Block(output.Line("", campaignsSuccessColor, "Preserving log files:"))
 			defer block.Close()

@@ -70,6 +70,7 @@ type executor struct {
 	cache   ExecutionCache
 	client  api.Client
 	logger  *LogManager
+	creator *WorkspaceCreator
 	tasks   sync.Map
 	tempDir string
 
@@ -86,6 +87,7 @@ func newExecutor(opts ExecutorOpts, client api.Client, update ExecutorUpdateCall
 	return &executor{
 		ExecutorOpts:  opts,
 		cache:         opts.Cache,
+		creator:       opts.Creator,
 		client:        client,
 		doneEnqueuing: make(chan struct{}),
 		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
@@ -218,7 +220,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	defer cancel()
 
 	// Actually execute the steps.
-	diff, err := runSteps(runCtx, x.client, task.Repository, task.Steps, log, x.tempDir)
+	diff, err := runSteps(runCtx, x.creator, task.Repository, task.Steps, log, x.tempDir)
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
 			err = &errTimeoutReached{timeout: x.Timeout}

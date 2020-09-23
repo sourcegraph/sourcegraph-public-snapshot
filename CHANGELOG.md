@@ -16,6 +16,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Changed
 
 - Error reporting by `src campaign [preview|apply]` has been improved and now includes more information about which step failed in which repository. [#325](https://github.com/sourcegraph/src-cli/pull/325)
+- The default behaviour of `src campaigns [preview|apply]` has been changed to retain downloaded archives of repositories for better performance across re-runs of the command. To use the old behaviour and delete the archives use the `-clean-archives` flag. Repository archives are also not stored in the directory for temp data (see `-tmp` flag) anymore but in the cache directory, which can be configured with the `-cache` flag. To manually delete archives between runs, delete the `*.zip` files in the `-cache` directory (see `src campaigns -help` for its default location).
 
 ### Fixed
 

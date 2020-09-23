@@ -1,38 +1,26 @@
 package campaigns
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string) ([]byte, error) {
-	zipFile, err := fetchRepositoryArchive(ctx, client, repo, tempDir)
+func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string) ([]byte, error) {
+	volumeDir, err := wc.Create(ctx, repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "Fetching ZIP archive failed")
-	}
-	defer os.Remove(zipFile.Name())
-
-	prefix := "changeset-" + repo.Slug()
-	volumeDir, err := unzipToTempDir(ctx, zipFile.Name(), tempDir, prefix)
-	if err != nil {
-		return nil, errors.Wrap(err, "Unzipping the ZIP archive failed")
+		return nil, errors.Wrap(err, "creating workspace")
 	}
 	defer os.RemoveAll(volumeDir)
 
@@ -72,7 +60,7 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 	for i, step := range steps {
 		logger.Logf("[Step %d] docker run %s %q", i+1, step.Container, step.Run)
 
-		cidFile, err := ioutil.TempFile(tempDir, prefix+"-container-id")
+		cidFile, err := ioutil.TempFile(tempDir, repo.Slug()+"-container-id")
 		if err != nil {
 			return nil, errors.Wrap(err, "Creating a CID file failed")
 		}
@@ -167,101 +155,6 @@ func runSteps(ctx context.Context, client api.Client, repo *graphql.Repository, 
 	}
 
 	return diffOut, err
-}
-
-func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string) (string, error) {
-	volumeDir, err := ioutil.TempDir(tempDir, tempFilePrefix)
-	if err != nil {
-		return "", err
-	}
-	return volumeDir, unzip(zipFile, volumeDir)
-}
-
-func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphql.Repository, tempDir string) (*os.File, error) {
-	req, err := client.NewHTTPRequest(ctx, "GET", repositoryZipArchivePath(repo), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/zip")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
-	}
-
-	f, err := ioutil.TempFile(tempDir, strings.Replace(repo.Name, "/", "-", -1)+".zip")
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		return nil, err
-	}
-	return f, nil
-}
-
-func repositoryZipArchivePath(repo *graphql.Repository) string {
-	return path.Join("", repo.Name+"@"+repo.DefaultBranch.Name, "-", "raw")
-}
-
-func unzip(zipFile, dest string) error {
-	r, err := zip.OpenReader(zipFile)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	outputBase := filepath.Clean(dest) + string(os.PathSeparator)
-
-	for _, f := range r.File {
-		fpath := filepath.Join(dest, f.Name)
-
-		// Check for ZipSlip. More Info: https://snyk.io/research/zip-slip-vulnerability#go
-		if !strings.HasPrefix(fpath, outputBase) {
-			return fmt.Errorf("%s: illegal file path", fpath)
-		}
-
-		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
-				return err
-			}
-			continue
-		}
-
-		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-			return err
-		}
-
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-		if err != nil {
-			return err
-		}
-
-		rc, err := f.Open()
-		if err != nil {
-			outFile.Close()
-			return err
-		}
-
-		_, err = io.Copy(outFile, rc)
-		rc.Close()
-		cerr := outFile.Close()
-		// Now we have safely closed everything that needs it, and can check errors
-		if err != nil {
-			return errors.Wrapf(err, "copying %q failed", f.Name)
-		}
-		if cerr != nil {
-			return errors.Wrap(err, "closing output file failed")
-		}
-
-	}
-
-	return nil
 }
 
 func probeImageForShell(ctx context.Context, image string) (shell, tempfile string, err error) {

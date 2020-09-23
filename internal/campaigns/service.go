@@ -139,6 +139,7 @@ func (svc *Service) NewExecutionCache(dir string) ExecutionCache {
 
 type ExecutorOpts struct {
 	Cache       ExecutionCache
+	Creator     *WorkspaceCreator
 	Parallelism int
 	Timeout     time.Duration
 
@@ -146,10 +147,15 @@ type ExecutorOpts struct {
 	KeepLogs      bool
 	VerboseLogger bool
 	TempDir       string
+	CacheDir      string
 }
 
 func (svc *Service) NewExecutor(opts ExecutorOpts, update ExecutorUpdateCallback) Executor {
 	return newExecutor(opts, svc.client, update)
+}
+
+func (svc *Service) NewWorkspaceCreator(dir string, cleanArchives bool) *WorkspaceCreator {
+	return &WorkspaceCreator{dir: dir, client: svc.client, deleteZips: cleanArchives}
 }
 
 func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, progress func(i int)) error {
