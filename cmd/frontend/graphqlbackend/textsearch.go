@@ -293,7 +293,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return mockSearchFilesInRepos(args)
 	}
 
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s, numRepoRevs: %d", args.PatternInfo.Pattern, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -334,11 +334,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	// query, there will be no results. Raise a friendly alert.
 	if args.PatternInfo.IsStructuralPat && len(indexed.Repos()) == 0 {
 		return nil, nil, errors.New("no indexed repositories for structural search")
-	}
-
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
 	}
 
 	if args.PatternInfo.IsEmpty() {
@@ -598,6 +593,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	wg.Wait()
 	if searchErr != nil {
 		return nil, common, searchErr
+	}
+
+	common.repos = make([]*types.Repo, len(args.RepoPromise.Get()))
+	for i, repo := range args.RepoPromise.Get() {
+		common.repos[i] = repo.Repo
 	}
 
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))

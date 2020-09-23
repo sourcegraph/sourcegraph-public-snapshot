@@ -51,7 +51,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		return mockSearchSymbols(ctx, args, limit)
 	}
 
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.RepoPromise.Get())))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -71,8 +71,8 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		return nil, nil, err
 	}
 
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
+	common.repos = make([]*types.Repo, len(args.RepoPromise.Get()))
+	for i, repo := range args.RepoPromise.Get() {
 		common.repos[i] = repo.Repo
 	}
 

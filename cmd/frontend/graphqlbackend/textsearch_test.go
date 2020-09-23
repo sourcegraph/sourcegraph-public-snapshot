@@ -65,12 +65,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	rp := search.NewRepoPromise()
+	rp.Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"))
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
+		RepoPromise:  rp,
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -95,12 +97,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
+	rp = search.NewRepoPromise()
+	rp.Resolve(makeRepositoryRevisions("foo/no-rev@dev"))
 	args = &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo/no-rev@dev"),
+		RepoPromise:  rp,
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -140,17 +144,19 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	rp := search.NewRepoPromise()
+	rp.Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"))
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
+		RepoPromise:  rp,
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	args.Repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+	args.RepoPromise.Get()[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 	results, _, err := searchFilesInRepos(context.Background(), args)

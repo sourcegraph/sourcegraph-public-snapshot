@@ -1082,9 +1082,11 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			}
 		}
 
+		rp := search.NewRepoPromise()
+		rp.Resolve(repoRevs)
 		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.TextParameters{
-			Repos: repoRevs,
-			Query: &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
+			RepoPromise: rp,
+			Query:       &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
 		})
 
 		haveAlertDescription := ""
