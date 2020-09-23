@@ -14,5 +14,7 @@ jobs:
           fetch-depth: 1
       - run: echo Hello world
         shell: bash
-      - run: git log
+      - run: git diff HEAD^..HEAD CHANGELOG.md
+        shell: bash
+      - run: export COMMIT=HEAD; git diff $COMMIT^..$COMMIT CHANGELOG.md | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
         shell: bash
