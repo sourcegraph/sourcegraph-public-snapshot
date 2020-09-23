@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Sync changelog to progress channel
     steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
       - run: echo Hello world
         shell: bash
       - run: git log
