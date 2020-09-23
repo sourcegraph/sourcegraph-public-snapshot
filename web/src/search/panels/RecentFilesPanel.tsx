@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
@@ -17,7 +17,12 @@ interface Props extends TelemetryProps {
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
-export const RecentFilesPanel: React.FunctionComponent<Props> = ({className, authenticatedUser, fetchRecentFileViews, telemetryService}) => {
+export const RecentFilesPanel: React.FunctionComponent<Props> = ({
+    className,
+    authenticatedUser,
+    fetchRecentFileViews,
+    telemetryService,
+}) => {
     const pageSize = 20
 
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
@@ -42,9 +47,11 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({className, aut
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (processedResults && itemsToLoad === pageSize) {
-            telemetryService.log('RecentFilesPanelLoaded', {empty: processedResults.length === 0})
+            telemetryService.log('RecentFilesPanelLoaded', { empty: processedResults.length === 0 })
         }
     }, [processedResults, telemetryService, itemsToLoad])
+
+    const logFileClicked = useCallback(() => telemetryService.log('RecentFilesPanelFileClicked'), [telemetryService])
 
     const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
@@ -68,7 +75,7 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({className, aut
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
                     <dd key={index} className="text-monospace test-recent-files-item">
-                        <Link to={recentFile.url}>
+                        <Link to={recentFile.url} onClick={logFileClicked}>
                             {recentFile.repoName} › {recentFile.filePath}
                         </Link>
                     </dd>
