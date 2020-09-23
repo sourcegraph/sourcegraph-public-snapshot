@@ -30,9 +30,6 @@ To externalize the _code intelligence database_, use the following prefixed `COD
 - `CODEINTEL_PGDATABASE`
 - `CODEINTEL_PGSSLMODE`
 
-<!-- TODO(efritz,docs) - update text here -->
-Simply add the standard PostgreSQL environment variables to your Sourcegraph deployment files and Sourcegraph will use that PostgreSQL server instead of its built-in one.
-
 :warning: It is not recommended to configure both PostgreSQL instances to point to the same external database. They should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
 
 ### sourcegraph/server
