@@ -297,7 +297,8 @@ func (r *changesetRewirer) Rewire() (err error) {
 			}
 		} else {
 			// But if we already have a changeset in the given repository with
-			// the given branch, we need to update it to have the new spec:
+			// the given branch, we need to update it to have the new spec
+			// and possibly re-attach it to the campaign:
 			if err = r.updateChangesetToNewSpec(c, spec); err != nil {
 				return err
 			}
@@ -377,6 +378,9 @@ func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
+
+	// Ensure that the changeset is attached to the campaign
+	c.CampaignIDs = append(c.CampaignIDs, r.campaign.ID)
 
 	// Copy over diff stat from the new spec.
 	diffStat := spec.DiffStat()
