@@ -30,10 +30,14 @@ type Issue struct {
 	Parents       []*Issue       `json:"-"`
 }
 
+func (issue *Issue) Closed() bool {
+	return strings.EqualFold(issue.State, "closed")
+}
+
 func (issue *Issue) Markdown(labelAllowlist []string) string {
 	state := " "
 	prefixSuffix := ""
-	if strings.EqualFold(issue.State, "closed") {
+	if issue.Closed() {
 		state = "x"
 		prefixSuffix = "~"
 	}

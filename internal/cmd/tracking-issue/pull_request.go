@@ -27,9 +27,21 @@ type PullRequest struct {
 	LinkedIssues []*Issue `json:"-"`
 }
 
+func (pr *PullRequest) Closed() bool {
+	return strings.EqualFold(pr.State, "closed")
+}
+
+func (pr *PullRequest) Merged() bool {
+	return strings.EqualFold(pr.State, "merged")
+}
+
+func (pr *PullRequest) Done() bool {
+	return pr.Merged() || pr.Closed()
+}
+
 func (pr *PullRequest) Summary() string {
 	prefixSuffix := ""
-	if strings.EqualFold(pr.State, "merged") {
+	if pr.Done() {
 		prefixSuffix = "~"
 	}
 
@@ -38,7 +50,7 @@ func (pr *PullRequest) Summary() string {
 
 func (pr *PullRequest) Markdown() string {
 	state := " "
-	if strings.EqualFold(pr.State, "merged") {
+	if pr.Done() {
 		state = "x"
 	}
 
@@ -66,7 +78,7 @@ func (pr *PullRequest) title() string {
 		title = pr.Title
 	}
 
-	if strings.EqualFold(pr.State, "closed") {
+	if pr.Closed() {
 		title = "~" + strings.TrimSpace(title) + "~"
 	}
 
