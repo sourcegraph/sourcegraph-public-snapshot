@@ -16,7 +16,7 @@ interface Props {
 /**
  * The form for signing in with a username and password.
  */
-export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, setAuthError }) => {
+export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, onAuthError }) => {
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -68,10 +68,10 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                 .catch(error => {
                     console.error('Auth error:', error)
                     setLoading(false)
-                    setAuthError(asError(error))
+                    onAuthError(asError(error))
                 })
         },
-        [usernameOrEmail, loading, location, password, setAuthError]
+        [usernameOrEmail, loading, location, password, onAuthError]
     )
 
     return (

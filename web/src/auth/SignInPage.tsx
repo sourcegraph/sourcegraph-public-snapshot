@@ -57,7 +57,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         authError ? 'mt-3' : 'mt-4'
                     )}
                 >
-                    {builtInAuthProvider && <UsernamePasswordSignInForm {...props} setAuthError={setAuthError} />}
+                    {builtInAuthProvider && <UsernamePasswordSignInForm {...props} onAuthError={setAuthError} />}
                     {builtInAuthProvider && thirdPartyAuthProviders.length > 0 && <OrDivider className="mb-3 py-1" />}
                     {thirdPartyAuthProviders.map((provider, index) => (
                         // Use index as key because display name may not be unique. This is OK
