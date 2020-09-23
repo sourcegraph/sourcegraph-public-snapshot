@@ -16,11 +16,12 @@ fi
   echo ":rocket: CHANGELOG.md has been updated:"
   echo '```'
 } > /tmp/message.txt;
+# shellcheck disable=SC2016
 sed 's/`/` /g' < /tmp/diff.txt >> /tmp/message.txt;
 echo '```' >> /tmp/message.txt;
 
 cat /tmp/message.txt;
-cat /tmp/message.txt | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/message.json;
+python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' < /tmp/message.txt > /tmp/message.json;
 
 if [ -n "$(cat /tmp/diff.txt)" ]; then
   echo "Posting diff to #progress channel in Slack";
