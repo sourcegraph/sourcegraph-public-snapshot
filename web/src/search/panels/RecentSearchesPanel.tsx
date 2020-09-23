@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { EventLogResult } from '../backend'
@@ -29,7 +29,13 @@ interface Props extends TelemetryProps {
     now?: () => Date
 }
 
-export const RecentSearchesPanel: React.FunctionComponent<Props> = ({ className, authenticatedUser, fetchRecentSearches, now, telemetryService }) => {
+export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
+    className,
+    authenticatedUser,
+    fetchRecentSearches,
+    now,
+    telemetryService,
+}) => {
     const pageSize = 20
 
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
@@ -53,9 +59,13 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({ className,
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (processedResults && itemsToLoad === pageSize) {
-            telemetryService.log('RecentSearchesPanelLoaded', {empty: processedResults.length === 0})
+            telemetryService.log('RecentSearchesPanelLoaded', { empty: processedResults.length === 0 })
         }
     }, [processedResults, telemetryService, itemsToLoad])
+
+    const logSearchClicked = useCallback(() => telemetryService.log('RecentSearchesPanelSearchClicked'), [
+        telemetryService,
+    ])
 
     const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
@@ -137,7 +147,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({ className,
                                 </span>
                             </td>
                             <td>
-                                <Link to={recentSearch.url} className="text-monospace">
+                                <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>
                                     {recentSearch.searchText}
                                 </Link>
                             </td>
