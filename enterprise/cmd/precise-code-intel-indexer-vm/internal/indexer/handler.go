@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -71,15 +72,21 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	if h.options.UseFirecracker {
 		mountPoint = "/repo-dir"
 
-		images := []string{
-			"lsif-go",
-			"src-cli",
+		images := map[string]string{
+			"lsif-go": "sourcegraph/lsif-go:latest",
+			"src-cli": "sourcegraph/src-cli:latest",
 		}
 
+		var keys []string
+		for key := range images {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
 		copyfiles := []string{}
-		for _, image := range images {
-			tarfile := filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", image))
-			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", tarfile, fmt.Sprintf("/%s.tar", image)))
+		for _, key := range keys {
+			tarfile := filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", key))
+			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", tarfile, fmt.Sprintf("/%s.tar", key)))
 
 			if _, err := os.Stat(tarfile); err == nil {
 				continue
@@ -89,19 +96,19 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 			pullCommand := flatten(
 				"docker", "pull",
-				fmt.Sprintf("sourcegraph/%s:latest", image),
+				images[key],
 			)
 			if err := h.commander.Run(ctx, pullCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to pull sourcegraph/%s:latest", image))
+				return errors.Wrap(err, fmt.Sprintf("failed to pull %s", images[key]))
 			}
 
 			saveCommand := flatten(
 				"docker", "save",
 				"-o", tarfile,
-				fmt.Sprintf("sourcegraph/%s:latest", image),
+				images[key],
 			)
 			if err := h.commander.Run(ctx, saveCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to save sourcegraph/%s:latest", image))
+				return errors.Wrap(err, fmt.Sprintf("failed to save %s", images[key]))
 			}
 		}
 
@@ -142,14 +149,14 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			}
 		}()
 
-		for _, image := range images {
+		for _, key := range keys {
 			loadCommand := flatten(
 				"ignite", "exec", name.String(), "--",
 				"docker", "load",
-				"-i", fmt.Sprintf("/%s.tar", image),
+				"-i", fmt.Sprintf("/%s.tar", key),
 			)
 			if err := h.commander.Run(ctx, loadCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to load sourcegraph/%s:latest", image))
+				return errors.Wrap(err, fmt.Sprintf("failed to load %s", images[key]))
 			}
 		}
 	}
