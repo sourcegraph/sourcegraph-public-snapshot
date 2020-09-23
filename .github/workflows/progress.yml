@@ -2,7 +2,8 @@ name: Changelog progress broadcaster
 on:
   push:
     branches:
-      - bl/progress-action
+      - main
+      - master
 
 jobs:
   sync-progress-channel:
@@ -10,15 +11,11 @@ jobs:
     name: Sync changelog to progress channel
     env:
       WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_PROGRESS_CHANNEL }}
-      DIFF_PATH: . # CHANGELOG.md | set to . to test
+      DIFF_PATH: CHANGELOG.md  # when testing and you want this to fire on any diff, set this to .
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
-      - run: echo Hello world
-        shell: bash
-      - run: git diff HEAD^..HEAD -- $DIFF_PATH
-        shell: bash
       - run: export COMMIT=HEAD; git diff $COMMIT~1..$COMMIT $DIFF_PATH | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/diff.json
         shell: bash
       - run: |
@@ -29,7 +26,3 @@ jobs:
             curl -XPOST $WEBHOOK_URL -d "{ \"text\": $(cat /tmp/diff.json) }";
           fi
         shell: bash
-# - run: echo $WEBHOOK_URL -d '{ "text": "hello world" }'
-#   shell: bash
-# - run: curl -XPOST "$WEBHOOK_URL" -d "{ \"text\": `cat /tmp/diff.json` }"
-#   shell: bash
