@@ -1795,8 +1795,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if alertResult != nil {
 		return alertResult, nil
 	}
-	args.RepoPromise <- resolved.repoRevs
-	args.Repos = resolved.repoRevs
+	args.RepoPromise <- resolved.repoRevs // global search
+	args.Repos = resolved.repoRevs        // everything else
 
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)

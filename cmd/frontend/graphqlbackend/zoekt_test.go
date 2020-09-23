@@ -314,7 +314,7 @@ func TestIndexedSearch(t *testing.T) {
 			}
 
 			args.RepoPromise <- args.Repos
-			defer close(args.RepoPromise)
+			close(args.RepoPromise)
 
 			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
 			if err != nil {

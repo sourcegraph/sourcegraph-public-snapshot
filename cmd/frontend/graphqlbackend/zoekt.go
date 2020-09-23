@@ -195,8 +195,10 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if s.args.Mode != search.ZoektGlobalSearch && len(s.Repos()) == 0 {
-		return nil, false, nil, nil
+	if len(s.Repos()) == 0 {
+		if s.args == nil || s.args.Mode != search.ZoektGlobalSearch {
+			return nil, false, nil, nil
+		}
 	}
 
 	since := time.Since
@@ -291,8 +293,10 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
 func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if args.Mode != search.ZoektGlobalSearch && len(repos.repoRevs) == 0 {
-		return nil, false, nil, nil
+	if len(repos.repoRevs) == 0 {
+		if args == nil || args.Mode != search.ZoektGlobalSearch {
+			return nil, false, nil, nil
+		}
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
@@ -372,26 +376,32 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 		limitHit = true
 	}
-	// repo
-	m := map[string]*search.RepositoryRevisions{}
-	for _, file := range resp.Files {
-		m[file.Repository] = nil
-	}
 
-	select {
-	case <-ctx.Done():
-		return nil, false, nil, ctx.Err()
-	case repos := <-args.RepoPromise:
-		for _, repo := range repos {
-			if _, ok := m[string(repo.Repo.Name)]; !ok {
-				continue
+	m := map[string]*search.RepositoryRevisions{}
+	if args.Mode == search.ZoektGlobalSearch {
+		for _, file := range resp.Files {
+			m[file.Repository] = nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, false, nil, ctx.Err()
+		case repos := <-args.RepoPromise:
+			for _, repo := range repos {
+				if _, ok := m[string(repo.Repo.Name)]; !ok {
+					continue
+				}
+				m[string(repo.Repo.Name)] = repo
 			}
-			m[string(repo.Repo.Name)] = repo
 		}
 	}
 
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
+	var (
+		repo      *types.Repo
+		inputRevs []string
+	)
 	for _, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -399,13 +409,15 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := m[file.Repository]
-		if repoRev == nil {
-			continue
+		if args.Mode == search.ZoektGlobalSearch {
+			repoRev := m[file.Repository]
+			if repoRev == nil {
+				continue
+			}
+			repo, inputRevs = repoRev.Repo, repoRev.RevSpecs()
+		} else {
+			repo, inputRevs = repos.GetRepoInputRev(&file)
 		}
-		//repo, inputRevs := repos.GetRepoInputRev(&file)
-		repo := repoRev.Repo
-		inputRevs := repoRev.RevSpecs()
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
 			repoResolver = &RepositoryResolver{repo: repo}
