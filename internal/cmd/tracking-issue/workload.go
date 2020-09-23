@@ -54,15 +54,15 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 		}
 	}
 
-	// Put all PRs that aren't linked to issues or nested under a tracking issue
-	// at the end of the top-level
+	// Put all PRs that aren't linked to issues or nested under a tracking
+	// issue at the end of the top-level.
 	for _, pr := range wl.PullRequests {
 		if pr.Done() {
 			hasCompletedIssueOrPullRequest = true
 			continue
 		}
 
-		if len(pr.LinkedIssues) == 0 {
+		if len(pr.LinkedIssues) == 0 && len(pr.Parents) != 1 {
 			b.WriteString(pr.Markdown())
 		}
 	}
