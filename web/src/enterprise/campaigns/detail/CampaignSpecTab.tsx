@@ -10,6 +10,16 @@ export interface CampaignSpecTabProps {
     originalInput: CampaignFields['currentSpec']['originalInput']
 }
 
+/** Reports whether str is a valid JSON document. */
+const isJSON = (string: string): boolean => {
+    try {
+        JSON.parse(string)
+        return true
+    } catch {
+        return false
+    }
+}
+
 export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
     campaign: { name: campaignName, createdAt, lastApplier, lastAppliedAt },
     originalInput,
@@ -17,7 +27,20 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
     const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput), [
         originalInput,
     ])
-    const highlightedInput = useMemo(() => ({ __html: highlightCodeSafe(originalInput, 'yaml') }), [originalInput])
+
+    // JSON is valid YAML, so the input might be JSON. In that case, we'll highlight and indent it
+    // as JSON. This is especially nice when the input is a "minified" (no extraneous whitespace)
+    // JSON document that's difficult to read unless indented.
+    const inputIsJSON = isJSON(originalInput)
+    const input = useMemo(() => (inputIsJSON ? JSON.stringify(JSON.parse(originalInput), null, 2) : originalInput), [
+        inputIsJSON,
+        originalInput,
+    ])
+
+    const highlightedInput = useMemo(() => ({ __html: highlightCodeSafe(input, inputIsJSON ? 'json' : 'yaml') }), [
+        inputIsJSON,
+        input,
+    ])
     return (
         <div className="mt-4">
             <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">

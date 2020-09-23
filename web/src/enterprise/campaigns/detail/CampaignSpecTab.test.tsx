@@ -4,7 +4,7 @@ import { mount } from 'enzyme'
 import { CampaignFields } from '../../../graphql-operations'
 
 jest.mock('mdi-react/FileDownloadIcon', () => 'FileDownloadIcon')
-jest.mock('../../../../../shared/src/util/markdown', () => ({ highlightCodeSafe: () => 'code' }))
+jest.mock('../../../../../shared/src/util/markdown', () => ({ highlightCodeSafe: (input: string) => input }))
 
 const ALICE: CampaignFields['initialApplier'] | CampaignFields['lastApplier'] = {
     username: 'alice',
@@ -39,6 +39,22 @@ describe('CampaignSpecTab', () => {
                         lastApplier: ALICE,
                     }}
                     originalInput="x"
+                />
+            )
+        ).toMatchSnapshot()
+    })
+
+    test('input spec is JSON', () => {
+        expect(
+            mount(
+                <CampaignSpecTab
+                    campaign={{
+                        name: 'c',
+                        createdAt: '2020-01-01T15:00:00Z',
+                        lastAppliedAt: '2020-01-01T15:00:00Z',
+                        lastApplier: ALICE,
+                    }}
+                    originalInput='{"foo":"bar"}'
                 />
             )
         ).toMatchSnapshot()
