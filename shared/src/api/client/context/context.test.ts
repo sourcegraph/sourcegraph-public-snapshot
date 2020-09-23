@@ -157,11 +157,6 @@ describe('getComputedContextProperty', () => {
             test('returns null when there is no component', () => {
                 assertNoSelection()
             })
-
-            test('returns undefined for out-of-bounds selection', () =>
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'get(component.selections, 1)')
-                ).toBe(undefined))
         })
     })
 
@@ -190,6 +185,6 @@ describe('getComputedContextProperty', () => {
 
     test('falls back to the context entries', () => {
         expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x')).toBe(1)
-        expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'y')).toBe(undefined)
+        expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'y')).toBe(null)
     })
 })

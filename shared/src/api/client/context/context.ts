@@ -1,3 +1,4 @@
+import { Position, Selection } from '@sourcegraph/extension-api-types'
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
 import { ViewerWithPartialModel } from '../services/viewerService'
@@ -12,8 +13,10 @@ import { ViewerWithPartialModel } from '../services/viewerService'
 export interface Context<T = never>
     extends Record<
         string,
-        string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
+        string | number | boolean | null | Context<T> | T | (string | number | boolean | null | Context<T> | T)[]
     > {}
+
+type ValueOf<T> = T[keyof T]
 
 export type ContributionScope =
     | ViewerWithPartialModel
@@ -23,6 +26,9 @@ export type ContributionScope =
           hasLocations: boolean
       }
 
+/** The types of the builtin context keys (such as `component.selections`). */
+type BuiltinContextValuesTypes = Selection | Selection[] | Position
+
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
  * and the context entries (with lower precedence).
@@ -30,88 +36,61 @@ export type ContributionScope =
  * @param expr the context expr to evaluate
  * @param scope the user interface component in whose scope this computation should occur
  */
-export function getComputedContextProperty(
+export function getComputedContextProperty<T>(
     activeEditor: ViewerWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
-    context: Context<any>,
+    context: Context<T>,
     key: string,
     scope?: ContributionScope
-): any {
-    if (key.startsWith('config.')) {
-        const property = key.slice('config.'.length)
-        const value = isSettingsValid(settings) ? settings.final[property] : undefined
-        // Map undefined to null because an undefined value is treated as "does not exist in
-        // context" and an error is thrown, which is undesirable for config values (for
-        // which a falsey null default is useful).
-        return value === undefined ? null : value
-    }
-    const component: ContributionScope | null = scope || activeEditor || null
-    if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
-        return !!component
-    }
-    if (key.startsWith('resource.')) {
-        if (component?.type !== 'CodeEditor') {
-            return null
+): ValueOf<Context<BuiltinContextValuesTypes | T>> {
+    const data: Context<BuiltinContextValuesTypes | T> = { ...context }
+
+    // Settings (`config.` prefix)
+    if (isSettingsValid(settings)) {
+        for (const [key, value] of Object.entries<ValueOf<Context>>(settings.final)) {
+            data[`config.${key}`] = value
         }
+    }
+
+    // Resource (`resource.` prefix)
+    const component: ContributionScope | null = scope || activeEditor || null
+    data.resource = Boolean(component)
+    data.component = Boolean(component) // BACKCOMPAT: allow 'component' key
+    if (component?.type === 'CodeEditor') {
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
         // path relative to the repository's root? If it's a file on disk, then "path" could also mean the
         // (absolute) path on the file system. Clear up that ambiguity.
-        const property = key.slice('resource.'.length)
-        switch (property) {
-            case 'uri':
-                return component.resource
-            case 'basename':
-                return basename(component.resource)
-            case 'dirname':
-                return dirname(component.resource)
-            case 'extname':
-                return extname(component.resource)
-            case 'language':
-                return component.model.languageId
-            case 'type':
-                return 'textDocument'
-        }
+        data['resource.uri'] = component.resource
+        data['resource.basename'] = basename(component.resource)
+        data['resource.dirname'] = dirname(component.resource)
+        data['resource.extname'] = extname(component.resource)
+        data['resource.language'] = component.model.languageId
+        data['resource.type'] = 'textDocument'
+
+        data['component.type'] = 'CodeEditor'
+        data['component.selections'] = component.selections
+        data['component.selection'] = component.selections[0] || null
+        data['component.selection.start'] = component.selections[0] ? component.selections[0].start : null
+        data['component.selection.end'] = component.selections[0] ? component.selections[0].end : null
+        data['component.selection.start.line'] = component.selections[0] ? component.selections[0].start.line : null
+        data['component.selection.start.character'] = component.selections[0]
+            ? component.selections[0].start.character
+            : null
+        data['component.selection.end.line'] = component.selections[0] ? component.selections[0].end.line : null
+        data['component.selection.end.character'] = component.selections[0]
+            ? component.selections[0].end.character
+            : null
     }
-    if (key.startsWith('component.')) {
-        if (component?.type !== 'CodeEditor') {
-            return null
-        }
-        const property = key.slice('component.'.length)
-        switch (property) {
-            case 'type':
-                return 'CodeEditor'
-            case 'selections':
-                return component.selections
-            case 'selection':
-                return component.selections[0] || null
-            case 'selection.start':
-                return component.selections[0] ? component.selections[0].start : null
-            case 'selection.end':
-                return component.selections[0] ? component.selections[0].end : null
-            case 'selection.start.line':
-                return component.selections[0] ? component.selections[0].start.line : null
-            case 'selection.start.character':
-                return component.selections[0] ? component.selections[0].start.character : null
-            case 'selection.end.line':
-                return component.selections[0] ? component.selections[0].end.line : null
-            case 'selection.end.character':
-                return component.selections[0] ? component.selections[0].end.character : null
-        }
+
+    // Panel (`panel.` prefix)
+    if (component?.type === 'panelView') {
+        data['panel.activeView.id'] = component.id
+        data['panel.activeView.hasLocations'] = component.hasLocations
     }
-    if (key.startsWith('panel.activeView.')) {
-        if (component?.type !== 'panelView') {
-            return null
-        }
-        const property = key.slice('panel.activeView.'.length)
-        switch (property) {
-            case 'id':
-                return component.id
-            case 'hasLocations':
-                return component.hasLocations
-        }
-    }
-    if (key === 'context') {
-        return context
-    }
-    return context[key]
+
+    data.context = context
+
+    // BACKCOMPAT: If the key is not found, we return null, not undefined.
+    const value = data[key]
+    return value === undefined ? null : value
 }

@@ -4,7 +4,7 @@ import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
-import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
+import { Expression, parse, parseTemplate } from '../context/expr/evaluator'
 import { ViewerService, ViewerWithPartialModel } from './viewerService'
 import { ModelService } from './modelService'
 import { PlatformContext } from '../../../platform/context'
@@ -137,10 +137,9 @@ export class ContributionRegistry {
                     context = { ...context, ...extraContext }
                 }
 
-                // TODO(sqs): use {@link ContextService#observeValue}
-                const computedContext = {
-                    get: (key: string) => getComputedContextProperty(activeEditor, settings, context, key, scope),
-                }
+                // TODO(sqs): Observe context so that we update immediately upon changes.
+                const computedContext = getComputedContextProperty(activeEditor, settings, context, 'context', scope)
+
                 return multiContributions.flat().map(contributions => {
                     try {
                         return filterContributions(evaluateContributions(computedContext, contributions))
@@ -267,10 +266,7 @@ export function filterContributions(contributions: Evaluated<Contributions>): Ev
  *
  * @todo could walk object recursively
  */
-export function evaluateContributions(
-    context: ComputedContext,
-    contributions: Contributions
-): Evaluated<Contributions> {
+export function evaluateContributions(context: Context, contributions: Contributions): Evaluated<Contributions> {
     return {
         ...contributions,
         menus:
@@ -286,7 +282,7 @@ export function evaluateContributions(
  * Evaluates expressions in contribution definitions against the given context.
  */
 function evaluateActionContributions(
-    context: ComputedContext,
+    context: Context,
     actions: Contributions['actions']
 ): Evaluated<Contributions['actions']> {
     return actions?.map(action => ({
