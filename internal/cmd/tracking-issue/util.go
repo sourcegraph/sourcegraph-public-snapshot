@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Days(estimate string) float64 {
@@ -125,4 +127,17 @@ func contains(haystack []string, needle string) bool {
 	}
 
 	return false
+}
+
+func formatTimeSince(t time.Time) string {
+	days := time.Since(t) / time.Hour / 24
+
+	switch days {
+	case 0:
+		return "today"
+	case 1:
+		return "1 day ago"
+	default:
+		return fmt.Sprintf("%d days ago", days)
+	}
 }

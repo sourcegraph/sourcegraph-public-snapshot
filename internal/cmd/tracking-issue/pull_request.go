@@ -51,12 +51,15 @@ func (pr *PullRequest) Summary() string {
 
 func (pr *PullRequest) Markdown() string {
 	state := " "
+	daysSinceClose := ""
 	if pr.Done() {
 		state = "x"
+		daysSinceClose = fmt.Sprintf("(🏁 %s) ", formatTimeSince(pr.ClosedAt))
 	}
 
-	return fmt.Sprintf("- [%s] %s ([#%d](%s)) %s\n",
+	return fmt.Sprintf("- [%s] %s%s ([#%d](%s)) %s\n",
 		state,
+		daysSinceClose,
 		pr.title(),
 		pr.Number,
 		pr.URL,

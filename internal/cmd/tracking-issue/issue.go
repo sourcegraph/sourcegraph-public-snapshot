@@ -38,9 +38,11 @@ func (issue *Issue) Closed() bool {
 func (issue *Issue) Markdown(labelAllowlist []string) string {
 	state := " "
 	prefixSuffix := ""
+	daysSinceClose := ""
 	if issue.Closed() {
 		state = "x"
 		prefixSuffix = "~"
+		daysSinceClose = fmt.Sprintf("(🏁 %s) ", formatTimeSince(issue.ClosedAt))
 	}
 
 	estimate := Estimate(issue.Labels)
@@ -70,8 +72,9 @@ func (issue *Issue) Markdown(labelAllowlist []string) string {
 		pullRequestsPrefix = "; PRs: "
 	}
 
-	return fmt.Sprintf("- [%s] %s ([%s#%d%s](%s)%s%s) %s%s%s\n",
+	return fmt.Sprintf("- [%s] %s%s ([%s#%d%s](%s)%s%s) %s%s%s\n",
 		state,
+		daysSinceClose,
 		issue.title(),
 		prefixSuffix,
 		issue.Number,
