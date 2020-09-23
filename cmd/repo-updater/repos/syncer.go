@@ -304,7 +304,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	now := s.Now()
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
 	if s.Logger != nil {
-		s.Logger.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
+		s.Logger.Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	}
 	syncBackoffDuration.With(prometheus.Labels{
 		"external_service_id": strconv.FormatInt(svc.ID, 10),
