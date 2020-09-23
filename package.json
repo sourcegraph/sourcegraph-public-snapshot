@@ -171,7 +171,7 @@
     "@types/webpack": "4.41.21",
     "@types/webpack-dev-server": "3.11.0",
     "abort-controller": "^3.0.0",
-    "autoprefixer": "^9.8.0",
+    "autoprefixer": "^9.8.6",
     "babel-jest": "^25.5.1",
     "babel-loader": "^8.1.0",
     "babel-plugin-lodash": "^3.3.4",
