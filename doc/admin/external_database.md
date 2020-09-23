@@ -68,7 +68,6 @@ Add the following to your `docker run` command:
 
     See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
 
-<!-- TODO(efritz) - also show codeintel-db definition -->
 1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.21.0/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
 
     ```
@@ -94,6 +93,29 @@ Add the following to your `docker run` command:
     # networks:
     #     - sourcegraph
     # restart: always
+
+    # # Description: PostgreSQL database for code intelligence data.
+    # #
+    # # Disk: 128GB / persistent SSD
+    # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
+    # # Ports exposed to the public internet: none
+    # #
+    # codeintel-db:
+    #   container_name: codeintel-db
+    #   image: 'index.docker.io/sourcegraph/codeintel-db@sha256:63090799b34b3115a387d96fe2227a37999d432b774a1d9b7966b8c5d81b56ad'
+    #   cpus: 4
+    #   mem_limit: '2g'
+    #   healthcheck:
+    #     test: '/liveness.sh'
+    #     interval: 10s
+    #     timeout: 1s
+    #     retries: 3
+    #     start_period: 15s
+    #   volumes:
+    #     - 'codeintel-db:/data/'
+    #   networks:
+    #     - sourcegraph
+    #   restart: always
     ```
 
 ### Kubernetes
