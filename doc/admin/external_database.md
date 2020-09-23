@@ -46,7 +46,7 @@ Add the following to your `docker run` command:
 
 ### Docker Compose
 
-1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in ` [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.21.0/docker-compose/docker-compose.yaml):
+1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.21.0/docker-compose/docker-compose.yaml):
 
     ```
     sourcegraph-frontend-0:
