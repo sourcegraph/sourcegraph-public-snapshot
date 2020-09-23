@@ -22,7 +22,7 @@ import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => (
-    <div className="web-content">{story()}</div>
+    <div className="p-3 container web-content">{story()}</div>
 ))
 
 const now = new Date()
