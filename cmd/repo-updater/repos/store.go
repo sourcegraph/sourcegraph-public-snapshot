@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -161,12 +162,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		Metadata:            metadata,
 		Sources:             sources,
 	}, nil
-}
-
-type sourceRecord struct {
-	ExternalServiceID int64  `json:"external_service_id"`
-	RepoID            int64  `json:"repo_id"`
-	CloneURL          string `json:"clone_url"`
 }
 
 // DBStore implements the Store interface for reading and writing repos directly
@@ -757,18 +752,54 @@ ORDER BY id ASC LIMIT %s
 	)
 }
 
-func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
-	type source struct {
-		ExternalServiceID int64  `json:"external_service_id"`
-		RepoID            int64  `json:"repo_id"`
-		CloneURL          string `json:"clone_url"`
+var (
+	_ json.Marshaler   = (externalServiceRepos)(nil)
+	_ json.Unmarshaler = (*externalServiceRepos)(nil)
+)
+
+type externalServiceRepos []externalServiceRepo
+
+func (srcs externalServiceRepos) MarshalJSON() ([]byte, error) {
+	var err error
+	for _, src := range srcs {
+		src.CloneURL, err = secret.Encrypt(src.CloneURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "encrypt %q", src.CloneURL)
+		}
 	}
 
+	return json.Marshal([]externalServiceRepo(srcs))
+}
+
+func (srcs *externalServiceRepos) UnmarshalJSON(bytes []byte) error {
+	var rawSrcs []externalServiceRepo
+	err := json.Unmarshal(bytes, &rawSrcs)
+	if err != nil {
+		return err
+	}
+
+	for i := range rawSrcs {
+		rawSrcs[i].CloneURL, err = secret.Decrypt(rawSrcs[i].CloneURL)
+		if err != nil {
+			return errors.Wrapf(err, "decrypt %q", rawSrcs[i].CloneURL)
+		}
+	}
+	*srcs = rawSrcs
+	return nil
+}
+
+type externalServiceRepo struct {
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
+}
+
+func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
 	marshalSourceList := func(sources map[api.RepoID][]SourceInfo) ([]byte, error) {
-		srcs := make([]source, 0, len(sources))
+		srcs := make(externalServiceRepos, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
-				srcs = append(srcs, source{
+				srcs = append(srcs, externalServiceRepo{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
 					CloneURL:          info.CloneURL,
@@ -1234,9 +1265,9 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 }
 
 func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawMessage, error) {
-	var records []sourceRecord
+	var records externalServiceRepos
 	for _, src := range sources {
-		records = append(records, sourceRecord{
+		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
 			CloneURL:          src.CloneURL,
@@ -1291,6 +1322,48 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 	)
 }
 
+var (
+	_ json.Marshaler   = (externalServiceRepos)(nil)
+	_ json.Unmarshaler = (*externalServiceRepos)(nil)
+)
+
+type sourceInfos []sourceInfo
+
+func (srcs sourceInfos) MarshalJSON() ([]byte, error) {
+	var err error
+	for _, src := range srcs {
+		src.CloneURL, err = secret.Encrypt(src.CloneURL)
+		if err != nil {
+			return nil, errors.Wrapf(err, "encrypt %q", src.CloneURL)
+		}
+	}
+
+	return json.Marshal([]sourceInfo(srcs))
+}
+
+func (srcs *sourceInfos) UnmarshalJSON(bytes []byte) error {
+	var rawSrcs []sourceInfo
+	err := json.Unmarshal(bytes, &rawSrcs)
+	if err != nil {
+		return err
+	}
+
+	for i := range rawSrcs {
+		rawSrcs[i].CloneURL, err = secret.Decrypt(rawSrcs[i].CloneURL)
+		if err != nil {
+			return errors.Wrapf(err, "decrypt %q", rawSrcs[i].CloneURL)
+		}
+	}
+	*srcs = rawSrcs
+	return nil
+}
+
+type sourceInfo struct {
+	ID       int64
+	CloneURL string
+	Kind     string
+}
+
 func scanRepo(r *Repo, s scanner) error {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
@@ -1317,16 +1390,10 @@ func scanRepo(r *Repo, s scanner) error {
 		return err
 	}
 
-	type sourceInfo struct {
-		ID       int64
-		CloneURL string
-		Kind     string
-	}
-
 	r.Sources = make(map[string]*SourceInfo)
 
 	if sources.Raw != nil {
-		var srcs []sourceInfo
+		var srcs sourceInfos
 		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
 			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
 		}
