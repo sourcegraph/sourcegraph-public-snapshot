@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
-	github.com/google/go-cmp v0.4.1
+	github.com/google/go-cmp v0.5.2
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
@@ -17,6 +17,7 @@ require (
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
 	github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58
+	github.com/sourcegraph/go-diff v0.6.0
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

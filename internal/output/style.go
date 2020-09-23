@@ -55,4 +55,7 @@ var (
 	StyleSearchAlertProposedTitle       = &style{""}
 	StyleSearchAlertProposedQuery       = Fg256Color(69)
 	StyleSearchAlertProposedDescription = &style{""}
+
+	StyleLinesDeleted = Fg256Color(196)
+	StyleLinesAdded   = Fg256Color(2)
 )

@@ -195,6 +195,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 	x.Start(ctx)
 	specs, err := x.Wait()
 	if progress != nil {
+		progress(statuses)
 		done <- struct{}{}
 	}
 	if err != nil {

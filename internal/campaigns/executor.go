@@ -46,6 +46,8 @@ func (t *Task) cacheKey() ExecutionCacheKey {
 }
 
 type TaskStatus struct {
+	RepoName string
+
 	Cached bool
 
 	LogFile    string
@@ -95,7 +97,7 @@ func newExecutor(opts ExecutorOpts, client api.Client, update ExecutorUpdateCall
 
 func (x *executor) AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus {
 	task := &Task{repo, steps, template}
-	ts := &TaskStatus{EnqueuedAt: time.Now()}
+	ts := &TaskStatus{RepoName: repo.Name, EnqueuedAt: time.Now()}
 	x.tasks.Store(task, ts)
 	return ts
 }
