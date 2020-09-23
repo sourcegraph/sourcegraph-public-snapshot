@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
 import { FILTERS } from '../../../../shared/src/search/parser/filters'
@@ -20,11 +20,20 @@ interface Props extends TelemetryProps {
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
-export const RepositoriesPanel: React.FunctionComponent<Props> = ({ className, authenticatedUser, fetchRecentSearches, telemetryService }) => {
+export const RepositoriesPanel: React.FunctionComponent<Props> = ({
+    className,
+    authenticatedUser,
+    fetchRecentSearches,
+    telemetryService,
+}) => {
     // Use a larger page size because not every search may have a `repo:` filter, and `repo:` filters could often
     // be duplicated. Therefore, we fetch more searches to populate this panel.
     const pageSize = 50
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
+
+    const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
+        telemetryService,
+    ])
 
     const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 
@@ -66,7 +75,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({ className, a
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (repoFilterValues && itemsToLoad === pageSize) {
-            telemetryService.log('RepositoriesPanelLoaded', {empty: repoFilterValues.length === 0})
+            telemetryService.log('RepositoriesPanelLoaded', { empty: repoFilterValues.length === 0 })
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
@@ -82,7 +91,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({ className, a
             </div>
             {repoFilterValues?.map((repoFilterValue, index) => (
                 <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
-                    <Link to={`/search?q=repo:${repoFilterValue}`}>
+                    <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
                         <span className="search-keyword">repo:</span>
                         <span className="repositories-panel__search-value">{repoFilterValue}</span>
                     </Link>
