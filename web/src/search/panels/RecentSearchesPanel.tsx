@@ -4,12 +4,13 @@ import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { LoadingPanelView } from './LoadingPanelView'
+import { ShowMoreButton } from './ShowMoreButton'
 
 interface RecentSearch {
     count: number
@@ -27,7 +28,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
 }> = ({ className, authenticatedUser, fetchRecentSearches, now }) => {
     const pageSize = 20
 
-    const [itemsToLoad, setItmesToLoad] = useState(pageSize)
+    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
     const recentSearches = useObservable(
         useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', itemsToLoad), [
             authenticatedUser?.id,
@@ -45,16 +46,9 @@ export const RecentSearchesPanel: React.FunctionComponent<{
         }
     }, [recentSearches])
 
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading recent searches
-        </div>
-    )
+    const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
-        <div className="panel-container__empty-container">
+        <div className="panel-container__empty-container text-muted">
             <small className="mb-2">
                 Your recent searches will be displayed here. Here are a few searches to get you started:
             </small>
@@ -102,9 +96,13 @@ export const RecentSearchesPanel: React.FunctionComponent<{
         </div>
     )
 
+    function loadMoreItems(): void {
+        setItemsToLoad(current => current + pageSize)
+    }
+
     const contentDisplay = (
         <>
-            <table className="recent-searches-panel__results-table">
+            <table className="recent-searches-panel__results-table mt-2">
                 <thead>
                     <tr className="recent-searches-panel__results-table-row">
                         <th>
@@ -132,22 +130,14 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                                 </Link>
                             </td>
                             <td className="recent-searches-panel__results-table-date-col">
-                                <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} />
+                                <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} strict={true} />
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
             {recentSearches?.pageInfo.hasNextPage && (
-                <div className="text-center">
-                    <button
-                        type="button"
-                        className="btn btn-secondary test-recent-searches-panel-show-more"
-                        onClick={() => setItmesToLoad(current => current + pageSize)}
-                    >
-                        Show more
-                    </button>
-                </div>
+                <ShowMoreButton onClick={loadMoreItems} className="test-recent-searches-panel-show-more" />
             )}
         </>
     )
