@@ -25,7 +25,7 @@ jobs:
 
           echo "CHANGELOG.md has been updated:" > /tmp/message.txt;
           echo '```' >> /tmp/message.txt;
-          cat /tmp/diff.txt >> /tmp/message.txt;
+          cat /tmp/diff.txt | sed s/`/\\`/g >> /tmp/message.txt;
           echo '```' >> /tmp/message.txt;
 
           cat /tmp/message.txt;
