@@ -90,6 +90,6 @@ func processStream(prefix string, r io.Reader) {
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
-		log15.Info(fmt.Sprintf("%s: %s", prefix, scanner.Text()))
+		log15.Debug(fmt.Sprintf("%s: %s", prefix, scanner.Text()))
 	}
 }
