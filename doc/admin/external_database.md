@@ -4,14 +4,36 @@
 
 Sourcegraph by default provides its own PostgreSQL and Redis databases for data storage:
 
-- PostgreSQL for storing long-term information, such as user information when using Sourcegraph's built-in authentication provider instead of an external one.
-- Redis for storing short-term information, such as session information and cache data.
+- A PostgreSQL instance for storing long-term information, such as user information when using Sourcegraph's built-in authentication provider instead of an external one.
+- A second PostgreSQL instance for storing large-volume precise code intelligence data.
+- A pair of redis instances for storing short-term information, such as session information and cache data.
 
 ## Using your own PostgreSQL server
 
 You can use your own PostgreSQL v9.6+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
+The addition of `PG*` environment variables to your Sourcegraph deployment files will instruct Sourcegraph to target an external PostgreSQL server. To externalize the _frontend database_, use the following standard `PG*` variables:
+
+- `PGHOST`
+- `PGPORT`
+- `PGUSER`
+- `PGPASSWORD`
+- `PGDATABASE`
+- `PGSSLMODE`
+
+To externalize the _code intelligence database_, use the following prefixed `CODEINTEL_PG*` variables:
+
+- `CODEINTEL_PGHOST`
+- `CODEINTEL_PGPORT`
+- `CODEINTEL_PGUSER`
+- `CODEINTEL_PGPASSWORD`
+- `CODEINTEL_PGDATABASE`
+- `CODEINTEL_PGSSLMODE`
+
+<!-- TODO(efritz,docs) - update text here -->
 Simply add the standard PostgreSQL environment variables to your Sourcegraph deployment files and Sourcegraph will use that PostgreSQL server instead of its built-in one.
+
+:warning: It is not recommended to configure both PostgreSQL instances to point to the same external database. They should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
 
 ### sourcegraph/server
 
@@ -22,28 +44,34 @@ Add the following to your `docker run` command:
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.19.2</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.19.2</code></pre>
 
 ### Docker Compose
 
-1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in ` [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.14.2/docker-compose/docker-compose.yaml): 
+1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in ` [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.21.0/docker-compose/docker-compose.yaml):
 
     ```
     sourcegraph-frontend-0:
       # ...
       environment:
         # ...
-        - 'PGHOST=psql.mycompany.org'
+        - 'PGHOST=psql1.mycompany.org'
         - 'PGUSER=sourcegraph'
         - 'PGPASSWORD=secret'
         - 'PGDATABASE=sourcegraph'
         - 'PGSSLMODE=require'
+        - 'CODEINTEL_PGHOST=psql2.mycompany.org'
+        - 'CODEINTEL_PGUSER=sourcegraph'
+        - 'CODEINTEL_PGPASSWORD=secret'
+        - 'CODEINTEL_PGDATABASE=sourcegraph-codeintel'
+        - 'CODEINTEL_PGSSLMODE=require'
       # ...
     ```
 
     See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
 
-1. Comment out / remove the internal `pgsql` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.14.2/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
+<!-- TODO(efritz) - also show codeintel-db definition -->
+1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.21.0/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
 
     ```
     # # Description: PostgreSQL database for various data.
@@ -72,7 +100,7 @@ Add the following to your `docker run` command:
 
 ### Kubernetes
 
-Update the `PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external PostgreSQL instance.
+Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external PostgreSQL instance. You are then free to remove the now unused `pgsql` and `codeintel-db` services and deployments from your cluster.
 
 ### Version requirements
 
