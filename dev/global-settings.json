@@ -5,9 +5,6 @@
     "showEnterpriseHomePanels": true
   },
   "search.repositoryGroups": {
-    "test": [
-      "github.com/gorilla/mux",
-      "github.com/gorilla/pat"
-    ]
+    "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
   }
 }
