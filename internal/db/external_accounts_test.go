@@ -142,6 +142,53 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	}
 }
 
+func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+
+	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := Users.GetByID(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u"; user.Username != want {
+		t.Errorf("got %q, want %q", user.Username, want)
+	}
+
+	accounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(accounts) != 1 {
+		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+	}
+	account := *accounts[0]
+	simplifyExternalAccount(&account)
+	account.ID = 0
+
+	want := extsvc.Account{
+		UserID:      userID,
+		AccountSpec: spec,
+	}
+	if diff := cmp.Diff(want, account); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func simplifyExternalAccount(account *extsvc.Account) {
 	account.CreatedAt = time.Time{}
 	account.UpdatedAt = time.Time{}

@@ -321,17 +321,20 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	var results []*extsvc.Account
 	defer rows.Close()
 	for rows.Next() {
-		var o extsvc.Account
-		var esAuthData, esData secret.StringValue
-		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &esAuthData, &esData, &o.CreatedAt, &o.UpdatedAt); err != nil {
+		var acct extsvc.Account
+		var esAuthData, esData secret.NullStringValue
+		if err := rows.Scan(&acct.ID, &acct.UserID, &acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID, &esAuthData, &esData, &acct.CreatedAt, &acct.UpdatedAt); err != nil {
 			return nil, err
 		}
-
-		authData := json.RawMessage(esAuthData)
-		data := json.RawMessage(esData)
-		o.AuthData = &authData
-		o.Data = &data
-		results = append(results, &o)
+		if esAuthData.S != nil {
+			authData := json.RawMessage(*esAuthData.S)
+			acct.AuthData = &authData
+		}
+		if esData.S != nil {
+			data := json.RawMessage(*esData.S)
+			acct.Data = &data
+		}
+		results = append(results, &acct)
 	}
 	return results, rows.Err()
 }

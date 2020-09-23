@@ -1371,7 +1371,7 @@ ORDER BY id ASC
 
 	for rows.Next() {
 		var acct extsvc.Account
-		var esAuthData, esData secret.StringValue
+		var esAuthData, esData secret.NullStringValue
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
@@ -1381,10 +1381,14 @@ ORDER BY id ASC
 			return nil, err
 		}
 
-		authData := json.RawMessage(esAuthData)
-		data := json.RawMessage(esData)
-		acct.AuthData = &authData
-		acct.Data = &data
+		if esAuthData.S != nil {
+			authData := json.RawMessage(*esAuthData.S)
+			acct.AuthData = &authData
+		}
+		if esData.S != nil {
+			data := json.RawMessage(*esData.S)
+			acct.Data = &data
+		}
 		accounts = append(accounts, &acct)
 	}
 	if err = rows.Err(); err != nil {
