@@ -3,6 +3,7 @@
     min-width: 0;
     overflow: hidden;
     align-items: center;
+    white-space: nowrap;
 
     .part-directory {
         flex: 1 1 1em;
@@ -11,7 +12,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         text-align: center;
-        white-space: nowrap;
     }
 
     .part-last {
