@@ -6,7 +6,8 @@ on:
 
 jobs:
   sync-progress-channel:
-    runs:
-      using: "composite"
-      steps:
-        - run: echo Hello world
+    runs-on: ubuntu-latest
+    name: Sync changelog to progress channel
+    steps:
+      - run: echo Hello world
+        shell: bash
