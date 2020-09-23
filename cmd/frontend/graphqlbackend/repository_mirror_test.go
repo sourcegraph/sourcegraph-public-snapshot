@@ -135,3 +135,66 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 		}
 	})
 }
+
+func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
+	resetMocks()
+
+	const repoName = "my/repo"
+
+	cases := []struct {
+		desc    string
+		repoURL string
+		want    string
+	}{
+		{
+			desc:    "HTTPS URL without userinfo",
+			repoURL: "https://example.com/my/repo",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
+		},
+		{
+			desc:    "HTTPS URL with userinfo (user only)",
+			repoURL: "https://user@example.com/my/repo",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
+		},
+		{
+			desc:    "HTTPS URL with userinfo (user+pass)",
+			repoURL: "https://user:pass@example.com/my/repo",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+				return &types.User{SiteAdmin: true}, nil
+			}
+
+			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+				return &types.Repo{Name: repoName}, nil
+			}
+
+			repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+				return &protocol.RepoLookupResult{
+					Repo: &protocol.RepoInfo{Name: repoName, VCS: protocol.VCSInfo{URL: tc.repoURL}},
+				}, nil
+			}
+			defer func() { repoupdater.MockRepoLookup = nil }()
+
+			gqltesting.RunTests(t, []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t),
+					Query: `
+					{
+						repository(name: "my/repo") {
+							mirrorInfo {
+								remoteURL
+							}
+						}
+					}
+				`,
+					ExpectedResult: tc.want,
+				},
+			})
+		})
+	}
+}

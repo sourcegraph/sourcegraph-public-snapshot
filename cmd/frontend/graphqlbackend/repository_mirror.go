@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"net/url"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -61,6 +62,17 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return "", err
 	}
 
+	// removeUserinfo strips the userinfo component of a remote URL. The provided string s
+	// will be returned if it cannot be parsed as a URL.
+	removeUserinfo := func(s string) string {
+		u, err := url.Parse(s)
+		if err != nil {
+			return s
+		}
+		u.User = nil
+		return u.String()
+	}
+
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
@@ -70,7 +82,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 			return "", err
 		}
 		if result.Repo != nil {
-			return result.Repo.VCS.URL, nil
+			return removeUserinfo(result.Repo.VCS.URL), nil
 		}
 	}
 
@@ -79,7 +91,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	if err != nil {
 		return "", err
 	}
-	return info.URL, nil
+	return removeUserinfo(info.URL), nil
 }
 
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {
