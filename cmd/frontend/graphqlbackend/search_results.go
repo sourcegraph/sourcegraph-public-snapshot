@@ -1676,8 +1676,9 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	}
 }
 
-// isGlobalSearch returns true if r.query is not a structural query and if it
-// does not contain any of the following filters: repo, repogroup
+// isGlobalSearch returns true if the query contains the filters repo or
+// repogroup. For structural queries and queries with version context
+// isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.patternType == query.SearchTypeStructural {
 		return false
