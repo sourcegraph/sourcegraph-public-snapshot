@@ -355,20 +355,23 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
 
     const buttonReference = useRef<HTMLAnchorElement | null>(null)
 
-    const onKeyDown: React.KeyboardEventHandler<HTMLAnchorElement> = useCallback(event => {
-        switch (event.key) {
-            case Key.Escape: {
-                buttonReference.current?.focus()
-                break
-            }
-            case Key.Enter: {
-                if (!isOpen) {
-                    setIsOpen(true)
+    const onKeyDown: React.KeyboardEventHandler<HTMLAnchorElement> = useCallback(
+        event => {
+            switch (event.key) {
+                case Key.Escape: {
+                    buttonReference.current?.focus()
+                    break
                 }
-                break
+                case Key.Enter: {
+                    if (!isOpen) {
+                        setIsOpen(true)
+                    }
+                    break
+                }
             }
-        }
-    }, [isOpen])
+        },
+        [isOpen]
+    )
 
     return (
         <ButtonElement
