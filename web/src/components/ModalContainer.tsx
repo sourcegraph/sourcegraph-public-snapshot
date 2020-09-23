@@ -20,7 +20,12 @@ export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, compon
         containerReference.current?.focus()
 
         return () => {
-            if (focusedElement && (focusedElement instanceof HTMLButtonElement || focusedElement instanceof HTMLAnchorElement)) {
+            if (
+                focusedElement &&
+                (focusedElement instanceof HTMLButtonElement ||
+                    focusedElement instanceof HTMLAnchorElement ||
+                    focusedElement instanceof HTMLDivElement)
+            ) {
                 focusedElement.focus()
             }
         }
@@ -40,7 +45,12 @@ export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, compon
     )
 
     return (
-        <div ref={containerReference} tabIndex={-1} onKeyDown={onKeyDown} className={classNames('modal-container', className)}>
+        <div
+            ref={containerReference}
+            tabIndex={-1}
+            onKeyDown={onKeyDown}
+            className={classNames('modal-container', className)}
+        >
             <div className="modal-container__dialog">
                 <div className="modal-container__close">
                     {onClose && (
