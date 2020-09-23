@@ -68,11 +68,11 @@ type SymbolsParameters struct {
 	First int
 }
 
-type GlobalSearchMode string
+type GlobalSearchMode int
 
-var (
-	ZoektGlobalSearch = GlobalSearchMode("globalIndex")
-	SearcherOnly      = GlobalSearchMode("searcherOnly")
+const (
+	ZoektGlobalSearch GlobalSearchMode = iota + 1
+	SearcherOnly
 )
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern

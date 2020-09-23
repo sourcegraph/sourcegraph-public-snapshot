@@ -1752,6 +1752,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 
+	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
+	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
@@ -1796,13 +1798,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if alertResult != nil {
 		return alertResult, nil
 	}
+	args.Repos = resolved.repoRevs
 	if r.isGlobalSearch() {
 		args.RepoPromise <- resolved.repoRevs
 	}
-	args.Repos = resolved.repoRevs
-
-	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
-	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	agg.common.excluded = resolved.excludedRepos
 
