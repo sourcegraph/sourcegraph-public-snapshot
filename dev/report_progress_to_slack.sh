@@ -6,7 +6,7 @@ test ! -z "$WEBHOOK_URL"
 test ! -z "$DIFF_PATH"   # typically CHANGELOG.md, but use . when testing to diff all files
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-export COMMIT=HEAD; git SHOW $COMMIT~1..$COMMIT -- $DIFF_PATH > /tmp/diff.txt;
+export COMMIT=HEAD; git show $COMMIT~1..$COMMIT -- $DIFF_PATH > /tmp/diff.txt;
 if [ -z "$( cat /tmp/diff.txt )" ]; then
   echo "Diff was empty, not posting to Slack";
   exit 0;
