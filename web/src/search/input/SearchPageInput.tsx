@@ -8,7 +8,6 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { SearchButton } from './SearchButton'
 import { Link } from '../../../../shared/src/components/Link'
-import { SearchScopes } from './SearchScopes'
 import { QuickLinks } from '../QuickLinks'
 import { Notices } from '../../global/Notices'
 import { SettingsCascadeProps, isSettingsValid } from '../../../../shared/src/settings/settings'
@@ -273,21 +272,13 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             />
                             <SearchButton />
                         </div>
-                        <div className="search-page__input-sub-container">
-                            {!props.splitSearchModes && (
+                        {!props.splitSearchModes && (
+                            <div className="search-page__input-sub-container">
                                 <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
                                     Query builder
                                 </Link>
-                            )}
-                            <SearchScopes
-                                history={props.history}
-                                query={userQueryState.query}
-                                authenticatedUser={props.authenticatedUser}
-                                settingsCascade={props.settingsCascade}
-                                patternType={props.patternType}
-                                versionContext={props.versionContext}
-                            />
-                        </div>
+                            </div>
+                        )}
                         <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                         <Notices
                             className="my-3"
