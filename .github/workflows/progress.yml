@@ -18,15 +18,15 @@ jobs:
         with:
           fetch-depth: 2
       - run: |
-          export COMMIT=HEAD; git diff $COMMIT~1..$COMMIT $DIFF_PATH >> /tmp/diff.txt;
+          export COMMIT=HEAD; git diff $COMMIT~1..$COMMIT $DIFF_PATH > /tmp/diff.txt;
           if [ -z "$( cat /tmp/diff.txt )" ]; then
             exit 0;
           fi
 
           echo "CHANGELOG.md has been updated:" > /tmp/message.txt;
-          echo "```" >> /tmp/message.txt;
+          echo '```' >> /tmp/message.txt;
           cat /tmp/diff.txt >> /tmp/message.txt;
-          echo "```" >> /tmp/message.txt;
+          echo '```' >> /tmp/message.txt;
 
           cat /tmp/message.txt;
           cat /tmp/message.txt | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/message.json;
