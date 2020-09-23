@@ -26,8 +26,9 @@ jobs:
           echo "CHANGELOG.md has been updated:" > /tmp/message.txt;
           echo "```" >> /tmp/message.txt;
           cat /tmp/diff.txt >> /tmp/message.txt;
-          echo "```" >> /tmp/message.txt
+          echo "```" >> /tmp/message.txt;
 
+          cat /tmp/message.txt;
           cat /tmp/message.txt | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))' > /tmp/message.json;
         shell: bash
       - run: |
