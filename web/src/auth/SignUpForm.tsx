@@ -13,12 +13,13 @@ import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { compact, head, size } from 'lodash'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
-import { Observable, of, timer, zip } from 'rxjs'
+import { merge, Observable, of, partition, timer, zip } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, filter, map, switchMap, takeUntil, tap } from 'rxjs/operators'
 import { typingDebounceTime } from '../search/input/QueryInput'
 import CheckIcon from 'mdi-react/CheckIcon'
 import { fromFetch } from 'rxjs/fetch'
+import { isDefined } from '../../../shared/src/util/types'
 export interface SignUpArgs {
     email: string
     username: string
@@ -38,70 +39,129 @@ interface SignUpFormProps {
 
 /**
  * Configuration used to create validation pipelines for `useEventObservable`
+ *
+ * TODO: Consider changing "OK" return type to false if this is ever used elsewehere.
  */
 interface FieldValidators {
     /**
      * Optional array of synchronous input validators.
      *
-     * If there's no problem with the input, void return. Else,
+     * If there's no problem with the input, return undefined. Else,
      * return with the reason the input is invalid.
      */
-    synchronousValidators?: ((value: string) => string | void)[]
+    synchronousValidators?: ((value: string) => string | undefined)[]
 
     /**
      * Optional array of asynchronous input validators. These must return
      * observables created with `fromFetch` for easy cancellation in `switchMap`.
      *
-     * If there's no problem with the input, void return. Else,
+     * If there's no problem with the input, emit undefined. Else,
      * return with the reason the input is invalid.
      */
     asynchronousValidators?: ((value: string) => Observable<string | undefined>)[]
 }
 
+type ValidationEvent =
+    | { kind: 'BLUR'; reason: string }
+    | { kind: 'CHANGE_ASYNC'; value: string }
+    | { kind: 'CHANGE_SYNC'; reason: string; value: string }
 type ValidationResult = { kind: 'VALID' } | { kind: 'INVALID'; reason: string }
-type ValidationPipeline = (events: Observable<React.ChangeEvent<HTMLInputElement>>) => Observable<ValidationResult>
+type ValidationPipeline = (
+    events: Observable<React.ChangeEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>>
+) => Observable<ValidationResult>
+interface InputState {
+    value: string
+    loading: boolean
+}
 
 /**
  * Returns an observable pipeline to be consumed by `useEventObservable`.
  * Helps with management of sync + async validation.
+ * The returned pipeline takes both input change and focus events.
+ *
+ * Intended behavior:
+ * - Asynchronous validation occurs on change (debounced)
+ * - Synchronous validation occurs on blur (+ cancels any pending async validation requests)
  *
  * @param name Name of input field, used for descriptive error messages.
- * @param onInputChange Function to execute side-effects given the latest input value and loading state.
+ * @param onInputChange Higher order function to execute side-effects given the latest input value and loading state.
  * Typically used to set state in a React component.
+ * The function provided to `onInputChange` should be called with the previous input value and loading state
  * @param fieldValidators Config object that declares sync + async validators
  */
 function createValidationPipeline(
     name: string,
-    onInputChange: (inputState: { value: string; loading: boolean }) => void,
+    onInputChange: (inputStateCallback: (previousInputState: InputState) => InputState) => void,
     fieldValidators: FieldValidators
 ): ValidationPipeline {
     const { synchronousValidators = [], asynchronousValidators = [] } = fieldValidators
 
+    function runSyncValidators(value: string): string | undefined {
+        return head(compact(synchronousValidators.map(validator => validator(value))))
+    }
+
     return function validationPipeline(events): Observable<ValidationResult> {
-        return events.pipe(
+        const [changeEvents, blurEvents] = partition(events, event => event.type === 'change')
+        let hasHadBlurError = false
+
+        // Only emits when sync errors are found on blur
+        const syncReasons: Observable<ValidationEvent> = blurEvents.pipe(
+            map(event => event.target.value),
+            filter(value => value.length > 0),
+            map(runSyncValidators),
+            filter(isDefined),
+            map(reason => ({
+                kind: 'BLUR' as const,
+                reason,
+            })),
+            tap(() => {
+                if (!hasHadBlurError) {
+                    hasHadBlurError = true
+                }
+                onInputChange(previousInputState => ({ ...previousInputState, loading: false }))
+            })
+        )
+
+        // Emits on every change event
+        const changes: Observable<ValidationEvent> = changeEvents.pipe(
             map(event => event.target.value),
             map(value => {
-                // When there's a sync validation error or no async validators,
-                // don't render spinner (prevent jitter), don't make async
-                // validation requests (unnecessary, waste of resources)
+                if (hasHadBlurError) {
+                    const syncReason = runSyncValidators(value)
+                    if (syncReason) {
+                        return { kind: 'CHANGE_SYNC' as const, reason: syncReason, value }
+                    }
+                }
 
-                const syncReason = head(compact(synchronousValidators.map(validator => validator(value))))
-                return { value, syncReason, loading: !syncReason && asynchronousValidators.length > 0 }
+                return { kind: 'CHANGE_ASYNC' as const, value }
             }),
-            tap(({ value, loading }) => onInputChange({ value, loading })),
-            debounce(({ loading }) => timer(loading ? typingDebounceTime : 0)),
-            switchMap(({ value, syncReason, loading }) => {
-                if (!loading) {
+            tap(({ value, kind }) =>
+                onInputChange(() => ({ value, loading: kind === 'CHANGE_ASYNC' && asynchronousValidators.length > 0 }))
+            )
+        )
+
+        return merge(syncReasons, changes).pipe(
+            debounce(validationEvent => timer(validationEvent.kind === 'CHANGE_ASYNC' ? typingDebounceTime : 0)),
+            switchMap(validationEvent => {
+                if (validationEvent.kind === 'BLUR') {
+                    return of({ kind: 'INVALID' as const, reason: validationEvent.reason })
+                }
+
+                if (validationEvent.kind === 'CHANGE_SYNC') {
                     return of(
-                        syncReason ? { kind: 'INVALID' as const, reason: syncReason } : { kind: 'VALID' as const }
+                        validationEvent.reason
+                            ? { kind: 'INVALID' as const, reason: validationEvent.reason }
+                            : { kind: 'VALID' as const }
                     )
                 }
 
-                return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
-                    map(values => head(compact(values))),
-                    map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
-                    tap(() => onInputChange({ value, loading: false }))
-                )
+                return zip(...asynchronousValidators.map(validator => validator(validationEvent.value)))
+                    .pipe(
+                        map(values => head(compact(values))),
+                        map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
+                        tap(() => onInputChange(previousInputState => ({ ...previousInputState, loading: false })))
+                    )
+                    .pipe(takeUntil(syncReasons))
             }),
             catchError(() => of({ kind: 'INVALID' as const, reason: `Unknown error validating ${name}` }))
         )
@@ -133,7 +193,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         []
     )
 
-    const [emailState, setEmailState] = useState({ value: '', loading: false })
+    const [emailState, setEmailState] = useState<InputState>({ value: '', loading: false })
     const [nextEmailFieldChange, emailValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
@@ -143,7 +203,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         ])
     )
 
-    const [usernameState, setUsernameState] = useState({ value: '', loading: false })
+    const [usernameState, setUsernameState] = useState<InputState>({ value: '', loading: false })
     const [nextUsernameFieldChange, usernameValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
@@ -153,7 +213,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         ])
     )
 
-    const [passwordState, setPasswordState] = useState({ value: '', loading: false })
+    const [passwordState, setPasswordState] = useState<InputState>({ value: '', loading: false })
     const [nextPasswordFieldChange, passwordValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
@@ -227,6 +287,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                                 'border-danger': emailValidationResult?.kind === 'INVALID' && !emailState.loading,
                             })}
                             onChange={nextEmailFieldChange}
+                            onBlur={nextEmailFieldChange}
                             required={true}
                             value={emailState.value}
                             disabled={loading}
@@ -260,6 +321,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                                 'border-danger': usernameValidationResult?.kind === 'INVALID' && !usernameState.loading,
                             })}
                             onChange={nextUsernameFieldChange}
+                            onBlur={nextUsernameFieldChange}
                             value={usernameState.value}
                             required={true}
                             disabled={loading}
@@ -292,6 +354,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                                 'border-danger': passwordValidationResult?.kind === 'INVALID' && !passwordState.loading,
                             })}
                             onChange={nextPasswordFieldChange}
+                            onBlur={nextPasswordFieldChange}
                             value={passwordState.value}
                             required={true}
                             disabled={loading}
@@ -374,31 +437,36 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
 
 // Synchronous Validators
 
-function checkPasswordLength(password: string): string | void {
+function checkPasswordLength(password: string): string | undefined {
     if (password.length < 12) {
         return 'Password must contain at least 12 characters'
     }
+
+    return undefined
 }
 
-function checkUsernameLength(username: string): string | void {
+function checkUsernameLength(username: string): string | undefined {
     if (username.length > USERNAME_MAX_LENGTH) {
-        console.log('username is long')
         return `Username is longer than ${USERNAME_MAX_LENGTH} characters`
     }
+
+    return undefined
 }
 
-function checkUsernamePattern(username: string): string | void {
+function checkUsernamePattern(username: string): string | undefined {
     const valid = new RegExp(VALID_USERNAME_REGEXP).test(username)
     if (!valid) {
         return "Username doesn't match the requested format"
     }
+
+    return undefined
 }
 
 /**
  * Simple email format validation to catch the most glaring errors
  * and display helpful error messages
  */
-function checkEmailFormat(email: string): string | void {
+function checkEmailFormat(email: string): string | undefined {
     const parts = email.trim().split('@')
     if (parts.length < 2) {
         return "Please include an '@' in the email address"
@@ -406,13 +474,15 @@ function checkEmailFormat(email: string): string | void {
     if (parts.length > 2) {
         return "A part following '@' should not contain the symbol '@'"
     }
+
+    return undefined
 }
 
 /**
  * Catch-all regex for errors not caught by `checkEmailFormat`.
  * From emailregex.com
  */
-function checkEmailPattern(email: string): string | void {
+function checkEmailPattern(email: string): string | undefined {
     if (
         // eslint-disable-next-line no-useless-escape
         !/^(([^\s"(),.:;<>@[\\\]]+(\.[^\s"(),.:;<>@[\\\]]+)*)|(".+"))@((\[(?:\d{1,3}\.){3}\d{1,3}])|(([\dA-Za-z\-]+\.)+[A-Za-z]{2,}))$/.test(
@@ -421,6 +491,8 @@ function checkEmailPattern(email: string): string | void {
     ) {
         return 'Please enter a valid email'
     }
+
+    return undefined
 }
 
 // Asynchronous Validators
