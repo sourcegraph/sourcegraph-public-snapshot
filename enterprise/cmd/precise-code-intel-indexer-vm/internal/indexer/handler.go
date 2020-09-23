@@ -85,30 +85,18 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 
 		copyfiles := []string{}
 		for _, key := range keys {
-			tarfile := filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", key))
-			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", tarfile, fmt.Sprintf("/%s.tar", key)))
+			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", h.tarfilePathOnHost(key), h.tarfilePathInVM(key)))
+		}
 
-			if _, err := os.Stat(tarfile); err == nil {
+		for _, key := range keys {
+			if _, err := os.Stat(h.tarfilePathOnHost(key)); err == nil {
 				continue
 			} else if !os.IsNotExist(err) {
 				return err
 			}
 
-			pullCommand := flatten(
-				"docker", "pull",
-				images[key],
-			)
-			if err := h.commander.Run(ctx, pullCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to pull %s", images[key]))
-			}
-
-			saveCommand := flatten(
-				"docker", "save",
-				"-o", tarfile,
-				images[key],
-			)
-			if err := h.commander.Run(ctx, saveCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to save %s", images[key]))
+			if err := h.saveDockerImage(ctx, key, images[key]); err != nil {
+				return err
 			}
 		}
 
@@ -153,7 +141,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			loadCommand := flatten(
 				"ignite", "exec", name.String(), "--",
 				"docker", "load",
-				"-i", fmt.Sprintf("/%s.tar", key),
+				"-i", h.tarfilePathInVM(key),
 			)
 			if err := h.commander.Run(ctx, loadCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to load %s", images[key]))
@@ -252,6 +240,35 @@ func (h *Handler) fetchRepository(ctx context.Context, repositoryName, commit st
 	}
 
 	return tempDir, nil
+}
+
+func (h *Handler) saveDockerImage(ctx context.Context, key, image string) error {
+	pullCommand := flatten(
+		"docker", "pull",
+		image,
+	)
+	if err := h.commander.Run(ctx, pullCommand...); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to pull %s", image))
+	}
+
+	saveCommand := flatten(
+		"docker", "save",
+		"-o", h.tarfilePathOnHost(key),
+		image,
+	)
+	if err := h.commander.Run(ctx, saveCommand...); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to save %s", image))
+	}
+
+	return nil
+}
+
+func (h *Handler) tarfilePathOnHost(key string) string {
+	return filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", key))
+}
+
+func (h *Handler) tarfilePathInVM(key string) string {
+	return fmt.Sprintf("/%s.tar", key)
 }
 
 func makeCloneURL(baseURL, authToken, repositoryName string) (*url.URL, error) {
