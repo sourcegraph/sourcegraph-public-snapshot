@@ -1,12 +1,14 @@
 import { Polly } from '@pollyjs/core'
-import { PuppeteerAdapter } from './shared/src/testing/integration/polly/PuppeteerAdapter'
+// import { PuppeteerAdapter } from './shared/src/testing/integration/polly/PuppeteerAdapter'
+import { CdpAdapter } from './shared/src/testing/integration/polly/CdpAdapter'
+
 import { ResourceType } from 'puppeteer'
 import FSPersister from '@pollyjs/persister-fs'
 import puppeteer from 'puppeteer'
 
 async function run() {
     // register uses `adapter.id()` to register a service by its id
-    Polly.register(PuppeteerAdapter as any)
+    Polly.register(CdpAdapter as any)
     Polly.register(FSPersister)
 
     const recordingsDirectory = './__fixtures__1'

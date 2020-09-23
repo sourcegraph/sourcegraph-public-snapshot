@@ -5,7 +5,7 @@ import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
 import { readFile, mkdir } from 'mz/fs'
 import { Polly, PollyServer } from '@pollyjs/core'
-import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
+import { CdpAdapter } from './polly/CdpAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
 import { first, timeoutWith } from 'rxjs/operators'
@@ -23,7 +23,7 @@ import { asError } from '../../util/errors'
 util.inspect.defaultOptions.depth = 0
 util.inspect.defaultOptions.maxStringLength = 80
 
-Polly.register(PuppeteerAdapter as any)
+Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
 
 const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../ui/assets')
@@ -184,6 +184,8 @@ export const createSharedIntegrationTestContext = async <
     const graphQlRequests = new Subject<GraphQLRequestEvent<TGraphQlOperationNames>>()
     server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
         const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
+        console.log('$$$$What do we have for request?')
+        console.log('$$$$', request)
         const { variables, query } = request.jsonBody() as {
             query: string
             variables: Parameters<TGraphQlOperations[TGraphQlOperationNames]>[0]
