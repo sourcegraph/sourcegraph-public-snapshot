@@ -1,0 +1,12 @@
+name: Changelog progress broadcaster
+on:
+  push:
+    branches:
+      - bl/progress-action
+
+jobs:
+  sync-progress-channel:
+    runs:
+      using: "composite"
+      steps:
+        - run: echo Hello world
