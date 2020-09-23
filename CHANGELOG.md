@@ -17,6 +17,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Usernames set in Slack `observability.alerts` now apply correctly. [#14079](https://github.com/sourcegraph/sourcegraph/pull/14079)
+
+## 3.20.1
+
+### Fixed
+
+- gomod: rollback go-diff to v0.5.3 (v0.6.0 causes panic in certain cases) [#13973](https://github.com/sourcegraph/sourcegraph/pull/13973).
 - Fixed an issue causing the scoped query in the search field to be erased when viewing files. [#13954](https://github.com/sourcegraph/sourcegraph/pull/13954).
 
 ## 3.20.0
