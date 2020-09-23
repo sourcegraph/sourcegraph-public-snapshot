@@ -9,7 +9,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -57,19 +57,14 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -78,7 +73,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:sourcegraph"
@@ -96,7 +91,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test"
@@ -122,7 +117,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -133,7 +128,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -142,7 +139,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-0"
           >
             <AnchorLink
@@ -165,7 +162,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-1"
           >
             <AnchorLink
@@ -203,7 +200,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -251,19 +248,14 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -272,7 +264,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test"
@@ -290,7 +282,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:sourcegraph"
@@ -308,7 +300,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test-two"
@@ -325,17 +317,10 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </span>
           </AnchorLink>
         </dd>
-        <div
-          className="text-center"
-        >
-          <button
-            className="btn btn-secondary test-repositories-panel-show-more"
-            onClick={[Function]}
-            type="button"
-          >
-            Show more
-          </button>
-        </div>
+        <ShowMoreButton
+          className="test-repositories-panel-show-more"
+          onClick={[Function]}
+        />
       </div>
     }
     state="populated"
@@ -345,7 +330,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -356,7 +341,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -365,7 +352,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-0"
           >
             <AnchorLink
@@ -388,7 +375,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-1"
           >
             <AnchorLink
@@ -411,7 +398,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-two-2"
           >
             <AnchorLink
@@ -433,17 +420,22 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
               </a>
             </AnchorLink>
           </dd>
-          <div
-            className="text-center"
+          <ShowMoreButton
+            className="test-repositories-panel-show-more"
+            onClick={[Function]}
           >
-            <button
-              className="btn btn-secondary test-repositories-panel-show-more"
-              onClick={[Function]}
-              type="button"
+            <div
+              className="text-center py-3"
             >
-              Show more
-            </button>
-          </div>
+              <button
+                className="btn btn-link test-repositories-panel-show-more"
+                onClick={[Function]}
+                type="button"
+              >
+                Show more
+              </button>
+            </div>
+          </ShowMoreButton>
         </div>
       </div>
     </div>
@@ -461,7 +453,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -509,19 +501,14 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -530,7 +517,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test"
@@ -548,7 +535,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:sourcegraph"
@@ -566,7 +553,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test-two"
@@ -584,7 +571,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test-three"
@@ -602,7 +589,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:r:test-four"
@@ -620,7 +607,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test-five"
@@ -646,7 +633,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -657,7 +644,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -666,7 +655,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-0"
           >
             <AnchorLink
@@ -689,7 +678,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-1"
           >
             <AnchorLink
@@ -712,7 +701,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-two-2"
           >
             <AnchorLink
@@ -735,7 +724,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-three-3"
           >
             <AnchorLink
@@ -758,7 +747,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="r:test-four-4"
           >
             <AnchorLink
@@ -781,7 +770,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-five-5"
           >
             <AnchorLink
@@ -819,7 +808,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -867,19 +856,14 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -888,7 +872,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:test"
@@ -906,7 +890,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
             to="/search?q=repo:sourcegraph"
@@ -932,7 +916,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
         <h3
           className="panel-container__header-text"
@@ -943,7 +927,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -952,7 +938,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-0"
           >
             <AnchorLink
@@ -975,7 +961,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-1"
           >
             <AnchorLink

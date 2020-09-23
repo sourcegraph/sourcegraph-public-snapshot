@@ -114,7 +114,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     // Campaign was not found
     if (campaign === null) {
         return (
-            <div className="container">
+            <div className="container web-content">
                 <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
             </div>
         )
@@ -123,7 +123,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     return (
         <>
             <PageTitle title={campaign.name} />
-            <div className="container">
+            <div className="container web-content">
                 <CampaignHeader
                     name={campaign.name}
                     namespace={campaign.namespace}

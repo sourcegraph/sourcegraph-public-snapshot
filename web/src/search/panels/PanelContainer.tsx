@@ -24,7 +24,7 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     className,
 }) => (
     <div className={classNames(className, 'panel-container', 'd-flex', 'flex-column')}>
-        <div className="panel-container__header d-flex border-bottom mb-2">
+        <div className="panel-container__header d-flex border-bottom">
             <h3 className="panel-container__header-text">{title}</h3>
             {actionButtons}
         </div>

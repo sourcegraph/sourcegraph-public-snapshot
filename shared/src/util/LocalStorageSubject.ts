@@ -8,8 +8,9 @@ import { filter } from 'rxjs/operators'
  * "storage" event per the Web Storage API specification). To emit for changes in the same window, call
  * {@link LocalStorageSubject#next}.
  */
-// eslint-disable-next-line rxjs/no-subclass
-export class LocalStorageSubject<T> extends Observable<T>
+export class LocalStorageSubject<T>
+    // eslint-disable-next-line rxjs/no-subclass
+    extends Observable<T>
     implements NextObserver<T>, Pick<BehaviorSubject<T>, 'value'> {
     constructor(private key: string, private defaultValue: T) {
         super(subscriber => {
