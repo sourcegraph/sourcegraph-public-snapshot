@@ -110,7 +110,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			"--name", name.String(),
 			sanitizeImage(h.options.FirecrackerImage),
 		)
-		if err := h.commander.Run(ctx, args[0], args[1:]...); err != nil {
+		if err := h.commander.Run(ctx, args...); err != nil {
 			return errors.Wrap(err, "failed to start firecracker vm")
 		}
 		defer func() {
@@ -120,7 +120,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				"--network-plugin", "docker-bridge",
 				name.String(),
 			}
-			if err := h.commander.Run(ctx, stopArgs[0], stopArgs[1:]...); err != nil {
+			if err := h.commander.Run(ctx, stopArgs...); err != nil {
 				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
 			}
 
@@ -130,7 +130,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				"--network-plugin", "docker-bridge",
 				name.String(),
 			}
-			if err := h.commander.Run(ctx, removeArgs[0], removeArgs[1:]...); err != nil {
+			if err := h.commander.Run(ctx, removeArgs...); err != nil {
 				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
 			}
 		}()
@@ -155,7 +155,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	if h.options.UseFirecracker {
 		indexArgs = append([]string{"ignite", "exec", name.String(), "--"}, indexArgs...)
 	}
-	if err := h.commander.Run(ctx, indexArgs[0], indexArgs[1:]...); err != nil {
+	if err := h.commander.Run(ctx, indexArgs...); err != nil {
 		return errors.Wrap(err, "failed to index repository")
 	}
 
@@ -176,7 +176,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	if h.options.UseFirecracker {
 		uploadArgs = append([]string{"ignite", "exec", name.String(), "--"}, uploadArgs...)
 	}
-	if err := h.commander.Run(ctx, uploadArgs[0], uploadArgs[1:]...); err != nil {
+	if err := h.commander.Run(ctx, uploadArgs...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
 	}
 
@@ -216,13 +216,13 @@ func (h *Handler) fetchRepository(ctx context.Context, repositoryName, commit st
 	}
 
 	commands := [][]string{
-		{"-C", tempDir, "init"},
-		{"-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit},
-		{"-C", tempDir, "checkout", commit},
+		{"git", "-C", tempDir, "init"},
+		{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit},
+		{"git", "-C", tempDir, "checkout", commit},
 	}
 
 	for _, args := range commands {
-		if err := h.commander.Run(ctx, "git", args...); err != nil {
+		if err := h.commander.Run(ctx, args...); err != nil {
 			return "", errors.Wrap(err, fmt.Sprintf("failed `git %s`", strings.Join(args, " ")))
 		}
 	}
