@@ -68,11 +68,11 @@ type SymbolsParameters struct {
 	First int
 }
 
-type Mode string
+type GlobalSearchMode string
 
 var (
-	ZoektGlobalSearch = Mode("globalIndex")
-	SearcherOnly      = Mode("searcherOnly")
+	ZoektGlobalSearch = GlobalSearchMode("globalIndex")
+	SearcherOnly      = GlobalSearchMode("searcherOnly")
 )
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
@@ -82,14 +82,17 @@ type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	Repos       []*RepositoryRevisions
 
+	// Performance optimization.
+	//
+	// For global queries, resolving repositories and querying zoekt happens
+	// concurrently. Eventually RepoPromise and Repos will be identical.
+	RepoPromise chan []*RepositoryRevisions
+	Mode        GlobalSearchMode
+
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
 	// ignored by Pattern, such as index:no
 	Query query.QueryInfo
-
-	Mode Mode
-
-	RepoPromise chan []*RepositoryRevisions
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
