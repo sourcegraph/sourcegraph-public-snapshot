@@ -12,11 +12,6 @@ env:
 steps:
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
   command:
-    - pushd enterprise
-    - ./cmd/server/pre-build.sh
-    - ./cmd/server/build.sh
-    - popd
-    - ./dev/ci/e2e.sh
-    - docker image rm -f "$IMAGE"
+    - test.sh e2e
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
