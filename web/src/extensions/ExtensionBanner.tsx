@@ -1,6 +1,6 @@
 import React from 'react'
-import { BannerPuzzleIcon } from './icons'
 import { CtaBanner } from '../components/CtaBanner'
+import { extensionBannerIconURL } from './icons'
 
 interface Props {
     className?: string
@@ -9,7 +9,7 @@ interface Props {
 export const ExtensionBanner: React.FunctionComponent<Props> = ({ className }) => (
     <CtaBanner
         className={className}
-        icon={<BannerPuzzleIcon />}
+        icon={<img className="extension-banner__icon" src={extensionBannerIconURL} />}
         title="Create your own extension"
         bodyText="You can improve your workflow by creating custom extensions. See the Sourcegraph Docs for details about writing and publishing."
         linkText="Explore extension API"

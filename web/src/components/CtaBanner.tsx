@@ -11,7 +11,7 @@ interface Props {
     googleAnalytics?: boolean
 }
 
-export const CtaBanner = React.memo<Props>(function CtaBanner({
+export const CtaBanner: React.FunctionComponent<Props> = ({
     icon,
     className,
     title,
@@ -19,22 +19,21 @@ export const CtaBanner = React.memo<Props>(function CtaBanner({
     href,
     linkText,
     googleAnalytics,
-}) {
-    return (
-        <div className={classNames('web-content cta-banner shadow d-flex flex-row card', className)}>
-            <div className="cta-banner__icon-column d-flex flex-column align-items-center">{icon}</div>
-            <div>
-                <h3>{title}</h3>
-                <p>{bodyText}</p>
-                <a
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={classNames('btn btn-primary', { 'ga-cta-install-now': googleAnalytics })}
-                >
-                    {linkText}
-                </a>
-            </div>
+}) => (
+    <div className={classNames('web-content cta-banner shadow d-flex flex-row card py-4 pr-4 pl-3', className)}>
+        <div className="mr-4 d-flex flex-column align-items-center">{icon}</div>
+        <div>
+            <h3>{title}</h3>
+            <p>{bodyText}</p>
+            <a
+                href={href}
+                // eslint-disable-next-line react/jsx-no-target-blank
+                target="_blank"
+                rel="noreferrer"
+                className={classNames('btn btn-primary', { 'ga-cta-install-now': googleAnalytics })}
+            >
+                {linkText}
+            </a>
         </div>
-    )
-})
+    </div>
+)
