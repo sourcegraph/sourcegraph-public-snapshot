@@ -1,11 +1,11 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
-import { isPlainObject, isEqual } from 'lodash'
+import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
-import { Subscription, Observable, Subject, Unsubscribable, ReplaySubject } from 'rxjs'
+import { Subscription, Observable, Subject, Unsubscribable, ReplaySubject, concat } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { map, distinctUntilChanged, filter, switchMap, withLatestFrom, debounceTime } from 'rxjs/operators'
 import { Omit } from 'utility-types'
@@ -18,10 +18,11 @@ import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keybo
 import { observeResize } from '../../util/dom'
 import Shepherd from 'shepherd.js'
 import {
-    createAddCodeStepTooltip,
-    createAddCodeStepWithLanguageExampleTooltip,
+    advanceLangStep,
+    advanceRepoStep,
     isCurrentTourStep,
     isValidLangQuery,
+    runAdvanceLangOrRepoStep,
 } from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -125,6 +126,24 @@ const hasKeybindingService = (
         .addDynamicKeybinding === 'function'
 
 /**
+ * HACK: this interface and the below type guard are used to add a custom command
+ * to the editor. There is no public API to add a command with a specified ID and handler,
+ * hence we need to use the private _commandService API.
+ *
+ * See upstream issue:
+ * - https://github.com/Microsoft/monaco-editor/issues/900#issue-327455729
+ * */
+interface MonacoEditorWithCommandService extends Monaco.editor.IStandaloneCodeEditor {
+    _commandService: {
+        addCommand: (command: { id: string; handler: () => void }) => void
+    }
+}
+
+const hasCommandService = (editor: Monaco.editor.IStandaloneCodeEditor): editor is MonacoEditorWithCommandService =>
+    hasProperty('_commandService')(editor) &&
+    typeof (editor._commandService as MonacoEditorWithCommandService['_commandService']).addCommand === 'function'
+
+/**
  * A search query input backed by the Monaco editor, allowing it to provide
  * syntax highlighting, hovers, completions and diagnostics for search queries.
  *
@@ -151,13 +170,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private subscriptions = new Subscription()
     private suggestionTriggers = new Subject<void>()
 
-    /**
-     * Detects whether the autocomplete suggestions have been closed, and
-     * updates the `suggestionsVisible` component field to false if so.
-     * Used to detect whether we should advance the language filter step in the
-     * search tour.
-     **/
-    private suggestionsVisible = false
+    private tourIsOnQueryTermStep = this.componentUpdates.pipe(
+        filter(({ tour }) => isCurrentTourStep('add-query-term', tour) || false)
+    )
 
     constructor(props: MonacoQueryInputProps) {
         super(props)
@@ -310,104 +325,25 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
         )
 
-        this.subscriptions.add(
-            toUnsubscribable(
-                editor.addAction({
-                    id: 'detectSuggestionsClose',
-                    label: 'Close',
-                    precondition: '!suggestWidgetVisible',
-                    run: () => {
-                        this.suggestionsVisible = false
-                    },
-                })
-            )
-        )
-
-        this.subscriptions.add(
-            toUnsubscribable(
-                editor.addAction({
-                    id: 'detectSuggestionsOpen',
-                    label: 'Open',
-                    precondition: 'suggestWidgetVisible',
-                    run: (): void => {
-                        this.suggestionsVisible = true
-                    },
-                })
-            )
-        )
-
-        this.subscriptions.add(
-            toUnsubscribable(
-                editor.onDidChangeModelContent(() => {
-                    editor.trigger('!suggestWidgetVisible', 'detectSuggestionsClose', [])
-                    editor.trigger('suggestWidgetVisible', 'detectSuggestionsOpen', [])
-                })
-            )
-        )
-
         const tour = this.props.tour
 
-        const advanceLangStep = (): void => {
-            if (
-                tour &&
-                this.props.queryState.query !== 'lang:' &&
-                isValidLangQuery(this.props.queryState.query.trim()) &&
-                tour.getById('filter-lang').isOpen()
-            ) {
-                tour.show('add-query-term')
-                tour.getById('add-query-term').updateStepOptions({
-                    text: createAddCodeStepWithLanguageExampleTooltip(
-                        tour,
-                        this.props.queryState.query.trim() ?? '',
-                        (newQuery: string, patternType: SearchPatternType) => {
-                            if (patternType) {
-                                this.props.setPatternType(patternType)
-                            }
-                            this.props.onChange({
-                                query: newQuery,
-                                cursorPosition: newQuery.length,
-                                fromUserInput: true,
-                            })
-                        }
-                    ),
-                })
-            }
-        }
-
-        const advanceRepoStep = (): void => {
-            if (tour?.getById('filter-repository').isOpen() && this.props.queryState.query !== 'repo:') {
-                tour?.show('add-query-term')
-                tour?.getById('add-query-term').updateStepOptions({ text: createAddCodeStepTooltip(tour) })
-            }
-        }
-
-        const runAdvanceLangOrRepoStep = (): void => {
-            if (tour) {
-                if (
-                    this.props.queryState.query !== 'lang:' &&
-                    isValidLangQuery(this.props.queryState.query.trim()) &&
-                    tour.getById('filter-lang').isOpen()
-                ) {
-                    advanceLangStep()
-                } else if (tour.getById('filter-repository').isOpen() && this.props.queryState.query !== 'repo:') {
-                    advanceRepoStep()
-                }
-            }
-        }
-
-        this.subscriptions.add(
-            toUnsubscribable(
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                (editor as any)._commandService.addCommand({
-                    id: 'completionItemSelected',
-                    handler: () => {
-                        runAdvanceLangOrRepoStep()
-                    },
-                })
-            )
-        )
-
         if (tour) {
+            if (!hasCommandService(editor)) {
+                throw new Error('Cannot add completionItemSelected command')
+            }
+            // When a suggestion gets selected, advance the tour.
+            this.subscriptions.add(
+                toUnsubscribable(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    (editor as any)._commandService.addCommand({
+                        id: 'completionItemSelected',
+                        handler: () => {
+                            runAdvanceLangOrRepoStep(this.props.queryState.query, tour)
+                        },
+                    })
+                )
+            )
+
             // Handle advancing the search tour on the filter repo and filter lang steps, for events
             // where the user does NOT select a suggestion, and instead types a value.
             this.subscriptions.add(
@@ -431,26 +367,25 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             tour.getById('filter-repository').isOpen() &&
                             queryState.query !== 'repo:'
                         ) {
-                            advanceRepoStep()
+                            advanceRepoStep(this.props.queryState.query, tour)
                         } else if (
                             isCurrentTourStep('filter-lang', tour) &&
                             tour.getById('filter-lang').isOpen() &&
                             queryState.query !== 'lang:' &&
                             isValidLangQuery(queryState.query.trim())
                         ) {
-                            advanceLangStep()
+                            advanceLangStep(this.props.queryState.query, tour)
                         }
                     })
             )
 
             // Handle advancing the search tour when on the add query term step.
-            // We subscribe to componentUpdates and filter separately so we don't
-            // get a race condition between the tour advancing steps, and the advance function
+            // We subscribe to componentUpdates and filter for the event separately so we don't
+            // get a race condition between the tour advancing steps to add-query-term, and the handler
             // getting called.
             this.subscriptions.add(
-                this.componentUpdates
+                concat(this.tourIsOnQueryTermStep, this.componentUpdates)
                     .pipe(
-                        filter(({ tour }) => isCurrentTourStep('add-query-term', tour) || false),
                         debounceTime(500),
                         map(({ queryState }) => queryState)
                     )
