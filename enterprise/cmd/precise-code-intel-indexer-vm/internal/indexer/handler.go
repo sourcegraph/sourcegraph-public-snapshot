@@ -87,15 +87,22 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				return err
 			}
 
-			if err := h.commander.Run(ctx, "docker", "pull", fmt.Sprintf("sourcegraph/%s:latest", image)); err != nil {
+			pullCommand := []string{
+				"docker", "pull", fmt.Sprintf("sourcegraph/%s:latest", image),
+			}
+			if err := h.commander.Run(ctx, pullCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to pull sourcegraph/%s:latest", image))
 			}
-			if err := h.commander.Run(ctx, "docker", "save", "-o", tarfile, fmt.Sprintf("sourcegraph/%s:latest", image)); err != nil {
+
+			saveCommand := []string{
+				"docker", "save", "-o", tarfile, fmt.Sprintf("sourcegraph/%s:latest", image),
+			}
+			if err := h.commander.Run(ctx, saveCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to save sourcegraph/%s:latest", image))
 			}
 		}
 
-		args := []string{
+		startCommand := []string{
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "docker-bridge",
@@ -103,46 +110,51 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			"--memory", h.options.FirecrackerMemory,
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
 		}
-		args = append(args, copyfiles...)
-		args = append(
-			args,
+		startCommand = append(startCommand, copyfiles...)
+		startCommand = append(
+			startCommand,
 			"--ssh",
 			"--name", name.String(),
 			sanitizeImage(h.options.FirecrackerImage),
 		)
-		if err := h.commander.Run(ctx, args[0], args[1:]...); err != nil {
+		if err := h.commander.Run(ctx, startCommand...); err != nil {
 			return errors.Wrap(err, "failed to start firecracker vm")
 		}
 		defer func() {
-			stopArgs := []string{
+			stopCommand := []string{
 				"ignite", "stop",
 				"--runtime", "docker",
 				"--network-plugin", "docker-bridge",
 				name.String(),
 			}
-			if err := h.commander.Run(ctx, stopArgs[0], stopArgs[1:]...); err != nil {
+			if err := h.commander.Run(ctx, stopCommand...); err != nil {
 				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
 			}
 
-			removeArgs := []string{
+			removeCommand := []string{
 				"ignite", "rm", "-f",
 				"--runtime", "docker",
 				"--network-plugin", "docker-bridge",
 				name.String(),
 			}
-			if err := h.commander.Run(ctx, removeArgs[0], removeArgs[1:]...); err != nil {
+			if err := h.commander.Run(ctx, removeCommand...); err != nil {
 				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
 			}
 		}()
 
 		for _, image := range images {
-			if err := h.commander.Run(ctx, "ignite", "exec", name.String(), "--", "docker", "load", "-i", fmt.Sprintf("/%s.tar", image)); err != nil {
+			loadCommand := []string{
+				"ignite", "exec", name.String(), "--",
+				"docker", "load",
+				"-i", fmt.Sprintf("/%s.tar", image),
+			}
+			if err := h.commander.Run(ctx, loadCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to load sourcegraph/%s:latest", image))
 			}
 		}
 	}
 
-	indexArgs := []string{
+	indexCommand := []string{
 		"docker", "run", "--rm",
 		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
@@ -153,13 +165,13 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"--no-animation",
 	}
 	if h.options.UseFirecracker {
-		indexArgs = append([]string{"ignite", "exec", name.String(), "--"}, indexArgs...)
+		indexCommand = append([]string{"ignite", "exec", name.String(), "--"}, indexCommand...)
 	}
-	if err := h.commander.Run(ctx, indexArgs[0], indexArgs[1:]...); err != nil {
+	if err := h.commander.Run(ctx, indexCommand...); err != nil {
 		return errors.Wrap(err, "failed to index repository")
 	}
 
-	uploadArgs := []string{
+	uploadCommand := []string{
 		"docker", "run", "--rm",
 		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
@@ -174,9 +186,9 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-upload-route", "/.internal-code-intel/lsif/upload",
 	}
 	if h.options.UseFirecracker {
-		uploadArgs = append([]string{"ignite", "exec", name.String(), "--"}, uploadArgs...)
+		uploadCommand = append([]string{"ignite", "exec", name.String(), "--"}, uploadCommand...)
 	}
-	if err := h.commander.Run(ctx, uploadArgs[0], uploadArgs[1:]...); err != nil {
+	if err := h.commander.Run(ctx, uploadCommand...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
 	}
 
@@ -215,15 +227,14 @@ func (h *Handler) fetchRepository(ctx context.Context, repositoryName, commit st
 		return "", err
 	}
 
-	commands := [][]string{
-		{"-C", tempDir, "init"},
-		{"-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit},
-		{"-C", tempDir, "checkout", commit},
+	gitCommands := [][]string{
+		{"git", "-C", tempDir, "init"},
+		{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit},
+		{"git", "-C", tempDir, "checkout", commit},
 	}
-
-	for _, args := range commands {
-		if err := h.commander.Run(ctx, "git", args...); err != nil {
-			return "", errors.Wrap(err, fmt.Sprintf("failed `git %s`", strings.Join(args, " ")))
+	for _, gitCommand := range gitCommands {
+		if err := h.commander.Run(ctx, gitCommand...); err != nil {
+			return "", errors.Wrap(err, fmt.Sprintf("failed `git %s`", strings.Join(gitCommand, " ")))
 		}
 	}
 
