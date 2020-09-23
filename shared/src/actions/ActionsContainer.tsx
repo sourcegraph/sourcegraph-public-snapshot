@@ -16,7 +16,7 @@ export interface ActionsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     menu: ContributableMenu
     scope?: ContributionScope
-    extraContext?: Context<any>
+    extraContext?: Context
     listClass?: string
     location: H.Location
 }
@@ -39,7 +39,7 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
-    private extraContextChanges = new Subject<Context<any> | undefined>()
+    private extraContextChanges = new Subject<Context | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {

@@ -1,4 +1,3 @@
-import { Position, Selection } from '@sourcegraph/extension-api-types'
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
 import { ViewerWithPartialModel } from '../services/viewerService'
@@ -16,8 +15,6 @@ export interface Context<T = never>
         string | number | boolean | null | Context<T> | T | (string | number | boolean | null | Context<T> | T)[]
     > {}
 
-type ValueOf<T> = T[keyof T]
-
 export type ContributionScope =
     | ViewerWithPartialModel
     | {
@@ -26,37 +23,44 @@ export type ContributionScope =
           hasLocations: boolean
       }
 
-/** The types of the builtin context keys (such as `component.selections`). */
-type BuiltinContextValuesTypes = Selection | Selection[] | Position
-
 /**
- * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
- * and the context entries (with lower precedence).
+ * Compute the full context data based on the environment, including keys such as `resource.uri`.
  *
- * @param expr the context expr to evaluate
+ * @param activeEditor the currently visible editor (if any)
+ * @param settings the settings for the viewer
+ * @param context manually specified context keys
  * @param scope the user interface component in whose scope this computation should occur
  */
-export function getComputedContextProperty<T>(
+export function computeContext<T>(
     activeEditor: ViewerWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
     context: Context<T>,
-    key: string,
     scope?: ContributionScope
-): ValueOf<Context<BuiltinContextValuesTypes | T>> {
-    const data: Context<BuiltinContextValuesTypes | T> = { ...context }
+): Context<T> {
+    const data: Context<T> = { ...context }
 
     // Settings (`config.` prefix)
     if (isSettingsValid(settings)) {
-        for (const [key, value] of Object.entries<ValueOf<Context>>(settings.final)) {
+        for (const [key, value] of Object.entries(settings.final)) {
+            // Disable eslint warnings for any. The context is treated as a loosely typed bag of
+            // values. The values for these keys are only used by extensions, whose code is in a
+            // separate compilation and typechecking unit from this code. Any attempt to properly
+            // reflect the types massively increases the impl complexity without any actual benefit
+            // to the caller.
+            //
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             data[`config.${key}`] = value
         }
     }
 
     // Resource (`resource.` prefix)
     const component: ContributionScope | null = scope || activeEditor || null
-    data.resource = Boolean(component)
-    data.component = Boolean(component) // BACKCOMPAT: allow 'component' key
+    if (component) {
+        data.component = true
+    }
     if (component?.type === 'CodeEditor') {
+        data.resource = true
+
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
         // path relative to the repository's root? If it's a file on disk, then "path" could also mean the
         // (absolute) path on the file system. Clear up that ambiguity.
@@ -68,18 +72,26 @@ export function getComputedContextProperty<T>(
         data['resource.type'] = 'textDocument'
 
         data['component.type'] = 'CodeEditor'
-        data['component.selections'] = component.selections
-        data['component.selection'] = component.selections[0] || null
-        data['component.selection.start'] = component.selections[0] ? component.selections[0].start : null
-        data['component.selection.end'] = component.selections[0] ? component.selections[0].end : null
-        data['component.selection.start.line'] = component.selections[0] ? component.selections[0].start.line : null
-        data['component.selection.start.character'] = component.selections[0]
-            ? component.selections[0].start.character
-            : null
-        data['component.selection.end.line'] = component.selections[0] ? component.selections[0].end.line : null
-        data['component.selection.end.character'] = component.selections[0]
-            ? component.selections[0].end.character
-            : null
+        // See above for why we disable eslint rules related to `any`.
+        //
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data['component.selections'] = component.selections as any // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (component.selections.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            data['component.selection'] = (component.selections[0] || null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            data['component.selection.start'] = (component.selections[0] ? component.selections[0].start : null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            data['component.selection.end'] = (component.selections[0] ? component.selections[0].end : null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            data['component.selection.start.line'] = component.selections[0] ? component.selections[0].start.line : null
+            data['component.selection.start.character'] = component.selections[0]
+                ? component.selections[0].start.character
+                : null
+            data['component.selection.end.line'] = component.selections[0] ? component.selections[0].end.line : null
+            data['component.selection.end.character'] = component.selections[0]
+                ? component.selections[0].end.character
+                : null
+        }
     }
 
     // Panel (`panel.` prefix)
@@ -88,9 +100,5 @@ export function getComputedContextProperty<T>(
         data['panel.activeView.hasLocations'] = component.hasLocations
     }
 
-    data.context = context
-
-    // BACKCOMPAT: If the key is not found, we return null, not undefined.
-    const value = data[key]
-    return value === undefined ? null : value
+    return data
 }

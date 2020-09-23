@@ -3,7 +3,7 @@ import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscriba
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
-import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
+import { Context, ContributionScope, computeContext } from '../context/context'
 import { Expression, parse, parseTemplate } from '../context/expr/evaluator'
 import { ViewerService, ViewerWithPartialModel } from './viewerService'
 import { ModelService } from './modelService'
@@ -38,7 +38,7 @@ export class ContributionRegistry {
         private viewerService: Pick<ViewerService, 'activeViewerUpdates'>,
         private modelService: Pick<ModelService, 'getPartialModel'>,
         private settings: PlatformContext['settings'],
-        private context: Subscribable<Context<any>>
+        private context: Subscribable<Context>
     ) {}
 
     /**
@@ -74,19 +74,23 @@ export class ContributionRegistry {
     }
 
     /**
-     * Returns an observable that emits all contributions (merged) evaluated in the current model (with the
-     * optional scope). It emits whenever there is any change.
+     * Returns an observable that emits all contributions (merged) evaluated in the current model
+     * (with the optional scope). It emits whenever there is any change.
      *
-     * @template T Extra allowed property value types for the {@link Context} value. See {@link Context}'s `T` type
-     * parameter for more information.
-     * @param extraContext Extra context values to use when computing the contributions. Properties in this object
-     * shadow (take precedence over) properties in the global context for this computation.
+     * @template T Extra allowed property value types for the {@link Context} value. See
+     * {@link Context}'s `T` type parameter for more information.
+     * @param scope The scope in which contributions are fetched. A scope can be a sub-component of
+     * the UI that defines its own context keys, such as the hover, which stores useful loading and
+     * definition/reference state in its scoped context keys.
+     * @param extraContext Extra context values to use when computing the contributions. Properties
+     * in this object shadow (take precedence over) properties in the global context for this
+     * computation.
      */
     public getContributions<T>(
         scope?: ContributionScope | undefined,
         extraContext?: Context<T>
     ): Observable<Evaluated<Contributions>> {
-        return this.getContributionsFromEntries(this._entries, scope, extraContext)
+        return this.getContributionsFromEntries<T>(this._entries, scope, extraContext)
     }
 
     /**
@@ -129,7 +133,7 @@ export class ContributionRegistry {
                 })
             ),
             this.settings,
-            this.context,
+            this.context as Subscribable<Context<T>>,
         ]).pipe(
             map(([multiContributions, activeEditor, settings, context]) => {
                 // Merge in extra context.
@@ -138,11 +142,11 @@ export class ContributionRegistry {
                 }
 
                 // TODO(sqs): Observe context so that we update immediately upon changes.
-                const computedContext = getComputedContextProperty(activeEditor, settings, context, 'context', scope)
+                const computedContext = computeContext(activeEditor, settings, context, scope)
 
                 return multiContributions.flat().map(contributions => {
                     try {
-                        return filterContributions(evaluateContributions(computedContext, contributions))
+                        return filterContributions(evaluateContributions<T>(computedContext, contributions))
                     } catch (error) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
@@ -266,7 +270,7 @@ export function filterContributions(contributions: Evaluated<Contributions>): Ev
  *
  * @todo could walk object recursively
  */
-export function evaluateContributions(context: Context, contributions: Contributions): Evaluated<Contributions> {
+export function evaluateContributions<T>(context: Context<T>, contributions: Contributions): Evaluated<Contributions> {
     return {
         ...contributions,
         menus:
@@ -274,15 +278,15 @@ export function evaluateContributions(context: Context, contributions: Contribut
             mapValues(contributions.menus, (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
                 menuItems?.map(menuItem => ({ ...menuItem, when: menuItem.when && !!menuItem.when.exec(context) }))
             ),
-        actions: evaluateActionContributions(context, contributions.actions),
+        actions: evaluateActionContributions<T>(context, contributions.actions),
     }
 }
 
 /**
  * Evaluates expressions in contribution definitions against the given context.
  */
-function evaluateActionContributions(
-    context: Context,
+function evaluateActionContributions<T>(
+    context: Context<T>,
     actions: Contributions['actions']
 ): Evaluated<Contributions['actions']> {
     return actions?.map(action => ({

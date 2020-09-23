@@ -8,8 +8,8 @@ import { ExpressionNode, Parser, TemplateParser } from './parser'
 export class Expression<T> {
     constructor(private root: ExpressionNode) {}
 
-    public exec(context: Context): T {
-        return exec(this.root, context)
+    public exec<C>(context: Context<C>): T {
+        return exec<C>(this.root, context)
     }
 }
 
@@ -41,7 +41,7 @@ const FUNCS: { [name: string]: (...args: any[]) => any } = {
     json: (object: any): string => JSON.stringify(object),
 }
 
-function exec(node: ExpressionNode, context: Context): any {
+function exec<C>(node: ExpressionNode, context: Context<C>): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
             case TokenType.String:

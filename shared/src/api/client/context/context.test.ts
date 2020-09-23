@@ -1,9 +1,8 @@
-import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
 import { CodeEditorWithPartialModel } from '../services/viewerService'
-import { getComputedContextProperty } from './context'
+import { computeContext } from './context'
 
-describe('getComputedContextProperty', () => {
+describe('computeContext', () => {
     test('provides config', () => {
         const settings: SettingsCascadeOrError = {
             final: {
@@ -13,13 +12,14 @@ describe('getComputedContextProperty', () => {
             },
             subjects: [],
         }
-        expect(getComputedContextProperty(undefined, settings, {}, 'config.a')).toBe(1)
-        expect(getComputedContextProperty(undefined, settings, {}, 'config.a.b')).toBe(2)
-        expect(getComputedContextProperty(undefined, settings, {}, 'config.c.d')).toBe(3)
-        expect(getComputedContextProperty(undefined, settings, {}, 'config.x')).toBe(null)
+        expect(computeContext(undefined, settings, {})).toEqual({
+            'config.a': 1,
+            'config.a.b': 2,
+            'config.c.d': 3,
+        })
     })
 
-    describe('with code editors', () => {
+    test('with code editor', () => {
         const editor: CodeEditorWithPartialModel = {
             viewerId: 'editor2',
             type: 'CodeEditor',
@@ -37,154 +37,88 @@ describe('getComputedContextProperty', () => {
             isActive: true,
         }
 
-        describe('resource', () => {
-            test('provides resource.uri', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri')).toBe(
-                    'file:///a/b.c'
-                ))
-            test('provides resource.basename', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'resource.basename')).toBe('b.c'))
-            test('provides resource.dirname', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'resource.dirname')).toBe(
-                    'file:///a'
-                ))
-            test('provides resource.extname', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'resource.extname')).toBe('.c'))
-            test('provides resource.language', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'resource.language')).toBe('l'))
-            test('provides resource.type', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'resource.type')).toBe(
-                    'textDocument'
-                ))
-
-            test('returns null when there are no code editors', () =>
-                expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'resource.uri')).toBe(null))
-        })
-
-        describe('component', () => {
-            test('provides component.type', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(
-                    'CodeEditor'
-                ))
-
-            test('returns null when there are no code editors', () =>
-                expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(null))
-
-            function assertSelection(
-                editor: CodeEditorWithPartialModel,
-                expression: string,
-                expected: Selection
-            ): void {
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, expression)).toEqual(expected)
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.start`)).toEqual(
-                    expected.start
-                )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.end`)).toEqual(
-                    expected.end
-                )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.start.line`)).toBe(
-                    expected.start.line
-                )
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.start.character`)
-                ).toBe(expected.start.character)
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.end.line`)).toBe(
-                    expected.end.line
-                )
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.end.character`)
-                ).toBe(expected.end.character)
-            }
-
-            test('provides primary selection', () =>
-                assertSelection(editor, 'component.selection', {
+        expect(computeContext(editor, EMPTY_SETTINGS_CASCADE, {})).toEqual({
+            resource: true,
+            'resource.uri': 'file:///a/b.c',
+            'resource.basename': 'b.c',
+            'resource.dirname': 'file:///a',
+            'resource.extname': '.c',
+            'resource.language': 'l',
+            'resource.type': 'textDocument',
+            component: true,
+            'component.type': 'CodeEditor',
+            'component.selection': {
+                start: { line: 1, character: 2 },
+                end: { line: 3, character: 4 },
+                anchor: { line: 1, character: 2 },
+                active: { line: 3, character: 4 },
+                isReversed: false,
+            },
+            'component.selections': [
+                {
                     start: { line: 1, character: 2 },
                     end: { line: 3, character: 4 },
                     anchor: { line: 1, character: 2 },
                     active: { line: 3, character: 4 },
                     isReversed: false,
-                }))
-
-            test('provides selections', () =>
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selections')).toEqual([
-                    {
-                        start: { line: 1, character: 2 },
-                        end: { line: 3, character: 4 },
-                        anchor: { line: 1, character: 2 },
-                        active: { line: 3, character: 4 },
-                        isReversed: false,
-                    },
-                ]))
-
-            function assertNoSelection(editor?: CodeEditorWithPartialModel): void {
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selection')).toBe(null)
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start')
-                ).toBe(null)
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end')).toBe(
-                    null
-                )
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.start.line')
-                ).toBe(null)
-                expect(
-                    getComputedContextProperty(
-                        editor,
-                        EMPTY_SETTINGS_CASCADE,
-                        {},
-                        'component.selection.start.character'
-                    )
-                ).toBe(null)
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.line')
-                ).toBe(null)
-                expect(
-                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, 'component.selection.end.character')
-                ).toBe(null)
-            }
-
-            test('returns null when there is no selection', () => {
-                assertNoSelection({
-                    viewerId: 'editor1',
-                    type: 'CodeEditor' as const,
-                    resource: 'file:///a/b.c',
-                    model: { languageId: 'l' },
-                    selections: [],
-                    isActive: true,
-                })
-            })
-
-            test('returns null when there is no component', () => {
-                assertNoSelection()
-            })
+                },
+            ],
+            'component.selection.start': { line: 1, character: 2 },
+            'component.selection.start.line': 1,
+            'component.selection.start.character': 2,
+            'component.selection.end': { line: 3, character: 4 },
+            'component.selection.end.line': 3,
+            'component.selection.end.character': 4,
         })
     })
 
-    describe('panel', () => {
-        test('provides panel.activeView.id', () =>
-            expect(
-                getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id', {
-                    type: 'panelView',
-                    id: 'x',
-                    hasLocations: true,
-                })
-            ).toBe('x'))
-
-        test('provides panel.activeView.hasLocations', () =>
-            expect(
-                getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.hasLocations', {
-                    type: 'panelView',
-                    id: 'x',
-                    hasLocations: true,
-                })
-            ).toBe(true))
-
-        test('returns null for panel.activeView.id when there is no panel', () =>
-            expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'panel.activeView.id')).toBe(null))
+    test('without code editor', () => {
+        expect(computeContext(undefined, EMPTY_SETTINGS_CASCADE, {})).toEqual({})
     })
 
-    test('falls back to the context entries', () => {
-        expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, { x: 1 }, 'x')).toBe(1)
-        expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'y')).toBe(null)
+    test('code editor with no selection', () => {
+        const editorWithNoSelection: CodeEditorWithPartialModel = {
+            viewerId: 'editor1',
+            type: 'CodeEditor' as const,
+            resource: 'file:///a/b.c',
+            model: { languageId: 'l' },
+            selections: [],
+            isActive: true,
+        }
+        expect(computeContext(editorWithNoSelection, EMPTY_SETTINGS_CASCADE, {})).toEqual({
+            resource: true,
+            'resource.uri': 'file:///a/b.c',
+            'resource.basename': 'b.c',
+            'resource.dirname': 'file:///a',
+            'resource.extname': '.c',
+            'resource.language': 'l',
+            'resource.type': 'textDocument',
+            component: true,
+            'component.type': 'CodeEditor',
+            'component.selections': [],
+        })
+    })
+
+    test('panel', () => {
+        expect(
+            computeContext(
+                undefined,
+                EMPTY_SETTINGS_CASCADE,
+                {},
+                {
+                    type: 'panelView',
+                    id: 'x',
+                    hasLocations: true,
+                }
+            )
+        ).toEqual({
+            component: true,
+            'panel.activeView.id': 'x',
+            'panel.activeView.hasLocations': true,
+        })
+    })
+
+    test('context fallback', () => {
+        expect(computeContext(undefined, EMPTY_SETTINGS_CASCADE, { x: 1 })).toEqual({ x: 1 })
     })
 })
