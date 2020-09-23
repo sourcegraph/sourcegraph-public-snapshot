@@ -88,7 +88,7 @@ func (t *TrackingIssue) Workloads() Workloads {
 				estimate := Estimate(issue.Labels)
 				w.Days += Days(estimate)
 
-				if strings.EqualFold(issue.State, "closed") {
+				if issue.Closed() {
 					w.CompletedDays += Days(estimate)
 				}
 			} else {
