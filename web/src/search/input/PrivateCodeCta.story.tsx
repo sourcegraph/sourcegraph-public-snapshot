@@ -5,7 +5,7 @@ import { WebStory } from '../../components/WebStory'
 
 const { add } = storiesOf('web/PrivateCodeCta', module).addDecorator(story => <div className="p-4">{story()}</div>)
 
-add('Private code cta', () => <WebStory>{() => <PrivateCodeCta />}</WebStory>, {
+add('PrivateCodeCta', () => <WebStory>{() => <PrivateCodeCta />}</WebStory>, {
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=420%3A10',

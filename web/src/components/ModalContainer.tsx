@@ -13,22 +13,19 @@ interface Props {
 
 export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, hideCloseIcon, className, children }) => {
     const containerReference = useRef<HTMLDivElement>(null)
-    const bodyReference = useRef<HTMLElement>(null)
+    const modalBodyReference = useRef<HTMLElement>(null)
+
+    // TODO(tj): tabtrapping modal body
 
     // On first render, close over the element that was focused to open it.
     // On unmount, refocus that element
     useEffect(() => {
-        const focusedElement = document.activeElement
+        const focusedElement = document.activeElement as HTMLElement | null
 
         containerReference.current?.focus()
 
         return () => {
-            if (
-                focusedElement &&
-                (focusedElement instanceof HTMLButtonElement ||
-                    focusedElement instanceof HTMLAnchorElement ||
-                    focusedElement instanceof HTMLDivElement)
-            ) {
+            if (focusedElement && focusedElement instanceof HTMLElement) {
                 focusedElement.focus()
             }
         }
@@ -38,15 +35,30 @@ export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, hideCl
     // (optional behavior: user opts in by using `bodyReference` as the ref attribute to the body element)
     useEffect(() => {
         function handleMouseDownOutside(event: MouseEvent): void {
-            const body = bodyReference.current
-            if (onClose && body && body !== event.target && !body.contains(event.target as Node)) {
+            const modalBody = modalBodyReference.current
+            if (onClose && modalBody && modalBody !== event.target && !modalBody.contains(event.target as Node)) {
+                document.addEventListener('mouseup', handleMouseUp)
+            }
+        }
+
+        // Only called when mousedown was outside of the modal body
+        function handleMouseUp(event: MouseEvent): void {
+            document.removeEventListener('mouseup', handleMouseUp)
+
+            const modalBody = modalBodyReference.current
+            // if mouse is still outside of modal body, close the modal
+            if (onClose && modalBody && modalBody !== event.target && !modalBody.contains(event.target as Node)) {
                 onClose()
             }
         }
-        // TODO(tj): Don't close modal when user mouse down inside body then mouse up outside of div?
+
         document.addEventListener('mousedown', handleMouseDownOutside)
 
-        return () => document.removeEventListener('mousedown', handleMouseDownOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleMouseDownOutside)
+            // just in case (e.g. modal could close from a timeout between mousedown and mouseup)
+            document.removeEventListener('mouseup', handleMouseUp)
+        }
     }, [onClose])
 
     // Close modal when user presses `esc` key
@@ -78,7 +90,7 @@ export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, hideCl
                         </span>
                     )}
                 </div>
-                {children(bodyReference)}
+                {children(modalBodyReference)}
             </div>
         </div>
     )

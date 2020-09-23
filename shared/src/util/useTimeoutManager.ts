@@ -21,12 +21,8 @@ export interface TimeoutManager {
 export function useTimeoutManager(): TimeoutManager {
     const timeoutIDReference = useRef<{ timeoutID: number | undefined }>({ timeoutID: undefined })
 
-    // eslint-disable-next-line arrow-body-style
     useEffect(() => {
-        /**
-         * https://reactjs.org/blog/2020/08/10/react-v17-rc.html#potential-issues
-         *
-         */
+        // https://reactjs.org/blog/2020/08/10/react-v17-rc.html#potential-issues
         const current = timeoutIDReference.current
         return () => clearTimeout(current.timeoutID)
     }, [])
