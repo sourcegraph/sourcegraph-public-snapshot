@@ -94,7 +94,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.enqueueSignal.Watch())
 
-		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil {
+		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil && s.Logger != nil {
 			s.Logger.Error("Enqueuing sync jobs", "error", err)
 		}
 
@@ -177,7 +177,10 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
-	log15.Debug("Syncing external service", "serviceID", externalServiceID)
+	if s.Logger != nil {
+		s.Logger.Debug("Syncing external service", "serviceID", externalServiceID)
+	}
+
 	ctx, save := s.observe(ctx, externalServiceID, "Syncer.SyncExternalService", "")
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
@@ -300,7 +303,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 
 	now := s.Now()
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, diff)
-	log15.Info("Synced external service", "id", externalServiceID, "backoff duration", interval)
+	if s.Logger != nil {
+		s.Logger.Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
+	}
 	syncBackoffDuration.With(prometheus.Labels{
 		"external_service_id": strconv.FormatInt(svc.ID, 10),
 	}).Set(interval.Seconds())
@@ -600,7 +605,9 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 
 	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
 	if err != nil {
-		s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+		if s.Logger != nil {
+			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+		}
 		return
 	}
 
