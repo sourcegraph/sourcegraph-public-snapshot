@@ -270,6 +270,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:    "head-ref-on-github",
 				externalState:     campaigns.ChangesetExternalStateOpen,
 				createdByCampaign: true,
+				ownedByCampaign:   campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -284,6 +285,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalID:       githubPR.ID,
 				externalBranch:   githubPR.HeadRefName,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 			},
 		},
 		"retry update published changeset commit": {
@@ -306,6 +308,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:    "head-ref-on-github",
 				externalState:     campaigns.ChangesetExternalStateOpen,
 				createdByCampaign: true,
+				ownedByCampaign:   campaign.ID,
 
 				// Previous update failed:
 				failureMessage: "failed to update changeset commit",
@@ -321,6 +324,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalID:       githubPR.ID,
 				externalBranch:   githubPR.HeadRefName,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 				// failureMessage should be nil
 			},
 		},
@@ -347,6 +351,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:    "head-ref-on-github",
 				externalState:     campaigns.ChangesetExternalStateOpen,
 				createdByCampaign: true,
+				ownedByCampaign:   campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -361,6 +366,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalID:       githubPR.ID,
 				externalBranch:   githubPR.HeadRefName,
 				diffStat:         state.DiffStat,
+				ownedByCampaign:  campaign.ID,
 			},
 		},
 		"reprocess published changeset without changes": {
@@ -403,6 +409,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:   githubPR.HeadRefName,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				closing:          true,
+				ownedByCampaign:  campaign.ID,
 			},
 			// We return a closed GitHub PR here
 			sourcerMetadata: closedGitHubPR,
@@ -422,6 +429,8 @@ func TestReconcilerProcess(t *testing.T) {
 				title:    closedGitHubPR.Title,
 				body:     closedGitHubPR.Body,
 				diffStat: state.DiffStat,
+
+				ownedByCampaign: campaign.ID,
 			},
 		},
 		"closing non-open changeset": {
@@ -791,31 +800,14 @@ func TestDecorateChangesetBody(t *testing.T) {
 		ownedByCampaign: campaign.ID,
 	})
 
-	t.Run("owned", func(t *testing.T) {
-		body := "body"
-		rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
-		if err := decorateChangesetBody(ctx, store, rcs); err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
-			t.Errorf("repos.Changeset body unexpectedly changed: have=%q want=%q", rcs.Body, want)
-		}
-	})
-
-	t.Run("unowned", func(t *testing.T) {
-		cid := cs.OwnedByCampaignID
-		cs.OwnedByCampaignID = 0
-		defer func() { cs.OwnedByCampaignID = cid }()
-
-		body := "body"
-		rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
-		if err := decorateChangesetBody(ctx, store, rcs); err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if rcs.Body != body {
-			t.Errorf("repos.Changeset body unexpectedly changed: have=%q want=%q", rcs.Body, body)
-		}
-	})
+	body := "body"
+	rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
+	if err := decorateChangesetBody(ctx, store, rcs, campaign); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed: have=%q want=%q", rcs.Body, want)
+	}
 }
 
 func TestCampaignURL(t *testing.T) {
