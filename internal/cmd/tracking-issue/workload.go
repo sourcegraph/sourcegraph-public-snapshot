@@ -102,10 +102,20 @@ func renderIssue(b *strings.Builder, labelAllowlist []string, issue *Issue, dept
 	b.WriteString(issue.Markdown(labelAllowlist))
 
 	// Render children tracked _only_ by this issue
-	// (excluding the team tracking issue) as nested elements
-	for _, child := range issue.Children {
+	// (excluding the tracking issue being updated) as nested elements
+	for _, child := range issue.ChildIssues {
 		if len(child.Parents) == 1 {
 			renderIssue(b, labelAllowlist, child, depth+1)
+		}
+	}
+
+	for _, child := range issue.ChildPRs {
+		// Nest PRs under the tracking issue they most closely belong to
+		// _only if_ it doesn't appear in the list of PRs for any issue
+		// in this tracking issue(isn't explicitly linked to any issue).
+		if len(child.Parents) == 1 && len(child.LinkedIssues) == 0 {
+			b.WriteString(indent(depth + 1))
+			b.WriteString(child.Markdown())
 		}
 	}
 }
