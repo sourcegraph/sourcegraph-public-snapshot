@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Usernames set in Slack `observability.alerts` now apply correctly. [#14079](https://github.com/sourcegraph/sourcegraph/pull/14079)
+- Path segments in breadcrumbs get truncated correctly again on small screen sizes instead of inflating the header bar. [#14097](https://github.com/sourcegraph/sourcegraph/pull/14097)
 
 ## 3.20.1
 
