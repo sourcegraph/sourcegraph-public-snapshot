@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -148,6 +149,14 @@ func campaignsOpenFileFlag(flag *string) (io.ReadCloser, error) {
 // to Sourcegraph, including execution as needed. The return values are the
 // spec ID, spec URL, and error.
 func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Service, flags *campaignsApplyFlags) (campaigns.CampaignSpecID, string, error) {
+	if err := checkExecutable("git", "version"); err != nil {
+		return "", "", err
+	}
+
+	if err := checkExecutable("docker", "version"); err != nil {
+		return "", "", err
+	}
+
 	// Parse flags and build up our service options.
 	var errs *multierror.Error
 
@@ -409,4 +418,17 @@ func diffStatDiagram(stat diff.Stat) string {
 		output.StyleLinesAdded, strings.Repeat("+", int(added)),
 		output.StyleLinesDeleted, strings.Repeat("-", int(deleted)),
 	)
+}
+
+func checkExecutable(cmd string, args ...string) error {
+	if err := exec.Command(cmd, args...).Run(); err != nil {
+		return fmt.Errorf(
+			"failed to execute \"%s %s\":\n\t%s\n\n'src campaigns' require %q to be available.",
+			cmd,
+			strings.Join(args, " "),
+			err,
+			cmd,
+		)
+	}
+	return nil
 }
