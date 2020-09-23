@@ -87,32 +87,32 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 				return err
 			}
 
-			pullCommand := []string{
-				"docker", "pull", fmt.Sprintf("sourcegraph/%s:latest", image),
-			}
+			pullCommand := flatten(
+				"docker", "pull",
+				fmt.Sprintf("sourcegraph/%s:latest", image),
+			)
 			if err := h.commander.Run(ctx, pullCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to pull sourcegraph/%s:latest", image))
 			}
 
-			saveCommand := []string{
-				"docker", "save", "-o", tarfile, fmt.Sprintf("sourcegraph/%s:latest", image),
-			}
+			saveCommand := flatten(
+				"docker", "save",
+				"-o", tarfile,
+				fmt.Sprintf("sourcegraph/%s:latest", image),
+			)
 			if err := h.commander.Run(ctx, saveCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to save sourcegraph/%s:latest", image))
 			}
 		}
 
-		startCommand := []string{
+		startCommand := flatten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "docker-bridge",
 			"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 			"--memory", h.options.FirecrackerMemory,
 			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
-		}
-		startCommand = append(startCommand, copyfiles...)
-		startCommand = append(
-			startCommand,
+			copyfiles,
 			"--ssh",
 			"--name", name.String(),
 			sanitizeImage(h.options.FirecrackerImage),
@@ -121,40 +121,40 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			return errors.Wrap(err, "failed to start firecracker vm")
 		}
 		defer func() {
-			stopCommand := []string{
+			stopCommand := flatten(
 				"ignite", "stop",
 				"--runtime", "docker",
 				"--network-plugin", "docker-bridge",
 				name.String(),
-			}
+			)
 			if err := h.commander.Run(ctx, stopCommand...); err != nil {
 				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
 			}
 
-			removeCommand := []string{
+			removeCommand := flatten(
 				"ignite", "rm", "-f",
 				"--runtime", "docker",
 				"--network-plugin", "docker-bridge",
 				name.String(),
-			}
+			)
 			if err := h.commander.Run(ctx, removeCommand...); err != nil {
 				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
 			}
 		}()
 
 		for _, image := range images {
-			loadCommand := []string{
+			loadCommand := flatten(
 				"ignite", "exec", name.String(), "--",
 				"docker", "load",
 				"-i", fmt.Sprintf("/%s.tar", image),
-			}
+			)
 			if err := h.commander.Run(ctx, loadCommand...); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("failed to load sourcegraph/%s:latest", image))
 			}
 		}
 	}
 
-	indexCommand := []string{
+	indexCommand := flatten(
 		"docker", "run", "--rm",
 		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
@@ -163,15 +163,18 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"sourcegraph/lsif-go:latest",
 		"lsif-go",
 		"--no-animation",
-	}
+	)
 	if h.options.UseFirecracker {
-		indexCommand = append([]string{"ignite", "exec", name.String(), "--"}, indexCommand...)
+		indexCommand = flatten(
+			"ignite", "exec", name.String(), "--",
+			indexCommand,
+		)
 	}
 	if err := h.commander.Run(ctx, indexCommand...); err != nil {
 		return errors.Wrap(err, "failed to index repository")
 	}
 
-	uploadCommand := []string{
+	uploadCommand := flatten(
 		"docker", "run", "--rm",
 		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
 		"--memory", h.options.FirecrackerMemory,
@@ -184,9 +187,12 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-repo", index.RepositoryName,
 		"-commit", index.Commit,
 		"-upload-route", "/.internal-code-intel/lsif/upload",
-	}
+	)
 	if h.options.UseFirecracker {
-		uploadCommand = append([]string{"ignite", "exec", name.String(), "--"}, uploadCommand...)
+		uploadCommand = flatten(
+			"ignite", "exec", name.String(), "--",
+			uploadCommand,
+		)
 	}
 	if err := h.commander.Run(ctx, uploadCommand...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
@@ -259,4 +265,17 @@ func makeUploadURL(baseURL, authToken string) (*url.URL, error) {
 	base.User = url.UserPassword("indexer", authToken)
 
 	return base, nil
+}
+
+func flatten(values ...interface{}) (union []string) {
+	for _, value := range values {
+		switch v := value.(type) {
+		case string:
+			union = append(union, v)
+		case []string:
+			union = append(union, v...)
+		}
+	}
+
+	return union
 }
