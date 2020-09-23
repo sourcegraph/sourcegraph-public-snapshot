@@ -2,7 +2,6 @@
 
 **/CODENOTIFY @nicksnyder
 **/CODEOWNERS @nicksnyder
-.github/workflows/codenotify.yml @nicksnyder
 
 cmd/frontend/graphqlbackend/campaigns.go @eseliger
 doc/user/campaigns/**/* @eseliger
@@ -11,16 +10,3 @@ enterprise/cmd/frontend/internal/campaigns/**/* @eseliger
 internal/campaigns/**/* @eseliger
 web/src/enterprise/campaigns/**/* @eseliger
 web/src/integration/campaigns.test.ts @eseliger
-
-docker-images/cadvisor/**/* @bobheadxi
-docker-images/grafana/**/* @bobheadxi
-docker-images/prometheus/**/* @bobheadxi
-cmd/frontend/graphqlbackend/observability.go @bobheadxi
-cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
-.github/workflows/licenses-check.yml @bobheadxi
-.github/workflows/licenses-update.yml @bobheadxi
-.github/workflows/renovate-downstream.yml @bobheadxi
-.github/workflows/renovate-downstream.json @bobheadxi
-.github/workflows/resources-report.yml @bobheadxi
-internal/cmd/resources-report @bobheadxi
-monitoring/**/* @bobheadxi
