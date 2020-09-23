@@ -77,18 +77,12 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			"src-cli": "sourcegraph/src-cli:latest",
 		}
 
-		var keys []string
-		for key := range images {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-
 		copyfiles := []string{}
-		for _, key := range keys {
+		for _, key := range orderedKeys(images) {
 			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", h.tarfilePathOnHost(key), h.tarfilePathInVM(key)))
 		}
 
-		for _, key := range keys {
+		for _, key := range orderedKeys(images) {
 			if _, err := os.Stat(h.tarfilePathOnHost(key)); err == nil {
 				continue
 			} else if !os.IsNotExist(err) {
@@ -137,7 +131,7 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 			}
 		}()
 
-		for _, key := range keys {
+		for _, key := range orderedKeys(images) {
 			loadCommand := flatten(
 				"ignite", "exec", name.String(), "--",
 				"docker", "load",
@@ -302,4 +296,12 @@ func flatten(values ...interface{}) (union []string) {
 	}
 
 	return union
+}
+
+func orderedKeys(m map[string]string) (keys []string) {
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
