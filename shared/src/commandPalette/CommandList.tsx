@@ -362,11 +362,13 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
                 break
             }
             case Key.Enter: {
-                toggleIsOpen()
+                if (!isOpen) {
+                    setIsOpen(true)
+                }
                 break
             }
         }
-    }, [toggleIsOpen])
+    }, [isOpen])
 
     return (
         <ButtonElement
