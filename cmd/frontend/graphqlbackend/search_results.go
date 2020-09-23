@@ -1478,14 +1478,14 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 			hasTimeFilter = true
 		}
 
-		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
+		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.RepoPromise.Get()) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
 				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
 			}
 		}
-		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
+		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.RepoPromise.Get()) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_with_time_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
@@ -1618,7 +1618,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 	}
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.Repos,
+		Repos:       tp.RepoPromise.Get(),
 		Query:       tp.Query,
 	}
 	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
@@ -1654,7 +1654,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	}
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.Repos,
+		Repos:       tp.RepoPromise.Get(),
 		Query:       tp.Query,
 	}
 	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
@@ -1739,9 +1739,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
-		RepoPromise:     make(chan []*search.RepositoryRevisions, 1),
+		RepoPromise:     search.NewRepoPromise(),
 	}
-	defer close(args.RepoPromise)
 
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -1798,10 +1797,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if alertResult != nil {
 		return alertResult, nil
 	}
-	args.Repos = resolved.repoRevs
-	if r.isGlobalSearch() {
-		args.RepoPromise <- resolved.repoRevs
-	}
+	args.RepoPromise.Resolve(resolved.repoRevs)
 
 	agg.common.excluded = resolved.excludedRepos
 

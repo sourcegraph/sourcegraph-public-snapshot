@@ -3,6 +3,7 @@ package search
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -75,19 +76,45 @@ const (
 	SearcherOnly
 )
 
+type RepoPromise struct {
+	resolveOnce sync.Once
+	repoChan    chan []*RepositoryRevisions
+	Repos       []*RepositoryRevisions
+}
+
+func NewRepoPromise() *RepoPromise {
+	return &RepoPromise{
+		repoChan: make(chan []*RepositoryRevisions, 1),
+	}
+}
+
+// TODO: Add context to GET. How to deal with cancellations?
+func (rp *RepoPromise) Get() []*RepositoryRevisions {
+	rp.resolveOnce.Do(func() {
+		fmt.Println("resolving repos")
+		rp.Repos = <-rp.repoChan
+	})
+	return rp.Repos
+}
+
+func (rp *RepoPromise) Resolve(repos []*RepositoryRevisions) {
+	defer close(rp.repoChan)
+	rp.repoChan <- repos
+}
+
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
-	Repos       []*RepositoryRevisions
 
 	// Performance optimization.
 	//
 	// For global queries, resolving repositories and querying zoekt happens
 	// concurrently. Eventually RepoPromise and Repos will be identical.
-	RepoPromise chan []*RepositoryRevisions
-	Mode        GlobalSearchMode
+	RepoPromise *RepoPromise
+
+	Mode GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and

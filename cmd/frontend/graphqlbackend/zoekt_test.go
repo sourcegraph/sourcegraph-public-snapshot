@@ -297,12 +297,12 @@ func TestIndexedSearch(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
+			rp := search.NewRepoPromise()
+			rp.Resolve(tt.args.repos)
 			args := &search.TextParameters{
 				Query:           q,
 				PatternInfo:     tt.args.patternInfo,
-				Repos:           tt.args.repos,
-				RepoPromise:     make(chan []*search.RepositoryRevisions, 1),
+				RepoPromise:     rp,
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
 					Client: &fakeSearcher{
@@ -312,9 +312,6 @@ func TestIndexedSearch(t *testing.T) {
 					DisableCache: true,
 				},
 			}
-
-			args.RepoPromise <- args.Repos
-			close(args.RepoPromise)
 
 			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
 			if err != nil {

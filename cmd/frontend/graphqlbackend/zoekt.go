@@ -108,7 +108,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.Repos,
+			Unindexed:        args.RepoPromise.Get(),
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -119,14 +119,14 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
 		}
 		return &indexedSearchRequest{
-			Unindexed: args.Repos,
+			Unindexed: args.RepoPromise.Get(),
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if indexParam == No {
 		return &indexedSearchRequest{
-			Unindexed: args.Repos,
+			Unindexed: args.RepoPromise.Get(),
 		}, nil
 	}
 
@@ -153,7 +153,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.Repos,
+			Unindexed:        args.RepoPromise.Get(),
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -161,7 +161,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.RepoPromise.Get(), filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -382,17 +382,12 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		for _, file := range resp.Files {
 			m[file.Repository] = nil
 		}
-
-		select {
-		case <-ctx.Done():
-			return nil, false, nil, ctx.Err()
-		case repos := <-args.RepoPromise:
-			for _, repo := range repos {
-				if _, ok := m[string(repo.Repo.Name)]; !ok {
-					continue
-				}
-				m[string(repo.Repo.Name)] = repo
+		repos := args.RepoPromise.Get()
+		for _, repo := range repos {
+			if _, ok := m[string(repo.Repo.Name)]; !ok {
+				continue
 			}
+			m[string(repo.Repo.Name)] = repo
 		}
 	}
 
