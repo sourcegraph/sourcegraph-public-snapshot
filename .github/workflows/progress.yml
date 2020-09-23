@@ -11,3 +11,5 @@ jobs:
     steps:
       - run: echo Hello world
         shell: bash
+      - run: git log
+        shell: bash
