@@ -215,6 +215,8 @@ type stepFailedErr struct {
 	Err error
 }
 
+func (e stepFailedErr) Cause() error { return e.Err }
+
 func (e stepFailedErr) Error() string {
 	var out strings.Builder
 

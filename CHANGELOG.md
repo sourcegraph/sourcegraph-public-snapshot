@@ -22,6 +22,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - Log files created by `src campaigns [preview|apply]` are deleted again after successful execution. This was a regression and is not new behaviour. If steps failed to execute or the `-keep-logs` flag is set the log files are not cleaned up.
+- `src campaign [preview|apply]` now correctly handle the interrupt signal (emitted in a terminal with Ctrl-C) and abort execution of campaign steps, cleaning up running Docker containers.
 
 ## 3.21.0
 

@@ -19,6 +19,10 @@ type TaskExecutionErr struct {
 	Repository string
 }
 
+func (e TaskExecutionErr) Cause() error {
+	return e.Err
+}
+
 func (e TaskExecutionErr) Error() string {
 	return fmt.Sprintf(
 		"execution in %s failed: %s (see %s for details)",
@@ -110,13 +114,25 @@ func (x *executor) LogFiles() []string {
 
 func (x *executor) Start(ctx context.Context) {
 	x.tasks.Range(func(k, v interface{}) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		default:
+		}
+
 		x.par.Acquire()
 
 		go func(task *Task) {
 			defer x.par.Release()
-			err := x.do(ctx, task)
-			if err != nil {
-				x.par.Error(err)
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				err := x.do(ctx, task)
+				if err != nil {
+					x.par.Error(err)
+				}
 			}
 		}(k.(*Task))
 

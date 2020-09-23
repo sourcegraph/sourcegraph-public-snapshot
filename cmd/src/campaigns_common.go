@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"runtime"
 	"strings"
@@ -24,6 +25,7 @@ import (
 var (
 	campaignsPendingColor = output.StylePending
 	campaignsSuccessColor = output.StyleSuccess
+	campaignsErrorColor   = output.StyleWarning
 	campaignsSuccessEmoji = output.EmojiSuccess
 )
 
@@ -272,7 +274,9 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		for _, ts := range unloggedCompleted {
 			var statusText string
 
-			if ts.ChangesetSpec == nil {
+			if ts.Err != nil {
+				statusText = fmt.Sprintf("%s%s%s", campaignsErrorColor, "Errored", output.StyleReset)
+			} else if ts.ChangesetSpec == nil {
 				statusText = "No changes"
 			} else {
 				fileDiffs, err := diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
@@ -375,6 +379,15 @@ func printExecutionError(out *output.Output, err error) {
 }
 
 func formatTaskExecutionErr(err campaigns.TaskExecutionErr) string {
+	if ee, ok := errors.Cause(err).(*exec.ExitError); ok && ee.String() == "signal: killed" {
+		return fmt.Sprintf(
+			"%s%s%s: killed by interrupt signal",
+			output.StyleBold,
+			err.Repository,
+			output.StyleReset,
+		)
+	}
+
 	return fmt.Sprintf(
 		"%s%s%s:\n%s\nLog: %s\n",
 		output.StyleBold,
@@ -431,4 +444,23 @@ func checkExecutable(cmd string, args ...string) error {
 		)
 	}
 	return nil
+}
+
+func contextCancelOnInterrupt(parent context.Context) (context.Context, func()) {
+	ctx, ctxCancel := context.WithCancel(parent)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	go func() {
+		select {
+		case <-c:
+			ctxCancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	return ctx, func() {
+		signal.Stop(c)
+		ctxCancel()
+	}
 }

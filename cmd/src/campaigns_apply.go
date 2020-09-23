@@ -56,7 +56,10 @@ Examples:
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		ctx := context.Background()
+
+		ctx, cancel := contextCancelOnInterrupt(context.Background())
+		defer cancel()
+
 		svc := campaigns.NewService(&campaigns.ServiceOpts{
 			AllowUnsupported: flags.allowUnsupported,
 			Client:           cfg.apiClient(flags.api, flagSet.Output()),
