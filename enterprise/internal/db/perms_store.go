@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -1369,14 +1371,20 @@ ORDER BY id ASC
 
 	for rows.Next() {
 		var acct extsvc.Account
+		var esAuthData, esData secret.StringValue
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&acct.AuthData, &acct.Data,
+			&esAuthData, &esData,
 			&acct.CreatedAt, &acct.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
+
+		authData := json.RawMessage(esAuthData)
+		data := json.RawMessage(esData)
+		acct.AuthData = &authData
+		acct.Data = &data
 		accounts = append(accounts, &acct)
 	}
 	if err = rows.Err(); err != nil {

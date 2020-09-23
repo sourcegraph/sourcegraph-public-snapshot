@@ -295,15 +295,6 @@ func TestAESGCMEncodedEncrytor_RotateEncryption(t *testing.T) {
 	}
 }
 
-// mustGenerateRandomAESKey generates a random AES key and panics for any error.
-func mustGenerateRandomAESKey() []byte {
-	key, err := generateRandomAESKey()
-	if err != nil {
-		panic(err)
-	}
-	return key
-}
-
 func TestAESGCMEncodedEncrytor_Decrypt_Plaintext(t *testing.T) {
 	tests := []struct {
 		name          string

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -51,5 +50,4 @@ func TestScannerInsert(t *testing.T) {
 	if gotEncryptedMessage != encryptedMessage {
 		t.Fatalf("expected %q, got %q", encryptedMessage, gotEncryptedMessage)
 	}
-	return
 }
