@@ -50,7 +50,6 @@ const (
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
 	routeAPIConsole     = "api-console"
-	routeSearchScope    = "scope"
 	routeUser           = "user"
 	routeUserSettings   = "user-settings"
 	routeUserRedirect   = "user-redirect"
@@ -123,7 +122,6 @@ func newRouter() *mux.Router {
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
-	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
 	r.PathPrefix("/users/{username}/settings").Methods("GET").Name(routeUserSettings)
 	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
 	r.PathPrefix("/user").Methods("GET").Name(routeUserRedirect)
@@ -213,7 +211,6 @@ func initRouter() {
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags")))
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare")))
 	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats")))
-	router.Get(routeSearchScope).Handler(handler(serveBrandedPageString("Search scope")))
 	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey")))
 	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey")))
 	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry")))

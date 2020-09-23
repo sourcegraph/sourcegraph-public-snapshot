@@ -27,7 +27,7 @@ describe('SearchScopes', () => {
         ).toMatchSnapshot())
 
     test('with scopes', () => {
-        const settings: Settings = { 'search.scopes': [{ name: 'n', value: 'v', description: 'd', id: 'i' }] }
+        const settings: Settings = { 'search.scopes': [{ name: 'n', value: 'v' }] }
         expect(
             renderer
                 .create(

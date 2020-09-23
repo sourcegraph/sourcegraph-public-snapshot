@@ -244,10 +244,6 @@ const SettingsSchemaJSON = `{
       "additionalProperties": false,
       "required": ["name", "value"],
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
-        },
         "name": {
           "type": "string",
           "description": "The human-readable name for this search scope"
@@ -255,10 +251,6 @@ const SettingsSchemaJSON = `{
         "value": {
           "type": "string",
           "description": "The query string of this search scope"
-        },
-        "description": {
-          "type": "string",
-          "description": "A description for this search scope"
         }
       }
     },

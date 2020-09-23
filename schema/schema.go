@@ -1025,12 +1025,6 @@ type SearchSavedQueries struct {
 	ShowOnHomepage bool `json:"showOnHomepage,omitempty"`
 }
 type SearchScope struct {
-	// Description description: A description for this search scope
-	Description string `json:"description,omitempty"`
-	// Id description: A unique identifier for the search scope.
-	//
-	// If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
-	Id string `json:"id,omitempty"`
 	// Name description: The human-readable name for this search scope
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
