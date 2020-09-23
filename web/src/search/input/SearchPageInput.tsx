@@ -269,7 +269,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                 onSubmit={onSubmit}
                                 autoFocus={props.autoFocus !== false}
                                 tour={showOnboardingTour ? tour : undefined}
-                                tourAdvanceStepCallbacks={stepCallbacks}
                             />
                             <SearchButton />
                         </div>

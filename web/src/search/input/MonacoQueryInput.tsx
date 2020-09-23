@@ -17,7 +17,12 @@ import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
 import Shepherd from 'shepherd.js'
-import { CallbackToAdvanceTourStep } from './SearchOnboardingTour'
+import {
+    createAddCodeStepTooltip,
+    createAddCodeStepWithLanguageExampleTooltip,
+    isCurrentTourStep,
+    isValidLangQuery,
+} from './SearchOnboardingTour'
 import { SearchPatternType } from '../../graphql-operations'
 
 export interface MonacoQueryInputProps
@@ -37,11 +42,6 @@ export interface MonacoQueryInputProps
      * The current onboarding tour instance
      */
     tour?: Shepherd.Tour
-    /**
-     * A list of callbacks to advance steps in the search onboarding tour.
-     * These callbacks are called when the query in this query input is updated.
-     */
-    tourAdvanceStepCallbacks?: CallbackToAdvanceTourStep[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -346,8 +346,70 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         )
 
         const tour = this.props.tour
+
+        const advanceLangStep = (): void => {
+            if (
+                tour &&
+                this.props.queryState.query !== 'lang:' &&
+                isValidLangQuery(this.props.queryState.query.trim()) &&
+                tour.getById('filter-lang').isOpen()
+            ) {
+                tour.show('add-query-term')
+                tour.getById('add-query-term').updateStepOptions({
+                    text: createAddCodeStepWithLanguageExampleTooltip(
+                        tour,
+                        this.props.queryState.query.trim() ?? '',
+                        (newQuery: string, patternType: SearchPatternType) => {
+                            if (patternType) {
+                                this.props.setPatternType(patternType)
+                            }
+                            this.props.onChange({
+                                query: newQuery,
+                                cursorPosition: newQuery.length,
+                                fromUserInput: true,
+                            })
+                        }
+                    ),
+                })
+            }
+        }
+
+        const advanceRepoStep = (): void => {
+            if (tour?.getById('filter-repository').isOpen() && this.props.queryState.query !== 'repo:') {
+                tour?.show('add-query-term')
+                tour?.getById('add-query-term').updateStepOptions({ text: createAddCodeStepTooltip(tour) })
+            }
+        }
+
+        const runAdvanceLangOrRepoStep = (): void => {
+            if (tour) {
+                if (
+                    this.props.queryState.query !== 'lang:' &&
+                    isValidLangQuery(this.props.queryState.query.trim()) &&
+                    tour.getById('filter-lang').isOpen()
+                ) {
+                    advanceLangStep()
+                } else if (tour.getById('filter-repository').isOpen() && this.props.queryState.query !== 'repo:') {
+                    advanceRepoStep()
+                }
+            }
+        }
+
+        this.subscriptions.add(
+            toUnsubscribable(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                (editor as any)._commandService.addCommand({
+                    id: 'completionItemSelected',
+                    handler: () => {
+                        runAdvanceLangOrRepoStep()
+                    },
+                })
+            )
+        )
+
         if (tour) {
-            // Handle advancing the search tour.
+            // Handle advancing the search tour on the filter repo and filter lang steps, for events
+            // where the user does NOT select a suggestion, and instead types a value.
             this.subscriptions.add(
                 this.componentUpdates
                     .pipe(
@@ -358,55 +420,47 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                     .subscribe(queryState => {
                         // Trigger the suggestions popup for `repo:` and `lang:` fields
                         if (
-                            (isEqual(tour.getCurrentStep(), tour.getById('filter-repository')) &&
-                                queryState.query === 'repo:') ||
-                            (isEqual(tour.getCurrentStep(), tour.getById('filter-lang')) &&
-                                queryState.query === 'lang:')
+                            (isCurrentTourStep('filter-repository', tour) && queryState.query === 'repo:') ||
+                            (isCurrentTourStep('filter-lang', tour) && queryState.query === 'lang:')
                         ) {
                             this.suggestionTriggers.next()
                         }
 
-                        if (this.props.tourAdvanceStepCallbacks) {
-                            for (const advanceStepCallback of this.props.tourAdvanceStepCallbacks) {
-                                if (
-                                    isEqual(tour.getCurrentStep(), tour.getById(advanceStepCallback.stepToAdvance)) &&
-                                    advanceStepCallback.queryConditions &&
-                                    advanceStepCallback.queryConditions(queryState.query)
-                                ) {
-                                    if (advanceStepCallback.stepToAdvance === 'filter-lang') {
-                                        // In step 2, users are asked to type to filter the language suggestions list. We only want
-                                        // to advance when they are done with the suggestions dropdown, so ensure it's closed or there
-                                        // is whitespace at the end of the query, indicating the user is ready to type another term
-                                        // before advancing.
-                                        if (!this.suggestionsVisible || queryState.query.endsWith(' ')) {
-                                            advanceStepCallback.handler(
-                                                tour,
-                                                queryState.query,
-                                                (newQuery: string, patternType?: SearchPatternType) => {
-                                                    if (patternType) {
-                                                        this.props.setPatternType(patternType)
-                                                    }
-                                                    this.props.onChange({
-                                                        query: newQuery,
-                                                        cursorPosition: newQuery.length,
-                                                        fromUserInput: true,
-                                                    })
-                                                }
-                                            )
-                                        }
-                                        break
-                                    } else {
-                                        advanceStepCallback.handler(tour, queryState.query, (newQuery: string) => {
-                                            this.props.onChange({
-                                                query: newQuery,
-                                                cursorPosition: newQuery.length,
-                                                fromUserInput: true,
-                                            })
-                                        })
-                                    }
-                                    break
-                                }
-                            }
+                        if (
+                            isCurrentTourStep('filter-repository', tour) &&
+                            tour.getById('filter-repository').isOpen() &&
+                            queryState.query !== 'repo:'
+                        ) {
+                            advanceRepoStep()
+                        } else if (
+                            isCurrentTourStep('filter-lang', tour) &&
+                            tour.getById('filter-lang').isOpen() &&
+                            queryState.query !== 'lang:' &&
+                            isValidLangQuery(queryState.query.trim())
+                        ) {
+                            advanceLangStep()
+                        }
+                    })
+            )
+
+            // Handle advancing the search tour when on the add query term step.
+            // We subscribe to componentUpdates and filter separately so we don't
+            // get a race condition between the tour advancing steps, and the advance function
+            // getting called.
+            this.subscriptions.add(
+                this.componentUpdates
+                    .pipe(
+                        filter(({ tour }) => isCurrentTourStep('add-query-term', tour) || false),
+                        debounceTime(500),
+                        map(({ queryState }) => queryState)
+                    )
+                    .subscribe(queryState => {
+                        if (
+                            tour.getById('add-query-term').isOpen() &&
+                            queryState.query !== 'repo:' &&
+                            queryState.query !== 'lang:'
+                        ) {
+                            tour.show('submit-search')
                         }
                     })
             )
