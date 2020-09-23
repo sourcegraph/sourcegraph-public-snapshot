@@ -23,9 +23,7 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
     return event
 }
 
-const { add } = storiesOf('web/Global styles', module).addDecorator(story => (
-    <WebStory>{() => <div className="p-3">{story()}</div>}</WebStory>
-))
+const { add } = storiesOf('web/Global styles', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 
 const TextStory: React.FunctionComponent = () => (
     <>
