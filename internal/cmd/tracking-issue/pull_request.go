@@ -54,7 +54,7 @@ func (pr *PullRequest) Markdown() string {
 		state = "x"
 	}
 
-	return fmt.Sprintf("- [%s] %s [#%d](%s) %s\n",
+	return fmt.Sprintf("- [%s] %s ([#%d](%s)) %s\n",
 		state,
 		pr.title(),
 		pr.Number,
