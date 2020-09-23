@@ -113,41 +113,35 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     }
     // Campaign was not found
     if (campaign === null) {
-        return (
-            <div className="container web-content">
-                <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
-            </div>
-        )
+        return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
 
     return (
         <>
             <PageTitle title={campaign.name} />
-            <div className="container web-content">
-                <CampaignHeader
-                    name={campaign.name}
-                    namespace={campaign.namespace}
-                    actionSection={
-                        <CampaignDetailsActionSection
-                            campaignID={campaign.id}
-                            campaignClosed={!!campaign.closedAt}
-                            deleteCampaign={deleteCampaign}
-                            campaignNamespaceURL={campaign.namespace.url}
-                            history={history}
-                        />
-                    }
-                    className="test-campaign-details-page"
-                />
-                <CampaignInfoByline
-                    createdAt={campaign.createdAt}
-                    initialApplier={campaign.initialApplier}
-                    lastAppliedAt={campaign.lastAppliedAt}
-                    lastApplier={campaign.lastApplier}
-                    className="mb-3"
-                />
-                <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
-                <CampaignDescription history={history} description={campaign.description} />
-            </div>
+            <CampaignHeader
+                name={campaign.name}
+                namespace={campaign.namespace}
+                actionSection={
+                    <CampaignDetailsActionSection
+                        campaignID={campaign.id}
+                        campaignClosed={!!campaign.closedAt}
+                        deleteCampaign={deleteCampaign}
+                        campaignNamespaceURL={campaign.namespace.url}
+                        history={history}
+                    />
+                }
+                className="test-campaign-details-page"
+            />
+            <CampaignInfoByline
+                createdAt={campaign.createdAt}
+                initialApplier={campaign.initialApplier}
+                lastAppliedAt={campaign.lastAppliedAt}
+                lastApplier={campaign.lastApplier}
+                className="mb-3"
+            />
+            <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
+            <CampaignDescription history={history} description={campaign.description} />
             <CampaignTabs
                 campaign={campaign}
                 extensionsController={extensionsController}
