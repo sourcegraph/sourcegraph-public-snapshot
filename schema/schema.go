@@ -1233,6 +1233,10 @@ type SiteConfiguration struct {
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
+	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins
+	UserReposMaxPerSite int `json:"userRepos.maxPerSite,omitempty"`
+	// UserReposMaxPerUser description: The per user maximum number of repos that can be added by non site admins
+	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 }
 
 // Step description: A command to run (as part of a sequence) in a repository branch to produce the campaign's changes.
