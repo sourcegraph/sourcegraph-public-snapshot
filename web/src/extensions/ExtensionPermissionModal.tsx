@@ -12,10 +12,12 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
     const extensionName = extensionID.split('/')[1]
 
     return (
-        <ModalContainer
-            className="justify-content-center"
-            component={
-                <div className="extension-permission-modal p-4">
+        <ModalContainer className="justify-content-center" onClose={denyPermission} hideCloseIcon={true}>
+            {bodyReference => (
+                <div
+                    className="extension-permission-modal p-4"
+                    ref={bodyReference as React.MutableRefObject<HTMLDivElement>}
+                >
                     <h3>Add {extensionName || extensionID} Sourcegraph extension?</h3>
                     <p className="mb-0 mt-3">It will be able to:</p>
                     <p className="m-0">- read repositories and files you view using Sourcegraph</p>
@@ -29,7 +31,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
                         </button>
                     </div>
                 </div>
-            }
-        />
+            )}
+        </ModalContainer>
     )
 }
