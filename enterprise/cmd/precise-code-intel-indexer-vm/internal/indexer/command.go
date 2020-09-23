@@ -23,7 +23,7 @@ func runCommand(ctx context.Context, command ...string) error {
 	case "docker":
 	case "ignite":
 	default:
-		fmt.Errorf("illegal command: %s", strings.Join(command, " "))
+		return fmt.Errorf("illegal command: %s", strings.Join(command, " "))
 	}
 
 	cmd, stdout, stderr, err := makeCommand(ctx, command...)
