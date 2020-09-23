@@ -27,7 +27,6 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
@@ -139,9 +138,6 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     ))}
                 </div>
                 <div className="repogroup-page__column col-xs-12 col-lg-5">
-                    <div className="order-1-lg order-2-xs">
-                        <PrivateCodeCta />
-                    </div>
                     <div className="order-2-lg order-1-xs">
                         <div className="repogroup-page__repo-card card">
                             <h2 className="web-content__title">
