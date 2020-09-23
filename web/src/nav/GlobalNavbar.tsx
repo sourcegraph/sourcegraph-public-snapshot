@@ -98,11 +98,14 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     hideNavLinks,
     variant,
     isLightTheme,
-    branding = window.context?.branding,
+    branding,
     location,
     history,
     ...props
 }) => {
+    // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
+    branding = branding ?? window.context?.branding
+
     const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
 
     useEffect(() => {
