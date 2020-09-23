@@ -1371,22 +1371,24 @@ ORDER BY id ASC
 
 	for rows.Next() {
 		var acct extsvc.Account
-		var esAuthData, esData secret.NullStringValue
+		var esAuthData, esData secret.StringValue
+		nullAuthData := secret.NullStringValue{S: &esAuthData}
+		nullData := secret.NullStringValue{S: &esData}
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&esAuthData, &esData,
+			&nullAuthData, &nullData,
 			&acct.CreatedAt, &acct.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 
-		if esAuthData.S != nil {
-			authData := json.RawMessage(*esAuthData.S)
+		if nullAuthData.Valid {
+			authData := json.RawMessage(*nullAuthData.S)
 			acct.AuthData = &authData
 		}
-		if esData.S != nil {
-			data := json.RawMessage(*esData.S)
+		if nullData.Valid {
+			data := json.RawMessage(*nullData.S)
 			acct.Data = &data
 		}
 		accounts = append(accounts, &acct)

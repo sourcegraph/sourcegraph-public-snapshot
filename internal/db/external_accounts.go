@@ -183,17 +183,19 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var esAuthData, esData secret.StringValue
+	var nullAuthData, nullData secret.NullStringValue
 	if data.AuthData != nil {
-		esAuthData = secret.StringValue(*data.AuthData)
+		esAuthData := secret.StringValue(*data.AuthData)
+		nullAuthData.S = &esAuthData
 	}
 	if data.Data != nil {
-		esData = secret.StringValue(*data.Data)
+		esData := secret.StringValue(*data.Data)
+		nullData.S = &esData
 	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, &esAuthData, &esData)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, nullAuthData, nullData)
 
 	return err
 }
@@ -322,16 +324,23 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	defer rows.Close()
 	for rows.Next() {
 		var acct extsvc.Account
-		var esAuthData, esData secret.NullStringValue
-		if err := rows.Scan(&acct.ID, &acct.UserID, &acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID, &esAuthData, &esData, &acct.CreatedAt, &acct.UpdatedAt); err != nil {
+		var esAuthData, esData secret.StringValue
+		nullAuthData := secret.NullStringValue{S: &esAuthData}
+		nullData := secret.NullStringValue{S: &esData}
+		if err := rows.Scan(
+			&acct.ID, &acct.UserID,
+			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+			&nullAuthData, &nullData,
+			&acct.CreatedAt, &acct.UpdatedAt); err != nil {
 			return nil, err
 		}
-		if esAuthData.S != nil {
-			authData := json.RawMessage(*esAuthData.S)
+
+		if nullAuthData.Valid {
+			authData := json.RawMessage(*nullAuthData.S)
 			acct.AuthData = &authData
 		}
-		if esData.S != nil {
-			data := json.RawMessage(*esData.S)
+		if nullData.Valid {
+			data := json.RawMessage(*nullData.S)
 			acct.Data = &data
 		}
 		results = append(results, &acct)

@@ -40,37 +40,28 @@ func (v *StringValue) String() string {
 	return string(*v)
 }
 
-//// NullString represents a string that may be null. NullString implements the
-//// sql.Scanner interface so it can be used as a scan destination, similar to
-//// sql.NullString. When the scanned value is null, String is set to the zero value.
-//type NullString struct{ S *string }
-//
-//// Scan implements the Scanner interface.
-//func (nt *NullString) Scan(value interface{}) error {
-//	switch v := value.(type) {
-//	case []byte:
-//		*nt.S = string(v)
-//	case string:
-//		*nt.S = v
-//	}
-//	return nil
-//}
-//
-//// Value implements the driver Valuer interface.
-//func (nt NullString) Value() (driver.Value, error) {
-//	if nt.S == nil {
-//		return nil, nil
-//	}
-//	return *nt.S, nil
-//}
-// ---------
+var (
+	_ driver.Valuer = NullStringValue{}
+	_ sql.Scanner   = (*NullStringValue)(nil)
+)
 
-type NullStringValue struct{ S *StringValue }
+type NullStringValue struct {
+	S     *StringValue
+	Valid bool // Valid is true if StringValue is not NULL
+}
 
-func (s *NullStringValue) Scan(value interface{}) error {
+func (nv *NullStringValue) Scan(value interface{}) error {
 	switch v := value.(type) {
 	case string:
-		*s.S = StringValue(v)
+		*nv.S = StringValue(v)
+		nv.Valid = true
 	}
 	return nil
+}
+
+func (nv NullStringValue) Value() (driver.Value, error) {
+	if nv.S == nil {
+		return nil, nil
+	}
+	return *nv.S, nil
 }
