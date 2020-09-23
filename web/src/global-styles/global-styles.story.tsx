@@ -500,11 +500,11 @@ add(
                                                     breakpoint === 'xs' ? '' : '-' + breakpoint
                                                 }-${size} d-flex`}
                                                 key={number}
-                                                style={{ background: 'var(--oc-teal-2)' }}
+                                                style={{ background: 'var(--oc-red-2)' }}
                                             >
                                                 <span
                                                     className="p-2 flex-1 d-flex align-items-center justify-content-center"
-                                                    style={{ background: 'var(--oc-teal-3)' }}
+                                                    style={{ background: 'var(--oc-red-3)' }}
                                                 >
                                                     {number}
                                                 </span>
