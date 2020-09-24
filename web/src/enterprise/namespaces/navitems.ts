@@ -1,6 +1,12 @@
-import { NavItemWithIconDescriptor } from '../../util/contributions'
+import { NamespaceAreaNavItem } from '../../namespaces/NamespaceArea'
+import { CampaignsIcon } from '../campaigns/icons'
 
-export const enterpriseNamespaceAreaHeaderNavItems: readonly Pick<
-    NavItemWithIconDescriptor,
-    Exclude<keyof NavItemWithIconDescriptor, 'condition'>
->[] = []
+export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavItem[] = [
+    {
+        to: '/campaigns',
+        label: 'Campaigns',
+        icon: CampaignsIcon,
+        condition: ({ isSourcegraphDotCom }: { isSourcegraphDotCom: boolean }): boolean =>
+            !isSourcegraphDotCom && window.context.campaignsEnabled,
+    },
+]
