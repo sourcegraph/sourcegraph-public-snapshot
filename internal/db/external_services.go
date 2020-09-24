@@ -361,7 +361,7 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		es.Kind, es.DisplayName, secret.StringValue(es.Config), es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
 	).Scan(&es.ID)
 }
 
@@ -396,10 +396,6 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 		}); err != nil {
 			return err
 		}
-
-		esConfig := secret.StringValue(*update.Config)
-		config := esConfig.String()
-		update.Config = &config
 	}
 
 	execUpdate := func(ctx context.Context, tx *sql.Tx, update *sqlf.Query) error {
@@ -424,7 +420,7 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 			}
 		}
 		if update.Config != nil {
-			if err := execUpdate(ctx, tx, sqlf.Sprintf("config=%s", update.Config)); err != nil {
+			if err := execUpdate(ctx, tx, sqlf.Sprintf("config=%s", secret.StringValue{S: update.Config})); err != nil {
 				return err
 			}
 		}
@@ -542,16 +538,14 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 	for rows.Next() {
 		var (
 			h              types.ExternalService
-			esConfig       secret.StringValue
 			deletedAt      sql.NullTime
 			lastSyncAt     sql.NullTime
 			nextSyncAt     sql.NullTime
 			namepaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &esConfig, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &secret.StringValue{S: &h.Config}, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
 			return nil, err
 		}
-		h.Config = esConfig.String()
 
 		if deletedAt.Valid {
 			h.DeletedAt = &deletedAt.Time
