@@ -46,6 +46,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
 	}
 
+	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
+		s.Agents["queue"] = "test"
+	})
+
 	if c.profilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
