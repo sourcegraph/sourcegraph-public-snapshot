@@ -247,6 +247,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             options={options}
                             border={false}
                             keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            className="test-query-input"
                         />
                     </div>
                     <Toggles

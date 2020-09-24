@@ -59,7 +59,7 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        splitSearchModes = true,
+        splitSearchModes = false,
         copyQueryButton = false,
         searchStreaming = false,
         showRepogroupHomepage = false,
