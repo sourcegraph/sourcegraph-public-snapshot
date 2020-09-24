@@ -64,12 +64,8 @@ export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, hideCl
     // Close modal when user presses `esc` key
     const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
         event => {
-            switch (event.key) {
-                case Key.Escape: {
-                    if (onClose) {
-                        onClose()
-                    }
-                }
+            if (event.key === Key.Escape) {
+                onClose?.()
             }
         },
         [onClose]

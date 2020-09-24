@@ -29,7 +29,7 @@
     @include media-breakpoint-up(md) {
         &__wrapper {
             display: grid;
-            grid-template-columns: auto 120px 120px;
+            grid-template-columns: auto 7.5rem 7.5rem;
             grid-template-rows: none;
         }
 

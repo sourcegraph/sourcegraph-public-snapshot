@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useState, useCallback, useMemo, memo } from 'react'
 import WarningIcon from 'mdi-react/WarningIcon'
 import classNames from 'classnames'
 import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
@@ -7,10 +7,10 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../shared/src/util/errors'
-import { isExtensionAdded } from './extension/extension'
+import { isExtensionAdded, splitExtensionID } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
-import { ExtensionToggle } from './ExtensionToggle'
+import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
 import { Link } from 'react-router-dom'
 import { DefaultIconEnabled, DefaultIcon } from './icons'
@@ -39,7 +39,7 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
 const FEEDBACK_DELAY = 5000
 
 /** Displays an extension as a card. */
-export const ExtensionCard = React.memo<Props>(function ExtensionCard({
+export const ExtensionCard = memo<Props>(function ExtensionCard({
     node: extension,
     settingsCascade,
     platformContext,
@@ -67,17 +67,19 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
         return url
     }, [manifest?.icon, manifest?.iconDark, isLightTheme])
 
-    const [publisher, name] = React.useMemo(() => {
-        const id = extension.registryExtension ? extension.registryExtension.extensionIDWithoutRegistry : extension.id
-
-        return id.split('/')
-    }, [extension])
+    const { name, publisher } = useMemo(
+        () =>
+            splitExtensionID(
+                extension.registryExtension ? extension.registryExtension.extensionIDWithoutRegistry : extension.id
+            ),
+        [extension]
+    )
 
     /**
      * When extension enablement state changes, display visual feedback for $delay seconds.
      * Clear the timeout when the component unmounts or the extension is toggled again.
      */
-    const [change, setChange] = React.useState<'enabled' | 'disabled' | null>(null)
+    const [change, setChange] = useState<'enabled' | 'disabled' | null>(null)
     const feedbackManager = useTimeoutManager()
 
     // Add class that triggers box shadow animation .3s after enabled, and remove it 1s later
@@ -85,7 +87,10 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
     const startAnimationManager = useTimeoutManager()
     const endAnimationManager = useTimeoutManager()
 
-    const onToggleChange = React.useCallback(
+    const [optimisticFailure, setOptimisticFailure] = useState<OptimisticUpdateFailure<boolean> | null>(null)
+    const optimisticFailureManager = useTimeoutManager()
+
+    const onToggleChange = useCallback(
         (enabled: boolean): void => {
             if (enabled) {
                 setChange('enabled')
@@ -102,11 +107,34 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                 startAnimationManager.cancelTimeout()
                 endAnimationManager.cancelTimeout()
             }
+            // Common: clear possible error, queue timeout to clear change feedback
+            setOptimisticFailure(null)
+            optimisticFailureManager.cancelTimeout()
             feedbackManager.setTimeout(() => {
                 setChange(null)
             }, FEEDBACK_DELAY)
         },
-        [feedbackManager, startAnimationManager, endAnimationManager]
+        [feedbackManager, startAnimationManager, endAnimationManager, optimisticFailureManager]
+    )
+
+    /**
+     * When an optimistic update results in an error, we want to show different
+     * feedback and cancel current feedback/animations
+     */
+    const onToggleError = useCallback(
+        (optimisticUpdateFailure: OptimisticUpdateFailure<boolean>) => {
+            // Cancel all timeouts
+            startAnimationManager.cancelTimeout()
+            endAnimationManager.cancelTimeout()
+            feedbackManager.cancelTimeout()
+            // Revert state
+            setChange(null)
+            setShowShadow(false)
+            // Set error state and timeout to clear
+            setOptimisticFailure(optimisticUpdateFailure)
+            optimisticFailureManager.setTimeout(() => setOptimisticFailure(null), FEEDBACK_DELAY)
+        },
+        [startAnimationManager, endAnimationManager, feedbackManager, optimisticFailureManager]
     )
 
     return (
@@ -123,7 +151,6 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                         'extension-card__shadow--show': showShadow,
                     })}
                 />
-
                 <div
                     className="card-body extension-card__body d-flex position-relative"
                     // Prevent toggle clicks from propagating to the stretched-link (and
@@ -196,6 +223,7 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                                 platformContext={platformContext}
                                 className="extension-card__toggle flex-shrink-0 align-self-start"
                                 onToggleChange={onToggleChange}
+                                onToggleError={onToggleError}
                             />
                         ) : (
                             <ExtensionConfigurationState
@@ -211,6 +239,13 @@ export const ExtensionCard = React.memo<Props>(function ExtensionCard({
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
                         <span className="font-weight-semibold">{name}</span> is off
+                    </div>
+                )}
+                {/* Visual feedback: alert when optimistic update fails */}
+                {optimisticFailure && (
+                    <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
+                        <span className="font-weight-semibold">Network Error:</span> {name} is{' '}
+                        {optimisticFailure.previousValue ? 'enabled' : 'disabled'} again
                     </div>
                 )}
             </div>

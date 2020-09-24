@@ -1,4 +1,6 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
+import { Observable, of } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { Toggle } from '../../../shared/src/components/Toggle'
 import { ToggleBig } from '../../../shared/src/components/ToggleBig'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -7,6 +9,7 @@ import {
     SettingsCascadeOrError,
     ConfiguredSubjectOrError,
 } from '../../../shared/src/settings/settings'
+import { useEventObservable } from '../../../shared/src/util/useObservable'
 import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionPermissionModal } from './ExtensionPermissionModal'
@@ -16,12 +19,54 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     extensionID: string
     enabled: boolean
     className?: string
-    /** Additional logic to run on toggle */
-    onToggleChange?: (enabled: boolean) => void
     /** Render big toggle */
     big?: boolean
     userCannotToggle?: boolean
     onHover?: (value: boolean) => void
+    /** Additional logic to run on toggle */
+    onToggleChange?: (enabled: boolean) => void
+    /** Additional logic to run on update error */
+    onToggleError?: (revertedValue: OptimisticUpdateFailure<boolean>) => void
+}
+
+export interface OptimisticUpdateFailure<T> {
+    previousValue: T
+    optimisticValue: T
+    error: Error
+}
+
+/**
+ * How it works:
+ * - Wraps the optimistic update request promise with another
+ * promise that only resolves if the inner promise is rejected.
+ * The resulting observable will then only emit on error.
+ * - Cancels subscriptions to old promises by way of `switchMap`; we
+ * only care about the latest optimistic update
+ *
+ * TODO: Make it work with observables as well?
+ *
+ * @param onError Function called with the previous value and the optimistic value, in case you
+ * want to display the optimistic value in an error message.
+ */
+function createOptimisticRollbackPipeline<T>(
+    onError: (optimisticUpdateFailure: OptimisticUpdateFailure<T>) => void
+): (
+    optimisticUpdates: Observable<{ previousValue: T; optimisticValue: T; promise: Promise<void> }>
+) => Observable<void> {
+    return function optimisticRollbackPipeline(optimisticUpdates) {
+        return optimisticUpdates.pipe(
+            switchMap(
+                ({ promise, previousValue, optimisticValue }) =>
+                    new Promise<OptimisticUpdateFailure<T>>(resolve => {
+                        promise.catch((error: Error) => resolve({ error, previousValue, optimisticValue }))
+                    })
+            ),
+            map(optimisticUpdateFailure => {
+                onError(optimisticUpdateFailure)
+            }),
+            catchError<void, Observable<void>>(() => of())
+        )
+    }
 }
 
 export const ExtensionToggle: React.FunctionComponent<Props> = ({
@@ -30,13 +75,27 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     extensionID,
     enabled,
     className,
-    onToggleChange,
     big,
     userCannotToggle,
     onHover,
+    onToggleChange,
+    onToggleError,
 }) => {
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [askingForPermission, setAskingForPermission] = useState<boolean>(false)
+
+    const optimisticRollbackPipeline = useCallback(
+        (optimisticUpdateFailure: OptimisticUpdateFailure<boolean>) => {
+            setOptimisticEnabled(optimisticUpdateFailure.previousValue)
+            onToggleError?.(optimisticUpdateFailure)
+        },
+        [onToggleError, setOptimisticEnabled]
+    )
+
+    const [nextOptimisticUpdate] = useEventObservable<
+        { previousValue: boolean; optimisticValue: boolean; promise: Promise<void> },
+        void
+    >(useMemo(() => createOptimisticRollbackPipeline(optimisticRollbackPipeline), [optimisticRollbackPipeline]))
 
     const updateEnablement = useCallback(
         (enabled: boolean) => {
@@ -53,13 +112,16 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
             }
             setOptimisticEnabled(enabled)
 
-            // eslint-disable-next-line no-void
-            void platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
-                path: ['extensions', extensionID],
-                value: enabled,
+            nextOptimisticUpdate({
+                previousValue: !enabled,
+                optimisticValue: enabled,
+                promise: platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
+                    path: ['extensions', extensionID],
+                    value: enabled,
+                }),
             })
         },
-        [platformContext, extensionID, onToggleChange, settingsCascade]
+        [platformContext, extensionID, onToggleChange, nextOptimisticUpdate, settingsCascade]
     )
 
     const onToggle = useCallback(

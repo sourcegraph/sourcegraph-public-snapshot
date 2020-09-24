@@ -43,6 +43,30 @@ export function toExtensionID(publisher: string | RegistryPublisher, name: strin
     return `${typeof publisher === 'string' ? publisher : extensionIDPrefix(publisher)}/${name}`
 }
 
+/**
+ *  Mirrors `registry.SplitExtensionID` from `frontend`:
+ *
+ * `splitExtensionID` splits an extension ID of the form [host/]publisher/name (where [host/] is the
+ * optional registry prefix), such as "alice/myextension" or
+ * "sourcegraph.example.com/bob/myextension". It returns the components in an object.
+ *
+ * @param extensionID
+ */
+export function splitExtensionID(extensionID: string): { publisher: string; name: string; host?: string } {
+    const parts = extensionID.split('/')
+    if (parts.length === 3) {
+        return {
+            host: parts[0],
+            publisher: parts[1],
+            name: parts[2],
+        }
+    }
+    return {
+        publisher: parts[0] ?? '',
+        name: parts[1] ?? '',
+    }
+}
+
 /** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
 export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
     return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
