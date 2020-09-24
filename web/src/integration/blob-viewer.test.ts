@@ -89,9 +89,9 @@ describe('Blob viewer', () => {
         const getHoverContents = async (): Promise<string[]> => {
             // Search for any child of e2e-tooltip-content: as e2e-tooltip-content has display: contents,
             // it will never be detected as visible by waitForSelector(), but its children will.
-            await driver.page.waitForSelector('.e2e-tooltip-content *', { visible: true })
+            await driver.page.waitForSelector('.test-tooltip-content *', { visible: true })
             return driver.page.evaluate(() =>
-                [...document.querySelectorAll('.e2e-tooltip-content')].map(content => content.textContent ?? '')
+                [...document.querySelectorAll('.test-tooltip-content')].map(content => content.textContent ?? '')
             )
         }
 
@@ -138,7 +138,7 @@ describe('Blob viewer', () => {
                                     html:
                                         // Note: whitespace in this string is significant.
                                         '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; Log to console\n' +
-                                        '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="e2e-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)\n' +
+                                        '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)\n' +
                                         '</span></div></td></tr></tbody></table>',
                                 },
                             },
@@ -188,7 +188,9 @@ describe('Blob viewer', () => {
 
                         exports.activate = activate
                     }
-                    response.type('application/javascript; charset=utf-8').send(extensionBundle.toString())
+                    // Create an immediately-invoked function expression for the extensionBundle function
+                    const extensionBundleString = `(${extensionBundle.toString()})()`
+                    response.type('application/javascript; charset=utf-8').send(extensionBundleString);
                 })
         })
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -201,11 +203,11 @@ describe('Blob viewer', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Click on "log" in "console.log()" in line 2
-            await driver.page.waitForSelector('.e2e-log-token', { visible: true })
-            await driver.page.click('.e2e-log-token')
+            await driver.page.waitForSelector('.test-log-token', { visible: true })
+            await driver.page.click('.test-log-token')
 
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
-            assert.deepStrictEqual(await getHoverContents(), ['Test hover content'])
+            assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
             await percySnapshot(driver.page, this.test!.fullTitle())
         })
 
