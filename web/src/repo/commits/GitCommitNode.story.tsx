@@ -5,6 +5,7 @@ import { GitCommitNode } from './GitCommitNode'
 import { subDays } from 'date-fns'
 import { GitCommitFields } from '../../graphql-operations'
 import { WebStory } from '../../components/WebStory'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
@@ -68,6 +69,7 @@ add('Full customizable', () => (
             <div className="card">
                 <GitCommitNode
                     node={gitCommitNode}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     compact={boolean('compact', false)}
                     expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
                     showSHAAndParentsRow={boolean('showSHAAndParentsRow', false)}
@@ -83,6 +85,7 @@ add('Compact', () => (
             <div className="card">
                 <GitCommitNode
                     node={gitCommitNode}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     compact={true}
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}
@@ -98,6 +101,7 @@ add('Commit message expanded', () => (
             <div className="card">
                 <GitCommitNode
                     node={gitCommitNode}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     compact={false}
                     expandCommitMessageBody={true}
                     showSHAAndParentsRow={false}
@@ -113,6 +117,7 @@ add('SHA and parent shown', () => (
             <div className="card">
                 <GitCommitNode
                     node={gitCommitNode}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     compact={false}
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={true}
@@ -128,6 +133,7 @@ add('Expand commit message btn hidden', () => (
             <div className="card">
                 <GitCommitNode
                     node={gitCommitNode}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     compact={false}
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}

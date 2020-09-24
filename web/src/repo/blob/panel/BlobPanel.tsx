@@ -21,6 +21,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -31,7 +32,8 @@ interface Props
         PlatformContextProps,
         ExtensionsControllerProps,
         ThemeProps,
-        ActivationProps {
+        ActivationProps,
+        TelemetryProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -176,6 +178,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                     filePath={subject.filePath}
                                     history={this.props.history}
                                     location={this.props.location}
+                                    telemetryService={this.props.telemetryService}
                                 />
                             ),
                         }))

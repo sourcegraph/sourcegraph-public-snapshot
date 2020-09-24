@@ -237,6 +237,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     node={this.state.commitOrError}
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}
+                                    telemetryService={this.props.telemetryService}
                                 />
                             </div>
                         </div>

@@ -1,17 +1,17 @@
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import React, { useState, useCallback } from 'react'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Tooltip } from '../../components/tooltip/Tooltip'
-import { eventLogger } from '../../tracking/eventLogger'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 import { GitCommitFields } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import classNames from 'classnames'
 
-export interface GitCommitNodeProps {
+export interface GitCommitNodeProps extends TelemetryProps {
     node: GitCommitFields
 
     /** An optional additional CSS class name to apply to this element. */
@@ -42,17 +42,18 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     showSHAAndParentsRow,
+    telemetryService,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
-        eventLogger.log('CommitBodyToggled')
+        telemetryService.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
-    }, [showCommitMessageBody])
+    }, [showCommitMessageBody, telemetryService])
 
     const copyToClipboard = useCallback((): void => {
-        eventLogger.log('CommitSHACopiedToClipboard')
+        telemetryService.log('CommitSHACopiedToClipboard')
         copy(node.oid)
         setFlashCopiedToClipboardMessage(true)
         Tooltip.forceUpdate()
@@ -60,7 +61,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             setFlashCopiedToClipboardMessage(false)
             Tooltip.forceUpdate()
         }, 1500)
-    }, [node.oid])
+    }, [node.oid, telemetryService])
 
     const bylineElement = (
         <GitCommitNodeByline
@@ -72,16 +73,20 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     )
     const messageElement = (
         <div className="git-commit-node__message flex-grow-1">
-            <Link to={node.canonicalURL} className="git-commit-node__message-subject" title={node.message}>
+            <Link
+                to={node.canonicalURL}
+                className="git-commit-node__message-subject pr-2 text-reset"
+                title={node.message}
+            >
                 {node.subject}
             </Link>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <button
                     type="button"
-                    className="btn btn-secondary btn-sm git-commit-node__message-toggle"
+                    className="btn btn-secondary btn-sm px-1 py-0 font-weight-bold align-item-center mr-2"
                     onClick={toggleShowCommitMessageBody}
                 >
-                    <DotsHorizontalIcon className="icon-inline" />
+                    &#8943;
                 </button>
             )}
             {compact && (
@@ -95,7 +100,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     return (
         <div
             key={node.id}
-            className={`git-commit-node ${compact ? 'git-commit-node--compact' : ''} ${className || ''}`}
+            className={classNames('git-commit-node p-2', compact && 'git-commit-node--compact', className)}
         >
             <div className="w-100 d-flex justify-content-between align-items-start flex-wrap-reverse">
                 {!compact ? (
@@ -106,7 +111,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         </div>
                         <div className="git-commit-node__actions">
                             {!showSHAAndParentsRow && (
-                                <div className="btn-group btn-group-sm mr-2" role="group">
+                                <div className="btn-group btn-group-sm" role="group">
                                     <Link
                                         className="btn btn-secondary"
                                         to={node.canonicalURL}
@@ -126,7 +131,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                             )}
                             {node.tree && (
                                 <Link
-                                    className="btn btn-secondary btn-sm"
+                                    className="btn btn-secondary btn-sm ml-2"
                                     to={node.tree.canonicalURL}
                                     data-tooltip="View files at this commit"
                                 >

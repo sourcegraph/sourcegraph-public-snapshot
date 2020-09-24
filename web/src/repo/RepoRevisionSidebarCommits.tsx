@@ -18,18 +18,20 @@ import {
     GitCommitFields,
     Scalars,
 } from '../graphql-operations'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
-interface CommitNodeProps {
+interface CommitNodeProps extends TelemetryProps {
     node: GitCommitFields
     location: H.Location
 }
 
-const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }) => (
+const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location, telemetryService }) => (
     <li className="list-group-item p-0">
         <GitCommitNode
             compact={true}
             node={node}
             hideExpandCommitMessageBody={true}
+            telemetryService={telemetryService}
             afterElement={
                 <Link
                     to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
@@ -43,7 +45,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }
     </li>
 )
 
-interface Props extends Partial<RevisionSpec>, FileSpec {
+interface Props extends Partial<RevisionSpec>, FileSpec, TelemetryProps {
     repoID: Scalars['ID']
     history: H.History
     location: H.Location
@@ -52,14 +54,14 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>, CommitAncestorsConnectionFields>
+            <FilteredConnection<GitCommitFields, Omit<CommitNodeProps, 'node'>, CommitAncestorsConnectionFields>
                 className="list-group list-group-flush"
                 compact={true}
                 noun="commit"
                 pluralNoun="commits"
                 queryConnection={this.fetchCommits}
                 nodeComponent={CommitNode}
-                nodeComponentProps={{ location: this.props.location }}
+                nodeComponentProps={{ location: this.props.location, telemetryService: this.props.telemetryService }}
                 defaultFirst={100}
                 hideSearch={true}
                 useURLQuery={false}

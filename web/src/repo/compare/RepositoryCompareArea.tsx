@@ -63,7 +63,7 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
 /**
  * Properties passed to all page components in the repository compare area.
  */
-export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
+export interface RepositoryCompareAreaPageProps extends PlatformContextProps, TelemetryProps {
     /** The repository being compared. */
     repo: GQL.IRepository
 
@@ -185,6 +185,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             head: { repoID: this.props.repo.id, repoName: this.props.repo.name, revision: spec?.head },
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
+            telemetryService: this.props.telemetryService,
         }
 
         return (

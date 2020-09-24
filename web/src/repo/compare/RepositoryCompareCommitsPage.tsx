@@ -90,7 +90,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
             <div className="repository-compare-page">
                 <div className="card">
                     <div className="card-header">Commits</div>
-                    <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                    <FilteredConnection<GitCommitFields, Omit<GitCommitNodeProps, 'node'>>
                         listClassName="list-group list-group-flush"
                         noun="commit"
                         pluralNoun="commits"
@@ -100,6 +100,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         nodeComponentProps={{
                             className: 'list-group-item',
                             compact: true,
+                            telemetryService: this.props.telemetryService,
                         }}
                         defaultFirst={50}
                         hideSearch={true}

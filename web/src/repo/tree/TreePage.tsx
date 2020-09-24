@@ -130,15 +130,16 @@ export const TreePage: React.FunctionComponent<Props> = ({
     caseSensitive,
     settingsCascade,
     useBreadcrumb,
+    telemetryService,
     ...props
 }) => {
     useEffect(() => {
         if (filePath === '') {
-            props.telemetryService.logViewEvent('Repository')
+            telemetryService.logViewEvent('Repository')
         } else {
-            props.telemetryService.logViewEvent('Tree')
+            telemetryService.logViewEvent('Tree')
         }
-    }, [filePath, props.telemetryService])
+    }, [filePath, telemetryService])
 
     useBreadcrumb(
         useMemo(() => {
@@ -355,6 +356,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
                         {...props}
+                        telemetryService={telemetryService}
                         menu={ContributableMenu.DirectoryPage}
                         render={items => (
                             <section className="tree-page__section">
@@ -362,6 +364,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 {items.map(item => (
                                     <ActionItem
                                         {...props}
+                                        telemetryService={telemetryService}
                                         key={item.action.id}
                                         {...item}
                                         className="btn btn-secondary mr-1 mb-1"
@@ -374,7 +377,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     {/* eslint-enable react/jsx-no-bind */}
                     <div className="tree-page__section">
                         <h3 className="tree-page__section-header">Changes</h3>
-                        <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                        <FilteredConnection<GitCommitFields, Omit<GitCommitNodeProps, 'node'>>
                             location={props.location}
                             className="mt-2 tree-page__section--commits"
                             listClassName="list-group list-group-flush"
@@ -385,6 +388,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             nodeComponentProps={{
                                 className: 'list-group-item',
                                 compact: true,
+                                telemetryService,
                             }}
                             updateOnChange={`${repoName}:${revision}:${filePath}:${String(showOlderCommits)}`}
                             defaultFirst={7}

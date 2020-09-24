@@ -1,5 +1,4 @@
 .git-commit-node {
-    padding: 0.75rem 0.5rem 0.5rem;
     &--compact {
         padding-top: 0.5rem;
     }
@@ -15,17 +14,9 @@
         &-subject {
             flex: 0 1 auto;
             font-weight: bold;
-            padding-right: 0.5rem;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            color: $color-text-2;
-        }
-        &-toggle {
-            flex: none;
-            font-size: 9px;
-            padding: 0 0.175rem;
-            margin-right: 0.5rem;
         }
         &-timestamp {
             flex: none;
@@ -105,15 +96,5 @@
     }
     &--compact &__oid {
         flex: 0 0 auto;
-    }
-}
-
-.theme-light {
-    .git-commit-node {
-        &__message {
-            &-subject {
-                color: $color-light-text-1;
-            }
-        }
     }
 }

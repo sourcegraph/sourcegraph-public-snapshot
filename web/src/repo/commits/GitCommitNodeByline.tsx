@@ -3,6 +3,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { UserAvatar } from '../../user/UserAvatar'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
 import { SignatureFields } from '../../graphql-operations'
+import classNames from 'classnames'
 
 interface Props {
     author: SignatureFields
@@ -28,7 +29,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
     ) {
         // The author and committer both exist and are different people.
         return (
-            <small className={`git-commit-node-byline git-commit-node-byline--has-committer ${className}`}>
+            <small className={classNames('test-git-commit-node-byline', className)}>
                 <UserAvatar
                     className="icon-inline"
                     user={author.person}
@@ -51,7 +52,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
     }
 
     return (
-        <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
+        <small className={classNames('test-git-commit-node-byline', className)}>
             <UserAvatar
                 className="icon-inline mr-1"
                 user={author.person}

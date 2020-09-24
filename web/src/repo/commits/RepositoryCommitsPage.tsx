@@ -15,6 +15,7 @@ import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { GitCommitFields } from '../../graphql-operations'
 import { externalLinkFieldsFragment } from '../backend'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -108,7 +109,8 @@ interface Props
     extends RepoHeaderContributionsLifecycleProps,
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        TelemetryProps {
     repo: GQL.IRepository
 
     history: H.History
@@ -132,14 +134,14 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBread
     return (
         <div className="repository-commits-page">
             <PageTitle title="Commits" />
-            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+            <FilteredConnection<GitCommitFields, Omit<GitCommitNodeProps, 'node'>>
                 className="repository-commits-page__content"
                 listClassName="list-group list-group-flush"
                 noun="commit"
                 pluralNoun="commits"
                 queryConnection={queryCommits}
                 nodeComponent={GitCommitNode}
-                nodeComponentProps={{ className: 'list-group-item' }}
+                nodeComponentProps={{ className: 'list-group-item', telemetryService: props.telemetryService }}
                 defaultFirst={20}
                 autoFocus={true}
                 history={props.history}
