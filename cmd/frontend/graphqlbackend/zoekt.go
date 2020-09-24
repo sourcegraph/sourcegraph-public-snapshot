@@ -199,10 +199,11 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(s.Repos()) == 0 {
-		if s.args == nil || s.args.Mode != search.ZoektGlobalSearch {
-			return nil, false, nil, nil
-		}
+	if s.args == nil {
+		return nil, false, nil, nil
+	}
+	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
+		return nil, false, nil, nil
 	}
 
 	since := time.Since
@@ -297,10 +298,11 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
 func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos.repoRevs) == 0 {
-		if args == nil || args.Mode != search.ZoektGlobalSearch {
-			return nil, false, nil, nil
-		}
+	if args == nil {
+		return nil, false, nil, nil
+	}
+	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
+		return nil, false, nil, nil
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
