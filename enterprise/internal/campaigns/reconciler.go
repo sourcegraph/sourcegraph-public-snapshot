@@ -580,7 +580,7 @@ func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign
 	}
 
 	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil {
+	if err != nil && err != ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
 	} else if campaign == nil {
 		return nil, errors.Errorf("campaign not found: %d", id)
