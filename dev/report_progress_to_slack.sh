@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Usage:
+#   When testing, WEBHOOK_URL=$WEBHOOK_TESTING_CHANNEL_URL DIFF_PATH=. ./report_progress_to_slack.sh
+#   In prod, WEBHOOK_URL=$WEBHOOK_PROGRESS_CHANNEL_URL DIFF_PATH=CHANGELOG.md ./report_progress_to_slack.sh
 
 set -e
 
@@ -7,7 +11,7 @@ test ! -z "$DIFF_PATH" # typically CHANGELOG.md, but use . when testing to diff 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 export COMMIT=HEAD
-git show $COMMIT~1..$COMMIT -- "$DIFF_PATH" >/tmp/diff.txt
+git diff $COMMIT~1..$COMMIT -- "$DIFF_PATH" >/tmp/diff.txt
 if [ -z "$(cat /tmp/diff.txt)" ]; then
   echo "Diff was empty, not posting to Slack"
   exit 0
