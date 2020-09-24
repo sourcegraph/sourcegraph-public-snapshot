@@ -16,3 +16,5 @@ steps:
     - test.sh sourcegraph-e2e || true
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
+  agents:
+    queue: 'baremetal'
