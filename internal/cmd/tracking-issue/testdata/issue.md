@@ -26,7 +26,7 @@ Completed
 - [ ] Write announcement post for Postgres change ([#14009](https://github.com/sourcegraph/sourcegraph/issues/14009)) 
 - [ ] Update RFC 236 ([#14007](https://github.com/sourcegraph/sourcegraph/issues/14007)) 
 - [ ] RFC 235: Tracking issue ([#13882](https://github.com/sourcegraph/sourcegraph/issues/13882)) __5.50d__ 
-  - [x] (🏁 5 days ago) RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ 
+  - [x] (🏁 6 days ago) RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ 
   - [ ] RFC 235: Cleanup ([#13890](https://github.com/sourcegraph/sourcegraph/issues/13890)) __1d__ 
   - [ ] RFC 235: Update worker to write to Postgres ([#13889](https://github.com/sourcegraph/sourcegraph/issues/13889); PRs: [#13946](https://github.com/sourcegraph/sourcegraph/pull/13946), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ 
   - [ ] RFC 235: Migrate SQLite data to Postgres ([#13888](https://github.com/sourcegraph/sourcegraph/issues/13888); PRs: [#13932](https://github.com/sourcegraph/sourcegraph/pull/13932), [#13923](https://github.com/sourcegraph/sourcegraph/pull/13923)) __0.5d__ 
@@ -54,12 +54,13 @@ Completed
 - [ ] 🚚 LSIF-Go Delivery ([#13015](https://github.com/sourcegraph/sourcegraph/issues/13015)) __5d__ 
 - [ ] codeintel: No longer able to upload repos which are currently cloning ([#14052](https://github.com/sourcegraph/sourcegraph/issues/14052); PRs: [#14141](https://github.com/sourcegraph/sourcegraph/pull/14141)) 🐛
 - [ ] codeintel: git diffing fails graphql requests related to force-pushed commits ([#12588](https://github.com/sourcegraph/sourcegraph/issues/12588)) 🧶
+- [ ] chore: Fix tracking-issue tests ([#14172](https://github.com/sourcegraph/sourcegraph/pull/14172)) :shipit:
 - [ ] codeintel: Remove some wrappers from a previous abstraction ([#14142](https://github.com/sourcegraph/sourcegraph/pull/14142)) :shipit:
 
 Completed: __1.00d__
 - [x] (🏁 6 days ago) chore: Co-locate dev scripts to interact with postgres ([#13942](https://github.com/sourcegraph/sourcegraph/pull/13942)) :shipit:
-- [x] (🏁 5 days ago) chore: Multiple database handles ([#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)) :shipit:
-- [x] (🏁 5 days ago) RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ 
+- [x] (🏁 6 days ago) chore: Multiple database handles ([#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)) :shipit:
+- [x] (🏁 6 days ago) RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ 
 - [x] (🏁 5 days ago) chore: Set exec bit on docker-images/codeintel-db/build.sh ([#13955](https://github.com/sourcegraph/sourcegraph/pull/13955)) :shipit:
 - [x] (🏁 5 days ago) chore: Relocate frontend migrations ([#13943](https://github.com/sourcegraph/sourcegraph/pull/13943)) :shipit:
 - [x] (🏁 2 days ago) tracking-issue: Fix timeout ([#13986](https://github.com/sourcegraph/sourcegraph/pull/13986)) :shipit:
@@ -71,8 +72,8 @@ Completed: __1.00d__
 - [x] (🏁 2 days ago) tracking-issue: Parallelize writes ([#14006](https://github.com/sourcegraph/sourcegraph/pull/14006)) :shipit:
 - [x] (🏁 2 days ago) tracking-issue: Break code up into files according to type/action ([#14013](https://github.com/sourcegraph/sourcegraph/pull/14013)) :shipit:
 - [x] (🏁 2 days ago) tracking-issue: List PRs for an issue inline ([#14018](https://github.com/sourcegraph/sourcegraph/pull/14018)) :shipit:
-- [x] (🏁 1 day ago) tracking-issue: Separate complete/incomplete work ([#14034](https://github.com/sourcegraph/sourcegraph/pull/14034)) :shipit:
-- [x] (🏁 1 day ago) tracking-issue: Better nested tracking issue estimates ([#14035](https://github.com/sourcegraph/sourcegraph/pull/14035)) :shipit:
+- [x] (🏁 2 days ago) tracking-issue: Separate complete/incomplete work ([#14034](https://github.com/sourcegraph/sourcegraph/pull/14034)) :shipit:
+- [x] (🏁 2 days ago) tracking-issue: Better nested tracking issue estimates ([#14035](https://github.com/sourcegraph/sourcegraph/pull/14035)) :shipit:
 - [x] (🏁 today) codenotify: Configure efritz's subscriptions ([#14060](https://github.com/sourcegraph/sourcegraph/pull/14060)) :shipit:
 - [x] (🏁 today) codeintel: Refactor command runner in indexer ([#14102](https://github.com/sourcegraph/sourcegraph/pull/14102)) :shipit:
 - [x] (🏁 today) codeintel: Lower indexer output to debug level ([#14103](https://github.com/sourcegraph/sourcegraph/pull/14103)) :shipit:
@@ -84,6 +85,8 @@ Completed: __1.00d__
 - [x] (🏁 today) tracking-issue: Nest unlinked PRs under the closest tracking issue ([#14108](https://github.com/sourcegraph/sourcegraph/pull/14108)) :shipit:
 - [x] (🏁 today) dbworker: Pass sql options to TransactableHandle ([~#14044~](https://github.com/sourcegraph/sourcegraph/issues/14044); PRs: ~[#14063](https://github.com/sourcegraph/sourcegraph/pull/14063)~, ~[#14061](https://github.com/sourcegraph/sourcegraph/pull/14061)~) 
 - [x] (🏁 today) tracking-issue: Order finished work chronologically ([#14124](https://github.com/sourcegraph/sourcegraph/pull/14124)) :shipit:
+- [x] (🏁 today) tracking-issue: Fix tests ([#14168](https://github.com/sourcegraph/sourcegraph/pull/14168)) :shipit:
+- [x] (🏁 today) tracking-issue: Do not show completed PRs if the owning image is also complete ([#14169](https://github.com/sourcegraph/sourcegraph/pull/14169)) :shipit:
 <!-- END ASSIGNEE -->
 
 <!-- BEGIN ASSIGNEE: gbrik -->
