@@ -59,7 +59,7 @@ Completed: __1.00d__
 - [x] (🏁 2 days ago) codeintel: Resolve abbreviated OID ([#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)) :shipit:
 - [x] (🏁 2 days ago) LSIF uploads fail with abbreviated OID ([~#13957~](https://github.com/sourcegraph/sourcegraph/issues/13957); PRs: ~[#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)~) __0.5d__ 
 - [x] (🏁 2 days ago) tracking-issue: Nested tracking issues ([#13998](https://github.com/sourcegraph/sourcegraph/pull/13998)) :shipit:
-- [x] (🏁 1 day ago) Fix retries in src-cli lsif upload ([~#14008~](https://github.com/sourcegraph/sourcegraph/issues/14008)) 
+- [x] (🏁 2 days ago) Fix retries in src-cli lsif upload ([~#14008~](https://github.com/sourcegraph/sourcegraph/issues/14008)) 
 - [x] (🏁 1 day ago) tracking-issue: Parallelize writes ([#14006](https://github.com/sourcegraph/sourcegraph/pull/14006)) :shipit:
 - [x] (🏁 1 day ago) tracking-issue: Break code up into files according to type/action ([#14013](https://github.com/sourcegraph/sourcegraph/pull/14013)) :shipit:
 - [x] (🏁 1 day ago) tracking-issue: List PRs for an issue inline ([#14018](https://github.com/sourcegraph/sourcegraph/pull/14018)) :shipit:
