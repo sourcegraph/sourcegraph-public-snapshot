@@ -161,6 +161,21 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 			repoURL: "https://user:pass@example.com/my/repo",
 			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
 		},
+		{
+			desc:    "SSH URL without userinfo",
+			repoURL: "ssh://example.com/my/repo",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://example.com/my/repo"}}}`,
+		},
+		{
+			desc:    "SSH URL with userinfo (user only)",
+			repoURL: "ssh://user@example.com/my/repo",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://example.com/my/repo"}}}`,
+		},
+		{
+			desc:    "SSH URL with userinfo (user+pass)",
+			repoURL: "ssh://user:pass@example.com/my/repo",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://example.com/my/repo"}}}`,
+		},
 	}
 
 	for _, tc := range cases {
