@@ -232,12 +232,18 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 // ReopenChangeset reopens the *Changeset on the code host and updates the
 // Metadata column in the *campaigns.Changeset.
 func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	_, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	return errors.New("TODO: not implemented!")
+	if err := s.client.ReopenPullRequest(ctx, pr); err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+
+	return nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.
