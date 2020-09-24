@@ -75,46 +75,6 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 	// display all finished issues and pull requests as a flattened list.
 
 	if hasCompletedIssueOrPullRequest {
-		type renderedCompletedWork struct {
-			Markdown string
-			ClosedAt time.Time
-		}
-		var completedWork []renderedCompletedWork
-
-		for _, issue := range wl.Issues {
-			// Render any issue that belongs to zero or more than one
-			// tracking issue (excluding the team tracking issue).
-			if issue.Closed() {
-				completedWork = append(completedWork, renderedCompletedWork{
-					Markdown: issue.Markdown(labelAllowlist),
-					ClosedAt: issue.ClosedAt,
-				})
-			}
-		}
-
-	outer:
-		for _, pr := range wl.PullRequests {
-			if pr.Done() {
-				// Put all closed PRs that have at least one linked issue that
-				// has not been completed at the top level of the finished work.
-				for _, issue := range pr.LinkedIssues {
-					if issue.Closed() {
-						continue outer
-					}
-				}
-
-				completedWork = append(completedWork, renderedCompletedWork{
-					Markdown: pr.Markdown(),
-					ClosedAt: pr.ClosedAt,
-				})
-			}
-		}
-
-		sort.Slice(completedWork, func(i, j int) bool {
-			// Order rendered markdown by time elapsed since close
-			return completedWork[i].ClosedAt.Before(completedWork[j].ClosedAt)
-		})
-
 		days = ""
 		if wl.CompletedDays > 0 {
 			days = fmt.Sprintf(": __%.2fd__", wl.CompletedDays)
@@ -122,14 +82,93 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 
 		fmt.Fprintf(&b, "\nCompleted%s\n", days)
 
-		// Display completed work chronologically
-		for _, issueOrPr := range completedWork {
+		for _, issueOrPr := range wl.gatherCompletedWork(labelAllowlist) {
 			b.WriteString(issueOrPr.Markdown)
 		}
 	}
 
 	fmt.Fprintf(&b, "%s\n", endAssigneeMarker)
 	return b.String()
+}
+
+type CompletedWork struct {
+	Markdown string
+	ClosedAt time.Time
+}
+
+func (wl *Workload) gatherCompletedWork(labelAllowList []string) []CompletedWork {
+	completedWork := append(
+		wl.gatherCompletedIssues(labelAllowList),
+		wl.gatherCompletedPullRequests()...,
+	)
+
+	sort.Slice(completedWork, func(i, j int) bool {
+		// Order rendered markdown by time elapsed since close
+		return completedWork[i].ClosedAt.Before(completedWork[j].ClosedAt)
+	})
+
+	return completedWork
+}
+
+// gatherCompletedIssues returns all completed issues whose sole parent is not
+// also complete. This will ensure that we display the roots of large completed
+// work instead of every element in that subtree.
+func (wl *Workload) gatherCompletedIssues(labelAllowList []string) (completedWork []CompletedWork) {
+	for _, issue := range wl.Issues {
+		if !issue.Closed() {
+			continue
+		}
+
+		// This would be displayed inested in a tracking issue. Because the
+		// parent is also complete we don't want to show this duplicate data.
+		if len(issue.Parents) == 1 && issue.Parents[0].Closed() {
+			continue
+		}
+
+		completedWork = append(completedWork, CompletedWork{
+			Markdown: issue.Markdown(labelAllowList),
+			ClosedAt: issue.ClosedAt,
+		})
+	}
+
+	return completedWork
+}
+
+// gatherCompletedPullRequests returns all completed pull requests that has an
+// open parent or linked issue.
+func (wl *Workload) gatherCompletedPullRequests() (completedWork []CompletedWork) {
+	for _, pr := range wl.PullRequests {
+		if !pr.Done() {
+			continue
+		}
+
+		// This would be displayed nested in a tracking issue but isn't explicitly
+		// linked to a particular issue. We don't want to show these if that parent
+		// is also complete.
+		if len(pr.LinkedIssues) == 0 && len(pr.Parents) == 1 && pr.Parents[0].Closed() {
+			continue
+		}
+
+		closedIssues := 0
+		for _, issue := range pr.LinkedIssues {
+			if issue.Closed() {
+				closedIssues++
+			}
+		}
+		// If all linked issues are closed we can skip this. If there is at least one
+		// open linked issue then the work related to this PR is not complete and we
+		// want to show this in the progress.
+		if len(pr.LinkedIssues) > 0 && len(pr.LinkedIssues) == closedIssues {
+			continue
+		}
+
+		completedWork = append(completedWork, CompletedWork{
+			Markdown: pr.Markdown(),
+			ClosedAt: pr.ClosedAt,
+		})
+	}
+
+	return completedWork
 }
 
 func renderIssue(b *strings.Builder, labelAllowlist []string, issue *Issue, depth int) {
@@ -148,7 +187,7 @@ func renderIssue(b *strings.Builder, labelAllowlist []string, issue *Issue, dept
 		// Nest PRs under the tracking issue they most closely belong to
 		// _only if_ it doesn't appear in the list of PRs for any issue
 		// in this tracking issue(isn't explicitly linked to any issue).
-		if len(child.Parents) == 1 && len(child.LinkedIssues) == 0 {
+		if len(child.LinkedIssues) == 0 && len(child.Parents) == 1 {
 			b.WriteString(indent(depth + 1))
 			b.WriteString(child.Markdown())
 		}
