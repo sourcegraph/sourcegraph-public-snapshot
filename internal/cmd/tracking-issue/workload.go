@@ -92,6 +92,7 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 }
 
 type CompletedWork struct {
+	Title    string
 	Markdown string
 	ClosedAt time.Time
 }
@@ -104,7 +105,15 @@ func (wl *Workload) gatherCompletedWork(labelAllowList []string) []CompletedWork
 
 	sort.Slice(completedWork, func(i, j int) bool {
 		// Order rendered markdown by time elapsed since close
-		return completedWork[i].ClosedAt.Before(completedWork[j].ClosedAt)
+		if completedWork[i].ClosedAt.Before(completedWork[j].ClosedAt) {
+			return true
+		}
+		if completedWork[i].ClosedAt != completedWork[j].ClosedAt {
+			return false
+		}
+
+		// Break ties alphabetically
+		return strings.Compare(completedWork[j].Title, completedWork[i].Title) < 0
 	})
 
 	return completedWork
@@ -126,6 +135,7 @@ func (wl *Workload) gatherCompletedIssues(labelAllowList []string) (completedWor
 		}
 
 		completedWork = append(completedWork, CompletedWork{
+			Title:    issue.Title,
 			Markdown: issue.Markdown(labelAllowList),
 			ClosedAt: issue.ClosedAt,
 		})
@@ -163,6 +173,7 @@ func (wl *Workload) gatherCompletedPullRequests() (completedWork []CompletedWork
 		}
 
 		completedWork = append(completedWork, CompletedWork{
+			Title:    pr.Title,
 			Markdown: pr.Markdown(),
 			ClosedAt: pr.ClosedAt,
 		})
