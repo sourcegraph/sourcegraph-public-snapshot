@@ -55,6 +55,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	if err != nil {
 		return nil, nil, err
 	}
+
 	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
 	defer func() {
 		tr.SetError(err)

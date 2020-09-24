@@ -1120,11 +1120,9 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	rp := search.NewRepoPromise().Resolve(resolved.repoRevs)
-
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     rp,
+		RepoPromise:     search.NewRepoPromise().Resolve(resolved.repoRevs),
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
