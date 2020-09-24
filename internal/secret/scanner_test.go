@@ -20,30 +20,29 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestScannerInsert(t *testing.T) {
+func TestScanner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	dbtesting.SetupGlobalTestDB(t)
 	defaultEncryptor = newAESGCMEncodedEncryptor(mustGenerateRandomAESKey(), nil)
-	tableName := "secret_scanner_test"
 
 	t.Run("base", func(t *testing.T) {
 		message := "Able was I ere I saw Elba"
 		encryptedMessage := StringValue(message)
 
-		_, err := dbconn.Global.Exec(`CREATE TABLE IF NOT EXISTS $1 (name text, message text)`, tableName)
+		_, err := dbconn.Global.Exec(`CREATE TABLE IF NOT EXISTS secret_scanner_test(name text, message text)`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		_, err = dbconn.Global.Exec(`INSERT INTO $1(name,message) VALUES ($2,$3)`, tableName, t.Name(), encryptedMessage)
+		_, err = dbconn.Global.Exec(`INSERT INTO secret_scanner_test(name,message) VALUES ($1,$2)`, t.Name(), encryptedMessage)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		rows, err := dbconn.Global.Query(`SELECT name,message FROM $1`, tableName)
+		rows, err := dbconn.Global.Query(`SELECT name,message FROM secret_scanner_test`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,13 +66,18 @@ func TestScannerInsert(t *testing.T) {
 
 	t.Run("null example", func(t *testing.T) {
 
-		nullMessage := NullStringValue{}
-		_, err := dbconn.Global.Exec(`INSERT INTO $1(name, message) VALUES ($2,$3)`, tableName, t.Name(), nullMessage)
+		_, err := dbconn.Global.Exec(`CREATE TABLE IF NOT EXISTS secret_null_test(name text, message text)`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		rows, err := dbconn.Global.Query(`SELECT name,message FROM $1`, tableName)
+		nullMessage := NullStringValue{}
+		_, err = dbconn.Global.Exec(`INSERT INTO secret_null_test(name, message) VALUES ($1,$2)`, t.Name(), nullMessage)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rows, err := dbconn.Global.Query(`SELECT name,message FROM secret_null_test`)
 		if err != nil {
 			t.Fatal(err)
 		}
