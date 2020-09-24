@@ -79,15 +79,11 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	case actionReopen:
 		return r.reopenChangeset(ctx, tx, ch)
 
-	case actionReopenUpdate:
-		err := r.reopenChangeset(ctx, tx, ch)
-		if err != nil {
-			return err
-		}
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
-
 	case actionUpdate:
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, false)
+
+	case actionReopenUpdate:
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, true)
 
 	case actionClose:
 		return r.closeChangeset(ctx, tx, ch)
@@ -208,7 +204,7 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 // create and force push a new commit.
 // If the delta requires updates to the changeset on the code host, it will
 // update the changeset there.
-func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta) (err error) {
+func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta, reopen bool) (err error) {
 	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
@@ -218,6 +214,18 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	ccs, err := r.buildChangesetSource(repo, extSvc)
 	if err != nil {
 		return err
+	}
+
+	if reopen {
+		reopener, ok := ccs.(repos.ChangesetReopener)
+		if !ok {
+			return fmt.Errorf("reopening changesets on %s code hosts is not yet supported", extSvc.Kind)
+		}
+
+		cs := repos.Changeset{Repo: repo, Changeset: ch}
+		if err := reopener.ReopenChangeset(ctx, &cs); err != nil {
+			return errors.Wrap(err, "reopening changeset")
+		}
 	}
 
 	if delta.NeedCommitUpdate() {
@@ -231,9 +239,10 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		}
 	}
 
-	// If we only need to update the diff, we're done, because we already
-	// pushed the commit. We don't need to update anything on the codehost.
-	if !delta.NeedCodeHostUpdate() {
+	// If we only need to update the diff and we didn't reopen the changeset,
+	// we're done, because we already pushed the commit. We don't need to
+	// update anything on the codehost.
+	if !delta.NeedCodeHostUpdate() && !reopen {
 		ch.FailureMessage = nil
 		// But we need to sync the changeset so that it has the new commit.
 		//
@@ -250,7 +259,8 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		return r.syncChangeset(ctx, tx, ch)
 	}
 
-	// Otherwise, we need to update the pull request on the code host.
+	// Otherwise, we need to update the pull request on the code host or, if we
+	// reopened it, update it to make sure it has the newest state.
 	cs := repos.Changeset{
 		Title:     spec.Spec.Title,
 		Body:      spec.Spec.Body,
