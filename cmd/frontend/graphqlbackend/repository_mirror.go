@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
@@ -55,6 +57,10 @@ func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Conte
 	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
 }
 
+// TODO(flying-robot): this regex and the majority of the removeUserInfo function can
+// be extracted to a common location in a subsequent change.
+var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
 	// only allow site admins to see it.
@@ -65,12 +71,24 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	// removeUserinfo strips the userinfo component of a remote URL. The provided string s
 	// will be returned if it cannot be parsed as a URL.
 	removeUserinfo := func(s string) string {
-		u, err := url.Parse(s)
+		// Support common syntax (HTTPS, SSH, etc.)
+		if nonSCPURLRegex.MatchString(s) {
+			u, err := url.Parse(s)
+			if err != nil {
+				return s
+			}
+			u.User = nil
+			return u.String()
+		}
+
+		// Support SCP-style syntax.
+		u, err := url.Parse("fake://" + strings.Replace(s, ":", "/", 1))
 		if err != nil {
 			return s
 		}
+		u.Scheme = ""
 		u.User = nil
-		return u.String()
+		return strings.Replace(strings.Replace(u.String(), "//", "", 1), "/", ":", 1)
 	}
 
 	{

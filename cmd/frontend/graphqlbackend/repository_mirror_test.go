@@ -142,44 +142,77 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 	const repoName = "my/repo"
 
 	cases := []struct {
-		desc    string
 		repoURL string
 		want    string
 	}{
 		{
-			desc:    "HTTPS URL without userinfo",
-			repoURL: "https://example.com/my/repo",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
+			repoURL: "git@github.com:gorilla/mux.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"github.com:gorilla/mux.git"}}}`,
 		},
 		{
-			desc:    "HTTPS URL with userinfo (user only)",
-			repoURL: "https://user@example.com/my/repo",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
+			repoURL: "git+https://github.com/gorilla/mux.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"git+https://github.com/gorilla/mux.git"}}}`,
 		},
 		{
-			desc:    "HTTPS URL with userinfo (user+pass)",
-			repoURL: "https://user:pass@example.com/my/repo",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://example.com/my/repo"}}}`,
+			repoURL: "https://github.com/gorilla/mux.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://github.com/gorilla/mux.git"}}}`,
 		},
 		{
-			desc:    "SSH URL without userinfo",
-			repoURL: "ssh://example.com/my/repo",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://example.com/my/repo"}}}`,
+			repoURL: "https://github.com/gorilla/mux",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://github.com/gorilla/mux"}}}`,
 		},
 		{
-			desc:    "SSH URL with userinfo (user only)",
-			repoURL: "ssh://user@example.com/my/repo",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://example.com/my/repo"}}}`,
+			repoURL: "ssh://git@github.com/gorilla/mux",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com/gorilla/mux"}}}`,
 		},
 		{
-			desc:    "SSH URL with userinfo (user+pass)",
-			repoURL: "ssh://user:pass@example.com/my/repo",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://example.com/my/repo"}}}`,
+			repoURL: "ssh://github.com/gorilla/mux.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com/gorilla/mux.git"}}}`,
+		},
+		{
+			repoURL: "ssh://git@github.com:/my/repo.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com:/my/repo.git"}}}`,
+		},
+		{
+			repoURL: "git://git@github.com:/my/repo.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"git://github.com:/my/repo.git"}}}`,
+		},
+		{
+			repoURL: "user@host.xz:/path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:/path/to/repo.git/"}}}`,
+		},
+		{
+			repoURL: "host.xz:/path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:/path/to/repo.git/"}}}`,
+		},
+		{
+			repoURL: "ssh://user@host.xz:1234/path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://host.xz:1234/path/to/repo.git/"}}}`,
+		},
+		{
+			repoURL: "host.xz:~user/path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:~user/path/to/repo.git/"}}}`,
+		},
+		{
+			repoURL: "ssh://host.xz/~/path/to/repo.git",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://host.xz/~/path/to/repo.git"}}}`,
+		},
+		{
+			repoURL: "git://host.xz/~user/path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"git://host.xz/~user/path/to/repo.git/"}}}`,
+		},
+		{
+			repoURL: "file:///path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"file:///path/to/repo.git/"}}}`,
+		},
+		{
+			repoURL: "file://~/path/to/repo.git/",
+			want:    `{"repository":{"mirrorInfo":{"remoteURL":"file://~/path/to/repo.git/"}}}`,
 		},
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
+		t.Run(tc.repoURL, func(t *testing.T) {
 			db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 				return &types.User{SiteAdmin: true}, nil
 			}
