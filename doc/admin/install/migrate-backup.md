@@ -60,7 +60,7 @@ This list is not guaranteed to be complete, but rather representative of the typ
 
 ### Ephemeral data (Redis)
 
-Short-lived data, including session data and some usage statistics, are stored in Redis. These data can all be recreated without backups.
+Short-lived data, including session data and some usage statistics, are stored in Redis. This data can all be recreated without backups.
 
 ### External data
 
