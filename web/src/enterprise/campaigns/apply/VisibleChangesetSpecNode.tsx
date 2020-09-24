@@ -103,7 +103,10 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     <div className="visible-changeset-spec-node__expanded-section">
                         {node.description.__typename === 'GitBranchChangesetDescription' && (
                             <>
-                                <GitBranchChangesetDescriptionInfo description={node.description} isExpandedInitially={expandChangesetDescriptions} />
+                                <GitBranchChangesetDescriptionInfo
+                                    description={node.description}
+                                    isExpandedInitially={expandChangesetDescriptions}
+                                />
                                 <h4>Diff</h4>
                                 <FileDiffConnection
                                     listClassName="list-group list-group-flush"
