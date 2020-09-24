@@ -595,8 +595,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return nil, common, searchErr
 	}
 
-	common.repos = make([]*types.Repo, len(args.RepoPromise.Get()))
-	for i, repo := range args.RepoPromise.Get() {
+	repos, err := args.RepoPromise.Get(ctx)
+	if err != nil {
+		return nil, common, err
+	}
+	common.repos = make([]*types.Repo, len(repos))
+	for i, repo := range repos {
 		common.repos[i] = repo.Repo
 	}
 

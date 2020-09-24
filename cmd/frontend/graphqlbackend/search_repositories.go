@@ -60,9 +60,13 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 
 	// Filter args.Repos by matching their names against the query pattern.
 	common = &searchResultsCommon{}
-	common.repos = make([]*types.Repo, len(args.RepoPromise.Get()))
+	resolved, err := args.RepoPromise.Get(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	common.repos = make([]*types.Repo, len(resolved))
 	var repos []*search.RepositoryRevisions
-	for i, r := range args.RepoPromise.Get() {
+	for i, r := range resolved {
 		common.repos[i] = r.Repo
 		if pattern.MatchString(string(r.Repo.Name)) {
 			repos = append(repos, r)
@@ -114,8 +118,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			}
 			newArgs := *args
 			newArgs.PatternInfo = &p
-			rp := search.NewRepoPromise()
-			rp.Resolve(repos)
+			rp := search.NewRepoPromise().Resolve(repos)
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
@@ -143,8 +146,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			}
 			newArgs := *args
 			newArgs.PatternInfo = &p
-			rp := search.NewRepoPromise()
-			rp.Resolve(repos)
+			rp := search.NewRepoPromise().Resolve(repos)
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true

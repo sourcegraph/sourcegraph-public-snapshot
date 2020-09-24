@@ -297,8 +297,7 @@ func TestIndexedSearch(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rp := search.NewRepoPromise()
-			rp.Resolve(tt.args.repos)
+			rp := search.NewRepoPromise().Resolve(tt.args.repos)
 			args := &search.TextParameters{
 				Query:           q,
 				PatternInfo:     tt.args.patternInfo,

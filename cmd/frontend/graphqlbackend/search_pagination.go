@@ -139,8 +139,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	if alertResult != nil {
 		return alertResult, nil
 	}
-	rp := search.NewRepoPromise()
-	rp.Resolve(resolved.repoRevs)
+	rp := search.NewRepoPromise().Resolve(resolved.repoRevs)
 
 	p, err := r.getPatternInfo(nil)
 	if err != nil {
@@ -253,17 +252,20 @@ func repoIsLess(i, j *types.Repo) bool {
 //    2 above (in the worst case scenario).
 //
 func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *searchResultsCommon, error) {
+	repos, err := args.RepoPromise.Get(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	plan := &repoPaginationPlan{
 		pagination:          pagination,
-		repositories:        args.RepoPromise.Get(),
+		repositories:        repos,
 		searchBucketDivisor: 8,
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
 	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error) {
 		batchArgs := *args
-		rp := search.NewRepoPromise()
-		rp.Resolve(batch)
+		rp := search.NewRepoPromise().Resolve(batch)
 		batchArgs.RepoPromise = rp
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
 		// Timeouts are reported through searchResultsCommon so don't report an error for them

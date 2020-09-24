@@ -244,8 +244,9 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo-repo"; len(args.RepoPromise.Get()) != 1 || string(args.RepoPromise.Get()[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", args.RepoPromise.Get(), want)
+			repos, _ := args.RepoPromise.Get(context.Background())
+			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/file"),
@@ -346,8 +347,9 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo-repo"; len(args.RepoPromise.Get()) != 1 || string(args.RepoPromise.Get()[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", args.RepoPromise.Get(), want)
+			repos, _ := args.RepoPromise.Get(context.Background())
+			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/bar-file"),

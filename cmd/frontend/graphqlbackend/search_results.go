@@ -1464,7 +1464,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 // diff and commit searches where more than repoLimit repos need to be searched.
 func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
 	limits := searchLimits()
-
+	repos, _ := args.RepoPromise.Get(context.Background())
 	for _, resultType := range resultTypes {
 		if resultType != "commit" && resultType != "diff" {
 			continue
@@ -1478,14 +1478,14 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 			hasTimeFilter = true
 		}
 
-		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.RepoPromise.Get()) > max {
+		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
 				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
 			}
 		}
-		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.RepoPromise.Get()) > max {
+		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_with_time_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
@@ -1616,9 +1616,14 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: tp.PatternInfo.PathPatternsAreCaseSensitive,
 	}
+	repos, err := tp.RepoPromise.Get(ctx)
+	if err != nil {
+		log15.Error("doDiffSearch: context error while getting repos. This should never happen.")
+		return
+	}
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.RepoPromise.Get(),
+		Repos:       repos,
 		Query:       tp.Query,
 	}
 	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
@@ -1652,9 +1657,15 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 	}
+	repos, err := tp.RepoPromise.Get(ctx)
+	if err != nil {
+		log15.Error("doCommitSearch: context error while getting repos. This should never happen.")
+		return
+	}
+
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.RepoPromise.Get(),
+		Repos:       repos,
 		Query:       tp.Query,
 	}
 	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
@@ -1799,7 +1810,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	args.RepoPromise.Resolve(resolved.repoRevs)
 
+	agg.commonMu.Lock()
 	agg.common.excluded = resolved.excludedRepos
+	agg.commonMu.Unlock()
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
