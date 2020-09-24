@@ -184,8 +184,6 @@ export const createSharedIntegrationTestContext = async <
     const graphQlRequests = new Subject<GraphQLRequestEvent<TGraphQlOperationNames>>()
     server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
         const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
-        console.log('$$$$What do we have for request?')
-        console.log('$$$$', request)
         const { variables, query } = request.jsonBody() as {
             query: string
             variables: Parameters<TGraphQlOperations[TGraphQlOperationNames]>[0]

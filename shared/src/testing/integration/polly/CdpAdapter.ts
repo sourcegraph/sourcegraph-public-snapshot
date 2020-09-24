@@ -8,6 +8,10 @@ function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')
 }
 
+function fromBase64(input: string): string {
+    return Buffer.from(input, 'base64').toString()
+}
+
 interface PollyResponse {
     statusCode: number
     headers: Record<string, string>
@@ -20,7 +24,7 @@ interface PollyRequestArguments {
 
 interface PollyPromise extends Promise<PollyResponse> {
     resolve(response: PollyResponse): void
-    resject(error: any): void
+    reject(error: any): void
 }
 
 // @ts-ignore
@@ -124,7 +128,7 @@ export class CdpAdapter extends PollyAdapter {
      */
     public async onDisconnect(): Promise<void> {
         console.log('CDP adapter disconnecting')
-        await this.cdpSession?.send('Fetch.disable')
+        await this.trySendCdpRequest('Fetch.disable')
     }
 
     /**
@@ -138,7 +142,6 @@ export class CdpAdapter extends PollyAdapter {
         } = pollyRequest
 
         return new Promise<PollyResponse>((resolve, reject) => {
-            //
             this.passthroughCallbacks.set(requestId, resolve)
             this.continuePausedRequest({ requestId })
         })
@@ -154,24 +157,25 @@ export class CdpAdapter extends PollyAdapter {
         error?: unknown
     ): Promise<void> {
         const { response: pollyResponse, requestArguments } = pollyRequest
-        const { statusCode, headers, body } = pollyResponse
+        const { headers, body = '' } = pollyResponse
         const { requestId } = requestArguments
         if (error) {
-            // TODO: better conversion from Polly error to CDP errorReason.
-
             // This function receives a value in the `error` argument if we're
             // intercepting a request with the Polly server route which throws
             // an error.
+            console.warn('Aborting request:', error)
             await this.abortPausedRequest({ requestId, errorReason: 'Failed' })
         } else {
             // Fulfill by converting the Polly response to a CDP response
-            // TODO: check that body is b64encoded or not
-            await this.fulfillPausedRequest({
+            const cdpRequestToFulfill = {
                 requestId,
-                responseCode: statusCode,
+                responseCode: 200, // statusCode,
                 responseHeaders: headerObjectToHeaderEntries(headers),
                 body: toBase64(body),
-            })
+            }
+            console.log(this.pendingRequests)
+            console.log('Fulfilling', cdpRequestToFulfill)
+            await this.fulfillPausedRequest(cdpRequestToFulfill)
         }
     }
 
@@ -182,6 +186,7 @@ export class CdpAdapter extends PollyAdapter {
      * when a response for this request is received.
      */
     public onRequest(pollyRequest: PollyRequest & PollyRequestArguments & { promise: PollyPromise }): void {
+        console.log('onRequest', pollyRequest.requestArguments.requestId)
         const { requestArguments, promise } = pollyRequest
 
         const { requestId } = requestArguments
@@ -189,31 +194,45 @@ export class CdpAdapter extends PollyAdapter {
     }
 
     private async fulfillPausedRequest(request: Protocol.Fetch.FulfillRequestRequest): Promise<void> {
-        // TODO: check for target closed, and ignore the error
-        await this.cdpSession?.send('Fetch.fulfillRequest', request)
+        await this.trySendCdpRequest('Fetch.fulfillRequest', request)
     }
 
     private async continuePausedRequest(request: Protocol.Fetch.ContinueRequestRequest): Promise<void> {
-        // TODO: check for target closed, and ignore the error
-        await this.cdpSession?.send('Fetch.continueRequest', request)
-    }
-    private async abortPausedRequest(request: Protocol.Fetch.FailRequestRequest): Promise<void> {
-        // TODO: check for target closed, and ignore the error
-        await this.cdpSession?.send('Fetch.abortRequest', request)
+        await this.trySendCdpRequest('Fetch.continueRequesst', request)
     }
 
-    private async getResponseBody(
-        event: Protocol.Fetch.RequestPausedEvent
-    ): Promise<Protocol.Fetch.GetResponseBodyResponse | undefined> {
+    /**
+     * Perform a CDP request call that doesn't return a result, while ignoring
+     * errors due to the page being closed already.
+     */
+    private async trySendCdpRequest(cdpRequestName: string, request?: object) {
+        try {
+            await this.cdpSession?.send(cdpRequestName, request)
+        } catch (error) {
+            // TODO: also ignore "target closed" error
+            if (error.message.endsWith('Session closed. Most likely the page has been closed.')) {
+                return
+            }
+            throw error
+        }
+    }
+
+    private async abortPausedRequest(request: Protocol.Fetch.FailRequestRequest): Promise<void> {
+        await this.cdpSession?.send('Fetch.failRequest', request)
+    }
+
+    private async getResponseBody(event: Protocol.Fetch.RequestPausedEvent): Promise<string> {
         if (getLocationHeader(event)) {
-            return undefined // CDP doesn't let us obtain the body of redirect requests, so we don't attempt it.
+            return '' // CDP doesn't let us obtain the body of redirect requests, so we don't attempt it.
         }
         if (!this.cdpSession) {
             throw new Error('Fetch.getResponseBody called before CDP session created')
         }
-        return this.cdpSession.send('Fetch.getResponseBody', { requestId: event.requestId }) as Promise<
-            Protocol.Fetch.GetResponseBodyResponse
-        >
+        const body = (await this.cdpSession.send('Fetch.getResponseBody', {
+            requestId: event.requestId,
+        })) as Protocol.Fetch.GetResponseBodyResponse
+
+        return getBodyStringFromCdpBody(body)
     }
 
     private async handlePausedRequestInRequestStage(event: Protocol.Fetch.RequestPausedEvent): Promise<void> {
@@ -232,12 +251,20 @@ export class CdpAdapter extends PollyAdapter {
     private async handlePausedRequestInResponseStage(event: Protocol.Fetch.RequestPausedEvent): Promise<void> {
         const { requestId } = event
 
+        if (event.responseErrorReason) {
+            // Response is an error
+            this.pendingRequests.get(requestId)?.reject(new Error(event.responseErrorReason))
+            this.pendingRequests.delete(requestId)
+        }
+
         const body = await this.getResponseBody(event)
+
         // Convert the CDP response into a Polly response
+
         const pollyResponse: PollyResponse = {
             statusCode: event.responseStatusCode ?? 0, // TODO: what if the response is a failure
             headers: headerEntriesToHeaderObject(event.responseHeaders),
-            body: body?.body || '', // TODO check if base64encoded
+            body,
         }
 
         // The requestId may or may not have an associated passthrough callback.
@@ -288,4 +315,17 @@ function headerEntriesToHeaderObject(responseHeaders: Protocol.Fetch.HeaderEntry
  * entries (the format used by CDP) */
 function headerObjectToHeaderEntries(headers: Record<string, string>): Protocol.Fetch.HeaderEntry[] {
     return Object.entries(headers).map(([name, value]) => ({ name, value }))
+}
+
+/**
+ * Get the body data as a string, from the response of a `Fetch.getResponseBody` call.
+ */
+function getBodyStringFromCdpBody(body: Protocol.Fetch.GetResponseBodyResponse): string {
+    if (!body) {
+        return ''
+    }
+    if (body.base64Encoded) {
+        return fromBase64(body.body)
+    }
+    return body.body
 }
