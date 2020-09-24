@@ -8,18 +8,27 @@ import (
 )
 
 var (
-	_ driver.Valuer = StringValue("")
+	_ driver.Valuer = StringValue{}
 	_ sql.Scanner   = (*StringValue)(nil)
 )
 
 // StringValue implements driver.Valuer and sql.Scanner for string type secret.
-type StringValue string
+type StringValue struct {
+	S *string
+}
 
 func (v StringValue) Value() (driver.Value, error) {
-	return Encrypt(string(v))
+	if v.S == nil {
+		return nil, errors.New("unable to encrypt a nil string pointer")
+	}
+	return Encrypt(*v.S)
 }
 
 func (v *StringValue) Scan(src interface{}) (err error) {
+	if v.S == nil {
+		return errors.New("unable to decrypt to a nil string pointer")
+	}
+
 	var plaintext string
 	switch src := src.(type) {
 	case string: // expect a base64 encoded string
@@ -32,12 +41,8 @@ func (v *StringValue) Scan(src interface{}) (err error) {
 		return errors.Errorf("incompatible type %T for StringValue", src)
 	}
 
-	*v = StringValue(plaintext)
+	*v.S = plaintext
 	return nil
-}
-
-func (v *StringValue) String() string {
-	return string(*v)
 }
 
 var (
@@ -45,6 +50,7 @@ var (
 	_ sql.Scanner   = (*NullStringValue)(nil)
 )
 
+// NullStringValue implements driver.Valuer and sql.Scanner for NULLABLE string type secret.
 type NullStringValue struct {
 	S     *StringValue
 	Valid bool // Valid is true if StringValue is not NULL

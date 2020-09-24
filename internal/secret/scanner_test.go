@@ -1,6 +1,7 @@
 package secret
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -25,77 +26,70 @@ func TestScanner(t *testing.T) {
 		t.Skip()
 	}
 
+	ctx := context.Background()
+
 	dbtesting.SetupGlobalTestDB(t)
 	defaultEncryptor = newAESGCMEncodedEncryptor(mustGenerateRandomAESKey(), nil)
 
 	t.Run("base", func(t *testing.T) {
 		message := "Able was I ere I saw Elba"
-		encryptedMessage := StringValue(message)
+		esMessage := StringValue{S: &message}
 
-		_, err := dbconn.Global.Exec(`CREATE TABLE IF NOT EXISTS secret_scanner_test(name text, message text)`)
+		_, err := dbconn.Global.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS secret_scanner_test(name text, message text)`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		_, err = dbconn.Global.Exec(`INSERT INTO secret_scanner_test(name,message) VALUES ($1,$2)`, t.Name(), encryptedMessage)
+		_, err = dbconn.Global.ExecContext(ctx, `INSERT INTO secret_scanner_test(name,message) VALUES ($1,$2)`, t.Name(), esMessage)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		rows, err := dbconn.Global.Query(`SELECT name,message FROM secret_scanner_test`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer rows.Close()
 
 		var gotName string
-		var gotEncryptedMessage StringValue
-		for rows.Next() {
-			if err := rows.Scan(&gotName, &gotEncryptedMessage); err != nil {
-				t.Fatal(err)
-			}
+		var gotMessage string
+		err = dbconn.Global.QueryRowContext(ctx, `SELECT name,message FROM secret_scanner_test`).
+			Scan(&gotName, &StringValue{S: &gotMessage})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if gotName != t.Name() {
 			t.Fatalf("expected %q, got %q for name", t.Name(), gotName)
 		}
-		if gotEncryptedMessage != encryptedMessage {
-			t.Fatalf("expected %q, got %q", encryptedMessage, gotEncryptedMessage)
+		if gotMessage != message {
+			t.Fatalf("expected %q, got %q", message, gotMessage)
 		}
 	})
 
 	t.Run("null example", func(t *testing.T) {
-
-		_, err := dbconn.Global.Exec(`CREATE TABLE IF NOT EXISTS secret_null_test(name text, message text)`)
+		_, err := dbconn.Global.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS secret_null_test(name text, message text)`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		nullMessage := NullStringValue{}
-		_, err = dbconn.Global.Exec(`INSERT INTO secret_null_test(name, message) VALUES ($1,$2)`, t.Name(), nullMessage)
+		_, err = dbconn.Global.ExecContext(ctx, `INSERT INTO secret_null_test(name, message) VALUES ($1, $2)`, t.Name(), &NullStringValue{})
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		rows, err := dbconn.Global.Query(`SELECT name,message FROM secret_null_test`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer rows.Close()
 
 		var gotName string
-		var gotEncryptedMessage NullStringValue
-		for rows.Next() {
-			if err := rows.Scan(&gotName, &gotEncryptedMessage); err != nil {
-				t.Fatal(err)
-			}
+		var gotMessage string
+		nullMessage := NullStringValue{
+			S: &StringValue{
+				S: &gotMessage,
+			},
+		}
+		err = dbconn.Global.QueryRowContext(ctx, `SELECT name,message FROM secret_null_test`).
+			Scan(&gotName, &nullMessage)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if gotName != t.Name() {
 			t.Fatalf("expected %q, got %q for name", t.Name(), gotName)
 		}
-		if gotEncryptedMessage.S != nil {
-			t.Fatal("expected nil, got non-nil result")
+		if nullMessage.Valid {
+			t.Fatal("expected not valid, got valid")
 		}
 	})
 }
