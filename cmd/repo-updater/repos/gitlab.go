@@ -396,12 +396,26 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 
 // ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	_, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
 
-	return errors.New("TODO: not implemented yet")
+	// Title and TargetBranch are required, even though we're not actually
+	// changing them.
+	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+		Title:        mr.Title,
+		TargetBranch: mr.TargetBranch,
+		StateEvent:   gitlab.UpdateMergeRequestStateEventReopen,
+	})
+	if err != nil {
+		return errors.Wrap(err, "reopening GitLab merge request")
+	}
+
+	if err := c.SetMetadata(updated); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
+	}
+	return nil
 }
 
 func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) error {
