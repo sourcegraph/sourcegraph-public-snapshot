@@ -65,8 +65,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rp := search.NewRepoPromise()
-	rp.Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"))
+	rp := search.NewRepoPromise().Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"))
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
@@ -97,8 +96,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
-	rp = search.NewRepoPromise()
-	rp.Resolve(makeRepositoryRevisions("foo/no-rev@dev"))
+	rp = search.NewRepoPromise().Resolve(makeRepositoryRevisions("foo/no-rev@dev"))
 	args = &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
@@ -144,8 +142,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rp := search.NewRepoPromise()
-	rp.Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"))
+	rp := search.NewRepoPromise().Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"))
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
@@ -156,7 +153,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	args.RepoPromise.Get()[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+	repos, _ := args.RepoPromise.Get(context.Background())
+	repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 	results, _, err := searchFilesInRepos(context.Background(), args)

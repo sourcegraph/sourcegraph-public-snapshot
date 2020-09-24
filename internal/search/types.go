@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -77,9 +78,13 @@ const (
 )
 
 type RepoPromise struct {
+	closeOnce sync.Once
+	repoChan  chan []*RepositoryRevisions
+
 	resolveOnce sync.Once
-	repoChan    chan []*RepositoryRevisions
-	Repos       []*RepositoryRevisions
+	repos       []*RepositoryRevisions
+
+	err error
 }
 
 func NewRepoPromise() *RepoPromise {
@@ -88,18 +93,24 @@ func NewRepoPromise() *RepoPromise {
 	}
 }
 
-// TODO: Add context to GET. How to deal with cancellations?
-func (rp *RepoPromise) Get() []*RepositoryRevisions {
+func (rp *RepoPromise) Get(ctx context.Context) ([]*RepositoryRevisions, error) {
 	rp.resolveOnce.Do(func() {
-		fmt.Println("resolving repos")
-		rp.Repos = <-rp.repoChan
+		select {
+		case <-ctx.Done():
+			rp.err = ctx.Err()
+
+		case rp.repos = <-rp.repoChan:
+		}
 	})
-	return rp.Repos
+	return rp.repos, rp.err
 }
 
-func (rp *RepoPromise) Resolve(repos []*RepositoryRevisions) {
-	defer close(rp.repoChan)
-	rp.repoChan <- repos
+func (rp *RepoPromise) Resolve(repos []*RepositoryRevisions) *RepoPromise {
+	rp.closeOnce.Do(func() {
+		rp.repoChan <- repos
+		close(rp.repoChan)
+	})
+	return rp
 }
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
@@ -108,13 +119,10 @@ func (rp *RepoPromise) Resolve(repos []*RepositoryRevisions) {
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
 
-	// Performance optimization.
-	//
-	// For global queries, resolving repositories and querying zoekt happens
-	// concurrently. Eventually RepoPromise and Repos will be identical.
+	// Performance optimization: For global queries, resolving repositories and
+	// querying zoekt happens concurrently.
 	RepoPromise *RepoPromise
-
-	Mode GlobalSearchMode
+	Mode        GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and

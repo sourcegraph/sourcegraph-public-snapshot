@@ -90,6 +90,10 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	repos, err := args.RepoPromise.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
@@ -108,7 +112,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.RepoPromise.Get(),
+			Unindexed:        repos,
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -119,14 +123,14 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
 		}
 		return &indexedSearchRequest{
-			Unindexed: args.RepoPromise.Get(),
+			Unindexed: repos,
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if indexParam == No {
 		return &indexedSearchRequest{
-			Unindexed: args.RepoPromise.Get(),
+			Unindexed: repos,
 		}, nil
 	}
 
@@ -153,7 +157,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.RepoPromise.Get(),
+			Unindexed:        repos,
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -161,7 +165,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.RepoPromise.Get(), filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -382,7 +386,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		for _, file := range resp.Files {
 			m[file.Repository] = nil
 		}
-		repos := args.RepoPromise.Get()
+		repos, err := args.RepoPromise.Get(ctx)
+		if err != nil {
+			return nil, false, nil, err
+		}
 		for _, repo := range repos {
 			if _, ok := m[string(repo.Repo.Name)]; !ok {
 				continue
