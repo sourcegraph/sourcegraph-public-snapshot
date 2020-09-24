@@ -1,22 +1,14 @@
 import * as React from 'react'
 import { AuthenticatedUser } from '../../auth'
+import { EnterpriseHomePanelsProps, PatternTypeProps } from '..'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 import { RepositoriesPanel } from './RepositoriesPanel'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { Observable } from 'rxjs'
-import { EventLogResult } from '../backend'
-import { PatternTypeProps } from '..'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
-interface Props extends Pick<PatternTypeProps, 'patternType'> {
+interface Props extends Pick<PatternTypeProps, 'patternType'>, TelemetryProps, EnterpriseHomePanelsProps {
     authenticatedUser: AuthenticatedUser | null
-    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
-    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
-
-    /** Function that returns current time (for stability in visual tests). */
-    now?: () => Date
 }
 
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (

@@ -1,24 +1,44 @@
-import React, { useMemo, useState } from 'react'
 import classNames from 'classnames'
-import { PanelContainer } from './PanelContainer'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { Link } from '../../../../shared/src/components/Link'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { SearchPatternType, ISavedSearch } from '../../../../shared/src/graphql/schema'
-import { AuthenticatedUser } from '../../auth'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { Observable } from 'rxjs'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { AuthenticatedUser } from '../../auth'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { ISavedSearch, SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
+import { Observable } from 'rxjs'
+import { PanelContainer } from './PanelContainer'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
-export const SavedSearchesPanel: React.FunctionComponent<{
-    patternType: SearchPatternType
+interface Props extends TelemetryProps {
+    className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
-    className?: string
-}> = ({ patternType, authenticatedUser, fetchSavedSearches, className }) => {
+    patternType: SearchPatternType
+}
+
+export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
+    patternType,
+    authenticatedUser,
+    fetchSavedSearches,
+    className,
+    telemetryService,
+}) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
+
+    useEffect(() => {
+        // Only log the first load (when items to load is equal to the page size)
+        if (savedSearches) {
+            telemetryService.log('SavedSearchesPanelLoaded', { empty: savedSearches.length === 0, showAllSearches })
+        }
+    }, [savedSearches, telemetryService, showAllSearches])
+
+    const logEvent = useCallback((event: string, props?: any) => (): void => telemetryService.log(event, props), [
+        telemetryService,
+    ])
 
     const emptyDisplay = (
         <div className="panel-container__empty-container text-muted">
@@ -28,6 +48,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
             {authenticatedUser && (
                 <Link
                     to={`/users/${authenticatedUser.username}/searches/add`}
+                    onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
                     className="btn btn-secondary mt-2 align-self-center"
                 >
                     <PlusIcon className="icon-inline" />
@@ -53,17 +74,22 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                                 <Link
                                     to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
                                     className="btn btn-link p-0"
+                                    onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                 >
                                     {search.description}
                                 </Link>
                                 {authenticatedUser &&
                                     (search.namespace.__typename === 'User' ? (
-                                        <Link to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}>
+                                        <Link
+                                            to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
+                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                        >
                                             <PencilOutlineIcon className="icon-inline" />
                                         </Link>
                                     ) : (
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
+                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
                                             <PencilOutlineIcon className="icon-inline" />
                                         </Link>
@@ -76,12 +102,14 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                 <Link
                     to={`/users/${authenticatedUser.username}/searches`}
                     className="btn btn-secondary w-100 text-left"
+                    onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                 >
                     View saved searches
                 </Link>
             )}
         </div>
     )
+
     const actionButtons = (
         <div className="panel-container__action-button-group">
             <div className="btn-group btn-group-sm">
@@ -89,6 +117,7 @@ export const SavedSearchesPanel: React.FunctionComponent<{
                     <Link
                         to={`/users/${authenticatedUser.username}/searches/add`}
                         className="btn btn-outline-secondary panel-container__action-button mr-2"
+                        onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
                     >
                         +
                     </Link>
