@@ -173,9 +173,9 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
-			return
-		}
+		// if !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
+		// 	return
+		// }
 
 		pipeline.AddStep(":chains:",
 			bk.Cmd("pushd enterprise"),
@@ -312,6 +312,10 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
 			addDockerImage(c, c.branch[20:], false)(pipeline)
+		default:
+			for _, dockerImage := range allDockerImages {
+				addDockerImage(c, dockerImage, false)(pipeline)
+			}
 		}
 	}
 }
