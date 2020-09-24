@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 // Namespace is the interface for the GraphQL Namespace interface.
@@ -58,7 +57,7 @@ func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error
 }
 
 func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
-	namespace, err := db.GetNamespaceByName(ctx, dbconn.Global, args.Name)
+	namespace, err := db.Namespaces.GetByName(ctx, args.Name)
 	if err == db.ErrNamespaceNotFound {
 		return nil, nil
 	}
