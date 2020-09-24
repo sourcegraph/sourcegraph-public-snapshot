@@ -1,6 +1,5 @@
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
 import Puppeteer from 'puppeteer'
-import { patterns } from 'puppeteer-interceptor'
 import Protocol from 'devtools-protocol'
 import PollyAdapter from '@pollyjs/adapter'
 
@@ -25,23 +24,6 @@ interface PollyRequestArguments {
 interface PollyPromise extends Promise<PollyResponse> {
     resolve(response: PollyResponse): void
     reject(error: any): void
-}
-
-// @ts-ignore
-const puppeteerToCDPPatterns: Record<Puppeteer.ResourceType, keyof typeof patterns> = {
-    document: 'Document',
-    eventsource: 'EventSource',
-    fetch: 'Fetch',
-    font: 'Font',
-    image: 'Image',
-    manifest: 'Manifest',
-    media: 'Media',
-    other: 'Other',
-    script: 'Script',
-    stylesheet: 'Stylesheet',
-    texttrack: 'TextTrack',
-    websocket: 'WebSocket',
-    xhr: 'XHR',
 }
 
 /**
@@ -205,7 +187,7 @@ export class CdpAdapter extends PollyAdapter {
      * Perform a CDP request call that doesn't return a result, while ignoring
      * errors due to the page being closed already.
      */
-    private async trySendCdpRequest(cdpRequestName: string, request?: object) {
+    private async trySendCdpRequest(cdpRequestName: string, request?: object): Promise<void> {
         try {
             await this.cdpSession?.send(cdpRequestName, request)
         } catch (error) {
