@@ -41,25 +41,29 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 
 	hasCompletedIssueOrPullRequest := false
 	for _, issue := range wl.Issues {
-		// Render any issue that belongs to zero or more than one
-		// tracking issue (excluding the team tracking issue).
+		if issue.Closed() {
+			hasCompletedIssueOrPullRequest = true
+			continue
+		}
+
+		// Render any issue that does not belong to a single sub-tracking
+		// issue. We skip these issues on the top level as they will be
+		// nested under their parent and we don't want to double-list.
 		if len(issue.Parents) != 1 {
-			if !issue.Closed() {
-				renderIssue(&b, labelAllowlist, issue, 0)
-			} else {
-				hasCompletedIssueOrPullRequest = true
-			}
+			renderIssue(&b, labelAllowlist, issue, 0)
 		}
 	}
 
-	// Put all PRs that aren't linked to issues top-level
+	// Put all PRs that aren't linked to issues or nested under a tracking
+	// issue at the end of the top-level.
 	for _, pr := range wl.PullRequests {
-		if len(pr.LinkedIssues) == 0 {
-			if !pr.Done() {
-				b.WriteString(pr.Markdown())
-			} else {
-				hasCompletedIssueOrPullRequest = true
-			}
+		if pr.Done() {
+			hasCompletedIssueOrPullRequest = true
+			continue
+		}
+
+		if len(pr.LinkedIssues) == 0 && len(pr.Parents) != 1 {
+			b.WriteString(pr.Markdown())
 		}
 	}
 
@@ -102,10 +106,20 @@ func renderIssue(b *strings.Builder, labelAllowlist []string, issue *Issue, dept
 	b.WriteString(issue.Markdown(labelAllowlist))
 
 	// Render children tracked _only_ by this issue
-	// (excluding the team tracking issue) as nested elements
-	for _, child := range issue.Children {
+	// (excluding the tracking issue being updated) as nested elements
+	for _, child := range issue.ChildIssues {
 		if len(child.Parents) == 1 {
 			renderIssue(b, labelAllowlist, child, depth+1)
+		}
+	}
+
+	for _, child := range issue.ChildPRs {
+		// Nest PRs under the tracking issue they most closely belong to
+		// _only if_ it doesn't appear in the list of PRs for any issue
+		// in this tracking issue(isn't explicitly linked to any issue).
+		if len(child.Parents) == 1 && len(child.LinkedIssues) == 0 {
+			b.WriteString(indent(depth + 1))
+			b.WriteString(child.Markdown())
 		}
 	}
 }
