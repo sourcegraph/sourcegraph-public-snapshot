@@ -77,6 +77,10 @@ const (
 	SearcherOnly
 )
 
+// RepoPromise can be used in place of []*RepositoryRevisions whenever we resolve
+// repositories concurrently. Its implementation is a thin wrapper around a
+// channel. However, unlike a channel, a RepoPromise can only be set once, but
+// consumed many times. Use Resolve to set the value, and Get to get the value.
 type RepoPromise struct {
 	closeOnce sync.Once
 	repoChan  chan []*RepositoryRevisions
@@ -87,12 +91,17 @@ type RepoPromise struct {
 	err error
 }
 
+// NewRepoPromise returns an unresolved promise.
 func NewRepoPromise() *RepoPromise {
 	return &RepoPromise{
 		repoChan: make(chan []*RepositoryRevisions, 1),
 	}
 }
 
+// Get returns the repository revisions. It blocks until the promise resolves or
+// the context is canceled. Further calls to Get will always return the original
+// results, IE err will stay nil even if the context expired between the first
+// and the second call.
 func (rp *RepoPromise) Get(ctx context.Context) ([]*RepositoryRevisions, error) {
 	rp.resolveOnce.Do(func() {
 		select {
@@ -105,6 +114,7 @@ func (rp *RepoPromise) Get(ctx context.Context) ([]*RepositoryRevisions, error) 
 	return rp.repos, rp.err
 }
 
+// Resolve returns a promise that is resolved with a given value.
 func (rp *RepoPromise) Resolve(repos []*RepositoryRevisions) *RepoPromise {
 	rp.closeOnce.Do(func() {
 		rp.repoChan <- repos
