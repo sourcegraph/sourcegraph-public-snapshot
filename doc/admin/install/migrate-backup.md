@@ -8,7 +8,7 @@ In some circumstances it may be necessary or advantageous to migrate from one So
 
 ## Data stores
 
-While much of Sourcegraph's data can be regenerated, some state can be stored in mulitple locations.
+While much of Sourcegraph's data can be regenerated, some state can be stored in multiple locations.
 
 ### Configuration JSON
 
