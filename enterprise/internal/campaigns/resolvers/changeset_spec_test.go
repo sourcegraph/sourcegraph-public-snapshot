@@ -35,7 +35,12 @@ func TestChangesetSpecResolver(t *testing.T) {
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "mary", Email: ct.ChangesetSpecAuthorEmail, EmailIsVerified: true, DisplayName: "Mary Tester"})
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Username:        "mary",
+		Email:           ct.ChangesetSpecAuthorEmail,
+		EmailIsVerified: true,
+		DisplayName:     "Mary Tester",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,9 +199,9 @@ query($id: ID!) {
           body
 
           commits {
-			message
-			subject
-			body
+            message
+            subject
+            body
             diff
             author {
               name
