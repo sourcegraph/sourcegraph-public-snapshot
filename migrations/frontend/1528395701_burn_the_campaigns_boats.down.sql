@@ -38,7 +38,35 @@ ALTER TABLE campaigns
 INSERT INTO
     changesets
 SELECT
-    *
+    id,
+    campaign_ids,
+    repo_id,
+    created_at,
+    updated_at,
+    metadata,
+    external_id,
+    external_service_type,
+    external_deleted_at,
+    external_branch,
+    external_updated_at,
+    external_state,
+    external_review_state,
+    external_check_state,
+    added_to_campaign,
+    diff_stat_added,
+    diff_stat_changed,
+    diff_stat_deleted,
+    sync_state,
+    current_spec_id,
+    previous_spec_id,
+    publication_state,
+    owned_by_campaign_id,
+    reconciler_state,
+    failure_message,
+    started_at,
+    finished_at,
+    process_after,
+    num_resets
 FROM
     changesets_old
 ON CONFLICT
