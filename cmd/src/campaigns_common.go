@@ -240,67 +240,12 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		campaignsCompletePending(pending, "Resolved repositories.")
 	}
 
-	var progress output.Progress
-	var maxRepoName int
-	completed := map[string]bool{}
-	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, func(statuses []*campaigns.TaskStatus) {
-		if progress == nil {
-			progress = out.Progress([]output.ProgressBar{{
-				Label: fmt.Sprintf("Executing steps in %d repositories", len(statuses)),
-				Max:   float64(len(statuses)),
-			}}, nil)
-		}
-
-		unloggedCompleted := []*campaigns.TaskStatus{}
-
-		for _, ts := range statuses {
-			if len(ts.RepoName) > maxRepoName {
-				maxRepoName = len(ts.RepoName)
-			}
-
-			if ts.FinishedAt.IsZero() {
-				continue
-			}
-
-			if !completed[ts.RepoName] {
-				completed[ts.RepoName] = true
-				unloggedCompleted = append(unloggedCompleted, ts)
-			}
-
-		}
-
-		progress.SetValue(0, float64(len(completed)))
-
-		for _, ts := range unloggedCompleted {
-			var statusText string
-
-			if ts.Err != nil {
-				statusText = fmt.Sprintf("%s%s%s", campaignsErrorColor, "Errored", output.StyleReset)
-			} else if ts.ChangesetSpec == nil {
-				statusText = "No changes"
-			} else {
-				fileDiffs, err := diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
-				if err != nil {
-					panic(err)
-				}
-
-				statusText = diffStatDescription(fileDiffs) + " " + diffStatDiagram(sumDiffStats(fileDiffs))
-			}
-
-			if ts.Cached {
-				statusText += " (cached)"
-			}
-
-			progress.Verbosef("%-*s %s", maxRepoName, ts.RepoName, statusText)
-		}
-	})
-
+	execProgress, execProgressComplete := executeCampaignSpecProgress(out)
+	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, execProgress)
 	if err != nil {
 		return "", "", err
 	}
-	if progress != nil {
-		progress.Complete()
-	}
+	execProgressComplete()
 
 	if logFiles := executor.LogFiles(); len(logFiles) > 0 && flags.keepLogs {
 		func() {
@@ -313,7 +258,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		}()
 	}
 
-	progress = out.Progress([]output.ProgressBar{
+	progress := out.Progress([]output.ProgressBar{
 		{Label: "Sending changeset specs", Max: float64(len(specs))},
 	}, nil)
 	ids := make([]campaigns.ChangesetSpecID, len(specs))
@@ -463,4 +408,79 @@ func contextCancelOnInterrupt(parent context.Context) (context.Context, func()) 
 		signal.Stop(c)
 		ctxCancel()
 	}
+}
+
+// executeCampaignSpecProgress returns a function that can be passed to
+// (*Service).ExecuteCampaignSpec as the "progress" function.
+//
+// It prints a progress bar and, if verbose mode is activated, diff stats of
+// the produced diffs.
+//
+// The second return value is the "complete" function that completes the
+// progress bar and should be called after ExecuteCampaignSpec returns
+// successfully.
+func executeCampaignSpecProgress(out *output.Output) (func(statuses []*campaigns.TaskStatus), func()) {
+	var (
+		progress       output.Progress
+		maxRepoName    int
+		completedTasks = map[string]bool{}
+	)
+
+	complete := func() {
+		if progress != nil {
+			progress.Complete()
+		}
+	}
+
+	progressFunc := func(statuses []*campaigns.TaskStatus) {
+		if progress == nil {
+			progress = out.Progress([]output.ProgressBar{{
+				Label: fmt.Sprintf("Executing steps in %d repositories", len(statuses)),
+				Max:   float64(len(statuses)),
+			}}, nil)
+		}
+
+		unloggedCompleted := []*campaigns.TaskStatus{}
+
+		for _, ts := range statuses {
+			if len(ts.RepoName) > maxRepoName {
+				maxRepoName = len(ts.RepoName)
+			}
+
+			if ts.FinishedAt.IsZero() {
+				continue
+			}
+
+			if !completedTasks[ts.RepoName] {
+				completedTasks[ts.RepoName] = true
+				unloggedCompleted = append(unloggedCompleted, ts)
+			}
+
+		}
+
+		progress.SetValue(0, float64(len(completedTasks)))
+
+		for _, ts := range unloggedCompleted {
+			var statusText string
+
+			if ts.ChangesetSpec == nil {
+				statusText = "No changes"
+			} else {
+				fileDiffs, err := diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
+				if err != nil {
+					panic(err)
+				}
+
+				statusText = diffStatDescription(fileDiffs) + " " + diffStatDiagram(sumDiffStats(fileDiffs))
+			}
+
+			if ts.Cached {
+				statusText += " (cached)"
+			}
+
+			progress.Verbosef("%-*s %s", maxRepoName, ts.RepoName, statusText)
+		}
+	}
+
+	return progressFunc, complete
 }
