@@ -76,6 +76,8 @@
 // 1528395720_drop_repo_sources_column.up.sql (196B)
 // 1528395721_lsif_deleted.down.sql (1.454kB)
 // 1528395721_lsif_deleted.up.sql (1.619kB)
+// 1528395722_drop_created_by_campaign.down.sql (243B)
+// 1528395722_drop_created_by_campaign.up.sql (83B)
 
 package migrations
 
@@ -1664,6 +1666,46 @@ func _1528395721_lsif_deletedUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395722_drop_created_by_campaignDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xcc\xb1\x6a\xc3\x30\x14\x46\xe1\x5d\x4f\xf1\x6f\x79\x08\x93\x41\x8e\x6e\x1a\x81\x2c\x87\x48\xa2\xdd\xcc\xb5\x73\x9b\x1a\x5c\x39\x44\x0a\xa5\x6f\x5f\xe8\x50\x30\x74\x3e\x9c\xaf\xa5\x17\xeb\x1b\xa5\xb4\x8b\x74\x41\xd4\xad\x23\x4c\x1f\x9c\x6f\x52\xa4\x16\x68\x63\x70\xe8\x5d\xea\x3c\xec\x11\xbe\x8f\xa0\x37\x1b\x62\xc0\xf4\x10\xae\x72\x1d\xc6\xef\x61\xe2\xcf\x3b\xcf\xb7\x8c\x71\x5d\x17\xe1\x0c\x43\x47\x9d\x5c\xc4\x3b\x2f\x45\x7e\x27\x9f\x9c\x6b\x94\x4a\x67\xa3\xe3\xc6\x0f\x14\xff\xa5\xf6\xa8\x8f\xa7\xe0\xf5\x44\x17\xc2\xfa\x95\xb7\x79\x98\xaf\xb0\xe1\x4f\x86\xf6\x06\xf7\xe7\xb8\xcc\x13\xd7\x79\xcd\x43\xa9\x5c\x05\x7b\xec\xce\xa9\x75\x36\x9c\xc8\xec\x1a\xa5\x0e\x7d\xd7\xd9\xd8\xa8\x9f\x00\x00\x00\xff\xff\x2d\xf5\xca\x76\xf3\x00\x00\x00")
+
+func _1528395722_drop_created_by_campaignDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395722_drop_created_by_campaignDownSql,
+		"1528395722_drop_created_by_campaign.down.sql",
+	)
+}
+
+func _1528395722_drop_created_by_campaignDownSql() (*asset, error) {
+	bytes, err := _1528395722_drop_created_by_campaignDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395722_drop_created_by_campaign.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdf, 0x8a, 0xda, 0x7a, 0x17, 0xfe, 0x69, 0x85, 0xba, 0xbb, 0xb, 0x61, 0x10, 0xcb, 0x8d, 0x17, 0xea, 0x26, 0xa1, 0xdc, 0xdc, 0x13, 0xb4, 0x27, 0xb4, 0x5f, 0x71, 0x33, 0x7, 0xc2, 0x9f, 0xa6}}
+	return a, nil
+}
+
+var __1528395722_drop_created_by_campaignUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2e\x4a\x4d\x2c\x49\x4d\x89\x4f\xaa\x8c\x4f\x4e\xcc\x2d\x48\xcc\x4c\xcf\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x6b\x45\x9b\x81\x53\x00\x00\x00")
+
+func _1528395722_drop_created_by_campaignUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395722_drop_created_by_campaignUpSql,
+		"1528395722_drop_created_by_campaign.up.sql",
+	)
+}
+
+func _1528395722_drop_created_by_campaignUpSql() (*asset, error) {
+	bytes, err := _1528395722_drop_created_by_campaignUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395722_drop_created_by_campaign.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf, 0xd3, 0x48, 0x98, 0x65, 0x91, 0xa8, 0x61, 0x81, 0xbb, 0x8a, 0x7a, 0xe9, 0xcd, 0xf1, 0x62, 0xd1, 0xf2, 0x8, 0xa5, 0x9c, 0x43, 0x2, 0xc6, 0x14, 0x97, 0x7a, 0x41, 0x5e, 0x58, 0xfe, 0xd8}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1831,6 +1873,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395720_drop_repo_sources_column.up.sql":                                   _1528395720_drop_repo_sources_columnUpSql,
 	"1528395721_lsif_deleted.down.sql":                                             _1528395721_lsif_deletedDownSql,
 	"1528395721_lsif_deleted.up.sql":                                               _1528395721_lsif_deletedUpSql,
+	"1528395722_drop_created_by_campaign.down.sql":                                 _1528395722_drop_created_by_campaignDownSql,
+	"1528395722_drop_created_by_campaign.up.sql":                                   _1528395722_drop_created_by_campaignUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1953,6 +1997,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395720_drop_repo_sources_column.up.sql":                                   {_1528395720_drop_repo_sources_columnUpSql, map[string]*bintree{}},
 	"1528395721_lsif_deleted.down.sql":                                             {_1528395721_lsif_deletedDownSql, map[string]*bintree{}},
 	"1528395721_lsif_deleted.up.sql":                                               {_1528395721_lsif_deletedUpSql, map[string]*bintree{}},
+	"1528395722_drop_created_by_campaign.down.sql":                                 {_1528395722_drop_created_by_campaignDownSql, map[string]*bintree{}},
+	"1528395722_drop_created_by_campaign.up.sql":                                   {_1528395722_drop_created_by_campaignUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

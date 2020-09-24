@@ -192,7 +192,6 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 		return err
 	}
 
-	ch.CreatedByCampaign = true
 	ch.PublicationState = campaigns.ChangesetPublicationStatePublished
 	ch.FailureMessage = nil
 	return tx.UpdateChangeset(ctx, ch)
