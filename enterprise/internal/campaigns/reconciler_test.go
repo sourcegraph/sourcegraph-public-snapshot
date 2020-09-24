@@ -67,7 +67,9 @@ func TestReconcilerProcess(t *testing.T) {
 		wantUpdateOnCodeHost bool
 		wantCloseOnCodeHost  bool
 		wantLoadFromCodeHost bool
-		wantGitserverCommit  bool
+		wantReopenOnCodeHost bool
+
+		wantGitserverCommit bool
 
 		wantChangeset changesetAssertions
 	}
@@ -464,6 +466,94 @@ func TestReconcilerProcess(t *testing.T) {
 				externalState:  campaigns.ChangesetExternalStateClosed,
 			},
 		},
+		"reopening closed changeset without updates": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        githubPR.ID,
+				externalBranch:    githubPR.HeadRefName,
+				externalState:     campaigns.ChangesetExternalStateClosed,
+				createdByCampaign: true,
+			},
+			// We return the open GitHub PR here
+			sourcerMetadata: githubPR,
+
+			wantReopenOnCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     githubPR.ID,
+				externalBranch: githubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+
+				title:    githubPR.Title,
+				body:     githubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
+
+		"reopening closed changeset with updates": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "old title",
+				body:  "old body",
+
+				commitDiff:    "old diff",
+				commitMessage: "old message",
+			},
+			changeset: testChangesetOpts{
+				publicationState:  campaigns.ChangesetPublicationStatePublished,
+				externalID:        githubPR.ID,
+				externalBranch:    githubPR.HeadRefName,
+				externalState:     campaigns.ChangesetExternalStateClosed,
+				createdByCampaign: true,
+			},
+			sourcerMetadata: githubPR,
+
+			// Reopen it
+			wantReopenOnCodeHost: true,
+			// Update the metadata
+			wantUpdateOnCodeHost: true,
+			// Update the commit
+			wantGitserverCommit: true,
+
+			wantLoadFromCodeHost: false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     githubPR.ID,
+				externalBranch: githubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+
+				title:    githubPR.Title,
+				body:     githubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -500,6 +590,9 @@ func TestReconcilerProcess(t *testing.T) {
 			changesetOpts := tc.changeset
 			changesetOpts.repo = rs[0].ID
 			changesetOpts.campaign = campaign.ID
+			if tc.changeset.createdByCampaign {
+				changesetOpts.ownedByCampaign = campaign.ID
+			}
 			if changesetSpec != nil {
 				changesetOpts.currentSpec = changesetSpec.ID
 			}
@@ -553,6 +646,10 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
+			if have, want := fakeSource.ReopenChangesetCalled, tc.wantReopenOnCodeHost; have != want {
+				t.Fatalf("wrong ReopenChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
 			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
 				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
 			}
@@ -564,6 +661,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
 			assertions.repo = rs[0].ID
+			assertions.ownedByCampaign = changesetOpts.ownedByCampaign
 			if changesetSpec != nil {
 				assertions.currentSpec = changesetSpec.ID
 			}

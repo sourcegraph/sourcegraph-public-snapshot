@@ -76,6 +76,16 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	case actionPublish:
 		return r.publishChangeset(ctx, tx, ch, action.spec)
 
+	case actionReopen:
+		return r.reopenChangeset(ctx, tx, ch)
+
+	case actionReopenUpdate:
+		err := r.reopenChangeset(ctx, tx, ch)
+		if err != nil {
+			return err
+		}
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
+
 	case actionUpdate:
 		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta)
 
@@ -274,6 +284,43 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	return tx.UpdateChangeset(ctx, ch)
 }
 
+// reopenChangeset reopens the given changeset attribute on the code host.
+func (r *reconciler) reopenChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
+	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	if err != nil {
+		return errors.Wrap(err, "failed to load associations")
+	}
+
+	// Set up a source with which we can update the changeset on the code host.
+	ccs, err := r.buildChangesetSource(repo, extSvc)
+	if err != nil {
+		return err
+	}
+
+	reopener, ok := ccs.(repos.ChangesetReopener)
+	if !ok {
+		return fmt.Errorf("reopening changesets on %s code hosts is not yet supported", extSvc.Kind)
+	}
+
+	cs := repos.Changeset{Repo: repo, Changeset: ch}
+
+	if err := reopener.ReopenChangeset(ctx, &cs); err != nil {
+		return errors.Wrap(err, "updating changeset")
+	}
+
+	// We extract the events, compute derived state and upsert events because
+	// the reopening has updated changeset on the code host.
+	events := ch.Events()
+	SetDerivedState(ctx, ch, events)
+	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
+		return err
+	}
+
+	ch.FailureMessage = nil
+	return tx.UpdateChangeset(ctx, ch)
+}
+
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
 func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
 	ch.Closing = false
@@ -398,11 +445,13 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 type actionType string
 
 const (
-	actionNone    actionType = "none"
-	actionUpdate  actionType = "update"
-	actionPublish actionType = "publish"
-	actionSync    actionType = "sync"
-	actionClose   actionType = "close"
+	actionNone         actionType = "none"
+	actionUpdate       actionType = "update"
+	actionPublish      actionType = "publish"
+	actionSync         actionType = "sync"
+	actionClose        actionType = "close"
+	actionReopen       actionType = "reopen"
+	actionReopenUpdate actionType = "reopen-update"
 )
 
 // reconcilerAction represents the possible actions the reconciler can take for
@@ -465,20 +514,61 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 		if curr.Spec.Published {
 			action.actionType = actionPublish
 		}
+
 	case campaigns.ChangesetPublicationStatePublished:
+		reopen := reopenAfterDetach(ch)
+		if reopen {
+			action.actionType = actionReopen
+		}
+
 		delta, err := CompareChangesetSpecs(prev, curr)
 		if err != nil {
 			return action, nil
 		}
+
 		if delta.AttributesChanged() {
-			action.actionType = actionUpdate
 			action.delta = delta
+			if reopen {
+				action.actionType = actionReopenUpdate
+			} else {
+				action.actionType = actionUpdate
+			}
 		}
 	default:
 		return action, fmt.Errorf("unknown changeset publication state: %s", ch.PublicationState)
 	}
 
 	return action, nil
+}
+
+func reopenAfterDetach(ch *campaigns.Changeset) bool {
+	closed := ch.ExternalState == campaigns.ChangesetExternalStateClosed
+	if !closed {
+		return false
+	}
+
+	// Sanity check: if it's not owned by a campaign, it's simply being tracked.
+	if ch.OwnedByCampaignID == 0 {
+		return false
+	}
+	// Sanity check 2: if it's marked as to-be-closed, then we don't reopen it.
+	if ch.Closing {
+		return false
+	}
+
+	// Check if it's (re-)attached to the campaign that created it.
+	attachedToOwner := false
+	for _, campaignID := range ch.CampaignIDs {
+		if campaignID == ch.OwnedByCampaignID {
+			attachedToOwner = true
+		}
+	}
+
+	// At this point the changeset is closed and not marked as to-be-closed and
+	// attached to the owning campaign.
+	return attachedToOwner
+
+	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
 
 func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.ChangesetSpec) error {

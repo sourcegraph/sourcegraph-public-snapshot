@@ -116,6 +116,16 @@ type ChangesetSource interface {
 	UpdateChangeset(context.Context, *Changeset) error
 }
 
+// A ChangesetReopener is a ChangesetSource that can reopen Changesets.
+// We can remove this once all ChangesetSources can reopen changtesets.
+type ChangesetReopener interface {
+	ChangesetSource
+
+	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
+	// If not, it's a noop.
+	ReopenChangeset(context.Context, *Changeset) error
+}
+
 // ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
 // Changesets could not be found on the codehost.
 type ChangesetsNotFoundError struct {
