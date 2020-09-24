@@ -129,8 +129,13 @@ func contains(haystack []string, needle string) bool {
 	return false
 }
 
+// now returns the current time for relative formatting. This
+// is overwritten during tests to ensure that our output can be
+// byte-for-byte compared against the golden output file.
+var now = time.Now
+
 func formatTimeSince(t time.Time) string {
-	days := time.Since(t) / time.Hour / 24
+	days := now().Sub(t) / time.Hour / 24
 
 	switch days {
 	case 0:
