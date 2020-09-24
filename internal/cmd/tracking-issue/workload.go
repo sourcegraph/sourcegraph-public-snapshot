@@ -92,9 +92,17 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 			}
 		}
 
-		// Put all PRs that aren't linked to issues top-level
+	outer:
 		for _, pr := range wl.PullRequests {
 			if pr.Done() {
+				// Put all closed PRs that have at least one linked issue that
+				// has not been completed at the top level of the finished work.
+				for _, issue := range pr.LinkedIssues {
+					if issue.Closed() {
+						continue outer
+					}
+				}
+
 				completedWork = append(completedWork, renderedCompletedWork{
 					Markdown: pr.Markdown(),
 					ClosedAt: pr.ClosedAt,
