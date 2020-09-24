@@ -27,7 +27,6 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
@@ -42,7 +41,7 @@ export interface RepogroupPageProps
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -53,13 +52,6 @@ export interface RepogroupPageProps
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
-
-    // For NavLinks
-    authRequired?: boolean
-    showCampaigns: boolean
-
-    /** Controls focusing the query input on the page. Query inputs are autofocused by default. */
-    autoFocus?: boolean
 
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata
@@ -110,12 +102,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 </span>
             </div>
             <div className="repogroup-page__container">
-                <SearchPageInput
-                    {...props}
-                    queryPrefix={repogroupQuery}
-                    source="repogroupPage"
-                    interactiveModeHomepageMode={true}
-                />
+                <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
             </div>
             <div className="row">
                 <div className="repogroup-page__column col-xs-12 col-lg-7">
@@ -151,9 +138,6 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     ))}
                 </div>
                 <div className="repogroup-page__column col-xs-12 col-lg-5">
-                    <div className="order-1-lg order-2-xs">
-                        <PrivateCodeCta />
-                    </div>
                     <div className="order-2-lg order-1-xs">
                         <div className="repogroup-page__repo-card card">
                             <h2 className="web-content__title">

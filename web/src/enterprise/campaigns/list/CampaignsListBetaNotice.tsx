@@ -14,8 +14,8 @@ export const CampaignsListBetaNotice: React.FunctionComponent<{}> = () => (
                         <p className="mb-1">
                             We're excited for you to use campaigns to remove legacy code, fix critical security issues,
                             pay down tech debt, and more. We look forward to hearing about campaigns you run inside your
-                            organization. Take a look at some examples in{' '}
-                            <a href="https://docs.sourcegraph.com/user/campaigns/examples">our documentation</a>, and{' '}
+                            organization. See{' '}
+                            <a href="https://docs.sourcegraph.com/user/campaigns">campaigns documentation</a>, and{' '}
                             <a href="mailto:feedback@sourcegraph.com?subject=Campaigns feedback">get in touch</a> with
                             any questions or feedback!
                         </p>

@@ -166,7 +166,7 @@ const config = {
             loader: 'postcss-loader',
             options: {
               config: {
-                path: __dirname,
+                path: path.resolve(__dirname, '..'),
               },
             },
           },
@@ -191,6 +191,7 @@ const config = {
         test: extensionHostWorker,
         use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
       },
+      { test: /\.ya?ml$/, use: ['raw-loader'] },
     ],
   },
 }

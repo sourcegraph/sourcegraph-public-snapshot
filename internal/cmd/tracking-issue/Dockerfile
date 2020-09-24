@@ -1,7 +1,7 @@
 FROM golang:1.14-alpine@sha256:62cd35bbeb9aadff6764dd8809c788267d72b12066bb40c080431510bbe81e36 AS builder
 
 WORKDIR /go/src/tracking-issue
-COPY main.go .
+COPY . .
 
 RUN go mod init tracking-issue
 RUN CGO_ENABLED=0 go install .

@@ -64,7 +64,6 @@ func TestDatabaseRanges(t *testing.T) {
 					{Path: "protocol/writer.go", Range: newRange(12, 5, 12, 11)},
 				},
 				References: []bundles.Location{
-					{Path: "internal/index/indexer.go", Range: newRange(36, 26, 36, 32)},
 					{Path: "protocol/writer.go", Range: newRange(12, 5, 12, 11)},
 					{Path: "protocol/writer.go", Range: newRange(20, 47, 20, 53)},
 					{Path: "protocol/writer.go", Range: newRange(21, 9, 21, 15)},

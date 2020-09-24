@@ -91,7 +91,7 @@ index e5af166..d44c3fc 100644
 		"published": false,
 
 		"commits": [
-		  {"message": "git commit message", "diff": %q}]
+		  {"message": "git commit message", "diff": %q, "authorName": "Mary McButtons", "authorEmail": "mary@example.com"}]
 	}`
 
 	return fmt.Sprintf(tmpl, repo, baseRev, repo, diff)

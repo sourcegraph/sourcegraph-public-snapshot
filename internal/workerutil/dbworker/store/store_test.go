@@ -179,7 +179,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_resets, uploaded_at)
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
@@ -200,7 +200,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 			sqlf.Sprintf("w.num_resets"),
 		},
 		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
-		MaxNumResets:      5,
+		MaxNumRetries:     5,
 		RetryAfter:        5 * time.Minute,
 	}
 
@@ -208,11 +208,11 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 
 	// Dequeue errored record
 	record1, tx, ok, err := store.Dequeue(context.Background(), nil)
-	assertDequeueRecordRetryResult(t, 1, 4, record1, tx, ok, err)
+	assertDequeueRecordRetryResult(t, 1, record1, tx, ok, err)
 
 	// Dequeue non-errored record
 	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
-	assertDequeueRecordRetryResult(t, 4, 0, record2, tx, ok, err)
+	assertDequeueRecordRetryResult(t, 4, record2, tx, ok, err)
 
 	// Does not dequeue old or max retried errored
 	if _, _, ok, _ := store.Dequeue(context.Background(), nil); ok {
@@ -224,7 +224,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_resets, uploaded_at)
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
@@ -245,7 +245,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 			sqlf.Sprintf("w.num_resets"),
 		},
 		OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
-		MaxNumResets:      5,
+		MaxNumRetries:     5,
 		RetryAfter:        0,
 	}
 
@@ -253,7 +253,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 
 	// Dequeue non-errored record only
 	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
-	assertDequeueRecordRetryResult(t, 4, 0, record2, tx, ok, err)
+	assertDequeueRecordRetryResult(t, 4, record2, tx, ok, err)
 
 	// Does not dequeue errored
 	if _, _, ok, _ := store.Dequeue(context.Background(), nil); ok {

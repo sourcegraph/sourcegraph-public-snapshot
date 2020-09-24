@@ -60,8 +60,12 @@ describe('Organizations', () => {
                 }),
             }
             testContext.overrideGraphQL(graphQLResults)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/site-admin/organizations')
-            await driver.findElementWithText('Create organization', { action: 'click', wait: { timeout: 2000 } })
+
+            await driver.page.waitForSelector('.test-create-org-button')
+            await driver.page.click('.test-create-org-button')
+
             await driver.replaceText({
                 selector: '.test-new-org-name-input',
                 newText: testOrg.name,
@@ -72,7 +76,7 @@ describe('Organizations', () => {
             })
 
             const variables = await testContext.waitForGraphQLRequest(async () => {
-                await driver.findElementWithText('Create organization', { action: 'click' })
+                await driver.page.click('.test-create-org-submit-button')
             }, 'createOrganization')
             assert.deepStrictEqual(variables, {
                 displayName: testOrg.displayName,
@@ -130,7 +134,7 @@ describe('Organizations', () => {
                 })
 
                 const variables = await testContext.waitForGraphQLRequest(async () => {
-                    await driver.findElementWithText('Save changes', { action: 'click' })
+                    await driver.page.click('.test-save-toolbar-save')
                 }, 'OverwriteSettings')
 
                 assert.deepStrictEqual(variables, {

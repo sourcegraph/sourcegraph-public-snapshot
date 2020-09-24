@@ -181,7 +181,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		calledResolveRepoGroups := false
-		mockResolveRepoGroups = func() (map[string][]*types.Repo, error) {
+		mockResolveRepoGroups = func() (map[string][]*types.Repo, []string, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
@@ -190,7 +190,7 @@ func TestSearchSuggestions(t *testing.T) {
 					&types.Repo{Name: "foo-repo1"},
 					&types.Repo{Name: "repo3"},
 				},
-			}, nil
+			}, nil, nil
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 		for _, v := range searchVersions {

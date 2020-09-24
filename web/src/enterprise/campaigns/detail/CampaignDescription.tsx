@@ -15,9 +15,7 @@ export const CampaignDescription: React.FunctionComponent<CampaignDescriptionPro
     history,
     className,
 }) => (
-    <div className={classNames(className)}>
-        <div className="pb-3">
-            <Markdown dangerousInnerHTML={renderMarkdown(description || '_No description_')} history={history} />
-        </div>
+    <div className={classNames('mb-3', className)}>
+        <Markdown dangerousInnerHTML={renderMarkdown(description || '_No description_')} history={history} />
     </div>
 )

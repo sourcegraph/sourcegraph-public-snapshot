@@ -23,10 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -37,13 +37,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
 
 var (
-	trace          = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
+	traceFields    = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
 	traceThreshold = env.Get("SRC_LOG_TRACE_THRESHOLD", "", "show traces that take longer than this")
 
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
@@ -86,7 +87,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() error {
-	if err := dbconn.ConnectToDB(""); err != nil {
+	if err := dbconn.SetupGlobalConnection(""); err != nil {
 		return err
 	}
 
@@ -133,8 +134,9 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
-	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
 	tracer.Init()
+	trace.Init(true)
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook()

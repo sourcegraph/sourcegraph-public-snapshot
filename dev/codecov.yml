@@ -40,3 +40,6 @@ ignore:
 flags:
   typescript:
     carryforward: true
+
+github_checks:
+    annotations: false

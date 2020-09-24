@@ -1,46 +1,66 @@
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIcon } from '../icons'
+import { CampaignsFlushEdgesIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { AuthenticatedUser } from '../../../auth'
+import helloWorldSample from './samples/empty.campaign.yaml'
+import combySample from './samples/comby.campaign.yaml'
+import goImportsSample from './samples/go-imports.campaign.yaml'
+import minimalSample from './samples/minimal.campaign.yaml'
+import classNames from 'classnames'
+import { CodeSnippet } from '../../../components/CodeSnippet'
 
-const campaignSpec = `name: hello-world
-description: Add Hello World to READMEs
-
-# Find all repositories that contain a README.md file.
-on:
-  - repositoriesMatchingQuery: file:README.md
-
-# In each repository, run this command. Each repository's resulting diff is captured.
-steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
-
-# Describe the changeset (e.g., GitHub pull request) you want for each repository.
-changesetTemplate:
-  title: Hello World
-  body: My first campaign!
-  branch: hello-world # Push the commit to this branch.
-  commit:
-    message: Append Hello World to all README.md files
-  published: false`
-
-const helloWorldDownloadUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(campaignSpec)
-
-const sourcePreviewCommand = 'src campaign preview -f hello-world.campaign.yaml'
-
-export interface CreateCampaignPageProps extends BreadcrumbSetters {
-    // Nothing for now, but using it so once this changes we get type errors in the routing files.
+interface SampleTabHeaderProps {
+    sample: Sample
+    active: boolean
+    setSelectedSample: (sample: Sample) => void
 }
 
-export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ useBreadcrumb }) => {
+const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample, active, setSelectedSample }) => {
+    const onClick = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedSample(sample)
+        },
+        [setSelectedSample, sample]
+    )
+    return (
+        <li className="nav-item">
+            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')}>
+                {sample.name}
+            </a>
+        </li>
+    )
+}
+
+interface Sample {
+    name: string
+    file: string
+}
+
+const samples: Sample[] = [
+    { name: 'hello-world.campaign.yaml', file: helloWorldSample },
+    { name: 'modify-with-comby.campaign.yaml', file: combySample },
+    { name: 'update-go-imports.campaign.yaml', file: goImportsSample },
+    { name: 'minimal.campaign.yaml', file: minimalSample },
+]
+
+export interface CreateCampaignPageProps extends BreadcrumbSetters {
+    authenticatedUser: Pick<AuthenticatedUser, 'username'>
+}
+
+export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
+    authenticatedUser,
+    useBreadcrumb,
+}) => {
+    const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
     useBreadcrumb(useMemo(() => ({ element: <>Create campaign</>, key: 'createCampaignPage' }), []))
     return (
         <>
             <PageTitle title="Create campaign" />
             <PageHeader
-                icon={CampaignsIcon}
+                icon={CampaignsFlushEdgesIcon}
                 title={
                     <>
                         Create campaign{' '}
@@ -50,43 +70,56 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     </>
                 }
             />
-            <div className="container pt-3">
-                <h2>New to campaigns?</h2>
-                <p className="lead">
-                    Read the{' '}
-                    <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener noreferrer" target="_blank">
-                        campaigns documentation page
-                    </a>{' '}
-                    to learn how to create campaign specifications, using Sourcegraph's CLI tool src-cli and publishing
-                    changesets.
-                </p>
-                <h2>Quick start</h2>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <p className="m-0 lead">This campaign specification adds "Hello World" to all README.md files:</p>
+            <div className="pt-3">
+                <h2>1. Write a campaign spec YAML file</h2>
+                <p>
+                    The campaign spec (
                     <a
-                        download="hello-world.campaign.yaml"
-                        href={helloWorldDownloadUrl}
-                        className="text-right btn btn-secondary text-nowrap"
-                        data-tooltip="Download hello-world.campaign.yaml"
+                        href="https://docs.sourcegraph.com/user/campaigns#campaign-specs"
+                        rel="noopener noreferrer"
+                        target="_blank"
                     >
-                        <FileDownloadIcon className="icon-inline" /> Download yaml
+                        syntax reference
                     </a>
-                </div>
-                <div className="bg-light rounded p-2 mb-3">
-                    <pre className="m-0">{campaignSpec}</pre>
-                </div>
-                <p className="lead">
-                    Use Sourcegraph's CLI tool, <code>src</code>, to execute the steps in the campaign spec and upload
-                    it, ready to be previewed and applied:
+                    ) describes what the campaign does. You'll provide it when previewing, creating, and updating
+                    campaigns. We recommend committing it to source control.
                 </p>
-                <div className="bg-light rounded p-3 mb-3">
-                    <pre className="m-0">{sourcePreviewCommand}</pre>
-                </div>
-                <p className="lead">
-                    Download <code>src</code> at{' '}
+                <h4>Examples:</h4>
+                <ul className="nav nav-pills mb-2">
+                    {samples.map(sample => (
+                        <SampleTabHeader
+                            key={sample.name}
+                            sample={sample}
+                            active={selectedSample.name === sample.name}
+                            setSelectedSample={setSelectedSample}
+                        />
+                    ))}
+                </ul>
+                <CodeSnippet code={selectedSample.file} language="yaml" className="mb-4" />
+                <h2>2. Preview the campaign with Sourcegraph CLI</h2>
+                <p>
+                    Use the{' '}
                     <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
-                        github.com/sourcegraph/src-cli
+                        Sourcegraph CLI (src)
+                    </a>{' '}
+                    to preview the commits and changesets that your campaign will make:
+                </p>
+                <CodeSnippet
+                    code={`src campaign preview -namespace ${authenticatedUser.username} -f ${selectedSample.name}`}
+                    language="shell"
+                    className="mb-3"
+                />
+                <p>
+                    Follow the URL printed in your terminal to see the preview and (when you're ready) create the
+                    campaign.
+                </p>
+                <hr className="mt-4" />
+                <p className="text-muted">
+                    Want more help? See{' '}
+                    <a href="/help/user/campaigns" rel="noopener noreferrer" target="_blank">
+                        campaigns documentation
                     </a>
+                    .
                 </p>
             </div>
         </>

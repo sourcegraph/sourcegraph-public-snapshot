@@ -10,13 +10,18 @@ import (
 )
 
 var allDockerImages = []string{
+	// Slow images first for faster CI
+	"server",
 	"frontend",
+	"grafana",
+	"prometheus",
+	"ignite-ubuntu",
+
 	"github-proxy",
 	"gitserver",
 	"query-runner",
 	"repo-updater",
 	"searcher",
-	"server",
 	"symbols",
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
@@ -25,17 +30,15 @@ var allDockerImages = []string{
 
 	// Images under docker-images/
 	"cadvisor",
-	"grafana",
 	"indexed-searcher",
 	"postgres-11.4",
-	"prometheus",
 	"redis-cache",
 	"redis-store",
 	"search-indexer",
 	"syntax-highlighter",
 	"jaeger-agent",
 	"jaeger-all-in-one",
-	"ignite-ubuntu",
+	"codeintel-db",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -186,21 +189,21 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome", "firefox"} {
-		// Run e2e tests
-		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("BROWSER", browser),
-			bk.Env("LOG_BROWSER_CONSOLE", "true"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd browser"),
-			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
-	}
+	// TODO run this on firefox as well when our add-on is unblocked
+	browser := "chrome"
+	// Run e2e tests
+	pipeline.AddStep(fmt.Sprintf(":%s:", browser),
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+		bk.Env("BROWSER", browser),
+		bk.Env("LOG_BROWSER_CONSOLE", "true"),
+		bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd browser"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
+		bk.Cmd("popd"),
+		bk.ArtifactPaths("./puppeteer/*.png"))
 }
 
 // Release the browser extension.
@@ -217,12 +220,13 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn release:chrome"),
 		bk.Cmd("popd"))
 
+	// TODO uncomment this when our add-on will be unblocked
 	// Build and self sign the FF extension and upload it to ...
-	pipeline.AddStep(":rocket::firefox:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
-		bk.Cmd("yarn release:ff"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":rocket::firefox:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("yarn release:ff"),
+	// 	bk.Cmd("popd"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm:",
@@ -239,10 +243,15 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests for release branches
-	// We do not run e2e tests on other branches until we can make them reliable.
-	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	// Run e2e tests on release, patch and main branches
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
+
+	var async bool
+	if c.branch == "main" {
+		async = true
+	} else {
+		async = false
+	}
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
@@ -258,14 +267,17 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 		if !runE2E {
 			return
 		}
+
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
+			bk.Async(async),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
 				Commit:  c.commit,
 				Branch:  c.branch,
 				Env:     env,
-			}))
+			}),
+		)
 	}
 }
 
@@ -295,24 +307,19 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-			pipeline.AddWait()
 		case c.releaseBranch:
 			addDockerImage(c, "server", false)(pipeline)
-			pipeline.AddWait()
 		case c.isMasterDryRun: // replicates `master` build but does not deploy
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-			pipeline.AddWait()
 		case c.branch == "master" || c.branch == "main":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
-			pipeline.AddWait()
 
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
 			addDockerImage(c, c.branch[20:], false)(pipeline)
-			pipeline.AddWait()
 		}
 	}
 }

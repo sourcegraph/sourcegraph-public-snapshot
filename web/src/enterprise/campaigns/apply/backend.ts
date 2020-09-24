@@ -1,5 +1,5 @@
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
-import { gql, requestGraphQL, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import {
     Scalars,
     CampaignSpecFields,
@@ -17,6 +17,7 @@ import {
 } from '../../../graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { requestGraphQL } from '../../../backend/graphql'
 
 export const campaignSpecFragment = gql`
     fragment CampaignSpecFields on CampaignSpec {
@@ -50,8 +51,8 @@ export const campaignSpecFragment = gql`
 `
 
 export const fetchCampaignSpecById = (campaignSpec: Scalars['ID']): Observable<CampaignSpecFields | null> =>
-    requestGraphQL<CampaignSpecByIDResult, CampaignSpecByIDVariables>({
-        request: gql`
+    requestGraphQL<CampaignSpecByIDResult, CampaignSpecByIDVariables>(
+        gql`
             query CampaignSpecByID($campaignSpec: ID!) {
                 node(id: $campaignSpec) {
                     __typename
@@ -62,8 +63,8 @@ export const fetchCampaignSpecById = (campaignSpec: Scalars['ID']): Observable<C
             }
             ${campaignSpecFragment}
         `,
-        variables: { campaignSpec },
-    }).pipe(
+        { campaignSpec }
+    ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -138,8 +139,8 @@ export const queryChangesetSpecs = ({
 }: CampaignSpecChangesetSpecsVariables): Observable<
     (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
 > =>
-    requestGraphQL<CampaignSpecChangesetSpecsResult, CampaignSpecChangesetSpecsVariables>({
-        request: gql`
+    requestGraphQL<CampaignSpecChangesetSpecsResult, CampaignSpecChangesetSpecsVariables>(
+        gql`
             query CampaignSpecChangesetSpecs($campaignSpec: ID!, $first: Int, $after: String) {
                 node(id: $campaignSpec) {
                     __typename
@@ -160,8 +161,8 @@ export const queryChangesetSpecs = ({
 
             ${changesetSpecFieldsFragment}
         `,
-        variables: { campaignSpec, first, after },
-    }).pipe(
+        { campaignSpec, first, after }
+    ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -206,8 +207,8 @@ export const queryChangesetSpecFileDiffs = ({
 }: ChangesetSpecFileDiffsVariables): Observable<
     (ChangesetSpecFileDiffsFields['description'] & { __typename: 'GitBranchChangesetDescription' })['diff']
 > =>
-    requestGraphQL<ChangesetSpecFileDiffsResult, ChangesetSpecFileDiffsVariables>({
-        request: gql`
+    requestGraphQL<ChangesetSpecFileDiffsResult, ChangesetSpecFileDiffsVariables>(
+        gql`
             query ChangesetSpecFileDiffs($changesetSpec: ID!, $first: Int, $after: String, $isLightTheme: Boolean!) {
                 node(id: $changesetSpec) {
                     __typename
@@ -217,8 +218,8 @@ export const queryChangesetSpecFileDiffs = ({
 
             ${changesetSpecFileDiffsFields}
         `,
-        variables: { changesetSpec, first, after, isLightTheme },
-    }).pipe(
+        { changesetSpec, first, after, isLightTheme }
+    ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -237,8 +238,8 @@ export const queryChangesetSpecFileDiffs = ({
 export const createCampaign = ({
     campaignSpec,
 }: CreateCampaignVariables): Promise<CreateCampaignResult['createCampaign']> =>
-    requestGraphQL<CreateCampaignResult, CreateCampaignVariables>({
-        request: gql`
+    requestGraphQL<CreateCampaignResult, CreateCampaignVariables>(
+        gql`
             mutation CreateCampaign($campaignSpec: ID!) {
                 createCampaign(campaignSpec: $campaignSpec) {
                     id
@@ -246,8 +247,8 @@ export const createCampaign = ({
                 }
             }
         `,
-        variables: { campaignSpec },
-    })
+        { campaignSpec }
+    )
         .pipe(
             map(dataOrThrowErrors),
             map(data => data.createCampaign)
@@ -258,8 +259,8 @@ export const applyCampaign = ({
     campaignSpec,
     campaign,
 }: ApplyCampaignVariables): Promise<ApplyCampaignResult['applyCampaign']> =>
-    requestGraphQL<ApplyCampaignResult, ApplyCampaignVariables>({
-        request: gql`
+    requestGraphQL<ApplyCampaignResult, ApplyCampaignVariables>(
+        gql`
             mutation ApplyCampaign($campaignSpec: ID!, $campaign: ID!) {
                 applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $campaign) {
                     id
@@ -267,8 +268,8 @@ export const applyCampaign = ({
                 }
             }
         `,
-        variables: { campaignSpec, campaign },
-    })
+        { campaignSpec, campaign }
+    )
         .pipe(
             map(dataOrThrowErrors),
             map(data => data.applyCampaign)

@@ -54,6 +54,7 @@ import { RepositoriesPopover } from './RepositoriesPopover'
 import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ExternalLinkFields } from '../graphql-operations'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -80,7 +81,7 @@ export interface RepoContainerContext
     routePrefix: string
 
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
-    onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
+    onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
 }
@@ -180,7 +181,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     )
 
     // The external links to show in the repository header, if any.
-    const [externalLinks, setExternalLinks] = useState<GQL.IExternalLink[] | undefined>()
+    const [externalLinks, setExternalLinks] = useState<ExternalLinkFields[] | undefined>()
 
     // The lifecycle props for repo header contributions.
     const [repoHeaderContributionsLifecycleProps, setRepoHeaderContributionsLifecycleProps] = useState<

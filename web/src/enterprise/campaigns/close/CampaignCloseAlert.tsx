@@ -11,6 +11,7 @@ export interface CampaignCloseAlertProps {
     campaignURL: string
     closeChangesets: boolean
     viewerCanAdminister: boolean
+    totalCount: number
     setCloseChangesets: (newValue: boolean) => void
     history: H.History
 
@@ -22,6 +23,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
     campaignID,
     campaignURL,
     closeChangesets,
+    totalCount,
     setCloseChangesets,
     viewerCanAdminister,
     history,
@@ -48,32 +50,39 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
     }, [history, closeChangesets, closeCampaign, campaignID, campaignURL])
     return (
         <>
-            <div className="card shadow mb-3">
+            <div className="card mb-3">
                 <div className="card-body p-3">
                     <p>
                         <strong>
                             After closing this campaign, it will be read-only and no new campaign specs can be applied.
                         </strong>
                     </p>
-                    <p>By default, all changesets remain untouched.</p>
-                    <p>
-                        <input
-                            type="checkbox"
-                            checked={closeChangesets}
-                            onChange={onChangeCloseChangesets}
-                            className="test-campaigns-close-changesets-checkbox"
-                            disabled={isClosing === true || !viewerCanAdminister}
-                        />{' '}
-                        Also close open changesets on code hosts.
-                    </p>
-                    {!viewerCanAdminister && (
-                        <p className="text-warning">
-                            You don't have permission to close this campaign. See{' '}
-                            <a href="https://docs.sourcegraph.com/user/campaigns/managing_access">
-                                Managing access to campaigns
-                            </a>{' '}
-                            for more information about the campaigns permission model.
-                        </p>
+                    {totalCount > 0 && (
+                        <>
+                            <p>By default, all changesets remain untouched.</p>
+                            <p>
+                                <input
+                                    id="closeChangesets"
+                                    type="checkbox"
+                                    checked={closeChangesets}
+                                    onChange={onChangeCloseChangesets}
+                                    className="test-campaigns-close-changesets-checkbox"
+                                    disabled={isClosing === true || !viewerCanAdminister}
+                                />{' '}
+                                <label htmlFor="closeChangesets">
+                                    Also close all {totalCount} open changesets on code hosts.
+                                </label>
+                            </p>
+                            {!viewerCanAdminister && (
+                                <p className="text-warning">
+                                    You don't have permission to close this campaign. See{' '}
+                                    <a href="https://docs.sourcegraph.com/user/campaigns/managing_access">
+                                        Managing access to campaigns
+                                    </a>{' '}
+                                    for more information about the campaigns permission model.
+                                </p>
+                            )}
+                        </>
                     )}
                     <div className="d-flex justify-content-end">
                         <button

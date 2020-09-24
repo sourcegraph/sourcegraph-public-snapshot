@@ -89,15 +89,16 @@ type GlobalState struct {
 
 // User represents a registered user.
 type User struct {
-	ID          int32
-	Username    string
-	DisplayName string
-	AvatarURL   string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	SiteAdmin   bool
-	BuiltinAuth bool
-	Tags        []string
+	ID                    int32
+	Username              string
+	DisplayName           string
+	AvatarURL             string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	SiteAdmin             bool
+	BuiltinAuth           bool
+	Tags                  []string
+	InvalidatedSessionsAt time.Time
 }
 
 type Org struct {

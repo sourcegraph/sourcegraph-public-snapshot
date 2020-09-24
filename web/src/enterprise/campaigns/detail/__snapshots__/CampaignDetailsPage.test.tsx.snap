@@ -10,6 +10,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   location="[Location path=/]"
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
+  queryChangesets={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
     Object {
@@ -52,13 +53,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         />
       }
       className="test-campaign-details-page"
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           <AnchorLink
@@ -68,14 +63,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </React.Fragment>
       }
     >
@@ -85,9 +72,21 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(ImageAutoAdjustIcon)
+          <CampaignsIconWithBetaBadge
             className="icon-inline page-header__icon"
-          />
+          >
+            <Memo(CampaignsFlushEdgesIcon)
+              className="icon-inline page-header__icon"
+            />
+             
+            <sup>
+              <span
+                className="badge badge-merged text-uppercase"
+              >
+                Beta
+              </span>
+            </sup>
+          </CampaignsIconWithBetaBadge>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -100,14 +99,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </h1>
         <CampaignDetailsActionSection
           campaignClosed={false}
@@ -154,65 +145,28 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     }
   >
     <div
-      className="mb-3"
+      className="text-muted mb-3"
     >
-      <span
-        className="text-muted"
+      <AnchorLink
+        to="/users/alice"
       >
-        Created 
-        <Timestamp
-          date="2020-01-01"
+        <a
+          href="/users/alice"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/alice"
-        >
-          <a
-            href="/users/alice"
-          >
-            alice
-          </a>
-        </AnchorLink>
-      </span>
-      <span
-        className="mx-2 text-muted"
+          alice
+        </a>
+      </AnchorLink>
+       
+      <Timestamp
+        date="2020-01-01"
       >
-        |
-      </span>
-      <span
-        className="text-muted"
-      >
-        Updated 
-        <Timestamp
-          date="2020-01-01"
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/bob"
-        >
-          <a
-            href="/users/bob"
-          >
-            bob
-          </a>
-        </AnchorLink>
-      </span>
+          in almost 14 years
+        </span>
+      </Timestamp>
     </div>
   </CampaignInfoByline>
   <CampaignStatsCard
@@ -391,28 +345,24 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     history="[History]"
   >
     <div
-      className=""
+      className="mb-3"
     >
-      <div
-        className="pb-3"
-      >
-        <Markdown
-          dangerousInnerHTML="<p>d</p>
+      <Markdown
+        dangerousInnerHTML="<p>d</p>
 "
-          history="[History]"
-        >
-          <div
-            className="markdown"
-            dangerouslySetInnerHTML={
-              Object {
-                "__html": "<p>d</p>
+        history="[History]"
+      >
+        <div
+          className="markdown"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>d</p>
 ",
-              }
             }
-            onClick={[Function]}
-          />
-        </Markdown>
-      </div>
+          }
+          onClick={[Function]}
+        />
+      </Markdown>
     </div>
   </CampaignDescription>
   <CampaignTabs
@@ -466,6 +416,7 @@ description: somestring",
     isLightTheme={true}
     location="[Location path=/]"
     queryChangesetCountsOverTime={[Function]}
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -515,7 +466,7 @@ description: somestring",
           <Memo(FileDocumentIcon)
             className="icon-inline text-muted mr-1"
           />
-           Campaign spec
+           Spec
         </a>
       </li>
     </ul>
@@ -524,6 +475,7 @@ description: somestring",
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
+      queryChangesets={[Function]}
       telemetryService={
         Object {
           "log": [Function],
@@ -541,11 +493,10 @@ description: somestring",
           onFiltersChange={[Function]}
         >
           <div
-            className="form-inline m-0"
+            className="form-inline m-0 my-2"
           >
-            <ChangesetFilter
+            <ChangesetUIStateFilter
               className="mr-2"
-              label="Status"
               onChange={[Function]}
               values={
                 Array [
@@ -559,59 +510,75 @@ description: somestring",
                 ]
               }
             >
-              <select
-                className="form-control mr-2"
-                onChange={[Function]}
+              <div
+                className="btn-group flex-wrap mr-2"
+                role="group"
               >
-                <option
-                  value=""
+                <button
+                  className="btn btn-outline-secondary active"
+                  onClick={[Function]}
+                  type="button"
                 >
-                  Status
-                </option>
-                <option
+                  All
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="UNPUBLISHED"
-                  value="UNPUBLISHED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Unpublished
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="ERRORED"
-                  value="ERRORED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Errored
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="PROCESSING"
-                  value="PROCESSING"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Processing
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="OPEN"
-                  value="OPEN"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Open
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="CLOSED"
-                  value="CLOSED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Closed
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="MERGED"
-                  value="MERGED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Merged
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="DELETED"
-                  value="DELETED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Deleted
-                </option>
-              </select>
-            </ChangesetFilter>
+                </button>
+              </div>
+            </ChangesetUIStateFilter>
             <ChangesetFilter
               className="mr-2"
               label="Check state"
@@ -716,12 +683,14 @@ description: somestring",
         <FilteredConnection
           className="mt-2"
           defaultFirst={15}
+          emptyElement={<EmptyChangesetListElement />}
           headComponent={[Function]}
           hideSearch={true}
           history="[History]"
           listClassName="campaign-changesets__grid mb-3"
           listComponent="div"
           location="[Location path=/]"
+          noSummaryIfAllNodesVisible={true}
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
@@ -755,17 +724,110 @@ description: somestring",
           <div
             className="filtered-connection test-filtered-connection filtered-connection--noncompact mt-2"
           >
-            <span
-              className="filtered-connection__loader test-filtered-connection__loader"
+            <ConnectionNodes
+              connection={
+                Object {
+                  "nodes": Array [],
+                  "pageInfo": Object {
+                    "endCursor": null,
+                    "hasNextPage": false,
+                  },
+                  "totalCount": 0,
+                }
+              }
+              connectionQuery=""
+              emptyElement={<EmptyChangesetListElement />}
+              first={15}
+              headComponent={[Function]}
+              listClassName="campaign-changesets__grid mb-3"
+              listComponent="div"
+              loading={false}
+              location="[Location path=/]"
+              noSummaryIfAllNodesVisible={true}
+              nodeComponent={[Function]}
+              nodeComponentProps={
+                Object {
+                  "extensionInfo": Object {
+                    "extensionsController": undefined,
+                    "hoverifier": Object {
+                      "hoverState": Object {
+                        "actionsOrError": undefined,
+                        "highlightedRange": undefined,
+                        "hoverOverlayProps": undefined,
+                        "hoveredTokenElement": undefined,
+                        "selectedPosition": undefined,
+                      },
+                      "hoverStateUpdates": "[Subject]",
+                      "hoverify": [Function],
+                      "unsubscribe": [Function],
+                    },
+                  },
+                  "history": "[History]",
+                  "isLightTheme": true,
+                  "location": "[Location path=/]",
+                  "queryExternalChangesetWithFileDiffs": undefined,
+                  "viewerCanAdminister": false,
+                }
+              }
+              noun="changeset"
+              onShowMore={[Function]}
+              pluralNoun="changesets"
+              query=""
             >
-              <LoadingSpinner
-                className="icon-inline"
-              >
+              <EmptyChangesetListElement>
                 <div
-                  className="loading-spinner icon-inline"
-                />
-              </LoadingSpinner>
-            </span>
+                  className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+                >
+                  <div
+                    className="card-body p-5"
+                  >
+                    <h2
+                      className="text-center mb-4"
+                    >
+                      This campaign does not contain changesets
+                    </h2>
+                    <p>
+                      This can occur for several reasons:
+                    </p>
+                    <p>
+                      <strong>
+                        The query specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          repositorieMatchingQuery:
+                        </span>
+                         may not have matched any repositories.
+                      </strong>
+                    </p>
+                    <p>
+                      Test your query in the search bar and ensure it returns results.
+                    </p>
+                    <p>
+                      <strong>
+                        The code specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          steps:
+                        </span>
+                         may not have resulted in changes being made.
+                      </strong>
+                    </p>
+                    <p>
+                      Try the command on a local instance of one of the repositories returned in your search results. Run
+                       
+                      <span
+                        className="text-monospace"
+                      >
+                        git status
+                      </span>
+                       and ensure it produced changed files.
+                    </p>
+                  </div>
+                </div>
+              </EmptyChangesetListElement>
+            </ConnectionNodes>
           </div>
         </FilteredConnection>
       </div>
@@ -784,6 +846,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   location="[Location path=/]"
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
+  queryChangesets={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
     Object {
@@ -826,13 +889,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         />
       }
       className="test-campaign-details-page"
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           <AnchorLink
@@ -842,14 +899,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </React.Fragment>
       }
     >
@@ -859,9 +908,21 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(ImageAutoAdjustIcon)
+          <CampaignsIconWithBetaBadge
             className="icon-inline page-header__icon"
-          />
+          >
+            <Memo(CampaignsFlushEdgesIcon)
+              className="icon-inline page-header__icon"
+            />
+             
+            <sup>
+              <span
+                className="badge badge-merged text-uppercase"
+              >
+                Beta
+              </span>
+            </sup>
+          </CampaignsIconWithBetaBadge>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -874,14 +935,6 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           </AnchorLink>
            / 
           n
-           
-          <sup>
-            <span
-              className="badge badge-merged text-uppercase"
-            >
-              Beta
-            </span>
-          </sup>
         </h1>
         <CampaignDetailsActionSection
           campaignClosed={false}
@@ -928,65 +981,28 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     }
   >
     <div
-      className="mb-3"
+      className="text-muted mb-3"
     >
-      <span
-        className="text-muted"
+      <AnchorLink
+        to="/users/alice"
       >
-        Created 
-        <Timestamp
-          date="2020-01-01"
+        <a
+          href="/users/alice"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/alice"
-        >
-          <a
-            href="/users/alice"
-          >
-            alice
-          </a>
-        </AnchorLink>
-      </span>
-      <span
-        className="mx-2 text-muted"
+          alice
+        </a>
+      </AnchorLink>
+       
+      <Timestamp
+        date="2020-01-01"
       >
-        |
-      </span>
-      <span
-        className="text-muted"
-      >
-        Updated 
-        <Timestamp
-          date="2020-01-01"
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/bob"
-        >
-          <a
-            href="/users/bob"
-          >
-            bob
-          </a>
-        </AnchorLink>
-      </span>
+          in almost 14 years
+        </span>
+      </Timestamp>
     </div>
   </CampaignInfoByline>
   <CampaignStatsCard
@@ -1165,28 +1181,24 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     history="[History]"
   >
     <div
-      className=""
+      className="mb-3"
     >
-      <div
-        className="pb-3"
-      >
-        <Markdown
-          dangerousInnerHTML="<p>d</p>
+      <Markdown
+        dangerousInnerHTML="<p>d</p>
 "
-          history="[History]"
-        >
-          <div
-            className="markdown"
-            dangerouslySetInnerHTML={
-              Object {
-                "__html": "<p>d</p>
+        history="[History]"
+      >
+        <div
+          className="markdown"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>d</p>
 ",
-              }
             }
-            onClick={[Function]}
-          />
-        </Markdown>
-      </div>
+          }
+          onClick={[Function]}
+        />
+      </Markdown>
     </div>
   </CampaignDescription>
   <CampaignTabs
@@ -1240,6 +1252,7 @@ description: somestring",
     isLightTheme={true}
     location="[Location path=/]"
     queryChangesetCountsOverTime={[Function]}
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -1289,7 +1302,7 @@ description: somestring",
           <Memo(FileDocumentIcon)
             className="icon-inline text-muted mr-1"
           />
-           Campaign spec
+           Spec
         </a>
       </li>
     </ul>
@@ -1298,6 +1311,7 @@ description: somestring",
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
+      queryChangesets={[Function]}
       telemetryService={
         Object {
           "log": [Function],
@@ -1315,11 +1329,10 @@ description: somestring",
           onFiltersChange={[Function]}
         >
           <div
-            className="form-inline m-0"
+            className="form-inline m-0 my-2"
           >
-            <ChangesetFilter
+            <ChangesetUIStateFilter
               className="mr-2"
-              label="Status"
               onChange={[Function]}
               values={
                 Array [
@@ -1333,59 +1346,75 @@ description: somestring",
                 ]
               }
             >
-              <select
-                className="form-control mr-2"
-                onChange={[Function]}
+              <div
+                className="btn-group flex-wrap mr-2"
+                role="group"
               >
-                <option
-                  value=""
+                <button
+                  className="btn btn-outline-secondary active"
+                  onClick={[Function]}
+                  type="button"
                 >
-                  Status
-                </option>
-                <option
+                  All
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="UNPUBLISHED"
-                  value="UNPUBLISHED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Unpublished
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="ERRORED"
-                  value="ERRORED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Errored
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="PROCESSING"
-                  value="PROCESSING"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Processing
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="OPEN"
-                  value="OPEN"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Open
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="CLOSED"
-                  value="CLOSED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Closed
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="MERGED"
-                  value="MERGED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Merged
-                </option>
-                <option
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="DELETED"
-                  value="DELETED"
+                  onClick={[Function]}
+                  type="button"
                 >
                   Deleted
-                </option>
-              </select>
-            </ChangesetFilter>
+                </button>
+              </div>
+            </ChangesetUIStateFilter>
             <ChangesetFilter
               className="mr-2"
               label="Check state"
@@ -1490,12 +1519,14 @@ description: somestring",
         <FilteredConnection
           className="mt-2"
           defaultFirst={15}
+          emptyElement={<EmptyChangesetListElement />}
           headComponent={[Function]}
           hideSearch={true}
           history="[History]"
           listClassName="campaign-changesets__grid mb-3"
           listComponent="div"
           location="[Location path=/]"
+          noSummaryIfAllNodesVisible={true}
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
@@ -1529,17 +1560,110 @@ description: somestring",
           <div
             className="filtered-connection test-filtered-connection filtered-connection--noncompact mt-2"
           >
-            <span
-              className="filtered-connection__loader test-filtered-connection__loader"
+            <ConnectionNodes
+              connection={
+                Object {
+                  "nodes": Array [],
+                  "pageInfo": Object {
+                    "endCursor": null,
+                    "hasNextPage": false,
+                  },
+                  "totalCount": 0,
+                }
+              }
+              connectionQuery=""
+              emptyElement={<EmptyChangesetListElement />}
+              first={15}
+              headComponent={[Function]}
+              listClassName="campaign-changesets__grid mb-3"
+              listComponent="div"
+              loading={false}
+              location="[Location path=/]"
+              noSummaryIfAllNodesVisible={true}
+              nodeComponent={[Function]}
+              nodeComponentProps={
+                Object {
+                  "extensionInfo": Object {
+                    "extensionsController": undefined,
+                    "hoverifier": Object {
+                      "hoverState": Object {
+                        "actionsOrError": undefined,
+                        "highlightedRange": undefined,
+                        "hoverOverlayProps": undefined,
+                        "hoveredTokenElement": undefined,
+                        "selectedPosition": undefined,
+                      },
+                      "hoverStateUpdates": "[Subject]",
+                      "hoverify": [Function],
+                      "unsubscribe": [Function],
+                    },
+                  },
+                  "history": "[History]",
+                  "isLightTheme": true,
+                  "location": "[Location path=/]",
+                  "queryExternalChangesetWithFileDiffs": undefined,
+                  "viewerCanAdminister": true,
+                }
+              }
+              noun="changeset"
+              onShowMore={[Function]}
+              pluralNoun="changesets"
+              query=""
             >
-              <LoadingSpinner
-                className="icon-inline"
-              >
+              <EmptyChangesetListElement>
                 <div
-                  className="loading-spinner icon-inline"
-                />
-              </LoadingSpinner>
-            </span>
+                  className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+                >
+                  <div
+                    className="card-body p-5"
+                  >
+                    <h2
+                      className="text-center mb-4"
+                    >
+                      This campaign does not contain changesets
+                    </h2>
+                    <p>
+                      This can occur for several reasons:
+                    </p>
+                    <p>
+                      <strong>
+                        The query specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          repositorieMatchingQuery:
+                        </span>
+                         may not have matched any repositories.
+                      </strong>
+                    </p>
+                    <p>
+                      Test your query in the search bar and ensure it returns results.
+                    </p>
+                    <p>
+                      <strong>
+                        The code specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          steps:
+                        </span>
+                         may not have resulted in changes being made.
+                      </strong>
+                    </p>
+                    <p>
+                      Try the command on a local instance of one of the repositories returned in your search results. Run
+                       
+                      <span
+                        className="text-monospace"
+                      >
+                        git status
+                      </span>
+                       and ensure it produced changed files.
+                    </p>
+                  </div>
+                </div>
+              </EmptyChangesetListElement>
+            </ConnectionNodes>
           </div>
         </FilteredConnection>
       </div>

@@ -7,3 +7,9 @@ FROM scratch
 #
 # See https://github.com/sourcegraph/infrastructure/blob/master/code-intel/startup-script.sh.
 COPY precise-code-intel-indexer-vm /usr/local/bin/
+
+# Required for docker create to work correctly. Without this docker create responds with
+# the folowing error:
+#
+# Error response from daemon: No command specified
+CMD ["/usr/local/bin/precise-code-intel-indexer-vm"]

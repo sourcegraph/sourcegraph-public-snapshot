@@ -92,6 +92,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				NumResets:       18,
+				NumFailures:     25,
 
 				Unsynced: true,
 				Closing:  true,
@@ -273,7 +274,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		t.Run("ReconcilerState", func(t *testing.T) {
 			completed := campaigns.ReconcilerStateCompleted
-			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &completed})
+			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{completed}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -283,7 +284,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 
 			processing := campaigns.ReconcilerStateProcessing
-			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &processing})
+			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{processing}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -473,13 +474,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateQueued,
+					ReconcilerStates: []campaigns.ReconcilerState{stateQueued},
 				},
 				wantCount: 0,
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateCompleted,
+					ReconcilerStates: []campaigns.ReconcilerState{stateCompleted},
 				},
 				wantCount: 3,
 			},
@@ -703,7 +704,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			c.StartedAt = clock.now()
 			c.FinishedAt = clock.now()
 			c.ProcessAfter = clock.now()
-			c.NumResets = 99
+			c.NumResets = 987
+			c.NumFailures = 789
 
 			clone := c.Clone()
 			have = append(have, clone)
@@ -790,6 +792,164 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatal(diff)
+		}
+	})
+
+	t.Run("CancelQueuedCampaignChangesets", func(t *testing.T) {
+		var campaignID int64 = 99999
+
+		c1 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+		})
+
+		c2 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			numFailures:     reconcilerMaxNumRetries - 1,
+		})
+
+		c3 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateCompleted,
+		})
+
+		c4 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: 0,
+			unsynced:        true,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+		})
+
+		c5 := createChangeset(t, ctx, s, testChangesetOpts{
+			repo:            repo.ID,
+			campaign:        campaignID,
+			ownedByCampaign: campaignID,
+			reconcilerState: cmpgn.ReconcilerStateProcessing,
+		})
+
+		if err := s.CancelQueuedCampaignChangesets(ctx, campaignID); err != nil {
+			t.Fatal(err)
+		}
+
+		reloadAndAssertChangeset(t, ctx, s, c1, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			ownedByCampaign: campaignID,
+			failureMessage:  &canceledChangesetFailureMessage,
+			numFailures:     reconcilerMaxNumRetries,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c2, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			ownedByCampaign: campaignID,
+			failureMessage:  &canceledChangesetFailureMessage,
+			numFailures:     reconcilerMaxNumRetries,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c3, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateCompleted,
+			ownedByCampaign: campaignID,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c4, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateQueued,
+			unsynced:        true,
+		})
+
+		reloadAndAssertChangeset(t, ctx, s, c5, changesetAssertions{
+			repo:            repo.ID,
+			reconcilerState: cmpgn.ReconcilerStateErrored,
+			failureMessage:  &canceledChangesetFailureMessage,
+			ownedByCampaign: campaignID,
+			numFailures:     reconcilerMaxNumRetries,
+		})
+	})
+
+	t.Run("EnqueueChangesetsToClose", func(t *testing.T) {
+		var campaignID int64 = 99999
+
+		wantEnqueued := changesetAssertions{
+			repo:            repo.ID,
+			ownedByCampaign: campaignID,
+			reconcilerState: campaigns.ReconcilerStateQueued,
+			numFailures:     0,
+			failureMessage:  nil,
+			closing:         true,
+		}
+
+		tests := []struct {
+			have testChangesetOpts
+			want changesetAssertions
+		}{
+			{
+				have: testChangesetOpts{reconcilerState: cmpgn.ReconcilerStateQueued},
+				want: wantEnqueued,
+			},
+			{
+				have: testChangesetOpts{reconcilerState: cmpgn.ReconcilerStateProcessing},
+				want: wantEnqueued,
+			},
+			{
+				have: testChangesetOpts{
+					reconcilerState: cmpgn.ReconcilerStateErrored,
+					failureMessage:  "failed",
+					numFailures:     reconcilerMaxNumRetries - 1,
+				},
+				want: wantEnqueued,
+			},
+			{
+				have: testChangesetOpts{
+					externalState:   campaigns.ChangesetExternalStateOpen,
+					reconcilerState: cmpgn.ReconcilerStateCompleted,
+				},
+				want: changesetAssertions{
+					reconcilerState: campaigns.ReconcilerStateQueued,
+					closing:         true,
+					externalState:   campaigns.ChangesetExternalStateOpen,
+				},
+			},
+			{
+				have: testChangesetOpts{
+					externalState:   campaigns.ChangesetExternalStateClosed,
+					reconcilerState: cmpgn.ReconcilerStateCompleted,
+				},
+				want: changesetAssertions{
+					reconcilerState: campaigns.ReconcilerStateCompleted,
+					externalState:   campaigns.ChangesetExternalStateClosed,
+				},
+			},
+		}
+
+		changesets := make(map[*campaigns.Changeset]changesetAssertions)
+		for _, tc := range tests {
+			opts := tc.have
+			opts.repo = repo.ID
+			opts.campaign = campaignID
+			opts.ownedByCampaign = campaignID
+
+			c := createChangeset(t, ctx, s, opts)
+			changesets[c] = tc.want
+		}
+
+		if err := s.EnqueueChangesetsToClose(ctx, campaignID); err != nil {
+			t.Fatal(err)
+		}
+
+		for changeset, want := range changesets {
+			want.repo = repo.ID
+			want.ownedByCampaign = campaignID
+			reloadAndAssertChangeset(t, ctx, s, changeset, want)
 		}
 	})
 }

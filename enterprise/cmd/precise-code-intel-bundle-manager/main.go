@@ -29,6 +29,7 @@ func main() {
 	env.HandleHelpFlag()
 	logging.Init()
 	tracer.Init()
+	trace.Init(true)
 
 	sqliteutil.MustRegisterSqlite3WithPcre()
 

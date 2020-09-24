@@ -1,10 +1,6 @@
 .external-changeset-node {
     &__expanded-section {
         // Make it full width in the current row.
-        grid-column: 1 / -1;
-    }
-    &__diffstat {
-        justify-self: end;
-        align-self: start;
+        grid-column: 2 / -1;
     }
 }

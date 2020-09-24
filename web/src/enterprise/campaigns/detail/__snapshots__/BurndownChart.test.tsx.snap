@@ -7,11 +7,22 @@ exports[`CampaignBurndownChart renders an alert when data for less than 2 days i
   queryChangesetCountsOverTime={[Function]}
   width={500}
 >
-  <p>
-    <em>
-      Burndown chart will be shown when there is more than 1 day of data.
-    </em>
-  </p>
+  <div
+    className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+  >
+    <div
+      className="card-body p-5"
+    >
+      <h2
+        className="text-center mb-4"
+      >
+        The burndown chart requires 2 days of data
+      </h2>
+      <p>
+        Come back in a few days and we'll be able to show you data on how your campaign is progressing!
+      </p>
+    </div>
+  </div>
 </CampaignBurndownChart>
 `;
 
@@ -22,11 +33,22 @@ exports[`CampaignBurndownChart renders an alert when no datapoints are in a set 
   queryChangesetCountsOverTime={[Function]}
   width={500}
 >
-  <p>
-    <em>
-      Burndown chart will be shown when data is available.
-    </em>
-  </p>
+  <div
+    className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+  >
+    <div
+      className="card-body p-5"
+    >
+      <h2
+        className="text-center mb-4"
+      >
+        Burndown chart is not available
+      </h2>
+      <p>
+        The burndown chart will be shown when data is available.
+      </p>
+    </div>
+  </div>
 </CampaignBurndownChart>
 `;
 

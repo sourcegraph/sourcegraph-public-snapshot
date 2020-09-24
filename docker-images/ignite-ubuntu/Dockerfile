@@ -6,3 +6,5 @@ RUN set -ex && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     docker.io
+
+RUN mkdir -p /etc/docker/ && echo '{"registry-mirrors": ["http://localhost:5000"] }' >/etc/docker/daemon.json

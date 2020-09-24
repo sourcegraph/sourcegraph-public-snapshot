@@ -5,13 +5,11 @@ import { FilterType } from '../../../../../shared/src/search/interactive/util'
 
 interface RowProps {
     /**
-     * Whether we're currently on the search homepage.
-     */
-    isHomepage: boolean
-    /**
      * Callback that adds a new filter to the SelectedFilterRow when one of the buttons are clicked.
      * */
     onAddNewFilter: (filter: FilterType) => void
+
+    className?: string
 }
 
 // Filters that are shown as buttons, and not in the dropdown menu.
@@ -20,7 +18,7 @@ export const defaultFilterTypes = [FilterType.repo, FilterType.file]
 /**
  * The row containing the buttons to add new filters in interactive mode.
  * */
-export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, onAddNewFilter }) => {
+export const AddFilterRow: React.FunctionComponent<RowProps> = ({ onAddNewFilter, className = '' }) => {
     const buildOnAddFilterHandler = (filterType: FilterType) => (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault()
 
@@ -28,7 +26,7 @@ export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, on
     }
 
     return (
-        <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} test-add-filter-row`}>
+        <div className={`add-filter-row test-add-filter-row ${className}`}>
             {defaultFilterTypes.map(filterType => (
                 <button
                     key={filterType}

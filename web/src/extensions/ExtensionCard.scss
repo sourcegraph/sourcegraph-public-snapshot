@@ -12,12 +12,12 @@
         object-fit: contain;
     }
 
-    &__toggle {
-        z-index: 1;
-    }
-
     &__footer {
         background: unset;
+    }
+
+    &__toggle {
+        z-index: 1;
     }
 
     &__body:hover {

@@ -2,12 +2,12 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql, dataOrThrowErrors, requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { isErrorLike, asError } from '../../../../shared/src/util/errors'
@@ -24,13 +24,13 @@ import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
-import { UserResult, UserVariables, UserAreaUserFields } from '../../graphql-operations'
+import { UserAreaUserFields } from '../../graphql-operations'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { Link } from '../../../../shared/src/components/Link'
+import { queryGraphQL } from '../../backend/graphql'
 
 const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<UserAreaUserFields> =>
-    requestGraphQL<UserResult, UserVariables>({
-        request: gql`
+    queryGraphQL(
+        gql`
             query User($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
                     ...UserAreaUserFields
@@ -67,14 +67,14 @@ const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<U
                 tags @include(if: $siteAdmin)
             }
         `,
-        variables: args,
-    }).pipe(
+        args
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.user) {
                 throw new Error(`User not found: ${JSON.stringify(args.username)}`)
             }
-            return data.user
+            return data.user as UserAreaUserFields
         })
     )
 
@@ -207,9 +207,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         if (stateUpdate.userOrError && !isErrorLike(stateUpdate.userOrError)) {
                             const childBreadcrumbSetters = this.props.setBreadcrumb({
                                 key: 'UserArea',
-                                element: (
-                                    <Link to={stateUpdate.userOrError.url}>{stateUpdate.userOrError.username}</Link>
-                                ),
+                                link: { to: stateUpdate.userOrError.url, label: stateUpdate.userOrError.username },
                             })
                             this.subscriptions.add(childBreadcrumbSetters)
                             this.setState({
@@ -271,14 +269,25 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             useBreadcrumb: this.state.useBreadcrumb,
             setBreadcrumb: this.state.setBreadcrumb,
         }
+
+        const routeMatch = this.props.userAreaRoutes.find(({ path, exact }) =>
+            matchPath(this.props.location.pathname, { path: this.props.match.url + path, exact })
+        )?.path
+
+        // Hide header and use full-width container for campaigns pages.
+        const isCampaigns = routeMatch === '/campaigns'
+        const hideHeader = isCampaigns
+
         return (
             <div className="user-area w-100">
-                <UserAreaHeader
-                    {...this.props}
-                    {...context}
-                    navItems={this.props.userAreaHeaderNavItems}
-                    className="border-bottom mt-4"
-                />
+                {!hideHeader && (
+                    <UserAreaHeader
+                        {...this.props}
+                        {...context}
+                        navItems={this.props.userAreaHeaderNavItems}
+                        className="border-bottom mt-4"
+                    />
+                )}
                 <div className="container mt-3">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

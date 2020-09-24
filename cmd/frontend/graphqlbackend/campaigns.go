@@ -193,7 +193,7 @@ type ListChangesetsArgs struct {
 	First                       int32
 	After                       *string
 	PublicationState            *campaigns.ChangesetPublicationState
-	ReconcilerState             *campaigns.ReconcilerState
+	ReconcilerState             *[]campaigns.ReconcilerState
 	ExternalState               *campaigns.ChangesetExternalState
 	ReviewState                 *campaigns.ChangesetReviewState
 	CheckState                  *campaigns.ChangesetCheckState
@@ -293,6 +293,8 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
+
+	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

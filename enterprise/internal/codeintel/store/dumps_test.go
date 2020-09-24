@@ -55,6 +55,7 @@ func TestGetDumpByID(t *testing.T) {
 		FinishedAt:     expected.FinishedAt,
 		ProcessAfter:   expected.ProcessAfter,
 		NumResets:      expected.NumResets,
+		NumFailures:    expected.NumFailures,
 		RepositoryID:   expected.RepositoryID,
 		RepositoryName: expected.RepositoryName,
 		Indexer:        expected.Indexer,

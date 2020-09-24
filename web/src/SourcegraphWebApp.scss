@@ -245,10 +245,10 @@ body,
 }
 
 // Hide the given element from Percy.
-.percy-hide {
+.percy-hide,
+.monaco-editor .cursor {
     @media only percy {
-        visibility: hidden;
-        display: none;
+        visibility: hidden !important;
     }
 }
 
@@ -278,6 +278,7 @@ body,
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
+@import './components/CodeSnippet';
 @import './components/PageHeader';
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
@@ -297,6 +298,7 @@ body,
 @import './components/Collapsible';
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
+@import './components/branding/BrandLogo';
 @import './components/SingleValueCard';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';

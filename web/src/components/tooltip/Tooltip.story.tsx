@@ -12,14 +12,23 @@ const { add } = storiesOf('web/Tooltip', module).addDecorator(story => (
     </>
 ))
 
-add('Hover', () => (
-    <>
-        <Tooltip />
-        <p>
-            You can <strong data-tooltip="Tooltip 1">hover me</strong> or <strong data-tooltip="Tooltip 2">me</strong>.
-        </p>
-    </>
-))
+add(
+    'Hover',
+    () => (
+        <>
+            <Tooltip />
+            <p>
+                You can <strong data-tooltip="Tooltip 1">hover me</strong> or{' '}
+                <strong data-tooltip="Tooltip 2">me</strong>.
+            </p>
+        </>
+    ),
+    {
+        chromatic: {
+            disable: true,
+        },
+    }
+)
 
 const PinnedTooltip: React.FunctionComponent = () => {
     const clickElement = useCallback((element: HTMLElement | null) => {

@@ -283,6 +283,7 @@ type Changeset struct {
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
+	NumFailures     int64
 
 	// Unsynced is true if the changeset tracks an external changeset but the
 	// data hasn't been synced yet.
@@ -494,6 +495,14 @@ func (c *Changeset) URL() (s string, err error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+}
+
+// ResetQueued resets the failure message and reset count and sets the changesets ReconcilerState to queued.
+func (c *Changeset) ResetQueued() {
+	c.ReconcilerState = ReconcilerStateQueued
+	c.NumResets = 0
+	c.NumFailures = 0
+	c.FailureMessage = nil
 }
 
 // ChangesetSpecs is a slice of *ChangesetSpecs.
@@ -1947,9 +1956,35 @@ func (d *ChangesetSpecDescription) CommitMessage() (string, error) {
 	return d.Commits[0].Message, nil
 }
 
+// AuthorName returns the author name of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) AuthorName() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].AuthorName, nil
+}
+
+// AuthorEmail returns the author email of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) AuthorEmail() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].AuthorEmail, nil
+}
+
 type GitCommitDescription struct {
-	Message string `json:"message,omitempty"`
-	Diff    string `json:"diff,omitempty"`
+	Message     string `json:"message,omitempty"`
+	Diff        string `json:"diff,omitempty"`
+	AuthorName  string `json:"authorName,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
 }
 
 // unmarshalValidate validates the input, which can be YAML or JSON, against

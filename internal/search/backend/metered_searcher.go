@@ -6,9 +6,13 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/rpc"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -64,6 +68,36 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		)
 	}
 
+	if opts != nil && ot.ShouldTrace(ctx) {
+		// Replace any existing spanContext with a new one, given we've done additional tracing
+		spanContext := make(map[string]string)
+		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
+			newOpts := *opts
+			newOpts.SpanContext = spanContext
+			opts = &newOpts
+		} else {
+			log15.Warn("meteredSearcher: Error injecting new span context into map: %s", err)
+		}
+	}
+
+	// Instrument the RPC layer
+	var writeRequestStart, writeRequestDone time.Time
+	ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
+		WriteRequestStart: func() {
+			tr.LogFields(log.String("event", "rpc.write_request_start"))
+			writeRequestStart = time.Now()
+		},
+
+		WriteRequestDone: func(err error) {
+			fields := []log.Field{log.String("event", "rpc.write_request_done")}
+			if err != nil {
+				fields = append(fields, log.String("rpc.write_request.error", err.Error()))
+			}
+			tr.LogFields(fields...)
+			writeRequestDone = time.Now()
+		},
+	})
+
 	zsr, err := m.Searcher.Search(ctx, q, opts)
 
 	code := "200"
@@ -75,6 +109,10 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(d.Seconds())
 
 	tr.SetError(err)
+	tr.LogFields(
+		log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+		log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+	)
 	if zsr != nil {
 		tr.LogFields(
 			log.Int("filematches", len(zsr.Files)),

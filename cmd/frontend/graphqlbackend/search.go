@@ -342,24 +342,35 @@ func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
 	return &settings, nil
 }
 
-var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
+var mockResolveRepoGroups func() (map[string][]*types.Repo, []string, error)
 
-func resolveRepoGroups(settings *schema.Settings) (map[string][]*types.Repo, error) {
+func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Repo, patterns []string, err error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
+	groups = map[string][]*types.Repo{}
 
-	groups := map[string][]*types.Repo{}
+	for name, repoSpecs := range settings.SearchRepositoryGroups {
+		repos := make([]*types.Repo, 0, len(repoSpecs))
 
-	for name, repoPaths := range settings.SearchRepositoryGroups {
-		repos := make([]*types.Repo, len(repoPaths))
-		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{Name: api.RepoName(repoPath)}
+		for _, repoSpec := range repoSpecs {
+			switch path := repoSpec.(type) {
+			case string:
+				patterns = append(patterns, "^"+regexp.QuoteMeta(path)+"$")
+				repos = append(repos, &types.Repo{Name: api.RepoName(path)})
+			case map[string]interface{}:
+				if stringRegex, ok := path["regex"].(string); ok {
+					patterns = append(patterns, stringRegex)
+				} else {
+					log15.Warn("ignoring repo group object because regex not specfied", "regex-string", path["regex"])
+				}
+			default:
+				log15.Warn("ignoring repo group object of unrecognized type", "object", repoSpec, "type", fmt.Sprintf("%T", repoSpec))
+			}
 		}
 		groups[name] = repos
 	}
-
-	return groups, nil
+	return groups, patterns, nil
 }
 
 // NOTE: This function is not called if the version context is not used
@@ -758,20 +769,15 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
 	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
-		groups, err := resolveRepoGroups(op.userSettings)
+		_, patterns, err := resolveRepoGroups(op.userSettings)
 		if err != nil {
 			return resolvedRepositories{}, err
-		}
-		var patterns []string
-		for _, groupName := range groupNames {
-			for _, repo := range groups[groupName] {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
-			}
 		}
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
-		// Ensure we don't omit any repos explicitly included via a repo group.
+		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
+		// listed repo generates at least one pattern.)
 		if len(patterns) > maxRepoListSize {
 			maxRepoListSize = len(patterns)
 		}

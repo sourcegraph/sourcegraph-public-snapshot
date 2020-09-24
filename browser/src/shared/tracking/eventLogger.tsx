@@ -1,5 +1,5 @@
 import { noop } from 'lodash'
-import { Observable, ReplaySubject } from 'rxjs'
+import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -11,6 +11,51 @@ import { observeSourcegraphURL, getPlatformName } from '../util/context'
 import { UserEvent } from '../../graphql-operations'
 
 const uidKey = 'sourcegraphAnonymousUid'
+
+/**
+ * Telemetry Service which only logs when the enable flag is set. Accepts an
+ * observable that emits the enabled value.
+ *
+ * This was implemented as a wrapper around TelemetryService in order to avoid
+ * modifying EventLogger, but the enabled flag could be rolled into EventLogger.
+ *
+ * TODO: Potential to be improved by buffering log events until the first emit
+ * of the enabled value.
+ */
+export class ConditionalTelemetryService implements TelemetryService {
+    /** Log events are passed on to the inner TelemetryService */
+    private innerTelemetryService: TelemetryService
+    private subscription = new Subscription()
+
+    /**
+     * The enabled state set by an observable, provided upon instantiation
+     */
+    private isEnabled = false
+
+    constructor(innerTelemetryService: TelemetryService, isEnabled: Observable<boolean>) {
+        this.subscription.add(
+            isEnabled.subscribe(value => {
+                this.isEnabled = value
+            })
+        )
+        this.innerTelemetryService = innerTelemetryService
+    }
+
+    public log(eventName: string, eventProperties?: any): void {
+        if (this.isEnabled) {
+            this.innerTelemetryService.log(eventName, eventProperties)
+        }
+    }
+    public logViewEvent(eventName: string, eventProperties?: any): void {
+        if (this.isEnabled) {
+            this.innerTelemetryService.logViewEvent(eventName, eventProperties)
+        }
+    }
+
+    public unsubscribe(): void {
+        return this.subscription.unsubscribe()
+    }
+}
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
@@ -111,7 +156,7 @@ export class EventLogger implements TelemetryService {
      *
      * @param pageTitle The title of the page being viewed.
      */
-    public async logViewEvent(pageTitle: string): Promise<void> {
+    public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logEvent(
@@ -119,7 +164,7 @@ export class EventLogger implements TelemetryService {
                 name: `View${pageTitle}`,
                 userCookieID: anonUserId,
                 url: sourcegraphURL,
-                argument: { platform: this.platform },
+                argument: { ...eventProperties, platform: this.platform },
             },
             this.requestGraphQL
         )

@@ -8,7 +8,6 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { SearchButton } from './SearchButton'
 import { Link } from '../../../../shared/src/components/Link'
-import { SearchScopes } from './SearchScopes'
 import { QuickLinks } from '../QuickLinks'
 import { Notices } from '../../global/Notices'
 import { SettingsCascadeProps, isSettingsValid } from '../../../../shared/src/settings/settings'
@@ -53,7 +52,7 @@ interface Props
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         Pick<SubmitSearchParams, 'source'>,
@@ -67,15 +66,9 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
-    interactiveModeHomepageMode?: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     autoFocus?: boolean
-
-    // For NavLinks
-    authRequired?: boolean
-    showCampaigns: boolean
 }
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
@@ -250,7 +243,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     onNavbarQueryChange={setUserQueryState}
                     toggleSearchMode={props.toggleSearchMode}
                     lowProfile={false}
-                    homepageMode={props.interactiveModeHomepageMode}
                 />
             ) : (
                 <>
@@ -280,21 +272,13 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             />
                             <SearchButton />
                         </div>
-                        <div className="search-page__input-sub-container">
-                            {!props.splitSearchModes && (
+                        {!props.splitSearchModes && (
+                            <div className="search-page__input-sub-container">
                                 <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
                                     Query builder
                                 </Link>
-                            )}
-                            <SearchScopes
-                                history={props.history}
-                                query={userQueryState.query}
-                                authenticatedUser={props.authenticatedUser}
-                                settingsCascade={props.settingsCascade}
-                                patternType={props.patternType}
-                                versionContext={props.versionContext}
-                            />
-                        </div>
+                            </div>
+                        )}
                         <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                         <Notices
                             className="my-3"

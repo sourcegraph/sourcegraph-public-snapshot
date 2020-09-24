@@ -1,5 +1,4 @@
 import * as H from 'history'
-import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
@@ -8,6 +7,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphIcon } from './icons'
 
 interface SignInPageProps {
     location: H.Location
@@ -16,7 +16,7 @@ interface SignInPageProps {
 }
 
 export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
-    useEffect(() => eventLogger.logViewEvent('SignIn', false))
+    useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(props.location)
@@ -27,18 +27,30 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
         <div className="signin-signup-page sign-in-page">
             <PageTitle title="Sign in" />
             <HeroPage
-                icon={KeyIcon}
-                title="Sign into Sourcegraph"
+                icon={SourcegraphIcon}
+                iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                iconClassName="bg-transparent"
+                title={
+                    window.context.sourcegraphDotComMode
+                        ? 'Sign in to Sourcegraph Cloud'
+                        : 'Sign in to Sourcegraph Server'
+                }
                 body={
                     window.context.authProviders && window.context.authProviders.length > 0 ? (
                         <div className="mb-4">
+                            {/*
+                            Use index as key because display name may not be unique. This is OK
+                            here because this list will not be updated during this component's lifetime.
+                             */}
                             {window.context.authProviders.map((provider, index) =>
                                 provider.isBuiltin ? (
+                                    /* eslint-disable react/no-array-index-key */
                                     <UsernamePasswordSignInForm key={index} {...props} />
                                 ) : (
-                                    <div className="mb-2">
-                                        <a key={index} href={provider.authenticationURL} className="btn btn-secondary">
-                                            Sign in with {provider.displayName}
+                                    /* eslint-disable react/no-array-index-key */
+                                    <div className="mb-2" key={index}>
+                                        <a href={provider.authenticationURL} className="btn btn-secondary">
+                                            Continue with {provider.displayName}
                                         </a>
                                     </div>
                                 )

@@ -24,7 +24,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
-	//	tracer.Init() // TODO(efritz) - disabled as it requires internal API access
+	trace.Init(false)
 
 	var (
 		frontendURL              = mustGet(rawFrontendURL, "PRECISE_CODE_INTEL_EXTERNAL_URL")
@@ -37,6 +37,7 @@ func main() {
 		useFirecracker           = mustParseBool(rawUseFirecracker, "PRECISE_CODE_INTEL_USE_FIRECRACKER")
 		firecrackerNumCPUs       = mustParseInt(rawFirecrackerNumCPUs, "PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS")
 		firecrackerMemory        = mustGet(rawFirecrackerMemory, "PRECISE_CODE_INTEL_FIRECRACKER_MEMORY")
+		imageArchivePath         = mustGet(rawImageArchivePath, "PRECISE_CODE_INTEL_IMAGE_ARCHIVE_PATH")
 	)
 
 	if frontendURLFromDocker == "" {
@@ -74,6 +75,7 @@ func main() {
 			UseFirecracker:        useFirecracker,
 			FirecrackerNumCPUs:    firecrackerNumCPUs,
 			FirecrackerMemory:     firecrackerMemory,
+			ImageArchivePath:      imageArchivePath,
 		},
 	})
 
