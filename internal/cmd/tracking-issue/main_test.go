@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,21 +32,41 @@ func TestIntegration(t *testing.T) {
 		},
 	}
 
-	path := filepath.Join("testdata", "issue.md")
-
-	if !*update {
-		stat, err := os.Stat(path)
-		if err != nil {
-			t.Fatalf("unexpected error statting golden: %s", err.Error())
-		}
-
-		// Mock current time to be the last update
-		now = func() time.Time { return stat.ModTime() }
+	// Mock current time to be the last update
+	lastUpdate, err := getOrUpdateLastUpdateTime(*update)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err.Error())
 	}
+	now = func() time.Time { return lastUpdate }
 
 	loadTrackingIssueFixtures(t, "sourcegraph", ti)
 	got := ti.Workloads().Markdown(ti.LabelAllowlist)
-	testutil.AssertGolden(t, path, *update, got)
+	testutil.AssertGolden(t, filepath.Join("testdata", "issue.md"), *update, got)
+}
+
+func getOrUpdateLastUpdateTime(update bool) (time.Time, error) {
+	lastUpdateFile := filepath.Join("testdata", "last-update.txt")
+
+	if update {
+		now := time.Now().UTC()
+
+		if err := ioutil.WriteFile(
+			lastUpdateFile,
+			[]byte(now.Format(time.RFC3339)),
+			os.ModePerm,
+		); err != nil {
+			return time.Time{}, err
+		}
+
+		return now, nil
+	}
+
+	content, err := ioutil.ReadFile(lastUpdateFile)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Parse(time.RFC3339, string(content))
 }
 
 func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
