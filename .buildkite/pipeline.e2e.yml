@@ -1,13 +1,12 @@
 env:
   ENTERPRISE: "1"
   DOCKER_BUILDKIT: "1"
-  ENTERPRISE: "1"
   FORCE_COLOR: "3"
   GO111MODULE: "on"
   IMAGE: "server_instrumented"
   TAG: "${BUILDKITE_BUILD_NUMBER}_${BUILDKITE_RETRY_COUNT}"
   COVERAGE_INSTRUMENT: "true"
-  TEST_USER_PASSWORD: "SuperSecurePassword"
+  VAGRANT_RUN_ENV: "CI"
 
 steps:
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
