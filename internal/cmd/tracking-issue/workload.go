@@ -110,38 +110,48 @@ func (wl *Workload) gatherCompletedWork(labelAllowList []string) []CompletedWork
 	return completedWork
 }
 
+// gatherCompletedIssues returns all completed issues whose sole parent is not
+// also complete. This will ensure that we display the roots of large completed
+// work instead of every element in that subtree.
 func (wl *Workload) gatherCompletedIssues(labelAllowList []string) (completedWork []CompletedWork) {
 	for _, issue := range wl.Issues {
-		// Render any issue that belongs to zero or more than one
-		// tracking issue (excluding the team tracking issue).
-		if issue.Closed() {
-			completedWork = append(completedWork, CompletedWork{
-				Markdown: issue.Markdown(labelAllowList),
-				ClosedAt: issue.ClosedAt,
-			})
+		if !issue.Closed() {
+			continue
 		}
+		if len(issue.Parents) == 1 && issue.Parents[0].Closed() {
+			continue
+		}
+
+		completedWork = append(completedWork, CompletedWork{
+			Markdown: issue.Markdown(labelAllowList),
+			ClosedAt: issue.ClosedAt,
+		})
 	}
 
 	return completedWork
 }
 
+// gatherCompletedPullRequests returns all completed pull requests that has an
+// open parent or linked issue.
 func (wl *Workload) gatherCompletedPullRequests() (completedWork []CompletedWork) {
 outer:
 	for _, pr := range wl.PullRequests {
-		if pr.Done() {
-			// Put all closed PRs that have at least one linked issue that
-			// has not been completed at the top level of the finished work.
-			for _, issue := range pr.LinkedIssues {
-				if issue.Closed() {
-					continue outer
-				}
-			}
-
-			completedWork = append(completedWork, CompletedWork{
-				Markdown: pr.Markdown(),
-				ClosedAt: pr.ClosedAt,
-			})
+		if !pr.Done() {
+			continue
 		}
+		if len(pr.LinkedIssues) == 0 && len(pr.Parents) == 1 && pr.Parents[0].Closed() {
+			continue
+		}
+		for _, issue := range pr.LinkedIssues {
+			if issue.Closed() {
+				continue outer
+			}
+		}
+
+		completedWork = append(completedWork, CompletedWork{
+			Markdown: pr.Markdown(),
+			ClosedAt: pr.ClosedAt,
+		})
 	}
 
 	return completedWork
@@ -163,7 +173,7 @@ func renderIssue(b *strings.Builder, labelAllowlist []string, issue *Issue, dept
 		// Nest PRs under the tracking issue they most closely belong to
 		// _only if_ it doesn't appear in the list of PRs for any issue
 		// in this tracking issue(isn't explicitly linked to any issue).
-		if len(child.Parents) == 1 && len(child.LinkedIssues) == 0 {
+		if len(child.LinkedIssues) == 0 && len(child.Parents) == 1 {
 			b.WriteString(indent(depth + 1))
 			b.WriteString(child.Markdown())
 		}
