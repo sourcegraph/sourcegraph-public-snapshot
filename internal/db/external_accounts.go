@@ -51,12 +51,22 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	var esAuthData, esData secret.StringValue
+	var esAuthData, esData secret.NullStringValue
 	if data.AuthData != nil {
-		esAuthData = secret.StringValue(*data.AuthData)
+		authDataStr := string(*data.AuthData)
+		esAuthData = secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &authDataStr,
+			},
+		}
 	}
 	if data.Data != nil {
-		esData = secret.StringValue(*data.Data)
+		dataStr := string(*data.Data)
+		esData = secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &dataStr,
+			},
+		}
 	}
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
@@ -122,12 +132,22 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
-	var esAuthData, esData secret.StringValue
+	var esAuthData, esData secret.NullStringValue
 	if data.AuthData != nil {
-		esAuthData = secret.StringValue(*data.AuthData)
+		authDataStr := string(*data.AuthData)
+		esAuthData = secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &authDataStr,
+			},
+		}
 	}
 	if data.Data != nil {
-		esData = secret.StringValue(*data.Data)
+		dataStr := string(*data.Data)
+		esData = secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &dataStr,
+			},
+		}
 	}
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
@@ -183,19 +203,27 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var nullAuthData, nullData secret.NullStringValue
+	var esAuthData, esData secret.NullStringValue
 	if data.AuthData != nil {
-		esAuthData := secret.StringValue(*data.AuthData)
-		nullAuthData.S = &esAuthData
+		authDataStr := string(*data.AuthData)
+		esAuthData = secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &authDataStr,
+			},
+		}
 	}
 	if data.Data != nil {
-		esData := secret.StringValue(*data.Data)
-		nullData.S = &esData
+		dataStr := string(*data.Data)
+		esData = secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &dataStr,
+			},
+		}
 	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, nullAuthData, nullData)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData)
 
 	return err
 }
@@ -324,23 +352,31 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	defer rows.Close()
 	for rows.Next() {
 		var acct extsvc.Account
-		var esAuthData, esData secret.StringValue
-		nullAuthData := secret.NullStringValue{S: &esAuthData}
-		nullData := secret.NullStringValue{S: &esData}
+		var authDataStr, dataStr string
+		esAuthData := secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &authDataStr,
+			},
+		}
+		esData := secret.NullStringValue{
+			S: &secret.StringValue{
+				S: &dataStr,
+			},
+		}
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&nullAuthData, &nullData,
+			&esAuthData, &esData,
 			&acct.CreatedAt, &acct.UpdatedAt); err != nil {
 			return nil, err
 		}
 
-		if nullAuthData.Valid {
-			authData := json.RawMessage(*nullAuthData.S)
+		if esAuthData.Valid {
+			authData := json.RawMessage(authDataStr)
 			acct.AuthData = &authData
 		}
-		if nullData.Valid {
-			data := json.RawMessage(*nullData.S)
+		if esData.Valid {
+			data := json.RawMessage(dataStr)
 			acct.Data = &data
 		}
 		results = append(results, &acct)

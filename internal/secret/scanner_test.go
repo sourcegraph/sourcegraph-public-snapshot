@@ -67,20 +67,20 @@ func TestScanner(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = dbconn.Global.ExecContext(ctx, `INSERT INTO secret_null_test(name, message) VALUES ($1, $2)`, t.Name(), &NullStringValue{})
+		_, err = dbconn.Global.ExecContext(ctx, `INSERT INTO secret_null_test(name, message) VALUES ($1, $2)`, t.Name(), NullStringValue{})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		var gotName string
 		var gotMessage string
-		nullMessage := NullStringValue{
+		esMessage := NullStringValue{
 			S: &StringValue{
 				S: &gotMessage,
 			},
 		}
 		err = dbconn.Global.QueryRowContext(ctx, `SELECT name,message FROM secret_null_test`).
-			Scan(&gotName, &nullMessage)
+			Scan(&gotName, &esMessage)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,7 +88,7 @@ func TestScanner(t *testing.T) {
 		if gotName != t.Name() {
 			t.Fatalf("expected %q, got %q for name", t.Name(), gotName)
 		}
-		if nullMessage.Valid {
+		if esMessage.Valid {
 			t.Fatal("expected not valid, got valid")
 		}
 	})

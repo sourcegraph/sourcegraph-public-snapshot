@@ -66,11 +66,10 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 
 	for rows.Next() {
 		var sq api.SavedQuerySpecAndConfig
-		var es secret.StringValue
 		if err := rows.Scan(
 			&sq.Config.Key,
 			&sq.Config.Description,
-			&es,
+			&secret.StringValue{S: &sq.Config.Query},
 			&sq.Config.Notify,
 			&sq.Config.NotifySlack,
 			&sq.Config.UserID,
@@ -84,7 +83,6 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		} else if sq.Config.OrgID != nil {
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
-		sq.Config.Query = es.String()
 
 		savedSearches = append(savedSearches, sq)
 	}
@@ -101,7 +99,6 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
 	var sq api.SavedQuerySpecAndConfig
-	var es secret.StringValue
 	err := dbconn.Global.QueryRowContext(ctx, `SELECT
 		id,
 		description,
@@ -114,7 +111,7 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		FROM saved_searches WHERE id=$1`, id).Scan(
 		&sq.Config.Key,
 		&sq.Config.Description,
-		&es,
+		&secret.StringValue{S: &sq.Config.Query},
 		&sq.Config.Notify,
 		&sq.Config.NotifySlack,
 		&sq.Config.UserID,
@@ -123,7 +120,6 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 	if err != nil {
 		return nil, err
 	}
-	sq.Config.Query = es.String()
 	sq.Spec.Key = sq.Config.Key
 	if sq.Config.UserID != nil {
 		sq.Spec.Subject.User = sq.Config.UserID
@@ -180,11 +176,9 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
-		var es secret.StringValue
-		if err := rows.Scan(&ss.ID, &ss.Description, &es, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+		if err := rows.Scan(&ss.ID, &ss.Description, &secret.StringValue{S: &ss.Query}, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan(2)")
 		}
-		ss.Query = es.String()
 		savedSearches = append(savedSearches, &ss)
 	}
 	return savedSearches, nil
@@ -217,11 +211,9 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
-		var es secret.StringValue
-		if err := rows.Scan(&ss.ID, &ss.Description, &es, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+		if err := rows.Scan(&ss.ID, &ss.Description, &secret.StringValue{S: &ss.Query}, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		ss.Query = es.String()
 
 		savedSearches = append(savedSearches, &ss)
 	}
@@ -257,7 +249,6 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		UserID:      newSavedSearch.UserID,
 		OrgID:       newSavedSearch.OrgID,
 	}
-	es := secret.StringValue(savedQuery.Query)
 
 	err = dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(
 			description,
@@ -268,7 +259,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 			org_id
 		) VALUES($1, $2, $3, $4, $5, $6) RETURNING id`,
 		newSavedSearch.Description,
-		es,
+		secret.StringValue{S: &savedQuery.Query},
 		newSavedSearch.Notify,
 		newSavedSearch.NotifySlack,
 		newSavedSearch.UserID,
@@ -277,7 +268,6 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 	if err != nil {
 		return nil, err
 	}
-	newSavedSearch.Query = es.String()
 	return savedQuery, nil
 }
 
@@ -307,11 +297,10 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 		SlackWebhookURL: savedSearch.SlackWebhookURL,
 	}
 
-	esQuery := secret.StringValue(savedSearch.Query)
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"),
 		sqlf.Sprintf("description=%s", savedSearch.Description),
-		sqlf.Sprintf("query=%s", esQuery),
+		sqlf.Sprintf("query=%s", secret.StringValue{S: &savedSearch.Query}),
 		sqlf.Sprintf("notify_owner=%t", savedSearch.Notify),
 		sqlf.Sprintf("notify_slack=%t", savedSearch.NotifySlack),
 		sqlf.Sprintf("user_id=%v", savedSearch.UserID),
