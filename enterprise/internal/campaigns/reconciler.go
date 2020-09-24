@@ -296,7 +296,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 
 // reopenChangeset reopens the given changeset attribute on the code host.
 func (r *reconciler) reopenChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	repo, extSvc, _, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
