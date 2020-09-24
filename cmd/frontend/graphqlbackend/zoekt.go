@@ -383,8 +383,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit = true
 	}
 
-	m := map[string]*search.RepositoryRevisions{}
+	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)
+
 	if args.Mode == search.ZoektGlobalSearch {
+		m := map[string]*search.RepositoryRevisions{}
 		for _, file := range resp.Files {
 			m[file.Repository] = nil
 		}
@@ -398,14 +400,22 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 			m[string(repo.Repo.Name)] = repo
 		}
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+			repoRev := m[file.Repository]
+			if repoRev == nil {
+				return nil, nil, false
+			}
+			return repoRev.Repo, repoRev.RevSpecs(), true
+		}
+	} else {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+			repo, inputRevs := repos.GetRepoInputRev(file)
+			return repo, inputRevs, true
+		}
 	}
 
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
-	var (
-		repo      *types.Repo
-		inputRevs []string
-	)
 	for _, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -413,14 +423,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-		if args.Mode == search.ZoektGlobalSearch {
-			repoRev := m[file.Repository]
-			if repoRev == nil {
-				continue
-			}
-			repo, inputRevs = repoRev.Repo, repoRev.RevSpecs()
-		} else {
-			repo, inputRevs = repos.GetRepoInputRev(&file)
+		repo, inputRevs, ok := getRepoInputRev(&file)
+		if !ok {
+			continue
 		}
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
