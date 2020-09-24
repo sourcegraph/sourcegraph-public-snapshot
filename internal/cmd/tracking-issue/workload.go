@@ -282,6 +282,7 @@ func (wl *Workload) issuesVisibleAncestors(issue *Issue) (ancestors []*Issue) {
 		if _, ok := visited[top]; ok {
 			continue
 		}
+		visited[top] = struct{}{}
 
 		if wl.issueVisible(top) {
 			// stop traversal on this branch
@@ -299,9 +300,10 @@ func (wl *Workload) pullRequestsVisibleAncestors(pr *PullRequest) (ancestors []*
 	ancestorMap := map[*Issue]struct{}{}
 	for _, parent := range pr.Parents {
 		if wl.issueVisible(parent) {
-			// stop traversal on this branch
 			ancestorMap[parent] = struct{}{}
 		} else {
+			// linked issue isn't itself visible, but we're still
+			// interested in the ancestors of that issue.
 			for _, issue := range wl.issuesVisibleAncestors(parent) {
 				ancestorMap[issue] = struct{}{}
 			}
@@ -319,11 +321,32 @@ func (wl *Workload) pullRequestsVisibleAncestors(pr *PullRequest) (ancestors []*
 // rendered if it is tracked by the tracking issue, or tracks another issue or
 // pull request that is.
 func (wl *Workload) issueVisible(issue *Issue) bool {
+	// Cycle breaker: We wrap the recursive term O in the function above with
+	// a check of its parameter, returning zero if it's already been seen as
+	// part of the recursion. There are meta and cyclicly referential tracking
+	// issues that become each other's parent AND child.
+	visited := map[*Issue]struct{}{}
+
+	f := func(rec issueRec, issue *Issue) bool {
+		if _, ok := visited[issue]; ok {
+			return false
+		}
+		visited[issue] = struct{}{}
+
+		return wl.issueVisibleRec(rec, issue)
+	}
+
+	return f(f, issue)
+}
+
+type issueRec func(rec issueRec, issue *Issue) bool
+
+func (wl *Workload) issueVisibleRec(rec issueRec, issue *Issue) bool {
 	if contains(issue.Labels, "tracking") {
 		// Tracking issues are visible if something they track is. Tracking issues
 		// may be visible if the milestones match as well (this check falls through).
 		for _, child := range issue.ChildIssues {
-			if wl.issueVisible(child) {
+			if rec(rec, child) {
 				return true
 			}
 		}
