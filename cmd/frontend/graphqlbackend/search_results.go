@@ -1697,7 +1697,6 @@ func (r *searchResolver) isGlobalSearch() bool {
 	if r.versionContext != nil && *r.versionContext != "" {
 		return false
 	}
-
 	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
 }
 
@@ -1788,7 +1787,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		fileMatches: make(map[string]*FileMatchResolver),
 	}
 
-	if r.isGlobalSearch() {
+	isFileOrPath := func() bool {
+		for _, rt := range resultTypes {
+			if rt == "file" || rt == "path" {
+				return true
+			}
+		}
+		return false
+	}
+
+	if r.isGlobalSearch() && isFileOrPath() {
 		// call zoekt early
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
