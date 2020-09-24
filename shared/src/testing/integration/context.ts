@@ -5,7 +5,7 @@ import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
 import { readFile, mkdir } from 'mz/fs'
 import { Polly, PollyServer } from '@pollyjs/core'
-import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
+import { CdpAdapter } from './polly/CdpAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
 import { first, timeoutWith } from 'rxjs/operators'
@@ -23,7 +23,7 @@ import { asError } from '../../util/errors'
 util.inspect.defaultOptions.depth = 0
 util.inspect.defaultOptions.maxStringLength = 80
 
-Polly.register(PuppeteerAdapter as any)
+Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
 
 const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../ui/assets')
@@ -96,7 +96,7 @@ export const createSharedIntegrationTestContext = async <
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
-    await driver.page.setRequestInterception(true)
+    // await driver.page.setRequestInterception(true)
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
