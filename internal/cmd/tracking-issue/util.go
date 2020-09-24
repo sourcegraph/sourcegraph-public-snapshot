@@ -135,7 +135,7 @@ func contains(haystack []string, needle string) bool {
 var now = time.Now
 
 func formatTimeSince(t time.Time) string {
-	days := now().Sub(t) / time.Hour / 24
+	days := now().UTC().Sub(t.UTC()) / time.Hour / 24
 
 	switch days {
 	case 0:

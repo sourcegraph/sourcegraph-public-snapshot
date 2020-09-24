@@ -58,7 +58,7 @@ Completed
 
 Completed: __1.00d__
 - [x] (🏁 6 days ago) chore: Co-locate dev scripts to interact with postgres ([#13942](https://github.com/sourcegraph/sourcegraph/pull/13942)) :shipit:
-- [x] (🏁 5 days ago) chore: Multiple database handles ([#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)) :shipit:
+- [x] (🏁 6 days ago) chore: Multiple database handles ([#13952](https://github.com/sourcegraph/sourcegraph/pull/13952)) :shipit:
 - [x] (🏁 5 days ago) RFC 235: Add code intel postgres image ([~#13912~](https://github.com/sourcegraph/sourcegraph/issues/13912); PRs: ~[#13913](https://github.com/sourcegraph/sourcegraph/pull/13913)~) __0.5d__ 
 - [x] (🏁 5 days ago) chore: Set exec bit on docker-images/codeintel-db/build.sh ([#13955](https://github.com/sourcegraph/sourcegraph/pull/13955)) :shipit:
 - [x] (🏁 5 days ago) chore: Relocate frontend migrations ([#13943](https://github.com/sourcegraph/sourcegraph/pull/13943)) :shipit:
@@ -71,7 +71,7 @@ Completed: __1.00d__
 - [x] (🏁 2 days ago) tracking-issue: Parallelize writes ([#14006](https://github.com/sourcegraph/sourcegraph/pull/14006)) :shipit:
 - [x] (🏁 2 days ago) tracking-issue: Break code up into files according to type/action ([#14013](https://github.com/sourcegraph/sourcegraph/pull/14013)) :shipit:
 - [x] (🏁 2 days ago) tracking-issue: List PRs for an issue inline ([#14018](https://github.com/sourcegraph/sourcegraph/pull/14018)) :shipit:
-- [x] (🏁 1 day ago) tracking-issue: Separate complete/incomplete work ([#14034](https://github.com/sourcegraph/sourcegraph/pull/14034)) :shipit:
+- [x] (🏁 2 days ago) tracking-issue: Separate complete/incomplete work ([#14034](https://github.com/sourcegraph/sourcegraph/pull/14034)) :shipit:
 - [x] (🏁 1 day ago) tracking-issue: Better nested tracking issue estimates ([#14035](https://github.com/sourcegraph/sourcegraph/pull/14035)) :shipit:
 - [x] (🏁 today) codenotify: Configure efritz's subscriptions ([#14060](https://github.com/sourcegraph/sourcegraph/pull/14060)) :shipit:
 - [x] (🏁 today) codeintel: Refactor command runner in indexer ([#14102](https://github.com/sourcegraph/sourcegraph/pull/14102)) :shipit:
