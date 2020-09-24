@@ -350,6 +350,11 @@ func (wl *Workload) issueVisibleRec(rec issueRec, issue *Issue) bool {
 				return true
 			}
 		}
+	} else {
+		// Mismatched leaf issue authors
+		if !contains(issue.Assignees, wl.Assignee) {
+			return false
+		}
 	}
 
 	if wl.TrackingIssue.Milestone != "" {
@@ -366,6 +371,11 @@ func (wl *Workload) issueVisibleRec(rec issueRec, issue *Issue) bool {
 // pullRequestVisible determines if this pull request should be rendered. A pull
 // request should be rendered if it's attached to an issue that's also rendered.
 func (wl *Workload) pullRequestVisible(pr *PullRequest) bool {
+	if pr.Author != wl.Assignee {
+		// Mismatched authors
+		return false
+	}
+
 	if wl.TrackingIssue.Milestone != "" {
 		if pr.Milestone != "" && wl.TrackingIssue.Milestone != pr.Milestone {
 			return false
