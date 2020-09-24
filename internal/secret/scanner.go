@@ -52,14 +52,15 @@ var (
 
 // NullStringValue implements driver.Valuer and sql.Scanner for NULLABLE string type secret.
 type NullStringValue struct {
-	S     *StringValue
-	Valid bool // Valid is true if StringValue is not NULL
+	S     *string
+	Valid bool // Valid is true if String is not NULL
 }
 
 func (nv *NullStringValue) Scan(value interface{}) error {
 	switch v := value.(type) {
 	case string:
-		err := nv.S.Scan(v)
+		es := StringValue{S: nv.S}
+		err := es.Scan(v)
 		if err != nil {
 			return err
 		}
@@ -73,5 +74,5 @@ func (nv NullStringValue) Value() (driver.Value, error) {
 		return nil, nil
 	}
 
-	return nv.S.Value()
+	return StringValue{S: nv.S}.Value()
 }

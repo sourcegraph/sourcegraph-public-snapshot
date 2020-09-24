@@ -54,19 +54,11 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 	var esAuthData, esData secret.NullStringValue
 	if data.AuthData != nil {
 		authDataStr := string(*data.AuthData)
-		esAuthData = secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &authDataStr,
-			},
-		}
+		esAuthData = secret.NullStringValue{S: &authDataStr}
 	}
 	if data.Data != nil {
 		dataStr := string(*data.Data)
-		esData = secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &dataStr,
-			},
-		}
+		esData = secret.NullStringValue{S: &dataStr}
 	}
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
@@ -135,19 +127,11 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 	var esAuthData, esData secret.NullStringValue
 	if data.AuthData != nil {
 		authDataStr := string(*data.AuthData)
-		esAuthData = secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &authDataStr,
-			},
-		}
+		esAuthData = secret.NullStringValue{S: &authDataStr}
 	}
 	if data.Data != nil {
 		dataStr := string(*data.Data)
-		esData = secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &dataStr,
-			},
-		}
+		esData = secret.NullStringValue{S: &dataStr}
 	}
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
@@ -206,19 +190,11 @@ func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID in
 	var esAuthData, esData secret.NullStringValue
 	if data.AuthData != nil {
 		authDataStr := string(*data.AuthData)
-		esAuthData = secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &authDataStr,
-			},
-		}
+		esAuthData = secret.NullStringValue{S: &authDataStr}
 	}
 	if data.Data != nil {
 		dataStr := string(*data.Data)
-		esData = secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &dataStr,
-			},
-		}
+		esData = secret.NullStringValue{S: &dataStr}
 	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
@@ -353,16 +329,8 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	for rows.Next() {
 		var acct extsvc.Account
 		var authDataStr, dataStr string
-		esAuthData := secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &authDataStr,
-			},
-		}
-		esData := secret.NullStringValue{
-			S: &secret.StringValue{
-				S: &dataStr,
-			},
-		}
+		esAuthData := secret.NullStringValue{S: &authDataStr}
+		esData := secret.NullStringValue{S: &dataStr}
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
