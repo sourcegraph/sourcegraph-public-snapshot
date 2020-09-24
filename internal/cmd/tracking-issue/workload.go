@@ -118,6 +118,9 @@ func (wl *Workload) gatherCompletedIssues(labelAllowList []string) (completedWor
 		if !issue.Closed() {
 			continue
 		}
+
+		// This would be displayed inested in a tracking issue. Because the
+		// parent is also complete we don't want to show this duplicate data.
 		if len(issue.Parents) == 1 && issue.Parents[0].Closed() {
 			continue
 		}
@@ -134,18 +137,29 @@ func (wl *Workload) gatherCompletedIssues(labelAllowList []string) (completedWor
 // gatherCompletedPullRequests returns all completed pull requests that has an
 // open parent or linked issue.
 func (wl *Workload) gatherCompletedPullRequests() (completedWork []CompletedWork) {
-outer:
 	for _, pr := range wl.PullRequests {
 		if !pr.Done() {
 			continue
 		}
+
+		// This would be displayed nested in a tracking issue but isn't explicitly
+		// linked to a particular issue. We don't want to show these if that parent
+		// is also complete.
 		if len(pr.LinkedIssues) == 0 && len(pr.Parents) == 1 && pr.Parents[0].Closed() {
 			continue
 		}
+
+		closedIssues := 0
 		for _, issue := range pr.LinkedIssues {
 			if issue.Closed() {
-				continue outer
+				closedIssues++
 			}
+		}
+		// If all linked issues are closed we can skip this. If there is at least one
+		// open linked issue then the work related to this PR is not complete and we
+		// want to show this in the progress.
+		if len(pr.LinkedIssues) > 0 && len(pr.LinkedIssues) == closedIssues {
+			continue
 		}
 
 		completedWork = append(completedWork, CompletedWork{
