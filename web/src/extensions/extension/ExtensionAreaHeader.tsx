@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import React, { useState, useCallback, useMemo } from 'react'
+import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
@@ -10,6 +10,7 @@ import { WorkInProgressBadge } from './WorkInProgressBadge'
 import { isEncodedImage } from '../../../../shared/src/util/icon'
 import { useTimeoutManager } from '../../../../shared/src/util/useTimeoutManager'
 import classNames from 'classnames'
+import { splitExtensionID } from './extension'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -46,7 +47,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
-    const [, name] = props.extension.id.split('/')
+    const { name } = splitExtensionID(props.extension.id)
 
     /**
      * When extension enablement state changes, display visual feedback for $delay seconds.
@@ -120,8 +121,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     </div>
                                 )}
                                 {showCta && (
-                                    <div className="alert alert-secondary mb-0 px-2 py-1 extension-area-header__alert">
-                                        Register now! TODO
+                                    <div className="alert alert-info mb-0 px-2 py-1 extension-area-header__alert">
+                                        An account is required to create and configure extensions.{' '}
+                                        <Link to="/sign-up" className="alert-link">
+                                            Register now!
+                                        </Link>
                                     </div>
                                 )}
 
@@ -161,25 +165,4 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
             </div>
         </div>
     )
-}
-
-{
-    /*
-                                {!props.authenticatedUser && (
-                                    <div className="d-flex align-items-center">
-                                        <Link to="/sign-in" className="btn btn-primary mr-2">
-                                            Sign in to{' '}
-                                            {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
-                                                ? 'configure'
-                                                : 'enable'}
-                                        </Link>
-                                        <small className="text-muted">
-                                            An account is required to{' '}
-                                            {isExtensionEnabled(props.settingsCascade.final, props.extension.id)
-                                                ? ''
-                                                : 'enable and'}{' '}
-                                            configure extensions.
-                                        </small>
-                                    </div>
-                                )} */
 }

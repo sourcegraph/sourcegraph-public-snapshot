@@ -44,13 +44,13 @@ export function toExtensionID(publisher: string | RegistryPublisher, name: strin
 }
 
 /**
- *  Mirrors `registry.SplitExtensionID` from `frontend`:
+ * Mirrors `registry.SplitExtensionID` from `frontend`:
  *
  * `splitExtensionID` splits an extension ID of the form [host/]publisher/name (where [host/] is the
  * optional registry prefix), such as "alice/myextension" or
  * "sourcegraph.example.com/bob/myextension". It returns the components in an object.
  *
- * @param extensionID
+ * @param extensionID The extension ID (string)
  */
 export function splitExtensionID(extensionID: string): { publisher: string; name: string; host?: string } {
     const parts = extensionID.split('/')

@@ -36,6 +36,9 @@ export interface OptimisticUpdateFailure<T> {
 }
 
 /**
+ * Creates a pipeline to use with our `useEventObservable` hook.
+ * Helps with error handling for optimistic updates.
+ *
  * How it works:
  * - Wraps the optimistic update request promise with another
  * promise that only resolves if the inner promise is rejected.
