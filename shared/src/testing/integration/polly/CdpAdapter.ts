@@ -155,8 +155,6 @@ export class CdpAdapter extends PollyAdapter {
                 responseHeaders: headerObjectToHeaderEntries(headers),
                 body: toBase64(body),
             }
-            console.log(this.pendingRequests)
-            console.log('Fulfilling', cdpRequestToFulfill)
             await this.fulfillPausedRequest(cdpRequestToFulfill)
         }
     }
