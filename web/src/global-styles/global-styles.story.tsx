@@ -14,6 +14,7 @@ import openColor from 'open-color'
 import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
 import 'storybook-addon-designs'
 import { WebStory } from '../components/WebStory'
+import { CodeSnippet } from '../components/CodeSnippet'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
@@ -258,6 +259,12 @@ add('Code', () => (
             Keyboard shortcuts should use <code>{'<kbd>'}</code>, not <code>{'<code>'}</code>. For example,{' '}
             <kbd>cmd</kbd>+<kbd>C</kbd> is used to copy text to the clipboard.
         </p>
+        <h3>Code snippets</h3>
+        <p>
+            Highlighted code pieces should go in a panel separating it from the surrounding content. Use{' '}
+            <code>{'<CodeSnippet />'}</code> for these uses.
+        </p>
+        <CodeSnippet code="property: 1" language="yaml" />
     </>
 ))
 

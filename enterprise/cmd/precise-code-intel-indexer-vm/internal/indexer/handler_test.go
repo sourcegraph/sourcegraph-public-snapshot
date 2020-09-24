@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -60,7 +59,7 @@ func TestHandleWithDocker(t *testing.T) {
 		calls := commander.RunFunc.History()
 
 		for i, expectedCall := range expectedCalls {
-			if diff := cmp.Diff(expectedCall, fmt.Sprintf("%s %s", calls[i].Arg1, strings.Join(calls[i].Arg2, " "))); diff != "" {
+			if diff := cmp.Diff(expectedCall, strings.Join(calls[i].Arg1, " ")); diff != "" {
 				t.Errorf("unexpected command (-want +got):\n%s", diff)
 			}
 		}
@@ -124,7 +123,7 @@ func TestHandleWithFirecracker(t *testing.T) {
 		calls := commander.RunFunc.History()
 
 		for i, expectedCall := range expectedCalls {
-			if diff := cmp.Diff(expectedCall, fmt.Sprintf("%s %s", calls[i].Arg1, strings.Join(calls[i].Arg2, " "))); diff != "" {
+			if diff := cmp.Diff(expectedCall, strings.Join(calls[i].Arg1, " ")); diff != "" {
 				t.Errorf("unexpected command (-want +got):\n%s", diff)
 			}
 		}

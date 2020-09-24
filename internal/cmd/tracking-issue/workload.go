@@ -44,7 +44,7 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 		// Render any issue that belongs to zero or more than one
 		// tracking issue (excluding the team tracking issue).
 		if len(issue.Parents) != 1 {
-			if !strings.EqualFold(issue.State, "closed") {
+			if !issue.Closed() {
 				renderIssue(&b, labelAllowlist, issue, 0)
 			} else {
 				hasCompletedIssueOrPullRequest = true
@@ -55,7 +55,7 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 	// Put all PRs that aren't linked to issues top-level
 	for _, pr := range wl.PullRequests {
 		if len(pr.LinkedIssues) == 0 {
-			if !strings.EqualFold(pr.State, "merged") {
+			if !pr.Done() {
 				b.WriteString(pr.Markdown())
 			} else {
 				hasCompletedIssueOrPullRequest = true
@@ -79,7 +79,7 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 		for _, issue := range wl.Issues {
 			// Render any issue that belongs to zero or more than one
 			// tracking issue (excluding the team tracking issue).
-			if strings.EqualFold(issue.State, "closed") {
+			if issue.Closed() {
 				b.WriteString(indent(0))
 				b.WriteString(issue.Markdown(labelAllowlist))
 			}
@@ -87,7 +87,7 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 
 		// Put all PRs that aren't linked to issues top-level
 		for _, pr := range wl.PullRequests {
-			if strings.EqualFold(pr.State, "merged") {
+			if pr.Done() {
 				b.WriteString(pr.Markdown())
 			}
 		}

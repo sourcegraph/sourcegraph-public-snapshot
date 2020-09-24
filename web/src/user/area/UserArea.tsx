@@ -277,7 +277,6 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         // Hide header and use full-width container for campaigns pages.
         const isCampaigns = routeMatch === '/campaigns'
         const hideHeader = isCampaigns
-        const containerClassName = isCampaigns ? '' : 'container'
 
         return (
             <div className="user-area w-100">
@@ -286,10 +285,10 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         {...this.props}
                         {...context}
                         navItems={this.props.userAreaHeaderNavItems}
-                        className="border-bottom mt-4 mb-3"
+                        className="border-bottom mt-4"
                     />
                 )}
-                <div className={containerClassName}>
+                <div className="container mt-3">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
