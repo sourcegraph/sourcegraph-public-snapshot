@@ -243,6 +243,8 @@ type ChangesetSpecDescription struct {
 type GitCommitDescription struct {
 	Author  Person
 	Message string
+	Subject string
+	Body    string
 	Diff    string
 }
 

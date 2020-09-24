@@ -90,6 +90,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 								},
 								Diff:    spec.Spec.Commits[0].Diff,
 								Message: spec.Spec.Commits[0].Message,
+								Subject: "git commit message",
+								Body:    "and some more content in a second paragraph.",
 							},
 						},
 						Published: false,
@@ -192,7 +194,9 @@ query($id: ID!) {
           body
 
           commits {
-            message
+			message
+			subject
+			body
             diff
             author {
               name

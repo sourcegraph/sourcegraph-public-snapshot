@@ -223,4 +223,14 @@ func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 	}
 }
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
-func (r *gitCommitDescriptionResolver) Diff() string    { return r.diff }
+func (r *gitCommitDescriptionResolver) Subject() string {
+	return graphqlbackend.GitCommitSubject(r.message)
+}
+func (r *gitCommitDescriptionResolver) Body() *string {
+	body := graphqlbackend.GitCommitBody(r.message)
+	if body == "" {
+		return nil
+	}
+	return &body
+}
+func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }

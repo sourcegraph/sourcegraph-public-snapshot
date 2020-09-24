@@ -895,9 +895,19 @@ A description of a Git commit.
 """
 type GitCommitDescription {
     """
-    The Git commit message.
+    The full commit message.
     """
     message: String!
+
+    """
+    The first line of the commit message.
+    """
+    subject: String!
+
+    """
+    The contents of the commit message after the first line.
+    """
+    body: String
 
     """
     The Git commit author.
