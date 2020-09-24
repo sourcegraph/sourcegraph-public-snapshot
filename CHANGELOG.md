@@ -15,6 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The new GraphQL API query field `namespaceByName(name: String!)` makes it easier to look up the user or organization with the given name. Previously callers needed to try looking up the user and organization separately.
 
+### Changed
+
+- Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153).
+
 ### Fixed
 
 - Usernames set in Slack `observability.alerts` now apply correctly. [#14079](https://github.com/sourcegraph/sourcegraph/pull/14079)
