@@ -56,6 +56,8 @@ changesetTemplate:
 
 var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
+const ChangesetSpecAuthorEmail = "mary@example.com"
+
 func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
 	diff := `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
@@ -91,10 +93,10 @@ index e5af166..d44c3fc 100644
 		"published": false,
 
 		"commits": [
-		  {"message": "git commit message", "diff": %q, "authorName": "Mary McButtons", "authorEmail": "mary@example.com"}]
+		  {"message": "git commit message", "diff": %q, "authorName": "Mary McButtons", "authorEmail": %q}]
 	}`
 
-	return fmt.Sprintf(tmpl, repo, baseRev, repo, diff)
+	return fmt.Sprintf(tmpl, repo, baseRev, repo, diff, ChangesetSpecAuthorEmail)
 }
 
 func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {

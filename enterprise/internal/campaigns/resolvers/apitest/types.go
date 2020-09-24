@@ -241,6 +241,7 @@ type ChangesetSpecDescription struct {
 }
 
 type GitCommitDescription struct {
+	Author  Person
 	Message string
 	Diff    string
 }
@@ -248,4 +249,10 @@ type GitCommitDescription struct {
 type PageInfo struct {
 	HasNextPage bool
 	EndCursor   *string
+}
+
+type Person struct {
+	Name  string
+	Email string
+	User  *User
 }

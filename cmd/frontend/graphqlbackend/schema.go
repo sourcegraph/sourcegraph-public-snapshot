@@ -900,6 +900,11 @@ type GitCommitDescription {
     message: String!
 
     """
+    The Git commit author.
+    """
+    author: Person!
+
+    """
     The commit diff (in unified diff format).
 
     The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
@@ -4562,9 +4567,9 @@ type Person {
     """
     displayName: String!
     """
-    The avatar URL.
+    The avatar URL, if known.
     """
-    avatarURL: String!
+    avatarURL: String
     """
     The corresponding user account for this person, if one exists.
     """

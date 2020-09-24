@@ -15,6 +15,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,6 +33,12 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	// Creating user with matching email to the changeset spec author.
+	user, err := db.Users.Create(ctx, db.NewUser{Username: "mary", Email: ct.ChangesetSpecAuthorEmail, EmailIsVerified: true, DisplayName: "Mary Tester"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
 	if err := reposStore.InsertRepos(ctx, repo); err != nil {
@@ -73,7 +80,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
-							{Diff: spec.Spec.Commits[0].Diff, Message: spec.Spec.Commits[0].Message},
+							{
+								Author: apitest.Person{
+									Email: spec.Spec.Commits[0].AuthorEmail,
+									Name:  user.Username,
+									User: &apitest.User{
+										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+									},
+								},
+								Diff:    spec.Spec.Commits[0].Diff,
+								Message: spec.Spec.Commits[0].Message,
+							},
 						},
 						Published: false,
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
@@ -177,6 +194,13 @@ query($id: ID!) {
           commits {
             message
             diff
+            author {
+              name
+              email
+              user {
+                id
+              }
+            }
           }
 
           published

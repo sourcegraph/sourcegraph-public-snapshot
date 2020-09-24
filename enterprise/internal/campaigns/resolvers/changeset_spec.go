@@ -196,8 +196,10 @@ func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescr
 	var resolvers []graphqlbackend.GitCommitDescriptionResolver
 	for _, c := range r.desc.Commits {
 		resolvers = append(resolvers, &gitCommitDescriptionResolver{
-			message: c.Message,
-			diff:    c.Diff,
+			message:     c.Message,
+			diff:        c.Diff,
+			authorName:  c.AuthorName,
+			authorEmail: c.AuthorEmail,
 		})
 	}
 	return resolvers
@@ -206,9 +208,19 @@ func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescr
 var _ graphqlbackend.GitCommitDescriptionResolver = &gitCommitDescriptionResolver{}
 
 type gitCommitDescriptionResolver struct {
-	message string
-	diff    string
+	message     string
+	diff        string
+	authorName  string
+	authorEmail string
 }
 
+func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
+	return &graphqlbackend.PersonResolver{
+		UserEmail: r.authorEmail,
+		UserName:  r.authorName,
+		// Try to find the corresponding Sourcegraph user.
+		IncludeUserInfo: true,
+	}
+}
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Diff() string    { return r.diff }
