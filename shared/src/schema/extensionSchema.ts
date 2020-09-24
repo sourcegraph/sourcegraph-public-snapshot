@@ -52,6 +52,7 @@ export interface ExtensionManifest {
     icon?: string
     activationEvents: string[]
     contributes?: Raw<Contributions> & { configuration?: { [key: string]: any } }
+    publisher?: string
 }
 
 /** TypeScript helper for making an array type with constant string union elements, not just string[]. */

@@ -4,8 +4,8 @@ import React from 'react'
 import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 import webMainStyles from '../SourcegraphWebApp.scss'
 import { subtypeOf } from '../../../shared/src/util/types'
-import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { action } from '@storybook/addon-actions'
+import { SearchPatternType } from '../graphql-operations'
 
 const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(story => (
     <>
@@ -32,8 +32,18 @@ const commonProps = subtypeOf<Partial<VersionContextDropdownProps>>()({
     setVersionContext,
 })
 
-add('No context selected', () => <VersionContextDropdown {...commonProps} versionContext={undefined} />)
-add('Context selected', () => <VersionContextDropdown {...commonProps} versionContext="test 1" />)
+add('No context selected', () => <VersionContextDropdown {...commonProps} versionContext={undefined} />, {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/Sax8ctk8GhvWd0vrzkHSDK/Version-Contexts?node-id=97%3A175',
+    },
+})
+add('Context selected', () => <VersionContextDropdown {...commonProps} versionContext="test 1" />, {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/Sax8ctk8GhvWd0vrzkHSDK/Version-Contexts?node-id=95%3A22516',
+    },
+})
 add('Selected context appears at the top of the list', () => (
     <VersionContextDropdown {...commonProps} versionContext="test 3" />
 ))

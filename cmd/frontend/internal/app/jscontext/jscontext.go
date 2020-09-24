@@ -9,13 +9,14 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -75,9 +76,13 @@ type JSContext struct {
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
+	ExternalServicesUserModeEnabled bool `json:"externalServicesUserModeEnabled"`
+
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	Branding *schema.Branding `json:"branding"`
+
+	CampaignsEnabled bool `json:"campaignsEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
@@ -162,11 +167,15 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
+		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode(),
+
 		AllowSignup: conf.AuthAllowSignup(),
 
 		AuthProviders: authProviders,
 
 		Branding: conf.Branding(),
+
+		CampaignsEnabled: conf.CampaignsEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}
@@ -181,10 +190,8 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AuthPublic:                 c.AuthPublic,
-		CampaignsReadAccessEnabled: c.CampaignsReadAccessEnabled,
-		PermissionsBackgroundSync:  c.PermissionsBackgroundSync,
-		UpdateChannel:              updateChannel,
+		AuthPublic:    c.AuthPublic,
+		UpdateChannel: updateChannel,
 	}
 }
 

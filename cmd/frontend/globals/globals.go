@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -63,11 +64,16 @@ func SetExternalURL(u *url.URL) {
 	externalURL.Store(u)
 }
 
+var defaultPermissionsUserMapping = &schema.PermissionsUserMapping{
+	Enabled: false,
+	BindID:  "email",
+}
+
 // permissionsUserMapping mirrors the value of `permissions.userMapping` in the site configuration.
 // This variable is used to monitor configuration change via conf.Watch and must be operated atomically.
 var permissionsUserMapping = func() atomic.Value {
 	var v atomic.Value
-	v.Store(&schema.PermissionsUserMapping{Enabled: false, BindID: "email"})
+	v.Store(defaultPermissionsUserMapping)
 	return v
 }()
 
@@ -84,7 +90,7 @@ func WatchPermissionsUserMapping() {
 	conf.Watch(func() {
 		after := conf.Get().PermissionsUserMapping
 		if after == nil {
-			return
+			after = defaultPermissionsUserMapping
 		} else if after.BindID != "email" && after.BindID != "username" {
 			log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
 			return
@@ -111,53 +117,6 @@ func PermissionsUserMapping() *schema.PermissionsUserMapping {
 // SetPermissionsUserMapping sets a valid value for the permissions user mapping.
 func SetPermissionsUserMapping(u *schema.PermissionsUserMapping) {
 	permissionsUserMapping.Store(u)
-}
-
-// permissionsBackgroundSync mirrors the value of `permissions.backgroundSync` in the site configuration.
-// This variable is used to monitor configuration change via conf.Watch and must be operated atomically.
-var permissionsBackgroundSync = func() atomic.Value {
-	var v atomic.Value
-	v.Store(&schema.PermissionsBackgroundSync{Enabled: true})
-	return v
-}()
-
-var permissionsBackgroundSyncWatchers uint32
-
-// WatchPermissionsUserMapping watches for changes in the `permissions.backgroundSync` site configuration
-// so that changes are reflected in what is returned by the PermissionsBackgroundSync function.
-// This should only be called once and will panic otherwise.
-func WatchPermissionsBackgroundSync() {
-	if atomic.AddUint32(&permissionsBackgroundSyncWatchers, 1) != 1 {
-		panic("WatchPermissionsBackgroundSync called more than once")
-	}
-
-	conf.Watch(func() {
-		after := conf.Get().PermissionsBackgroundSync
-		if after == nil {
-			return
-		}
-
-		if before := PermissionsBackgroundSync(); !reflect.DeepEqual(before, after) {
-			SetPermissionsBackgroundSync(after)
-			log15.Info(
-				"globals.PermissionsBackgroundSync",
-				"updated", true,
-				"before", before,
-				"after", after,
-			)
-		}
-	})
-}
-
-// PermissionsBackgroundSync returns the last valid value of permissions background sync in the site configuration.
-// Callers must not mutate the returned pointer.
-func PermissionsBackgroundSync() *schema.PermissionsBackgroundSync {
-	return permissionsBackgroundSync.Load().(*schema.PermissionsBackgroundSync)
-}
-
-// SetPermissionsUserMapping sets a valid value for the permissions background sync.
-func SetPermissionsBackgroundSync(u *schema.PermissionsBackgroundSync) {
-	permissionsBackgroundSync.Store(u)
 }
 
 // ConfigurationServerFrontendOnly provides the contents of the site configuration

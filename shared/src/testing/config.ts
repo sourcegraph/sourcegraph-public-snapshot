@@ -26,6 +26,7 @@ export interface Config {
     logStatusMessages: boolean
     logBrowserConsole: boolean
     slowMo: number
+    devtools: boolean
     headless: boolean
     keepBrowser: boolean
     bitbucketCloudUserBobAppPassword: string
@@ -184,6 +185,12 @@ const configFields: ConfigFields = {
         parser: parseInt,
         description: 'Slow down puppeteer by the specified number of milliseconds',
         defaultValue: 0,
+    },
+    devtools: {
+        envVar: 'DEVTOOLS',
+        parser: parseBool,
+        description: 'Run the tests with devtools open',
+        defaultValue: false,
     },
     headless: {
         envVar: 'HEADLESS',

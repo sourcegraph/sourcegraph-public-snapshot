@@ -99,6 +99,14 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'visibility:',
                 description: 'any | public | private',
             },
+            {
+                value: 'stable',
+                description: 'yes | no',
+            },
+            {
+                value: 'rev',
+                description: 'repository revision (branch, commit hash, or tag), ',
+            },
         ].map(
             assign({
                 type: NonFilterSuggestionType.Filters,
@@ -218,5 +226,15 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 type: FilterType.index,
             })
         ),
+    },
+    stable: {
+        values: [{ value: 'no' }, { value: 'yes' }].map(
+            assign({
+                type: FilterType.stable,
+            })
+        ),
+    },
+    rev: {
+        values: [],
     },
 }

@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -9,6 +9,9 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import * as path from 'path'
+import { DiffHunkLineType } from '../graphql-operations'
 
 describe('Repository', () => {
     let driver: Driver
@@ -24,6 +27,7 @@ describe('Repository', () => {
             directory: __dirname,
         })
     })
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     async function assertSelectorHasText(selector: string, text: string) {
@@ -184,7 +188,12 @@ describe('Repository', () => {
                                                 name: 'Quinn Slack',
                                                 email: 'qslack@qslack.com',
                                                 displayName: 'Quinn Slack',
-                                                user: { id: 'VXNlcjo2', username: 'sqs', url: '/users/sqs' },
+                                                user: {
+                                                    id: 'VXNlcjo2',
+                                                    username: 'sqs',
+                                                    url: '/users/sqs',
+                                                    displayName: 'sqs',
+                                                },
                                             },
                                             date: '2019-12-22T04:34:38Z',
                                         },
@@ -223,13 +232,14 @@ describe('Repository', () => {
                                         },
                                     },
                                 ],
-                                pageInfo: { hasNextPage: true },
+                                pageInfo: { hasNextPage: false },
                             },
                         },
                     },
                 }),
                 RepositoryCommit: () => ({
                     node: {
+                        __typename: 'Repository',
                         commit: {
                             __typename: 'GitCommit',
                             id:
@@ -316,12 +326,12 @@ describe('Repository', () => {
                                                     aborted: false,
                                                     lines: [
                                                         {
-                                                            kind: 'DELETED',
+                                                            kind: DiffHunkLineType.DELETED,
                                                             html:
                                                                 '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">build</span><span style="color:#657b83;">:\n</span></div>',
                                                         },
                                                         {
-                                                            kind: 'ADDED',
+                                                            kind: DiffHunkLineType.ADDED,
                                                             html:
                                                                 '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">lsif-go</span><span style="color:#657b83;">:\n</span></div>',
                                                         },
@@ -346,23 +356,38 @@ describe('Repository', () => {
             await driver.page.waitForSelector('h2.tree-page__title')
 
             // Assert that the directory listing displays properly
-            await driver.page.waitForSelector('.e2e-tree-entries')
+            await driver.page.waitForSelector('.test-tree-entries')
+
+            await percySnapshot(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
-                () => document.querySelectorAll<HTMLButtonElement>('.e2e-tree-entry-file')?.length
+                () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length
             )
 
             assert.strictEqual(numberOfFileEntries, fileEntries.length, 'Number of files in directory listing')
 
             await testContext.waitForGraphQLRequest(async () => {
-                await driver.findElementWithText(clickedFileName, { selector: '.e2e-tree-entry-file', action: 'click' })
+                await driver.findElementWithText(clickedFileName, {
+                    selector: '.test-tree-entry-file',
+                    action: 'click',
+                })
             }, 'Blob')
 
-            await driver.page.waitForSelector('.e2e-repo-blob')
+            await driver.page.waitForSelector('.test-repo-blob')
             await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
 
-            // Assert that the file is loaded
-            await assertSelectorHasText('.breadcrumb .part-last', clickedFileName)
+            // Assert breadcrumb order
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, [
+                'Home',
+                'Repositories',
+                shortRepositoryName,
+                '@master',
+                clickedFileName,
+            ])
 
             // Return to repo page
             await driver.page.click('a.repo-header__repo')
@@ -373,6 +398,90 @@ describe('Repository', () => {
             await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
             await driver.page.waitForSelector('.git-commit-node__message-subject')
             await assertSelectorHasText('.git-commit-node__message-subject', 'update LSIF indexing CI workflow')
+        })
+
+        it('works with files with spaces in the name', async () => {
+            const shortRepositoryName = 'ggilmore/q-test'
+            const fileName = '% token.4288249258.sql'
+            const directoryName = "Geoffrey's random queries.32r242442bf"
+            const filePath = path.posix.join(directoryName, fileName)
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath, repoName, revision }) =>
+                    createFileExternalLinksResult(
+                        `https://${repoName}/blob/${revision}/${filePath.split('/').map(encodeURIComponent).join('/')}`
+                    ),
+                TreeEntries: () => ({
+                    repository: {
+                        commit: {
+                            tree: {
+                                isRoot: false,
+                                url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
+                                entries: [
+                                    {
+                                        name: fileName,
+                                        path: filePath,
+                                        isDirectory: false,
+                                        url:
+                                            '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                        submodule: null,
+                                        isSingleChild: false,
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                }),
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+            })
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/github.com/ggilmore/q-test/-/tree/Geoffrey's%20random%20queries.32r242442bf`
+            )
+            await driver.page.waitForSelector('.test-tree-file-link')
+            assert.strictEqual(
+                await driver.page.evaluate(() => document.querySelector('.test-tree-file-link')?.textContent),
+                fileName
+            )
+
+            await driver.page.click('.test-tree-file-link')
+            await driver.page.waitForSelector('.test-repo-blob')
+
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
+
+            // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
+            // await driver.page.waitForSelector('#monaco-query-input .view-lines')
+            // const searchQuery = await driver.page.evaluate(
+            //     () => document.querySelector('#monaco-query-input .view-lines')?.textContent
+            // )
+            // assert.strictEqual(
+            //     searchQuery,
+            //     'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\.32r242442bf/% token\\.4288249258\\.sql$"'
+            // )
+
+            await driver.page.waitForSelector('.test-go-to-code-host')
+            assert.strictEqual(
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-go-to-code-host')?.href
+                ),
+                "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
+            )
+
+            const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
+            assert.strictEqual(blobContent, `content for: ${filePath}`)
         })
     })
 })

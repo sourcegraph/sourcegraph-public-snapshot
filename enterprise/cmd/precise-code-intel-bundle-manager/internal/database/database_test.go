@@ -64,7 +64,6 @@ func TestDatabaseRanges(t *testing.T) {
 					{Path: "protocol/writer.go", Range: newRange(12, 5, 12, 11)},
 				},
 				References: []bundles.Location{
-					{Path: "internal/index/indexer.go", Range: newRange(36, 26, 36, 32)},
 					{Path: "protocol/writer.go", Range: newRange(12, 5, 12, 11)},
 					{Path: "protocol/writer.go", Range: newRange(20, 47, 20, 53)},
 					{Path: "protocol/writer.go", Range: newRange(21, 9, 21, 15)},
@@ -363,13 +362,13 @@ func openTestDatabase(t *testing.T) Database {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	// TODO(efritz) - rewrite test not to require actual reader
-	reader, err := sqlitereader.NewReader(context.Background(), filename, cache)
+	// TODO(efritz) - rewrite test not to require actual store
+	store, err := sqlitereader.OpenStore(context.Background(), filename, cache)
 	if err != nil {
-		t.Fatalf("unexpected error creating reader: %s", err)
+		t.Fatalf("unexpected error creating store: %s", err)
 	}
 
-	db, err := OpenDatabase(context.Background(), filename, reader)
+	db, err := OpenDatabase(context.Background(), filename, store)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

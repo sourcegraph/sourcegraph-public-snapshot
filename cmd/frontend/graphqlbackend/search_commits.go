@@ -15,8 +15,8 @@ import (
 	"github.com/xeonx/timeago"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -67,10 +67,6 @@ func (r *commitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) 
 func (r *commitSearchResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return r, true
-}
-
-func (r *commitSearchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
-	return nil, false
 }
 
 func (r *commitSearchResultResolver) searchResultURIs() (string, string) {

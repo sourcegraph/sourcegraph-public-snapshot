@@ -5,12 +5,10 @@ import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
-import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
-const FilePathBreadcrumb = lazyComponent(() => import('./FilePathBreadcrumb'), 'FilePathBreadcrumb')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
 
@@ -99,6 +97,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setCaseSensitivity,
             copyQueryButton,
             versionContext,
+            globbing,
             ...context
         }: RepoRevisionContainerContext &
             RouteComponentProps<{
@@ -142,28 +141,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setCaseSensitivity,
                 copyQueryButton,
                 versionContext,
+                globbing,
             }
 
             return (
                 <>
-                    {filePath && (
-                        <>
-                            <RepoHeaderContributionPortal
-                                position="nav"
-                                priority={10}
-                                element={
-                                    <FilePathBreadcrumb
-                                        key="path"
-                                        repoName={repoName}
-                                        revision={context.revision}
-                                        filePath={filePath}
-                                        isDir={objectType === 'tree'}
-                                    />
-                                }
-                                repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
-                            />
-                        </>
-                    )}
                     <RepoRevisionSidebar
                         {...context}
                         {...repoRevisionProps}

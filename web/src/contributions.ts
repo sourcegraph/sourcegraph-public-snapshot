@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'

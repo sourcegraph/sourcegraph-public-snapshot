@@ -24,7 +24,7 @@ exports[`SearchStatsPage limitHit 1`] = `
        Code statistics
        
       <small
-        className="badge badge-secondary ml-2"
+        className="badge badge-secondary text-uppercase ml-2"
       >
         Experimental
       </small>
@@ -42,7 +42,7 @@ exports[`SearchStatsPage limitHit 1`] = `
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
-        className="form-control flex-1 e2e-stats-query"
+        className="form-control flex-1 test-stats-query"
         id="stats-page__query"
         onChange={[Function]}
         placeholder="Enter a Sourcegraph search query"
@@ -92,7 +92,7 @@ exports[`SearchStatsPage renders 1`] = `
        Code statistics
        
       <small
-        className="badge badge-secondary ml-2"
+        className="badge badge-secondary text-uppercase ml-2"
       >
         Experimental
       </small>
@@ -110,7 +110,7 @@ exports[`SearchStatsPage renders 1`] = `
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
-        className="form-control flex-1 e2e-stats-query"
+        className="form-control flex-1 test-stats-query"
         id="stats-page__query"
         onChange={[Function]}
         placeholder="Enter a Sourcegraph search query"

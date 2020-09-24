@@ -92,6 +92,11 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 		o.Branches = nil
 	}
 
+	// Zoekt has a limit of 64 branches
+	if len(o.Branches) > 64 {
+		o.Branches = o.Branches[:64]
+	}
+
 	return json.Marshal(o)
 }
 

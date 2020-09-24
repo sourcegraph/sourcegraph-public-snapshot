@@ -2,7 +2,7 @@
 
 ## Internal comments vs external documentation
 
-Comments starting with `#!` in [schema.graphql](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/frontend/graphqlbackend/schema.graphql) will be stripped out before the GraphQL documentation is generated. `#!` is useful for implementation details and security notes that shouldn't be displayed to API users.
+Comments starting with `#!` in [schema.graphql](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/schema.graphql) will be stripped out before the GraphQL documentation is generated. `#!` is useful for implementation details and security notes that shouldn't be displayed to API users.
 
 ## GraphQL schema evolution
 

@@ -2,10 +2,10 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
@@ -16,7 +16,7 @@ import (
 
 // Database wraps access to a single processed bundle.
 type Database interface {
-	// Close closes the underlying reader.
+	// Close closes the underlying store.
 	Close() error
 
 	// Exists determines if the path exists in the database.
@@ -54,8 +54,8 @@ type Database interface {
 
 type databaseImpl struct {
 	filename        string
-	reader          persistence.Reader // database file reader
-	numResultChunks int                // numResultChunks value from meta row
+	store           persistence.Store // bundle store
+	numResultChunks int               // numResultChunks value from meta row
 }
 
 var _ Database = &databaseImpl{}
@@ -79,34 +79,23 @@ type DocumentPathRangeID struct {
 	RangeID types.ID
 }
 
-// ErrMalformedBundle is returned when a bundle is missing an expected map key.
-type ErrMalformedBundle struct {
-	Filename string // the filename of the malformed bundle
-	Name     string // the type of value key should contain
-	Key      string // the missing key
-}
-
-func (e ErrMalformedBundle) Error() string {
-	return fmt.Sprintf("malformed bundle: unknown %s %s", e.Name, e.Key)
-}
-
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader) (Database, error) {
-	meta, err := reader.ReadMeta(ctx)
+func OpenDatabase(ctx context.Context, filename string, store persistence.Store) (Database, error) {
+	meta, err := store.ReadMeta(ctx)
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
+		return nil, pkgerrors.Wrap(err, "store.ReadMeta")
 	}
 
 	return &databaseImpl{
 		filename:        filename,
-		reader:          reader,
+		store:           store,
 		numResultChunks: meta.NumResultChunks,
 	}, nil
 }
 
-// Close closes the underlying reader.
+// Close closes the underlying store.
 func (db *databaseImpl) Close() error {
-	return db.reader.Close()
+	return db.store.Close(nil)
 }
 
 // Exists determines if the path exists in the database.
@@ -153,15 +142,26 @@ func (db *databaseImpl) Ranges(ctx context.Context, path string, startLine, endL
 	for _, rangeID := range rangeIDs {
 		r := documentData.Ranges[rangeID]
 
-		hoverText, _, err := db.hover(ctx, documentData, r)
+		hoverText, _, err := db.hover(ctx, path, documentData, r)
 		if err != nil {
 			return nil, err
+		}
+
+		// Return only references that are in the same file. Otherwise this set
+		// gets very big and such results are of limited use to consumers such as
+		// the code intel extensions, which only use references for highlighting
+		// uses of an identifier within the same file.
+		fileLocalReferences := make([]bundles.Location, 0, len(locations[r.ReferenceResultID]))
+		for _, r := range locations[r.ReferenceResultID] {
+			if r.Path == path {
+				fileLocalReferences = append(fileLocalReferences, r)
+			}
 		}
 
 		codeintelRanges = append(codeintelRanges, bundles.CodeIntelligenceRange{
 			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			Definitions: locations[r.DefinitionResultID],
-			References:  locations[r.ReferenceResultID],
+			References:  fileLocalReferences,
 			HoverText:   hoverText,
 		})
 	}
@@ -228,7 +228,7 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 	}
 
 	for _, r := range ranges {
-		text, exists, err := db.hover(ctx, documentData, r)
+		text, exists, err := db.hover(ctx, path, documentData, r)
 		if err != nil {
 			return "", bundles.Range{}, false, err
 		}
@@ -304,12 +304,8 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 		for _, monikerID := range r.MonikerIDs {
 			moniker, exists := documentData.Monikers[monikerID]
 			if !exists {
-				return nil, ErrMalformedBundle{
-					Filename: db.filename,
-					Name:     "moniker",
-					Key:      string(monikerID),
-					// TODO(efritz) - add document context
-				}
+				log15.Warn("malformed bundle: unknown moniker", "filename", db.filename, "path", path, "id", monikerID)
+				continue
 			}
 
 			batch = append(batch, bundles.MonikerData{
@@ -345,12 +341,12 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 	var rows []types.Location
 	var totalCount int
 	if tableName == "definitions" {
-		if rows, totalCount, err = db.reader.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
-			err = pkgerrors.Wrap(err, "reader.ReadDefinitions")
+		if rows, totalCount, err = db.store.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
+			err = pkgerrors.Wrap(err, "store.ReadDefinitions")
 		}
 	} else if tableName == "references" {
-		if rows, totalCount, err = db.reader.ReadReferences(ctx, scheme, identifier, skip, take); err != nil {
-			err = pkgerrors.Wrap(err, "reader.ReadReferences")
+		if rows, totalCount, err = db.store.ReadReferences(ctx, scheme, identifier, skip, take); err != nil {
+			err = pkgerrors.Wrap(err, "store.ReadReferences")
 		}
 	}
 
@@ -391,19 +387,15 @@ func (db *databaseImpl) PackageInformation(ctx context.Context, path, packageInf
 }
 
 // hover returns the hover text locations for the given range.
-func (db *databaseImpl) hover(ctx context.Context, documentData types.DocumentData, r types.RangeData) (string, bool, error) {
+func (db *databaseImpl) hover(ctx context.Context, path string, documentData types.DocumentData, r types.RangeData) (string, bool, error) {
 	if r.HoverResultID == "" {
 		return "", false, nil
 	}
 
 	text, exists := documentData.HoverResults[r.HoverResultID]
 	if !exists {
-		return "", false, ErrMalformedBundle{
-			Filename: db.filename,
-			Name:     "hoverResult",
-			Key:      string(r.HoverResultID),
-			// TODO(efritz) - add document context
-		}
+		log15.Warn("malformed bundle: unknown hover result", "filename", db.filename, "path", path, "id", r.HoverResultID)
+		return "", false, nil
 	}
 
 	return text, true, nil
@@ -421,7 +413,7 @@ func (db *databaseImpl) getPathsWithPrefix(ctx context.Context, prefix string) (
 		span.Finish()
 	}()
 
-	return db.reader.PathsWithPrefix(ctx, prefix)
+	return db.store.PathsWithPrefix(ctx, prefix)
 }
 
 // getDocumentData fetches and unmarshals the document data or the given path.
@@ -437,9 +429,9 @@ func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ typ
 		span.Finish()
 	}()
 
-	documentData, ok, err := db.reader.ReadDocument(ctx, path)
+	documentData, ok, err := db.store.ReadDocument(ctx, path)
 	if err != nil {
-		return types.DocumentData{}, false, pkgerrors.Wrap(err, "reader.ReadDocument")
+		return types.DocumentData{}, false, pkgerrors.Wrap(err, "store.ReadDocument")
 	}
 	return documentData, ok, nil
 }
@@ -487,11 +479,8 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 			return nil, pkgerrors.Wrap(err, "db.getResultChunkByID")
 		}
 		if !exists {
-			return nil, ErrMalformedBundle{
-				Filename: db.filename,
-				Name:     "result chunk",
-				Key:      fmt.Sprintf("%d", index),
-			}
+			log15.Warn("malformed bundle: unknown result chunk", "filename", db.filename, "index", index)
+			continue
 		}
 
 		resultChunks[index] = resultChunkData
@@ -505,24 +494,16 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 
 		documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
 		if !exists {
-			return nil, ErrMalformedBundle{
-				Filename: db.filename,
-				Name:     "result",
-				Key:      string(id),
-				// TODO(efritz) - add result chunk context
-			}
+			log15.Warn("malformed bundle: unknown result", "filename", db.filename, "index", index, "id", id)
+			continue
 		}
 
 		var resultData []DocumentPathRangeID
 		for _, documentIDRangeID := range documentIDRangeIDs {
 			path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]
 			if !ok {
-				return nil, ErrMalformedBundle{
-					Filename: db.filename,
-					Name:     "documentPath",
-					Key:      string(documentIDRangeID.DocumentID),
-					// TODO(efritz) - add result chunk context
-				}
+				log15.Warn("malformed bundle: unknown document path", "filename", db.filename, "index", index, "id", documentIDRangeID.DocumentID)
+				continue
 			}
 
 			resultData = append(resultData, DocumentPathRangeID{
@@ -550,9 +531,9 @@ func (db *databaseImpl) getResultChunkByID(ctx context.Context, id int) (_ types
 		span.Finish()
 	}()
 
-	resultChunkData, ok, err := db.reader.ReadResultChunk(ctx, id)
+	resultChunkData, ok, err := db.store.ReadResultChunk(ctx, id)
 	if err != nil {
-		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "reader.ReadResultChunk")
+		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "store.ReadResultChunk")
 	}
 	return resultChunkData, ok, nil
 }
@@ -583,11 +564,8 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, pairs map[
 		}
 
 		if !exists {
-			return nil, ErrMalformedBundle{
-				Filename: db.filename,
-				Name:     "document",
-				Key:      path,
-			}
+			log15.Warn("malformed bundle: unknown document", "filename", db.filename, "path", path)
+			continue
 		}
 
 		documents[path] = documentData
@@ -602,12 +580,8 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, pairs map[
 
 			r, exists := documents[path].Ranges[rangeID]
 			if !exists {
-				return nil, ErrMalformedBundle{
-					Filename: db.filename,
-					Name:     "range",
-					Key:      string(rangeID),
-					// TODO(efritz) - add document context
-				}
+				log15.Warn("malformed bundle: unknown range", "filename", db.filename, "path", path, "id", id)
+				continue
 			}
 
 			locations = append(locations, bundles.Location{

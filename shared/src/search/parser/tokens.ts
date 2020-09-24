@@ -28,6 +28,12 @@ export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.
                     }
                 }
                 break
+            case 'operator':
+                tokens.push({
+                    startIndex: range.start,
+                    scopes: 'operator',
+                })
+                break
             default:
                 tokens.push({
                     startIndex: range.start,

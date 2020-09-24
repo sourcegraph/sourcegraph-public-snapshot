@@ -16,6 +16,8 @@ import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import * as H from 'history'
 import { SiteConfiguration } from '../schema/site.schema'
+import { ThemeProps } from '../../../shared/src/theme'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -192,8 +194,7 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}> {
-    isLightTheme: boolean
+interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     history: H.History
 }
 
@@ -255,20 +256,17 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             }),
                             tap(() => {
                                 // Flipping the Campaigns feature flag
-                                // ("automation") requires a reload for the
-                                // Campaigns UI to be correctly rendered.
-                                //
-                                // This should be removed once the feature flag
-                                // is removed.
-                                const lastAutomationEnabled =
+                                // requires a reload for the
+                                // Campaigns UI to be correctly rendered in the navbar.
+                                const lastCampaignsEnabled =
                                     (lastConfiguration &&
-                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)
-                                            ?.experimentalFeatures?.automation) === 'enabled'
-                                const newAutomationEnabled =
-                                    (jsonc.parse(newContents) as SiteConfiguration)?.experimentalFeatures
-                                        ?.automation === 'enabled'
+                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)?.[
+                                            'campaigns.enabled'
+                                        ]) === true
+                                const newCampaignsEnabled =
+                                    (jsonc.parse(newContents) as SiteConfiguration)?.['campaigns.enabled'] === true
 
-                                if (lastAutomationEnabled !== newAutomationEnabled) {
+                                if (lastCampaignsEnabled !== newCampaignsEnabled) {
                                     window.location.reload()
                                 }
                             })
@@ -455,6 +453,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             onSave={this.onSave}
                             actions={quickConfigureActions}
                             history={this.props.history}
+                            telemetryService={this.props.telemetryService}
                         />
                         <p className="form-text text-muted">
                             <small>

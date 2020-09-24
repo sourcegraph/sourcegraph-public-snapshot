@@ -14,11 +14,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -70,9 +70,18 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: []string{req.Kind},
-	})
+
+	options := db.ExternalServicesListOptions{
+		Kinds:   []string{req.Kind},
+		AfterID: int64(req.AfterID),
+	}
+	if req.Limit > 0 {
+		options.LimitOffset = &db.LimitOffset{
+			Limit: req.Limit,
+		}
+	}
+
+	services, err := db.ExternalServices.List(r.Context(), options)
 	if err != nil {
 		return err
 	}
@@ -114,9 +123,17 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 		req.Kinds = append(req.Kinds, req.Kind)
 	}
 
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: req.Kinds,
-	})
+	options := db.ExternalServicesListOptions{
+		Kinds:   []string{req.Kind},
+		AfterID: int64(req.AfterID),
+	}
+	if req.Limit > 0 {
+		options.LimitOffset = &db.LimitOffset{
+			Limit: req.Limit,
+		}
+	}
+
+	services, err := db.ExternalServices.List(r.Context(), options)
 	if err != nil {
 		return err
 	}

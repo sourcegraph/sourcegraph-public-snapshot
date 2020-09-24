@@ -6,7 +6,6 @@ import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifUpload as defaultFetchUpload, deleteLsifUpload, Upload } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -17,10 +16,12 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
+import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 const REFRESH_INTERVAL_MS = 5000
 
-interface Props extends RouteComponentProps<{ id: string }> {
+export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     repo?: GQL.IRepository
     fetchLsifUpload?: typeof defaultFetchUpload
 
@@ -32,7 +33,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
     now?: () => Date
 }
 
-const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
+const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERRORED])
 
 function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
@@ -41,7 +42,7 @@ function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const CodeIntelUploadPage: FunctionComponent<Props> = ({
+export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = ({
     repo,
     scheduler,
     match: {
@@ -49,9 +50,10 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
     },
     history,
     fetchLsifUpload = defaultFetchUpload,
+    telemetryService,
     now,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
+    useEffect(() => telemetryService.logViewEvent('CodeIntelUpload'), [telemetryService])
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
@@ -121,31 +123,31 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                         </h2>
                     </div>
 
-                    {uploadOrError.state === GQL.LSIFUploadState.UPLOADING ? (
+                    {uploadOrError.state === LSIFUploadState.UPLOADING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Still uploading...</span>
+                            <span className="test-upload-state">Still uploading...</span>
                         </div>
-                    ) : uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
+                    ) : uploadOrError.state === LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload is currently being processed...</span>
+                            <span className="test-upload-state">Upload is currently being processed...</span>
                         </div>
-                    ) : uploadOrError.state === GQL.LSIFUploadState.COMPLETED ? (
+                    ) : uploadOrError.state === LSIFUploadState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload processed successfully.</span>
+                            <span className="test-upload-state">Upload processed successfully.</span>
                         </div>
-                    ) : uploadOrError.state === GQL.LSIFUploadState.ERRORED ? (
+                    ) : uploadOrError.state === LSIFUploadState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload failed to complete:</span>{' '}
+                            <span className="test-upload-state">Upload failed to complete:</span>{' '}
                             <code>{uploadOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">
+                            <span className="test-upload-state">
                                 Upload is queued. There are {uploadOrError.placeInQueue} uploads ahead of this one.
                             </span>
                         </div>
@@ -201,7 +203,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Is latest for repo</td>
                                 <td>
                                     {uploadOrError.finishedAt ? (
-                                        <span className="e2e-is-latest-for-repo">
+                                        <span className="test-is-latest-for-repo">
                                             {uploadOrError.isLatestForRepo ? 'yes' : 'no'}
                                         </span>
                                     ) : (
@@ -230,7 +232,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
 
                             <tr>
                                 <td>
-                                    {uploadOrError.state === GQL.LSIFUploadState.ERRORED && uploadOrError.finishedAt
+                                    {uploadOrError.state === LSIFUploadState.ERRORED && uploadOrError.finishedAt
                                         ? 'Failed'
                                         : 'Finished'}{' '}
                                     processing

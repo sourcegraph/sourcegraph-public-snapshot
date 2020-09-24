@@ -1,45 +1,22 @@
 import { Observable, of, combineLatest, defer, from } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, requestGraphQL } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-
-// TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
-const genericSearchResultInterfaceFields = `
-    label {
-        html
-    }
-    url
-    icon
-    detail {
-        html
-    }
-    matches {
-        url
-        body {
-            text
-            html
-        }
-        highlights {
-            line
-            character
-            length
-        }
-    }
-`
+import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
+import * as SearchStream from './stream'
 
 export function search(
     query: string,
     version: string,
-    patternType: GQL.SearchPatternType,
+    patternType: SearchPatternType,
     versionContext: string | undefined,
     extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
@@ -51,8 +28,18 @@ export function search(
         switchMap(query =>
             queryGraphQL(
                 gql`
-                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $useCodemod: Boolean!, $versionContext: String) {
-                        search(query: $query, version: $version, patternType: $patternType, versionContext: $versionContext) {
+                    query Search(
+                        $query: String!
+                        $version: SearchVersion!
+                        $patternType: SearchPatternType!
+                        $versionContext: String
+                    ) {
+                        search(
+                            query: $query
+                            version: $version
+                            patternType: $patternType
+                            versionContext: $versionContext
+                        ) {
                             results {
                                 __typename
                                 limitHit
@@ -81,7 +68,29 @@ export function search(
                                     ... on Repository {
                                         id
                                         name
-                                        ${genericSearchResultInterfaceFields}
+                                        # TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
+                                        # beginning of genericSearchResultInterfaceFields inline fragment
+                                        label {
+                                            html
+                                        }
+                                        url
+                                        icon
+                                        detail {
+                                            html
+                                        }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
+                                        # end of genericSearchResultInterfaceFields inline fragment
                                     }
                                     ... on FileMatch {
                                         file {
@@ -103,7 +112,11 @@ export function search(
                                             }
                                             ... on GitRevSpecExpr {
                                                 expr
-                                                object { commit { url } }
+                                                object {
+                                                    commit {
+                                                        url
+                                                    }
+                                                }
                                             }
                                             ... on GitObject {
                                                 abbreviatedOID
@@ -126,10 +139,29 @@ export function search(
                                         }
                                     }
                                     ... on CommitSearchResult {
-                                        ${genericSearchResultInterfaceFields}
-                                    }
-                                    ...on CodemodResult @include(if: $useCodemod) {
-                                        ${genericSearchResultInterfaceFields}
+                                        # TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
+                                        # beginning of genericSearchResultInterfaceFields inline fragment
+                                        label {
+                                            html
+                                        }
+                                        url
+                                        icon
+                                        detail {
+                                            html
+                                        }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
+                                        # end of genericSearchResultInterfaceFields inline fragment
                                     }
                                 }
                                 alert {
@@ -145,7 +177,7 @@ export function search(
                         }
                     }
                 `,
-                { query, version, patternType, versionContext, useCodemod: USE_CODEMOD }
+                { query, version, patternType, versionContext }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {
@@ -154,6 +186,26 @@ export function search(
                     return data.search.results
                 }),
                 catchError(error => [asError(error)])
+            )
+        )
+    )
+}
+
+export function searchStream(
+    query: string,
+    version: string,
+    patternType: SearchPatternType,
+    versionContext: string | undefined,
+    extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+): Observable<GQL.ISearchResults | ErrorLike> {
+    const transformedQuery = from(extensionHostPromise).pipe(
+        switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
+    )
+
+    return transformedQuery.pipe(
+        switchMap(query =>
+            SearchStream.search(query, version, patternType, versionContext).pipe(
+                SearchStream.switchToGQLISearchResults
             )
         )
     )
@@ -265,7 +317,9 @@ const savedSearchFragment = gql`
         notifySlack
         query
         namespace {
+            __typename
             id
+            namespaceName
         }
         slackWebhookURL
     }
@@ -487,4 +541,60 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
         map(dataOrThrowErrors),
         map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
     )
+}
+
+export interface EventLogResult {
+    totalCount: number
+    nodes: { argument: string | null; timestamp: string; url: string }[]
+    pageInfo: { endCursor: string | null; hasNextPage: boolean }
+}
+
+function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observable<EventLogResult | null> {
+    if (!userId) {
+        return of(null)
+    }
+
+    const result = requestGraphQL<EventLogsDataResult, EventLogsDataVariables>({
+        request: gql`
+            query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
+                node(id: $userId) {
+                    ... on User {
+                        eventLogs(first: $first, eventName: $eventName) {
+                            nodes {
+                                argument
+                                timestamp
+                                url
+                            }
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                            totalCount
+                        }
+                    }
+                }
+            }
+        `,
+        variables: { userId, first: first ?? null, eventName },
+    })
+
+    return result.pipe(
+        map(dataOrThrowErrors),
+        map(
+            (data: EventLogsDataResult): EventLogResult => {
+                if (!data.node) {
+                    throw new Error('User not found')
+                }
+                return data.node.eventLogs
+            }
+        )
+    )
+}
+
+export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    return fetchEvents(userId, first, 'SearchResultsQueried')
+}
+
+export function fetchRecentFileViews(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+    return fetchEvents(userId, first, 'ViewBlob')
 }

@@ -1,11 +1,11 @@
 import expect from 'expect'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { PhabricatorMapping } from '../browser-extension/web-extension-api/types'
 import { isEqual } from 'lodash'
 import { getConfig } from '../../../shared/src/testing/config'
 import { retry } from '../../../shared/src/testing/utils'
+import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
 
 // By default, these tests run against a local Phabricator instance and a local Sourcegraph instance.
 // To run them against phabricator.sgdev.org and umami.sgdev.org, set the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -169,7 +169,7 @@ describe('Sourcegraph Phabricator extension', () => {
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
         await driver.page.goto(
@@ -207,7 +207,7 @@ describe('Sourcegraph Phabricator extension', () => {
         // Once the line is tokenized, we can click on the individual token we want a hover for.
         const codeElement = await driver.page.waitForXPath(`//tbody/tr[${lineNumber}]//span[text()="CallOption"]`)
         await codeElement.click()
-        await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
+        await driver.page.waitForSelector('.test-tooltip-go-to-definition')
     })
 
     after(async () => {

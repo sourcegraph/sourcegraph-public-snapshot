@@ -98,6 +98,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}
+                            telemetryService={this.props.telemetryService}
                         />
                     ) : (
                         <pre className="form-control registry-extension-manifest-page__plain-viewer">

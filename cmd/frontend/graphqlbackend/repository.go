@@ -11,16 +11,19 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type RepositoryResolverCache map[api.RepoName]*RepositoryResolver
@@ -228,6 +231,10 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// No clients that we know of read this field. Additionally on performance profiles
+// the marshalling of timestamps is significant in our postgres client. So we
+// deprecate the fields and return fake data for created_at.
+// https://github.com/sourcegraph/sourcegraph/pull/4668
 func (r *RepositoryResolver) CreatedAt() DateTime {
 	return DateTime{Time: time.Now()}
 }
@@ -273,9 +280,6 @@ func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
 func (r *RepositoryResolver) ToRepository() (*RepositoryResolver, bool) { return r, true }
 func (r *RepositoryResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *RepositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
-	return nil, false
-}
-func (r *RepositoryResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return nil, false
 }
 
@@ -480,21 +484,51 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 }
 
 func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.Client, error) {
-	phabs, err := db.ExternalServices.ListPhabricatorConnections(ctx)
-	if err != nil {
-		return nil, err
+	opt := db.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindPhabricator},
+		LimitOffset: &db.LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
 	}
+	for {
+		svcs, err := db.ExternalServices.List(ctx, opt)
+		if err != nil {
+			return nil, errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
-	for _, phab := range phabs {
-		if phab.Url != origin {
-			continue
+		for _, svc := range svcs {
+			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				return nil, errors.Wrap(err, "parse config")
+			}
+
+			var conn *schema.PhabricatorConnection
+			switch c := cfg.(type) {
+			case *schema.PhabricatorConnection:
+				conn = c
+			default:
+				log15.Error("makePhabClientForOrigin", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
+				continue
+			}
+
+			if conn.Url != origin {
+				continue
+			}
+
+			if conn.Token == "" {
+				return nil, errors.Errorf("no phabricator token was given for: %s", origin)
+			}
+
+			return phabricator.NewClient(ctx, conn.Url, conn.Token, nil)
 		}
 
-		if phab.Token == "" {
-			return nil, errors.Errorf("no phabricator token was given for: %s", origin)
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
 		}
-
-		return phabricator.NewClient(ctx, phab.Url, phab.Token, nil)
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)

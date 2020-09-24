@@ -58,7 +58,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
     public render(): JSX.Element | null {
         return (
-            <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
+            <div className="saved-search-list-page__row list-group-item test-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
                     <Link
@@ -67,12 +67,14 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                             buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType, false)
                         }
                     >
-                        <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
+                        <div className="test-saved-search-list-page-row-title">
+                            {this.props.savedSearch.description}
+                        </div>
                     </Link>
                 </div>
                 <div>
                     <Link
-                        className="btn btn-secondary btn-sm e2e-edit-saved-search-button"
+                        className="btn btn-secondary btn-sm test-edit-saved-search-button"
                         to={`${this.props.match.path}/${this.props.savedSearch.id}`}
                         data-tooltip="Saved search settings"
                     >
@@ -80,7 +82,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Link>{' '}
                     <button
                         type="button"
-                        className="btn btn-sm btn-danger e2e-delete-saved-search-button"
+                        className="btn btn-sm btn-danger test-delete-saved-search-button"
                         onClick={this.onDelete}
                         disabled={this.state.isDeleting}
                         data-tooltip="Delete saved search"
@@ -146,7 +148,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     <div>
                         <Link
                             to={`${this.props.match.path}/add`}
-                            className="btn btn-primary e2e-add-saved-search-button"
+                            className="btn btn-primary test-add-saved-search-button"
                         >
                             <PlusIcon className="icon-inline" /> Add saved search
                         </Link>

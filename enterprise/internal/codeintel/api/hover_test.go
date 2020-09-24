@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	commitmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits/mocks"
 	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -17,12 +18,13 @@ func TestHover(t *testing.T) {
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
+	mockCommitUpdater := commitmocks.NewMockUpdater()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
 	setMockBundleClientHover(t, mockBundleClient, "main.go", 10, 50, "text", testRange1, true)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
 	text, r, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting hover text: %s", err)
@@ -43,9 +45,10 @@ func TestHoverUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
+	mockCommitUpdater := commitmocks.NewMockUpdater()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
 	if _, _, _, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting hover text. want=%q have=%q", ErrMissingDump, err)
 	}
@@ -57,6 +60,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 	mockBundleClient1 := bundlemocks.NewMockBundleClient()
 	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
+	mockCommitUpdater := commitmocks.NewMockUpdater()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
@@ -72,7 +76,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 	}, 15)
 	setMockBundleClientHover(t, mockBundleClient2, "foo.go", 10, 50, "text", testRange4, true)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
 	text, r, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting hover text: %s", err)
@@ -94,6 +98,7 @@ func TestHoverUnknownDefinition(t *testing.T) {
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
+	mockCommitUpdater := commitmocks.NewMockUpdater()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -103,7 +108,7 @@ func TestHoverUnknownDefinition(t *testing.T) {
 	setMockBundleClientPackageInformation(t, mockBundleClient, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
 	_, _, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting hover text: %s", err)

@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 
 type ActivationID = 'ConnectedCodeHost' | 'EnabledRepository' | 'DidSearch' | 'FoundReferences' | 'EnabledSharing'
 

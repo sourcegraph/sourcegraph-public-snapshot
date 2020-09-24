@@ -54,7 +54,7 @@
       "args": ["webpack"],
       "env": {
         // prettier-ignore
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}",
       },
       "internalConsoleOptions": "openOnSessionStart",
     },

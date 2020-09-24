@@ -80,6 +80,7 @@ const createMockPlatformContext = (
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
     refreshSettings: () => Promise.resolve(),
+    sourcegraphURL: '',
     ...partialMocks,
 })
 

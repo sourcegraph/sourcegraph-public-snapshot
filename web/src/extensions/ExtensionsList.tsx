@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
@@ -20,42 +20,6 @@ import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 import { ErrorAlert } from '../components/alerts'
-
-export const registryExtensionFragment = gql`
-    fragment RegistryExtensionFields on RegistryExtension {
-        id
-        publisher {
-            __typename
-            ... on User {
-                id
-                username
-                displayName
-                url
-            }
-            ... on Org {
-                id
-                name
-                displayName
-                url
-            }
-        }
-        extensionID
-        extensionIDWithoutRegistry
-        name
-        manifest {
-            raw
-            description
-        }
-        createdAt
-        updatedAt
-        url
-        remoteURL
-        registryName
-        isLocal
-        isWorkInProgress
-        viewerCanAdminister
-    }
-`
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
@@ -224,13 +188,14 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                             )
                         ) : (
                             <div className="extensions-list__cards mt-1">
-                                {this.state.data.resultOrError.extensions.map((extension, index) => (
+                                {this.state.data.resultOrError.extensions.map(extension => (
                                     <ExtensionCard
-                                        key={index}
+                                        key={extension.id}
                                         subject={this.props.subject}
                                         node={extension}
                                         settingsCascade={this.props.settingsCascade}
                                         platformContext={this.props.platformContext}
+                                        enabled={isExtensionEnabled(this.props.settingsCascade.final, extension.id)}
                                     />
                                 ))}
                             </div>
@@ -265,13 +230,46 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                 extensionRegistry {
                                     extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
                                         nodes {
-                                            ...RegistryExtensionFields
+                                            ...RegistryExtensionFieldsForList
                                         }
                                         error
                                     }
                                 }
                             }
-                            ${registryExtensionFragment}
+
+                            fragment RegistryExtensionFieldsForList on RegistryExtension {
+                                id
+                                publisher {
+                                    __typename
+                                    ... on User {
+                                        id
+                                        username
+                                        displayName
+                                        url
+                                    }
+                                    ... on Org {
+                                        id
+                                        name
+                                        displayName
+                                        url
+                                    }
+                                }
+                                extensionID
+                                extensionIDWithoutRegistry
+                                name
+                                manifest {
+                                    raw
+                                    description
+                                }
+                                createdAt
+                                updatedAt
+                                url
+                                remoteURL
+                                registryName
+                                isLocal
+                                isWorkInProgress
+                                viewerCanAdminister
+                            }
                         `,
                         {
                             ...args,

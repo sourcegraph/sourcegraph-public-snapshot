@@ -1,5 +1,5 @@
 import { fromEvent, of } from 'rxjs'
-import { catchError, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
+import { catchError, map, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
 import { asError } from '../../../shared/src/util/errors'
 
@@ -9,6 +9,8 @@ interface EventQueryParameters {
     utm_medium?: string
 }
 
+const extensionMarker = document.querySelector<HTMLDivElement>('#sourcegraph-app-background')
+
 /**
  * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
  * either in the form of a DOM marker element, or from a CustomEvent.
@@ -16,11 +18,16 @@ interface EventQueryParameters {
  * You should likely use browserExtensionInstalled, rather than _browserExtensionMessageReceived,
  * which may never emit or complete.
  */
-export const browserExtensionMessageReceived = (document.querySelector('#sourcegraph-app-background')
+export const browserExtensionMessageReceived = (extensionMarker
     ? // If the marker exists, the extension is installed
-      of(true)
+      of({ platform: extensionMarker.dataset?.platform })
     : // If not, listen for a registration event
-      fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(take(1), mapTo(true))
+      fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(
+          take(1),
+          map(({ detail }) => ({
+              platform: detail?.platform,
+          }))
+      )
 ).pipe(
     // Replay the same latest value for every subscriber
     publishReplay(1),

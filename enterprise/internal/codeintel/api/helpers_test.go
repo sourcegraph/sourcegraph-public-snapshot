@@ -141,6 +141,15 @@ func setMockStorePackageReferencePager(t *testing.T, mockStore *storemocks.MockS
 	})
 }
 
+func setMockStoreHasRepository(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, exists bool) {
+	mockStore.HasRepositoryFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (bool, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository id for HasRepository. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+		return exists, nil
+	})
+}
+
 func setMockStoreHasCommit(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit string, exists bool) {
 	mockStore.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
 		if repositoryID != expectedRepositoryID {

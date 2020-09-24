@@ -15,11 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
-/*
-	NOTE: For easier testing, run Sourcegraph instance without volume:
-			docker run --publish 7080:7080 --rm sourcegraph/server:insiders
-*/
-
 var client *gqltestutil.Client
 
 var (

@@ -19,6 +19,8 @@ import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../auth'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -64,7 +66,8 @@ export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteCo
 export interface ExtensionAreaProps
     extends ExtensionsAreaRouteContext,
         RouteComponentProps<{ extensionID: string }>,
-        ThemeProps {
+        ThemeProps,
+        TelemetryProps {
     routes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
@@ -77,7 +80,11 @@ interface ExtensionAreaState {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps, ThemeProps {
+export interface ExtensionAreaRouteContext
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        ThemeProps,
+        TelemetryProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -87,7 +94,7 @@ export interface ExtensionAreaRouteContext extends SettingsCascadeProps, Platfor
     onDidUpdateExtension: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**
@@ -183,6 +190,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             extension: this.state.extensionOrError,
             platformContext: this.props.platformContext,
             isLightTheme: this.props.isLightTheme,
+            telemetryService: this.props.telemetryService,
         }
 
         return (

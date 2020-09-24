@@ -14,6 +14,13 @@ import (
 type FakeChangesetSource struct {
 	Svc *repos.ExternalService
 
+	CreateChangesetCalled  bool
+	UpdateChangesetCalled  bool
+	ListReposCalled        bool
+	ExternalServicesCalled bool
+	LoadChangesetsCalled   bool
+	CloseChangesetCalled   bool
+
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
 	// The Changeset.BaseRef to be expected in CreateChangeset/UpdateChangeset calls.
@@ -33,13 +40,27 @@ type FakeChangesetSource struct {
 	// ClosedChangesets contains the changesets that were passed to CloseChangeset
 	ClosedChangesets []*repos.Changeset
 
+	// CreatedChangesets contains the changesets that were passed to
+	// CreateChangeset
+	CreatedChangesets []*repos.Changeset
+
 	// LoadedChangesets contains the changesets that were passed to LoadChangesets
 	LoadedChangesets []*repos.Changeset
+
+	// UpdateChangesets contains the changesets that were passed to
+	// UpdateChangeset
+	UpdatedChangesets []*repos.Changeset
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+	s.CreateChangesetCalled = true
+
 	if s.Err != nil {
 		return s.ChangesetExists, s.Err
+	}
+
+	if c.Repo == nil {
+		return false, NoReposErr
 	}
 
 	if c.HeadRef != s.WantHeadRef {
@@ -54,41 +75,75 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chan
 		return s.ChangesetExists, err
 	}
 
+	s.CreatedChangesets = append(s.CreatedChangesets, c)
 	return s.ChangesetExists, s.Err
 }
 
 func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.UpdateChangesetCalled = true
+
 	if s.Err != nil {
 		return s.Err
+	}
+	if c.Repo == nil {
+		return NoReposErr
 	}
 
 	if c.BaseRef != s.WantBaseRef {
 		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
+	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-var fakeNotImplemented = errors.New("not implement in FakeChangesetSource")
+var fakeNotImplemented = errors.New("not implemented in FakeChangesetSource")
 
 func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
+	s.ListReposCalled = true
+
 	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
 }
 
 func (s *FakeChangesetSource) ExternalServices() repos.ExternalServices {
+	s.ExternalServicesCalled = true
+
 	return repos.ExternalServices{s.Svc}
 }
 func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
+	s.LoadChangesetsCalled = true
+
 	if s.Err != nil {
 		return s.Err
 	}
+
+	for _, c := range cs {
+		if c.Repo == nil {
+			return NoReposErr
+		}
+
+		if err := c.SetMetadata(s.FakeMetadata); err != nil {
+			return err
+		}
+	}
+
 	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
 	return nil
 }
+
+var NoReposErr = errors.New("no repository set on repos.Changeset")
+
 func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.CloseChangesetCalled = true
+
 	if s.Err != nil {
 		return s.Err
 	}
+
+	if c.Repo == nil {
+		return NoReposErr
+	}
+
 	s.ClosedChangesets = append(s.ClosedChangesets, c)
 	return nil
 }
@@ -98,8 +153,11 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Chang
 type FakeGitserverClient struct {
 	Response    string
 	ResponseErr error
+
+	CreateCommitFromPatchCalled bool
 }
 
 func (f *FakeGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
+	f.CreateCommitFromPatchCalled = true
 	return f.Response, f.ResponseErr
 }

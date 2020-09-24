@@ -7,6 +7,7 @@ import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
 import { ThemeProps } from '../../../shared/src/theme'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -15,7 +16,8 @@ const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dis
 
 interface Props
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
-        ThemeProps {
+        ThemeProps,
+        TelemetryProps {
     value: string
 
     actions?: EditorAction[]
@@ -181,7 +183,14 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                             this.props.actions
                         ) {
                             for (const { id, label, run } of this.props.actions) {
-                                MonacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(
+                                    this.configEditor,
+                                    model,
+                                    label,
+                                    id,
+                                    run,
+                                    this.props.telemetryService
+                                )
                             }
                         }
                     })

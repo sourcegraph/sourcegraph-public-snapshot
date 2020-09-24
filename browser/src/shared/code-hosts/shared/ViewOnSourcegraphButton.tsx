@@ -7,6 +7,7 @@ import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { SignInButton } from './SignInButton'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../shared/src/backend/errors'
 import { snakeCase } from 'lodash'
+import { getPlatformName } from '../../util/context'
 
 export interface ViewOnSourcegraphButtonClassProps {
     className?: string
@@ -56,7 +57,10 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     }
 
     const { rawRepoName, revision } = getContext()
-    const url = new URL(`/${rawRepoName}${revision ? `@${revision}` : ''}`, sourcegraphURL).href
+    const url = new URL(
+        `/${rawRepoName}${revision ? `@${revision}` : ''}?utm_source=${getPlatformName()}`,
+        sourcegraphURL
+    ).href
 
     if (isErrorLike(repoExistsOrError)) {
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)

@@ -1,50 +1,79 @@
 .toggle {
     background: none;
     border: none;
-    cursor: pointer;
     display: inline-block;
     outline: none !important;
     padding: 0;
     position: relative;
-    width: 2.125rem;
-}
+    width: 2rem;
 
-.toggle__bar {
-    background-color: var(--secondary);
+    &__bar,
+    &__bar-shadow {
+        border-radius: 1rem;
+        top: 2px;
+        left: 0;
+        height: 1rem;
+        width: 100%;
+        position: absolute;
+    }
 
-    border-radius: 2rem;
+    &__bar {
+        opacity: 0.2;
+        background-color: var(--text-muted);
+        transition: all 0.3s;
+        transition-property: opacity;
 
-    border-radius: 1rem;
-    cursor: pointer;
+        &--on {
+            background-color: var(--primary);
+        }
+    }
 
-    top: 2px;
-    left: 0;
+    &:hover:enabled &__bar {
+        opacity: 0.5;
+    }
 
-    height: 1rem;
-    width: 100%;
+    &:focus-visible &__bar {
+        opacity: 0.5;
+        background-color: var(--text-muted);
 
-    position: absolute;
-}
+        &--on {
+            background-color: var(--primary);
+        }
+    }
 
-.toggle__bar--active {
-    background-color: rgba(28, 126, 214, 0.2);
-}
+    &__bar-shadow {
+        background-color: transparent;
+    }
 
-.toggle__knob {
-    background-color: var(--text-muted);
-    opacity: 0.8;
-    border-radius: 0.5rem;
+    &:focus-visible &__bar-shadow {
+        opacity: 0.2;
+        box-shadow: 0 0 0 0.1875rem var(--text-muted);
 
-    display: block;
+        &--on {
+            box-shadow: 0 0 0 0.1875rem var(--primary);
+        }
+    }
 
-    height: 1rem;
-    width: 1rem;
-    margin-top: 0.125rem;
+    &__knob {
+        background-color: var(--text-muted);
 
-    position: relative;
-}
+        border-radius: 0.375rem;
+        display: block;
 
-.toggle__knob--active {
-    background-color: var(--primary);
-    transform: translate3d(18px, 0, 0);
+        height: 0.75rem;
+        width: 0.75rem;
+        margin-top: 0.25rem;
+        left: 0.125rem;
+
+        position: relative;
+
+        &--on {
+            background-color: var(--primary);
+            transform: translate3d(1rem, 0, 0);
+        }
+    }
+
+    &:disabled &__knob {
+        opacity: 0.2;
+    }
 }

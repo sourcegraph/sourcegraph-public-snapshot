@@ -2,10 +2,12 @@ import assert from 'assert'
 import expect from 'expect'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
-import { SearchResult } from '../graphql-operations'
+import { SearchResult, WebGraphQlOperations } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
+import { siteGQLID, siteID } from './jscontext'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -78,13 +80,45 @@ describe('Search', () => {
             directory: __dirname,
         })
     })
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('Interactive search mode', () => {
+        const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({ experimentalFeatures: { splitSearchModes: true } }),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({ experimentalFeatures: { splitSearchModes: true } }),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+        }
+
         test('Search mode component appears', async () => {
+            testContext.overrideGraphQL({ ...viewerSettingsWithSplitSearchModes })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-search-mode-toggle')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.e2e-search-mode-toggle').length)).toBe(
+            await driver.page.waitForSelector('.test-search-mode-toggle')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-search-mode-toggle').length)).toBe(
                 1
             )
         })
@@ -92,6 +126,7 @@ describe('Search', () => {
         test('Filter buttons', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 SearchSuggestions: () => ({
                     search: {
                         suggestions: [
@@ -112,21 +147,21 @@ describe('Search', () => {
                 }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-search-mode-toggle', { visible: true })
-            await driver.page.click('.e2e-search-mode-toggle')
-            await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
+            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
+            await driver.page.click('.test-search-mode-toggle')
+            await driver.page.click('.test-search-mode-toggle__interactive-mode')
 
             // Wait for the input component to appear
-            await driver.page.waitForSelector('.e2e-interactive-mode-input', { visible: true })
+            await driver.page.waitForSelector('.test-interactive-mode-input', { visible: true })
             // Wait for the add filter row to appear.
-            await driver.page.waitForSelector('.e2e-add-filter-row', { visible: true })
+            await driver.page.waitForSelector('.test-add-filter-row', { visible: true })
             // Wait for the default add filter buttons appear
-            await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
-            await driver.page.waitForSelector('.e2e-add-filter-button-file', { visible: true })
+            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
+            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
 
             // Add a repo filter
-            await driver.page.waitForSelector('.e2e-add-filter-button-repo')
-            await driver.page.click('.e2e-add-filter-button-repo')
+            await driver.page.waitForSelector('.test-add-filter-button-repo')
+            await driver.page.click('.test-add-filter-button-repo')
 
             // FilterInput is autofocused
             await driver.page.waitForSelector('.filter-input')
@@ -146,8 +181,8 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=repo:%22gorilla/mux%22&patternType=literal')
 
             // Add a file filter from search results page
-            await driver.page.waitForSelector('.e2e-add-filter-button-file', { visible: true })
-            await driver.page.click('.e2e-add-filter-button-file')
+            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
+            await driver.page.click('.test-add-filter-button-file')
             await driver.page.waitForSelector('.filter-input__input-field', { visible: true })
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
@@ -156,19 +191,19 @@ describe('Search', () => {
 
             // Delete filter
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
-            await driver.page.waitForSelector('.e2e-filter-input__delete-button', { visible: true })
-            await driver.page.click('.e2e-filter-input__delete-button')
+            await driver.page.waitForSelector('.test-filter-input__delete-button', { visible: true })
+            await driver.page.click('.test-filter-input__delete-button')
             await driver.assertWindowLocation('/search?q=&patternType=literal')
 
             // Test suggestions
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
-            await driver.page.click('.e2e-add-filter-button-repo')
+            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
+            await driver.page.click('.test-add-filter-button-repo')
             await driver.page.waitForSelector('.filter-input', { visible: true })
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('gorilla')
-            await driver.page.waitForSelector('.e2e-filter-input__suggestions')
-            await driver.page.waitForSelector('.e2e-suggestion-item')
+            await driver.page.waitForSelector('.test-filter-input__suggestions')
+            await driver.page.waitForSelector('.test-suggestion-item')
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
@@ -181,7 +216,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             await driver.page.keyboard.press('Escape')
-            await driver.page.click('.e2e-search-button')
+            await driver.page.click('.test-search-button')
             await driver.assertWindowLocation(
                 '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
             )
@@ -190,7 +225,7 @@ describe('Search', () => {
             await driver.page.click('.filter-input__button-text')
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
-            await driver.page.click('.e2e-search-button')
+            await driver.page.click('.test-search-button')
             await driver.assertWindowLocation(
                 '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
             )
@@ -199,6 +234,7 @@ describe('Search', () => {
         test('Updates query when searching from directory page', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 RepositoryRedirect: () => ({
                     repositoryRedirect: {
                         __typename: 'Repository',
@@ -237,46 +273,99 @@ describe('Search', () => {
         test('Filter dropdown and finite-option filter inputs', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-filter-dropdown')
-            await driver.page.type('.e2e-query-input', 'test')
-            await driver.page.click('.e2e-filter-dropdown')
-            await driver.page.select('.e2e-filter-dropdown', 'fork')
-            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
-            await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-confirm-filter-button')
+            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-filter-dropdown')
+            await driver.page.type('.test-query-input', 'test')
+            await driver.page.click('.test-filter-dropdown')
+            await driver.page.select('.test-filter-dropdown', 'fork')
+            await driver.page.waitForSelector('.test-filter-input-finite-form')
+            await driver.page.waitForSelector('.test-filter-input-radio-button-no')
+            await driver.page.click('.test-filter-input-radio-button-no')
+            await driver.page.click('.test-confirm-filter-button')
             await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
             // Edit filter
             await driver.page.waitForSelector('.filter-input')
-            await driver.page.waitForSelector('.e2e-filter-input__button-text-fork')
-            await driver.page.click('.e2e-filter-input__button-text-fork')
-            await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
-            await driver.page.click('.e2e-filter-input-radio-button-only')
-            await driver.page.click('.e2e-confirm-filter-button')
+            await driver.page.waitForSelector('.test-filter-input__button-text-fork')
+            await driver.page.click('.test-filter-input__button-text-fork')
+            await driver.page.waitForSelector('.test-filter-input-radio-button-only')
+            await driver.page.click('.test-filter-input-radio-button-only')
+            await driver.page.click('.test-confirm-filter-button')
             await driver.assertWindowLocation('/search?q=fork:%22only%22+test&patternType=literal')
             // Edit filter by clicking dropdown menu
-            await driver.page.waitForSelector('.e2e-filter-dropdown')
-            await driver.page.click('.e2e-filter-dropdown')
-            await driver.page.select('.e2e-filter-dropdown', 'fork')
-            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
-            await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-confirm-filter-button')
+            await driver.page.waitForSelector('.test-filter-dropdown')
+            await driver.page.click('.test-filter-dropdown')
+            await driver.page.select('.test-filter-dropdown', 'fork')
+            await driver.page.waitForSelector('.test-filter-input-finite-form')
+            await driver.page.waitForSelector('.test-filter-input-radio-button-no')
+            await driver.page.click('.test-filter-input-radio-button-no')
+            await driver.page.click('.test-confirm-filter-button')
             await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
+        })
+
+        test('Clicking on alert proposed query navigates to the right filter', async () => {
+            const searchResultsWithAlert = searchResults()
+            if (searchResultsWithAlert.search) {
+                searchResultsWithAlert.search.results.results = []
+                searchResultsWithAlert.search.results.alert = {
+                    title: 'Test title',
+                    description: 'Test description',
+                    proposedQueries: [
+                        {
+                            description: 'test',
+                            query: 'repo:test1|test2',
+                        },
+                    ],
+                }
+            }
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
+                Search: () => searchResultsWithAlert,
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
+            await driver.page.click('.test-search-mode-toggle')
+            await driver.page.click('.test-search-mode-toggle__interactive-mode')
+
+            // Wait for the input component to appear
+            await driver.page.waitForSelector('.test-interactive-mode-input', { visible: true })
+            // Wait for the add filter row to appear.
+            await driver.page.waitForSelector('.test-add-filter-row', { visible: true })
+            // Wait for the default add filter buttons appear
+            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
+            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
+
+            // Add a repo filter
+            await driver.page.waitForSelector('.test-add-filter-button-repo')
+            await driver.page.click('.test-add-filter-button-repo')
+
+            // FilterInput is autofocused
+            await driver.page.waitForSelector('.filter-input')
+            // Search for repo:gorilla in the repo filter chip input
+            await driver.page.keyboard.type('gorilla')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?q=repo:%22gorilla%22&patternType=literal')
+
+            // Click on proposed query from GraphQL and verify existing filters aren't added
+            await driver.page.waitForSelector('[data-testid="proposed-query-link"]')
+            await driver.page.click('[data-testid="proposed-query-link"]')
+            await driver.assertWindowLocation('/search?q=repo:test1%7Ctest2&patternType=literal')
         })
     })
 
     describe('Case sensitivity toggle', () => {
         test('Clicking toggle turns on case sensitivity', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
-            await driver.page.type('.e2e-query-input', 'test')
-            await driver.page.click('.e2e-case-sensitivity-toggle')
+            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-case-sensitivity-toggle')
+            await driver.page.type('.test-query-input', 'test')
+            await driver.page.click('.test-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
         })
 
@@ -286,9 +375,9 @@ describe('Search', () => {
                 Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
-            await driver.page.click('.e2e-case-sensitivity-toggle')
+            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-case-sensitivity-toggle')
+            await driver.page.click('.test-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
         })
     })
@@ -300,10 +389,10 @@ describe('Search', () => {
                 Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-structural-search-toggle')
-            await driver.page.type('.e2e-query-input', 'test')
-            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-structural-search-toggle')
+            await driver.page.type('.test-query-input', 'test')
+            await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
         })
 
@@ -313,9 +402,9 @@ describe('Search', () => {
                 Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-structural-search-toggle')
-            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-structural-search-toggle')
+            await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
         })
 
@@ -325,10 +414,25 @@ describe('Search', () => {
                 Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-structural-search-toggle')
-            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-structural-search-toggle')
+            await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
+        })
+    })
+
+    describe('Search button', () => {
+        test('Clicking search button executes search', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                Search: searchResults,
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-search-button', { visible: true })
+            await driver.page.keyboard.type(' hello')
+            await driver.page.click('.test-search-button')
+            await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
         })
     })
 })

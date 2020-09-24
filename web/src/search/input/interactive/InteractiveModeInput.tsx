@@ -1,31 +1,20 @@
 import * as React from 'react'
 import * as H from 'history'
 import { QueryState, submitSearch } from '../../helpers'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { AddFilterRow } from './AddFilterRow'
 import { SelectedFiltersRow } from './SelectedFiltersRow'
 import { SearchButton } from '../SearchButton'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { Link } from '../../../../../shared/src/components/Link'
-import { NavLinks } from '../../../nav/NavLinks'
-import { showDotComMarketing } from '../../../util/features'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
-import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import {
-    parseSearchURLQuery,
-    InteractiveSearchProps,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    CopyQueryButtonProps,
-} from '../..'
+import { InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
@@ -33,15 +22,17 @@ import { isSingularFilter } from '../../../../../shared/src/search/parser/filter
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
+import { globbingEnabledFromSettings } from '../../../util/globbing'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
-        EventLoggerProps,
+        TelemetryProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
@@ -52,20 +43,15 @@ interface InteractiveModeProps
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
+
     /** Whether to hide the selected filters and add filter rows. */
     lowProfile: boolean
 
-    // For NavLinks
-    authRequired?: boolean
-    authenticatedUser: GQL.IUser | null
-    showCampaigns: boolean
-    isSourcegraphDotCom: boolean
-
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
-
-    /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
-    homepageMode?: boolean
 }
 
 interface InteractiveModeState {
@@ -196,85 +182,44 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     }
 
     public render(): JSX.Element | null {
-        const homepageMode =
-            this.props.homepageMode ||
-            (this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search))
-
-        let logoSource = '/.assets/img/sourcegraph-mark.svg'
-        let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
-
-        const { branding } = window.context
-        if (branding) {
-            if (this.props.isLightTheme) {
-                if (branding.light?.symbol) {
-                    logoSource = branding.light.symbol
-                }
-            } else if (branding.dark?.symbol) {
-                logoSource = branding.dark.symbol
-            }
-            if (branding.disableSymbolSpin) {
-                logoLinkClassName = 'global-navbar__logo-link'
-            }
-        }
-
-        const logo = <img className="global-navbar__logo" src={logoSource} />
-
         return (
-            <div className="interactive-mode-input e2e-interactive-mode-input">
-                <div className={!homepageMode ? 'interactive-mode-input__top-nav' : ''}>
-                    {!homepageMode &&
-                        (this.props.authRequired ? (
-                            <div className={logoLinkClassName}>{logo}</div>
-                        ) : (
-                            <Link to="/search" className={logoLinkClassName}>
-                                {logo}
-                            </Link>
-                        ))}
-                    <div
-                        className={`d-none d-sm-flex flex-row ${
-                            !homepageMode ? 'interactive-mode-input__search-box-container' : ''
-                        }`}
-                    >
-                        <Form onSubmit={this.onSubmit} className="flex-grow-1">
-                            <div className="d-flex align-items-start">
-                                <SearchModeToggle {...this.props} interactiveSearchMode={true} />
-                                <VersionContextDropdown
-                                    history={this.props.history}
-                                    navbarSearchQuery={this.props.navbarSearchState.query}
-                                    caseSensitive={this.props.caseSensitive}
-                                    patternType={this.props.patternType}
-                                    versionContext={this.props.versionContext}
-                                    setVersionContext={this.props.setVersionContext}
-                                    availableVersionContexts={this.props.availableVersionContexts}
-                                />
-                                <QueryInput
-                                    {...this.props}
-                                    location={this.props.location}
-                                    history={this.props.history}
-                                    value={this.props.navbarSearchState}
-                                    hasGlobalQueryBehavior={true}
-                                    onChange={this.props.onNavbarQueryChange}
-                                    patternType={this.props.patternType}
-                                    setPatternType={this.props.setPatternType}
-                                    caseSensitive={this.props.caseSensitive}
-                                    setCaseSensitivity={this.props.setCaseSensitivity}
-                                    autoFocus={true}
-                                    filtersInQuery={this.props.filtersInQuery}
-                                    withoutSuggestions={true}
-                                    withSearchModeToggle={true}
-                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                                />
-                                <SearchButton noHelp={true} />
-                            </div>
-                        </Form>
+            <div className="interactive-mode-input test-interactive-mode-input">
+                <Form onSubmit={this.onSubmit} className="flex-grow-1">
+                    <div className="d-flex align-items-start">
+                        <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                        <VersionContextDropdown
+                            history={this.props.history}
+                            navbarSearchQuery={this.props.navbarSearchState.query}
+                            caseSensitive={this.props.caseSensitive}
+                            patternType={this.props.patternType}
+                            versionContext={this.props.versionContext}
+                            setVersionContext={this.props.setVersionContext}
+                            availableVersionContexts={this.props.availableVersionContexts}
+                        />
+                        <QueryInput
+                            {...this.props}
+                            location={this.props.location}
+                            history={this.props.history}
+                            value={this.props.navbarSearchState}
+                            hasGlobalQueryBehavior={true}
+                            onChange={this.props.onNavbarQueryChange}
+                            patternType={this.props.patternType}
+                            setPatternType={this.props.setPatternType}
+                            caseSensitive={this.props.caseSensitive}
+                            setCaseSensitivity={this.props.setCaseSensitivity}
+                            autoFocus={true}
+                            filtersInQuery={this.props.filtersInQuery}
+                            withoutSuggestions={true}
+                            withSearchModeToggle={true}
+                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                        />
+                        <SearchButton noHelp={true} />
                     </div>
-                    {!this.props.authRequired && !homepageMode && (
-                        <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
-                    )}
-                </div>
+                </Form>
                 {!this.props.lowProfile && (
-                    <div>
+                    <>
                         <SelectedFiltersRow
+                            globbing={globbingEnabledFromSettings(this.props.settingsCascade)}
                             filtersInQuery={this.props.filtersInQuery}
                             navbarQuery={this.props.navbarSearchState}
                             onSubmit={this.onSubmit}
@@ -282,10 +227,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             onFilterDeleted={this.onFilterDeleted}
                             toggleFilterEditable={this.toggleFilterEditable}
                             toggleFilterNegated={this.toggleFilterNegated}
-                            isHomepage={homepageMode}
+                            emptyClassName="mb-1"
                         />
-                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={homepageMode} />
-                    </div>
+                        <AddFilterRow onAddNewFilter={this.addNewFilter} />
+                    </>
                 )}
             </div>
         )

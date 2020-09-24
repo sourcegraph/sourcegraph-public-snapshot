@@ -16,9 +16,10 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
-import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
+import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsByID } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../auth'
 
 interface UserNodeProps {
     /**
@@ -29,7 +30,7 @@ interface UserNodeProps {
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 
     /**
      * Called when the user is updated by an action in this list item.
@@ -50,7 +51,7 @@ const nukeDetails = `
 
 Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
 
-For more information about what data is deleted, see https://github.com/sourcegraph/sourcegraph/blob/master/doc/admin/user_data_deletion.md
+For more information about what data is deleted, see https://github.com/sourcegraph/sourcegraph/blob/main/doc/admin/user_data_deletion.md
 
 Are you ABSOLUTELY certain you wish to delete this user and all associated data?`
 
@@ -112,6 +113,17 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
                             <SettingsIcon className="icon-inline" /> Settings
                         </Link>{' '}
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-secondary"
+                                onClick={this.invalidateSessions}
+                                disabled={this.state.loading}
+                                data-tooltip="Force the user to re-authenticate on their next request"
+                            >
+                                Force sign-out
+                            </button>
+                        )}{' '}
                         {window.context.resetPasswordEnabled && (
                             <button
                                 type="button"
@@ -243,6 +255,28 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
+    private invalidateSessions = (): void => {
+        if (
+            !window.confirm(
+                `Revoke all active sessions for ${this.props.node.username}? The user will need to re-authenticate on their next request or visit to Sourcegraph.`
+            )
+        ) {
+            return
+        }
+
+        this.setState({ loading: true })
+        invalidateSessionsByID(this.props.node.id)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({
+                        loading: false,
+                    })
+                },
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
+            )
+    }
+
     private deleteUser = (): void => this.doDeleteUser(false)
     private nukeUser = (): void => this.doDeleteUser(true)
 
@@ -276,7 +310,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
 }
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 

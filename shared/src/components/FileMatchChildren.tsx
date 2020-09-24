@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import { flatMap } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs'
@@ -13,6 +13,7 @@ import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
+import { ISymbol } from '../graphql/schema'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -104,10 +105,10 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     return (
         <div className="file-match-children">
             {/* Symbols */}
-            {(props.result.symbols || []).map(symbol => (
+            {(props.result.symbols || []).map((symbol: ISymbol) => (
                 <Link
                     to={symbol.url}
-                    className="file-match-children__item e2e-file-match-children-item"
+                    className="file-match-children__item test-file-match-children-item"
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
@@ -123,13 +124,13 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 return (
                     <div
                         key={`linematch:${props.result.file.url}${position.line}:${position.character}`}
-                        className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                        className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                     >
                         <Link
                             to={appendSubtreeQueryParameter(
                                 `${props.result.file.url}${toPositionOrRangeHash({ position })}`
                             )}
-                            className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                            className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                             onClick={props.onSelect}
                         >
                             <CodeExcerpt
@@ -145,7 +146,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             />
                         </Link>
 
-                        <div className="file-match-children__item-badge-row e2e-badge-row">
+                        <div className="file-match-children__item-badge-row test-badge-row">
                             {item.badge && showBadges && (
                                 // This div is necessary: it has block display, where the badge row
                                 // has flex display and would cause the hover tooltip to be offset

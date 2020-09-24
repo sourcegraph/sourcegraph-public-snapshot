@@ -26,7 +26,7 @@ We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github
 - **Fast permission syncing** between Sourcegraph and Bitbucket Server
 - **Webhooks with configurable scope**, which are used by and highly recommended for usage with [campaigns](../user/campaigns/index.md)
 
-![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
+![Bitbucket Server code intelligence](https://sourcegraphstatic.com/bitbucket-code-intel-pr-short.gif)
 
 ### Installation and requirements
 

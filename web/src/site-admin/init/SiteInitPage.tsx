@@ -1,11 +1,11 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../auth'
 
 const initSite = async (args: SignUpArgs): Promise<void> => {
     const response = await fetch('/-/site-init', {
@@ -29,7 +29,7 @@ const initSite = async (args: SignUpArgs): Promise<void> => {
 }
 
 interface Props extends ThemeProps {
-    authenticatedUser: Pick<GQL.IUser, 'username'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
      * Whether site initialization is needed. If not set, the global value from
@@ -57,7 +57,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
         <div className="site-init-page">
             <div className="site-init-page__content card">
                 <div className="card-body p-4">
-                    <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} />
+                    <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
                     {authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified

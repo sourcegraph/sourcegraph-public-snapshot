@@ -1,15 +1,13 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subscription } from 'rxjs'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -19,7 +17,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
     repo: GQL.IRepository
 }
 
@@ -36,48 +34,45 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export class RepositoryBranchesArea extends React.Component<Props> {
-    private subscriptions = new Subscription()
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, match }) => {
+    const transferProps: { repo: GQL.IRepository } = {
+        repo,
     }
 
-    public render(): JSX.Element | null {
-        const transferProps: { repo: GQL.IRepository } = {
-            repo: this.props.repo,
-        }
-
-        return (
-            <div className="repository-branches-area container">
-                <RepoHeaderContributionPortal
-                    position="nav"
-                    element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
-                <RepositoryBranchesNavbar className="my-3" repo={this.props.repo.name} />
-                <Switch>
-                    {/* eslint-disable react/jsx-no-bind */}
-                    <Route
-                        path={`${this.props.match.url}`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        render={routeComponentProps => (
-                            <RepositoryBranchesOverviewPage {...routeComponentProps} {...transferProps} />
-                        )}
-                    />
-                    <Route
-                        path={`${this.props.match.url}/all`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        render={routeComponentProps => (
-                            <RepositoryBranchesAllPage {...routeComponentProps} {...transferProps} />
-                        )}
-                    />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
-                    {/* eslint-enable react/jsx-no-bind */}
-                </Switch>
-            </div>
+    useBreadcrumb(
+        useMemo(
+            () => ({
+                key: 'branches',
+                element: <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>,
+            }),
+            []
         )
-    }
+    )
+
+    return (
+        <div className="repository-branches-area container">
+            <RepositoryBranchesNavbar className="my-3" repo={repo.name} />
+            <Switch>
+                {/* eslint-disable react/jsx-no-bind */}
+                <Route
+                    path={`${match.url}`}
+                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                    exact={true}
+                    render={routeComponentProps => (
+                        <RepositoryBranchesOverviewPage {...routeComponentProps} {...transferProps} />
+                    )}
+                />
+                <Route
+                    path={`${match.url}/all`}
+                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                    exact={true}
+                    render={routeComponentProps => (
+                        <RepositoryBranchesAllPage {...routeComponentProps} {...transferProps} />
+                    )}
+                />
+                <Route key="hardcoded-key" component={NotFoundPage} />
+                {/* eslint-enable react/jsx-no-bind */}
+            </Switch>
+        </div>
+    )
 }

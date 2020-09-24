@@ -5,16 +5,22 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { queryGraphQL } from '../backend/graphql'
+import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { replaceRevisionInURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { RevisionSpec, FileSpec } from '../../../shared/src/util/url'
+import {
+    CommitAncestorsConnectionFields,
+    FetchCommitsResult,
+    FetchCommitsVariables,
+    GitCommitFields,
+    Scalars,
+} from '../graphql-operations'
 
 interface CommitNodeProps {
-    node: GQL.IGitCommit
+    node: GitCommitFields
     location: H.Location
 }
 
@@ -38,7 +44,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }
 )
 
 interface Props extends Partial<RevisionSpec>, FileSpec {
-    repoID: GQL.ID
+    repoID: Scalars['ID']
     history: H.History
     location: H.Location
 }
@@ -46,7 +52,7 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>>
+            <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>, CommitAncestorsConnectionFields>
                 className="list-group list-group-flush"
                 compact={true}
                 noun="commit"
@@ -63,16 +69,16 @@ export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
         )
     }
 
-    private fetchCommits = (args: { query?: string }): Observable<GQL.IGitCommitConnection> =>
+    private fetchCommits = (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
         fetchCommits(this.props.repoID, this.props.revision || '', { ...args, currentPath: this.props.filePath || '' })
 }
 
 function fetchCommits(
-    repo: GQL.ID,
+    repo: Scalars['ID'],
     revision: string,
     args: { first?: number; currentPath?: string; query?: string }
-): Observable<GQL.IGitCommitConnection> {
-    return queryGraphQL(
+): Observable<CommitAncestorsConnectionFields> {
+    return requestGraphQL<FetchCommitsResult, FetchCommitsVariables>(
         gql`
             query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String) {
                 node(id: $repo) {
@@ -80,17 +86,31 @@ function fetchCommits(
                     ... on Repository {
                         commit(rev: $revision) {
                             ancestors(first: $first, query: $query, path: $currentPath) {
-                                nodes {
-                                    ...GitCommitFields
-                                }
+                                ...CommitAncestorsConnectionFields
                             }
                         }
                     }
                 }
             }
+
             ${gitCommitFragment}
+
+            fragment CommitAncestorsConnectionFields on GitCommitConnection {
+                nodes {
+                    ...GitCommitFields
+                }
+                pageInfo {
+                    hasNextPage
+                }
+            }
         `,
-        { ...args, repo, revision }
+        {
+            currentPath: args.currentPath ?? null,
+            first: args.first ?? null,
+            query: args.query ?? null,
+            repo,
+            revision,
+        }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {

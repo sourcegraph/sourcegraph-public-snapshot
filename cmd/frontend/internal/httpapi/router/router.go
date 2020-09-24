@@ -10,6 +10,8 @@ const (
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
+	SearchStream = "search.stream"
+
 	SrcCliVersion  = "src-cli.version"
 	SrcCliDownload = "src-cli.download"
 
@@ -20,6 +22,7 @@ const (
 	Telemetry   = "telemetry"
 
 	GitHubWebhooks          = "github.webhooks"
+	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 
 	SavedQueriesListAll    = "internal.saved-queries.list-all"
@@ -65,8 +68,10 @@ func New(base *mux.Router) *mux.Router {
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
+	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 

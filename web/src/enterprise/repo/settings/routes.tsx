@@ -1,12 +1,34 @@
 import * as React from 'react'
-import { RepoSettingsPermissionsPage } from './RepoSettingsPermissionsPage'
-import { CodeIntelIndexesPage } from '../../codeintel/CodeIntelIndexesPage'
-import { CodeIntelIndexPage } from '../../codeintel/CodeIntelIndexPage'
-import { CodeIntelUploadPage } from '../../codeintel/CodeIntelUploadPage'
-import { CodeIntelUploadsPage } from '../../codeintel/CodeIntelUploadsPage'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
 import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
+import { lazyComponent } from '../../../util/lazyComponent'
+import { CodeIntelUploadsPageProps } from '../../codeintel/CodeIntelUploadsPage'
+import { CodeIntelIndexesPageProps } from '../../codeintel/CodeIntelIndexesPage'
+import { CodeIntelIndexPageProps } from '../../codeintel/CodeIntelIndexPage'
+import { CodeIntelUploadPageProps } from '../../codeintel/CodeIntelUploadPage'
+import { RepoSettingsPermissionsPageProps } from './RepoSettingsPermissionsPage'
+
+const RepoSettingsPermissionsPage = lazyComponent<RepoSettingsPermissionsPageProps, 'RepoSettingsPermissionsPage'>(
+    () => import('./RepoSettingsPermissionsPage'),
+    'RepoSettingsPermissionsPage'
+)
+const CodeIntelUploadsPage = lazyComponent<CodeIntelUploadsPageProps, 'CodeIntelUploadsPage'>(
+    () => import('../../codeintel/CodeIntelUploadsPage'),
+    'CodeIntelUploadsPage'
+)
+const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUploadPage'>(
+    () => import('../../codeintel/CodeIntelUploadPage'),
+    'CodeIntelUploadPage'
+)
+const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
+    () => import('../../codeintel/CodeIntelIndexesPage'),
+    'CodeIntelIndexesPage'
+)
+const CodeIntelIndexPage = lazyComponent<CodeIntelIndexPageProps, 'CodeIntelIndexPage'>(
+    () => import('../../codeintel/CodeIntelIndexPage'),
+    'CodeIntelIndexPage'
+)
 
 export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     ...repoSettingsAreaRoutes,
@@ -14,7 +36,6 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
         path: '/permissions',
         exact: true,
         render: props => <RepoSettingsPermissionsPage {...props} />,
-        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
     },
     {
         path: '/code-intelligence/uploads',

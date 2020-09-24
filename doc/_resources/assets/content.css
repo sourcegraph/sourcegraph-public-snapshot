@@ -8,6 +8,20 @@
 .text-center {
     text-align: center;
 }
+.start-sourcegraph-command {
+    position: relative;
+}
+.copy-text {
+    position: absolute;
+    top:0;
+    right: 0;
+    margin: 4px;
+    color: #0a65ea;
+    font-size: 1.5rem;
+}
+.copy-text:hover {
+    color: var(--link-hover-color);
+}
 .truncate {
     white-space: nowrap;
     overflow: hidden;

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
@@ -20,9 +22,14 @@ type Index struct {
 	FinishedAt     *time.Time `json:"finishedAt"`
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
+	NumFailures    int        `json:"numFailures"`
 	RepositoryID   int        `json:"repositoryId"`
 	RepositoryName string     `json:"repositoryName"`
 	Rank           *int       `json:"placeInQueue"`
+}
+
+func (i Index) RecordID() int {
+	return i.ID
 }
 
 // scanIndexes scans a slice of indexes from the return value of `*store.query`.
@@ -45,6 +52,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.FinishedAt,
 			&index.ProcessAfter,
 			&index.NumResets,
+			&index.NumFailures,
 			&index.RepositoryID,
 			&index.RepositoryName,
 			&index.Rank,
@@ -72,6 +80,11 @@ func scanFirstIndexInterface(rows *sql.Rows, err error) (interface{}, bool, erro
 	return scanFirstIndex(rows, err)
 }
 
+// scanFirstIndexInterface scans a slice of indexes from the return value of `*store.query` and returns the first.
+func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return scanFirstIndex(rows, err)
+}
+
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 	return scanFirstIndex(s.query(ctx, sqlf.Sprintf(`
@@ -85,6 +98,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.finished_at,
 			u.process_after,
 			u.num_resets,
+			u.num_failures,
 			u.repository_id,
 			u.repository_name,
 			s.rank
@@ -152,6 +166,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.finished_at,
 				u.process_after,
 				u.num_resets,
+				u.num_failures,
 				u.repository_id,
 				u.repository_name,
 				s.rank
@@ -257,6 +272,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.finished_at"),
 	sqlf.Sprintf("u.process_after"),
 	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
 	sqlf.Sprintf("NULL"),
@@ -267,25 +283,17 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 // closed. If there is no such unlocked index, a zero-value index and nil store will be returned along with
 // a false valued flag. This method must not be called from within a transaction.
 func (s *store) DequeueIndex(ctx context.Context) (Index, Store, bool, error) {
-	index, tx, ok, err := s.dequeueRecord(
-		ctx,
-		"lsif_indexes_with_repository_name",
-		"lsif_indexes",
-		indexColumnsWithNullRank,
-		sqlf.Sprintf("queued_at"),
-		nil,
-		scanFirstIndexInterface,
-	)
+	index, tx, ok, err := s.makeIndexWorkQueueStore().Dequeue(ctx, nil)
 	if err != nil || !ok {
-		return Index{}, tx, ok, err
+		return Index{}, nil, false, err
 	}
 
-	return index.(Index), tx, true, nil
+	return index.(Index), s.With(tx), true, nil
 }
 
 // RequeueIndex updates the state of the index to queued and adds a processing delay before the next dequeue attempt.
 func (s *store) RequeueIndex(ctx context.Context, id int, after time.Time) error {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_indexes SET state = 'queued', process_after = %s WHERE id = %s`, after, id))
+	return s.makeIndexWorkQueueStore().Requeue(ctx, id, after)
 }
 
 // DeleteIndexByID deletes an index by its identifier.
@@ -312,14 +320,14 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 // that were removed for that repository.
 func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are  completed or visible at tip.
+	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
 	return scanCounts(s.query(ctx, sqlf.Sprintf(`
 		WITH deleted_repos AS (
 			SELECT r.id AS id FROM repo r
 			WHERE
 				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT COUNT(*) from lsif_indexes u WHERE u.repository_id = r.id)
+				EXISTS (SELECT 1 from lsif_indexes u WHERE u.repository_id = r.id)
 		),
 		deleted_uploads AS (
 			DELETE FROM lsif_indexes u WHERE repository_id IN (SELECT id FROM deleted_repos)
@@ -345,45 +353,21 @@ const IndexMaxNumResets = 3
 // been reset more than IndexMaxNumResets times will be marked as errored. This method returns a list of
 // updated and errored index identifiers.
 func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, []int, error) {
-	resetIDs, err := scanInts(s.query(
-		ctx,
-		sqlf.Sprintf(`
-			UPDATE lsif_indexes u
-			SET state = 'queued', started_at = null, num_resets = num_resets + 1
-			WHERE id = ANY(
-				SELECT id FROM lsif_indexes_with_repository_name
-				WHERE
-					state = 'processing' AND
-					%s - started_at > (%s * interval '1 second') AND
-					num_resets < %s
-				FOR UPDATE SKIP LOCKED
-			)
-			RETURNING u.id
-		`, now.UTC(), StalledIndexMaxAge/time.Second, IndexMaxNumResets),
-	))
-	if err != nil {
-		return nil, nil, err
-	}
+	return s.makeIndexWorkQueueStore().ResetStalled(ctx)
+}
 
-	erroredIDs, err := scanInts(s.query(
-		ctx,
-		sqlf.Sprintf(`
-			UPDATE lsif_indexes u
-			SET state = 'errored', finished_at = clock_timestamp(), failure_message = 'failed to process'
-			WHERE id = ANY(
-				SELECT id FROM lsif_indexes_with_repository_name
-				WHERE
-					state = 'processing' AND
-					%s - started_at > (%s * interval '1 second') AND
-					num_resets >= %s
-				FOR UPDATE SKIP LOCKED
-			)
-			RETURNING u.id
-		`, now.UTC(), StalledIndexMaxAge/time.Second, IndexMaxNumResets),
-	))
-	if err != nil {
-		return nil, nil, err
-	}
+func (s *store) makeIndexWorkQueueStore() dbworkerstore.Store {
+	return WorkerutilIndexStore(s)
+}
 
-	return resetIDs, erroredIDs, nil
+func WorkerutilIndexStore(s Store) dbworkerstore.Store {
+	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
+		TableName:         "lsif_indexes",
+		ViewName:          "lsif_indexes_with_repository_name u",
+		ColumnExpressions: indexColumnsWithNullRank,
+		Scan:              scanFirstIndexRecord,
+		OrderByExpression: sqlf.Sprintf("queued_at"),
+		StalledMaxAge:     StalledIndexMaxAge,
+		MaxNumResets:      IndexMaxNumResets,
+	})
 }

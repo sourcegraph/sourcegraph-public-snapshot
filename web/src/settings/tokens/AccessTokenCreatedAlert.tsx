@@ -22,7 +22,7 @@ export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCrea
                     <CheckmarkCircleIcon className="icon-inline" /> Copy the new access token now. You won't be able to
                     see it again.
                 </p>
-                <CopyableText className="e2e-access-token" text={this.props.tokenSecret} size={48} />
+                <CopyableText className="test-access-token" text={this.props.tokenSecret} size={48} />
                 <h5 className="mt-4">
                     <strong>Example usage</strong>
                 </h5>

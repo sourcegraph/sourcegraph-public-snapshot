@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 )
 
 var unmarshaller = jsoniter.ConfigFastest
@@ -33,10 +32,10 @@ func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 		Label: payload.Label,
 	}
 
-	if payload.Type == "edge" {
+	if element.Type == "edge" {
 		element.Payload, err = unmarshalEdge(interner, line)
-	} else if payload.Type == "vertex" {
-		if unmarshaler, ok := vertexUnmarshalers[payload.Label]; ok {
+	} else if element.Type == "vertex" {
+		if unmarshaler, ok := vertexUnmarshalers[element.Label]; ok {
 			element.Payload, err = unmarshaler(line)
 		}
 	}
@@ -45,6 +44,10 @@ func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 }
 
 func unmarshalEdge(interner *Interner, line []byte) (interface{}, error) {
+	if edge, ok := unmarshalEdgeFast(line); ok {
+		return edge, nil
+	}
+
 	var payload struct {
 		OutV     json.RawMessage   `json:"outV"`
 		InV      json.RawMessage   `json:"inV"`
@@ -86,6 +89,32 @@ func unmarshalEdge(interner *Interner, line []byte) (interface{}, error) {
 	}, nil
 }
 
+// unmarshalEdgeFast attempts to unmarshal the edge without requiring use of the
+// interner. Doing a bare json.Unmarshal happens is faster than unmarshalling into
+// raw message and then performing strconv.Atoi.
+//
+// Note that we do happen to do this for edge unmarshalling. The win here comes from
+// saving the of large inVs sets. Doing the same thing for element envelope identifiers
+// do not net the same benefit.
+func unmarshalEdgeFast(line []byte) (Edge, bool) {
+	var payload struct {
+		OutV     int   `json:"outV"`
+		InV      int   `json:"inV"`
+		InVs     []int `json:"inVs"`
+		Document int   `json:"document"`
+	}
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return Edge{}, false
+	}
+
+	return Edge{
+		OutV:     payload.OutV,
+		InV:      payload.InV,
+		InVs:     payload.InVs,
+		Document: payload.Document,
+	}, true
+}
+
 var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
 	"metaData":           unmarshalMetaData,
 	"document":           unmarshalDocument,
@@ -119,11 +148,7 @@ func unmarshalDocument(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return Document{
-		URI:         payload.URI,
-		Contains:    datastructures.NewIDSet(),
-		Diagnostics: datastructures.NewIDSet(),
-	}, nil
+	return payload.URI, nil
 }
 
 func unmarshalRange(line []byte) (interface{}, error) {
@@ -144,7 +169,6 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		StartCharacter: payload.Start.Character,
 		EndLine:        payload.End.Line,
 		EndCharacter:   payload.End.Character,
-		MonikerIDs:     datastructures.NewIDSet(),
 	}, nil
 }
 
@@ -289,7 +313,7 @@ func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
 		})
 	}
 
-	return DiagnosticResult{Result: diagnostics}, nil
+	return diagnostics, nil
 }
 
 type StringOrInt string

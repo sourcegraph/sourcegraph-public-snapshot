@@ -54,7 +54,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     public render(): JSX.Element | null {
         return (
             <Form
-                className={classNames('signin-signup-form', 'e2e-signup-form', this.props.className)}
+                className={classNames('signin-signup-form', 'test-signup-form', this.props.className)}
                 onSubmit={this.handleSubmit}
             >
                 {this.state.error && (

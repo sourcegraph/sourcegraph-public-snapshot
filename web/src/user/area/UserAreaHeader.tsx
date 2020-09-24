@@ -11,7 +11,9 @@ interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     className?: string
 }
 
-export type UserAreaHeaderContext = Pick<Props, 'user'>
+export interface UserAreaHeaderContext extends Pick<Props, 'user'> {
+    isSourcegraphDotCom: boolean
+}
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
 
@@ -28,7 +30,7 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                         {props.user.displayName ? (
                             <div>
                                 <div className="user-area-header__title-subtitle">{props.user.username}</div>
-                                <span className="e2e-user-area-header__display-name">{props.user.displayName} </span>
+                                <span className="test-user-area-header__display-name">{props.user.displayName} </span>
                             </div>
                         ) : (
                             props.user.username

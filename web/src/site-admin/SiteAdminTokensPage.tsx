@@ -12,9 +12,10 @@ import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../s
 import { eventLogger } from '../tracking/eventLogger'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { FilteredConnection } from '../components/FilteredConnection'
+import { AuthenticatedUser } from '../auth'
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: AuthenticatedUser
 }
 
 interface State {}

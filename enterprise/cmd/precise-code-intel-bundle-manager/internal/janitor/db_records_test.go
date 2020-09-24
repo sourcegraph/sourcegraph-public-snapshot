@@ -1,9 +1,10 @@
 package janitor
 
 import (
-	"fmt"
+	"context"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 
 	for _, id := range []int{1, 3, 5, 7, 9} {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -33,7 +34,7 @@ func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeCompletedRecordsWithoutBundleFile(); err != nil {
+	if err := j.removeCompletedRecordsWithoutBundleFile(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing completed uploads without bundle files: %s", err)
 	}
 
@@ -68,7 +69,7 @@ func TestRemoveOldUploadingRecords(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldUploadingRecords(); err != nil {
+	if err := j.removeOldUploadingRecords(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing old records that have not finished uploading: %s", err)
 	}
 

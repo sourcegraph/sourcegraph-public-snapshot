@@ -14,7 +14,7 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 			d.id,
 			d.commit,
 			d.root,
-			d.visible_at_tip,
+			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
 			d.uploaded_at,
 			d.state,
 			d.failure_message,
@@ -22,6 +22,7 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 			d.finished_at,
 			d.process_after,
 			d.num_resets,
+			d.num_failures,
 			d.repository_id,
 			d.repository_name,
 			d.indexer

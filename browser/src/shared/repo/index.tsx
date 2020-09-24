@@ -7,23 +7,7 @@ export interface DiffResolvedRevSpec {
 
 export interface OpenInSourcegraphProps extends RepoSpec, RevisionSpec {
     sourcegraphURL: string
-    filePath?: string
-    commit?: {
-        baseRev: string
-        headRev: string
-    }
-    coords?: {
-        line: number
-        char: number
-    }
-    fragment?: 'references'
-    query?: {
-        search?: string
-        diff?: {
-            revision: string
-        }
-    }
-    withModifierKey?: boolean
+    filePath: string
 }
 
 export interface OpenDiffInSourcegraphProps

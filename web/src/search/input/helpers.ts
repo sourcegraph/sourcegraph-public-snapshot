@@ -39,17 +39,16 @@ export function convertPlainTextToInteractiveQuery(
                     negated: isNegatedFilter(filterType),
                 }
             } else if (
-                member.token.type === 'literal' ||
-                member.token.type === 'quoted' ||
+                member.token.type !== 'filter' ||
                 (member.token.type === 'filter' &&
                     !validateFilter(member.token.filterType.token.value, member.token.filterValue).valid)
             ) {
                 newNavbarQuery = [newNavbarQuery, query.slice(member.range.start, member.range.end)]
                     .filter(query => query.length > 0)
-                    .join(' ')
+                    .join('')
             }
         }
     }
 
-    return { filtersInQuery: newFiltersInQuery, navbarQuery: newNavbarQuery }
+    return { filtersInQuery: newFiltersInQuery, navbarQuery: newNavbarQuery.trim() }
 }

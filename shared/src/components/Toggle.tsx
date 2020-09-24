@@ -1,4 +1,5 @@
 import * as React from 'react'
+import classnames from 'classnames'
 
 interface Props {
     /** The initial value. */
@@ -21,34 +22,49 @@ interface Props {
 }
 
 /** A toggle switch input component. */
-export class Toggle extends React.PureComponent<Props> {
-    private onClick = (): void => {
-        if (this.props.onToggle && !this.props.disabled) {
-            this.props.onToggle(!this.props.value)
+export const Toggle: React.FunctionComponent<Props> = ({
+    disabled,
+    className,
+    id,
+    title,
+    value,
+    tabIndex,
+    onToggle,
+}) => {
+    function onClick(): void {
+        if (!disabled && onToggle) {
+            onToggle(!value)
         }
     }
-    public render(): JSX.Element | null {
-        return (
-            <button
-                type="button"
-                className={`toggle ${this.props.disabled ? 'toggle__disabled' : ''} ${this.props.className || ''}`}
-                id={this.props.id}
-                title={this.props.title}
-                value={this.props.value ? 1 : 0}
-                onClick={this.onClick}
-                tabIndex={this.props.tabIndex}
-            >
-                <span
-                    className={`toggle__bar ${this.props.value ? 'toggle__bar--active' : ''} ${
-                        this.props.disabled ? 'toggle__bar--disabled' : ''
-                    }`}
-                />
-                <span
-                    className={`toggle__knob ${this.props.value ? 'toggle__knob--active' : ''} ${
-                        this.props.disabled ? 'toggle__knob--disabled' : ''
-                    }`}
-                />
-            </button>
-        )
-    }
+
+    return (
+        <button
+            type="button"
+            className={classnames('toggle', className, {})}
+            id={id}
+            title={title}
+            value={value ? 1 : 0}
+            onClick={onClick}
+            tabIndex={tabIndex}
+            disabled={disabled}
+            role="switch"
+            aria-checked={value}
+        >
+            <span
+                className={classnames('toggle__bar', {
+                    'toggle__bar--on': value,
+                })}
+            />
+            <span
+                className={classnames('toggle__bar-shadow', {
+                    'toggle__bar-shadow--on': value,
+                })}
+            />
+            <span
+                className={classnames('toggle__knob', {
+                    'toggle__knob--on': value,
+                })}
+            />
+        </button>
+    )
 }

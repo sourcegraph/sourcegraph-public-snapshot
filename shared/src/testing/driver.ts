@@ -14,21 +14,21 @@ import puppeteer, {
 } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../graphql/schema'
 import { readEnvironmentBoolean, retry } from './utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
-import { readFile, appendFile } from 'mz/fs'
+import { readFile, appendFile, mkdir } from 'mz/fs'
 import { Settings } from '../settings/settings'
 import { fromEvent, merge } from 'rxjs'
 import { filter, map, concatAll, mergeMap } from 'rxjs/operators'
-import mkdirpPromise from 'mkdirp-promise'
 import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
 import { isDefined } from '../util/types'
 import { getConfig } from './config'
+import { ExternalServiceKind } from '../graphql-operations'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -163,7 +163,7 @@ export class Driver {
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
-            await this.page.waitForSelector('.e2e-signup-form')
+            await this.page.waitForSelector('.test-signup-form')
             if (email) {
                 await this.page.type('input[name=email]', email)
             }
@@ -172,7 +172,7 @@ export class Driver {
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 1000 })
         } else if (url.pathname === '/sign-in') {
-            await this.page.waitForSelector('.e2e-signin-form')
+            await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
@@ -185,12 +185,12 @@ export class Driver {
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
-        await this.page.waitForSelector('.e2e-sourcegraph-url')
-        await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: this.sourcegraphBaseUrl })
+        await this.page.waitForSelector('.test-sourcegraph-url')
+        await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForFunction(
             () => {
-                const element = document.querySelector('.e2e-connection-status')
+                const element = document.querySelector('.test-connection-status')
                 return element?.textContent?.includes('Connected')
             },
             { timeout: 5000 }
@@ -302,11 +302,11 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.e2e-filtered-connection')
-            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+            await this.page.waitFor('.test-filtered-connection')
+            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
-            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+            const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`
             if (await this.page.$(deleteButtonSelector)) {
                 await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
             }
@@ -315,7 +315,7 @@ export class Driver {
         // Navigate to the add external service page.
         console.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
-        await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+        await this.page.waitForSelector(`[data-test-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
         })
         await this.page.evaluate((selector: string) => {
@@ -324,20 +324,20 @@ export class Driver {
                 throw new Error(`Could not find element to click on for selector ${selector}`)
             }
             element.click()
-        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
+        }, `[data-test-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
-            selector: '#e2e-external-service-form-display-name',
+            selector: '#test-external-service-form-display-name',
             newText: displayName,
         })
 
-        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
+        await this.page.waitForSelector('.test-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.e2e-external-service-editor .monaco-editor .view-line',
+            selector: '.test-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
-        await Promise.all([this.page.waitForNavigation(), this.page.click('.e2e-add-external-service-button')])
+        await Promise.all([this.page.waitForNavigation(), this.page.click('.test-add-external-service-button')])
 
         if (ensureRepos) {
             // Clone the repositories
@@ -345,7 +345,7 @@ export class Driver {
                 await this.page.goto(
                     this.sourcegraphBaseUrl + `/site-admin/repositories?filter=cloned&query=${encodeURIComponent(slug)}`
                 )
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
@@ -357,7 +357,7 @@ export class Driver {
                     this.sourcegraphBaseUrl +
                         `/site-admin/repositories?filter=cloning&query=${encodeURIComponent(slug)}`
                 )
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
@@ -432,12 +432,12 @@ export class Driver {
         return (await handle.jsonValue()) as T
     }
 
-    private async makeGraphQLRequest<T extends IQuery | IMutation>({
+    private async makeGraphQLRequest<T, V = object>({
         request,
         variables,
     }: {
         request: string
-        variables: {}
+        variables: V
     }): Promise<GraphQLResult<T>> {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
         const xhrHeaders =
@@ -477,21 +477,6 @@ export class Driver {
             throw new Error(`repository not found: ${name}`)
         }
         return repository
-    }
-
-    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
-        const response = await this.makeGraphQLRequest<IMutation>({
-            request: gql`
-                mutation($patches: [PatchInput!]!) {
-                    createPatchSetFromPatches(patches: $patches) {
-                        previewURL
-                    }
-                }
-            `,
-            variables: { patches },
-        })
-        const { createPatchSetFromPatches } = dataOrThrowErrors(response)
-        return createPatchSetFromPatches
     }
 
     public async setConfig(
@@ -668,7 +653,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
     } else if (process.platform === 'linux') {
-        await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'), { recursive: true })
         configPath = firefoxFolder
     } else if (process.platform === 'win32') {
         configPath = firefoxFolder
@@ -693,15 +678,19 @@ interface DriverOptions extends LaunchOptions {
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(
-    options: DriverOptions = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo')
-): Promise<Driver> {
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole = true, keepBrowser } = options
+export async function createDriverForTest(options?: DriverOptions): Promise<Driver> {
+    // Apply defaults
+    options = {
+        ...getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools'),
+        ...options,
+    }
+
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
+        ignoreHTTPSErrors: true,
         ...options,
         args,
-        headless: readEnvironmentBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
     }
     let browser: puppeteer.Browser
@@ -775,7 +764,8 @@ export async function createDriverForTest(
                         !message.text().includes('Download the React DevTools') &&
                         !message.text().includes('[HMR]') &&
                         !message.text().includes('[WDS]') &&
-                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed') &&
+                        !message.text().includes('React-Hot-Loader')
                 ),
                 // Immediately format remote handles to strings, but maintain order.
                 map(formatPuppeteerConsoleMessage),

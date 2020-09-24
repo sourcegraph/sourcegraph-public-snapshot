@@ -34,6 +34,9 @@ function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryT
                                 contentFilesCount
                                 indexByteSize
                                 indexShardsCount
+                                newLinesCount
+                                defaultBranchNewLinesCount
+                                otherBranchesNewLinesCount
                             }
                             refs {
                                 ref {
@@ -211,6 +214,17 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                         'shard',
                                                         this.state.textSearchIndex.status.indexShardsCount
                                                     )}
+                                                    )
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>New lines count</th>
+                                                <td>
+                                                    {this.state.textSearchIndex.status.newLinesCount.toLocaleString()}{' '}
+                                                    (default branch:{' '}
+                                                    {this.state.textSearchIndex.status.defaultBranchNewLinesCount.toLocaleString()}
+                                                    ) (other branches:{' '}
+                                                    {this.state.textSearchIndex.status.otherBranchesNewLinesCount.toLocaleString()}
                                                     )
                                                 </td>
                                             </tr>

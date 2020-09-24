@@ -10,10 +10,12 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
+
 import { WebGraphQlOperations, ViewerSettingsResult } from '../graphql-operations'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import { Settings } from '../schema/settings.schema'
 import type * as sourcegraph from 'sourcegraph'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -29,6 +31,7 @@ describe('Blob viewer', () => {
             directory: __dirname,
         })
     })
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     const repositoryName = 'github.com/sourcegraph/jsonrpc2'
@@ -52,9 +55,9 @@ describe('Blob viewer', () => {
     describe('general layout for viewing a file', () => {
         it('populates editor content and FILES tab', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-            await driver.page.waitForSelector('.e2e-repo-blob')
+            await driver.page.waitForSelector('.test-repo-blob')
             const blobContent = await driver.page.evaluate(
-                () => document.querySelector<HTMLElement>('.e2e-repo-blob')?.textContent
+                () => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent
             )
 
             // editor shows the return string content from Blob request
@@ -62,7 +65,7 @@ describe('Blob viewer', () => {
 
             // collect all files/links visible the the "Files" tab
             const allFilesInTheTree = await driver.page.evaluate(() => {
-                const allFiles = document.querySelectorAll<HTMLAnchorElement>('.e2e-tree-file-link')
+                const allFiles = document.querySelectorAll<HTMLAnchorElement>('.test-tree-file-link')
 
                 return [...allFiles].map(fileAnchor => ({
                     content: fileAnchor.textContent,

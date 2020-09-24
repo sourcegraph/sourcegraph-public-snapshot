@@ -15,7 +15,7 @@ interface Props
 }
 
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
-    <div className="mt-2 border-bottom e2e-search-result-type-tabs">
+    <div className="mt-2 border-bottom test-search-result-type-tabs">
         <ul className="nav nav-tabs border-bottom-0">
             <SearchResultTabHeader {...props} type={null} />
             <SearchResultTabHeader {...props} type="diff" />

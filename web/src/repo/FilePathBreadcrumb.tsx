@@ -2,43 +2,7 @@ import * as React from 'react'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { RepoRev, toPrettyBlobURL } from '../../../shared/src/util/url'
 import { toTreeURL } from '../util/url'
-
-interface Props {
-    path: string
-    partToUrl: (i: number) => string | undefined
-    partToClassName?: (i: number) => string
-}
-
-/**
- * A breadcrumb where each path component is a separate link. Use this sparingly. Usually having the entire path be
- * a single link target is more usable; in that case, use RepoFileLink.
- */
-const Breadcrumb: React.FunctionComponent<Props> = props => {
-    const parts = props.path.split('/')
-    const spans: JSX.Element[] = []
-    for (const [index, part] of parts.entries()) {
-        const link = props.partToUrl(index)
-        const className = `part ${props.partToClassName ? props.partToClassName(index) : ''} ${
-            index === parts.length - 1 ? 'part-last' : ''
-        }`
-        spans.push(
-            <LinkOrSpan key={index} className={className} to={link}>
-                {part}
-            </LinkOrSpan>
-        )
-        if (index < parts.length - 1) {
-            spans.push(
-                <span key={`sep${index}`} className="breadcrumb__separator">
-                    /
-                </span>
-            )
-        }
-    }
-    return (
-        // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-        <span className="breadcrumb">{spans}</span>
-    )
-}
+import classNames from 'classnames'
 
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
@@ -51,19 +15,37 @@ export const FilePathBreadcrumb: React.FunctionComponent<
     }
 > = ({ repoName, revision, filePath, isDir }) => {
     const parts = filePath.split('/')
+    const partToUrl = (index: number): string => {
+        const partPath = parts.slice(0, index + 1).join('/')
+        if (isDir || index < parts.length - 1) {
+            return toTreeURL({ repoName, revision, filePath: partPath })
+        }
+        return toPrettyBlobURL({ repoName, revision, filePath: partPath })
+    }
+    const partToClassName = (index: number): string =>
+        index === parts.length - 1
+            ? 'part-last test-breadcrumb-part-last'
+            : 'part-directory test-breadcrumb-part-directory'
+
+    const spans: JSX.Element[] = []
+    for (const [index, part] of parts.entries()) {
+        const link = partToUrl(index)
+        const className = classNames('part', partToClassName?.(index))
+        spans.push(
+            <LinkOrSpan key={index} className={className} to={link}>
+                {part}
+            </LinkOrSpan>
+        )
+        if (index < parts.length - 1) {
+            spans.push(
+                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-semibold">
+                    /
+                </span>
+            )
+        }
+    }
     return (
-        /* eslint-disable react/jsx-no-bind */
-        <Breadcrumb
-            path={filePath}
-            partToUrl={index => {
-                const partPath = parts.slice(0, index + 1).join('/')
-                if (isDir || index < parts.length - 1) {
-                    return toTreeURL({ repoName, revision, filePath: partPath })
-                }
-                return toPrettyBlobURL({ repoName, revision, filePath: partPath })
-            }}
-            partToClassName={index => (index === parts.length - 1 ? 'part-last' : 'part-directory')}
-        />
-        /* eslint-enable react/jsx-no-bind */
+        // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
+        <span className="file-path-breadcrumbs">{spans}</span>
     )
 }

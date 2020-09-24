@@ -22,7 +22,7 @@ export const Toast: React.FunctionComponent<Props> = props => (
         <button
             type="button"
             onClick={props.onDismiss}
-            className="toast__close-button btn btn-icon e2e-close-toast"
+            className="toast__close-button btn btn-icon test-close-toast"
             aria-label="Close"
         >
             <CloseIcon className="icon-inline" />

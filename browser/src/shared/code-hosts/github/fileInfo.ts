@@ -41,7 +41,14 @@ export const resolveFileInfo = (): BlobInfo => {
     const { revisionAndFilePath, rawRepoName } = parsedURL
 
     const filePath = getFilePath()
-    const filePathWithLeadingSlash = filePath.startsWith('/') ? filePath : `/${filePath}`
+
+    // Don't prepend empty filePath with slash; it's the root directory of the repo
+    const filePathWithLeadingSlash = filePath && !filePath.startsWith('/') ? `/${filePath}` : filePath
+    // If filePath is empty, revisionAndFilePath == just the revision
+    const revision = filePathWithLeadingSlash
+        ? revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length)
+        : revisionAndFilePath
+
     if (!revisionAndFilePath.endsWith(filePathWithLeadingSlash)) {
         throw new Error(
             `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`
@@ -51,8 +58,8 @@ export const resolveFileInfo = (): BlobInfo => {
         blob: {
             rawRepoName,
             filePath,
+            revision,
             commitID: getCommitIDFromPermalink(),
-            revision: revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length),
         },
     }
 }

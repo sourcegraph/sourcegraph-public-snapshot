@@ -14,6 +14,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 import { GitReferenceNode, queryGitReferences } from './GitReference'
 import { RevisionSpec } from '../../../shared/src/util/url'
+import { GitRefType } from '../../../shared/src/graphql-operations'
 
 const fetchRepositoryCommits = memoizeObservable(
     (args: RevisionSpec & { repo: GQL.ID; first?: number; query?: string }): Observable<GQL.IGitCommitConnection> =>
@@ -157,7 +158,7 @@ interface RevisionsPopoverTab {
     label: string
     noun: string
     pluralNoun: string
-    type?: GQL.GitRefType
+    type?: GitRefType
 }
 
 /**
@@ -168,8 +169,8 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     private static LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
     private static TABS: RevisionsPopoverTab[] = [
-        { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GQL.GitRefType.GIT_BRANCH },
-        { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GQL.GitRefType.GIT_TAG },
+        { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
+        { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
         { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
     ]
 
@@ -195,7 +196,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 queryConnection={
-                                    tab.type === GQL.GitRefType.GIT_BRANCH ? this.queryGitBranches : this.queryGitTags
+                                    tab.type === GitRefType.GIT_BRANCH ? this.queryGitBranches : this.queryGitTags
                                 }
                                 nodeComponent={GitReferencePopoverNode}
                                 nodeComponentProps={{
@@ -238,10 +239,10 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     }
 
     private queryGitBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-        queryGitReferences({ ...args, repo: this.props.repo, type: GQL.GitRefType.GIT_BRANCH, withBehindAhead: false })
+        queryGitReferences({ ...args, repo: this.props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
 
     private queryGitTags = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-        queryGitReferences({ ...args, repo: this.props.repo, type: GQL.GitRefType.GIT_TAG, withBehindAhead: false })
+        queryGitReferences({ ...args, repo: this.props.repo, type: GitRefType.GIT_TAG, withBehindAhead: false })
 
     private queryRepositoryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
         fetchRepositoryCommits({

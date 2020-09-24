@@ -12,6 +12,7 @@
         border: 1px solid $input-focus-border-color;
         box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
     }
+
     .monaco-editor {
         // stylelint-disable-next-line selector-class-pattern
         .decorationsOverviewRuler {
@@ -39,6 +40,28 @@
         // Override our :focus-visible style, which gets applied to the textarea
         .inputarea.focus-visible {
             box-shadow: none;
+        }
+
+        // Show keyboard tip to press Tab to complete
+        .suggest-widget .monaco-list .monaco-list-row.focused::after {
+            content: 'Tab';
+            display: flex;
+            align-items: center;
+            border: 1px solid;
+            border-radius: 0.25rem;
+            height: 1.25rem;
+            margin-top: 0.375rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            font-size: 0.65rem;
+            line-height: 1;
+            padding: 0.25rem 0.375rem;
+            border-color: $gray-13;
+            color: $color-text-1;
+
+            .theme-light & {
+                border-color: $color-light-border;
+                color: $color-light-text-3;
+            }
         }
     }
 

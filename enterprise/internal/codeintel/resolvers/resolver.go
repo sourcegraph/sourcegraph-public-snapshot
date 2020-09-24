@@ -3,11 +3,9 @@ package resolvers
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -60,7 +58,7 @@ func (r *resolver) IndexConnectionResolver(opts store.GetIndexesOptions) *Indexe
 }
 
 func (r *resolver) DeleteUploadByID(ctx context.Context, uploadID int) error {
-	_, err := r.store.DeleteUploadByID(ctx, uploadID, r.getTipCommit)
+	_, err := r.store.DeleteUploadByID(ctx, uploadID)
 	return err
 }
 
@@ -95,15 +93,4 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		args.Path,
 		dumps,
 	), nil
-}
-
-// getTipCommit returns the head of the default branch for the given repository. This
-// is used to recalculate the set of visible dumps for a repository on dump deletion.
-func (r *resolver) getTipCommit(ctx context.Context, repositoryID int) (string, error) {
-	tipCommit, err := gitserver.Head(ctx, r.store, repositoryID)
-	if err != nil {
-		return "", errors.Wrap(err, "gitserver.Head")
-	}
-
-	return tipCommit, nil
 }

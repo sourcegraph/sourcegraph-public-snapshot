@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
 import { ContributionScope } from '../../../../shared/src/api/client/context/context'
@@ -82,11 +82,6 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                 repoName: props.fileInfoOrError.base.repoName,
                                 filePath: props.fileInfoOrError.base.filePath,
                                 revision: defaultRevisionToCommitID(props.fileInfoOrError.base).revision,
-                                query: {
-                                    diff: {
-                                        revision: props.fileInfoOrError.base.commitID,
-                                    },
-                                },
                                 commit: {
                                     baseRev: defaultRevisionToCommitID(props.fileInfoOrError.base).revision,
                                     headRev: defaultRevisionToCommitID(props.fileInfoOrError.head).revision,

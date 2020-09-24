@@ -33,7 +33,7 @@ export class SearchResult extends React.Component<Props> {
     private renderTitle = (): JSX.Element => (
         <div className="search-result__title">
             <Markdown
-                className="e2e-search-result-label"
+                className="test-search-result-label"
                 dangerousInnerHTML={
                     this.props.result.label.html
                         ? decode(this.props.result.label.html)

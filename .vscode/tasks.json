@@ -20,6 +20,15 @@
       },
     },
     {
+      "label": "Watch code generation",
+      "detail": "Watch files and generate types when files are changed",
+      "type": "npm",
+      "script": "watch-generate",
+      "group": "build",
+      "problemMatcher": [],
+      "isBackground": true,
+    },
+    {
       "label": "stylelint",
       "command": "yarn",
       "args": ["-s", "run", "all:stylelint", "--", "--formatter", "compact"],

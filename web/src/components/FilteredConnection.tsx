@@ -108,7 +108,7 @@ interface ConnectionDisplayProps {
  */
 interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
     /** Header row to appear above all nodes. */
-    headComponent?: React.ComponentType<{ nodes: N[] }>
+    headComponent?: React.ComponentType<{ nodes: N[]; totalCount?: number | null }>
 
     /** Footer row to appear below all nodes. */
     footComponent?: React.ComponentType<{ nodes: N[] }>
@@ -247,7 +247,12 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {this.props.connectionQuery && summary}
                 {this.props.connection && this.props.connection.nodes.length > 0 && (
                     <ListComponent className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
-                        {HeadComponent && <HeadComponent nodes={this.props.connection.nodes} />}
+                        {HeadComponent && (
+                            <HeadComponent
+                                nodes={this.props.connection.nodes}
+                                totalCount={this.props.connection.totalCount}
+                            />
+                        )}
                         {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
                         {FootComponent && <FootComponent nodes={this.props.connection.nodes} />}
                     </ListComponent>
@@ -608,10 +613,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
-                            this.props.history.replace({
-                                search: this.urlQuery({ visible: previousPage.length }),
-                                hash: this.props.location.hash,
-                            })
+                            const searchFragment = this.urlQuery({ visible: previousPage.length })
+                            if (this.props.location.search !== searchFragment) {
+                                this.props.history.replace({
+                                    search: searchFragment,
+                                    hash: this.props.location.hash,
+                                })
+                            }
                         }
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)
@@ -712,8 +720,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (first !== this.props.defaultFirst) {
             searchParameters.set('first', String(first))
         }
-        if (filter && this.props.filters && filter !== this.props.filters[0]) {
-            searchParameters.set('filter', filter.id)
+        if (filter && this.props.filters) {
+            if (filter !== this.props.filters[0]) {
+                searchParameters.set('filter', filter.id)
+            } else {
+                searchParameters.delete('filter')
+            }
         }
         if (visible !== 0 && visible !== first) {
             searchParameters.set('visible', String(visible))
@@ -745,7 +757,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                className={`filtered-connection test-filtered-connection ${compactnessClass} ${
                     this.props.className || ''
                 }`}
             >
@@ -814,7 +826,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     />
                 )}
                 {this.state.loading && (
-                    <span className="filtered-connection__loader e2e-filtered-connection__loader">
+                    <span className="filtered-connection__loader test-filtered-connection__loader">
                         <LoadingSpinner className="icon-inline" />
                     </span>
                 )}

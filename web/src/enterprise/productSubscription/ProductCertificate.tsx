@@ -30,7 +30,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     footer,
     className = '',
 }) => (
-    <div className={`product-certificate e2e-product-certificate card ${className || ''}`}>
+    <div className={`product-certificate test-product-certificate card ${className || ''}`}>
         <div className="card-body d-flex align-items-center">
             <img className="product-certificate__logo mr-1 p-2" src="/.assets/img/sourcegraph-mark.svg" />
             <div>

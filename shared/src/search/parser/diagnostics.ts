@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { Sequence, toMonacoRange } from './parser'
 import { validateFilter } from './filters'
-import { SearchPatternType } from '../../graphql/schema'
+import { SearchPatternType } from '../../graphql-operations'
 
 /**
  * Returns the diagnostics for a parsed search query to be displayed in the Monaco query input.

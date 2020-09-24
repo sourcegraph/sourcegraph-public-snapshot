@@ -10,8 +10,7 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         path: '/permissions',
         exact: true,
         render: lazyComponent(() => import('./auth/UserSettingsPermissionsPage'), 'UserSettingsPermissionsPage'),
-        condition: ({ authenticatedUser }) =>
-            !!window.context.site['permissions.backgroundSync']?.enabled && authenticatedUser.siteAdmin,
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: '/external-accounts',

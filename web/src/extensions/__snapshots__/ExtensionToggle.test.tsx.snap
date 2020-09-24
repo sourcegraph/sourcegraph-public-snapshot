@@ -2,51 +2,66 @@
 
 exports[`ExtensionToggle extension disabled in settings 1`] = `
 <button
-  className="toggle  "
+  aria-checked={false}
+  className="toggle"
   onClick={[Function]}
+  role="switch"
   title="Click to enable"
   type="button"
   value={0}
 >
   <span
-    className="toggle__bar  "
+    className="toggle__bar"
   />
   <span
-    className="toggle__knob  "
+    className="toggle__bar-shadow"
+  />
+  <span
+    className="toggle__knob"
   />
 </button>
 `;
 
 exports[`ExtensionToggle extension enabled in settings 1`] = `
 <button
-  className="toggle  "
+  aria-checked={true}
+  className="toggle"
   onClick={[Function]}
+  role="switch"
   title="Click to enable"
   type="button"
   value={1}
 >
   <span
-    className="toggle__bar toggle__bar--active "
+    className="toggle__bar toggle__bar--on"
   />
   <span
-    className="toggle__knob toggle__knob--active "
+    className="toggle__bar-shadow toggle__bar-shadow--on"
+  />
+  <span
+    className="toggle__knob toggle__knob--on"
   />
 </button>
 `;
 
 exports[`ExtensionToggle extension not present in settings 1`] = `
 <button
-  className="toggle  "
+  aria-checked={false}
+  className="toggle"
   onClick={[Function]}
+  role="switch"
   title="Click to enable"
   type="button"
   value={0}
 >
   <span
-    className="toggle__bar  "
+    className="toggle__bar"
   />
   <span
-    className="toggle__knob  "
+    className="toggle__bar-shadow"
+  />
+  <span
+    className="toggle__knob"
   />
 </button>
 `;

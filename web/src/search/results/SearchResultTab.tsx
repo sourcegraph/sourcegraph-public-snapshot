@@ -63,11 +63,11 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
 
     const isActiveFunc = constant(typeInQuery === type)
     return (
-        <li className="nav-item e2e-search-result-tab">
+        <li className="nav-item test-search-result-tab">
             <NavLink
                 to={{ pathname: '/search', search: builtURLQuery }}
-                className={`nav-link e2e-search-result-tab-${String(type)}`}
-                activeClassName="active e2e-search-result-tab--active"
+                className={`nav-link test-search-result-tab-${String(type)}`}
+                activeClassName="active test-search-result-tab--active"
                 isActive={isActiveFunc}
             >
                 {type ? typeToProse[type] : 'Code'}

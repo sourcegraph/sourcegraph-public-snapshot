@@ -28,11 +28,11 @@
     margin-left: 2px; // same as other buttons in the row
 }
 
+.sg-toolbar-mount-bitbucket-server,
 .code-view-toolbar--bitbucket {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    margin-top: -5px !important;
+    // Layout action item children within the .secondary wrapping context,
+    // so they wrap together with the native Bitbucket buttons
+    display: contents;
 }
 
 .action-nav-item--bitbucket {
@@ -43,12 +43,15 @@
 // Use flexbox instead of float, so we can handle wrapping action items
 .file-toolbar {
     display: flex;
-    > .primary {
-        flex: 1 0 auto;
-        order: 1;
+    align-items: center;
+    // Trigger a two-row layout if file path and action items don't fit all in one row.
+    flex-wrap: wrap;
 
-        display: flex;
-        align-items: center;
+    > .primary {
+        // Make sure file paths don't wrap to make space for buttons
+        // (instead trigger a two-row layout if it does not fit)
+        flex: 0 2 auto;
+        order: 1;
     }
     > .secondary {
         // Overrides
@@ -57,11 +60,25 @@
         line-height: initial;
 
         flex: 1 1 auto;
+        flex-wrap: wrap;
         order: 2;
 
         display: flex;
         align-items: center;
         justify-content: flex-end;
+
+        > .aui-buttons {
+            // Layout all child buttons within the parent wrapping context (.secondary),
+            // so they wrap together with our toolbar buttons.
+            display: contents;
+
+            > .aui-button {
+                // Reapply margins that are on the .aui-buttons element to the .aui-button elements,
+                // because the display: contents removes margins from the .aui-buttons element
+                margin-left: 5px;
+                margin-top: 5px;
+            }
+        }
     }
 }
 

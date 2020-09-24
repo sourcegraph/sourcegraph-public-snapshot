@@ -3,6 +3,7 @@ import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { interval, Observable } from 'rxjs'
 import { switchMap, filter, take, tap } from 'rxjs/operators'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { getPlatformName } from '../../util/context'
 
 export const SignInButton: React.FunctionComponent<{
     className?: string
@@ -14,7 +15,7 @@ export const SignInButton: React.FunctionComponent<{
      */
     onSignInClose?: () => void
 }> = ({ className, iconClassName, sourcegraphURL, onSignInClose }) => {
-    const signInUrl = new URL('/sign-in?close=true', sourcegraphURL).href
+    const signInUrl = new URL(`/sign-in?close=true&utm_source=${getPlatformName()}`, sourcegraphURL).href
 
     const [nextSignInClick] = useEventObservable(
         useCallback(

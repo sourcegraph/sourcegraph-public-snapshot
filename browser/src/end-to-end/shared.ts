@@ -37,11 +37,11 @@ export function testSingleFilePage({
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
             expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
             await Promise.all([
-                getDriver().page.waitForNavigation(),
+                getDriver().page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
                 getDriver().page.click('.code-view-toolbar .open-on-sourcegraph'),
             ])
             expect(getDriver().page.url()).toBe(
-                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
             )
         })
 
@@ -60,11 +60,11 @@ export function testSingleFilePage({
             })
             const [token] = await line.$x('//span[text()="CallOption"]')
             await token.hover()
-            await getDriver().page.waitForSelector('.e2e-tooltip-go-to-definition')
+            await getDriver().page.waitForSelector('.test-tooltip-go-to-definition')
             await retry(async () => {
                 assert.strictEqual(
                     await getDriver().page.evaluate(
-                        () => document.querySelector<HTMLAnchorElement>('.e2e-tooltip-go-to-definition')?.href
+                        () => document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')?.href
                     ),
                     goToDefinitionURL ||
                         `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`

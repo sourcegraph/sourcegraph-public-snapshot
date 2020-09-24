@@ -2,7 +2,6 @@ gitserver: gitserver
 query-runner: query-runner
 repo-updater: repo-updater
 searcher: searcher
-replacer: replacer
 symbols: symbols
 github-proxy: github-proxy
 frontend: env CONFIGURATION_MODE=server SITE_CONFIG_ESCAPE_HATCH_PATH=$HOME/.sourcegraph/site-config.json frontend

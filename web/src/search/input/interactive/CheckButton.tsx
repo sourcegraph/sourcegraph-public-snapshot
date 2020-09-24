@@ -9,7 +9,7 @@ import classNames from 'classnames'
 export const CheckButton: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className="check-button d-flex">
         <button
-            className={classNames('btn', 'btn-primary', className, 'e2e-confirm-filter-button')}
+            className={classNames('btn', 'btn-primary', className, 'test-confirm-filter-button')}
             type="submit"
             aria-label="Confirm filter"
             data-tooltip="Confirm filter"

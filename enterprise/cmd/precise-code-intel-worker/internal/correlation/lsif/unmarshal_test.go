@@ -90,18 +90,13 @@ func TestUnmarshalMetaData(t *testing.T) {
 }
 
 func TestUnmarshalDocument(t *testing.T) {
-	document, err := unmarshalDocument([]byte(`{"id": "02", "type": "vertex", "label": "document", "uri": "file:///test/root/foo.go"}`))
+	uri, err := unmarshalDocument([]byte(`{"id": "02", "type": "vertex", "label": "document", "uri": "file:///test/root/foo.go"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling document data: %s", err)
 	}
 
-	expectedDocument := Document{
-		URI:         "file:///test/root/foo.go",
-		Contains:    datastructures.NewIDSet(),
-		Diagnostics: datastructures.NewIDSet(),
-	}
-	if diff := cmp.Diff(expectedDocument, document, datastructures.IDSetComparer); diff != "" {
-		t.Errorf("unexpected document (-want +got):\n%s", diff)
+	if diff := cmp.Diff("file:///test/root/foo.go", uri, datastructures.Comparers...); diff != "" {
+		t.Errorf("unexpected uri (-want +got):\n%s", diff)
 	}
 }
 
@@ -119,9 +114,8 @@ func TestUnmarshalRange(t *testing.T) {
 		DefinitionResultID: 0,
 		ReferenceResultID:  0,
 		HoverResultID:      0,
-		MonikerIDs:         datastructures.NewIDSet(),
 	}
-	if diff := cmp.Diff(expectedRange, r, datastructures.IDSetComparer); diff != "" {
+	if diff := cmp.Diff(expectedRange, r, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
 	}
 }
@@ -202,18 +196,16 @@ func TestUnmarshalDiagnosticResult(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling diagnostic result data: %s", err)
 	}
 
-	expectedDiagnosticResult := DiagnosticResult{
-		Result: []Diagnostic{
-			{
-				Severity:       1,
-				Code:           "2322",
-				Message:        "Type '10' is not assignable to type 'string'.",
-				Source:         "eslint",
-				StartLine:      1,
-				StartCharacter: 5,
-				EndLine:        1,
-				EndCharacter:   6,
-			},
+	expectedDiagnosticResult := []Diagnostic{
+		{
+			Severity:       1,
+			Code:           "2322",
+			Message:        "Type '10' is not assignable to type 'string'.",
+			Source:         "eslint",
+			StartLine:      1,
+			StartCharacter: 5,
+			EndLine:        1,
+			EndCharacter:   6,
 		},
 	}
 	if diff := cmp.Diff(expectedDiagnosticResult, diagnosticResult); diff != "" {

@@ -7,11 +7,17 @@ const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 const logger = require('gulplog')
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
 const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
+
+const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
+if (shouldAnalyze) {
+  logger.info('Running bundle analyzer')
+}
 
 const rootDirectory = path.resolve(__dirname, '..')
 const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
@@ -104,6 +110,7 @@ const config = {
       ],
     }),
     new webpack.IgnorePlugin(/\.flow$/, /.*/),
+    ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js'],
@@ -159,7 +166,7 @@ const config = {
             loader: 'postcss-loader',
             options: {
               config: {
-                path: __dirname,
+                path: path.resolve(__dirname, '..'),
               },
             },
           },
@@ -167,6 +174,7 @@ const config = {
             loader: 'sass-loader',
             options: {
               sassOptions: {
+                implementation: require('sass'),
                 includePaths: [nodeModulesPath],
               },
             },
@@ -183,6 +191,7 @@ const config = {
         test: extensionHostWorker,
         use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
       },
+      { test: /\.ya?ml$/, use: ['raw-loader'] },
     ],
   },
 }
