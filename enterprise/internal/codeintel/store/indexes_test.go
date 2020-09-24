@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -377,7 +378,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -388,7 +389,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -420,7 +421,7 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -431,13 +432,13 @@ func TestDequeueIndexProcessError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if message, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_indexes WHERE id = 1")); err != nil {
+	if message, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_message: %s", err)
 	} else if message != "test message" {
 		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "test message", message)
