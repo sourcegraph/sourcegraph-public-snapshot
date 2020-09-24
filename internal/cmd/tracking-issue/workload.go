@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+	"time"
 )
 
 type Workload struct {
@@ -73,6 +75,38 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 	// display all finished issues and pull requests as a flattened list.
 
 	if hasCompletedIssueOrPullRequest {
+		type renderedCompletedWork struct {
+			Markdown string
+			ClosedAt time.Time
+		}
+		var completedWork []renderedCompletedWork
+
+		for _, issue := range wl.Issues {
+			// Render any issue that belongs to zero or more than one
+			// tracking issue (excluding the team tracking issue).
+			if issue.Closed() {
+				completedWork = append(completedWork, renderedCompletedWork{
+					Markdown: issue.Markdown(labelAllowlist),
+					ClosedAt: issue.ClosedAt,
+				})
+			}
+		}
+
+		// Put all PRs that aren't linked to issues top-level
+		for _, pr := range wl.PullRequests {
+			if pr.Done() {
+				completedWork = append(completedWork, renderedCompletedWork{
+					Markdown: pr.Markdown(),
+					ClosedAt: pr.ClosedAt,
+				})
+			}
+		}
+
+		sort.Slice(completedWork, func(i, j int) bool {
+			// Order rendered markdown by time elapsed since close
+			return completedWork[i].ClosedAt.Before(completedWork[j].ClosedAt)
+		})
+
 		days = ""
 		if wl.CompletedDays > 0 {
 			days = fmt.Sprintf(": __%.2fd__", wl.CompletedDays)
@@ -80,20 +114,9 @@ func (wl *Workload) Markdown(labelAllowlist []string) string {
 
 		fmt.Fprintf(&b, "\nCompleted%s\n", days)
 
-		for _, issue := range wl.Issues {
-			// Render any issue that belongs to zero or more than one
-			// tracking issue (excluding the team tracking issue).
-			if issue.Closed() {
-				b.WriteString(indent(0))
-				b.WriteString(issue.Markdown(labelAllowlist))
-			}
-		}
-
-		// Put all PRs that aren't linked to issues top-level
-		for _, pr := range wl.PullRequests {
-			if pr.Done() {
-				b.WriteString(pr.Markdown())
-			}
+		// Display completed work chronologically
+		for _, issueOrPr := range completedWork {
+			b.WriteString(issueOrPr.Markdown)
 		}
 	}
 
