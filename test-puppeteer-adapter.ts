@@ -1,5 +1,4 @@
 import { Polly } from '@pollyjs/core'
-// import { PuppeteerAdapter } from './shared/src/testing/integration/polly/PuppeteerAdapter'
 import { CdpAdapter } from './shared/src/testing/integration/polly/CdpAdapter'
 
 import { ResourceType } from 'puppeteer'
@@ -25,7 +24,7 @@ async function run() {
         'other', // Favicon
     ]
 
-    const record = true
+    const record = false
 
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
@@ -46,6 +45,7 @@ async function run() {
         },
         expiryStrategy: 'warn',
         recordIfMissing: record,
+        recordFailedRequests: true,
         matchRequestsBy: {
             method: true,
             body: true,
@@ -54,16 +54,16 @@ async function run() {
             headers: false,
         },
         mode: record ? 'record' : 'replay',
-        logging: false,
+        logging: true,
     })
 
-    polly
-
-    await page.goto('https://sourcegraph.com')
-    console.log('Done')
+    await page.goto('https://example.com')
+    console.log('Done loading URL,...')
     await page.close()
 
     await browser.close()
+
+    await polly.stop()
 }
 
 run().catch(error => {
