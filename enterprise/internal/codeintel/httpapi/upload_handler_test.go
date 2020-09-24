@@ -424,6 +424,6 @@ func setupRepoMocks(t *testing.T) {
 		if rev != "deadbeef" {
 			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
 		}
-		return api.CommitID(rev), nil
+		return "", nil
 	}
 }
