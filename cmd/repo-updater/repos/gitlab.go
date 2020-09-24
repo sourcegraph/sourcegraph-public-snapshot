@@ -478,9 +478,7 @@ func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, e
 			return pipelines, nil
 		}
 
-		for _, pipeline := range page {
-			pipelines = append(pipelines, pipeline)
-		}
+		pipelines = append(pipelines, page...)
 	}
 }
 
