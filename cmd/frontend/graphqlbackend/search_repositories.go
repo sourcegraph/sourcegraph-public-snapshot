@@ -118,8 +118,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			}
 			newArgs := *args
 			newArgs.PatternInfo = &p
-			rp := search.NewRepoPromise().Resolve(repos)
-			newArgs.RepoPromise = rp
+			newArgs.RepoPromise = search.NewRepoPromise().Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)

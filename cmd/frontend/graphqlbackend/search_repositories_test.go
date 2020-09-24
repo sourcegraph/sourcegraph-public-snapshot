@@ -90,10 +90,9 @@ func TestSearchRepositories(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			rp := search.NewRepoPromise().Resolve(repositories)
 			results, _, err := searchRepositories(context.Background(), &search.TextParameters{
 				PatternInfo: pattern,
-				RepoPromise: rp,
+				RepoPromise: search.NewRepoPromise().Resolve(repositories),
 				Query:       q,
 				Zoekt:       zoekt,
 			}, int32(100))

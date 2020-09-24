@@ -139,7 +139,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	if alertResult != nil {
 		return alertResult, nil
 	}
-	rp := search.NewRepoPromise().Resolve(resolved.repoRevs)
 
 	p, err := r.getPatternInfo(nil)
 	if err != nil {
@@ -147,7 +146,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     rp,
+		RepoPromise:     search.NewRepoPromise().Resolve(resolved.repoRevs),
 		Query:           r.query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
@@ -254,8 +253,9 @@ func repoIsLess(i, j *types.Repo) bool {
 func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *searchResultsCommon, error) {
 	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
-		return nil, nil, nil, err
+		log15.Info("paginatedSearchFilesInRepos: context error while getting repos.")
 	}
+
 	plan := &repoPaginationPlan{
 		pagination:          pagination,
 		repositories:        repos,
@@ -265,8 +265,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 	}
 	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error) {
 		batchArgs := *args
-		rp := search.NewRepoPromise().Resolve(batch)
-		batchArgs.RepoPromise = rp
+		batchArgs.RepoPromise = search.NewRepoPromise().Resolve(batch)
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
 		// Timeouts are reported through searchResultsCommon so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {

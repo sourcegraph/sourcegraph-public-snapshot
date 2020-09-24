@@ -297,11 +297,11 @@ func TestIndexedSearch(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			rp := search.NewRepoPromise().Resolve(tt.args.repos)
+
 			args := &search.TextParameters{
 				Query:           q,
 				PatternInfo:     tt.args.patternInfo,
-				RepoPromise:     rp,
+				RepoPromise:     search.NewRepoPromise().Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
 					Client: &fakeSearcher{

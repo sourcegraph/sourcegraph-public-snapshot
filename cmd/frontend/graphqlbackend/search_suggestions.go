@@ -217,10 +217,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		rp := search.NewRepoPromise().Resolve(resolved.repoRevs)
 		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
 			PatternInfo:  p,
-			RepoPromise:  rp,
+			RepoPromise:  search.NewRepoPromise().Resolve(resolved.repoRevs),
 			Query:        r.query,
 			Zoekt:        r.zoekt,
 			SearcherURLs: r.searcherURLs,

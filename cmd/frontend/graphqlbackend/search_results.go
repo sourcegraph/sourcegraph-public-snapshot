@@ -1618,8 +1618,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 	}
 	repos, err := tp.RepoPromise.Get(ctx)
 	if err != nil {
-		log15.Error("doDiffSearch: context error while getting repos. This should never happen.")
-		return
+		log15.Info("doDiffSearch: context error while getting repos.")
 	}
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
@@ -1659,8 +1658,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	}
 	repos, err := tp.RepoPromise.Get(ctx)
 	if err != nil {
-		log15.Error("doCommitSearch: context error while getting repos. This should never happen.")
-		return
+		log15.Info("doCommitSearch: context error while getting repos.")
 	}
 
 	args := search.TextParametersForCommitParameters{
@@ -1751,7 +1749,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		SearcherURLs:    r.searcherURLs,
 		RepoPromise:     search.NewRepoPromise(),
 	}
-
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
