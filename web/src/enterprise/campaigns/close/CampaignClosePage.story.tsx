@@ -24,6 +24,8 @@ const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDe
     <div className="p-3 container web-content">{story()}</div>
 ))
 
+const now = new Date()
+
 const campaignDefaults: CampaignFields = {
     __typename: 'Campaign',
     changesets: {
@@ -35,7 +37,7 @@ const campaignDefaults: CampaignFields = {
             unpublished: 5,
         },
     },
-    createdAt: subDays(new Date(), 5).toISOString(),
+    createdAt: subDays(now, 5).toISOString(),
     initialApplier: {
         url: '/users/alice',
         username: 'alice',
@@ -55,8 +57,8 @@ const campaignDefaults: CampaignFields = {
     closedAt: null,
     description: '## What this campaign does\n\nTruly awesome things for example.',
     name: 'awesome-campaign',
-    updatedAt: subDays(new Date(), 5).toISOString(),
-    lastAppliedAt: subDays(new Date(), 5).toISOString(),
+    updatedAt: subDays(now, 5).toISOString(),
+    lastAppliedAt: subDays(now, 5).toISOString(),
     lastApplier: {
         url: '/users/bob',
         username: 'bob',
@@ -76,43 +78,43 @@ const queryChangesets: typeof _queryChangesets = () =>
         nodes: [
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh1',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 reconcilerState: ChangesetReconcilerState.QUEUED,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh2',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 reconcilerState: ChangesetReconcilerState.PROCESSING,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh3',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 reconcilerState: ChangesetReconcilerState.ERRORED,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh4',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 reconcilerState: ChangesetReconcilerState.COMPLETED,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'ExternalChangeset',
@@ -135,8 +137,8 @@ const queryChangesets: typeof _queryChangesets = () =>
                 },
                 reviewState: ChangesetReviewState.COMMENTED,
                 title: 'Add prettier to all projects',
-                createdAt: subDays(new Date(), 5).toISOString(),
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 nextSyncAt: null,
                 id: 'somev1',
@@ -164,8 +166,8 @@ const queryChangesets: typeof _queryChangesets = () =>
                 },
                 reviewState: null,
                 title: 'Add prettier to all projects',
-                createdAt: subDays(new Date(), 5).toISOString(),
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
                 externalState: null,
                 nextSyncAt: null,
                 id: 'somev2',
