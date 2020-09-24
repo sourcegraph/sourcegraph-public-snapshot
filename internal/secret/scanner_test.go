@@ -74,11 +74,7 @@ func TestScanner(t *testing.T) {
 
 		var gotName string
 		var gotMessage string
-		esMessage := NullStringValue{
-			S: &StringValue{
-				S: &gotMessage,
-			},
-		}
+		esMessage := NullStringValue{S: &gotMessage}
 		err = dbconn.Global.QueryRowContext(ctx, `SELECT name,message FROM secret_null_test`).
 			Scan(&gotName, &esMessage)
 		if err != nil {
