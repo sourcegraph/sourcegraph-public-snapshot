@@ -260,9 +260,9 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *github.CommitStatus:
 		t = ev.ReceivedAt
 	case *github.CheckSuite:
-		return ev.ReceivedAt
+		t = ev.ReceivedAt
 	case *github.CheckRun:
-		return ev.ReceivedAt
+		t = ev.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.ParticipantStatusEvent:
@@ -270,9 +270,9 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(ev.Status.DateAdded)
 	case *gitlab.ReviewApproved:
-		return ev.CreatedAt.Time
+		t = ev.CreatedAt.Time
 	case *gitlab.ReviewUnapproved:
-		return ev.CreatedAt.Time
+		t = ev.CreatedAt.Time
 	case *gitlabwebhooks.MergeRequestCloseEvent,
 		*gitlabwebhooks.MergeRequestMergeEvent,
 		*gitlabwebhooks.MergeRequestReopenEvent,
@@ -280,7 +280,7 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		// These events do not inherently have timestamps from GitLab, so we
 		// fall back to the event record we created when we received the
 		// webhook.
-		return e.CreatedAt
+		t = e.CreatedAt
 	}
 
 	return t
