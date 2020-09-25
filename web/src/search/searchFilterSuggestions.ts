@@ -92,6 +92,10 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 description: 'commit message contents',
             },
             {
+                value: 'committer:',
+                description: 'git email of committer',
+            },
+            {
                 value: 'content:',
                 description: 'override the search pattern',
             },
@@ -196,6 +200,9 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     author: {
+        values: [],
+    },
+    committer: {
         values: [],
     },
     message: {
