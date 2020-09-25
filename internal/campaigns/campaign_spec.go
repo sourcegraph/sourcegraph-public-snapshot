@@ -41,7 +41,7 @@ func (cs *CampaignSpec) UnmarshalValidate() error {
 }
 
 // CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
-// yet.
+// yet. It's set to 1 week.
 const CampaignSpecTTL = 7 * 24 * time.Hour
 
 // ExpiresAt returns the time when the CampaignSpec will be deleted if not
