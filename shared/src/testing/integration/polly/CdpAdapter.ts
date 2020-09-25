@@ -154,7 +154,7 @@ export class CdpAdapter extends PollyAdapter {
             // Fulfill by converting the Polly response to a CDP response
             const cdpRequestToFulfill = {
                 requestId,
-                responseCode: 200, // statusCode,
+                responseCode: pollyResponse.statusCode,
                 responseHeaders: headerObjectToHeaderEntries(headers),
                 body: toBase64(body),
             }
