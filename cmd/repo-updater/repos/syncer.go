@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -113,32 +112,15 @@ type syncHandler struct {
 	minSyncInterval time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, _ dbworkerstore.Store, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{
-		Isolation: sql.LevelReadCommitted,
-	})
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
-
 	store := s.store
 	if ws, ok := s.store.(WithStore); ok {
-		store = ws.With(tx)
+		store = ws.With(tx.Handle().DB())
 	}
 
 	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval)
