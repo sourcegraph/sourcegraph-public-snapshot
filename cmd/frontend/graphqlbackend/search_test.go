@@ -933,11 +933,11 @@ func TestRevisionValidation(t *testing.T) {
 
 func TestRepoGroupValuesToRegexp(t *testing.T) {
 	groups := map[string][]RepoGroupValue{
-		"go": []RepoGroupValue{
+		"go": {
 			RepoPath("github.com/saucegraph/saucegraph"),
 			RepoRegexpPattern(`github\.com/golang/.*`),
 		},
-		"typescript": []RepoGroupValue{
+		"typescript": {
 			RepoPath("github.com/eslint/eslint"),
 		},
 	}
