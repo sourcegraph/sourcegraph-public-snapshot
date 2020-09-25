@@ -730,7 +730,7 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, observe .
 }
 
 func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*Repo), error) {
-	// syncRepo requires querying the store for related repositories, and
+	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
 	// ask the store for all repositories and only do syncRepo if it might
