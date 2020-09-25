@@ -390,6 +390,7 @@ describe('Repository', () => {
             ])
 
             // Return to repo page
+            await driver.page.waitForSelector('a.repo-header__repo')
             await driver.page.click('a.repo-header__repo')
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
