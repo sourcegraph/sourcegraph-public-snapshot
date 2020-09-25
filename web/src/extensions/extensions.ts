@@ -91,7 +91,7 @@ export function applyCategoryFilter(
 ): Record<ExtensionCategory, string[]> {
     if (selectedCategories.length === 0) {
         // Primary categories
-        return createRecord(categories, category => extensionIDsByCategory[category].primaryExtensionIDs)
+        return createRecord(categories, category => [...extensionIDsByCategory[category].primaryExtensionIDs])
     }
 
     // Categorize in toggle order, make sure the same extension doesn't appear twice.
