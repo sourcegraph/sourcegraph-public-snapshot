@@ -89,7 +89,6 @@ export class CdpAdapter extends PollyAdapter {
      * interception using the CDP "Fetch domain".
      */
     public async onConnect(): Promise<void> {
-        console.log('CDP adapter connecting')
         this.cdpSession = await this.page.target().createCDPSession()
 
         // TODO: This is where we narrow down the interception with patterns.
@@ -114,7 +113,6 @@ export class CdpAdapter extends PollyAdapter {
      * Called when disconnecting from a Puppeteer.page.
      */
     public async onDisconnect(): Promise<void> {
-        console.log('CDP adapter disconnecting')
         await this.trySendCdpRequest('Fetch.disable')
     }
 
