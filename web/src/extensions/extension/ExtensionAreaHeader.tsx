@@ -128,8 +128,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         </Link>
                                     </div>
                                 )}
-
                                 <ExtensionToggle
+                                    className="extension-area-header__toggle"
                                     enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
                                     extensionID={props.extension.id}
                                     settingsCascade={props.settingsCascade}

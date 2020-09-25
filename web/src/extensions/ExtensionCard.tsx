@@ -13,7 +13,7 @@ import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
 import { Link } from 'react-router-dom'
-import { DefaultIconEnabled, DefaultIcon } from './icons'
+import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
 import { ThemeProps } from '../../../shared/src/theme'
 import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
 
@@ -67,7 +67,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         return url
     }, [manifest?.icon, manifest?.iconDark, isLightTheme])
 
-    const { name, publisher } = useMemo(
+    const { name, publisher, isSourcegraphExtension } = useMemo(
         () =>
             splitExtensionID(
                 extension.registryExtension ? extension.registryExtension.extensionIDWithoutRegistry : extension.id
@@ -100,7 +100,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 }, 300)
                 endAnimationManager.setTimeout(() => {
                     setShowShadow(false)
-                }, 1300)
+                }, 1000)
             } else {
                 setChange('disabled')
                 setShowShadow(false)
@@ -161,7 +161,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     <div className="flex-shrink-0 mr-2">
                         {icon ? (
                             <img className="extension-card__icon" src={icon} />
-                        ) : publisher === 'sourcegraph' ? (
+                        ) : isSourcegraphExtension ? (
                             change === 'enabled' ? (
                                 <DefaultIconEnabled isLightTheme={isLightTheme} />
                             ) : (
@@ -187,8 +187,11 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                     {name}
                                 </Link>
                                 <span> by {publisher}</span>
-                            </span>
 
+                                {isSourcegraphExtension && (
+                                    <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />
+                                )}
+                            </span>
                             {extension.registryExtension?.isWorkInProgress && (
                                 <WorkInProgressBadge
                                     viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
@@ -238,7 +241,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when extension is disabled */}
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">{name}</span> is off
+                        <span className="font-weight-semibold">{name}</span> is disabled
                     </div>
                 )}
                 {/* Visual feedback: alert when optimistic update fails */}

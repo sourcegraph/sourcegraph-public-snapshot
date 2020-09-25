@@ -52,7 +52,9 @@ export function toExtensionID(publisher: string | RegistryPublisher, name: strin
  *
  * @param extensionID The extension ID (string)
  */
-export function splitExtensionID(extensionID: string): { publisher: string; name: string; host?: string } {
+export function splitExtensionID(
+    extensionID: string
+): { publisher: string; name: string; host?: string; isSourcegraphExtension?: boolean } {
     const parts = extensionID.split('/')
     if (parts.length === 3) {
         return {
@@ -61,9 +63,11 @@ export function splitExtensionID(extensionID: string): { publisher: string; name
             name: parts[2],
         }
     }
+
     return {
         publisher: parts[0] ?? '',
         name: parts[1] ?? '',
+        isSourcegraphExtension: parts[0] === 'sourcegraph',
     }
 }
 

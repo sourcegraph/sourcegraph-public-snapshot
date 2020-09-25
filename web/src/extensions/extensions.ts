@@ -41,7 +41,6 @@ const NO_VALID_CATEGORIES: 'Other'[] = ['Other']
  *
  * `configureExtensionRegistry` is passed a cache of configured extensions to avoid
  * parsing manifests multiple times during the lifecycle of the extension registry.
-
  */
 export function configureExtensionRegistry(
     nodes: RegistryExtensionFieldsForList[],

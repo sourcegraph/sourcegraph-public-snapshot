@@ -160,12 +160,17 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                         </h2>
                         <div className="mb-3">
                             <a
+                                target="_blank"
+                                rel="noopener"
                                 href="https://docs.sourcegraph.com/extensions/authoring"
                                 className="registry-new-extension-page__docs-link"
                             >
                                 Learn more
                             </a>{' '}
-                            about authoring Sourcegraph extensions <HelpCircleOutline className="icon-inline" />
+                            about authoring Sourcegraph extensions{' '}
+                            <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/extensions/authoring">
+                                <HelpCircleOutline className="icon-inline" />
+                            </a>
                         </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup

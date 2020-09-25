@@ -36,6 +36,10 @@
         color: var(--body-color);
     }
 
+    &__logo {
+        margin-left: calc(0.5rem - 2px); /* stylelint-disable-line */
+    }
+
     &__disabled-feedback {
         position: absolute;
         top: -1.625rem;

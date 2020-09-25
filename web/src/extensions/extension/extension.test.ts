@@ -12,6 +12,7 @@ describe('splitExtensionID', () => {
         expect(splitExtensionID('alice/myextension')).toStrictEqual({
             publisher: 'alice',
             name: 'myextension',
+            isSourcegraphExtension: false,
         })
     })
 })
