@@ -583,11 +583,21 @@ func TestReadNotesUntilSeen(t *testing.T) {
 		{ID: 4, System: true},
 	}
 
+	t.Run("reads all notes", func(t *testing.T) {
+		notes, err := readSystemNotes(paginatedNoteIterator(commonNotes, 2))
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+		if diff := cmp.Diff(notes, commonNotes); diff != "" {
+			t.Errorf("unexpected notes: %s", diff)
+		}
+	})
+
 	t.Run("error from iterator", func(t *testing.T) {
 		want := errors.New("foo")
-		notes, err := readNotesUntilSeen(func() ([]*gitlab.Note, error) {
+		notes, err := readSystemNotes(func() ([]*gitlab.Note, error) {
 			return nil, want
-		}, make(idSet))
+		})
 		if notes != nil {
 			t.Errorf("unexpected non-nil notes: %+v", notes)
 		}
@@ -597,65 +607,27 @@ func TestReadNotesUntilSeen(t *testing.T) {
 	})
 
 	t.Run("no system notes", func(t *testing.T) {
-		notes, err := readNotesUntilSeen(paginatedNoteIterator([]*gitlab.Note{
+		notes, err := readSystemNotes(paginatedNoteIterator([]*gitlab.Note{
 			{ID: 1, System: false},
 			{ID: 2, System: false},
 			{ID: 3, System: false},
 			{ID: 4, System: false},
-		}, 2), make(idSet))
+		}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 		if len(notes) > 0 {
 			t.Errorf("unexpected notes: %+v", notes)
-		}
-	})
-
-	t.Run("empty extant notes", func(t *testing.T) {
-		notes, err := readNotesUntilSeen(paginatedNoteIterator(commonNotes, 2), make(idSet))
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(notes, commonNotes); diff != "" {
-			t.Errorf("unexpected notes: %s", diff)
-		}
-	})
-
-	t.Run("no overlap with extant notes", func(t *testing.T) {
-		set := make(idSet)
-		set.add(5)
-		set.add(6)
-
-		notes, err := readNotesUntilSeen(paginatedNoteIterator(commonNotes, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(notes, commonNotes); diff != "" {
-			t.Errorf("unexpected notes: %s", diff)
 		}
 	})
 
 	t.Run("no pages", func(t *testing.T) {
-		notes, err := readNotesUntilSeen(paginatedNoteIterator([]*gitlab.Note{}, 2), make(idSet))
+		notes, err := readSystemNotes(paginatedNoteIterator([]*gitlab.Note{}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 		if len(notes) > 0 {
 			t.Errorf("unexpected notes: %+v", notes)
-		}
-	})
-
-	t.Run("early end", func(t *testing.T) {
-		set := make(idSet)
-		set.add(3)
-		set.add(4)
-
-		notes, err := readNotesUntilSeen(paginatedNoteIterator(commonNotes, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(notes, commonNotes[0:2]); diff != "" {
-			t.Errorf("unexpected notes: %s", diff)
 		}
 	})
 }
@@ -668,11 +640,21 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 		{ID: 4},
 	}
 
+	t.Run("reads all pipelines", func(t *testing.T) {
+		notes, err := readPipelines(paginatedPipelineIterator(commonPipelines, 2))
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+		if diff := cmp.Diff(notes, commonPipelines); diff != "" {
+			t.Errorf("unexpected notes: %s", diff)
+		}
+	})
+
 	t.Run("error from iterator", func(t *testing.T) {
 		want := errors.New("foo")
-		pipelines, err := readPipelinesUntilSeen(func() ([]*gitlab.Pipeline, error) {
+		pipelines, err := readPipelines(func() ([]*gitlab.Pipeline, error) {
 			return nil, want
-		}, make(idSet))
+		})
 		if pipelines != nil {
 			t.Errorf("unexpected non-nil pipelines: %+v", pipelines)
 		}
@@ -681,51 +663,13 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 		}
 	})
 
-	t.Run("empty extant pipelines", func(t *testing.T) {
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator(commonPipelines, 2), make(idSet))
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(pipelines, commonPipelines); diff != "" {
-			t.Errorf("unexpected pipelines: %s", diff)
-		}
-	})
-
-	t.Run("no overlap with extant pipelines", func(t *testing.T) {
-		set := make(idSet)
-		set.add(5)
-		set.add(6)
-
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator(commonPipelines, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(pipelines, commonPipelines); diff != "" {
-			t.Errorf("unexpected pipelines: %s", diff)
-		}
-	})
-
 	t.Run("no pages", func(t *testing.T) {
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator([]*gitlab.Pipeline{}, 2), make(idSet))
+		pipelines, err := readPipelines(paginatedPipelineIterator([]*gitlab.Pipeline{}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 		if len(pipelines) > 0 {
 			t.Errorf("unexpected pipelines: %+v", pipelines)
-		}
-	})
-
-	t.Run("early end", func(t *testing.T) {
-		set := make(idSet)
-		set.add(3)
-		set.add(4)
-
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator(commonPipelines, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(pipelines, commonPipelines[0:2]); diff != "" {
-			t.Errorf("unexpected pipelines: %s", diff)
 		}
 	})
 }

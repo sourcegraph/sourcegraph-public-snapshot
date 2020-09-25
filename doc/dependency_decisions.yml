@@ -323,3 +323,8 @@
     :why: 
     :versions: []
     :when: 2020-08-12 08:03:13.360476000 Z
+- - :permit
+  - CC-BY-4.0
+  - :who:
+    :why: Used by caniuse-lite
+    :when: 2020-09-23 12:14:34.205000000 Z

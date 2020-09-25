@@ -133,10 +133,18 @@ func (s *repos) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (map[ap
 	return repoMap, nil
 }
 
-func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
+func (s *repos) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
 	}
+
+	tr, ctx := trace.New(ctx, "repos.Count", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.Finish()
+	}()
 
 	conds, err := s.listSQL(opt)
 	if err != nil {
@@ -144,6 +152,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	}
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE %s", sqlf.Join(conds, "AND"))
+	tr.LazyPrintf("SQL: %v", q.Query(sqlf.PostgresBindVar))
 
 	var count int
 	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {

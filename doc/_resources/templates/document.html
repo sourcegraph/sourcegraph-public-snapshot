@@ -9,7 +9,7 @@
 
 {{define "versionSelector"}}
     <div id="version-selector" class="dropdown version-dropdown ml-2">
-        {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.19.2"}} {{$previousReleaseVersion := "3.19"}} {{$currentReleaseRevspec := "v3.20.0"}} {{$currentReleaseVersion := "3.20"}} {{$nextReleaseVersion := "main"}}
+        {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.19.2"}} {{$previousReleaseVersion := "3.19"}} {{$currentReleaseRevspec := "v3.20.1"}} {{$currentReleaseVersion := "3.20"}} {{$nextReleaseVersion := "main"}}
         <button class="btn btn-outline dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           {{.ContentVersion}}{{/* If no version is specified we are on the currentReleaseVersion */}}{{if eq .ContentVersion ""}}{{$currentReleaseVersion}}{{end}}
         </button>
@@ -154,6 +154,7 @@
                                     </li>
                                     <li><a href="/admin/install/kubernetes">Installing Sourcegraph with Kubernetes</a></li>
                                     <li><a href="/admin/install/managed">Setting up a managed instance</a></li>
+                                    <li><a href="/admin/install/migrate-backup">Back up or migrate to a new Sourcegraph instance</a></li>
                                 </ul>
                             </li>
                             <li><a href="/admin/config">Configuring Sourcegraph</a></li>
