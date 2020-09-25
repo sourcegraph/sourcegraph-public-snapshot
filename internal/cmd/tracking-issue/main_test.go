@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
@@ -24,17 +26,47 @@ var (
 func TestIntegration(t *testing.T) {
 	ti := &TrackingIssue{
 		Issue: &Issue{
-			Number:    9917,
+			Number:    13987,
 			Milestone: "3.21",
 			Labels:    []string{"tracking", "team/code-intelligence"},
 		},
 	}
 
-	loadTrackingIssueFixtures(t, "sourcegraph", ti)
+	// Mock current time to be the last update
+	lastUpdate, err := getOrUpdateLastUpdateTime(*update)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err.Error())
+	}
+	now = func() time.Time { return lastUpdate }
 
+	loadTrackingIssueFixtures(t, "sourcegraph", ti)
 	got := ti.Workloads().Markdown(ti.LabelAllowlist)
-	path := filepath.Join("testdata", "issue.md")
-	testutil.AssertGolden(t, path, *update, got)
+	testutil.AssertGolden(t, filepath.Join("testdata", "issue.md"), *update, got)
+}
+
+func getOrUpdateLastUpdateTime(update bool) (time.Time, error) {
+	lastUpdateFile := filepath.Join("testdata", "last-update.txt")
+
+	if update {
+		now := time.Now().UTC()
+
+		if err := ioutil.WriteFile(
+			lastUpdateFile,
+			[]byte(now.Format(time.RFC3339)),
+			os.ModePerm,
+		); err != nil {
+			return time.Time{}, err
+		}
+
+		return now, nil
+	}
+
+	content, err := ioutil.ReadFile(lastUpdateFile)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Parse(time.RFC3339, string(content))
 }
 
 func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
@@ -50,7 +82,7 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 		)
 
 		var q strings.Builder
-		fmt.Fprintf(&q, "org:sourcegraph milestone:%s", issue.Milestone)
+		fmt.Fprintf(&q, "org:sourcegraph label:tracking is:open")
 		for _, label := range issue.Labels {
 			fmt.Fprintf(&q, " label:%s", label)
 		}
@@ -60,11 +92,16 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 			t.Fatal(err)
 		}
 
+		found := false
 		for _, ti := range tracking {
 			if ti.Number == issue.Number {
 				issue = ti
+				found = true
 				break
 			}
+		}
+		if !found {
+			t.Fatalf("unknown tracking issue %d\n", issue.Number)
 		}
 
 		err = loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})

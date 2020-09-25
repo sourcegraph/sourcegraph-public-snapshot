@@ -252,7 +252,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
             filtersInQuery: {},
-            splitSearchModes: true,
+            splitSearchModes: false,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
             copyQueryButton: false,
             versionContext: resolvedVersionContext,

@@ -4,6 +4,12 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
 <RecentSearchesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="recent-searches-panel"
@@ -104,6 +110,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   test
@@ -134,6 +141,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   r:sourcegraph
@@ -166,11 +174,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -218,11 +226,13 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
                   >
                     test
                   </a>
@@ -261,11 +271,13 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
                   >
                     r:sourcegraph
                   </a>
@@ -317,6 +329,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
   authenticatedUser={null}
   className=""
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="recent-searches-panel"
@@ -417,6 +435,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   test
@@ -447,6 +466,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   r:sourcegraph
@@ -477,6 +497,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   test
@@ -507,6 +528,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   r:sourcegraph
@@ -535,11 +557,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -587,11 +609,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
                   >
                     test
                   </a>
@@ -630,11 +654,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
                   >
                     r:sourcegraph
                   </a>
@@ -673,11 +699,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
                   >
                     test
                   </a>
@@ -716,11 +744,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
                   >
                     r:sourcegraph
                   </a>
@@ -755,6 +785,12 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
 <RecentSearchesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="recent-searches-panel"
@@ -855,6 +891,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   test
@@ -885,6 +922,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   r:sourcegraph
@@ -913,11 +951,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -965,11 +1003,13 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=test&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
                   >
                     test
                   </a>
@@ -1008,11 +1048,13 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <AnchorLink
                   className="text-monospace"
+                  onClick={[Function]}
                   to="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <a
                     className="text-monospace"
                     href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
                   >
                     r:sourcegraph
                   </a>

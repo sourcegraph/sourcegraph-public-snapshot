@@ -8,8 +8,6 @@ import { registerHighlightContributions } from '../../../../../shared/src/highli
 import { mount } from 'enzyme'
 import { NOOP_BREADCRUMB_SETTERS } from '../../../components/Breadcrumbs'
 
-jest.mock('../icons', () => ({ CampaignsIconWithBetaBadge: 'CampaignsIconWithBetaBadge' }))
-
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 
@@ -63,6 +61,7 @@ describe('CampaignDetailsPage', () => {
                     },
                 })
             }
+            queryChangesets={() => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })}
             deleteCampaign={() => Promise.resolve(undefined)}
             queryChangesetCountsOverTime={() => of([])}
             {...NOOP_BREADCRUMB_SETTERS}
