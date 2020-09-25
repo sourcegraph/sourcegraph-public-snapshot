@@ -61,7 +61,7 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
  *
  * @returns Subscription
  */
-function addSouregraphSearchCodeIntelligence(
+function addSourcegraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
@@ -247,6 +247,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             options={options}
                             border={false}
                             keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            className="test-query-input"
                         />
                     </div>
                     <Toggles
@@ -271,7 +272,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
         this.subscriptions.add(
-            addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
+            addSourcegraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
         )
     }
 

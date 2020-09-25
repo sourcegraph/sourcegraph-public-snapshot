@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -308,7 +309,7 @@ func deleteEverything() {
 
 func getRepositoryID(name string) string {
 	dsn := dbutil.PostgresDSN("sourcegraph", os.Getenv)
-	s, err := basestore.New(dsn, "campaigns-reconciler")
+	s, err := basestore.New(dsn, "campaigns-reconciler", sql.TxOptions{})
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}

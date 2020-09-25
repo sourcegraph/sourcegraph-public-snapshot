@@ -4,7 +4,7 @@
   "recommendations": [
     "EditorConfig.editorconfig",
     "esbenp.prettier-vscode",
-    "prisma.vscode-graphql",
+    "graphql.vscode-graphql",
     "golang.go",
     "exiasr.hadolint",
     "bierner.markdown-mermaid",

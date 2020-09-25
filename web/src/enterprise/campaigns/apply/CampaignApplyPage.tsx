@@ -79,7 +79,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 campaign={spec.appliesToCampaign}
                 viewerCanAdminister={spec.viewerCanAdminister}
             />
-            <CampaignDescription history={history} description={spec.description.description} className="mb-3" />
+            <CampaignDescription history={history} description={spec.description.description} />
             <ChangesetSpecList
                 campaignSpecID={specID}
                 history={history}
