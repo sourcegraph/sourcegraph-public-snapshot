@@ -61,7 +61,7 @@ describe('Blob viewer', () => {
             )
 
             // editor shows the return string content from Blob request
-            assert.strictEqual(blobContent, `content for: ${fileName}`)
+            assert.strictEqual(blobContent, `content for: ${fileName}\nsecond line\nthird line`)
 
             // collect all files/links visible the the "Files" tab
             const allFilesInTheTree = await driver.page.evaluate(() => {
