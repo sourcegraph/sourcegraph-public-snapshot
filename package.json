@@ -239,7 +239,7 @@
     "storybook-addon-designs": "^5.4.1",
     "string-width": "^4.2.0",
     "style-loader": "^1.2.1",
-    "stylelint": "^13.6.1",
+    "stylelint": "^13.7.2",
     "term-size": "^2.2.0",
     "terser-webpack-plugin": "^4.1.0",
     "thread-loader": "^2.1.3",
