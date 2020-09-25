@@ -392,6 +392,25 @@ func resolveRepoGroups(settings *schema.Settings) (groups map[string][]RepoGroup
 	return groups, nil
 }
 
+// repoGroupValuesToRegexp does a lookup of all repo groups by name and converts
+// their values to a list of regular expressions to search.
+func repoGroupValuesToRegexp(groupNames []string, groups map[string][]RepoGroupValue) []string {
+	var patterns []string
+	for _, groupName := range groupNames {
+		for _, value := range groups[groupName] {
+			switch v := value.(type) {
+			case RepoPath:
+				patterns = append(patterns, "^"+regexp.QuoteMeta(v.String())+"$")
+			case RepoRegexpPattern:
+				patterns = append(patterns, v.String())
+			default:
+				panic("unreachable")
+			}
+		}
+	}
+	return patterns
+}
+
 // NOTE: This function is not called if the version context is not used
 func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
 	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
@@ -792,19 +811,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		if err != nil {
 			return resolvedRepositories{}, err
 		}
-		var patterns []string
-		for _, groupName := range groupNames {
-			for _, value := range groups[groupName] {
-				switch v := value.(type) {
-				case RepoPath:
-					patterns = append(patterns, "^"+regexp.QuoteMeta(v.String())+"$")
-				case RepoRegexpPattern:
-					patterns = append(patterns, v.String())
-				default:
-					panic("unreachable")
-				}
-			}
-		}
+		patterns := repoGroupValuesToRegexp(groupNames, groups)
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
