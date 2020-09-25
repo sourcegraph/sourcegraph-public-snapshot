@@ -101,9 +101,9 @@ export const createSharedIntegrationTestContext = async <
         await mkdir(recordingsDirectory, { recursive: true })
     }
     const polly = new Polly(snakeCase(currentTest.title), {
-        adapters: ['puppeteer'],
+        adapters: ['cdp'],
         adapterOptions: {
-            puppeteer: {
+            cdp: {
                 page: driver.page,
             },
         },
