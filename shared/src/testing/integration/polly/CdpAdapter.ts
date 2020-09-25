@@ -12,6 +12,10 @@ function fromBase64(input: string): string {
     return Buffer.from(input, 'base64').toString()
 }
 
+export interface CdpAdapterOptions {
+    page: Puppeteer.Page
+}
+
 interface PollyResponse {
     statusCode: number
     headers: Record<string, string>
@@ -42,6 +46,11 @@ export class CdpAdapter extends PollyAdapter {
      * The adapter's ID, used to reference it in the Polly constructor.
      */
     public static readonly id = 'cdp'
+
+    /**
+     * `adapterOptions` passed to Polly.
+     */
+    public options!: CdpAdapterOptions
 
     /**
      * The puppeteer Page this adapter is attached to, obtained from
@@ -79,7 +88,7 @@ export class CdpAdapter extends PollyAdapter {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         super(polly)
-        this.page = this.options.page as Puppeteer.Page
+        this.page = this.options.page
     }
 
     /**

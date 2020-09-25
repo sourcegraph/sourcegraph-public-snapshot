@@ -101,22 +101,11 @@ export const createSharedIntegrationTestContext = async <
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
     }
-    const requestResourceTypes: ResourceType[] = [
-        'xhr',
-        'fetch',
-        'document',
-        'script',
-        'stylesheet',
-        'image',
-        'font',
-        'other', // Favicon
-    ]
     const polly = new Polly(snakeCase(currentTest.title), {
         adapters: ['puppeteer'],
         adapterOptions: {
             puppeteer: {
                 page: driver.page,
-                requestResourceTypes,
             },
         },
         persister: 'fs',
