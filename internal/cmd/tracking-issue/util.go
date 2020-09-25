@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Days(estimate string) float64 {
@@ -125,4 +127,22 @@ func contains(haystack []string, needle string) bool {
 	}
 
 	return false
+}
+
+// now returns the current time for relative formatting. This
+// is overwritten during tests to ensure that our output can be
+// byte-for-byte compared against the golden output file.
+var now = time.Now
+
+func formatTimeSince(t time.Time) string {
+	days := now().UTC().Sub(t.UTC()) / time.Hour / 24
+
+	switch days {
+	case 0:
+		return "today"
+	case 1:
+		return "1 day ago"
+	default:
+		return fmt.Sprintf("%d days ago", days)
+	}
 }
