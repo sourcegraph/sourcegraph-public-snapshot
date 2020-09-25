@@ -5,7 +5,7 @@ import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
 import { readFile, mkdir } from 'mz/fs'
 import { Polly, PollyServer } from '@pollyjs/core'
-import { CdpAdapter } from './polly/CdpAdapter'
+import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
 import { first, timeoutWith } from 'rxjs/operators'
@@ -100,16 +100,17 @@ export const createSharedIntegrationTestContext = async <
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
     }
+    const cdpAdapterOptions: CdpAdapterOptions = {
+        page: driver.page,
+    }
     const polly = new Polly(snakeCase(currentTest.title), {
-        adapters: ['cdp'],
+        adapters: [CdpAdapter.id],
         adapterOptions: {
-            cdp: {
-                page: driver.page,
-            },
+            [CdpAdapter.id]: cdpAdapterOptions,
         },
-        persister: 'fs',
+        persister: FSPersister.id,
         persisterOptions: {
-            fs: {
+            [FSPersister.id]: {
                 recordingsDir: recordingsDirectory,
             },
         },
