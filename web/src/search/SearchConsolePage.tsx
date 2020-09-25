@@ -8,7 +8,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike } from '../../../shared/src/util/errors'
-import { Toggles } from './input/toggles/Toggles'
 import { addSouregraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, of } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
@@ -92,13 +91,45 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         })
         return () => disposable.dispose()
     }, [editorInstance, searchQueries, props.history])
+
+    const calculateCount = (): number => {
+        // This function can only get called if the results were successfully loaded,
+        // so casting is the right thing to do here
+        const results = resultsOrError as GQL.ISearchResults
+
+        const parameters = new URLSearchParams(location.search)
+        const query = parameters.get('q') || ''
+
+        if (/count:(\d+)/.test(query)) {
+            return Math.max(results.matchCount * 2, 1000)
+        }
+        return Math.max(results.matchCount * 2 || 0, 1000)
+    }
+    const showMoreResults = (): void => {
+        // Requery with an increased max result count.
+        if (!editorInstance) {
+            return
+        }
+        let query = editorInstance.getValue()
+
+        const count = calculateCount()
+        if (/count:(\d+)/.test(query)) {
+            console.log(`count:${count}`)
+            query = query.replace(/count:\d+/g, '').trim() + ` count:${count}`
+        } else {
+            query = `${query} count:${count}`
+        }
+        editorInstance.setValue(query)
+        props.history.push('/search/console?q=' + encodeURI(query))
+    }
+
     return (
         <div className="w-100 p-2">
             <PageTitle title="Search console" />
             <div className="d-flex">
                 <div className="flex-1 p-1">
                     <div className="mb-1 d-flex align-items-center justify-content-between">
-                        <Toggles {...props} copyQueryButton={false} navbarSearchQuery={searchQueries.value} />
+                        <div />
                         <button className="btn btn-primary" type="button" onClick={nextSearch}>
                             Search
                         </button>
@@ -117,8 +148,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     {resultsOrError &&
                         (resultsOrError === 'loading' ? (
                             <LoadingSpinner />
-                        ) : (
-                            <SearchResultsList {...props} resultsOrError={resultsOrError} />
+                        ) : (        
+                            <SearchResultsList {...props} resultsOrError={resultsOrError} onShowMoreResultsClick={showMoreResults}/>
                         ))}
                 </div>
             </div>
