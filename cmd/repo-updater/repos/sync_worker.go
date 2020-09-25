@@ -23,7 +23,7 @@ import (
 
 // NewSyncWorker creates a new external service sync worker.
 func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, numHandlers int) *workerutil.Worker {
-	dbHandle := basestore.NewHandleWithDB(db)
+	dbHandle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 
 	syncJobColumns := append(store.DefaultColumnExpressions(), []*sqlf.Query{
 		sqlf.Sprintf("external_service_id"),

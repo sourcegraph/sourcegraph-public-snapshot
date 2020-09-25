@@ -3,5 +3,8 @@
   "experimentalFeatures": {
     "showRepogroupHomepage": true,
     "showEnterpriseHomePanels": true
+  },
+  "search.repositoryGroups": {
+    "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
   }
 }

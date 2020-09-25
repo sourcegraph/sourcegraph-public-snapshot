@@ -1001,9 +1001,9 @@ type SMTPServerConfig struct {
 
 // SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 type SearchLimits struct {
-	// CommitDiffMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when "after:" or "before:" is specified since those queries are faster. Value must be positive. Defaults to 50.
+	// CommitDiffMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit". The user is prompted to narrow their query if the limit is exceeded. There is a separate limit (commitDiffWithTimeFilterMaxRepos) when "after:" or "before:" is specified because those queries are faster. Defaults to 50.
 	CommitDiffMaxRepos int `json:"commitDiffMaxRepos,omitempty"`
-	// CommitDiffWithTimeFilterMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit" with a "after:" or "before:" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when "after:" or "before:" is not specified since those queries are slower. Value must be positive. Defaults to 10000.
+	// CommitDiffWithTimeFilterMaxRepos description: The maximum number of repositories to search across when doing a "type:diff" or "type:commit" with a "after:" or "before:" filter. The user is prompted to narrow their query if the limit is exceeded. There is a separate limit (commitDiffMaxRepos) when "after:" or "before:" is not specified because those queries are slower. Defaults to 10000.
 	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
 	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxRepos int `json:"maxRepos,omitempty"`
@@ -1025,12 +1025,6 @@ type SearchSavedQueries struct {
 	ShowOnHomepage bool `json:"showOnHomepage,omitempty"`
 }
 type SearchScope struct {
-	// Description description: A description for this search scope
-	Description string `json:"description,omitempty"`
-	// Id description: A unique identifier for the search scope.
-	//
-	// If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
-	Id string `json:"id,omitempty"`
 	// Name description: The human-readable name for this search scope
 	Name string `json:"name"`
 	// Value description: The query string of this search scope

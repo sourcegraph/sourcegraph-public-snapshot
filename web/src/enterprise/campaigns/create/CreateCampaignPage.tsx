@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIcon } from '../icons'
+import { CampaignsFlushEdgesIcon } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
@@ -9,7 +9,7 @@ import combySample from './samples/comby.campaign.yaml'
 import goImportsSample from './samples/go-imports.campaign.yaml'
 import minimalSample from './samples/minimal.campaign.yaml'
 import classNames from 'classnames'
-import { highlightCodeSafe } from '../../../../../shared/src/util/markdown'
+import { CodeSnippet } from '../../../components/CodeSnippet'
 
 interface SampleTabHeaderProps {
     sample: Sample
@@ -47,7 +47,7 @@ const samples: Sample[] = [
 ]
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
-    authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'username'>
 }
 
 export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
@@ -55,15 +55,12 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
     useBreadcrumb,
 }) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
-    const highlightedSample = useMemo(() => ({ __html: highlightCodeSafe(selectedSample.file, 'yaml') }), [
-        selectedSample.file,
-    ])
     useBreadcrumb(useMemo(() => ({ element: <>Create campaign</>, key: 'createCampaignPage' }), []))
     return (
         <>
             <PageTitle title="Create campaign" />
             <PageHeader
-                icon={CampaignsIcon}
+                icon={CampaignsFlushEdgesIcon}
                 title={
                     <>
                         Create campaign{' '}
@@ -98,9 +95,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                         />
                     ))}
                 </ul>
-                <div className="p-3 mb-4 border">
-                    <pre className="m-0" dangerouslySetInnerHTML={highlightedSample} />
-                </div>
+                <CodeSnippet code={selectedSample.file} language="yaml" className="mb-4" />
                 <h2>2. Preview the campaign with Sourcegraph CLI</h2>
                 <p>
                     Use the{' '}
@@ -109,18 +104,17 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     </a>{' '}
                     to preview the commits and changesets that your campaign will make:
                 </p>
-                <pre className="">
-                    <code>
-                        src campaign preview -namespace {authenticatedUser ? authenticatedUser.username : 'NAMESPACE'}{' '}
-                        -f {selectedSample.name}
-                    </code>
-                </pre>
+                <CodeSnippet
+                    code={`src campaign preview -namespace ${authenticatedUser.username} -f ${selectedSample.name}`}
+                    language="shell"
+                    className="mb-3"
+                />
                 <p>
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the
                     campaign.
                 </p>
-                <hr className="mt-5" />
-                <p className="mt-2 text-muted">
+                <hr className="mt-4" />
+                <p className="text-muted">
                     Want more help? See{' '}
                     <a href="/help/user/campaigns" rel="noopener noreferrer" target="_blank">
                         campaigns documentation
