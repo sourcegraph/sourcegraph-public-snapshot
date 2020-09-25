@@ -2326,14 +2326,6 @@
   dependencies:
     esquery "^1.0.1"
 
-"@pollyjs/adapter-puppeteer@^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/@pollyjs/adapter-puppeteer/-/adapter-puppeteer-5.0.0.tgz#cca1d4a553af1287768dc2d6b3ed6371530dc219"
-  integrity sha512-f/DkOULohx1F7by8jWK3dPRzk2VDOvJFxscy7X5YDNwvccOPuyhpsU5Dmde/sgWRYbfUUzAarc7cVgRnTYbhow==
-  dependencies:
-    "@pollyjs/adapter" "^5.0.0"
-    "@pollyjs/utils" "^5.0.0"
-
 "@pollyjs/adapter@^5.0.0":
   version "5.0.0"
   resolved "https://registry.npmjs.org/@pollyjs/adapter/-/adapter-5.0.0.tgz#faba5a7e68db38f56b4bf04271d8f5a10d5ca8c2"
@@ -2728,7 +2720,8 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.1.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -4030,13 +4023,6 @@
   version "4.0.0"
   resolved "https://registry.npmjs.org/@types/parse-json/-/parse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
-
-"@types/pollyjs__adapter-puppeteer@4.0.0":
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/@types/pollyjs__adapter-puppeteer/-/pollyjs__adapter-puppeteer-4.0.0.tgz#623dd5e2d856a3493818fc370bb1c6cff93ed9ee"
-  integrity sha512-THiFFO0YBul02lPZSZQvfy6Uzo2VmXSM1QoL6H8EFRdZaFZETfdESir3wF5Hs8Pw0ChJiTluDlp6FdEgZ9Rzyw==
-  dependencies:
-    "@types/pollyjs__adapter" "*"
 
 "@types/pollyjs__adapter@*":
   version "4.3.0"
@@ -20884,7 +20870,8 @@ sourcegraph@^24.0.0:
   integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "24.7.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
