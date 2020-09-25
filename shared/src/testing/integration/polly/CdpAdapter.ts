@@ -39,6 +39,11 @@ interface PollyPromise extends Promise<PollyResponse> {
  */
 export class CdpAdapter extends PollyAdapter {
     /**
+     * The adapter's ID, used to reference it in the Polly constructor.
+     */
+    public static readonly id = 'cdp'
+
+    /**
      * The puppeteer Page this adapter is attached to, obtained from
      * options passed to the Polly constructor.
      */
@@ -66,13 +71,6 @@ export class CdpAdapter extends PollyAdapter {
             reject: (error: any) => void
         }
     >()
-
-    /**
-     * The adapter's ID, used to reference it in the Polly constructor.
-     */
-    public static get id(): string {
-        return 'puppeteer'
-    }
 
     constructor(polly: Polly) {
         // Rationale for the following ts-ignore:
