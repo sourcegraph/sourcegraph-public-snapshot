@@ -86,9 +86,8 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		if err != nil {
 			return s
 		}
-		u.Scheme = ""
 		u.User = nil
-		return strings.Replace(strings.Replace(u.String(), "//", "", 1), "/", ":", 1)
+		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
 	}
 
 	{
