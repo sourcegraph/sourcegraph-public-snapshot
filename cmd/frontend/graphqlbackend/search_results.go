@@ -1796,6 +1796,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if r.isGlobalSearch() && isFileOrPath() {
+		// to protect us from regression, we explicitly create a child context which is
+		// canceled if we return from doResults
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
