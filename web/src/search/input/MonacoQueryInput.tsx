@@ -365,14 +365,16 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                         if (
                             isCurrentTourStep('filter-repository', tour) &&
                             tour.getById('filter-repository').isOpen() &&
-                            queryState.query !== 'repo:'
+                            queryState.query !== 'repo:' &&
+                            queryState.query.endsWith(' ')
                         ) {
                             advanceRepoStep(this.props.queryState.query, tour)
                         } else if (
                             isCurrentTourStep('filter-lang', tour) &&
                             tour.getById('filter-lang').isOpen() &&
                             queryState.query !== 'lang:' &&
-                            isValidLangQuery(queryState.query.trim())
+                            isValidLangQuery(queryState.query.trim()) &&
+                            queryState.query.endsWith(' ')
                         ) {
                             advanceLangStep(this.props.queryState.query, tour)
                         }
