@@ -8,7 +8,7 @@ Users can also always submit (or re-submit) this survey by visiting `https://sou
 
 ## View survey responses
 
-Responses to this survey are visible to all site admins on the Sourcegraph instance. View all responses on the **Site admin > User surveys** page. (The URL is `https://sourcegraph.example.com/site-admin/surveys`.)
+Responses to this survey are visible to all site admins on the Sourcegraph instance. View all responses by navigating to **Site admin > Feedback surveys**. (The URL is `https://sourcegraph.example.com/site-admin/surveys`.)
 
 On this page, admins can view individual satisfaction scores (from 0–10) and individual qualitative feedback, along with aggregate historical scores.
 
