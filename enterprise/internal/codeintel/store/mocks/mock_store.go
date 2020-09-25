@@ -81,6 +81,9 @@ type MockStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *StoreHandleFunc
+	// HardDeleteUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method HardDeleteUploadByID.
+	HardDeleteUploadByIDFunc *StoreHardDeleteUploadByIDFunc
 	// HasCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method HasCommit.
 	HasCommitFunc *StoreHasCommitFunc
@@ -278,6 +281,11 @@ func NewMockStore() *MockStore {
 		},
 		HandleFunc: &StoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
+				return nil
+			},
+		},
+		HardDeleteUploadByIDFunc: &StoreHardDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) error {
 				return nil
 			},
 		},
@@ -495,6 +503,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		HandleFunc: &StoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		HardDeleteUploadByIDFunc: &StoreHardDeleteUploadByIDFunc{
+			defaultHook: i.HardDeleteUploadByID,
 		},
 		HasCommitFunc: &StoreHasCommitFunc{
 			defaultHook: i.HasCommit,
@@ -2907,6 +2918,112 @@ func (c StoreHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreHardDeleteUploadByIDFunc describes the behavior when the
+// HardDeleteUploadByID method of the parent MockStore instance is invoked.
+type StoreHardDeleteUploadByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []StoreHardDeleteUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// HardDeleteUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) HardDeleteUploadByID(v0 context.Context, v1 int) error {
+	r0 := m.HardDeleteUploadByIDFunc.nextHook()(v0, v1)
+	m.HardDeleteUploadByIDFunc.appendCall(StoreHardDeleteUploadByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the HardDeleteUploadByID
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreHardDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HardDeleteUploadByID method of the parent MockStore instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreHardDeleteUploadByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreHardDeleteUploadByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreHardDeleteUploadByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *StoreHardDeleteUploadByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreHardDeleteUploadByIDFunc) appendCall(r0 StoreHardDeleteUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreHardDeleteUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *StoreHardDeleteUploadByIDFunc) History() []StoreHardDeleteUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreHardDeleteUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreHardDeleteUploadByIDFuncCall is an object that describes an
+// invocation of method HardDeleteUploadByID on an instance of MockStore.
+type StoreHardDeleteUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreHardDeleteUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreHardDeleteUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
