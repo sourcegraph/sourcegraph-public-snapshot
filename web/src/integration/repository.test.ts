@@ -454,7 +454,8 @@ describe('Repository', () => {
                 fileName
             )
 
-            await driver.page.click('.test-tree-file-link')
+            // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
+            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
             await driver.page.waitForSelector('.test-repo-blob')
 
             await driver.page.waitForSelector('.test-breadcrumb')
