@@ -45,7 +45,9 @@ export class CdpAdapter extends PollyAdapter {
     /**
      * The adapter's ID, used to reference it in the Polly constructor.
      */
-    public static readonly id = 'cdp'
+    public static get id(): string {
+        return 'cdp'
+    }
 
     /**
      * `adapterOptions` passed to Polly.
@@ -199,7 +201,12 @@ export class CdpAdapter extends PollyAdapter {
             await this.cdpSession?.send(cdpRequestName, request)
         } catch (error) {
             // TODO: also ignore "target closed" error
-            if (isErrorLike(error) && error.message.endsWith('Session closed. Most likely the page has been closed.')) {
+            if (
+                isErrorLike(error) &&
+                (error.message.endsWith('Session closed. Most likely the page has been closed.') ||
+                    // Invalid interceptionId probably means the request has been aborted.
+                    error.message.includes('Invalid InterceptionId'))
+            ) {
                 return
             }
             throw error
