@@ -10,6 +10,14 @@ $list-group-action-active-bg: $color-bg-5;
 
 @import 'bootstrap/scss/list-group';
 
+.list-group-item {
+    &:hover,
+    &:focus,
+    &.active {
+        z-index: auto;
+    }
+}
+
 .theme-light {
     .list-group-item {
         border-color: $color-light-border;
