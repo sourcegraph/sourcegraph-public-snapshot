@@ -108,7 +108,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: LANGUAGES,
     },
     [FilterType.message]: {
-        description: 'Commits with messages matching a certain string',
+        negatable: true,
+        description: negated =>
+            `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
     },
     [FilterType.patterntype]: {
         discreteValues: ['regexp', 'literal', 'structural'],
