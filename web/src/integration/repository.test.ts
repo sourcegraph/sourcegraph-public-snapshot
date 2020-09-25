@@ -454,6 +454,7 @@ describe('Repository', () => {
                 fileName
             )
 
+            console.log('Clicking link in file tree')
             await driver.page.click('.test-tree-file-link')
             await driver.page.waitForSelector('.test-repo-blob')
 
