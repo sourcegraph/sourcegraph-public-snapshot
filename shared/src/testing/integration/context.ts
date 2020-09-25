@@ -15,7 +15,6 @@ import * as prettier from 'prettier'
 import { keyExistsIn } from '../../util/types'
 import { IGraphQLResponseError } from '../../graphql/schema'
 import { readEnvironmentBoolean } from '../utils'
-import { ResourceType } from 'puppeteer'
 import * as mime from 'mime-types'
 import { asError } from '../../util/errors'
 
