@@ -63,7 +63,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.author]: {
-        description: 'The author of a commit',
+        negatable: true,
+        description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
         description: 'Commits made before a certain date',
