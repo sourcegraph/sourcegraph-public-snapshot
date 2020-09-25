@@ -12,6 +12,10 @@ function fromBase64(input: string): string {
     return Buffer.from(input, 'base64').toString()
 }
 
+export interface CdpAdapterOptions {
+    page: Puppeteer.Page
+}
+
 interface PollyResponse {
     statusCode: number
     headers: Record<string, string>
@@ -39,6 +43,18 @@ interface PollyPromise extends Promise<PollyResponse> {
  */
 export class CdpAdapter extends PollyAdapter {
     /**
+     * The adapter's ID, used to reference it in the Polly constructor.
+     */
+    public static get id(): string {
+        return 'cdp'
+    }
+
+    /**
+     * `adapterOptions` passed to Polly.
+     */
+    public options!: CdpAdapterOptions
+
+    /**
      * The puppeteer Page this adapter is attached to, obtained from
      * options passed to the Polly constructor.
      */
@@ -51,7 +67,7 @@ export class CdpAdapter extends PollyAdapter {
     private pendingRequests = new Map<string, PollyPromise>()
 
     /**
-     * TODO: write doc comment
+     * The CDP session used to control request interception in the browser.
      */
     private cdpSession?: Puppeteer.CDPSession
 
@@ -67,13 +83,6 @@ export class CdpAdapter extends PollyAdapter {
         }
     >()
 
-    /**
-     * The adapter's ID, used to reference it in the Polly constructor.
-     */
-    public static get id(): string {
-        return 'puppeteer'
-    }
-
     constructor(polly: Polly) {
         // Rationale for the following ts-ignore:
         // The type declaration provided for Polly's Adapter is missing the
@@ -81,7 +90,7 @@ export class CdpAdapter extends PollyAdapter {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         super(polly)
-        this.page = this.options.page as Puppeteer.Page
+        this.page = this.options.page
     }
 
     /**
@@ -89,7 +98,6 @@ export class CdpAdapter extends PollyAdapter {
      * interception using the CDP "Fetch domain".
      */
     public async onConnect(): Promise<void> {
-        console.log('CDP adapter connecting')
         this.cdpSession = await this.page.target().createCDPSession()
 
         // TODO: This is where we narrow down the interception with patterns.
@@ -114,7 +122,6 @@ export class CdpAdapter extends PollyAdapter {
      * Called when disconnecting from a Puppeteer.page.
      */
     public async onDisconnect(): Promise<void> {
-        console.log('CDP adapter disconnecting')
         await this.trySendCdpRequest('Fetch.disable')
     }
 
@@ -156,7 +163,7 @@ export class CdpAdapter extends PollyAdapter {
             // Fulfill by converting the Polly response to a CDP response
             const cdpRequestToFulfill = {
                 requestId,
-                responseCode: 200, // statusCode,
+                responseCode: pollyResponse.statusCode,
                 responseHeaders: headerObjectToHeaderEntries(headers),
                 body: toBase64(body),
             }
@@ -194,7 +201,12 @@ export class CdpAdapter extends PollyAdapter {
             await this.cdpSession?.send(cdpRequestName, request)
         } catch (error) {
             // TODO: also ignore "target closed" error
-            if (isErrorLike(error) && error.message.endsWith('Session closed. Most likely the page has been closed.')) {
+            if (
+                isErrorLike(error) &&
+                (error.message.endsWith('Session closed. Most likely the page has been closed.') ||
+                    // Invalid interceptionId probably means the request has been aborted.
+                    error.message.includes('Invalid InterceptionId'))
+            ) {
                 return
             }
             throw error
