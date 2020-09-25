@@ -127,11 +127,11 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -353,11 +353,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -674,11 +674,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -977,11 +977,11 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
