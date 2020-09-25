@@ -1,5 +1,6 @@
 import React from 'react'
 import { ModalContainer } from '../components/ModalContainer'
+import { splitExtensionID } from './extension/extension'
 
 /**
  * A modal confirmation prompt to the user confirming whether to add an extension.
@@ -9,7 +10,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
     givePermission: () => void
     denyPermission: () => void
 }> = ({ extensionID, denyPermission, givePermission }) => {
-    const extensionName = extensionID.split('/')[1]
+    const { name } = splitExtensionID(extensionID)
 
     return (
         <ModalContainer className="justify-content-center" onClose={denyPermission} hideCloseIcon={true}>
@@ -18,7 +19,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
                     className="extension-permission-modal p-4"
                     ref={bodyReference as React.MutableRefObject<HTMLDivElement>}
                 >
-                    <h3>Add {extensionName || extensionID} Sourcegraph extension?</h3>
+                    <h3>Add {name || extensionID} Sourcegraph extension?</h3>
                     <p className="mb-0 mt-3">It will be able to:</p>
                     <ul className="list-dashed">
                         <li className="m-0">read repositories and files you view using Sourcegraph</li>
@@ -29,7 +30,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
                             Cancel
                         </button>
                         <button type="button" className="btn btn-primary" onClick={givePermission}>
-                            Yes, add {extensionName || extensionID}!
+                            Yes, add {name || extensionID}!
                         </button>
                     </div>
                 </div>

@@ -22,6 +22,7 @@ import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { splitExtensionID } from './extension'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -130,7 +131,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         // Set breadcrumb
         const { extensionID } = this.props.match.params
 
-        const [publisher, name] = extensionID.split('/')
+        const { publisher, name } = splitExtensionID(extensionID)
 
         this.subscriptions.add(
             this.props.setBreadcrumb({
