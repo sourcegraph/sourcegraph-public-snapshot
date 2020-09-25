@@ -35,6 +35,12 @@ const SettingsSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "searchStreaming": {
+          "description": "Enables experimental streaming support.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "showBadgeAttachments": {
           "description": "Enables the UI indicators for code intelligence precision.",
           "type": "boolean",
@@ -109,12 +115,6 @@ const SettingsSchemaJSON = `{
       "default": false,
       "!go": { "pointer": true }
     },
-    "search.streaming": {
-      "description": "Enables experimental streaming support.",
-      "type": "boolean",
-      "default": false,
-      "!go": { "pointer": true }
-    },
     "search.scopes": {
       "description": "Predefined search scopes",
       "type": "array",
@@ -123,11 +123,11 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.repositoryGroups": {
-      "description": "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+      "description": "Named groups of repositories that can be referenced in a search query using the ` + "`" + `repogroup:` + "`" + ` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression).",
       "type": "object",
       "additionalProperties": {
         "type": "array",
-        "items": { "type": "string" }
+        "items": { "anyOf": [{ "type": "object", "required": ["regex"] }, { "type": "string" }] }
       }
     },
     "search.contextLines": {

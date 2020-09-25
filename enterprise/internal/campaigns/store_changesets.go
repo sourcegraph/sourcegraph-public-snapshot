@@ -52,6 +52,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.finished_at"),
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
+	sqlf.Sprintf("changesets.num_failures"),
 	sqlf.Sprintf("changesets.unsynced"),
 	sqlf.Sprintf("changesets.closing"),
 }
@@ -88,6 +89,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("finished_at"),
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
 	sqlf.Sprintf("unsynced"),
 	sqlf.Sprintf("closing"),
 }
@@ -139,6 +141,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullTimeColumn(c.FinishedAt),
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
+		c.NumFailures,
 		c.Unsynced,
 		c.Closing,
 	}
@@ -173,7 +176,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -193,7 +196,7 @@ type CountChangesetsOpts struct {
 	ExternalState       *campaigns.ChangesetExternalState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
-	ReconcilerState     *campaigns.ReconcilerState
+	ReconcilerStates    []campaigns.ReconcilerState
 	OwnedByCampaignID   int64
 }
 
@@ -227,9 +230,12 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
-	if opts.ReconcilerState != nil {
-		state := (*opts.ReconcilerState).ToDB()
-		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", state))
+	if len(opts.ReconcilerStates) != 0 {
+		states := make([]*sqlf.Query, len(opts.ReconcilerStates))
+		for i, reconcilerState := range opts.ReconcilerStates {
+			states[i] = sqlf.Sprintf("%s", reconcilerState.ToDB())
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
@@ -379,7 +385,7 @@ type ListChangesetsOpts struct {
 	IDs                  []int64
 	WithoutDeleted       bool
 	PublicationState     *campaigns.ChangesetPublicationState
-	ReconcilerState      *campaigns.ReconcilerState
+	ReconcilerStates     []campaigns.ReconcilerState
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
@@ -444,8 +450,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.PublicationState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
 	}
-	if opts.ReconcilerState != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", (*opts.ReconcilerState).ToDB()))
+	if len(opts.ReconcilerStates) != 0 {
+		states := make([]*sqlf.Query, len(opts.ReconcilerStates))
+		for i, reconcilerState := range opts.ReconcilerStates {
+			states[i] = sqlf.Sprintf("%s", reconcilerState.ToDB())
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
@@ -488,7 +498,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -536,9 +546,9 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		reconcilerMaxNumResets,
+		reconcilerMaxNumRetries,
 		canceledChangesetFailureMessage,
-		reconcilerMaxNumResets,
+		reconcilerMaxNumRetries,
 	)
 	return s.Store.Exec(ctx, q)
 }
@@ -552,7 +562,7 @@ WITH changeset_ids AS (
   AND
     (reconciler_state = 'queued' OR
 	 reconciler_state = 'processing' OR
-	 (reconciler_state = 'errored' AND num_resets < %d))
+	 (reconciler_state = 'errored' AND num_failures < %d))
   FOR UPDATE
 )
 UPDATE
@@ -560,7 +570,7 @@ UPDATE
 SET
   reconciler_state = 'errored',
   failure_message = %s,
-  num_resets = %d
+  num_failures = %d
 WHERE id IN (SELECT id FROM changeset_ids);
 `
 
@@ -589,7 +599,7 @@ UPDATE
 SET
   reconciler_state = 'queued',
   failure_message = NULL,
-  num_resets = 0,
+  num_failures = 0,
   closing = TRUE
 WHERE
   owned_by_campaign_id = %d
@@ -668,6 +678,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.FinishedAt},
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
+		&t.NumFailures,
 		&t.Unsynced,
 		&t.Closing,
 	)

@@ -10,7 +10,7 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
 fi
 
 # Warn if dev-private needs to be updated.
-required_commit="ce8181197b942853068d82c04b21963bdc745a2a"
+required_commit="a661975799edd759b3d6e4c4027e69a9727bdffb"
 if ! git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor $required_commit HEAD; then
   echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/commit/$required_commit."
   echo
@@ -44,6 +44,7 @@ export PRECISE_CODE_INTEL_EXTERNAL_URL_FROM_DOCKER=http://host.docker.internal:3
 export PRECISE_CODE_INTEL_INDEX_MANAGER_URL=http://localhost:3189
 export PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN=hunter2
 export PRECISE_CODE_INTEL_USE_FIRECRACKER=false
+export PRECISE_CODE_INTEL_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-indexer-vm precise-code-intel-worker "

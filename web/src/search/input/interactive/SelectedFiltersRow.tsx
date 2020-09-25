@@ -3,6 +3,7 @@ import { FilterInput } from './FilterInput'
 import { QueryState } from '../../helpers'
 import { FilterType } from '../../../../../shared/src/search/interactive/util'
 import { InteractiveSearchProps } from '../..'
+import classNames from 'classnames'
 
 interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
@@ -36,14 +37,11 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     toggleFilterNegated: (filterKey: string) => void
 
     /**
-     * Whether we're on the search homepage.
-     */
-    isHomepage: boolean
-
-    /**
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
+
+    emptyClassName?: string
 }
 
 /**
@@ -57,37 +55,32 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     onFilterDeleted,
     toggleFilterEditable,
     toggleFilterNegated,
-    isHomepage,
     globbing,
+    emptyClassName = '',
 }) => {
     const filterKeys = Object.keys(filtersInQuery)
     return (
-        <>
-            {filterKeys.length > 0 && (
-                <div className={`selected-filters-row ${isHomepage ? 'selected-filters-row--homepage' : ''}`}>
-                    {filtersInQuery &&
-                        filterKeys.map(field => (
-                            /** Replace this with new input component, which can be an input when editable, and button when non-editable */
-                            <FilterInput
-                                globbing={globbing}
-                                key={field}
-                                mapKey={field}
-                                filterType={filtersInQuery[field].type as Exclude<FilterType, FilterType.patterntype>}
-                                value={filtersInQuery[field].value}
-                                editable={filtersInQuery[field].editable}
-                                negated={filtersInQuery[field].negated}
-                                filtersInQuery={filtersInQuery}
-                                navbarQuery={navbarQuery}
-                                isHomepage={isHomepage}
-                                onSubmit={onSubmit}
-                                onFilterDeleted={onFilterDeleted}
-                                onFilterEdited={onFilterEdited}
-                                toggleFilterEditable={toggleFilterEditable}
-                                toggleFilterNegated={toggleFilterNegated}
-                            />
-                        ))}
-                </div>
-            )}
-        </>
+        <div className={classNames('selected-filters-row', { [emptyClassName]: filterKeys.length === 0 })}>
+            {filtersInQuery &&
+                filterKeys.map(field => (
+                    /** Replace this with new input component, which can be an input when editable, and button when non-editable */
+                    <FilterInput
+                        globbing={globbing}
+                        key={field}
+                        mapKey={field}
+                        filterType={filtersInQuery[field].type as Exclude<FilterType, FilterType.patterntype>}
+                        value={filtersInQuery[field].value}
+                        editable={filtersInQuery[field].editable}
+                        negated={filtersInQuery[field].negated}
+                        filtersInQuery={filtersInQuery}
+                        navbarQuery={navbarQuery}
+                        onSubmit={onSubmit}
+                        onFilterDeleted={onFilterDeleted}
+                        onFilterEdited={onFilterEdited}
+                        toggleFilterEditable={toggleFilterEditable}
+                        toggleFilterNegated={toggleFilterNegated}
+                    />
+                ))}
+        </div>
     )
 }

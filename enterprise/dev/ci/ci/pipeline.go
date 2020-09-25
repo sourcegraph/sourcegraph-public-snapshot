@@ -131,6 +131,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		pipelineOperations = []func(*bk.Pipeline){
 			triggerE2E(c, env),
 			addBackendIntegrationTests(c), // ~11m
+			addDockerImages(c, false),     // ~8m
 			addLint,                       // ~4.5m
 			addSharedTests(c),             // ~4.5m
 			addWebApp,                     // ~3m
@@ -140,7 +141,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoBuild,                    // ~0.5m
 			addPostgresBackcompat,         // ~0.25m
 			addDockerfileLint,             // ~0.2m
-			addDockerImages(c, false),
 			wait,
 			addDockerImages(c, true),
 		}

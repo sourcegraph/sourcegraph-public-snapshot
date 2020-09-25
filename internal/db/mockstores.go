@@ -25,4 +25,6 @@ type MockStores struct {
 	Authz MockAuthz
 
 	Secrets MockSecrets
+
+	GetNamespaceByName func(name string) (*Namespace, error)
 }

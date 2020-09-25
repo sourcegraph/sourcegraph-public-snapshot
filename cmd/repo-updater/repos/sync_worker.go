@@ -38,8 +38,8 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
 		// Zero for now as we expect errors to be transient
-		// TODO: Confirm whether this means 0 or infinite retries
-		MaxNumResets: 0,
+		MaxNumResets:  0,
+		MaxNumRetries: 0,
 	})
 
 	return dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
@@ -90,6 +90,7 @@ func scanSyncJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 			&job.FinishedAt,
 			&job.ProcessAfter,
 			&job.NumResets,
+			&job.NumFailures,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
 		); err != nil {
@@ -109,6 +110,7 @@ type SyncJob struct {
 	FinishedAt        sql.NullTime
 	ProcessAfter      sql.NullTime
 	NumResets         int
+	NumFailures       int
 	ExternalServiceID int64
 	NextSyncAt        sql.NullTime
 }

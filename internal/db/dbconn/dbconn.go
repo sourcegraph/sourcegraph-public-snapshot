@@ -29,38 +29,47 @@ import (
 
 var (
 	// Global is the global DB connection.
-	// Only use this after a call to ConnectToDB.
+	// Only use this after a call to SetupGlobalConnection.
 	Global *sql.DB
 
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 )
 
-// ConnectToDB connects to the given DB and stores the handle globally.
+// SetupGlobalConnection connects to the given data source and stores the handle
+// globally.
 //
 // Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func ConnectToDB(dataSource string) error {
+func SetupGlobalConnection(dataSource string) (err error) {
+	Global, err = New(dataSource, "_app")
+	return err
+}
+
+// New connects to the given data source and returns the handle.
+//
+// Note: github.com/lib/pq parses the environment as well. This function will
+// also use the value of PGDATASOURCE if supplied and dataSource is the empty
+// string.
+func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 	// Force PostgreSQL session timezone to UTC.
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
 	}
 	if err := os.Setenv("PGTZ", "UTC"); err != nil {
-		return errors.Wrap(err, "Error setting PGTZ=UTC")
+		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
 	connectionString := buildConnectionString(dataSource)
 
-	var err error
-	Global, err = openDBWithStartupWait(connectionString)
+	db, err := openDBWithStartupWait(connectionString)
 	if err != nil {
-		return errors.Wrap(err, "DB not available")
+		return nil, errors.Wrap(err, "DB not available")
 	}
-	registerPrometheusCollector(Global, "_app")
-	configureConnectionPool(Global)
-
-	return nil
+	registerPrometheusCollector(db, dbNameSuffix)
+	configureConnectionPool(db)
+	return db, nil
 }
 
 func MigrateDB(db *sql.DB, dataSource string) error {

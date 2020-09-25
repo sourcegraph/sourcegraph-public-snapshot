@@ -49,6 +49,7 @@ export function experimentalFeaturesFromSettings(
 ): {
     splitSearchModes: boolean
     copyQueryButton: boolean
+    searchStreaming: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
@@ -60,10 +61,18 @@ export function experimentalFeaturesFromSettings(
     const {
         splitSearchModes = true,
         copyQueryButton = false,
+        searchStreaming = false,
         showRepogroupHomepage = false,
         showOnboardingTour = false,
         showEnterpriseHomePanels = false,
     } = experimentalFeatures
 
-    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour, showEnterpriseHomePanels }
+    return {
+        splitSearchModes,
+        copyQueryButton,
+        searchStreaming,
+        showRepogroupHomepage,
+        showOnboardingTour,
+        showEnterpriseHomePanels,
+    }
 }

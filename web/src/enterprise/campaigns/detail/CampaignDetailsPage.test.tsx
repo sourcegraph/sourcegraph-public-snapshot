@@ -8,6 +8,8 @@ import { registerHighlightContributions } from '../../../../../shared/src/highli
 import { mount } from 'enzyme'
 import { NOOP_BREADCRUMB_SETTERS } from '../../../components/Breadcrumbs'
 
+jest.mock('../icons', () => ({ CampaignsIconWithBetaBadge: 'CampaignsIconWithBetaBadge' }))
+
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 

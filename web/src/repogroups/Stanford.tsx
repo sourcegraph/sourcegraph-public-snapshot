@@ -73,5 +73,5 @@ export const stanford: RepogroupMetadata = {
     ],
     homepageDescription: 'Explore Stanford open-source code.',
     homepageIcon:
-        'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/Stanford_University_seal_2003.svg/1200px-Stanford_University_seal_2003.svg.png',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png',
 }

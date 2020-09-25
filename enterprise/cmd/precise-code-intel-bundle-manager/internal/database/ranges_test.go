@@ -1,7 +1,7 @@
 package database
 
 import (
-	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -44,7 +44,7 @@ func TestFindRanges(t *testing.T) {
 
 	m := map[types.ID]types.RangeData{}
 	for i, r := range ranges {
-		m[types.ID(fmt.Sprintf("%d", i))] = r
+		m[types.ID(strconv.Itoa(i))] = r
 	}
 
 	for i, r := range ranges {
@@ -92,7 +92,7 @@ func TestFindRangesOrder(t *testing.T) {
 
 	m := map[types.ID]types.RangeData{}
 	for i, r := range ranges {
-		m[types.ID(fmt.Sprintf("%d", i))] = r
+		m[types.ID(strconv.Itoa(i))] = r
 	}
 
 	actual := findRanges(m, 2, 4)

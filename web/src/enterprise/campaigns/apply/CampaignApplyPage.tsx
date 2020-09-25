@@ -46,7 +46,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     useBreadcrumb(
         useMemo(
             () => ({
-                element: <>Apply spec</>,
+                element: <>Preview</>,
                 key: 'ApplySpecPage',
             }),
             []

@@ -22,6 +22,7 @@ type Dump struct {
 	FinishedAt     *time.Time `json:"finishedAt"`
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
+	NumFailures    int        `json:"numFailures"`
 	RepositoryID   int        `json:"repositoryId"`
 	RepositoryName string     `json:"repositoryName"`
 	Indexer        string     `json:"indexer"`
@@ -49,6 +50,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.FinishedAt,
 			&dump.ProcessAfter,
 			&dump.NumResets,
+			&dump.NumFailures,
 			&dump.RepositoryID,
 			&dump.RepositoryName,
 			&dump.Indexer,
@@ -86,6 +88,7 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.finished_at,
 			d.process_after,
 			d.num_resets,
+			d.num_failures,
 			d.repository_id,
 			d.repository_name,
 			d.indexer
@@ -123,7 +126,8 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 	 			d.started_at,
 	 			d.finished_at,
 	 			d.process_after,
-	 			d.num_resets,
+				d.num_resets,
+				d.num_failures,
 	 			d.repository_id,
 	 			d.repository_name,
 	 			d.indexer

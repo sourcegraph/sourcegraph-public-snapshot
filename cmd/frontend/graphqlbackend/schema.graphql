@@ -448,6 +448,12 @@ type Mutation {
     # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
+    Invalidates all sessions belonging to a user.
+
+    Only site admins may perform this mutation.
+    """
+    invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -621,7 +627,9 @@ type Mutation {
     """
     createChangesetSpec(
         """
-        The raw changeset spec (as JSON).
+        The raw changeset spec (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         changesetSpec: String!
     ): ChangesetSpec!
@@ -641,7 +649,9 @@ type Mutation {
         namespace: ID!
 
         """
-        The campaign spec as YAML (or the equivalent JSON).
+        The campaign spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         campaignSpec: String!
 
@@ -1101,9 +1111,9 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with the given reconciler state.
+        Only include changesets with any of the given reconciler states.
         """
-        reconcilerState: ChangesetReconcilerState
+        reconcilerState: [ChangesetReconcilerState!]
         """
         Only include changesets with the given publication state.
         """
@@ -2266,6 +2276,16 @@ type Query {
     Look up a namespace by ID.
     """
     namespace(id: ID!): Namespace
+
+    """
+    Look up a namespace by name, which is a username or organization name.
+    """
+    namespaceByName(
+        """
+        The name of the namespace.
+        """
+        name: String!
+    ): Namespace
 
     """
     The repositories a user is authorized to access with the given permission.
@@ -3534,6 +3554,21 @@ type RepositoryTextSearchIndexStatus {
     The number of index shards.
     """
     indexShardsCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines appearing in the index.
+    """
+    newLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the default branch.
+    """
+    defaultBranchNewLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the other branches.
+    """
+    otherBranchesNewLinesCount: Int!
 }
 
 """

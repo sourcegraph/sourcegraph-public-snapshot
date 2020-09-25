@@ -191,6 +191,7 @@ const config = {
         test: extensionHostWorker,
         use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
       },
+      { test: /\.ya?ml$/, use: ['raw-loader'] },
     ],
   },
 }

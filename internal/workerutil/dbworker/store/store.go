@@ -79,6 +79,7 @@ type StoreOptions struct {
 	//   - finished_at: timestamp with time zone
 	//   - process_after: timestamp with time zone
 	//   - num_resets: integer not null
+	//   - num_failures: integer not null
 	//
 	// The names of these columns may be customized based on the table name by adding a replacement
 	// pair in the AlternateColumnNames mapping.
@@ -127,18 +128,24 @@ type StoreOptions struct {
 	StalledMaxAge time.Duration
 
 	// MaxNumResets is the maximum number of times a record can be implicitly reset back to the queued
-	// state (via `ResetStalled`). If a record's failed attempts counter reaches this threshold, it will
+	// state (via `ResetStalled`). If a record's reset attempts counter reaches this threshold, it will
 	// be moved into the errored state rather than queued on its next reset to prevent an infinite retry
 	// cycle of the same input.
 	MaxNumResets int
 
-	// RetryAfter determines whether the store dequeues jobs that have errored
-	// more than RetryAfter ago.
-	// If RetryAfter is a non-zero duration, the store dequeues records where
-	// - the state is 'errored'
-	// - the failed attempts counter hasn't reached MaxNumResets
-	// - the finished_at timestamp was more than RetryAfter ago
+	// RetryAfter determines whether the store dequeues jobs that have errored more than RetryAfter ago.
+	// Setting this value to zero will disable retries entirely.
+	//
+	// If RetryAfter is a non-zero duration, the store dequeues records where:
+	//
+	//   - the state is 'errored'
+	//   - the failed attempts counter hasn't reached MaxNumRetries
+	//   - the finished_at timestamp was more than RetryAfter ago
 	RetryAfter time.Duration
+
+	// MaxNumRetries is the maximum number of times a record can be retried after an explicit failure.
+	// Setting this value to zero will disable retries entirely.
+	MaxNumRetries int
 }
 
 // RecordScanFn is a function that interprets row values as a particular record. This function should
@@ -188,6 +195,7 @@ var columnNames = []string{
 	"finished_at",
 	"process_after",
 	"num_resets",
+	"num_failures",
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
@@ -242,7 +250,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 		quote(s.options.ViewName),
 		int(s.options.RetryAfter/time.Second),
 		int(s.options.RetryAfter/time.Second),
-		s.options.MaxNumResets,
+		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
@@ -327,7 +335,7 @@ WITH candidate AS (
 				%s > 0 AND
 				{state} = 'errored' AND
 				NOW() - {finished_at} > (%s * '1 second'::interval) AND
-				{num_resets} < %s
+				{num_failures} < %s
 			)
 		)
 		%s
@@ -340,7 +348,7 @@ SET
 	{state} = 'processing',
 	{started_at} = NOW(),
 	{finished_at} = NULL,
-	{num_resets} = (CASE WHEN ({state} = 'errored') THEN ({num_resets} + 1) ELSE {num_resets} END)
+	{failure_message} = NULL
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
 `
@@ -405,7 +413,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) 
 const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET {state} = 'errored', {finished_at} = clock_timestamp(), {failure_message} = %s
+SET {state} = 'errored', {finished_at} = clock_timestamp(), {failure_message} = %s, {num_failures} = {num_failures} + 1
 WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
 RETURNING {id}
 `

@@ -60,8 +60,10 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                             oldPassword: this.state.oldPassword,
                             newPassword: this.state.newPassword,
                         }).pipe(
-                            // Change URL after updating to trigger Chrome to show "Update password?" dialog.
-                            tap(() => this.props.history.replace({ hash: 'updated' })),
+                            // Sign the user out after their password is changed.
+                            // We do this because the backend will no longer accept their current session
+                            // and failing to sign them out will leave them in a confusing state
+                            tap(() => (window.location.href = '/-/sign-out')),
                             catchError(error => this.handleError(error))
                         )
                     )

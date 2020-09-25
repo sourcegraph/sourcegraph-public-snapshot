@@ -265,7 +265,7 @@ export async function login(
     await driver.page.goto(sourcegraphBaseUrl)
     await retry(async () => {
         await driver.page.reload()
-        await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {
+        await driver.findElementWithText('Continue with ' + authProviderDisplayName, {
             action: 'click',
             selector: 'a',
             wait: { timeout: 5000 },

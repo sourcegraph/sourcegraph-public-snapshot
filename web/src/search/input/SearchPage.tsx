@@ -45,7 +45,7 @@ export interface SearchPageProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -59,10 +59,6 @@ export interface SearchPageProps
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     autoFocus?: boolean
-
-    // For NavLinks
-    authRequired?: boolean
-    showCampaigns: boolean
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -101,7 +97,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     )
     return (
         <div className="web-content search-page">
-            <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
+            <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
                 className={classNames('search-page__search-container', {
@@ -323,7 +319,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 </>
             )}
 
-            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels />}
+            {!props.isSourcegraphDotCom && props.showEnterpriseHomePanels && <EnterpriseHomePanels {...props} />}
         </div>
     )
 }

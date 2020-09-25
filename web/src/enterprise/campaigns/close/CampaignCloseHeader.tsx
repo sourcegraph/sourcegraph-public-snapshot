@@ -1,24 +1,32 @@
 import React from 'react'
-import { ChangesetFields } from '../../../graphql-operations'
 
 export interface CampaignCloseHeaderProps {
-    nodes: ChangesetFields[]
-    totalCount?: number | null
+    // Nothing.
 }
 
-export const CampaignCloseHeader: React.FunctionComponent<CampaignCloseHeaderProps> = ({ nodes, totalCount }) => (
+const CampaignCloseHeader: React.FunctionComponent<CampaignCloseHeaderProps> = () => (
     <>
-        <div className="campaign-close-header__title mb-2">
-            <strong>
-                Displaying {nodes.length}
-                {totalCount && <> of {totalCount}</>} changesets
-            </strong>
-        </div>
         <span />
-        <h5 className="text-uppercase text-center text-nowrap text-muted">Action</h5>
-        <h5 className="text-uppercase text-nowrap text-muted">Changeset information</h5>
-        <h5 className="text-uppercase text-center text-nowrap text-muted">Check state</h5>
-        <h5 className="text-uppercase text-center text-nowrap text-muted">Review state</h5>
-        <h5 className="text-uppercase text-right text-nowrap text-muted">Changes</h5>
+        <h5 className="text-uppercase text-center text-nowrap">Action</h5>
+        <h5 className="text-uppercase text-nowrap">Changeset information</h5>
+        <h5 className="text-uppercase text-center text-nowrap">Check state</h5>
+        <h5 className="text-uppercase text-center text-nowrap">Review state</h5>
+        <h5 className="text-uppercase text-center text-nowrap">Changes</h5>
+    </>
+)
+
+export const CampaignCloseHeaderWillCloseChangesets: React.FunctionComponent<CampaignCloseHeaderProps> = () => (
+    <>
+        <h2 className="campaign-close-header__row test-campaigns-close-willclose-header">
+            Closing the campaign will close the following changesets:
+        </h2>
+        <CampaignCloseHeader />
+    </>
+)
+
+export const CampaignCloseHeaderWillKeepChangesets: React.FunctionComponent<CampaignCloseHeaderProps> = () => (
+    <>
+        <h2 className="campaign-close-header__row">The following changesets will remain open:</h2>
+        <CampaignCloseHeader />
     </>
 )

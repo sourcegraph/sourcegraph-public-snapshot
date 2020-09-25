@@ -6,8 +6,8 @@ import * as React from 'react'
 import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { combineLatest, from, fromEventPattern, Subscription, fromEvent, of } from 'rxjs'
+import { startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     Controller as ExtensionsController,
@@ -36,7 +36,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
-import { search } from './search/backend'
+import { search, searchStream, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -68,6 +68,7 @@ import {
     experimentalFeaturesFromSettings,
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
+import { HTTPStatusError } from '../../shared/src/backend/fetch'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -164,6 +165,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
+    /**
+     * Whether the experimental search streaming API should be used.
+     */
+    searchStreaming: boolean
+
     showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
@@ -252,6 +258,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
+            searchStreaming: false,
             showRepogroupHomepage: false,
             showOnboardingTour: false,
             showEnterpriseHomePanels: false,
@@ -296,6 +303,26 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             ).subscribe(event => {
                 this.setState({ systemIsLightTheme: !event.matches })
             })
+        )
+
+        /**
+         * Listens for uncaught 401 errors when a user when a user was previously authenticated.
+         *
+         * Don't subscribe to this event when there wasn't an authenticated user,
+         * as it could lead to an infinite loop of 401 -> reload -> 401
+         */
+        this.subscriptions.add(
+            authenticatedUser
+                .pipe(
+                    switchMap(authenticatedUser =>
+                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
+                    )
+                )
+                .subscribe(event => {
+                    if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
+                        location.reload()
+                    }
+                })
         )
 
         // Send initial versionContext to extensions
@@ -392,7 +419,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                    searchRequest={search}
+                                    searchRequest={this.state.searchStreaming ? searchStream : search}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
@@ -416,6 +443,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
+                                    fetchSavedSearches={fetchSavedSearches}
+                                    fetchRecentSearches={fetchRecentSearches}
+                                    fetchRecentFileViews={fetchRecentFileViews}
                                 />
                             )}
                         />

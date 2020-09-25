@@ -94,7 +94,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.El
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <TimerSandIcon className="changeset-status-cell__processing-icon" />
+        <TimerSandIcon />
         {label}
     </div>
 )

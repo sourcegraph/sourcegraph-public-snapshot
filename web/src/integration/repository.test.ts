@@ -188,7 +188,12 @@ describe('Repository', () => {
                                                 name: 'Quinn Slack',
                                                 email: 'qslack@qslack.com',
                                                 displayName: 'Quinn Slack',
-                                                user: { id: 'VXNlcjo2', username: 'sqs', url: '/users/sqs' },
+                                                user: {
+                                                    id: 'VXNlcjo2',
+                                                    username: 'sqs',
+                                                    url: '/users/sqs',
+                                                    displayName: 'sqs',
+                                                },
                                             },
                                             date: '2019-12-22T04:34:38Z',
                                         },
@@ -234,6 +239,7 @@ describe('Repository', () => {
                 }),
                 RepositoryCommit: () => ({
                     node: {
+                        __typename: 'Repository',
                         commit: {
                             __typename: 'GitCommit',
                             id:

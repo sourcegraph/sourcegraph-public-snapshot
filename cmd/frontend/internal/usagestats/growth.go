@@ -13,45 +13,49 @@ import (
 func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
 	const q = `
 	WITH
-  latest_usage_by_user AS (
+  all_usage_by_user_and_month AS (
   SELECT
     user_id,
     DATE_TRUNC('month', timestamp) AS month_active
   FROM
     event_logs
   GROUP BY
-    1,
-    2 ),
-  sub AS (
+    user_id,
+    month_active ),
+  recent_usage_by_user AS (
   SELECT
-    DISTINCT users.id,
-    CASE
+    users.id,
+    BOOL_OR(CASE
       WHEN DATE_TRUNC('month', month_active) = DATE_TRUNC('month', now()) THEN TRUE
     ELSE
     FALSE
   END
-    AS current_month,
-    CASE
+    ) AS current_month,
+    BOOL_OR(CASE
       WHEN DATE_TRUNC('month', month_active) = DATE_TRUNC('month', now()) - INTERVAL '1 month' THEN TRUE
     ELSE
     FALSE
   END
-    AS previous_month,
+    ) AS previous_month,
     DATE_TRUNC('month', DATE(users.created_at)) AS created_month,
     DATE_TRUNC('month', DATE(users.deleted_at)) AS deleted_month
   FROM
     users
   LEFT JOIN
-    latest_usage_by_user
+    all_usage_by_user_and_month
   ON
-    latest_usage_by_user.user_id = users.id)
+    all_usage_by_user_and_month.user_id = users.id
+  GROUP BY
+    id,
+    created_month,
+    deleted_month )
 SELECT
   COUNT(*) FILTER (
   WHERE
-    sub.created_month = DATE_TRUNC('month', now())) AS created_users,
+    recent_usage_by_user.created_month = DATE_TRUNC('month', now())) AS created_users,
   COUNT(*) FILTER (
   WHERE
-    sub.deleted_month = DATE_TRUNC('month', now())) AS deleted_users,
+    recent_usage_by_user.deleted_month = DATE_TRUNC('month', now())) AS deleted_users,
   COUNT(*) FILTER (
   WHERE
     current_month = TRUE
@@ -74,7 +78,7 @@ SELECT
     AND (deleted_month < DATE_TRUNC('month', now())
       OR deleted_month IS NULL)) AS retained_users
 FROM
-  sub
+  recent_usage_by_user
 	`
 	var (
 		createdUsers     int

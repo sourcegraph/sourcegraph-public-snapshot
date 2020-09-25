@@ -46,9 +46,9 @@ export class ConditionalTelemetryService implements TelemetryService {
             this.innerTelemetryService.log(eventName, eventProperties)
         }
     }
-    public logViewEvent(eventName: string): void {
+    public logViewEvent(eventName: string, eventProperties?: any): void {
         if (this.isEnabled) {
-            this.innerTelemetryService.logViewEvent(eventName)
+            this.innerTelemetryService.logViewEvent(eventName, eventProperties)
         }
     }
 
@@ -156,7 +156,7 @@ export class EventLogger implements TelemetryService {
      *
      * @param pageTitle The title of the page being viewed.
      */
-    public async logViewEvent(pageTitle: string): Promise<void> {
+    public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logEvent(
@@ -164,7 +164,7 @@ export class EventLogger implements TelemetryService {
                 name: `View${pageTitle}`,
                 userCookieID: anonUserId,
                 url: sourcegraphURL,
-                argument: { platform: this.platform },
+                argument: { ...eventProperties, platform: this.platform },
             },
             this.requestGraphQL
         )

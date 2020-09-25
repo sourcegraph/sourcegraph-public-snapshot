@@ -143,7 +143,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
-	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
+	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
 	if hook, ok := w.options.Handler.(WithHooks); ok {
 		hook.PreHandle(w.ctx, record)
@@ -197,11 +197,11 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 		if marked, markErr := tx.MarkComplete(ctx, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			log15.Info("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
+			log15.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
 		}
 	}
 
-	log15.Info("Handled record", "name", w.options.Name, "id", record.RecordID())
+	log15.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
 	return nil
 }
 

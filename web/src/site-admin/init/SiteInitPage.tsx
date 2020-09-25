@@ -57,7 +57,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
         <div className="site-init-page">
             <div className="site-init-page__content card">
                 <div className="card-body p-4">
-                    <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} />
+                    <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
                     {authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified

@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -20,6 +20,8 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
+import { EmptyCommandList } from './EmptyCommandList'
+import { SettingsCascadeOrError } from '../settings/settings'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -54,7 +56,7 @@ export interface CommandListClassProps {
 export interface CommandListProps
     extends CommandListClassProps,
         ExtensionsControllerProps<'services' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         TelemetryProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
@@ -76,6 +78,8 @@ interface State {
     recentActions: string[] | null
 
     autoFocus?: boolean
+
+    settingsCascade?: SettingsCascadeOrError
 }
 
 /** Displays a list of commands contributed by extensions for a specific menu. */
@@ -112,7 +116,11 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         }
     }
 
-    public state: State = { input: '', selectedIndex: 0, recentActions: CommandList.readRecentActions() }
+    public state: State = {
+        input: '',
+        selectedIndex: 0,
+        recentActions: CommandList.readRecentActions(),
+    }
 
     private subscriptions = new Subscription()
 
@@ -126,6 +134,10 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             this.props.extensionsController.services.contribution
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
+        )
+
+        this.subscriptions.add(
+            this.props.platformContext.settings.subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
 
         // Only focus input after it has been rendered in the DOM
@@ -213,8 +225,13 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                     />
                                 </li>
                             ))
-                        ) : (
+                        ) : query.length > 0 ? (
                             <li className={this.props.noResultsClassName}>No matching commands</li>
+                        ) : (
+                            <EmptyCommandList
+                                settingsCascade={this.state.settingsCascade}
+                                sourcegraphURL={this.props.platformContext.sourcegraphURL}
+                            />
                         )}
                     </ul>
                 </div>
@@ -339,11 +356,11 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     return (
         <ButtonElement
             role="button"
-            className={`command-list-popover-button ${buttonClassName} ${isOpen ? buttonOpenClassName : ''}`}
+            className={`command-list__popover-button ${buttonClassName} ${isOpen ? buttonOpenClassName : ''}`}
             id={id}
             onClick={toggleIsOpen}
         >
-            <MenuIcon className="icon-inline" />
+            <ConsoleIcon className="icon-inline" />
             {showCaret && (isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />)}
             {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
             <TooltipPopoverWrapper

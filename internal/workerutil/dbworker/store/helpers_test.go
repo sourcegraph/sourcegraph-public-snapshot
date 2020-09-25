@@ -122,7 +122,8 @@ func setupStoreTest(t *testing.T) {
 			finished_at     timestamp with time zone,
 			process_after   timestamp with time zone,
 			num_resets      integer NOT NULL default 0,
-			uploaded_at     timestamp with time zone NOT NULL default NOW()
+			uploaded_at     timestamp with time zone NOT NULL default NOW(),
+			num_failures    integer NOT NULL default 0
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -186,7 +187,7 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, expectedNumResets int, record interface{}, tx Store, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, tx Store, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -200,9 +201,6 @@ func assertDequeueRecordRetryResult(t *testing.T, expectedID, expectedNumResets 
 	}
 	if val := record.(TestRecordRetry).State; val != "processing" {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
-	}
-	if val := record.(TestRecordRetry).NumResets; val != expectedNumResets {
-		t.Errorf("unexpected num resets. want=%d have=%d", expectedNumResets, val)
 	}
 }
 

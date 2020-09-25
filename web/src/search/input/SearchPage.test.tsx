@@ -6,6 +6,7 @@ import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { Services } from '../../../../shared/src/api/client/services'
 import { ThemePreference } from '../../theme'
+import { of } from 'rxjs'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -33,7 +34,6 @@ describe('SearchPage', () => {
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: () => undefined,
         authenticatedUser: null,
-        showCampaigns: false,
         setVersionContext: () => undefined,
         availableVersionContexts: [],
         globbing: false,
@@ -54,6 +54,9 @@ describe('SearchPage', () => {
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,
         isLightTheme: true,
+        fetchSavedSearches: () => of([]),
+        fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
     }
 
     it('should not show enterprise home panels if on Sourcegraph.com', () => {

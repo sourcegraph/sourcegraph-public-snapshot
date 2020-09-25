@@ -43,27 +43,29 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                     <span className="badge badge-info text-uppercase mb-0">Preview</span>
                 </h2>
                 {!campaign && (
-                    <p className="mb-0 flex-grow-1">
-                        This campaign is in preview mode. Click create campaign to publish it.
+                    <p className="mb-0 flex-grow-1 mr-3">
+                        Review the proposed changesets below. Click 'Apply spec' or run 'src campaigns apply' against
+                        your campaign spec to create the campaign and perform the indicated action on each changeset.
                     </p>
                 )}
                 {campaign && (
-                    <p className="mb-0 flex-grow-1">
+                    <p className="mb-0 flex-grow-1 mr-3">
                         This operation will update the existing campaign <Link to={campaign.url}>{campaign.name}</Link>.
-                        Click update campaign to accept the changes.
+                        Click 'Apply spec' or run 'src campaigns apply' against your campaign spec to update the
+                        campaign and perform the indicated action on each changeset.
                     </p>
                 )}
                 <button
                     type="button"
                     className={classNames(
-                        'btn btn-primary test-campaigns-confirm-apply-btn',
+                        'btn btn-primary test-campaigns-confirm-apply-btn text-nowrap',
                         isLoading === true || (!viewerCanAdminister && 'disabled')
                     )}
                     onClick={onApply}
                     disabled={isLoading === true || !viewerCanAdminister}
                     data-tooltip={!viewerCanAdminister ? 'You have no permission to apply this campaign.' : undefined}
                 >
-                    {campaignID ? 'Update' : 'Create'} campaign
+                    Apply spec
                 </button>
             </div>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}

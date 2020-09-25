@@ -570,7 +570,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				reconcilerState: campaigns.ReconcilerStateQueued,
 				failureMessage:  nil,
-				numResets:       0,
+				numFailures:     0,
 			})
 
 			c2 := cs.Find(campaigns.WithCurrentSpecID(newSpec2.ID))
@@ -584,7 +584,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				reconcilerState: campaigns.ReconcilerStateQueued,
 				failureMessage:  nil,
-				numResets:       0,
+				numFailures:     0,
 			})
 		})
 	})
@@ -625,7 +625,7 @@ type changesetAssertions struct {
 	body  string
 
 	failureMessage *string
-	numResets      int64
+	numFailures    int64
 }
 
 func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions) {
@@ -696,8 +696,8 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 		}
 	}
 
-	if have, want := c.NumResets, a.numResets; have != want {
-		t.Fatalf("changeset NumResets wrong. want=%d, have=%d", want, have)
+	if have, want := c.NumFailures, a.numFailures; have != want {
+		t.Fatalf("changeset NumFailures wrong. want=%d, have=%d", want, have)
 	}
 
 	if have, want := c.ExternalBranch, a.externalBranch; have != want {
@@ -783,7 +783,7 @@ func setChangesetFailed(t *testing.T, ctx context.Context, s *Store, c *campaign
 
 	c.ReconcilerState = campaigns.ReconcilerStateErrored
 	c.FailureMessage = &canceledChangesetFailureMessage
-	c.NumResets = 5
+	c.NumFailures = 5
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
@@ -807,10 +807,12 @@ type testSpecOpts struct {
 	// set.
 	published bool
 
-	title         string
-	body          string
-	commitMessage string
-	commitDiff    string
+	title             string
+	body              string
+	commitMessage     string
+	commitDiff        string
+	commitAuthorEmail string
+	commitAuthorName  string
 }
 
 var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
@@ -839,8 +841,10 @@ func createChangesetSpec(
 
 			Commits: []campaigns.GitCommitDescription{
 				{
-					Message: opts.commitMessage,
-					Diff:    opts.commitDiff,
+					Message:     opts.commitMessage,
+					Diff:        opts.commitDiff,
+					AuthorEmail: opts.commitAuthorEmail,
+					AuthorName:  opts.commitAuthorName,
 				},
 			},
 		},

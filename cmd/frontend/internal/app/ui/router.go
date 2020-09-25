@@ -20,6 +20,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -69,6 +70,7 @@ const (
 	routeViews          = "views"
 
 	routeSearchQueryBuilder = "search.query-builder"
+	routeSearchStream       = "search.stream"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -110,6 +112,7 @@ func newRouter() *mux.Router {
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
+	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
@@ -248,6 +251,9 @@ func initRouter() {
 		// e.g. "myquery - Sourcegraph"
 		return brandNameSubtitle(shortQuery)
 	})))
+
+	// streaming search
+	router.Get(routeSearchStream).HandlerFunc(search.ServeStream)
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler)

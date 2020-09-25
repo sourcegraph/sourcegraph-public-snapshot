@@ -23,7 +23,6 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
 
@@ -31,7 +30,7 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
         TelemetryProps,
@@ -91,6 +90,11 @@ export class NavLinks extends React.PureComponent<Props> {
                                 </Link>
                             </li>
                         )}
+                        <li className="nav-item">
+                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
+                                Docs
+                            </Link>
+                        </li>
                         {this.props.showDotComMarketing && (
                             <li className="nav-item">
                                 <a
@@ -99,15 +103,10 @@ export class NavLinks extends React.PureComponent<Props> {
                                     target="_blank"
                                     rel="noopener"
                                 >
-                                    About <OpenInNewIcon className="icon-inline" />
+                                    About
                                 </a>
                             </li>
                         )}
-                        <li className="nav-item">
-                            <Link to="/help" className="nav-link" target="_blank" rel="noopener">
-                                Help <OpenInNewIcon className="icon-inline" />
-                            </Link>
-                        </li>
                     </>
                 )}
                 {!this.props.isSourcegraphDotCom && this.props.authenticatedUser?.siteAdmin && (

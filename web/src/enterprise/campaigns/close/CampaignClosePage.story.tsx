@@ -24,6 +24,48 @@ const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDe
     <div className="p-3 container web-content">{story()}</div>
 ))
 
+const campaignDefaults: CampaignFields = {
+    __typename: 'Campaign',
+    changesets: {
+        stats: {
+            closed: 1,
+            merged: 2,
+            open: 3,
+            total: 10,
+            unpublished: 5,
+        },
+    },
+    createdAt: subDays(new Date(), 5).toISOString(),
+    initialApplier: {
+        url: '/users/alice',
+        username: 'alice',
+    },
+    diffStat: {
+        added: 10,
+        changed: 8,
+        deleted: 10,
+    },
+    id: 'specid',
+    url: '/users/alice/campaigns/specid',
+    namespace: {
+        namespaceName: 'alice',
+        url: '/users/alice',
+    },
+    viewerCanAdminister: true,
+    closedAt: null,
+    description: '## What this campaign does\n\nTruly awesome things for example.',
+    name: 'awesome-campaign',
+    updatedAt: subDays(new Date(), 5).toISOString(),
+    lastAppliedAt: subDays(new Date(), 5).toISOString(),
+    lastApplier: {
+        url: '/users/bob',
+        username: 'bob',
+    },
+    currentSpec: {
+        originalInput: 'name: awesome-campaign\ndescription: somestring',
+    },
+}
+
 const queryChangesets: typeof _queryChangesets = () =>
     of({
         pageInfo: {
@@ -154,45 +196,8 @@ add('Overview', () => {
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
     const campaign: CampaignFields = useMemo(
         () => ({
-            __typename: 'Campaign',
-            changesets: {
-                stats: {
-                    closed: 1,
-                    merged: 2,
-                    open: 3,
-                    total: 10,
-                    unpublished: 5,
-                },
-            },
-            createdAt: subDays(new Date(), 5).toISOString(),
-            initialApplier: {
-                url: '/users/alice',
-                username: 'alice',
-            },
-            diffStat: {
-                added: 10,
-                changed: 8,
-                deleted: 10,
-            },
-            id: 'specid',
-            url: '/users/alice/campaigns/specid',
-            namespace: {
-                namespaceName: 'alice',
-                url: '/users/alice',
-            },
+            ...campaignDefaults,
             viewerCanAdminister,
-            closedAt: null,
-            description: '## What this campaign does\n\nTruly awesome things for example.',
-            name: 'awesome-campaign',
-            updatedAt: subDays(new Date(), 5).toISOString(),
-            lastAppliedAt: subDays(new Date(), 5).toISOString(),
-            lastApplier: {
-                url: '/users/bob',
-                username: 'bob',
-            },
-            currentSpec: {
-                originalInput: 'name: awesome-campaign\ndescription: somestring',
-            },
         }),
         [viewerCanAdminister]
     )
@@ -203,6 +208,39 @@ add('Overview', () => {
                 <CampaignClosePage
                     {...props}
                     queryChangesets={queryChangesets}
+                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                    namespaceID="n123"
+                    campaignName="c123"
+                    fetchCampaignByNamespace={fetchCampaign}
+                    extensionsController={{} as any}
+                    platformContext={{} as any}
+                />
+            )}
+        </EnterpriseWebStory>
+    )
+})
+
+add('No open changesets', () => {
+    const campaign: CampaignFields = useMemo(() => campaignDefaults, [])
+    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+    const queryEmptyChangesets = useCallback(
+        () =>
+            of({
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+                totalCount: 0,
+                nodes: [],
+            }),
+        []
+    )
+    return (
+        <EnterpriseWebStory>
+            {props => (
+                <CampaignClosePage
+                    {...props}
+                    queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
                     campaignName="c123"

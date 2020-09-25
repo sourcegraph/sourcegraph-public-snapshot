@@ -1,28 +1,20 @@
 import React from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../components/time/Timestamp'
 import { UserAvatar } from '../../user/UserAvatar'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
+import { SignatureFields } from '../../graphql-operations'
 
-/**
- * The subset of {@link GQL.ISignature} information needed by {@link GitCommitNodeByline}. Using the
- * minimal subset makes testing easier.
- */
-interface Signature extends Pick<GQL.ISignature, 'date'> {
-    person: {
-        user: Pick<GQL.IUser, 'username' | 'displayName' | 'url'> | null
-    } & Pick<GQL.IPerson, 'email' | 'name' | 'displayName' | 'avatarURL'>
+interface Props {
+    author: SignatureFields
+    committer: SignatureFields | null
+    className?: string
+    compact?: boolean
 }
 
 /**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
-export const GitCommitNodeByline: React.FunctionComponent<{
-    author: GQL.ISignature | Signature
-    committer: GQL.ISignature | Signature | null
-    className?: string
-    compact?: boolean
-}> = ({ author, committer, className = '', compact }) => {
+export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, committer, className = '', compact }) => {
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
     if (committer && committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {

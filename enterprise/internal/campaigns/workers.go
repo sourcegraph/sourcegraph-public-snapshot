@@ -51,15 +51,21 @@ func RunWorkers(
 
 		StalledMaxAge: 60 * time.Second,
 		MaxNumResets:  reconcilerMaxNumResets,
+
 		RetryAfter:    5 * time.Second,
+		MaxNumRetries: reconcilerMaxNumRetries,
 	})
 
 	worker := dbworker.NewWorker(ctx, workerStore, options)
 	worker.Start()
 }
 
+// reconcilerMaxNumRetries is the maximum number of attempts the reconciler
+// makes to process a changeset when it fails.
+const reconcilerMaxNumRetries = 60
+
 // reconcilerMaxNumResets is the maximum number of attempts the reconciler
-// makes to process a changeset.
+// makes to process a changeset when it stalls (process crashes, etc.).
 const reconcilerMaxNumResets = 60
 
 func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {

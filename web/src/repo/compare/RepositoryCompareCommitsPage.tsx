@@ -10,6 +10,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import { GitCommitFields } from '../../graphql-operations'
 
 function queryRepositoryComparisonCommits(args: {
     repo: GQL.ID
@@ -89,7 +90,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
             <div className="repository-compare-page">
                 <div className="card">
                     <div className="card-header">Commits</div>
-                    <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                    <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                         listClassName="list-group list-group-flush"
                         noun="commit"
                         pluralNoun="commits"
