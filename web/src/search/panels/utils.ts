@@ -225,3 +225,124 @@ export const _fetchRecentSearches = (): Observable<EventLogResult | null> =>
         },
         totalCount: 436,
     })
+
+export const _fetchRecentFileViews = (): Observable<EventLogResult | null> =>
+    of({
+        nodes: [
+            {
+                argument: '{"filePath": "web/src/tree/Tree.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:55Z',
+                url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/Tree.tsx',
+            },
+            {
+                argument: '{"filePath": "web/src/tree/TreeRoot.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:55Z',
+                url:
+                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/TreeRoot.tsx',
+            },
+            {
+                argument:
+                    '{"filePath": "web/src/tree/SingleChildTreeLayer.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:54Z',
+                url:
+                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/SingleChildTreeLayer.tsx',
+            },
+            {
+                argument:
+                    '{"filePath": "web/src/tree/Directory.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:54Z',
+                url:
+                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/Directory.tsx',
+            },
+            {
+                argument:
+                    '{"filePath": "web/src/site/FreeUsersExceededAlert.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:51Z',
+                url:
+                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/site/FreeUsersExceededAlert.tsx',
+            },
+            {
+                argument:
+                    '{"filePath": "web/src/site/DockerForMacAlert.scss", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:50Z',
+                url:
+                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/site/DockerForMacAlert.scss',
+            },
+            {
+                argument: '{"filePath": "web/jest.config.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T23:07:45Z',
+                url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/jest.config.js',
+            },
+            {
+                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T22:55:30Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+            },
+            {
+                argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+                timestamp: '2020-09-10T22:55:18Z',
+                url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
+            },
+            {
+                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T22:55:06Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+            },
+            {
+                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T22:54:54Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+            },
+            {
+                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T22:54:50Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+            },
+            {
+                argument: '{"filePath": "AUTHORS", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:23Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/AUTHORS',
+            },
+            {
+                argument: '{"filePath": "LICENSE", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:23Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/LICENSE',
+            },
+            {
+                argument: '{"filePath": "README.md", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:22Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/README.md',
+            },
+            {
+                argument:
+                    '{"filePath": "example_authentication_middleware_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:21Z',
+                url:
+                    'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_authentication_middleware_test.go',
+            },
+            {
+                argument:
+                    '{"filePath": "example_cors_method_middleware_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:20Z',
+                url:
+                    'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_cors_method_middleware_test.go',
+            },
+            {
+                argument: '{"filePath": "example_route_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:19Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_route_test.go',
+            },
+            {
+                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:16Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+            },
+            {
+                argument: '{"filePath": "mux_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+                timestamp: '2020-09-10T21:21:03Z',
+                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/mux_test.go',
+            },
+        ],
+        totalCount: 500,
+        pageInfo: { hasNextPage: true, endCursor: null },
+    })

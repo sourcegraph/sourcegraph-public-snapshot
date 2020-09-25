@@ -7,11 +7,18 @@ jobs:
   # This job should trigger rennovate to run on the repositories defined in renovate-downstream.json
   renovate:
     runs-on: ubuntu-latest
-    # Run on commit status success on branch main, ignoring codecov evnets because there are a lot of those
-    if: ${{ github.ref == 'refs/heads/main' && github.event.state == 'success' && github.event.sender.login != 'codecov[bot]' }}
+    # Run on commit status success on branch main, ignoring bot events
+    if: ${{ contains(github.event.branches.*.name, 'main') && github.event.state == 'success' && github.event.context == 'buildkite/sourcegraph' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Dump event
+        continue-on-error: true
+        env:
+          EVENT_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$EVENT_CONTEXT"
 
       # retrieve first pull request attached to this commit
       - name: Get pull request
@@ -28,7 +35,7 @@ jobs:
           cat .github/workflows/renovate-downstream.json
 
       - name: Renovate
-        uses: renovatebot/github-action@v23.20.0
+        uses: renovatebot/github-action@v23.27.1
         with:
           configurationFile: .github/workflows/renovate-downstream.json
           # token must be a personal access token for cross-repo access - currently @sourcegraph-bot cross-repo-github-actions in 1password

@@ -1221,6 +1221,11 @@ func TestParseAndOrLiteral(t *testing.T) {
 			WantLabels: "Literal",
 		},
 		{
+			Input:      `not file:foo pattern`,
+			Want:       `(and "-file:foo" "pattern")`,
+			WantLabels: "Literal",
+		},
+		{
 			Input:      `not literal.*pattern`,
 			Want:       `"NOT literal.*pattern"`,
 			WantLabels: "Literal",

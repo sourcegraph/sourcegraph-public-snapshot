@@ -417,16 +417,14 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 		}
 	}
 	if len(like) > 0 {
-		var likeConds []*sqlf.Query
 		for _, v := range like {
-			likeConds = append(likeConds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
+			conds = append(conds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
 		}
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
 	}
 	if pattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
 	}
-	return conds, nil
+	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {

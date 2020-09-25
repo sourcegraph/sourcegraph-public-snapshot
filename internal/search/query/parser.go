@@ -893,7 +893,7 @@ loop:
 				parameter.Negated = true
 				parameter.Annotation.Range = newRange(start, p.pos)
 				nodes = append(nodes, parameter)
-				break loop
+				continue
 			}
 			pattern := p.ParsePatternLiteral()
 			pattern.Negated = true
@@ -997,7 +997,7 @@ loop:
 				parameter.Negated = true
 				parameter.Annotation.Range = newRange(start, p.pos)
 				nodes = append(nodes, parameter)
-				break loop
+				continue
 			}
 			pattern := p.ParsePatternRegexp()
 			pattern.Negated = true
@@ -1227,7 +1227,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		query = substituteConcat(query, " ")
 		query = ellipsesForHoles(query)
 	case SearchTypeRegex:
-		query = Map(query, EmptyGroupsToLiteral, TrailingParensToLiteral)
+		query = escapeParensHeuristic(query)
 	}
 
 	if options.Globbing {

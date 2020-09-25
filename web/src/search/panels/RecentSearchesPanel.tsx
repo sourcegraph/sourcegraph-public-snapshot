@@ -22,7 +22,9 @@ export const RecentSearchesPanel: React.FunctionComponent<{
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
-}> = ({ className, authenticatedUser, fetchRecentSearches }) => {
+    /** Function that returns current time (for stability in visual tests). */
+    now?: () => Date
+}> = ({ className, authenticatedUser, fetchRecentSearches, now }) => {
     const pageSize = 20
 
     const [itemsToLoad, setItmesToLoad] = useState(pageSize)
@@ -130,7 +132,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                                 </Link>
                             </td>
                             <td className="recent-searches-panel__results-table-date-col">
-                                <Timestamp noAbout={true} date={recentSearch.timestamp} />
+                                <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} />
                             </td>
                         </tr>
                     ))}
