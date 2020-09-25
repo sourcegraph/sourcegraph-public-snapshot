@@ -7,7 +7,7 @@ import assert from 'assert'
 import expect from 'expect'
 import { SearchResult } from '../graphql-operations'
 
-describe.only('Search onboarding', () => {
+describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
