@@ -92,42 +92,6 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	return &ee
 }
 
-// Actor returns the actor of the ChangesetEvent.
-func (e *ChangesetEvent) Actor() string {
-	var a string
-
-	switch e := e.Metadata.(type) {
-	case *github.AssignedEvent:
-		a = e.Actor.Login
-	case *github.ClosedEvent:
-		a = e.Actor.Login
-	case *github.IssueComment:
-		a = e.Author.Login
-	case *github.RenamedTitleEvent:
-		a = e.Actor.Login
-	case *github.MergedEvent:
-		a = e.Actor.Login
-	case *github.PullRequestReview:
-		a = e.Author.Login
-	case *github.PullRequestReviewComment:
-		a = e.Author.Login
-	case *github.ReopenedEvent:
-		a = e.Actor.Login
-	case *github.ReviewDismissedEvent:
-		a = e.Actor.Login
-	case *github.ReviewRequestRemovedEvent:
-		a = e.Actor.Login
-	case *github.ReviewRequestedEvent:
-		a = e.Actor.Login
-	case *github.UnassignedEvent:
-		a = e.Actor.Login
-	case *github.LabelEvent:
-		a = e.Actor.Login
-	}
-
-	return a
-}
-
 // ReviewAuthor returns the author of the review if the ChangesetEvent is related to a review.
 func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 	switch meta := e.Metadata.(type) {
