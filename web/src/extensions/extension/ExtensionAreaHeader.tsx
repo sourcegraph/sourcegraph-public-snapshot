@@ -149,7 +149,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                             <li key={label} className="nav-item">
                                                 <NavLink
                                                     to={props.url + to}
-                                                    className="nav-link"
+                                                    className="nav-link btn-sm"
                                                     activeClassName="active"
                                                     exact={exact}
                                                 >

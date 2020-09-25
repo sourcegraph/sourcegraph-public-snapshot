@@ -38,6 +38,7 @@
 
     &__logo {
         margin-left: calc(0.5rem - 2px); /* stylelint-disable-line */
+        flex: 0 0 auto;
     }
 
     &__disabled-feedback {

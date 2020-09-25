@@ -87,7 +87,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [askingForPermission, setAskingForPermission] = useState<boolean>(false)
 
-    const optimisticRollbackPipeline = useCallback(
+    const onOptimisticError = useCallback(
         (optimisticUpdateFailure: OptimisticUpdateFailure<boolean>) => {
             setOptimisticEnabled(optimisticUpdateFailure.previousValue)
             onToggleError?.(optimisticUpdateFailure)
@@ -98,7 +98,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     const [nextOptimisticUpdate] = useEventObservable<
         { previousValue: boolean; optimisticValue: boolean; promise: Promise<void> },
         void
-    >(useMemo(() => createOptimisticRollbackPipeline(optimisticRollbackPipeline), [optimisticRollbackPipeline]))
+    >(useMemo(() => createOptimisticRollbackPipeline(onOptimisticError), [onOptimisticError]))
 
     const updateEnablement = useCallback(
         (enabled: boolean) => {
