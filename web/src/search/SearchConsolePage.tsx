@@ -52,6 +52,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             enabled: false,
         },
         lineNumbers: 'off',
+        fontSize: 14,
         glyphMargin: false,
         overviewRulerBorder: false,
         rulers: [],
@@ -106,7 +107,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         {...props}
                         language="sourcegraphSearch"
                         options={options}
-                        height={400}
+                        height={600}
                         editorWillMount={setMonacoInstance}
                         onEditorCreated={setEditorInstance}
                         value={searchQueries.value}
