@@ -46,8 +46,14 @@ func Init() error {
 	return initErr
 }
 
-// defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor
-var defaultEncryptor encryptor
+// defaultEncryptor is configured during init, if no keys are provided it will implement noOpEncryptor.
+var defaultEncryptor encryptor = noOpEncryptor{}
+
+// NOTE: MockDefaultEncryptor should only be called in tests where a random encryptor is
+// needed to test transparent encryption and decryption.
+func MockDefaultEncryptor() {
+	defaultEncryptor = newAESGCMEncodedEncryptor(mustGenerateRandomAESKey(), nil)
+}
 
 func initDefaultEncryptor() error {
 	var encryptionKey []byte
@@ -138,7 +144,6 @@ func initDefaultEncryptor() error {
 	}
 
 	log15.Warn("no encryption option enabled")
-	defaultEncryptor = noOpEncryptor{}
 	return nil
 
 	// TODO: Enable this once docs are in place for
@@ -156,4 +161,13 @@ func generateRandomAESKey() ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+// mustGenerateRandomAESKey generates a random AES key and panics for any error.
+func mustGenerateRandomAESKey() []byte {
+	key, err := generateRandomAESKey()
+	if err != nil {
+		panic(err)
+	}
+	return key
 }
