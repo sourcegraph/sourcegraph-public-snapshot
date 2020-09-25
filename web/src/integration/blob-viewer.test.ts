@@ -190,7 +190,7 @@ describe('Blob viewer', () => {
                     }
                     // Create an immediately-invoked function expression for the extensionBundle function
                     const extensionBundleString = `(${extensionBundle.toString()})()`
-                    response.type('application/javascript; charset=utf-8').send(extensionBundleString);
+                    response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -199,7 +199,7 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it.only('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async function () {
+        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async function () {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Click on "log" in "console.log()" in line 2
