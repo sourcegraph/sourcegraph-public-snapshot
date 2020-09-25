@@ -217,7 +217,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           class="py-1 dropdown-header"
           tabindex="-1"
         >
-          Signed in as
+          Signed in as 
           <strong>
             @alice
           </strong>
@@ -319,7 +319,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           rel="noopener"
           target="_blank"
         >
-          Help
+          Help 
           <svg
             class="mdi-icon icon-inline"
             fill="currentColor"
@@ -348,7 +348,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           rel="noopener"
           target="_blank"
         >
-          About Sourcegraph
+          About Sourcegraph 
           <svg
             class="mdi-icon icon-inline"
             fill="currentColor"
@@ -574,7 +574,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           class="py-1 dropdown-header"
           tabindex="-1"
         >
-          Signed in as
+          Signed in as 
           <strong>
             @alice
           </strong>
@@ -676,7 +676,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           rel="noopener"
           target="_blank"
         >
-          Help
+          Help 
           <svg
             class="mdi-icon icon-inline"
             fill="currentColor"
@@ -705,7 +705,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           rel="noopener"
           target="_blank"
         >
-          About Sourcegraph
+          About Sourcegraph 
           <svg
             class="mdi-icon icon-inline"
             fill="currentColor"
@@ -941,7 +941,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           class="py-1 dropdown-header"
           tabindex="-1"
         >
-          Signed in as
+          Signed in as 
           <strong>
             @alice
           </strong>
@@ -1043,7 +1043,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           rel="noopener"
           target="_blank"
         >
-          Help
+          Help 
           <svg
             class="mdi-icon icon-inline"
             fill="currentColor"
@@ -1275,7 +1275,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           class="py-1 dropdown-header"
           tabindex="-1"
         >
-          Signed in as
+          Signed in as 
           <strong>
             @alice
           </strong>
@@ -1377,7 +1377,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           rel="noopener"
           target="_blank"
         >
-          Help
+          Help 
           <svg
             class="mdi-icon icon-inline"
             fill="currentColor"

@@ -13,7 +13,6 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
 import { useBreadcrumbs, Breadcrumbs, BreadcrumbSetters } from '../components/Breadcrumbs'
-import { Link } from 'react-router-dom'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -63,7 +62,7 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     const { breadcrumbs, ...rootBreadcrumbSetters } = useBreadcrumbs()
 
     const childBreadcrumbSetters = rootBreadcrumbSetters.useBreadcrumb(
-        React.useMemo(() => ({ element: <Link to="/extensions">Extensions</Link>, key: 'Extensions' }), [])
+        React.useMemo(() => ({ link: { to: '/extensions', label: 'Extensions' }, key: 'Extensions' }), [])
     )
 
     const context: ExtensionsAreaRouteContext = {
@@ -79,9 +78,9 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     }
 
     return (
-        <div className="extensions-area">
-            <Breadcrumbs breadcrumbs={breadcrumbs} />
-            <div className="web-content">
+        <div className="extensions-area web-content">
+            <Breadcrumbs breadcrumbs={breadcrumbs} location={props.location} />
+            <div className="">
                 <ExtensionsAreaHeader
                     {...props}
                     {...context}

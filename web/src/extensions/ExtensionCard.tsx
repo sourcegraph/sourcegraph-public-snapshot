@@ -142,7 +142,6 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
             <div
                 className={classNames('extension-card card position-relative flex-1', {
                     'alert alert-success p-0 m-0 extension-card--enabled': change === 'enabled',
-                    'text-muted': change !== 'enabled',
                 })}
             >
                 {/* Visual feedback: shadow when extension is enabled */}
@@ -186,7 +185,14 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                 >
                                     {name}
                                 </Link>
-                                <span> by {publisher}</span>
+                                <span
+                                    className={classNames({
+                                        'text-muted': change !== 'enabled',
+                                    })}
+                                >
+                                    {' '}
+                                    by {publisher}
+                                </span>
 
                                 {isSourcegraphExtension && (
                                     <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />

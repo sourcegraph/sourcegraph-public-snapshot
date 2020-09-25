@@ -5,7 +5,7 @@ exports[`ExtensionCard renders 1`] = `
   className="d-flex"
 >
   <div
-    className="extension-card card position-relative flex-1 text-muted"
+    className="extension-card card position-relative flex-1"
   >
     <div
       className="extension-card__shadow rounded"
@@ -38,8 +38,11 @@ exports[`ExtensionCard renders 1`] = `
             >
               y
             </a>
-            <span>
-               by 
+            <span
+              className="text-muted"
+            >
+               
+              by 
               x
             </span>
           </span>
