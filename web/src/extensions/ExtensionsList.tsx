@@ -7,7 +7,7 @@ import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/setti
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { ExtensionCard } from './ExtensionCard'
 import { ErrorAlert } from '../components/alerts'
-import { applyExtensionsEnablement } from './extensions'
+import { applyCategoryFilter, applyExtensionsEnablement } from './extensions'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
@@ -63,7 +63,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         return <ErrorAlert error={data} history={history} />
     }
 
-    const { error, categories, extensions } = data
+    const { error, extensions, extensionIDsByCategory } = data
 
     if (Object.keys(extensions).length === 0) {
         return (
@@ -92,9 +92,8 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         return selectedCategories.length === 0 || selectedCategories.includes(category)
     })
 
-    // Apply enablement filter
     const filteredCategories = applyExtensionsEnablement(
-        categories,
+        applyCategoryFilter(extensionIDsByCategory, ORDERED_EXTENSION_CATEGORIES, selectedCategories),
         filteredCategoryIDs,
         enablementFilter,
         settingsCascade.final

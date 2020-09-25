@@ -7,50 +7,59 @@ import {
 } from '../../../shared/src/extensions/extension'
 import { validCategories } from './extension/extension'
 import { isErrorLike, ErrorLike } from '../../../shared/src/util/errors'
-import { ExtensionsEnablement } from './ExtensionRegistry'
+import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
 import { Settings } from '../../../shared/src/settings/settings'
+import { createRecord } from '../../../shared/src/util/createRecord'
 
-export interface CategorizedExtensionRegistry {
+export interface ConfiguredRegistryExtensions {
+    [id: string]: ConfiguredRegistryExtension<RegistryExtensionFieldsForList>
+}
+
+export interface ConfiguredExtensionRegistry {
     /** Maps categories to ids of extensions  */
-    categories: Record<ExtensionCategory, string[]>
+    extensionIDsByCategory: Record<
+        ExtensionCategory,
+        {
+            /** IDs of all extensions for which this is the primary category */
+            primaryExtensionIDs: string[]
+            /** IDs of all extensions that fall into this category */
+            allExtensionIDs: string[]
+        }
+    >
 
     /** All extensions returned by the query indexed by id */
-    extensions: { [id: string]: ConfiguredRegistryExtension<RegistryExtensionFieldsForList> }
+    extensions: ConfiguredRegistryExtensions
 }
 
 const NO_VALID_CATEGORIES: 'Other'[] = ['Other']
 
 /**
- * Groups registry extensions by category.
+ * Configures extensions for the registry.
  *
- * `categories`: Object mapping category name to array of extension ids in that category
+ * `extensionIDsByCategory`: Object mapping category name to array of extension ids in that category
  * `extensions`: Object mapping extension id to the configured extension with that id
  *
- * `categorizeExtensionRegistry` is passed a cache of configured extensions to avoid
+ * `configureExtensionRegistry` is passed a cache of configured extensions to avoid
  * parsing manifests multiple times during the lifecycle of the extension registry.
- *
+
  */
-export function categorizeExtensionRegistry(
+export function configureExtensionRegistry(
     nodes: RegistryExtensionFieldsForList[],
-    configuredExtensionsCache: Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>
-): CategorizedExtensionRegistry {
-    const categoriesById: Record<string, string[]> = {}
+    configuredExtensionCache: ConfiguredExtensionCache
+): ConfiguredExtensionRegistry {
+    const extensions: ConfiguredRegistryExtensions = {}
 
-    for (const category of EXTENSION_CATEGORIES) {
-        categoriesById[category] = []
-    }
-
-    const categorizedExtensionRegistry: CategorizedExtensionRegistry = {
-        categories: categoriesById,
-        extensions: {},
-    }
+    const extensionIDsByCategory: ConfiguredExtensionRegistry['extensionIDsByCategory'] = createRecord(
+        EXTENSION_CATEGORIES,
+        () => ({ primaryExtensionIDs: [], allExtensionIDs: [] })
+    )
 
     for (const node of nodes) {
         // cache parsed extension manifests
-        let configuredRegistryExtension = configuredExtensionsCache.get(node.id)
+        let configuredRegistryExtension = configuredExtensionCache.get(node.id)
         if (!configuredRegistryExtension) {
             configuredRegistryExtension = toConfiguredRegistryExtension(node)
-            configuredExtensionsCache.set(node.id, configuredRegistryExtension)
+            configuredExtensionCache.set(node.id, configuredRegistryExtension)
         }
 
         let categories: ExtensionCategory[]
@@ -59,36 +68,68 @@ export function categorizeExtensionRegistry(
         } else {
             categories = NO_VALID_CATEGORIES
         }
+
+        // TODO: Add `primaryCategory` to extension schema
+        // Primary category is either specified or inferred by array position
         const primaryCategory = categories[0]
-        categorizedExtensionRegistry.categories[primaryCategory].push(configuredRegistryExtension.id)
-        categorizedExtensionRegistry.extensions[configuredRegistryExtension.id] = configuredRegistryExtension
+
+        extensionIDsByCategory[primaryCategory].primaryExtensionIDs.push(configuredRegistryExtension.id)
+        for (const category of categories) {
+            extensionIDsByCategory[category].allExtensionIDs.push(configuredRegistryExtension.id)
+        }
+
+        extensions[configuredRegistryExtension.id] = configuredRegistryExtension
     }
 
-    return categorizedExtensionRegistry
+    return { extensions, extensionIDsByCategory }
+}
+
+/** Groups extensions by category */
+export function applyCategoryFilter(
+    extensionIDsByCategory: ConfiguredExtensionRegistry['extensionIDsByCategory'],
+    categories: ExtensionCategory[],
+    selectedCategories: ExtensionCategory[]
+): Record<ExtensionCategory, string[]> {
+    if (selectedCategories.length === 0) {
+        // Primary categories
+        return createRecord(categories, category => extensionIDsByCategory[category].primaryExtensionIDs)
+    }
+
+    // Categorize in toggle order, make sure the same extension doesn't appear twice.
+    const filteredCategorizedExtensions = createRecord<ExtensionCategory, string[]>(selectedCategories, () => [])
+
+    // To "blacklist" extension ID after it has been used
+    const takenIDs = new Set<string>()
+
+    for (const category of selectedCategories) {
+        for (const extensionID of extensionIDsByCategory[category].allExtensionIDs) {
+            if (!takenIDs.has(extensionID)) {
+                filteredCategorizedExtensions[category].push(extensionID)
+
+                takenIDs.add(extensionID)
+            }
+        }
+    }
+
+    return filteredCategorizedExtensions
 }
 
 /**
  * Filters categorized registry extensions by enablement (enabled | disabled | all)
  */
 export function applyExtensionsEnablement(
-    categories: CategorizedExtensionRegistry['categories'],
+    categorizedExtensions: Record<ExtensionCategory, string[]>,
     filteredCategoryIDs: ExtensionCategory[],
     enablement: ExtensionsEnablement,
     settings: Settings | ErrorLike | null
-): CategorizedExtensionRegistry['categories'] {
+): Record<ExtensionCategory, string[]> {
     if (enablement === 'all') {
-        return categories
+        return categorizedExtensions
     }
 
-    const enabled = enablement === 'enabled'
-
-    const filteredCategories: Record<string, string[]> = {}
-
-    for (const category of filteredCategoryIDs) {
-        filteredCategories[category] = categories[category].filter(
-            extensionID => enabled === isExtensionEnabled(settings, extensionID)
+    return createRecord(filteredCategoryIDs, category =>
+        categorizedExtensions[category].filter(
+            extensionID => (enablement === 'enabled') === isExtensionEnabled(settings, extensionID)
         )
-    }
-
-    return filteredCategories
+    )
 }

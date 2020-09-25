@@ -46,7 +46,7 @@ export interface OptimisticUpdateFailure<T> {
  * - Cancels subscriptions to old promises by way of `switchMap`; we
  * only care about the latest optimistic update
  *
- * TODO: Make it work with observables as well?
+ * TODO: Make it work with observables as well.
  *
  * @param onError Function called with the previous value and the optimistic value, in case you
  * want to display the optimistic value in an error message.

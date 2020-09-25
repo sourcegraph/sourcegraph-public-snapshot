@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { PageTitle } from '../components/PageTitle'
@@ -18,7 +18,7 @@ import {
     RegistryExtensionFieldsForList,
     RegistryExtensionsVariables,
 } from '../graphql-operations'
-import { categorizeExtensionRegistry, CategorizedExtensionRegistry } from './extensions'
+import { configureExtensionRegistry, ConfiguredExtensionRegistry } from './extensions'
 import { ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
@@ -37,7 +37,7 @@ interface Props
 const LOADING = 'loading' as const
 const URL_QUERY_PARAM = 'query'
 
-export type ExtensionListData = typeof LOADING | (CategorizedExtensionRegistry & { error: string | null }) | ErrorLike
+export type ExtensionListData = typeof LOADING | (ConfiguredExtensionRegistry & { error: string | null }) | ErrorLike
 
 export type ExtensionsEnablement = 'all' | 'enabled' | 'disabled'
 
@@ -87,18 +87,28 @@ const extensionRegistryQuery = gql`
     }
 `
 
+export type ConfiguredExtensionCache = Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>
+
 /** A page that displays overview information about the available extensions. */
 export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
     const { history, location, settingsCascade, platformContext, authenticatedUser } = props
 
-    const { current: configuredExtensionCache } = useRef(
-        new Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>()
+    // Update the cache after each response. This speeds up client-side filtering.
+    // Lazy initialize cache ref. Don't mind the `useState` abuse:
+    // - can't use `useMemo` here (https://github.com/facebook/react/issues/14490#issuecomment-454973512)
+    // - `useRef` is just `useState`
+    const [configuredExtensionCache] = useState<ConfiguredExtensionCache>(
+        () => new Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>()
     )
+
     const [query, setQuery] = useState(getQueryFromProps(location))
+    // Selected categories in order of selection. Used to assign extensions to their earliest selected category.
     const [selectedCategories, setSelectedCategories] = useState<ExtensionCategory[]>([])
+    // Filter extensions by enablement state: enabled, disabled, or all.
     const [enablementFilter, setEnablementFilter] = useState<ExtensionsEnablement>('all')
+    // Programming language extensions are hidden by default. Users cannot un-show PL extensions once toggled.
     const [showMoreExtensions, setShowMoreExtensions] = useState(false)
 
     /**
@@ -159,7 +169,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
                         return {
                             error,
-                            ...categorizeExtensionRegistry(nodes, configuredExtensionCache),
+                            ...configureExtensionRegistry(nodes, configuredExtensionCache),
                         }
                     })
                 ),
@@ -196,19 +206,21 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             Improve your workflow with code intelligence, test coverage, and other useful information.
                         </p>
                         <Form onSubmit={preventDefault} className="form-inline">
-                            <input
-                                className="form-control flex-grow-1 mb-2 test-extension-registry-input shadow"
-                                type="search"
-                                placeholder="Search extensions..."
-                                name="query"
-                                value={query}
-                                onChange={onQueryChangeEvent}
-                                autoFocus={true}
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="off"
-                                spellCheck={false}
-                            />
+                            <div className="shadow flex-grow-1 mb-2">
+                                <input
+                                    className="form-control w-100 test-extension-registry-input"
+                                    type="search"
+                                    placeholder="Search extensions..."
+                                    name="query"
+                                    value={query}
+                                    onChange={onQueryChangeEvent}
+                                    autoFocus={true}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                />
+                            </div>
                         </Form>
                         <ExtensionsQueryInputToolbar
                             selectedCategories={selectedCategories}
