@@ -30,6 +30,7 @@ type SyncWorkerOptions struct {
 
 // NewSyncWorker creates a new external service sync worker.
 func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+	dbHandle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}

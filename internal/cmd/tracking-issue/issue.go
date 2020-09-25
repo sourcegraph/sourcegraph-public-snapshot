@@ -25,23 +25,30 @@ type Issue struct {
 	ClosedAt   time.Time
 
 	Deprioritised bool           `json:"-"`
-	LinkedPRs     []*PullRequest `json:"-"`
-	Children      []*Issue       `json:"-"`
-	Parents       []*Issue       `json:"-"`
+	LinkedPRs     []*PullRequest `json:"-"` // PRs that resolve this issue
+	ChildIssues   []*Issue       `json:"-"` // Tracked issues (only populated for tracking issues)
+	ChildPRs      []*PullRequest `json:"-"` // Tracked PRs (only populated for tracking issues)
+	Parents       []*Issue       `json:"-"` // Tracking issues watching this issue
+}
+
+func (issue *Issue) Closed() bool {
+	return strings.EqualFold(issue.State, "closed")
 }
 
 func (issue *Issue) Markdown(labelAllowlist []string) string {
 	state := " "
 	prefixSuffix := ""
-	if strings.EqualFold(issue.State, "closed") {
+	daysSinceClose := ""
+	if issue.Closed() {
 		state = "x"
 		prefixSuffix = "~"
+		daysSinceClose = fmt.Sprintf("(🏁 %s) ", formatTimeSince(issue.ClosedAt))
 	}
 
 	estimate := Estimate(issue.Labels)
 	if estimate == "" {
 		est := float64(0)
-		for _, child := range issue.Children {
+		for _, child := range issue.ChildIssues {
 			est += Days(Estimate(child.Labels))
 		}
 		if est > 0 {
@@ -65,8 +72,9 @@ func (issue *Issue) Markdown(labelAllowlist []string) string {
 		pullRequestsPrefix = "; PRs: "
 	}
 
-	return fmt.Sprintf("- [%s] %s ([%s#%d%s](%s)%s%s) %s%s%s\n",
+	return fmt.Sprintf("- [%s] %s%s ([%s#%d%s](%s)%s%s) %s%s%s\n",
 		state,
+		daysSinceClose,
 		issue.title(),
 		prefixSuffix,
 		issue.Number,
@@ -116,7 +124,7 @@ func (issue *Issue) title() string {
 	return title
 }
 
-func (issue *Issue) Tracked(issues []*Issue) (tracked []*Issue) {
+func (issue *Issue) TrackedIssues(issues []*Issue) (tracked []*Issue) {
 	if !contains(issue.Labels, "tracking") {
 		return nil
 	}
@@ -134,6 +142,25 @@ outer:
 		}
 
 		tracked = append(tracked, other)
+	}
+
+	return tracked
+}
+
+func (issue *Issue) TrackedPRs(prs []*PullRequest) (tracked []*PullRequest) {
+	if !contains(issue.Labels, "tracking") {
+		return nil
+	}
+
+outer:
+	for _, pr := range prs {
+		for _, label := range issue.Labels {
+			if label != "tracking" && !contains(pr.Labels, label) {
+				continue outer
+			}
+		}
+
+		tracked = append(tracked, pr)
 	}
 
 	return tracked

@@ -1,27 +1,39 @@
-import React, { useMemo, useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { PanelContainer } from './PanelContainer'
-import { Observable } from 'rxjs'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { parseSearchURLQuery } from '..'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 import { EventLogResult } from '../backend'
-import { Link } from '../../../../shared/src/components/Link'
-import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { FILTERS } from '../../../../shared/src/search/parser/filters'
+import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
+import { Observable } from 'rxjs'
+import { PanelContainer } from './PanelContainer'
+import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { parseSearchURLQuery } from '..'
 import { ShowMoreButton } from './ShowMoreButton'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
-export const RepositoriesPanel: React.FunctionComponent<{
+interface Props extends TelemetryProps {
+    className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
-    className?: string
-}> = ({ authenticatedUser, fetchRecentSearches, className }) => {
+}
+
+export const RepositoriesPanel: React.FunctionComponent<Props> = ({
+    className,
+    authenticatedUser,
+    fetchRecentSearches,
+    telemetryService,
+}) => {
     // Use a larger page size because not every search may have a `repo:` filter, and `repo:` filters could often
     // be duplicated. Therefore, we fetch more searches to populate this panel.
     const pageSize = 50
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
+
+    const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
+        telemetryService,
+    ])
 
     const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 
@@ -60,8 +72,16 @@ export const RepositoriesPanel: React.FunctionComponent<{
         }
     }, [searchEventLogs])
 
+    useEffect(() => {
+        // Only log the first load (when items to load is equal to the page size)
+        if (repoFilterValues && itemsToLoad === pageSize) {
+            telemetryService.log('RepositoriesPanelLoaded', { empty: repoFilterValues.length === 0 })
+        }
+    }, [repoFilterValues, telemetryService, itemsToLoad])
+
     function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
+        telemetryService.log('RepositoriesPanelShowMoreClicked')
     }
 
     const contentDisplay = (
@@ -71,7 +91,7 @@ export const RepositoriesPanel: React.FunctionComponent<{
             </div>
             {repoFilterValues?.map((repoFilterValue, index) => (
                 <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
-                    <Link to={`/search?q=repo:${repoFilterValue}`}>
+                    <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
                         <span className="search-keyword">repo:</span>
                         <span className="repositories-panel__search-value">{repoFilterValue}</span>
                     </Link>

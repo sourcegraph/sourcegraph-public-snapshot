@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // Store is the interface to Postgres for precise-code-intel features.
@@ -216,12 +217,16 @@ var _ Store = &store{}
 
 // New creates a new instance of store connected to the given Postgres DSN.
 func New(postgresDSN string) (Store, error) {
-	base, err := basestore.New(postgresDSN, "codeintel")
+	base, err := basestore.New(postgresDSN, "codeintel", sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{Store: base}, nil
+}
+
+func NewWithDB(db dbutil.DB) Store {
+	return &store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func NewWithHandle(handle *basestore.TransactableHandle) Store {

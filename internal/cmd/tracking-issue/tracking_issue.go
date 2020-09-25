@@ -78,9 +78,15 @@ func (t *TrackingIssue) Workloads() Workloads {
 				pr.LinkedIssues = append(pr.LinkedIssues, issue)
 			}
 
-			tracked := issue.Tracked(t.Issues)
-			for _, child := range tracked {
-				issue.Children = append(issue.Children, child)
+			trackedIssues := issue.TrackedIssues(t.Issues)
+			for _, child := range trackedIssues {
+				issue.ChildIssues = append(issue.ChildIssues, child)
+				child.Parents = append(child.Parents, issue)
+			}
+
+			trackedPRs := issue.TrackedPRs(t.PRs)
+			for _, child := range trackedPRs {
+				issue.ChildPRs = append(issue.ChildPRs, child)
 				child.Parents = append(child.Parents, issue)
 			}
 
@@ -88,7 +94,7 @@ func (t *TrackingIssue) Workloads() Workloads {
 				estimate := Estimate(issue.Labels)
 				w.Days += Days(estimate)
 
-				if strings.EqualFold(issue.State, "closed") {
+				if issue.Closed() {
 					w.CompletedDays += Days(estimate)
 				}
 			} else {

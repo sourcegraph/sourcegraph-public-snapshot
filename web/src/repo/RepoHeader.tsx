@@ -180,7 +180,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
     const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
     return (
         <nav className="repo-header navbar navbar-expand">
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
             </div>

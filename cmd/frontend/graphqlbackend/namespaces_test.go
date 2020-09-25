@@ -117,7 +117,7 @@ func TestNamespaceByName(t *testing.T) {
 			wantName   = "alice"
 			wantUserID = 123
 		)
-		db.Mocks.GetNamespaceByName = func(name string) (*db.Namespace, error) {
+		db.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*db.Namespace, error) {
 			if name != wantName {
 				t.Errorf("got %q, want %q", name, wantName)
 			}
@@ -158,7 +158,7 @@ func TestNamespaceByName(t *testing.T) {
 			wantName  = "acme"
 			wantOrgID = 3
 		)
-		db.Mocks.GetNamespaceByName = func(name string) (*db.Namespace, error) {
+		db.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*db.Namespace, error) {
 			if name != wantName {
 				t.Errorf("got %q, want %q", name, wantName)
 			}
@@ -195,7 +195,7 @@ func TestNamespaceByName(t *testing.T) {
 
 	t.Run("invalid", func(t *testing.T) {
 		resetMocks()
-		db.Mocks.GetNamespaceByName = func(name string) (*db.Namespace, error) {
+		db.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*db.Namespace, error) {
 			return nil, db.ErrNamespaceNotFound
 		}
 		gqltesting.RunTests(t, []*gqltesting.Test{

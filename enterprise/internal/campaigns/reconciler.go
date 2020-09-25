@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -104,7 +106,7 @@ var ErrPublishSameBranch = errors.New("cannot create changeset on the same branc
 
 // publishChangeset creates the given changeset on its code host.
 func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec) (err error) {
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
@@ -146,6 +148,12 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 		HeadRef:   git.EnsureRefPrefix(ref),
 		Repo:      repo,
 		Changeset: ch,
+	}
+
+	// Depending on the changeset, we may want to add to the body (for example,
+	// to add a backlink to Sourcegraph).
+	if err := decorateChangesetBody(ctx, tx, cs, campaign); err != nil {
+		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
 	}
 
 	// If we're running this method a second time, because we failed due to an
@@ -191,7 +199,7 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 // If the delta requires updates to the changeset on the code host, it will
 // update the changeset there.
 func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta) (err error) {
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
@@ -242,6 +250,12 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		Changeset: ch,
 	}
 
+	// Depending on the changeset, we may want to add to the body (for example,
+	// to add a backlink to Sourcegraph).
+	if err := decorateChangesetBody(ctx, tx, &cs, campaign); err != nil {
+		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
+	}
+
 	if err := ccs.UpdateChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
@@ -269,7 +283,7 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 		return tx.UpdateChangeset(ctx, ch)
 	}
 
-	repo, extSvc, err := loadAssociations(ctx, tx, ch)
+	repo, extSvc, _, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
@@ -485,20 +499,25 @@ func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.
 	return nil
 }
 
-func loadAssociations(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*repos.Repo, *repos.ExternalService, error) {
+func loadAssociations(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*repos.Repo, *repos.ExternalService, *campaigns.Campaign, error) {
 	reposStore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
 
 	repo, err := loadRepo(ctx, reposStore, ch.RepoID)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load repository")
+		return nil, nil, nil, errors.Wrap(err, "failed to load repository")
 	}
 
 	extSvc, err := loadExternalService(ctx, reposStore, repo)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load external service")
+		return nil, nil, nil, errors.Wrap(err, "failed to load external service")
 	}
 
-	return repo, extSvc, nil
+	campaign, err := loadCampaign(ctx, tx, ch.OwnedByCampaignID)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to load campaign")
+	}
+
+	return repo, extSvc, campaign, nil
 }
 
 func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
@@ -553,6 +572,77 @@ func loadExternalService(ctx context.Context, reposStore repos.Store, repo *repo
 	}
 
 	return externalService, nil
+}
+
+func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign, error) {
+	if id == 0 {
+		return nil, errors.New("changeset has no owning campaign")
+	}
+
+	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil && err != ErrNoResults {
+		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
+	} else if campaign == nil {
+		return nil, errors.Errorf("campaign not found: %d", id)
+	}
+
+	return campaign, nil
+}
+
+func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset, campaign *campaigns.Campaign) error {
+	// We need to get the namespace, since external campaign URLs are
+	// namespaced.
+	ns, err := db.Namespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
+	if err != nil {
+		return errors.Wrap(err, "retrieving namespace")
+	}
+
+	url, err := campaignURL(ctx, ns, campaign)
+	if err != nil {
+		return errors.Wrap(err, "building URL")
+	}
+
+	cs.Body = fmt.Sprintf(
+		"%s\n\n[_Created by Sourcegraph campaign `%s/%s`._](%s)",
+		cs.Body, ns.Name, campaign.Name, url,
+	)
+
+	return nil
+}
+
+// internalClient is here for mocking reasons.
+var internalClient interface {
+	ExternalURL(context.Context) (string, error)
+} = api.InternalClient
+
+func campaignURL(ctx context.Context, ns *db.Namespace, c *campaigns.Campaign) (string, error) {
+	// To build the absolute URL, we need to know where Sourcegraph is!
+	extStr, err := internalClient.ExternalURL(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "getting external Sourcegraph URL")
+	}
+
+	extURL, err := url.Parse(extStr)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
+	}
+
+	// This needs to be kept consistent with resolvers.campaignURL().
+	// (Refactoring the resolver to use the same function is difficult due to
+	// the different querying and caching behaviour in GraphQL resolvers, so we
+	// simply replicate the logic here.)
+	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/campaigns/" + c.Name})
+
+	return u.String(), nil
+}
+
+func namespaceURL(ns *db.Namespace) string {
+	prefix := "/users/"
+	if ns.Organization != 0 {
+		prefix = "/organizations/"
+	}
+
+	return prefix + ns.Name
 }
 
 func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {
