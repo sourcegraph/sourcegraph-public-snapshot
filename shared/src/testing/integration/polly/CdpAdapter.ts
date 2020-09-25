@@ -2,6 +2,7 @@ import { Polly, Request as PollyRequest } from '@pollyjs/core'
 import Puppeteer from 'puppeteer'
 import Protocol from 'devtools-protocol'
 import PollyAdapter from '@pollyjs/adapter'
+import { isErrorLike } from '../../../util/errors'
 
 function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')
@@ -17,6 +18,11 @@ interface PollyResponse {
     body: string
 }
 
+/**
+ * "Request arguments" are the custom data that Polly allows us to attach to
+ * PollyRequests, which we use to store the CDP's requestId to be able to refer
+ * to requests.
+ */
 interface PollyRequestArguments {
     requestArguments: { requestId: string }
 }
@@ -39,12 +45,6 @@ export class CdpAdapter extends PollyAdapter {
     private page: Puppeteer.Page
 
     /**
-     * The request resource types this adapter should intercept.
-     */
-    // @ts-ignore
-    private requestResourceTypes: Puppeteer.ResourceType[]
-
-    /**
      * A map of all intercepted requests to their respond function, which will be called by the
      * 'response' event listener, causing Polly to record the response content.
      */
@@ -59,7 +59,13 @@ export class CdpAdapter extends PollyAdapter {
      * A map of all intercepted requests to their passthrough callbacks function, which will be called by the
      * onResponseReceived event listener, causing Polly to record the response content.
      */
-    private passthroughCallbacks = new Map<string, (response: PollyResponse) => void>()
+    private passthroughPromises = new Map<
+        string,
+        {
+            resolve: (response: PollyResponse) => void
+            reject: (error: any) => void
+        }
+    >()
 
     /**
      * The adapter's ID, used to reference it in the Polly constructor.
@@ -69,11 +75,13 @@ export class CdpAdapter extends PollyAdapter {
     }
 
     constructor(polly: Polly) {
+        // Rationale for the following ts-ignore:
+        // The type declaration provided for Polly's Adapter is missing the
+        // constructor argument.
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         super(polly)
-        this.page = this.options.page
-        this.requestResourceTypes = this.options.requestResourceTypes
+        this.page = this.options.page as Puppeteer.Page
     }
 
     /**
@@ -85,24 +93,21 @@ export class CdpAdapter extends PollyAdapter {
         this.cdpSession = await this.page.target().createCDPSession()
 
         // TODO: This is where we narrow down the interception with patterns.
-        // Request and respond stages are independant, so we can set a different
+        // Request and respond stages are independent, so we can set a different
         // set of patterns for each.
         const fetchEnableRequest: Protocol.Fetch.EnableRequest = {
             patterns: [{ requestStage: 'Request' }, { requestStage: 'Response' }],
         }
         await this.cdpSession.send('Fetch.enable', fetchEnableRequest)
 
-        this.cdpSession.on(
-            'Fetch.requestPaused',
-            async (event: Protocol.Fetch.RequestPausedEvent): Promise<void> => {
-                const isInResponseStage = eventIsInResponseStage(event)
-                if (isInResponseStage) {
-                    await this.handlePausedRequestInResponseStage(event)
-                } else {
-                    await this.handlePausedRequestInRequestStage(event)
-                }
+        this.cdpSession.on('Fetch.requestPaused', (event: Protocol.Fetch.RequestPausedEvent): void => {
+            const isInResponseStage = eventIsInResponseStage(event)
+            if (isInResponseStage) {
+                this.handlePausedRequestInResponseStage(event)
+            } else {
+                this.handlePausedRequestInRequestStage(event)
             }
-        )
+        })
     }
 
     /**
@@ -124,8 +129,8 @@ export class CdpAdapter extends PollyAdapter {
         } = pollyRequest
 
         return new Promise<PollyResponse>((resolve, reject) => {
-            this.passthroughCallbacks.set(requestId, resolve)
-            this.continuePausedRequest({ requestId })
+            this.passthroughPromises.set(requestId, { resolve, reject })
+            this.continuePausedRequest({ requestId }).catch(console.error)
         })
     }
 
@@ -166,7 +171,6 @@ export class CdpAdapter extends PollyAdapter {
      * when a response for this request is received.
      */
     public onRequest(pollyRequest: PollyRequest & PollyRequestArguments & { promise: PollyPromise }): void {
-        console.log('onRequest', pollyRequest.requestArguments.requestId)
         const { requestArguments, promise } = pollyRequest
 
         const { requestId } = requestArguments
@@ -178,7 +182,7 @@ export class CdpAdapter extends PollyAdapter {
     }
 
     private async continuePausedRequest(request: Protocol.Fetch.ContinueRequestRequest): Promise<void> {
-        await this.trySendCdpRequest('Fetch.continueRequesst', request)
+        await this.trySendCdpRequest('Fetch.continueRequest', request)
     }
 
     /**
@@ -190,7 +194,7 @@ export class CdpAdapter extends PollyAdapter {
             await this.cdpSession?.send(cdpRequestName, request)
         } catch (error) {
             // TODO: also ignore "target closed" error
-            if (error.message.endsWith('Session closed. Most likely the page has been closed.')) {
+            if (isErrorLike(error) && error.message.endsWith('Session closed. Most likely the page has been closed.')) {
                 return
             }
             throw error
@@ -215,50 +219,75 @@ export class CdpAdapter extends PollyAdapter {
         return getBodyStringFromCdpBody(body)
     }
 
-    private async handlePausedRequestInRequestStage(event: Protocol.Fetch.RequestPausedEvent): Promise<void> {
+    /**
+     * Handle a "request paused" event, for requests called at the request stage.
+     */
+    private handlePausedRequestInRequestStage(event: Protocol.Fetch.RequestPausedEvent): void {
+        // Rationale for ts-ignore:
+        // The type declaration provided for Polly's Adapter is missing a
+        // declaration for the handleRequest method.
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         this.handleRequest({
-            ...event.request,
             url: event.request.url,
             method: event.request.method,
             headers: event.request.headers,
+            // postData appears to be the field that contains the actual entire
+            // body of the request
             body: event.request.postData ?? '',
             requestArguments: { requestId: event.requestId },
         })
     }
 
-    private async handlePausedRequestInResponseStage(event: Protocol.Fetch.RequestPausedEvent): Promise<void> {
+    /**
+     * Handle a "request paused" event, for requests paused at the response stage.
+     */
+    private handlePausedRequestInResponseStage(event: Protocol.Fetch.RequestPausedEvent): void {
         const { requestId } = event
 
+        // First case: response was not received and encountered an error (for
+        // example the connection was refused)
         if (event.responseErrorReason) {
-            // Response is an error
-            this.pendingRequests.get(requestId)?.reject(new Error(event.responseErrorReason))
+            const error = new Error(event.responseErrorReason)
+
+            // Reject passthrough
+            this.passthroughPromises.get(requestId)?.reject(error)
+            this.passthroughPromises.delete(requestId)
+
+            /// Reject pending request
+            this.pendingRequests.get(requestId)?.reject(error)
             this.pendingRequests.delete(requestId)
+            return
         }
 
-        const body = await this.getResponseBody(event)
+        // Second case: response was received and therefore the response is
+        // expected to have a status code, and may or may not have a body.
+        this.getResponseBody(event)
+            .then(body => {
+                const statusCode = event.responseStatusCode
+                if (!statusCode) {
+                    throw new Error('Response expected to have a status code')
+                }
 
-        // Convert the CDP response into a Polly response
+                // Convert the CDP response into a Polly response
+                const pollyResponse: PollyResponse = {
+                    statusCode,
+                    headers: headerEntriesToHeaderObject(event.responseHeaders),
+                    body,
+                }
 
-        const pollyResponse: PollyResponse = {
-            statusCode: event.responseStatusCode ?? 0, // TODO: what if the response is a failure
-            headers: headerEntriesToHeaderObject(event.responseHeaders),
-            body,
-        }
+                // The requestId may or may not have an associated passthrough callback.
+                // If it does, call it and delete it.
+                this.passthroughPromises.get(requestId)?.resolve(pollyResponse)
+                this.passthroughPromises.delete(requestId)
 
-        // The requestId may or may not have an associated passthrough callback.
-        // If it does, call it and delete it. TODO: verify if we need the
-        // ability to reject the passthrough promise as well, in which case we
-        // need both resolve and reject callbacks to be available here.
-        this.passthroughCallbacks.get(requestId)?.(pollyResponse)
-        this.passthroughCallbacks.delete(requestId)
-
-        // Each pending request has an associated promise. Because at this point
-        // the request is done (given that a response has been received), we can
-        // resolve the pending request promise.
-        this.pendingRequests.get(requestId)?.resolve(pollyResponse)
-        this.pendingRequests.delete(requestId)
+                // Each pending request has an associated promise. Because at this point
+                // the request is done (given that a response has been received), we can
+                // resolve the pending request promise.
+                this.pendingRequests.get(requestId)?.resolve(pollyResponse)
+                this.pendingRequests.delete(requestId)
+            })
+            .catch(console.error)
     }
 }
 
