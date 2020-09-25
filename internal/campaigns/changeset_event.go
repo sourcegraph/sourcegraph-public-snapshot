@@ -623,7 +623,12 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 
 	case *github.CheckRun:
 		o := o.Metadata.(*github.CheckRun)
-		updateGithubCheckRun(e, o)
+		if e.Status == "" {
+			e.Status = o.Status
+		}
+		if e.Conclusion == "" {
+			e.Conclusion = o.Conclusion
+		}
 
 	case *github.CheckSuite:
 		o := o.Metadata.(*github.CheckSuite)
@@ -675,15 +680,6 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 ////////////////////////////////////////////////////
 // Helpers for updating changesets from metadata. //
 ////////////////////////////////////////////////////
-
-func updateGithubCheckRun(e, o *github.CheckRun) {
-	if e.Status == "" {
-		e.Status = o.Status
-	}
-	if e.Conclusion == "" {
-		e.Conclusion = o.Conclusion
-	}
-}
 
 func updateGitHubPullRequestReview(e, o *github.PullRequestReview) {
 	if e.DatabaseID == 0 {
