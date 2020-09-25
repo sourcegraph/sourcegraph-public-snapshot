@@ -51,7 +51,7 @@ export class CdpAdapter extends PollyAdapter {
     private pendingRequests = new Map<string, PollyPromise>()
 
     /**
-     * TODO: write doc comment
+     * The CDP session used to control request interception in the browser.
      */
     private cdpSession?: Puppeteer.CDPSession
 
