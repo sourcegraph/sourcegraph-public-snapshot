@@ -29,10 +29,10 @@ async function run() {
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
 
-    const polly = new Polly('testing puppeteer adapter', {
-        adapters: ['puppeteer'], // provided by PuppeteerAdapter
+    const polly = new Polly('testing CDP adapter', {
+        adapters: ['cdp'], // provided by CdpAdapter
         adapterOptions: {
-            puppeteer: {
+            cdp: {
                 page: page,
                 requestResourceTypes,
             },
