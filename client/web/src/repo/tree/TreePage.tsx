@@ -301,11 +301,19 @@ export const TreePage: React.FunctionComponent<Props> = ({
             ) : (
                 <>
                     <header className="mb-3">
-                        {treeOrError.isRoot ? (
-                            <>
-                                <h2 className="tree-page__title">
+                        <h2 className="tree-page__title">
+                            {treeOrError.isRoot ? (
+                                <>
                                     <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
-                                </h2>
+                                </>
+                            ) : (
+                                <>
+                                    <FolderIcon className="icon-inline" /> {filePath}
+                                </>
+                            )}
+                        </h2>
+                        {treeOrError.isRoot && (
+                            <>
                                 {repoDescription && <p>{repoDescription}</p>}
                                 <div className="btn-group mb-3">
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
@@ -332,10 +340,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     </Link>
                                 </div>
                             </>
-                        ) : (
-                            <h2 className="tree-page__title">
-                                <FolderIcon className="icon-inline" /> {filePath}
-                            </h2>
                         )}
                     </header>
                     {views && (
