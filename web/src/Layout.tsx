@@ -128,6 +128,7 @@ export interface LayoutProps
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
     globbing: boolean
+    showMultilineSearchConsole: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>

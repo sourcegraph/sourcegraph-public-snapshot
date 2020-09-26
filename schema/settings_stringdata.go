@@ -70,6 +70,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "showMultilineSearchConsole": {
+          "description": "Enables the multiline search console at search/console",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"

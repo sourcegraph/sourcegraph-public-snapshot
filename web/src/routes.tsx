@@ -12,11 +12,13 @@ import { reactHooks } from './repogroups/ReactHooks'
 import { android } from './repogroups/Android'
 import { stanford } from './repogroups/Stanford'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
+import { isUndefined } from 'lodash'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
+const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 
 interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
@@ -77,7 +79,23 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/console',
-        render: lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage'),
+        render: props =>
+            props.showMultilineSearchConsole ? (
+                <SearchConsolePage
+                    {...props}
+                    allExpanded={false}
+                    showSavedQueryModal={false}
+                    deployType={window.context.deployType}
+                    onShowMoreResultsClick={() => undefined}
+                    onExpandAllResultsToggle={() => undefined}
+                    onSavedQueryModalClose={() => undefined}
+                    onDidCreateSavedQuery={() => undefined}
+                    onSaveQueryClick={() => undefined}
+                    didSave={false}
+                />
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {

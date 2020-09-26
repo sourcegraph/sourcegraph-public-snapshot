@@ -182,6 +182,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
+
+    /**
+     * Whether we show the mulitiline editor at /search/console 
+     */
+    showMultilineSearchConsole: boolean
 }
 
 const notificationClassNames = {
@@ -265,6 +270,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showOnboardingTour: false,
             showEnterpriseHomePanels: false,
             globbing: false,
+            showMultilineSearchConsole: false,
         }
     }
 
@@ -445,6 +451,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
+                                    showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
