@@ -82,6 +82,10 @@ func (j *Janitor) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "janitor.freeSpace")
 	}
 
+	if err := j.hardDeleteDeletedRecords(ctx); err != nil {
+		return errors.Wrap(err, "janitor.hardDeleteDeletedRecords")
+	}
+
 	return nil
 }
 

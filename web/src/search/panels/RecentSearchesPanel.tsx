@@ -1,16 +1,17 @@
 import classNames from 'classnames'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
+import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
+import { ShowMoreButton } from './ShowMoreButton'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { LoadingPanelView } from './LoadingPanelView'
-import { ShowMoreButton } from './ShowMoreButton'
 
 interface RecentSearch {
     count: number
@@ -19,13 +20,22 @@ interface RecentSearch {
     url: string
 }
 
-export const RecentSearchesPanel: React.FunctionComponent<{
+interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
+
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date
-}> = ({ className, authenticatedUser, fetchRecentSearches, now }) => {
+}
+
+export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
+    className,
+    authenticatedUser,
+    fetchRecentSearches,
+    now,
+    telemetryService,
+}) => {
     const pageSize = 20
 
     const [itemsToLoad, setItemsToLoad] = useState(pageSize)
@@ -45,6 +55,17 @@ export const RecentSearchesPanel: React.FunctionComponent<{
             setProcessedResults(processRecentSearches(recentSearches))
         }
     }, [recentSearches])
+
+    useEffect(() => {
+        // Only log the first load (when items to load is equal to the page size)
+        if (processedResults && itemsToLoad === pageSize) {
+            telemetryService.log('RecentSearchesPanelLoaded', { empty: processedResults.length === 0 })
+        }
+    }, [processedResults, telemetryService, itemsToLoad])
+
+    const logSearchClicked = useCallback(() => telemetryService.log('RecentSearchesPanelSearchClicked'), [
+        telemetryService,
+    ])
 
     const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
@@ -98,6 +119,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
 
     function loadMoreItems(): void {
         setItemsToLoad(current => current + pageSize)
+        telemetryService.log('RecentSearchesPanelShowMoreClicked')
     }
 
     const contentDisplay = (
@@ -125,7 +147,7 @@ export const RecentSearchesPanel: React.FunctionComponent<{
                                 </span>
                             </td>
                             <td>
-                                <Link to={recentSearch.url} className="text-monospace">
+                                <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>
                                     {recentSearch.searchText}
                                 </Link>
                             </td>

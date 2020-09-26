@@ -4,6 +4,12 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
 <RepositoriesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
@@ -76,6 +82,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -94,6 +101,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -119,11 +127,11 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -143,10 +151,12 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             key="sourcegraph-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -166,10 +176,12 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             key="test-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -195,6 +207,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
 <RepositoriesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
@@ -267,6 +285,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -285,6 +304,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -303,6 +323,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-two"
           >
             <span
@@ -332,11 +353,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -356,10 +377,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             key="test-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -379,10 +402,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             key="sourcegraph-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -402,10 +427,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             key="test-two-2"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-two"
             >
               <a
                 href="/search?q=repo:test-two"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -448,6 +475,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
   authenticatedUser={null}
   className=""
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
@@ -520,6 +553,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -538,6 +572,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -556,6 +591,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-two"
           >
             <span
@@ -574,6 +610,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-three"
           >
             <span
@@ -592,6 +629,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:r:test-four"
           >
             <span
@@ -610,6 +648,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-five"
           >
             <span
@@ -635,11 +674,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -659,10 +698,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             key="test-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -682,10 +723,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             key="sourcegraph-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -705,10 +748,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             key="test-two-2"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-two"
             >
               <a
                 href="/search?q=repo:test-two"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -728,10 +773,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             key="test-three-3"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-three"
             >
               <a
                 href="/search?q=repo:test-three"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -751,10 +798,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             key="r:test-four-4"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:r:test-four"
             >
               <a
                 href="/search?q=repo:r:test-four"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -774,10 +823,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             key="test-five-5"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-five"
             >
               <a
                 href="/search?q=repo:test-five"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -803,6 +854,12 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
 <RepositoriesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
@@ -875,6 +932,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -893,6 +951,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -918,11 +977,11 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       <div
         className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
@@ -942,10 +1001,12 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             key="test-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -965,10 +1026,12 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             key="sourcegraph-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"

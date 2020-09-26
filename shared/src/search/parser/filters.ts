@@ -63,7 +63,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.author]: {
-        description: 'The author of a commit',
+        negatable: true,
+        description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
         description: 'Commits made before a certain date',
@@ -107,7 +108,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: LANGUAGES,
     },
     [FilterType.message]: {
-        description: 'Commits with messages matching a certain string',
+        negatable: true,
+        description: negated =>
+            `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
     },
     [FilterType.patterntype]: {
         discreteValues: ['regexp', 'literal', 'structural'],

@@ -75,6 +75,8 @@ export enum NegatedFilters {
     l = '-l',
     repohasfile = '-repohasfile',
     content = '-content',
+    author = '-author',
+    message = '-message',
 }
 
 /** The list of filters that are able to be negated. */
@@ -84,6 +86,8 @@ export type NegatableFilter =
     | FilterType.repohasfile
     | FilterType.lang
     | FilterType.content
+    | FilterType.author
+    | FilterType.message
 
 export const isNegatableFilter = (filter: FilterType): filter is NegatableFilter =>
     Object.keys(NegatedFilters).includes(filter)
@@ -103,6 +107,8 @@ const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
     '-l': FilterType.lang,
     '-repohasfile': FilterType.repohasfile,
     '-content': FilterType.content,
+    '-author': FilterType.author,
+    '-message': FilterType.message,
 }
 
 export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter => negatedFilterToNegatableFilter[filter]

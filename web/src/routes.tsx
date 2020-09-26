@@ -124,16 +124,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/explore',
-        render: lazyComponent(() => import('./explore/ExploreArea'), 'ExploreArea'),
-        exact: true,
-    },
-    {
-        path: '/search/scope/:id',
-        render: lazyComponent(() => import('./search/ScopePage'), 'ScopePage'),
-        exact: true,
-    },
-    {
         path: '/api/console',
         render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
         exact: true,
