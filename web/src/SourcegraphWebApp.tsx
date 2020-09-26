@@ -184,7 +184,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     globbing: boolean
 
     /**
-     * Whether we show the mulitiline editor at /search/console 
+     * Whether we show the mulitiline editor at /search/console
      */
     showMultilineSearchConsole: boolean
 }

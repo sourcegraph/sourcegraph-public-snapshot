@@ -148,8 +148,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     {resultsOrError &&
                         (resultsOrError === 'loading' ? (
                             <LoadingSpinner />
-                        ) : (        
-                            <SearchResultsList {...props} resultsOrError={resultsOrError} onShowMoreResultsClick={showMoreResults}/>
+                        ) : (
+                            <SearchResultsList
+                                {...props}
+                                resultsOrError={resultsOrError}
+                                onShowMoreResultsClick={showMoreResults}
+                            />
                         ))}
                 </div>
             </div>
