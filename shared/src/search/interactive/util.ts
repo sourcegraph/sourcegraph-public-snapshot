@@ -35,6 +35,7 @@ export enum FilterType {
     before = 'before',
     after = 'after',
     author = 'author',
+    committer = 'committer',
     message = 'message',
     content = 'content',
     patterntype = 'patterntype',
@@ -75,6 +76,7 @@ export enum NegatedFilters {
     l = '-l',
     repohasfile = '-repohasfile',
     content = '-content',
+    committer = '-committer',
     author = '-author',
     message = '-message',
 }
@@ -86,6 +88,7 @@ export type NegatableFilter =
     | FilterType.repohasfile
     | FilterType.lang
     | FilterType.content
+    | FilterType.committer
     | FilterType.author
     | FilterType.message
 
@@ -107,6 +110,7 @@ const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
     '-l': FilterType.lang,
     '-repohasfile': FilterType.repohasfile,
     '-content': FilterType.content,
+    '-committer': FilterType.committer,
     '-author': FilterType.author,
     '-message': FilterType.message,
 }

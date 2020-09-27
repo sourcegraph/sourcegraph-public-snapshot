@@ -75,6 +75,12 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         default: 'no',
         singular: true,
     },
+    [FilterType.committer]: {
+        description: (negated: boolean): string =>
+            `${negated ? 'Exclude' : 'Include only'} commits and diffs committed by a user.`,
+        negatable: true,
+        singular: true,
+    },
     [FilterType.content]: {
         description: (negated: boolean): string =>
             `${negated ? 'Exclude' : 'Include only'} results from files if their content matches the search pattern.`,
