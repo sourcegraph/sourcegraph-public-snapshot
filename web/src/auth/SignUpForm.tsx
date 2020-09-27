@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useRef } from 'react'
 import { asError } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
@@ -15,11 +15,11 @@ import { compact, head, size } from 'lodash'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 import { merge, Observable, of, partition, timer, zip } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { catchError, debounce, filter, map, switchMap, takeUntil, tap } from 'rxjs/operators'
+import { catchError, debounce, debounceTime, filter, map, switchMap, tap } from 'rxjs/operators'
 import { typingDebounceTime } from '../search/input/QueryInput'
-import CheckIcon from 'mdi-react/CheckIcon'
 import { fromFetch } from 'rxjs/fetch'
 import { isDefined } from '../../../shared/src/util/types'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 export interface SignUpArgs {
     email: string
     username: string
@@ -92,7 +92,8 @@ interface InputState {
 function createValidationPipeline(
     name: string,
     onInputChange: (inputStateCallback: (previousInputState: InputState) => InputState) => void,
-    fieldValidators: FieldValidators
+    fieldValidators: FieldValidators,
+    inputReference: React.MutableRefObject<HTMLInputElement | null>
 ): ValidationPipeline {
     const { synchronousValidators = [], asynchronousValidators = [] } = fieldValidators
 
@@ -154,15 +155,77 @@ function createValidationPipeline(
                             : { kind: 'VALID' as const }
                     )
                 }
-
-                return zip(...asynchronousValidators.map(validator => validator(validationEvent.value)))
-                    .pipe(
-                        map(values => head(compact(values))),
-                        map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
-                        tap(() => onInputChange(previousInputState => ({ ...previousInputState, loading: false })))
-                    )
-                    .pipe(takeUntil(syncReasons))
+                inputReference.current?.setCustomValidity('')
+                return zip(...asynchronousValidators.map(validator => validator(validationEvent.value))).pipe(
+                    map(values => head(compact(values))),
+                    map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
+                    tap(({ reason }) => {
+                        if (reason) {
+                            inputReference.current?.setCustomValidity(reason)
+                        }
+                        onInputChange(previousInputState => ({ ...previousInputState, loading: false }))
+                    })
+                )
             }),
+            catchError(() => of({ kind: 'INVALID' as const, reason: `Unknown error validating ${name}` }))
+        )
+    }
+}
+
+function createSimpleValidationPipeline(
+    name: string,
+    onInputChange: (inputStateCallback: (previousInputState: InputState) => InputState) => void,
+    fieldValidators: FieldValidators,
+    inputReference: React.MutableRefObject<HTMLInputElement | null>
+): ValidationPipeline {
+    const { synchronousValidators = [], asynchronousValidators = [] } = fieldValidators
+
+    return function validationPipeline(
+        events: Observable<React.ChangeEvent<HTMLInputElement>>
+    ): Observable<ValidationResult> {
+        // debounce everything
+        return events.pipe(
+            tap(event => {
+                event.preventDefault()
+                // capture sync messages, the set custom validation to "" for loading neutral state
+            }),
+            map(event => event.target.value),
+            tap(value => onInputChange(() => ({ value, loading: true }))),
+            debounceTime(typingDebounceTime),
+            switchMap(value => {
+                // check validity (synchronous)
+                const valid = inputReference.current?.checkValidity()
+                console.log('value: ' + value + ' is: ', valid)
+                if (!valid) {
+                    // TODO: BUG
+                    console.log('the validation message is:', inputReference.current?.validationMessage)
+
+                    // inputReference.current?.setCustomValidity
+                    return of({ kind: 'INVALID' as const, reason: inputReference.current?.validationMessage ?? '' })
+                }
+
+                // check any custom sync validators
+                const syncReason = head(compact(synchronousValidators.map(validator => validator(value))))
+                if (syncReason) {
+                    inputReference.current?.setCustomValidity(syncReason)
+                    return of({ kind: 'INVALID' as const, reason: syncReason })
+                }
+
+                // check async validators
+                return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
+                    map(values => head(compact(values))),
+                    map(reason => (reason ? { kind: 'INVALID' as const, reason } : { kind: 'VALID' as const })),
+                    tap(result => {
+                        if (result.kind === 'INVALID') {
+                            inputReference.current?.setCustomValidity(result.reason)
+                        } else {
+                            inputReference.current?.setCustomValidity('')
+                        }
+                        onInputChange(previousInputState => ({ ...previousInputState, loading: false }))
+                    })
+                )
+            }),
+            tap(() => onInputChange(previousInputState => ({ ...previousInputState, loading: false }))),
             catchError(() => of({ kind: 'INVALID' as const, reason: `Unknown error validating ${name}` }))
         )
     }
@@ -179,7 +242,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     const signUpFieldValidators: Record<'email' | 'username' | 'password', FieldValidators> = useMemo(
         () => ({
             email: {
-                synchronousValidators: [checkEmailFormat, checkEmailPattern],
+                synchronousValidators: [],
                 asynchronousValidators: [isEmailUnique],
             },
             username: {
@@ -193,34 +256,61 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         []
     )
 
+    const emailInputReference = useRef<HTMLInputElement | null>(null)
+
     const [emailState, setEmailState] = useState<InputState>({ value: '', loading: false })
     const [nextEmailFieldChange, emailValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
     >(
-        useMemo(() => createValidationPipeline('email', setEmailState, signUpFieldValidators.email), [
-            signUpFieldValidators,
-        ])
+        useMemo(
+            () =>
+                createSimpleValidationPipeline(
+                    'email',
+                    setEmailState,
+                    signUpFieldValidators.email,
+                    emailInputReference
+                ),
+            [signUpFieldValidators]
+        )
     )
+
+    const usernameInputReference = useRef<HTMLInputElement | null>(null)
 
     const [usernameState, setUsernameState] = useState<InputState>({ value: '', loading: false })
     const [nextUsernameFieldChange, usernameValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
     >(
-        useMemo(() => createValidationPipeline('username', setUsernameState, signUpFieldValidators.username), [
-            signUpFieldValidators,
-        ])
+        useMemo(
+            () =>
+                createValidationPipeline(
+                    'username',
+                    setUsernameState,
+                    signUpFieldValidators.username,
+                    usernameInputReference
+                ),
+            [signUpFieldValidators]
+        )
     )
+
+    const passwordInputReference = useRef<HTMLInputElement | null>(null)
 
     const [passwordState, setPasswordState] = useState<InputState>({ value: '', loading: false })
     const [nextPasswordFieldChange, passwordValidationResult] = useEventObservable<
         React.ChangeEvent<HTMLInputElement>,
         ValidationResult
     >(
-        useMemo(() => createValidationPipeline('password', setPasswordState, signUpFieldValidators.password), [
-            signUpFieldValidators,
-        ])
+        useMemo(
+            () =>
+                createValidationPipeline(
+                    'password',
+                    setPasswordState,
+                    signUpFieldValidators.password,
+                    passwordInputReference
+                ),
+            [signUpFieldValidators]
+        )
     )
 
     const canRegister =
@@ -256,6 +346,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         setRequestedTrial(event.target.checked)
     }, [])
 
+    const preventDefault = useCallback((event: React.FormEvent) => event.preventDefault(), [])
+
     return (
         <>
             {error && <ErrorAlert className="mt-4 mb-0" error={error} history={history} />}
@@ -270,7 +362,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     className
                 )}
                 onSubmit={handleSubmit}
-                noValidate={true}
+                // noValidate={true}
             >
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
@@ -281,11 +373,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     >
                         Email
                     </label>
-                    <div className="signin-signup-form__input-container">
+                    <div
+                        className={classNames(
+                            'signin-signup-form__input-container',
+                            emailInputReference.current?.validationMessage && 'is-invalid'
+                        )}
+                    >
                         <EmailInput
-                            className={classNames('signin-signup-form__input', {
-                                'border-danger': emailValidationResult?.kind === 'INVALID' && !emailState.loading,
-                            })}
+                            className="signin-signup-form__input"
                             onChange={nextEmailFieldChange}
                             onBlur={nextEmailFieldChange}
                             required={true}
@@ -293,50 +388,45 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             disabled={loading}
                             autoFocus={true}
                             placeholder=" "
+                            inputRef={emailInputReference}
                         />
-                        {emailState.loading ? (
-                            <LoadingSpinner className="signin-signup-form__icon" />
-                        ) : (
-                            emailValidationResult?.kind === 'VALID' && (
-                                <CheckIcon className="signin-signup-form__icon text-success" size={20} />
-                            )
-                        )}
+                        {emailState.loading && <LoadingSpinner className="signin-signup-form__icon" />}
                     </div>
                     {!emailState.loading && emailValidationResult?.kind === 'INVALID' && (
-                        <small className="text-danger mt-2">{emailValidationResult.reason}</small>
+                        <small className="invalid-feedback">{emailValidationResult.reason}</small>
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold':
-                                usernameValidationResult?.kind === 'INVALID' && !usernameState.loading,
+                                !usernameInputReference.current?.validity.valid && !usernameState.loading,
                         })}
                     >
                         Username
                     </label>
-                    <div className="signin-signup-form__input-container">
+                    <div
+                        className={classNames(
+                            'signin-signup-form__input-container',
+                            !usernameInputReference.current?.validity.valid && 'is-invalid'
+                        )}
+                    >
                         <UsernameInput
-                            className={classNames('signin-signup-form__input', {
-                                'border-danger': usernameValidationResult?.kind === 'INVALID' && !usernameState.loading,
-                            })}
+                            className="signin-signup-form__input"
                             onChange={nextUsernameFieldChange}
                             onBlur={nextUsernameFieldChange}
                             value={usernameState.value}
                             required={true}
                             disabled={loading}
                             placeholder=" "
+                            pattern={VALID_USERNAME_REGEXP}
                         />
-                        {usernameState.loading ? (
-                            <LoadingSpinner className="signin-signup-form__icon" />
-                        ) : (
-                            usernameValidationResult?.kind === 'VALID' && (
-                                <CheckIcon className="signin-signup-form__icon text-success" size={20} />
-                            )
-                        )}
+                        {usernameState.loading && <LoadingSpinner className="signin-signup-form__icon" />}
                     </div>
-                    {!usernameState.loading && usernameValidationResult?.kind === 'INVALID' && (
-                        <small className="text-danger mt-2">{usernameValidationResult.reason}</small>
+                    {!usernameState.loading && !usernameInputReference.current?.validity.valid && (
+                        <small className="invalid-feedback" role="alert">
+                            {usernameInputReference.current?.validationMessage}
+                        </small>
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
@@ -348,11 +438,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     >
                         Password
                     </label>
-                    <div className="signin-signup-form__input-container">
+                    <div
+                        className={classNames(
+                            'signin-signup-form__input-container',
+                            passwordInputReference.current?.validationMessage && 'is-invalid'
+                        )}
+                    >
                         <PasswordInput
-                            className={classNames('signin-signup-form__input', {
-                                'border-danger': passwordValidationResult?.kind === 'INVALID' && !passwordState.loading,
-                            })}
+                            className="signin-signup-form__input"
                             onChange={nextPasswordFieldChange}
                             onBlur={nextPasswordFieldChange}
                             value={passwordState.value}
@@ -360,19 +453,17 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             disabled={loading}
                             autoComplete="new-password"
                             placeholder=" "
+                            onInvalid={preventDefault}
+                            minLength={12}
                         />
-                        {passwordState.loading ? (
-                            <LoadingSpinner className="signin-signup-form__icon" />
-                        ) : (
-                            passwordValidationResult?.kind === 'VALID' && (
-                                <CheckIcon className="signin-signup-form__icon text-success" size={20} />
-                            )
-                        )}
+                        {passwordState.loading && <LoadingSpinner className="signin-signup-form__icon" />}
                     </div>
-                    {!passwordState.loading && passwordValidationResult?.kind === 'INVALID' ? (
-                        <small className="text-danger mt-2">{passwordValidationResult.reason}</small>
+                    {!passwordState.loading && passwordInputReference.current?.validationMessage ? (
+                        <small className="invalid-feedback" role="alert">
+                            {passwordInputReference.current?.validationMessage}
+                        </small>
                     ) : (
-                        <small className="mt-2">At least 12 characters</small>
+                        <small className="form-text">At least 12 characters</small>
                     )}
                 </div>
                 {enterpriseTrial && (
@@ -407,7 +498,11 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             /* eslint-disable react/no-array-index-key */
                             <div className="mb-2" key={index}>
                                 <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
-                                    {provider.displayName === 'GitHub' && <GithubIcon className="icon-inline" />}{' '}
+                                    {provider.serviceType === 'github' ? (
+                                        <GithubIcon className="icon-inline" />
+                                    ) : provider.serviceType === 'gitlab' ? (
+                                        <GitlabIcon className="icon-inline" />
+                                    ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </a>
                             </div>
@@ -457,39 +552,6 @@ function checkUsernamePattern(username: string): string | undefined {
     const valid = new RegExp(VALID_USERNAME_REGEXP).test(username)
     if (!valid) {
         return "Username doesn't match the requested format"
-    }
-
-    return undefined
-}
-
-/**
- * Simple email format validation to catch the most glaring errors
- * and display helpful error messages
- */
-function checkEmailFormat(email: string): string | undefined {
-    const parts = email.trim().split('@')
-    if (parts.length < 2) {
-        return "Please include an '@' in the email address"
-    }
-    if (parts.length > 2) {
-        return "A part following '@' should not contain the symbol '@'"
-    }
-
-    return undefined
-}
-
-/**
- * Catch-all regex for errors not caught by `checkEmailFormat`.
- * From emailregex.com
- */
-function checkEmailPattern(email: string): string | undefined {
-    if (
-        // eslint-disable-next-line no-useless-escape
-        !/^(([^\s"(),.:;<>@[\\\]]+(\.[^\s"(),.:;<>@[\\\]]+)*)|(".+"))@((\[(?:\d{1,3}\.){3}\d{1,3}])|(([\dA-Za-z\-]+\.)+[A-Za-z]{2,}))$/.test(
-            email
-        )
-    ) {
-        return 'Please enter a valid email'
     }
 
     return undefined
