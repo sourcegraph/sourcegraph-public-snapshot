@@ -217,7 +217,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             </li>
                         )}
 
-                        {props.showSavedQueryButton && props.authenticatedUser && (
+                        {props.showSavedQueryButton !== false && props.authenticatedUser && (
                             <li className="nav-item">
                                 <button
                                     type="button"

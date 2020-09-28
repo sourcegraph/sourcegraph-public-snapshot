@@ -65,7 +65,7 @@ export interface SearchResultsListProps
     onExpandAllResultsToggle: () => void
 
     // Saved queries
-    showSavedQueryButton: boolean
+    showSavedQueryButton?: boolean
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
     onDidCreateSavedQuery: () => void

@@ -6,7 +6,6 @@ import * as Monaco from 'monaco-editor'
 import { MonacoEditor } from '../components/MonacoEditor'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { addSouregraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, of } from 'rxjs'
@@ -172,6 +171,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         ) : (
                             <SearchResultsList
                                 {...props}
+                                allExpanded={allExpanded}
                                 resultsOrError={resultsOrError}
                                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                                 showSavedQueryButton={false}
