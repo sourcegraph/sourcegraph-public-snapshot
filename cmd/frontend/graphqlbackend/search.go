@@ -342,35 +342,73 @@ func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
 	return &settings, nil
 }
 
-var mockResolveRepoGroups func() (map[string][]*types.Repo, []string, error)
+// A repogroup value is either a exact repo path RepoPath, or a regular
+// expression pattern RepoRegexpPattern.
+type RepoGroupValue interface {
+	value()
+	String() string
+}
 
-func resolveRepoGroups(settings *schema.Settings) (groups map[string][]*types.Repo, patterns []string, err error) {
+type RepoPath string
+type RepoRegexpPattern string
+
+func (RepoPath) value() {}
+func (r RepoPath) String() string {
+	return string(r)
+}
+
+func (RepoRegexpPattern) value() {}
+func (r RepoRegexpPattern) String() string {
+	return string(r)
+}
+
+var mockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
+
+func resolveRepoGroups(settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
-	groups = map[string][]*types.Repo{}
+	groups = map[string][]RepoGroupValue{}
 
-	for name, repoSpecs := range settings.SearchRepositoryGroups {
-		repos := make([]*types.Repo, 0, len(repoSpecs))
+	for name, values := range settings.SearchRepositoryGroups {
+		repos := make([]RepoGroupValue, 0, len(values))
 
-		for _, repoSpec := range repoSpecs {
-			switch path := repoSpec.(type) {
+		for _, value := range values {
+			switch path := value.(type) {
 			case string:
-				patterns = append(patterns, "^"+regexp.QuoteMeta(path)+"$")
-				repos = append(repos, &types.Repo{Name: api.RepoName(path)})
+				repos = append(repos, RepoPath(path))
 			case map[string]interface{}:
 				if stringRegex, ok := path["regex"].(string); ok {
-					patterns = append(patterns, stringRegex)
+					repos = append(repos, RepoRegexpPattern(stringRegex))
 				} else {
-					log15.Warn("ignoring repo group object because regex not specfied", "regex-string", path["regex"])
+					log15.Warn("ignoring repo group value because regex not specfied", "regex-string", path["regex"])
 				}
 			default:
-				log15.Warn("ignoring repo group object of unrecognized type", "object", repoSpec, "type", fmt.Sprintf("%T", repoSpec))
+				log15.Warn("ignoring repo group value of unrecognized type", "value", value, "type", fmt.Sprintf("%T", value))
 			}
 		}
 		groups[name] = repos
 	}
-	return groups, patterns, nil
+	return groups, nil
+}
+
+// repoGroupValuesToRegexp does a lookup of all repo groups by name and converts
+// their values to a list of regular expressions to search.
+func repoGroupValuesToRegexp(groupNames []string, groups map[string][]RepoGroupValue) []string {
+	var patterns []string
+	for _, groupName := range groupNames {
+		for _, value := range groups[groupName] {
+			switch v := value.(type) {
+			case RepoPath:
+				patterns = append(patterns, "^"+regexp.QuoteMeta(v.String())+"$")
+			case RepoRegexpPattern:
+				patterns = append(patterns, v.String())
+			default:
+				panic("unreachable")
+			}
+		}
+	}
+	return patterns
 }
 
 // NOTE: This function is not called if the version context is not used
@@ -769,10 +807,11 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
 	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
-		_, patterns, err := resolveRepoGroups(op.userSettings)
+		groups, err := resolveRepoGroups(op.userSettings)
 		if err != nil {
 			return resolvedRepositories{}, err
 		}
+		patterns := repoGroupValuesToRegexp(groupNames, groups)
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 

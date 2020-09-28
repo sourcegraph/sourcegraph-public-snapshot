@@ -141,6 +141,11 @@ outer:
 			}
 		}
 
+		// Do not track alternate-milestone issues
+		if issue.Milestone != "" && issue.Milestone != other.Milestone {
+			continue
+		}
+
 		tracked = append(tracked, other)
 	}
 
