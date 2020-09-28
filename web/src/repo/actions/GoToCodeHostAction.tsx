@@ -3,6 +3,7 @@ import { upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
+import PlusThickIcon from 'mdi-react/PlusThickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError, distinctUntilChanged, startWith, switchMap } from 'rxjs/operators'
@@ -17,6 +18,7 @@ import { ModalContainer } from '../../components/ModalContainer'
 import { useEventObservable, useObservable } from '../../../../shared/src/util/useObservable'
 import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
 import GitlabIcon from 'mdi-react/GitlabIcon'
+import { SourcegraphIcon } from '../../auth/icons'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: GQL.IRepository | null
@@ -35,6 +37,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const [modalOpen, setModalOpen] = useState(false)
 
     const isExtensionInstalled = useObservable(browserExtensionInstalled)
+    console.log('isextinst', isExtensionInstalled)
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not
@@ -73,11 +76,14 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         nextComponentUpdate(props)
     })
 
+    const openModal = useCallback(() => setModalOpen(true), [])
+    const closeModal = useCallback(() => setModalOpen(false), [])
+
     const onSelect = useCallback(() => {
         if (!isExtensionInstalled) {
-            setModalOpen(true)
+            openModal()
         }
-    }, [isExtensionInstalled])
+    }, [isExtensionInstalled, openModal])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =
@@ -147,10 +153,35 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 <Icon className="icon-inline" />
             </LinkOrButton>
             {modalOpen && (
-                <ModalContainer>
+                <ModalContainer onClose={closeModal} hideCloseIcon={true} className="justify-content-center">
                     {modalBodyReference => (
-                        <div ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>} className="p-4 card">
-                            <h3>Take SG with you</h3>
+                        <div
+                            ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>}
+                            className="extension-permission-modal  p-4 web-content text-wrap"
+                        >
+                            <h3 className="mb-0">Take Sourcegraph's code intelligence to {displayName}!</h3>
+                            <p className="py-3">
+                                Install Sourcegraph browser extension to get code intelligence while browsing files and
+                                reading PRs on {displayName}.
+                            </p>
+                            {/* Graphic: center, flex row, justify around, some padding x */}
+                            <div className="mx-auto code-host-action__graphic-container d-flex justify-content-between align-items-center">
+                                <SourcegraphIcon size={48} />
+                                <PlusThickIcon size={20} className="code-host-action__plus-icon" />
+                                <Icon size={56} />
+                            </div>
+
+                            <div className="d-flex justify-content-end">
+                                <button type="button" className="btn btn-outline-secondary mr-2">
+                                    No, thanks
+                                </button>
+                                <button type="button" className="btn btn-outline-secondary mr-2">
+                                    Remind me later
+                                </button>
+                                <button type="button" className="btn btn-primary">
+                                    Install browser extension
+                                </button>
+                            </div>
                         </div>
                     )}
                 </ModalContainer>
