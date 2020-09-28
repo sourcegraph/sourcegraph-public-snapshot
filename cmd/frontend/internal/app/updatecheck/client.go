@@ -291,7 +291,16 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		return nil, err
 	}
 
-	return bytes.NewReader(contents), nil
+	err = db.EventLogs.Insert(ctx, &db.Event{
+		UserID:          0,
+		Name:            "ping",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Source:          "BACKEND",
+		Argument:        json.RawMessage(contents),
+		Timestamp:       time.Now().UTC(),
+	})
+	return bytes.NewReader(contents), err
 }
 
 func authProviderTypes() []string {

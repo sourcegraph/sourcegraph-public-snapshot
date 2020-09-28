@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -488,6 +489,60 @@ func TestEventLogs_ListAll(t *testing.T) {
 	if diff := cmp.Diff(want, len(have)); diff != "" {
 		t.Error(diff)
 	}
+}
+
+func TestEventLogs_LatestPing(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	t.Run("with no pings in database", func(t *testing.T) {
+		ctx := context.Background()
+		ping, err := EventLogs.LatestPing(ctx)
+		if ping != nil {
+			t.Fatalf("have ping %+v, expected nil", ping)
+		}
+		if err != sql.ErrNoRows {
+			t.Fatalf("have err %+v, expected no rows error", err)
+		}
+	})
+
+	t.Run("with existing pings in database", func(t *testing.T) {
+		ctx := context.Background()
+		events := []*Event{
+			{
+				UserID:          0,
+				Name:            "ping",
+				URL:             "test",
+				AnonymousUserID: "test",
+				Source:          "test",
+				Timestamp:       time.Now().UTC(),
+				Argument:        json.RawMessage(`{"key": "value1"}`),
+			}, {
+				UserID:          0,
+				Name:            "ping",
+				URL:             "test",
+				AnonymousUserID: "test",
+				Source:          "test",
+				Timestamp:       time.Now().UTC(),
+				Argument:        json.RawMessage(`{"key": "value2"}`),
+			},
+		}
+		for _, event := range events {
+			if err := EventLogs.Insert(ctx, event); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		ping, err := EventLogs.LatestPing(ctx)
+		if err != nil || ping == nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(ping.Argument, string(events[1].Argument)); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }
 
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion
