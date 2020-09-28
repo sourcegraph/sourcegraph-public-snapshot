@@ -20,7 +20,7 @@ export const ModalContainer: React.FunctionComponent<Props> = ({ onClose, hideCl
     // On first render, close over the element that was focused to open it.
     // On unmount, refocus that element
     useEffect(() => {
-        const focusedElement = document.activeElement as HTMLElement | null
+        const focusedElement = document.activeElement
 
         containerReference.current?.focus()
 

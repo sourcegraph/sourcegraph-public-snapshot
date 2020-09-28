@@ -191,9 +191,15 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                     })}
                                 >
                                     {' '}
-                                    by {publisher}
+                                    by{' '}
+                                    <span
+                                        className={classNames({
+                                            'font-weight-bold': isSourcegraphExtension,
+                                        })}
+                                    >
+                                        {publisher}
+                                    </span>
                                 </span>
-
                                 {isSourcegraphExtension && (
                                     <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />
                                 )}

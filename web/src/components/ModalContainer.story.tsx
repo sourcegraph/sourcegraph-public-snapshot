@@ -28,7 +28,7 @@ add('Interactive + Centered', () => {
                         >
                             {bodyReference => (
                                 <div
-                                    className="extension-permission-modal"
+                                    className="extension-permission-modal p-4"
                                     ref={bodyReference as React.MutableRefObject<HTMLDivElement>}
                                 >
                                     <h1>Modal</h1>
