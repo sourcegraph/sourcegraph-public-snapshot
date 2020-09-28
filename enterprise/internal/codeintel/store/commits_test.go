@@ -24,9 +24,11 @@ func TestHasRepository(t *testing.T) {
 	}{
 		{50, true},
 		{51, false},
+		{52, false},
 	}
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, RepositoryID: 50})
+	insertUploads(t, dbconn.Global, Upload{ID: 2, RepositoryID: 51, State: "deleted"})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)

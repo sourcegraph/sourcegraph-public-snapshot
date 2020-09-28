@@ -24,12 +24,16 @@ interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageEle
  */
 export const BrandLogo: React.FunctionComponent<Props> = ({
     isLightTheme,
-    branding = window.context?.branding,
-    assetsRoot = window.context?.assetsRoot || '',
+    branding,
+    assetsRoot,
     variant,
     className = '',
     ...props
 }) => {
+    // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
+    branding = branding ?? window.context?.branding
+    assetsRoot = assetsRoot ?? (window.context?.assetsRoot || '')
+
     const sourcegraphLogoUrl =
         variant === 'symbol'
             ? `${assetsRoot}/img/sourcegraph-mark.svg`

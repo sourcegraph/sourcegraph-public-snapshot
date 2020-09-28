@@ -1,12 +1,13 @@
 import React from 'react'
+import { authUser } from '../panels/utils'
 import { cleanup, render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { of } from 'rxjs'
 import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { Services } from '../../../../shared/src/api/client/services'
 import { ThemePreference } from '../../theme'
-import { of } from 'rxjs'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -33,7 +34,7 @@ describe('SearchPage', () => {
         telemetryService: NOOP_TELEMETRY_SERVICE,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: () => undefined,
-        authenticatedUser: null,
+        authenticatedUser: authUser,
         setVersionContext: () => undefined,
         availableVersionContexts: [],
         globbing: false,
@@ -59,8 +60,28 @@ describe('SearchPage', () => {
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
     }
 
-    it('should not show enterprise home panels if on Sourcegraph.com', () => {
+    it('should not show enterprise home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
+        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
+        expect(enterpriseHomePanels).toBeFalsy()
+    })
+
+    it('should show enterprise home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
+        container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />)
+            .container
+        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
+        expect(enterpriseHomePanels).toBeTruthy()
+    })
+
+    it('should show enterprise home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
+        container = render(
+            <SearchPage
+                {...defaultProps}
+                isSourcegraphDotCom={true}
+                showEnterpriseHomePanels={true}
+                authenticatedUser={null}
+            />
+        ).container
         const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
         expect(enterpriseHomePanels).toBeFalsy()
     })

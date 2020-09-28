@@ -69,8 +69,6 @@ func TestExternalService(t *testing.T) {
 }
 
 func TestExternalService_AWSCodeCommit(t *testing.T) {
-	t.Skip("https://github.com/sourcegraph/sourcegraph/issues/14046")
-
 	if len(*awsAccessKeyID) == 0 || len(*awsSecretAccessKey) == 0 ||
 		len(*awsCodeCommitUsername) == 0 || len(*awsCodeCommitPassword) == 0 {
 		t.Skip("Environment variable AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
@@ -127,8 +125,6 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 }
 
 func TestExternalService_BitbucketServer(t *testing.T) {
-	t.Skip("https://github.com/sourcegraph/sourcegraph/issues/14046")
-
 	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}

@@ -59,6 +59,50 @@ func TestGetUploadByID(t *testing.T) {
 	}
 }
 
+func TestGetUploadByIDDeleted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	// Upload does not exist initially
+	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+
+	uploadedAt := time.Unix(1587396557, 0).UTC()
+	startedAt := uploadedAt.Add(time.Minute)
+	expected := Upload{
+		ID:             1,
+		Commit:         makeCommit(1),
+		Root:           "sub/",
+		VisibleAtTip:   true,
+		UploadedAt:     uploadedAt,
+		State:          "deleted",
+		FailureMessage: nil,
+		StartedAt:      &startedAt,
+		FinishedAt:     nil,
+		RepositoryID:   123,
+		RepositoryName: "n-123",
+		Indexer:        "lsif-go",
+		NumParts:       1,
+		UploadedParts:  []int{},
+		Rank:           nil,
+	}
+
+	insertUploads(t, dbconn.Global, expected)
+
+	// Should still not be queryable
+	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
 func TestGetQueuedUploadRank(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -141,6 +185,11 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 8, UploadedAt: t8, Indexer: "lsif-tsc"},
 		Upload{ID: 9, UploadedAt: t9, State: "queued"},
 		Upload{ID: 10, UploadedAt: t10, Root: "sub1/", Indexer: "lsif-tsc"},
+
+		// Deleted duplicates
+		Upload{ID: 11, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "deleted"},
+		Upload{ID: 12, UploadedAt: t2, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 13, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "deleted"},
 	)
 	insertVisibleAtTip(t, dbconn.Global, 50, 2, 5, 7, 8)
 
@@ -756,11 +805,11 @@ func TestDeleteUploadByID(t *testing.T) {
 		t.Fatalf("expected record to exist")
 	}
 
-	// Upload no longer exists
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
-	} else if exists {
-		t.Fatal("unexpected record")
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
 	repositoryIDs, err := store.DirtyRepositories(context.Background())
@@ -825,7 +874,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 		}
 	}
 
-	ids, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
+	deletedCounts, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
 	if err != nil {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
@@ -835,8 +884,55 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 		63: 23,
 		65: 25,
 	}
-	if diff := cmp.Diff(expected, ids); diff != "" {
-		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, deletedCounts); diff != "" {
+		t.Errorf("unexpected deletedCounts (-want +got):\n%s", diff)
+	}
+
+	var uploadIDs []int
+	for i := range uploads {
+		uploadIDs = append(uploadIDs, i+1)
+	}
+
+	// Ensure records were deleted
+	if states, err := store.GetStates(context.Background(), uploadIDs); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else {
+		deletedStates := 0
+		for _, state := range states {
+			if state == "deleted" {
+				deletedStates++
+			}
+		}
+
+		expected := 0
+		for _, deletedCount := range deletedCounts {
+			expected += deletedCount
+		}
+
+		if deletedStates != expected {
+			t.Errorf("unexpected number of deleted records. want=%d have=%d", expected, deletedStates)
+		}
+	}
+}
+
+func TestHardDeleteUploadByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "deleted"})
+
+	if err := store.HardDeleteUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	}
+
+	// Ensure records were deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if len(states) != 0 {
+		t.Fatalf("unexpected record")
 	}
 }
 

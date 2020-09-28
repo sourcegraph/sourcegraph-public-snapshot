@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -13,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
@@ -54,11 +57,37 @@ func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Conte
 	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
 }
 
+// TODO(flying-robot): this regex and the majority of the removeUserInfo function can
+// be extracted to a common location in a subsequent change.
+var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
 	// only allow site admins to see it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
+	}
+
+	// removeUserinfo strips the userinfo component of a remote URL. The provided string s
+	// will be returned if it cannot be parsed as a URL.
+	removeUserinfo := func(s string) string {
+		// Support common syntax (HTTPS, SSH, etc.)
+		if nonSCPURLRegex.MatchString(s) {
+			u, err := url.Parse(s)
+			if err != nil {
+				return s
+			}
+			u.User = nil
+			return u.String()
+		}
+
+		// Support SCP-style syntax.
+		u, err := url.Parse("fake://" + strings.Replace(s, ":", "/", 1))
+		if err != nil {
+			return s
+		}
+		u.User = nil
+		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
 	}
 
 	{
@@ -70,7 +99,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 			return "", err
 		}
 		if result.Repo != nil {
-			return result.Repo.VCS.URL, nil
+			return removeUserinfo(result.Repo.VCS.URL), nil
 		}
 	}
 
@@ -79,7 +108,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	if err != nil {
 		return "", err
 	}
-	return info.URL, nil
+	return removeUserinfo(info.URL), nil
 }
 
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {

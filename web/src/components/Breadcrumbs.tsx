@@ -5,15 +5,16 @@ import { sortBy } from 'lodash'
 import { Unsubscribable } from 'sourcegraph'
 import { isDefined } from '../../../shared/src/util/types'
 import * as H from 'history'
+import classNames from 'classnames'
 
 export type Breadcrumb = ElementBreadcrumb | LinkBreadcrumb
 
-interface ElementBreadcrumb {
+interface BaseBreadcrumb {
     /** A unique key for the breadcrumb. */
     key: string
 
-    /** The breadcrumb element being displayed. */
-    element: React.ReactNode
+    /** A CSS class name to apply to the container of the breadcrumb element. */
+    className?: string
 
     /**
      * Optionally a custom divider displayed before the element.
@@ -22,21 +23,17 @@ interface ElementBreadcrumb {
     divider?: React.ReactNode
 }
 
-interface LinkBreadcrumb {
-    /** A unique key for the breadcrumb. */
-    key: string
+interface ElementBreadcrumb extends BaseBreadcrumb {
+    /** The breadcrumb element being displayed. */
+    element: React.ReactNode
+}
 
+interface LinkBreadcrumb extends BaseBreadcrumb {
     /**
      * Specification for links. When this breadcrumb is the last breadcrumb and
      * the URL hash is empty, the label is rendered as plain text instead of a link.
      */
     link: { label: string; to: string }
-
-    /**
-     * Optionally a custom divider displayed before the element.
-     * By default a chevron icon `>` is used.
-     */
-    divider?: React.ReactNode
 }
 
 /** Type guard to differentiate arbitrary elements and links */
@@ -156,7 +153,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
     breadcrumbs,
     location,
 }) => (
-    <nav className="d-flex p-2" aria-label="Breadcrumbs">
+    <nav className="d-flex p-2 flex-shrink-past-contents" aria-label="Breadcrumbs">
         {sortBy(breadcrumbs, 'depth')
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
@@ -166,7 +163,13 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (
-                    <span key={breadcrumb.key} className="text-muted d-flex align-items-center test-breadcrumb">
+                    <span
+                        key={breadcrumb.key}
+                        className={classNames(
+                            'text-muted d-flex align-items-center test-breadcrumb',
+                            breadcrumb.className
+                        )}
+                    >
                         <span className="font-weight-semibold">{divider}</span>
                         {isElementBreadcrumb(breadcrumb) ? (
                             breadcrumb.element

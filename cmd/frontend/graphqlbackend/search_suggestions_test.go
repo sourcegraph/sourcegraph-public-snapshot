@@ -181,16 +181,16 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		calledResolveRepoGroups := false
-		mockResolveRepoGroups = func() (map[string][]*types.Repo, []string, error) {
+		mockResolveRepoGroups = func() (map[string][]RepoGroupValue, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
-			return map[string][]*types.Repo{
+			return map[string][]RepoGroupValue{
 				"baz": {
-					&types.Repo{Name: "foo-repo1"},
-					&types.Repo{Name: "repo3"},
+					RepoPath("foo-repo1"),
+					RepoPath("repo3"),
 				},
-			}, nil, nil
+			}, nil
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 		for _, v := range searchVersions {
