@@ -183,7 +183,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	if s.SubsetSynced == nil {
 		streamingInserter = func(*Repo) {} //noop
 	} else {
-		// The streaming inserter should insert outside of out transaction so that repos
+		// The streaming inserter should insert outside of our transaction so that repos
 		// are added to our database ASAP.
 		streamingInserter, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
 		if err != nil {
