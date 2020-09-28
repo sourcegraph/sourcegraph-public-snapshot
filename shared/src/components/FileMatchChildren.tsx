@@ -13,6 +13,7 @@ import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
+import { ISymbol } from '../graphql/schema'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -104,7 +105,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     return (
         <div className="file-match-children">
             {/* Symbols */}
-            {(props.result.symbols || []).map(symbol => (
+            {(props.result.symbols || []).map((symbol: ISymbol) => (
                 <Link
                     to={symbol.url}
                     className="file-match-children__item test-file-match-children-item"

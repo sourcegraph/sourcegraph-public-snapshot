@@ -65,6 +65,7 @@ export interface SearchResultsListProps
     onExpandAllResultsToggle: () => void
 
     // Saved queries
+    showSavedQueryButton?: boolean
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
     onDidCreateSavedQuery: () => void
@@ -329,17 +330,16 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 <div className="search-results-list" ref={this.setScrollableElementRef}>
                     {/* Saved Queries Form */}
                     {this.props.showSavedQueryModal && (
-                        <ModalContainer
-                            onClose={this.props.onSavedQueryModalClose}
-                            component={
+                        <ModalContainer onClose={this.props.onSavedQueryModalClose}>
+                            {() => (
                                 <SavedSearchModal
                                     {...this.props}
                                     query={parsedQuery}
                                     authenticatedUser={this.props.authenticatedUser}
                                     onDidCancel={this.props.onSavedQueryModalClose}
                                 />
-                            }
-                        />
+                            )}
+                        </ModalContainer>
                     )}
 
                     {this.props.resultsOrError === undefined ? (

@@ -16,6 +16,11 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
+export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
+    id: 'completionItemSelected',
+    title: 'completion item selected',
+}
+
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
     .flatMap(label => {
         const filterType = label as FilterType
@@ -239,6 +244,7 @@ export async function getCompletionItems(
                         // Set a sortText so that dynamic suggestions
                         // are shown after filter type suggestions.
                         sortText: '1',
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
             ],
         }
@@ -261,6 +267,7 @@ export async function getCompletionItems(
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: label,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
                 }
             }
@@ -283,6 +290,7 @@ export async function getCompletionItems(
                                 ? filterValue.token.value
                                 : filterValue.token.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
             }
         }
@@ -295,6 +303,7 @@ export async function getCompletionItems(
                         insertText: `${label} `,
                         filterText: label,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })
                 ),
             }

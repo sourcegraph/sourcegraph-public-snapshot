@@ -85,7 +85,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
 		sqlf.Sprintf("d.repository_id != %s", repositoryID),
-		sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id)"),
+		sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)"),
 	}
 
 	totalCount, _, err := scanFirstInt(tx.query(

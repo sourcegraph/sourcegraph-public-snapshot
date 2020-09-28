@@ -3,7 +3,8 @@
  */
 import Shepherd from 'shepherd.js'
 import { eventLogger } from '../../tracking/eventLogger'
-import { SearchPatternType } from '../../graphql-operations'
+import { isEqual } from 'lodash'
+import { LANGUAGES } from '../../../../shared/src/search/parser/filters'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -144,34 +145,6 @@ export function createAddCodeStepTooltip(tour: Shepherd.Tour): HTMLElement {
 }
 
 /**
- * A map containing the language filter and the example to be displayed
- * in the "add code to your query" tooltip.
- */
-export const languageFilterToSearchExamples: { [key: string]: { query: string; patternType: SearchPatternType } } = {
-    'lang:c': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:cpp': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:csharp': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:css': { query: 'body {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:go': { query: 'for {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:graphql': { query: 'Query {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:haskell': { query: 'if :[my_match] else', patternType: SearchPatternType.structural },
-    'lang:html': { query: '<div class="panel">:[my_match]</div>', patternType: SearchPatternType.structural },
-    'lang:java': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:javascript': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:json': { query: '"object":{:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:lua': { query: 'function update() :[my_match] end', patternType: SearchPatternType.structural },
-    'lang:markdown': { query: '', patternType: SearchPatternType.structural },
-    'lang:php': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:powershell': { query: 'try {:[my_match]}', patternType: SearchPatternType.structural },
-    'lang:python': { query: 'try:[my_match] except', patternType: SearchPatternType.structural },
-    'lang:r': { query: 'tryCatch( :[my_match] )', patternType: SearchPatternType.structural },
-    'lang:ruby': { query: 'while :[my_match] end', patternType: SearchPatternType.structural },
-    'lang:sass': { query: 'transition( :[my_match] )', patternType: SearchPatternType.structural },
-    'lang:swift': { query: 'switch :[a]{:[b]}', patternType: SearchPatternType.structural },
-    'lang:typescript': { query: 'try{:[my_match]}', patternType: SearchPatternType.structural },
-}
-
-/**
  * Generates the tooltip content for the "add code" step in the language path, which asks users to input their own terms into the query.
  * It provides an example based on the language they selected in the previous step.
  *
@@ -179,164 +152,44 @@ export const languageFilterToSearchExamples: { [key: string]: { query: string; p
  * @param languageQuery the current query including a `lang:` filter. Used for language queries so we know what examples to suggest.
  * @param exampleCallback the callback to be run when clicking the example query.
  */
-export function createAddCodeStepWithLanguageExampleTooltip(
-    tour: Shepherd.Tour,
-    languageQuery: string,
-    exampleCallback: (query: string, patternType: SearchPatternType) => void
-): HTMLElement {
-    const list = document.createElement('ul')
-    list.className = 'my-4 list-dashed'
-
-    const listItem = document.createElement('li')
-    listItem.className = 'p-0'
-
-    const exampleButton = document.createElement('button')
-    exampleButton.className = 'btn btn-link test-tour-language-example p-0'
-
-    const langsList = languageFilterToSearchExamples
-    let example = { query: '', patternType: SearchPatternType.literal }
-    if (languageQuery && Object.keys(langsList).includes(languageQuery)) {
-        example = langsList[languageQuery]
-    }
-    const codeElement = document.createElement('code')
-    codeElement.textContent = example.query
-    exampleButton.append(codeElement)
-
-    exampleButton.addEventListener('click', () => {
-        const fullQuery = [languageQuery, example.query].join(' ')
-        exampleCallback(fullQuery, example.patternType)
-        tour.show('view-search-reference')
-        eventLogger.log('OnboardingTourExampleQueryClicked')
-    })
-    listItem.append(exampleButton)
-    list.append(listItem)
+export function createAddCodeStepWithLanguageExampleTooltip(tour: Shepherd.Tour): HTMLElement {
     return generateStepTooltip(
         tour,
         'Add code to your search',
         3,
         5,
-        'Type the name of a function, variable or other code. Or try an example:',
-        list
+        'Type the name of a function, variable or other code.'
     )
 }
 
-/** Creates the tooltip for the structural search informational step. */
-export function createStructuralSearchTourTooltip(tour: Shepherd.Tour): HTMLElement {
-    const container = document.createElement('div')
-    const list = document.createElement('ul')
-    list.className = 'list-dashed mb-0'
-    const listItem = document.createElement('li')
-    listItem.className = 'p-0 my-4'
-    list.append(listItem)
-    const exampleButton = document.createElement('a')
-    exampleButton.href = 'https://docs.sourcegraph.com/user/search/structural'
-    exampleButton.target = '_blank'
-    exampleButton.rel = 'noopener'
-    exampleButton.className = 'btn btn-link test-tour-language-example p-0'
-    exampleButton.textContent = 'Structural search documentation'
-    listItem.append(exampleButton)
-    container.append(list)
+/**
+ * Determines whether a query contains a valid `lang:$LANGUAGE` query. There is an edge case where this will return true for
+ * language names that are subsets of other languages (e.g. java is a subset of javascript). The caller should ensure there is
+ * enough debouncing time for this edge case to be mitigated.
+ */
+export const isValidLangQuery = (query: string): boolean => LANGUAGES.map(lang => `lang:${lang}`).includes(query)
 
-    const nextButtonRow = document.createElement('div')
-    nextButtonRow.className = 'd-flex justify-content-end'
-    const nextButton = document.createElement('button')
-    nextButton.className =
-        'btn btn-outline-secondary test-tour-structural-next-button search-onboarding-tour__structural-next-button'
-    nextButton.textContent = 'Next'
-    nextButton.addEventListener('click', () => {
-        tour.getById('view-search-reference').updateStepOptions({
-            text: generateStepTooltip(tour, 'Review the search reference', 6, 6),
-        })
-        tour.show('view-search-reference')
-    })
-    nextButtonRow.append(nextButton)
-    container.append(nextButtonRow)
+export const isCurrentTourStep = (step: string, tour?: Shepherd.Tour): boolean | undefined =>
+    tour && isEqual(tour.getCurrentStep(), tour.getById(step))
 
-    return container
+export const advanceLangStep = (query: string, tour: Shepherd.Tour | undefined): void => {
+    if (query !== 'lang:' && isValidLangQuery(query.trim()) && tour?.getById('filter-lang').isOpen()) {
+        tour?.show('add-query-term')
+    }
 }
 
-export const isValidLangQuery = (query: string): boolean => Object.keys(languageFilterToSearchExamples).includes(query)
-
-/** *
- * The types below allow us to end steps in the tour from components outside of the SearchPageInput component
- * where the tour is located. In particular, we want to advance tour steps when a user types or updates the query input
- * after a debounce period, on certain conditions such as the contents of the query.
- *
- * Steps that aren't included here use Shepherd's built-in `advanceOn` field to specify events to advance on.
- */
-
-export interface AdvanceStepCallback {
-    /**
-     * The ID of the step to advance from.
-     */
-    stepToAdvance: string
-    /**
-     * Conditions that must be true before advancing to the next step.
-     */
-    queryConditions?: (query: string) => boolean
+export const advanceRepoStep = (query: string, tour: Shepherd.Tour | undefined): void => {
+    if (tour?.getById('filter-repository').isOpen() && query !== 'repo:') {
+        tour?.show('add-query-term')
+    }
 }
 
-/**
- * Defines a callback to advance a step.
- */
-type AdvanceStandardStep = AdvanceStepCallback & { handler: (tour: Shepherd.Tour) => void }
-
-/**
- * A special case type to define a callback for a the "add code to your query" step on the language path.
- * The handler takes a query and setQueryHandler, which allows us to generate the appropriate tooltip
- * content for the next step.
- */
-type AdvanceLanguageInputStep = AdvanceStepCallback & {
-    handler: (
-        tour: Shepherd.Tour,
-        query: string,
-        setQueryHandler: (query: string, patternType?: SearchPatternType) => void
-    ) => void
+export const runAdvanceLangOrRepoStep = (query: string, tour: Shepherd.Tour | undefined): void => {
+    if (tour) {
+        if (query !== 'lang:' && isValidLangQuery(query.trim()) && tour.getById('filter-lang').isOpen()) {
+            advanceLangStep(query, tour)
+        } else if (tour.getById('filter-repository').isOpen() && query !== 'repo:') {
+            advanceRepoStep(query, tour)
+        }
+    }
 }
-
-export type CallbackToAdvanceTourStep = AdvanceStandardStep | AdvanceLanguageInputStep
-
-/**
- * A list of callbacks that will advance certain steps when the query input's value is changed.
- */
-export const stepCallbacks: CallbackToAdvanceTourStep[] = [
-    {
-        stepToAdvance: 'filter-repository',
-        handler: (tour: Shepherd.Tour, query: string): void => {
-            if (tour.getById('filter-repository').isOpen() && query.endsWith(' ')) {
-                tour.show('add-query-term')
-                tour.getById('add-query-term').updateStepOptions({ text: createAddCodeStepTooltip(tour) })
-            }
-        },
-        queryConditions: (query: string): boolean => query !== 'repo:',
-    },
-    {
-        stepToAdvance: 'filter-lang',
-        handler: (
-            tour: Shepherd.Tour,
-            query: string,
-            setQueryHandler: (query: string, patternType?: SearchPatternType) => void
-        ): void => {
-            if (tour.getById('filter-lang').isOpen()) {
-                tour.show('add-query-term')
-                tour.getById('add-query-term').updateStepOptions({
-                    text: createAddCodeStepWithLanguageExampleTooltip(
-                        tour,
-                        query.trim() ?? '',
-                        (newQuery: string, patternType: SearchPatternType) => setQueryHandler(newQuery, patternType)
-                    ),
-                })
-            }
-        },
-        queryConditions: (query: string): boolean => query !== 'lang:' && isValidLangQuery(query.trim()),
-    },
-    {
-        stepToAdvance: 'add-query-term',
-        handler: (tour: Shepherd.Tour): void => {
-            if (tour.getById('add-query-term').isOpen()) {
-                tour.show('submit-search')
-            }
-        },
-        queryConditions: (query: string): boolean => query !== 'repo:' && query !== 'lang:',
-    },
-]

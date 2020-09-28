@@ -85,7 +85,7 @@
     "@mermaid-js/mermaid-cli": "^8.7.0",
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
-    "@pollyjs/adapter-puppeteer": "^5.0.0",
+    "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.0.0",
     "@pollyjs/persister-fs": "^5.0.0",
     "@slack/web-api": "^5.10.0",
@@ -137,7 +137,6 @@
     "@types/mz": "2.7.1",
     "@types/node": "13.13.5",
     "@types/optimize-css-assets-webpack-plugin": "5.0.1",
-    "@types/pollyjs__adapter-puppeteer": "4.0.0",
     "@types/pollyjs__core": "4.3.0",
     "@types/pollyjs__persister-fs": "2.0.0",
     "@types/puppeteer": "3.0.1",
@@ -171,7 +170,7 @@
     "@types/webpack": "4.41.21",
     "@types/webpack-dev-server": "3.11.0",
     "abort-controller": "^3.0.0",
-    "autoprefixer": "^9.8.0",
+    "autoprefixer": "^9.8.6",
     "babel-jest": "^25.5.1",
     "babel-loader": "^8.1.0",
     "babel-plugin-lodash": "^3.3.4",
@@ -188,7 +187,7 @@
     "cross-env": "^7.0.2",
     "css-loader": "^3.6.0",
     "enzyme": "^3.11.0",
-    "enzyme-adapter-react-16": "^1.15.3",
+    "enzyme-adapter-react-16": "^1.15.4",
     "enzyme-to-json": "^3.5.0",
     "eslint": "^7.8.1",
     "eslint-formatter-lsif": "^1.0.3",
@@ -239,7 +238,7 @@
     "storybook-addon-designs": "^5.4.1",
     "string-width": "^4.2.0",
     "style-loader": "^1.2.1",
-    "stylelint": "^13.6.1",
+    "stylelint": "^13.7.2",
     "term-size": "^2.2.0",
     "terser-webpack-plugin": "^4.1.0",
     "thread-loader": "^2.1.3",
@@ -324,6 +323,7 @@
     "webextension-polyfill": "^0.6.0"
   },
   "resolutions": {
-    "history": "4.5.1"
+    "history": "4.5.1",
+    "cssnano": "4.0.0-nightly.2020.9.9"
   }
 }

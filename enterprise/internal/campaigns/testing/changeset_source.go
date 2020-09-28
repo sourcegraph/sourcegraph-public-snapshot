@@ -40,8 +40,16 @@ type FakeChangesetSource struct {
 	// ClosedChangesets contains the changesets that were passed to CloseChangeset
 	ClosedChangesets []*repos.Changeset
 
+	// CreatedChangesets contains the changesets that were passed to
+	// CreateChangeset
+	CreatedChangesets []*repos.Changeset
+
 	// LoadedChangesets contains the changesets that were passed to LoadChangesets
 	LoadedChangesets []*repos.Changeset
+
+	// UpdateChangesets contains the changesets that were passed to
+	// UpdateChangeset
+	UpdatedChangesets []*repos.Changeset
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
@@ -67,6 +75,7 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chan
 		return s.ChangesetExists, err
 	}
 
+	s.CreatedChangesets = append(s.CreatedChangesets, c)
 	return s.ChangesetExists, s.Err
 }
 
@@ -84,6 +93,7 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Chan
 		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
+	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
 	return c.SetMetadata(s.FakeMetadata)
 }
 

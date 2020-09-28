@@ -1,7 +1,7 @@
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
-import { highlightCodeSafe } from '../../../../../shared/src/util/markdown'
+import { CodeSnippet } from '../../../components/CodeSnippet'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignFields } from '../../../graphql-operations'
 
@@ -37,12 +37,8 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
         originalInput,
     ])
 
-    const highlightedInput = useMemo(() => ({ __html: highlightCodeSafe(input, inputIsJSON ? 'json' : 'yaml') }), [
-        inputIsJSON,
-        input,
-    ])
     return (
-        <div className="mt-4">
+        <>
             <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
                 <p className="m-0">
                     {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
@@ -58,11 +54,7 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
                     <FileDownloadIcon className="icon-inline" /> Download YAML
                 </a>
             </div>
-            <div className="mb-3">
-                <div className="campaign-spec-tab__specfile rounded p-3">
-                    <pre className="m-0" dangerouslySetInnerHTML={highlightedInput} />
-                </div>
-            </div>
-        </div>
+            <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className="mb-3" />
+        </>
     )
 }

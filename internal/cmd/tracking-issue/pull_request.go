@@ -24,7 +24,8 @@ type PullRequest struct {
 	ClosedAt   time.Time
 	BeganAt    time.Time // Time of the first authored commit
 
-	LinkedIssues []*Issue `json:"-"`
+	LinkedIssues []*Issue `json:"-"` // Issues this PR resolves
+	Parents      []*Issue `json:"-"` // Tracking issues watching this PR
 }
 
 func (pr *PullRequest) Closed() bool {
@@ -50,15 +51,22 @@ func (pr *PullRequest) Summary() string {
 
 func (pr *PullRequest) Markdown() string {
 	state := " "
+	prefixSuffix := ""
+	daysSinceClose := ""
 	if pr.Done() {
 		state = "x"
+		prefixSuffix = "~"
+		daysSinceClose = fmt.Sprintf("(🏁 %s) ", formatTimeSince(pr.ClosedAt))
 	}
 
-	return fmt.Sprintf("- [%s] %s [#%d](%s) %s\n",
+	return fmt.Sprintf("- [%s] %s%s (%s[#%d](%s)%s) %s\n",
 		state,
+		daysSinceClose,
 		pr.title(),
+		prefixSuffix,
 		pr.Number,
 		pr.URL,
+		prefixSuffix,
 		pr.Emojis(),
 	)
 }
