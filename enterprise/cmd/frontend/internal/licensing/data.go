@@ -36,6 +36,18 @@ const (
 	// of allowed remote extensions and prevent any other remote extensions from being used. It does
 	// not apply to locally published extensions.
 	FeatureRemoteExtensionsAllowDisallow Feature = "remote-extensions-allow-disallow"
+
+	// FeatureBranding is whether custom branding of this Sourcegraph instance is allowed.
+	FeatureBranding Feature = "branding"
+
+	// FeatureCampaigns is whether campaigns may be used on this Sourcegraph instance.
+	FeatureCampaigns Feature = "campaigns"
+
+	// FeatureMonitoring is whether monitoring may be used on this Sourcegraph instance.
+	FeatureMonitoring Feature = "monitoring"
+
+	// FeatureBackupAndRestore is whether builtin backup and restore may be used this Sourcegraph instance
+	FeatureBackupAndRestore Feature = "backup-and-restore"
 )
 
 // planFeatures defines the features that are enabled for each plan.
@@ -45,6 +57,10 @@ var planFeatures = map[Plan][]Feature{
 		FeatureACLs,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
+		FeatureBranding,
+		FeatureCampaigns,
+		FeatureMonitoring,
+		FeatureBackupAndRestore,
 	},
 	team:       {},
 	enterprise: {},
