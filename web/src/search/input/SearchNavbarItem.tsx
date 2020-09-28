@@ -47,7 +47,12 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         tour.addSteps([
             {
                 id: 'view-search-reference',
-                text: generateStepTooltip(tour, 'Review the search reference', 5, 5),
+                text: generateStepTooltip({
+                    tour,
+                    dangerousTitleHtml: 'Review the search reference',
+                    stepNumber: 5,
+                    totalStepCount: 5,
+                }),
                 attachTo: {
                     element: '.search-help-dropdown-button',
                     on: 'bottom',

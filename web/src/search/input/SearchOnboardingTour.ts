@@ -32,32 +32,32 @@ export const defaultTourOptions: Shepherd.Tour.TourOptions = {
  * generateStep creates the content for tooltips for the search tour. All steps that just contain
  * simple text should use this function to populate the step's `text` field.
  */
-export function generateStepTooltip(
-    tour: Shepherd.Tour,
-    dangerousTitleHtml: string,
-    stepNumber: number,
-    totalStepCount: number,
-    description?: string,
+export function generateStepTooltip(options: {
+    tour: Shepherd.Tour
+    dangerousTitleHtml: string
+    stepNumber: number
+    totalStepCount: number
+    description?: string
     additionalContent?: HTMLElement
-): HTMLElement {
+}): HTMLElement {
     const element = document.createElement('div')
-    element.className = `d-flex flex-column test-tour-step-${stepNumber}`
+    element.className = `d-flex flex-column test-tour-step-${options.stepNumber}`
     const titleElement = document.createElement('h4')
-    titleElement.innerHTML = dangerousTitleHtml
+    titleElement.innerHTML = options.dangerousTitleHtml
     titleElement.className = 'font-weight-bold'
     element.append(titleElement)
-    if (description) {
+    if (options.description) {
         const descriptionElement = document.createElement('p')
-        descriptionElement.textContent = description
+        descriptionElement.textContent = options.description
         descriptionElement.className = 'tour-card__description mb-0'
         element.append(descriptionElement)
     }
-    if (additionalContent) {
+    if (options.additionalContent) {
         const additionalContentContainer = document.createElement('div')
-        additionalContentContainer.append(additionalContent)
-        element.append(additionalContent)
+        additionalContentContainer.append(options.additionalContent)
+        element.append(options.additionalContent)
     }
-    const bottomRow = generateBottomRow(tour, stepNumber, totalStepCount)
+    const bottomRow = generateBottomRow(options.tour, options.stepNumber, options.totalStepCount)
     element.append(bottomRow)
     return element
 }
@@ -126,7 +126,14 @@ export function createStep1Tooltip(
     repositoryListItem.append(repositoryButton)
     list.append(languageListItem)
     list.append(repositoryListItem)
-    return generateStepTooltip(tour, 'Code search tour', 1, 5, 'How would you like to begin?', list)
+    return generateStepTooltip({
+        tour,
+        dangerousTitleHtml: 'Code search tour',
+        stepNumber: 1,
+        totalStepCount: 5,
+        description: 'How would you like to begin?',
+        additionalContent: list,
+    })
 }
 
 /**
@@ -135,13 +142,13 @@ export function createStep1Tooltip(
  * @param tour the tour instance
  */
 export function createAddCodeStepTooltip(tour: Shepherd.Tour): HTMLElement {
-    return generateStepTooltip(
+    return generateStepTooltip({
         tour,
-        'Add code to your search',
-        3,
-        5,
-        'Type the name of a function, variable or other code.'
-    )
+        dangerousTitleHtml: 'Add code to your search',
+        stepNumber: 3,
+        totalStepCount: 5,
+        description: 'Type the name of a function, variable or other code.',
+    })
 }
 
 /**
@@ -153,13 +160,13 @@ export function createAddCodeStepTooltip(tour: Shepherd.Tour): HTMLElement {
  * @param exampleCallback the callback to be run when clicking the example query.
  */
 export function createAddCodeStepWithLanguageExampleTooltip(tour: Shepherd.Tour): HTMLElement {
-    return generateStepTooltip(
+    return generateStepTooltip({
         tour,
-        'Add code to your search',
-        3,
-        5,
-        'Type the name of a function, variable or other code.'
-    )
+        dangerousTitleHtml: 'Add code to your search',
+        stepNumber: 3,
+        totalStepCount: 5,
+        description: 'Type the name of a function, variable or other code.',
+    })
 }
 
 /**
