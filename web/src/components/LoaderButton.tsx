@@ -6,9 +6,9 @@ interface Props extends React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLB
     label: string
 }
 
-export const LoaderButton: React.FunctionComponent<Props> = props => (
+export const LoaderButton: React.FunctionComponent<Props> = ({ loading, label, ...props }) => (
     // eslint-disable-next-line react/button-has-type
-    <button type={props.type ?? 'button'} {...props}>
-        {props.loading ? <LoadingSpinner className="icon-inline" /> : props.label}
+    <button {...props} type={props.type ?? 'button'}>
+        {loading ? <LoadingSpinner className="icon-inline" /> : label}
     </button>
 )
