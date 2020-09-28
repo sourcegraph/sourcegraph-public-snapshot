@@ -88,7 +88,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Authentication provider instances in site config. */
     authProviders?: {
-        serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml'
+        serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
         displayName: string
         isBuiltin: boolean
         authenticationURL?: string
