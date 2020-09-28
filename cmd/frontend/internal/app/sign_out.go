@@ -13,12 +13,12 @@ type SignOutURL struct {
 	URL                 string
 }
 
-var ssoSignOutHandler func(w http.ResponseWriter, r *http.Request) []SignOutURL
+var ssoSignOutHandler func(w http.ResponseWriter, r *http.Request)
 
 // RegisterSSOSignOutHandler registers a SSO sign-out handler that takes care of cleaning up SSO
 // session state, both on Sourcegraph and on the SSO provider. This function should only be called
 // once from an init function.
-func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request) []SignOutURL) {
+func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 	if ssoSignOutHandler != nil {
 		panic("RegisterSSOSignOutHandler already called")
 	}
