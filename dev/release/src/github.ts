@@ -186,6 +186,10 @@ export interface CreateBranchWithChangesOptions {
     bashEditCommands: string[]
 }
 
+/**
+ * Applies changes and publishes a branch with the changes. If the base branch does not
+ * exist, it gets created from the HEAD of the default branch.
+ */
 export async function createBranchWithChanges({
     owner,
     repo,
@@ -197,12 +201,21 @@ export async function createBranchWithChanges({
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
 
+    const octokit = await getAuthenticatedGitHubClient()
+    const baseBranch = await octokit.repos.getBranch({ branch: baseRevision, owner, repo })
+    const checkoutCommand =
+        baseBranch.status === 404
+            ? // create and publish base branch if it does not yet exist
+              `git checkout -b ${baseRevision} && git push origin HEAD`
+            : // otherwise, check out the existing branch
+              `git checkout ${baseRevision}`
+
     const bashScript = `set -ex
 
     cd ${tmpdir};
     git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
     cd ./${repo};
-    git checkout ${baseRevision};
+    ${checkoutCommand};
     ${bashEditCommands.join(';\n    ')};
     git add :/;
     git commit -a -m ${JSON.stringify(commitMessage)};
