@@ -56,8 +56,8 @@ github.com/ClickHouse/clickhouse-go v1.3.12/go.mod h1:EaI/sW7Azgz9UATzd5ZdZHRUhH
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
-github.com/LawnGnome/campaign-schema v0.0.0-20200915044008-fb956c216a65 h1:3Hzx2CeDsf/hoAr3zEhRbG2IUnb3FaBojsTJMkWsz90=
-github.com/LawnGnome/campaign-schema v0.0.0-20200915044008-fb956c216a65/go.mod h1:PSeUirk5RYbWn64QnwEL0e4eo7fCiwQ3zqNV3PtGifE=
+github.com/LawnGnome/campaign-schema v0.0.0-20200928031255-19467a6b7b49 h1:CQ93sZgkkkVCLcWK5REAGE/y44pNTK9RhyN33BTuyvI=
+github.com/LawnGnome/campaign-schema v0.0.0-20200928031255-19467a6b7b49/go.mod h1:PSeUirk5RYbWn64QnwEL0e4eo7fCiwQ3zqNV3PtGifE=
 github.com/Masterminds/semver v1.5.0 h1:H65muMkzWKEuNDnfl9d70GUjFniHKHRbFPGBuZ3QEww=
 github.com/Masterminds/semver v1.5.0/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
 github.com/Microsoft/go-winio v0.4.11 h1:zoIOcVf0xPN1tnMVbTtEdI+P8OofVk3NObnwOQ6nK2Q=
