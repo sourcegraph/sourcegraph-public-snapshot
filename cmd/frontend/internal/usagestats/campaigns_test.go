@@ -23,7 +23,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 
 	// Create stub repo.
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	now := time.Time{}
+	now := time.Now()
 	svc := repos.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
@@ -38,7 +38,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		Name: "test/repo",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
