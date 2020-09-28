@@ -128,10 +128,8 @@ export function useInputValidation(
         [synchronousValidators, asynchronousValidators, name, onInputChange]
     )
 
-    // useEventObservable
     const [nextInputChangeEvent, validationResult] = useEventObservable(validationPipeline)
 
-    // return
     return [
         validationResult ? { ...inputState, ...validationResult } : { ...inputState, kind: 'NOT_VALIDATED' },
         nextInputChangeEvent,
