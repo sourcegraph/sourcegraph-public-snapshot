@@ -319,7 +319,7 @@ func (r *reconciler) reopenChangeset(ctx context.Context, tx *Store, ch *campaig
 	}
 
 	// We extract the events, compute derived state and upsert events because
-	// the reopening has updated changeset on the code host.
+	// the reopening has updated the changeset on the code host.
 	events := ch.Events()
 	SetDerivedState(ctx, ch, events)
 	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {

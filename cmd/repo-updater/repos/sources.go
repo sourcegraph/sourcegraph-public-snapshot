@@ -117,7 +117,7 @@ type ChangesetSource interface {
 }
 
 // A ChangesetReopener is a ChangesetSource that can reopen Changesets.
-// We can remove this once all ChangesetSources can reopen changtesets.
+// We can remove this once all ChangesetSources can reopen changesets.
 type ChangesetReopener interface {
 	ChangesetSource
 
