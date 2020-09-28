@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LawnGnome/campaign-schema/override"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -21,14 +22,14 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 				Spec: cmpgn.CampaignSpecFields{
 					Name:        "Foobar",
 					Description: "My description",
-					ChangesetTemplate: cmpgn.ChangesetTemplate{
-						Title:  "Hello there",
-						Body:   "This is the body",
-						Branch: "my-branch",
+					ChangesetTemplate: &cmpgn.ChangesetTemplate{
+						Title:  override.FromString("Hello there"),
+						Body:   override.FromString("This is the body"),
+						Branch: override.FromString("my-branch"),
 						Commit: campaigns.CommitTemplate{
-							Message: "commit message",
+							Message: override.FromString("commit message"),
 						},
-						Published: false,
+						Published: override.FromBool(false),
 					},
 				},
 				UserID: int32(i + 1234),

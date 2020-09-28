@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LawnGnome/campaign-schema/override"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -869,8 +870,8 @@ func createCampaignSpec(t *testing.T, ctx context.Context, store *Store, name st
 		Spec: campaigns.CampaignSpecFields{
 			Name:        name,
 			Description: "the description",
-			ChangesetTemplate: campaigns.ChangesetTemplate{
-				Branch: "branch-name",
+			ChangesetTemplate: &campaigns.ChangesetTemplate{
+				Branch: override.FromString("branch-name"),
 			},
 		},
 	}
