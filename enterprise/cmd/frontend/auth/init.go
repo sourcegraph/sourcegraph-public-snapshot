@@ -41,6 +41,4 @@ func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
 			log15.Error("Error clearing auth provider session data.", "err", err)
 		}
 	}
-
-	return
 }
