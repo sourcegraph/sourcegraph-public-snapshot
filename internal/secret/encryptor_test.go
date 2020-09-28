@@ -330,7 +330,7 @@ func TestAESGCMEncodedEncrytor_Decrypt_Plaintext(t *testing.T) {
 			primaryKey:    mustGenerateRandomAESKey(),
 			secondaryKey:  mustGenerateRandomAESKey(),
 			encryptInTest: false,
-			ciphertext:    "VeryBadString" + separator,
+			ciphertext:    "VeryBadString" + Separator,
 			wantPlaintext: "",
 			wantErr:       true,
 		},
