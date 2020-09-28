@@ -1754,14 +1754,12 @@ type CampaignImportChangeset struct {
 	ExternalIDs []interface{} `json:"externalIDs"`
 }
 
-// FIXME: the Title and Published fields should be unmarshalled properly to
-// handle the new oneOf types in the campaign spec schema.
 type ChangesetTemplate struct {
 	Title     override.String `json:"title"`
 	Body      override.String `json:"body"`
 	Branch    override.String `json:"branch"`
 	Commit    CommitTemplate  `json:"commit"`
-	Published interface{}     `json:"published"`
+	Published override.Bool   `json:"published"`
 }
 
 type CommitTemplate struct {
