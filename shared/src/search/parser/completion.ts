@@ -16,6 +16,10 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
+/**
+ * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
+ * This allows us to be notified and run custom code when a user selects a suggestion.
+ */
 export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
     id: 'completionItemSelected',
     title: 'completion item selected',
