@@ -31,7 +31,7 @@ This guide is meant to provide specific instructions to get you producing index 
 
    ```
    # for private instances
-   src -endpoint=<your sourcegraph endpoint> lsif upload
+   SRC_ENDPOINT=<your sourcegraph endpoint> src lsif upload
    # for public instances
    src lsif upload -github-token=<your github token>
    ```
