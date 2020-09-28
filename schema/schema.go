@@ -1103,6 +1103,8 @@ type SettingsExperimentalFeatures struct {
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
+	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
+	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// ShowOnboardingTour description: Enables the onboarding tour.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage

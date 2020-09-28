@@ -42,6 +42,7 @@ interface SearchResultsInfoBarProps
 
     showDotComMarketing: boolean
     // Saved queries
+    showSavedQueryButton?: boolean
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
@@ -216,7 +217,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             </li>
                         )}
 
-                        {props.authenticatedUser && (
+                        {props.showSavedQueryButton !== false && props.authenticatedUser && (
                             <li className="nav-item">
                                 <button
                                     type="button"
