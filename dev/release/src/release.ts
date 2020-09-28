@@ -11,12 +11,14 @@ import {
     createPR,
     CreateBranchWithChangesOptions,
 } from './github'
+import * as changelog from './changelog'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
 import commandExists from 'command-exists'
 import { PullsCreateParams } from '@octokit/rest'
 import execa from 'execa'
+import { readFileSync, writeFileSync } from 'fs'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -52,6 +54,7 @@ type StepID =
     | 'help'
     | 'tracking-issue:announce'
     | 'tracking-issue:create'
+    | 'changelog:cut'
     | 'release-candidate:create'
     | 'release-candidate:dev-announce'
     | 'qa-start:dev-announce'
@@ -209,6 +212,29 @@ Key dates:
 - Release: ${formatDate(new Date(config.releaseDateTime))}`,
                 config.slackAnnounceChannel
             )
+        },
+    },
+    {
+        id: 'changelog:cut',
+        argNames: ['version', 'changelogFile'],
+        run: (_config, version, changelogFile = './CHANGELOG.md') => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
+            let changelogContents = readFileSync(changelogFile).toString()
+
+            // Convert 'unreleased' to a release
+            const releaseHeader = `## ${parsedVersion.format()}`
+            const unreleasedHeader = '## Unreleased'
+            changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
+
+            // Add a blank changelog template for the next release
+            changelogContents = changelogContents.replace(changelog.divider, changelog.releaseTemplate)
+
+            // Update changelog
+            writeFileSync(changelogFile, changelogContents)
         },
     },
     {
