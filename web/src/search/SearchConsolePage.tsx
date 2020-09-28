@@ -20,8 +20,16 @@ import { parseSearchURL } from '.'
 
 interface SearchConsolePageProps
     extends ThemeProps,
-        SettingsCascadeProps,
-        Omit<SearchResultsListProps, 'extensionsController'>,
+        Omit<
+            SearchResultsListProps,
+            | 'extensionsController'
+            | 'onSavedQueryModalClose'
+            | 'onShowMoreResultsClick'
+            | 'onExpandAllResultsToggle'
+            | 'onSavedQueryModalClose'
+            | 'onDidCreateSavedQuery'
+            | 'onSaveQueryClick'
+        >,
         ExtensionsControllerProps<'executeCommand' | 'services' | 'extHostAPI'> {
     globbing: boolean
     history: H.History
@@ -45,6 +53,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             [searchQueries, props.patternType, props.extensionsController]
         )
     )
+
+    const [allExpanded, setAllExpanded] = useState(false)
+
     const options: Monaco.editor.IEditorOptions = {
         readOnly: false,
         minimap: {
@@ -92,7 +103,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         return () => disposable.dispose()
     }, [editorInstance, searchQueries, props.history])
 
-    const calculateCount = (): number => {
+    const calculateCount = useCallback((): number => {
         // This function can only get called if the results were successfully loaded,
         // so casting is the right thing to do here
         const results = resultsOrError as GQL.ISearchResults
@@ -104,8 +115,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             return Math.max(results.matchCount * 2, 1000)
         }
         return Math.max(results.matchCount * 2 || 0, 1000)
-    }
-    const showMoreResults = (): void => {
+    }, [resultsOrError])
+
+    const showMoreResults = useCallback((): void => {
         // Requery with an increased max result count.
         if (!editorInstance) {
             return
@@ -121,7 +133,16 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }
         editorInstance.setValue(query)
         props.history.push('/search/console?q=' + encodeURI(query))
-    }
+    }, [props.history, calculateCount, editorInstance])
+
+    const onExpandAllResultsToggle = useCallback((): void => {
+        setAllExpanded(allExpanded => {
+            props.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+            return allExpanded
+        })
+    }, [setAllExpanded, props.telemetryService])
+
+    const voidCallback = useCallback(() => undefined, [])
 
     return (
         <div className="w-100 p-2">
@@ -152,7 +173,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                             <SearchResultsList
                                 {...props}
                                 resultsOrError={resultsOrError}
+                                onExpandAllResultsToggle={onExpandAllResultsToggle}
+                                showSavedQueryButton={false}
+                                onDidCreateSavedQuery={voidCallback}
+                                onSavedQueryModalClose={voidCallback}
                                 onShowMoreResultsClick={showMoreResults}
+                                onSaveQueryClick={voidCallback}
                             />
                         ))}
                 </div>

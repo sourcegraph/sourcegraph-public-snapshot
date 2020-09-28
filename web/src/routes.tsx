@@ -86,11 +86,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     allExpanded={false}
                     showSavedQueryModal={false}
                     deployType={window.context.deployType}
-                    onShowMoreResultsClick={() => undefined}
-                    onExpandAllResultsToggle={() => undefined}
-                    onSavedQueryModalClose={() => undefined}
-                    onDidCreateSavedQuery={() => undefined}
-                    onSaveQueryClick={() => undefined}
                     didSave={false}
                 />
             ) : (
