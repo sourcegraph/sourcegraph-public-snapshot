@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Interactive search mode is now disabled by default because the new plain text search input is smarter. To reenable it, add `{ "experimentalFeatures": { "splitSearchModes": true } }` in user settings.
+- The extension registry has been redesigned to make it easier to find useful Sourcegraph extensions.
 
 ### Changed
 

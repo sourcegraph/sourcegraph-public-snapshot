@@ -72,4 +72,16 @@
             color: $body-color-light;
         }
     }
+
+    .extension-area-link {
+        color: $gray-07;
+
+        .theme-light & {
+            color: $gray-13;
+        }
+
+        &.active {
+            color: var(--body-color);
+        }
+    }
 }
