@@ -259,20 +259,6 @@ func HandleCheckUsernameTaken(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Check availability of email for signup form
-func HandleCheckEmailTaken(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	email := vars["email"]
-
-	_, err := db.Users.GetByVerifiedEmail(r.Context(), email)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
 func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)

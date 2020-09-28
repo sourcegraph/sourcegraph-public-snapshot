@@ -47,7 +47,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         () => ({
             email: {
                 synchronousValidators: [],
-                asynchronousValidators: [isEmailUnique],
+                asynchronousValidators: [],
             },
             username: {
                 synchronousValidators: [],
@@ -290,24 +290,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
 }
 
 // Asynchronous Validators
-
-function isEmailUnique(email: string): Observable<string | undefined> {
-    return fromFetch(`/-/check-email-taken/${email}`).pipe(
-        switchMap(response => {
-            switch (response.status) {
-                case 200:
-                    return of('Email is already taken.')
-                case 404:
-                    // Email is unique
-                    return of(undefined)
-
-                default:
-                    return of('Unknown error validating username')
-            }
-        }),
-        catchError(() => of('Unknown error validating email'))
-    )
-}
 
 function isUsernameUnique(username: string): Observable<string | undefined> {
     return fromFetch(`/-/check-username-taken/${username}`).pipe(
