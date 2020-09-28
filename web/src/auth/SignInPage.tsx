@@ -11,7 +11,6 @@ import { SourcegraphIcon } from './icons'
 import { partition } from 'lodash'
 import { OrDivider } from './OrDivider'
 import { ErrorAlert } from '../components/alerts'
-import { stripURLParameters } from '../tracking/analyticsUtils'
 import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
 
@@ -24,12 +23,7 @@ interface SignInPageProps {
 export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
-    const [authError, setAuthError] = useState<Error | null>(() => {
-        // Display 3rd party auth errors (redirect with param 'auth_error')
-        const authErrorMessage = new URLSearchParams(location.search).get('auth_error')
-        stripURLParameters(window.location.href, ['auth_error'])
-        return authErrorMessage ? new Error(authErrorMessage) : null
-    })
+    const [error, setError] = useState<Error | null>(null)
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(props.location)
@@ -48,24 +42,19 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
             </div>
         ) : (
             <div className="mb-4 signin-page__container pb-5">
-                {authError && (
-                    <ErrorAlert
-                        className="mt-4 mb-0 text-left"
-                        error={authError}
-                        icon={false}
-                        history={props.history}
-                    />
+                {error && (
+                    <ErrorAlert className="mt-4 mb-0 text-left" error={setError} icon={false} history={props.history} />
                 )}
                 <div
                     className={classNames(
                         'signin-signup-form signin-form test-signin-form rounded p-4 my-3',
-                        authError ? 'mt-3' : 'mt-4'
+                        error ? 'mt-3' : 'mt-4'
                     )}
                 >
                     {builtInAuthProvider && (
                         <UsernamePasswordSignInForm
                             {...props}
-                            onAuthError={setAuthError}
+                            onAuthError={setError}
                             noThirdPartyProviders={thirdPartyAuthProviders.length === 0}
                         />
                     )}

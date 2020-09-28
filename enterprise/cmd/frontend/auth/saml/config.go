@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -46,18 +45,18 @@ func getProvider(pcID string) *provider {
 	return p
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, r *http.Request, pcID string) (p *provider, handled bool) {
+func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) (p *provider, handled bool) {
 	handled = true // safer default
 
 	p = getProvider(pcID)
 	if p == nil {
 		log15.Error("No SAML auth provider found with ID", "id", pcID)
-		auth.ProviderErrorRedirect(w, r, "Misconfigured SAML auth provider")
+		http.Error(w, "Misconfigured SAML auth provider", http.StatusInternalServerError)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
 		log15.Error("Error getting SAML auth provider", "id", p.ConfigID(), "error", err)
-		auth.ProviderErrorRedirect(w, r, "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".")
+		http.Error(w, "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".", http.StatusInternalServerError)
 		return nil, true
 	}
 	return p, false
