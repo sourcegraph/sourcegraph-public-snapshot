@@ -37,7 +37,7 @@ export function testSingleFilePage({
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
             expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
             await Promise.all([
-                getDriver().page.waitForNavigation(),
+                getDriver().page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
                 getDriver().page.click('.code-view-toolbar .open-on-sourcegraph'),
             ])
             expect(getDriver().page.url()).toBe(

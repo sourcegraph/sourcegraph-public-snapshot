@@ -1,7 +1,8 @@
 import React from 'react'
 import { mount } from 'enzyme'
-import { RecentFilesPanel } from './RecentFilesPanel'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
+import { RecentFilesPanel } from './RecentFilesPanel'
 
 describe('RecentFilesPanel', () => {
     test('duplicate files are only shown once', () => {
@@ -33,6 +34,7 @@ describe('RecentFilesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentFileViews: () => of(recentFiles),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
@@ -71,6 +73,7 @@ describe('RecentFilesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentFileViews: () => of(recentFiles),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
@@ -104,10 +107,11 @@ describe('RecentFilesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentFileViews: () => of(recentFiles),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         const component = mount(<RecentFilesPanel {...props} />)
-        const showMoreButton = component.find('.test-recent-files-panel-show-more')
+        const showMoreButton = component.getDOMNode().querySelectorAll('.test-recent-files-panel-show-more')
         expect(showMoreButton.length).toStrictEqual(1)
     })
 
@@ -135,6 +139,7 @@ describe('RecentFilesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentFileViews: () => of(recentFiles),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         const component = mount(<RecentFilesPanel {...props} />)

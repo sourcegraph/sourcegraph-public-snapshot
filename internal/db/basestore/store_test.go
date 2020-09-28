@@ -2,6 +2,7 @@ package basestore
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -116,7 +117,7 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 }
 
 func testStore() *Store {
-	return NewWithHandle(NewHandleWithDB(dbconn.Global))
+	return NewWithDB(dbconn.Global, sql.TxOptions{})
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {

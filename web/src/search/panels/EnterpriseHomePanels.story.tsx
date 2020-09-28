@@ -1,6 +1,7 @@
 import React from 'react'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from './utils'
 import { EnterpriseHomePanels } from './EnterpriseHomePanels'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { parseISO } from 'date-fns'
 import { SearchPatternType } from '../../graphql-operations'
 import { storiesOf } from '@storybook/react'
@@ -21,6 +22,8 @@ const props = {
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
     now: () => parseISO('2020-09-16T23:15:01Z'),
+    telemetryService: NOOP_TELEMETRY_SERVICE,
+    showEnterpriseHomePanels: true,
 }
 
 add('Panels', () => <WebStory>{() => <EnterpriseHomePanels {...props} />}</WebStory>)

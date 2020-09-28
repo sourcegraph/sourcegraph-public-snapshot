@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // Store is an abstract Postgres-backed data access layer. Instances of this struct
@@ -22,9 +23,8 @@ import (
 //         *basestore.Store
 //     }
 //
-//     func NewWithHandle(db dbutil.DB) *SprocketStore {
-//         handle := basestore.NewHandleWithDB(db)
-//         return &SprocketStore{Store: basestore.NewWithHandle(handle)}
+//     func NewWithDB(db dbutil.DB) *SprocketStore {
+//         return &SprocketStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 //     }
 //
 //     func (s *SprocketStore) With(other basestore.ShareableStore) *SprocketStore {
@@ -50,13 +50,18 @@ type ShareableStore interface {
 var _ ShareableStore = &Store{}
 
 // New returns a new base store connected to the given dsn (data store name).
-func New(postgresDSN, app string) (*Store, error) {
-	handle, err := NewHandle(postgresDSN, app)
+func New(postgresDSN, app string, txOptions sql.TxOptions) (*Store, error) {
+	handle, err := NewHandle(postgresDSN, app, txOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{handle: handle}, nil
+	return NewWithHandle(handle), nil
+}
+
+// NewHandleWithDB returns a new base store connected to the given connection.
+func NewWithDB(db dbutil.DB, txOptions sql.TxOptions) *Store {
+	return NewWithHandle(NewHandleWithDB(db, txOptions))
 }
 
 // NewWithHandle returns a new base store using the given database handle.
