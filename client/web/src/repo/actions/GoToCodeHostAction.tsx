@@ -19,6 +19,7 @@ import { useEventObservable, useObservable } from '../../../../shared/src/util/u
 import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { SourcegraphIcon } from '../../auth/icons'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: GQL.IRepository | null
@@ -30,6 +31,8 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
     externalLinks?: ExternalLinkFields[]
 }
 
+const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
+
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
@@ -37,7 +40,14 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const [modalOpen, setModalOpen] = useState(false)
 
     const isExtensionInstalled = useObservable(browserExtensionInstalled)
-    console.log('isextinst', isExtensionInstalled)
+
+    const [hasDissmissedPopup, setHasDismissedPopup] = useState(false)
+
+    const hijackLink = !isExtensionInstalled && !hasDissmissedPopup
+
+    useEffect(() => {
+        setHasDismissedPopup(localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true')
+    }, [])
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not
@@ -74,16 +84,38 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     useEffect(() => {
         nextComponentUpdate(props)
-    })
+    }, [props, nextComponentUpdate])
 
-    const openModal = useCallback(() => setModalOpen(true), [])
-    const closeModal = useCallback(() => setModalOpen(false), [])
+    /** This is a hard rejection. Never ask the user again. */
+    const onRejection = useCallback(() => {
+        localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
+        setHasDismissedPopup(true)
+        setModalOpen(false)
+
+        eventLogger.log('BrowserExtensionPopupRejected')
+    }, [])
+
+    /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
+    const onClose = useCallback(() => {
+        setModalOpen(false)
+
+        eventLogger.log('BrowserExtensionPopupClosed')
+    }, [])
+
+    /** The user is likely to install the browser extension at this point, so don't show it again. */
+    const onClickInstall = useCallback(() => {
+        localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
+        setHasDismissedPopup(true)
+        setModalOpen(false)
+
+        eventLogger.log('BrowserExtensionPopupClickedInstall')
+    }, [])
 
     const onSelect = useCallback(() => {
-        if (!isExtensionInstalled) {
-            openModal()
+        if (hijackLink) {
+            setModalOpen(true)
         }
-    }, [isExtensionInstalled, openModal])
+    }, [hijackLink])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =
@@ -144,8 +176,8 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         <>
             <LinkOrButton
                 className="nav-link test-go-to-code-host"
-                // this is OK because we always set tabindex=0
-                to={isExtensionInstalled ? url : ''}
+                // empty href is OK because we always set tabindex=0
+                to={hijackLink ? '' : url}
                 target="_self"
                 data-tooltip={`View on ${displayName}`}
                 onSelect={onSelect}
@@ -153,7 +185,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 <Icon className="icon-inline" />
             </LinkOrButton>
             {modalOpen && (
-                <ModalContainer onClose={closeModal} hideCloseIcon={true} className="justify-content-center">
+                <ModalContainer onClose={onClose} hideCloseIcon={true} className="justify-content-center">
                     {modalBodyReference => (
                         <div
                             ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>}
@@ -164,7 +196,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                                 Install Sourcegraph browser extension to get code intelligence while browsing files and
                                 reading PRs on {displayName}.
                             </p>
-                            {/* Graphic: center, flex row, justify around, some padding x */}
+
                             <div className="mx-auto code-host-action__graphic-container d-flex justify-content-between align-items-center">
                                 <SourcegraphIcon size={48} />
                                 <PlusThickIcon size={20} className="code-host-action__plus-icon" />
@@ -172,15 +204,25 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                             </div>
 
                             <div className="d-flex justify-content-end">
-                                <button type="button" className="btn btn-outline-secondary mr-2">
-                                    No, thanks
-                                </button>
-                                <button type="button" className="btn btn-outline-secondary mr-2">
+                                <LinkOrButton
+                                    className="btn btn-outline-secondary mr-2"
+                                    onSelect={onRejection}
+                                    to={url}
+                                >
+                                    No, thanks a
+                                </LinkOrButton>
+
+                                <LinkOrButton className="btn btn-outline-secondary mr-2" onSelect={onClose} to={url}>
                                     Remind me later
-                                </button>
-                                <button type="button" className="btn btn-primary">
+                                </LinkOrButton>
+
+                                <LinkOrButton
+                                    className="btn btn-primary mr-2"
+                                    onSelect={onClickInstall}
+                                    to="/help/integration/browser_extension"
+                                >
                                     Install browser extension
-                                </button>
+                                </LinkOrButton>
                             </div>
                         </div>
                     )}
