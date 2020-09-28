@@ -15,7 +15,7 @@ import (
 
 const (
 	requiredKeyLength = 32  // 32 bytes is the required length for AES-256.
-	separator         = "$" // Used specifically because $ is not part of base64
+	Separator         = "$" // Used specifically because $ is not part of base64
 )
 
 // EncryptionError is an error about encryption or decryption.
@@ -158,7 +158,7 @@ func (e aesGCMEncodedEncryptor) Encrypt(plaintext string) (ciphertext string, er
 	}
 
 	ciphertext = base64.StdEncoding.EncodeToString(cipherbytes)
-	return e.PrimaryKeyHash() + separator + ciphertext, nil
+	return e.PrimaryKeyHash() + Separator + ciphertext, nil
 }
 
 var ErrDecryptAttemptedButFailed = &EncryptionError{
@@ -175,7 +175,7 @@ func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, er
 
 	// If the ciphertext does not contain the separator, or has a new line,
 	// it is definitely not encrypted.
-	if !strings.Contains(ciphertext, separator) ||
+	if !strings.Contains(ciphertext, Separator) ||
 		strings.Contains(ciphertext, "\n") {
 		return ciphertext, nil
 	}
@@ -183,11 +183,11 @@ func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, er
 	var keyToDecrypt []byte
 
 	// Use the keyHash prefix to determine if we can decrypt it or whether it is encrypted at all.
-	if strings.HasPrefix(ciphertext, e.PrimaryKeyHash()+separator) {
-		ciphertext = ciphertext[len(e.PrimaryKeyHash()+separator):]
+	if strings.HasPrefix(ciphertext, e.PrimaryKeyHash()+Separator) {
+		ciphertext = ciphertext[len(e.PrimaryKeyHash()+Separator):]
 		keyToDecrypt = e.primaryKey
-	} else if strings.HasPrefix(ciphertext, e.SecondaryKeyHash()+separator) {
-		ciphertext = ciphertext[len(e.SecondaryKeyHash()+separator):]
+	} else if strings.HasPrefix(ciphertext, e.SecondaryKeyHash()+Separator) {
+		ciphertext = ciphertext[len(e.SecondaryKeyHash()+Separator):]
 		keyToDecrypt = e.secondaryKey
 	} else {
 		return "", ErrDecryptAttemptedButFailed
@@ -208,10 +208,6 @@ func (e aesGCMEncodedEncryptor) Decrypt(ciphertext string) (plaintext string, er
 // RotateEncryption rotates the encryption on a ciphertext by decrypting the ciphertext
 // using the primaryKey, and then reencrypting it using the secondaryKey.
 func (e aesGCMEncodedEncryptor) RotateEncryption(ciphertext string) (string, error) {
-	if !e.ConfiguredToRotate() {
-		return "", &EncryptionError{errors.New("key rotation not configured")}
-	}
-
 	plaintext, err := e.Decrypt(ciphertext)
 	if err != nil {
 		return "", err
