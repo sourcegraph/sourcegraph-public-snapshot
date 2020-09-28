@@ -69,7 +69,7 @@ const (
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
-	routeSearchConsole       = "search.console"
+	routeSearchConsole      = "search.console"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
