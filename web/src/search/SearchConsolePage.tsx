@@ -10,7 +10,7 @@ import { ErrorLike } from '../../../shared/src/util/errors'
 import { addSouregraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, of } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { first, switchMap, switchMapTo } from 'rxjs/operators'
+import { first, switchMap, switchMapTo, tap } from 'rxjs/operators'
 import { search } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
@@ -41,8 +41,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         useCallback(
             searchRequests =>
                 searchRequests.pipe(
-                    switchMapTo(searchQueries),
-                    first(),
+                    switchMapTo(searchQueries.pipe(first())),
+                    tap(query => props.history.push('/search/console?q=' + encodeURI(query))),
                     switchMap(query =>
                         concat(
                             of('loading' as const),
@@ -50,10 +50,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         )
                     )
                 ),
-            [searchQueries, props.patternType, props.extensionsController]
+            [searchQueries, props.patternType, props.extensionsController, props.history]
         )
     )
-
     const [allExpanded, setAllExpanded] = useState(false)
 
     const options: Monaco.editor.IEditorOptions = {
@@ -98,7 +97,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         const disposable = editorInstance.onDidChangeModelContent(() => {
             const query = editorInstance.getValue()
             searchQueries.next(query)
-            props.history.push('/search/console?q=' + encodeURI(query))
         })
         return () => disposable.dispose()
     }, [editorInstance, searchQueries, props.history])
@@ -108,14 +106,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         // so casting is the right thing to do here
         const results = resultsOrError as GQL.ISearchResults
 
-        const parameters = new URLSearchParams(location.search)
-        const query = parameters.get('q') || ''
-
+        const query = searchQueries.value
         if (/count:(\d+)/.test(query)) {
             return Math.max(results.matchCount * 2, 1000)
         }
         return Math.max(results.matchCount * 2 || 0, 1000)
-    }, [resultsOrError])
+    }, [resultsOrError, searchQueries])
 
     const showMoreResults = useCallback((): void => {
         // Requery with an increased max result count.
@@ -126,14 +122,13 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
 
         const count = calculateCount()
         if (/count:(\d+)/.test(query)) {
-            console.log(`count:${count}`)
             query = query.replace(/count:\d+/g, '').trim() + ` count:${count}`
         } else {
             query = `${query} count:${count}`
         }
-        editorInstance.setValue(query)
-        props.history.push('/search/console?q=' + encodeURI(query))
-    }, [props.history, calculateCount, editorInstance])
+        searchQueries.next(query)
+        nextSearch()
+    }, [calculateCount, editorInstance, searchQueries, nextSearch])
 
     const onExpandAllResultsToggle = useCallback((): void => {
         setAllExpanded(allExpanded => {
