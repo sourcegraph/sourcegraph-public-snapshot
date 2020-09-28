@@ -134,7 +134,7 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
         ? {
               label: name,
               kind: Monaco.languages.CompletionItemKind.TypeParameter,
-              insertText: name,
+              insertText: name + ' ',
               filterText: name,
           }
         : undefined
