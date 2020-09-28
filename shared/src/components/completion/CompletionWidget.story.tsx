@@ -4,8 +4,7 @@ import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 import { CompletionList } from 'sourcegraph'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
-import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
-import completionWidgetStyles from './CompletionWidget.scss'
+import webStyles from '../../../../web/src/main.scss'
 
 const onSelectItem = action('onSelectItem')
 
@@ -16,9 +15,8 @@ const { add } = storiesOf('shared/CompletionWidget', module)
     .addParameters({ options: { enableShortcuts: false } })
     .addDecorator(story => (
         <>
-            <style>{bootstrapStyles}</style>
-            <style>{completionWidgetStyles}</style>
             <div>{story()}</div>
+            <style>{webStyles}</style>
         </>
     ))
 

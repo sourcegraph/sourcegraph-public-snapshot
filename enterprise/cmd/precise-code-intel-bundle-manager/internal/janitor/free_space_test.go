@@ -2,8 +2,8 @@ package janitor
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -27,7 +27,7 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 
 	for id, size := range sizes {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFileWithSize(path, size); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -46,7 +46,7 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.evictBundles(100); err != nil {
+	if err := j.evictBundles(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 
@@ -77,7 +77,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 	}
 
 	for id, size := range sizes {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFileWithSize(path, size); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -102,7 +102,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.evictBundles(100); err != nil {
+	if err := j.evictBundles(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 
@@ -136,7 +136,7 @@ func TestEvictBundlesNoBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.evictBundles(100); err != nil {
+	if err := j.evictBundles(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 }

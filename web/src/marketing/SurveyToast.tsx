@@ -1,11 +1,11 @@
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
 import { range } from 'lodash'
+import { AuthenticatedUser } from '../auth'
 
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 
@@ -20,7 +20,7 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     public render(): JSX.Element | null {
         return (
             <div className={this.props.className}>
-                {range(0, 10).map(score => {
+                {range(0, 11).map(score => {
                     const pressed = score === this.props.score
                     return (
                         /* eslint-disable react/jsx-no-bind */
@@ -50,7 +50,7 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
 }
 
 interface Props {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 interface State {

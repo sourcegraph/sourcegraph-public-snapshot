@@ -12,6 +12,8 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type indexedRequestType string
@@ -62,7 +65,32 @@ type indexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
+// TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
+func containsRefGlobs(q query.QueryInfo) bool {
+	containsRefGlobs := false
+	if repoFilterValues, _ := q.RegexpPatterns(query.FieldRepo); len(repoFilterValues) > 0 {
+		for _, v := range repoFilterValues {
+			repoRev := strings.SplitN(v, "@", 2)
+			if len(repoRev) == 1 { // no revision
+				continue
+			}
+			if query.ContainsNoGlobSyntax(repoRev[1]) {
+				continue
+			}
+			containsRefGlobs = true
+			break
+		}
+	}
+	return containsRefGlobs
+}
+
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (_ *indexedSearchRequest, err error) {
+	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
 	if index, _ := args.Query.StringValues(query.FieldIndex); len(index) > 0 {
@@ -82,6 +110,16 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		return &indexedSearchRequest{
 			Unindexed:        args.Repos,
 			IndexUnavailable: true,
+		}, nil
+	}
+
+	// Fallback to Unindexed if the query contains ref-globs
+	if containsRefGlobs(args.Query) {
+		if indexParam == Only {
+			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
+		}
+		return &indexedSearchRequest{
+			Unindexed: args.Repos,
 		}, nil
 	}
 
@@ -120,8 +158,15 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}, ctx.Err()
 	}
 
+	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
+
 	// Split based on indexed vs unindexed
 	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+
+	tr.LogFields(
+		log.Int("indexed.size", len(indexed.repoRevs)),
+		log.Int("searcher_repos.size", len(searcherRepos)),
+	)
 
 	// We do not yet support searching non-HEAD for fileRequest (structural
 	// search).
@@ -165,7 +210,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	case symbolRequest:
 		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos.repoRevs, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
@@ -195,8 +240,24 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	return k
 }
 
-func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
+	if !ot.ShouldTrace(ctx) {
+		return false, nil
+	}
+
+	spanContext = make(map[string]string)
+	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
+		log15.Warn("Error injecting span context into map: %s", err)
+		return true, nil
+	}
+	return true, spanContext
+}
+
+func zoektSearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
+		Trace:                  shouldTrace,
+		SpanContext:            spanContext,
 		MaxWallTime:            defaultTimeout,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
@@ -240,21 +301,11 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
-	tr, ctx := trace.New(ctx, "zoekt.Search", finalQuery.String())
-	defer func() {
-		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
-		}
-		tr.Finish()
-	}()
-
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
-	searchOpts := zoektSearchOpts(k, args.PatternInfo)
+	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
-	if args.UseFullDeadline {
+	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		deadline, _ := ctx.Deadline()
 		searchOpts.MaxWallTime = time.Until(deadline)
 
 		// We don't want our context's deadline to cut off zoekt so that we can get the results
@@ -263,15 +314,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		// We'll create a new context that gets cancelled if the other context is cancelled for any
 		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
 		// will be `deadline + time for zoekt to cancel + network latency`.
-		cNew, cancel := context.WithCancel(context.Background())
-		go func(cOld context.Context) {
-			<-cOld.Done()
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
-			}
-		}(ctx)
-		ctx = cNew
+		var cancel context.CancelFunc
+		ctx, cancel = contextWithoutDeadline(ctx)
 		defer cancel()
 	}
 
@@ -443,6 +487,28 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	return symbols
 }
 
+// contextWithoutDeadline returns a context which will cancel if the cOld is
+// canceled.
+func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
+	cNew, cancel := context.WithCancel(context.Background())
+
+	// Set trace context so we still get spans propagated
+	cNew = trace.CopyContext(cNew, cOld)
+
+	go func() {
+		select {
+		case <-cOld.Done():
+			// cancel the new context if the old one is done for some reason other than the deadline passing.
+			if cOld.Err() != context.DeadlineExceeded {
+				cancel()
+			}
+		case <-cNew.Done():
+		}
+	}()
+
+	return cNew, cancel
+}
+
 func noOpAnyChar(re *syntax.Regexp) {
 	if re.Op == syntax.OpAnyChar {
 		re.Op = syntax.OpAnyCharNotNL
@@ -500,6 +566,10 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 			FileName: true,
 			Content:  true,
 		}
+	}
+
+	if query.IsNegated {
+		q = &zoektquery.Not{Child: q}
 	}
 
 	if typ == symbolRequest {
@@ -604,6 +674,10 @@ type indexedRepoRevs struct {
 	NotHEADOnlySearch bool
 }
 
+// headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
+// common-case allocations within indexedRepoRevs.Add.
+var headBranch = []string{"HEAD"}
+
 // Add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
@@ -622,6 +696,12 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		// TODO we could only process the explicit revs and return the non
 		// explicit ones as unindexed.
 		return reporev.Revs
+	}
+
+	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
+		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		return nil
 	}
 
 	// notHEADOnlySearch is set to true if we search any branch other than

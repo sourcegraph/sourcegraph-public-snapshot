@@ -4,7 +4,7 @@
 jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 
 import { Location } from '@sourcegraph/extension-api-types'
-import H from 'history'
+import * as H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'

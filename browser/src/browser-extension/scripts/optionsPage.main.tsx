@@ -3,19 +3,28 @@ import '../../shared/polyfills'
 
 import * as React from 'react'
 import { render } from 'react-dom'
-import { from, noop, Observable, Subscription } from 'rxjs'
+import { from, noop, Observable, Subscription, combineLatest } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../web-extension-api/runtime'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
-import { featureFlagDefaults, FeatureFlags } from '../web-extension-api/types'
 import { OptionsContainer, OptionsContainerProps } from '../options-page/OptionsContainer'
 import { OptionsMenuProps } from '../options-page/OptionsMenu'
 import { initSentry } from '../../shared/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
+import {
+    OptionFlagKey,
+    OptionFlagWithValue,
+    assignOptionFlagValues,
+    observeOptionFlags,
+    shouldOverrideSendTelemetry,
+    optionFlagDefinitions,
+} from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { observeSourcegraphURL } from '../../shared/util/context'
+import { observeSourcegraphURL, isFirefox } from '../../shared/util/context'
+import { map } from 'rxjs/operators'
+import { isExtension } from '../../shared/context'
 
 assertEnvironment('OPTIONS')
 
@@ -23,19 +32,14 @@ initSentry('options')
 
 const IS_EXTENSION = true
 
-type State = Pick<
-    FeatureFlags,
-    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
-> & { sourcegraphURL: string | null; isActivated: boolean }
-
-const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
-    !!Object.keys(featureFlagDefaults).find(featureFlag => key === featureFlag)
-
-const toggleFeatureFlag = (key: string): void => {
-    if (keyIsFeatureFlag(key)) {
-        featureFlags.toggle(key).then(noop).catch(noop)
-    }
+interface State {
+    sourcegraphURL: string | null
+    isActivated: boolean
+    optionFlags: OptionFlagWithValue[]
 }
+
+const isOptionFlagKey = (key: string): key is OptionFlagKey =>
+    !!optionFlagDefinitions.find(definition => definition.key === key)
 
 const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
@@ -54,11 +58,24 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
 }
 
 // Make GraphQL requests from background page
-function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
-    request: string
-    variables: {}
-}): Observable<GraphQLResult<T>> {
-    return from(background.requestGraphQL<T>(options))
+function requestGraphQL<T, V = object>(options: { request: string; variables: V }): Observable<GraphQLResult<T>> {
+    return from(background.requestGraphQL<T, V>(options))
+}
+
+const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
+    const overrideSendTelemetry: Observable<boolean> = observeSourcegraphURL(IS_EXTENSION).pipe(
+        map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
+    )
+
+    return combineLatest([observeOptionFlags(), overrideSendTelemetry]).pipe(
+        map(([flags, override]) => {
+            const definitions = assignOptionFlagValues(flags)
+            if (override) {
+                return definitions.filter(flag => flag.key !== 'sendTelemetry')
+            }
+            return definitions
+        })
+    )
 }
 
 const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
@@ -67,25 +84,15 @@ class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
         isActivated: true,
-        allowErrorReporting: false,
-        experimentalLinkPreviews: false,
-        experimentalTextFieldCompletion: false,
+        optionFlags: [],
     }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
-                const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion } = {
-                    ...featureFlagDefaults,
-                    ...featureFlags,
-                }
-                this.setState({
-                    allowErrorReporting,
-                    experimentalLinkPreviews,
-                    experimentalTextFieldCompletion,
-                })
+            observeOptionFlagsWithValues().subscribe(optionFlags => {
+                this.setState({ optionFlags })
             })
         )
 
@@ -130,12 +137,12 @@ class Options extends React.Component<{}, State> {
 
             setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
             toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
-            toggleFeatureFlag,
-            featureFlags: [
-                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
-                { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
-                { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },
-            ],
+            onChangeOptionFlag: (key: string, value: boolean) => {
+                if (isOptionFlagKey(key)) {
+                    featureFlags.set(key, value).then(noop, noop)
+                }
+            },
+            optionFlags: this.state.optionFlags,
         }
 
         return <OptionsContainer {...props} />

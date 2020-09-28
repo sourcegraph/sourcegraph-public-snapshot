@@ -16,7 +16,7 @@ import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { FileDiffFields, DiffStatFields } from '../../backend/diff'
+import { fileDiffFields, diffStatFields } from '../../backend/diff'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID
@@ -57,9 +57,9 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 }
             }
 
-            ${FileDiffFields}
+            ${fileDiffFields}
 
-            ${DiffStatFields}
+            ${diffStatFields}
         `,
         args
     ).pipe(

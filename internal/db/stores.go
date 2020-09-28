@@ -7,6 +7,7 @@ var (
 	Repos            = &repos{}
 	Phabricator      = &phabricator{}
 	QueryRunnerState = &queryRunnerState{}
+	Namespaces       = &namespaces{}
 	Orgs             = &orgs{}
 	OrgMembers       = &orgMembers{}
 	SavedSearches    = &savedSearches{}
@@ -22,4 +23,6 @@ var (
 	OrgInvitations = &orgInvitations{}
 
 	Authz AuthzStore = &authzStore{}
+
+	Secrets = &secrets{}
 )

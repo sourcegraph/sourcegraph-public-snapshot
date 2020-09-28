@@ -96,7 +96,7 @@ export interface PlatformContext {
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
      */
-    requestGraphQL: <R extends GQL.IQuery | GQL.IMutation>(options: {
+    requestGraphQL: <R, V = object>(options: {
         /**
          * The GraphQL request (query or mutation)
          */
@@ -104,7 +104,7 @@ export interface PlatformContext {
         /**
          * An object whose properties are GraphQL query name-value variable pairs
          */
-        variables: {}
+        variables: V
         /**
          * 🚨 SECURITY: Whether or not sending the GraphQL request to Sourcegraph.com
          * could leak private information such as repository names.

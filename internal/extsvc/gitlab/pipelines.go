@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -53,8 +52,8 @@ type Pipeline struct {
 	Ref       string         `json:"ref"`
 	Status    PipelineStatus `json:"status"`
 	WebURL    string         `json:"web_url"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	CreatedAt Time           `json:"created_at"`
+	UpdatedAt Time           `json:"updated_at"`
 }
 
 type PipelineStatus string

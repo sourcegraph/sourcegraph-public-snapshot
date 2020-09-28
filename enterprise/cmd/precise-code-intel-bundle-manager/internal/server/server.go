@@ -11,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -19,15 +20,17 @@ const Port = 3187
 
 type Server struct {
 	bundleDir          string
-	readerCache        cache.ReaderCache
+	storeCache         cache.StoreCache
 	observationContext *observation.Context
 	server             *http.Server
 	once               sync.Once
 }
 
+var _ goroutine.BackgroundRoutine = &Server{}
+
 func New(
 	bundleDir string,
-	readerCache cache.ReaderCache,
+	storeCache cache.StoreCache,
 	observationContext *observation.Context,
 ) *Server {
 	host := ""
@@ -37,7 +40,7 @@ func New(
 
 	s := &Server{
 		bundleDir:          bundleDir,
-		readerCache:        readerCache,
+		storeCache:         storeCache,
 		observationContext: observationContext,
 	}
 

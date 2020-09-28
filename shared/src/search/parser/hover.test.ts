@@ -8,7 +8,7 @@ describe('getHoverResult()', () => {
         expect(getHoverResult(parsedQuery, { column: 4 })).toStrictEqual({
             contents: [
                 {
-                    value: 'Include only results from repositories matching the given regex pattern.',
+                    value: 'Include only results from repositories matching the given search pattern.',
                 },
             ],
             range: {
@@ -21,7 +21,7 @@ describe('getHoverResult()', () => {
         expect(getHoverResult(parsedQuery, { column: 30 })).toStrictEqual({
             contents: [
                 {
-                    value: 'Include only results from files matching the given regex pattern.',
+                    value: 'Include only results from files matching the given search pattern.',
                 },
             ],
             range: {

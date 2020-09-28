@@ -4,7 +4,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 <a
   aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
   className="open-on-sourcegraph test"
-  href="https://test.com/sign-in?close=true"
+  href="https://test.com/sign-in?close=true&utm_source=chrome-extension"
   onClick={[Function]}
   title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
 >
@@ -38,7 +38,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 <a
   aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
   className="open-on-sourcegraph test"
-  href="https://test.com/sign-in?close=true"
+  href="https://test.com/sign-in?close=true&utm_source=chrome-extension"
   onClick={[Function]}
   title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
 >
@@ -72,7 +72,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 <a
   aria-label="Something unknown happened!"
   className="open-on-sourcegraph test"
-  href="https://test.com/test@test"
+  href="https://test.com/test@test?utm_source=chrome-extension"
   rel="noopener noreferrer"
   target="_blank"
   title="Something unknown happened!"
@@ -108,7 +108,7 @@ exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance r
 <a
   aria-label="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.com"
   className="open-on-sourcegraph test"
-  href="https://sourcegraph.com/test@test"
+  href="https://sourcegraph.com/test@test?utm_source=chrome-extension"
   rel="noopener noreferrer"
   target="_blank"
   title="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.com"
@@ -144,7 +144,7 @@ exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance r
 <a
   aria-label="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.test"
   className="open-on-sourcegraph test"
-  href="https://sourcegraph.test/test@test"
+  href="https://sourcegraph.test/test@test?utm_source=chrome-extension"
   rel="noopener noreferrer"
   target="_blank"
   title="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.test"
@@ -180,7 +180,7 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
 <a
   aria-label="View repository on Sourcegraph"
   className="open-on-sourcegraph test"
-  href="https://test.com/test"
+  href="https://test.com/test?utm_source=chrome-extension"
   rel="noopener noreferrer"
   target="_blank"
   title="View repository on Sourcegraph"
@@ -214,7 +214,7 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
 <a
   aria-label="View repository on Sourcegraph"
   className="open-on-sourcegraph test"
-  href="https://test.com/test@test"
+  href="https://test.com/test@test?utm_source=chrome-extension"
   rel="noopener noreferrer"
   target="_blank"
   title="View repository on Sourcegraph"

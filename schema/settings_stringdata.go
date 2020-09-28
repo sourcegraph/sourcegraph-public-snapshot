@@ -20,7 +20,7 @@ const SettingsSchemaJSON = `{
         "splitSearchModes": {
           "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": { "pointer": true }
         },
         "codeInsights": {
@@ -35,14 +35,14 @@ const SettingsSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
-        "showBadgeAttachments": {
-          "description": "Enables the UI indicators for code intelligence precision.",
+        "searchStreaming": {
+          "description": "Enables experimental streaming support.",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": { "pointer": true }
         },
-        "smartSearchField": {
-          "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
+        "showBadgeAttachments": {
+          "description": "Enables the UI indicators for code intelligence precision.",
           "type": "boolean",
           "default": true,
           "!go": { "pointer": true }
@@ -55,6 +55,18 @@ const SettingsSchemaJSON = `{
         },
         "showRepogroupHomepage": {
           "description": "Enables the repository group homepage ",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "showOnboardingTour": {
+          "description": "Enables the onboarding tour.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "showEnterpriseHomePanels": {
+          "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -111,11 +123,11 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.repositoryGroups": {
-      "description": "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+      "description": "Named groups of repositories that can be referenced in a search query using the ` + "`" + `repogroup:` + "`" + ` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression).",
       "type": "object",
       "additionalProperties": {
         "type": "array",
-        "items": { "type": "string" }
+        "items": { "anyOf": [{ "type": "object", "required": ["regex"] }, { "type": "string" }] }
       }
     },
     "search.contextLines": {
@@ -214,7 +226,13 @@ const SettingsSchemaJSON = `{
       "!go": { "pointer": true }
     },
     "search.migrateParser": {
-      "description": "If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "description": "If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "type": "boolean",
+      "default": true,
+      "!go": { "pointer": true }
+    },
+    "search.hideSuggestions": {
+      "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }
@@ -226,10 +244,6 @@ const SettingsSchemaJSON = `{
       "additionalProperties": false,
       "required": ["name", "value"],
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
-        },
         "name": {
           "type": "string",
           "description": "The human-readable name for this search scope"
@@ -237,10 +251,6 @@ const SettingsSchemaJSON = `{
         "value": {
           "type": "string",
           "description": "The query string of this search scope"
-        },
-        "description": {
-          "type": "string",
-          "description": "A description for this search scope"
         }
       }
     },
@@ -263,12 +273,6 @@ const SettingsSchemaJSON = `{
         }
       }
     }
-  },
-  "search.hideSuggestions": {
-    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
-    "type": "boolean",
-    "default": false,
-    "!go": { "pointer": true }
   }
 }
 `

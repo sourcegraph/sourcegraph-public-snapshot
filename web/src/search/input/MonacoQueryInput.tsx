@@ -5,18 +5,26 @@ import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
-import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
+import { Subscription, Observable, Subject, Unsubscribable, ReplaySubject, concat } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, withLatestFrom } from 'rxjs/operators'
+import { map, distinctUntilChanged, filter, switchMap, withLatestFrom, debounceTime } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
+import Shepherd from 'shepherd.js'
+import {
+    advanceLangStep,
+    advanceRepoStep,
+    isCurrentTourStep,
+    isValidLangQuery,
+    runAdvanceLangOrRepoStep,
+} from './SearchOnboardingTour'
+import { SearchPatternType } from '../../graphql-operations'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -31,6 +39,13 @@ export interface MonacoQueryInputProps
     onSubmit: () => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+    /**
+     * The current onboarding tour instance
+     */
+    tour?: Shepherd.Tour
+
+    // Whether globbing is enabled for filters.
+    globbing: boolean
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -47,10 +62,11 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
  *
  * @returns Subscription
  */
-function addSouregraphSearchCodeIntelligence(
+function addSourcegraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
-    patternTypes: Observable<SearchPatternType>
+    patternTypes: Observable<SearchPatternType>,
+    globbing: Observable<boolean>
 ): Subscription {
     const subscriptions = new Subscription()
 
@@ -58,12 +74,13 @@ function addSouregraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions)
+    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions, globbing)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
         toUnsubscribable(monaco.languages.registerCompletionItemProvider(SOURCEGRAPH_SEARCH, providers.completion))
     )
+
     subscriptions.add(
         providers.diagnostics.subscribe(markers => {
             monaco.editor.setModelMarkers(monaco.editor.getModels()[0], 'diagnostics', markers)
@@ -109,6 +126,24 @@ const hasKeybindingService = (
         .addDynamicKeybinding === 'function'
 
 /**
+ * HACK: this interface and the below type guard are used to add a custom command
+ * to the editor. There is no public API to add a command with a specified ID and handler,
+ * hence we need to use the private _commandService API.
+ *
+ * See upstream issue:
+ * - https://github.com/Microsoft/monaco-editor/issues/900#issue-327455729
+ * */
+interface MonacoEditorWithCommandService extends Monaco.editor.IStandaloneCodeEditor {
+    _commandService: {
+        addCommand: (command: { id: string; handler: () => void }) => void
+    }
+}
+
+const hasCommandService = (editor: Monaco.editor.IStandaloneCodeEditor): editor is MonacoEditorWithCommandService =>
+    hasProperty('_commandService')(editor) &&
+    typeof (editor._commandService as MonacoEditorWithCommandService['_commandService']).addCommand === 'function'
+
+/**
  * A search query input backed by the Monaco editor, allowing it to provide
  * syntax highlighting, hovers, completions and diagnostics for search queries.
  *
@@ -116,22 +151,28 @@ const hasKeybindingService = (
  * to avoid bundling the Monaco editor on every page.
  */
 export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps> {
-    private componentUpdates = new Subject<MonacoQueryInputProps>()
+    private componentUpdates = new ReplaySubject<MonacoQueryInputProps>(1)
     private searchQueries = this.componentUpdates.pipe(
         map(({ queryState }) => queryState.query),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
     )
     private patternTypes = this.componentUpdates.pipe(
         map(({ patternType }) => patternType),
-        distinctUntilChanged(),
-        publishReplay(1),
-        refCount()
+        distinctUntilChanged()
+    )
+
+    private globbing = this.componentUpdates.pipe(
+        map(({ globbing }) => globbing),
+        distinctUntilChanged()
     )
     private containerRefs = new Subject<HTMLElement | null>()
     private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
     private subscriptions = new Subscription()
+    private suggestionTriggers = new Subject<void>()
+
+    private tourIsOnQueryTermStep = this.componentUpdates.pipe(
+        filter(({ tour }) => isCurrentTourStep('add-query-term', tour) || false)
+    )
 
     constructor(props: MonacoQueryInputProps) {
         super(props)
@@ -148,6 +189,18 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 )
                 .subscribe(editor => {
                     editor.layout()
+                })
+        )
+
+        this.subscriptions.add(
+            this.suggestionTriggers
+                .pipe(
+                    withLatestFrom(this.editorRefs),
+                    map(([, editor]) => editor),
+                    filter(isDefined)
+                )
+                .subscribe(editor => {
+                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
                 })
         )
     }
@@ -189,6 +242,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             quickSuggestions: false,
             fixedOverflowWidgets: true,
             contextmenu: false,
+            links: false,
             // Display the cursor as a 1px line.
             cursorStyle: 'line',
             cursorWidth: 1,
@@ -208,6 +262,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             options={options}
                             border={false}
                             keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            className="test-query-input"
                         />
                     </div>
                     <Toggles
@@ -220,7 +275,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         )
     }
 
-    private onChange = (query: string): void => {
+    private onChange = (editor: Monaco.editor.IStandaloneCodeEditor, query: string): void => {
         // Cursor position is irrelevant for the Monaco query input.
         this.props.onChange({ query, cursorPosition: 0, fromUserInput: true })
     }
@@ -231,7 +286,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
-        this.subscriptions.add(addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes))
+        this.subscriptions.add(
+            addSourcegraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
+        )
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
@@ -269,11 +326,89 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
         )
 
+        const tour = this.props.tour
+
+        if (tour) {
+            if (!hasCommandService(editor)) {
+                throw new Error('Cannot add completionItemSelected command')
+            }
+            // When a suggestion gets selected, advance the tour.
+            this.subscriptions.add(
+                toUnsubscribable(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    (editor as any)._commandService.addCommand({
+                        id: 'completionItemSelected',
+                        handler: () => {
+                            runAdvanceLangOrRepoStep(this.props.queryState.query, tour)
+                        },
+                    })
+                )
+            )
+
+            // Handle advancing the search tour on the filter repo and filter lang steps, for events
+            // where the user does NOT select a suggestion, and instead types a value.
+            this.subscriptions.add(
+                this.componentUpdates
+                    .pipe(
+                        debounceTime(500),
+                        map(({ queryState }) => queryState),
+                        filter(({ fromUserInput }) => !!fromUserInput)
+                    )
+                    .subscribe(queryState => {
+                        // Trigger the suggestions popup for `repo:` and `lang:` fields
+                        if (
+                            (isCurrentTourStep('filter-repository', tour) && queryState.query === 'repo:') ||
+                            (isCurrentTourStep('filter-lang', tour) && queryState.query === 'lang:')
+                        ) {
+                            this.suggestionTriggers.next()
+                        }
+
+                        if (
+                            isCurrentTourStep('filter-repository', tour) &&
+                            tour.getById('filter-repository').isOpen() &&
+                            queryState.query !== 'repo:' &&
+                            queryState.query.endsWith(' ')
+                        ) {
+                            advanceRepoStep(this.props.queryState.query, tour)
+                        } else if (
+                            isCurrentTourStep('filter-lang', tour) &&
+                            tour.getById('filter-lang').isOpen() &&
+                            queryState.query !== 'lang:' &&
+                            isValidLangQuery(queryState.query.trim()) &&
+                            queryState.query.endsWith(' ')
+                        ) {
+                            advanceLangStep(this.props.queryState.query, tour)
+                        }
+                    })
+            )
+
+            // Handle advancing the search tour when on the add query term step.
+            // We subscribe to componentUpdates and filter for the event separately so we don't
+            // get a race condition between the tour advancing steps to add-query-term, and the handler
+            // getting called.
+            this.subscriptions.add(
+                concat(this.tourIsOnQueryTermStep, this.componentUpdates)
+                    .pipe(
+                        debounceTime(500),
+                        map(({ queryState }) => queryState)
+                    )
+                    .subscribe(queryState => {
+                        if (
+                            tour.getById('add-query-term').isOpen() &&
+                            queryState.query !== 'repo:' &&
+                            queryState.query !== 'lang:'
+                        ) {
+                            tour.show('submit-search')
+                        }
+                    })
+            )
+        }
+
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
             toUnsubscribable(
                 editor.onDidChangeModelContent(() => {
-                    this.onChange(editor.getValue().replace(/[\n\r↵]/g, ''))
+                    this.onChange(editor, editor.getValue().replace(/[\n\r↵]/g, ''))
                 })
             )
         )

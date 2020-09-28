@@ -1,7 +1,5 @@
 package lsif
 
-import "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
-
 type Element struct {
 	ID      int
 	Type    string
@@ -21,12 +19,6 @@ type MetaData struct {
 	ProjectRoot string
 }
 
-type Document struct {
-	URI         string
-	Contains    *datastructures.IDSet
-	Diagnostics *datastructures.IDSet
-}
-
 type Range struct {
 	StartLine          int
 	StartCharacter     int
@@ -35,7 +27,6 @@ type Range struct {
 	DefinitionResultID int
 	ReferenceResultID  int
 	HoverResultID      int
-	MonikerIDs         *datastructures.IDSet
 }
 
 func (d Range) SetDefinitionResultID(id int) Range {
@@ -47,7 +38,6 @@ func (d Range) SetDefinitionResultID(id int) Range {
 		DefinitionResultID: id,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      d.HoverResultID,
-		MonikerIDs:         d.MonikerIDs,
 	}
 }
 
@@ -60,7 +50,6 @@ func (d Range) SetReferenceResultID(id int) Range {
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  id,
 		HoverResultID:      d.HoverResultID,
-		MonikerIDs:         d.MonikerIDs,
 	}
 }
 
@@ -73,20 +62,6 @@ func (d Range) SetHoverResultID(id int) Range {
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      id,
-		MonikerIDs:         d.MonikerIDs,
-	}
-}
-
-func (d Range) SetMonikerIDs(ids *datastructures.IDSet) Range {
-	return Range{
-		StartLine:          d.StartLine,
-		StartCharacter:     d.StartCharacter,
-		EndLine:            d.EndLine,
-		EndCharacter:       d.EndCharacter,
-		DefinitionResultID: d.DefinitionResultID,
-		ReferenceResultID:  d.ReferenceResultID,
-		HoverResultID:      d.HoverResultID,
-		MonikerIDs:         ids,
 	}
 }
 
@@ -94,7 +69,6 @@ type ResultSet struct {
 	DefinitionResultID int
 	ReferenceResultID  int
 	HoverResultID      int
-	MonikerIDs         *datastructures.IDSet
 }
 
 func (d ResultSet) SetDefinitionResultID(id int) ResultSet {
@@ -102,7 +76,6 @@ func (d ResultSet) SetDefinitionResultID(id int) ResultSet {
 		DefinitionResultID: id,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      d.HoverResultID,
-		MonikerIDs:         d.MonikerIDs,
 	}
 }
 
@@ -111,7 +84,6 @@ func (d ResultSet) SetReferenceResultID(id int) ResultSet {
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  id,
 		HoverResultID:      d.HoverResultID,
-		MonikerIDs:         d.MonikerIDs,
 	}
 }
 
@@ -120,16 +92,6 @@ func (d ResultSet) SetHoverResultID(id int) ResultSet {
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      id,
-		MonikerIDs:         d.MonikerIDs,
-	}
-}
-
-func (d ResultSet) SetMonikerIDs(ids *datastructures.IDSet) ResultSet {
-	return ResultSet{
-		DefinitionResultID: d.DefinitionResultID,
-		ReferenceResultID:  d.ReferenceResultID,
-		HoverResultID:      d.HoverResultID,
-		MonikerIDs:         ids,
 	}
 }
 
@@ -152,10 +114,6 @@ func (d Moniker) SetPackageInformationID(id int) Moniker {
 type PackageInformation struct {
 	Name    string
 	Version string
-}
-
-type DiagnosticResult struct {
-	Result []Diagnostic
 }
 
 type Diagnostic struct {

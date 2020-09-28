@@ -1,6 +1,6 @@
 import { startCase } from 'lodash'
 import assert from 'assert'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { testSingleFilePage } from './shared'
 import { retry } from '../../../shared/src/testing/utils'
@@ -29,7 +29,7 @@ describe('Sourcegraph browser extension on github.com', function () {
     })
 
     // Take a screenshot when a test fails
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after('Close browser', () => driver?.close())
 

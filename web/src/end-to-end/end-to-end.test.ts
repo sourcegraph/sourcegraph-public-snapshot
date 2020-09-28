@@ -1,5 +1,5 @@
 import { describe, test, before, beforeEach, after, afterEach } from 'mocha'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { afterEachRecordCoverage } from '../../../shared/src/testing/coverage'
 import { retry } from '../../../shared/src/testing/utils'
 import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
@@ -11,7 +11,6 @@ import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
-import { asError } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
@@ -44,8 +43,8 @@ describe('e2e test suite', () => {
             'sourcegraph/go-diff',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
-            'sourcegraph-testing/automation-test-test',
-            'sourcegraph/test-test-private-repository',
+            'sourcegraph-testing/automation-e2e-test',
+            'sourcegraph/e2e-test-private-repository',
         ]
         const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
@@ -65,7 +64,7 @@ describe('e2e test suite', () => {
 
     after('Close browser', () => driver?.close())
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEachRecordCoverage(() => driver)
 
     beforeEach(async () => {
@@ -124,12 +123,12 @@ describe('e2e test suite', () => {
             })
 
             await driver.page.click('.test-create-access-token-submit')
-            const token: string = await (
-                await driver.page.waitForFunction(() => {
-                    const element = document.querySelector<HTMLInputElement>('.test-access-token input[type=text]')
-                    return element?.value
-                })
-            ).jsonValue()
+            const token = (await (
+                await driver.page.waitForFunction(
+                    () => document.querySelector<HTMLInputElement>('.test-access-token input[type=text]')?.value
+                )
+            ).jsonValue()) as string | null
+            assert(token)
 
             const response = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
@@ -296,12 +295,9 @@ describe('e2e test suite', () => {
                 ensureRepos: ['aws/test'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
-            const blob: string = await (
-                await driver.page.waitFor(() => {
-                    const element = document.querySelector<HTMLElement>('.test-repo-blob')
-                    return element?.textContent
-                })
-            ).jsonValue()
+            const blob = (await (
+                await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
+            ).jsonValue()) as string | null
 
             expect(blob).toBe('README\n\nchange')
         })
@@ -326,12 +322,9 @@ describe('e2e test suite', () => {
                 ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
-            const blob: string = await (
-                await driver.page.waitFor(() => {
-                    const element = document.querySelector<HTMLElement>('.test-repo-blob')
-                    return element?.textContent
-                })
-            ).jsonValue()
+            const blob = (await (
+                await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
+            ).jsonValue()) as string | null
 
             expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })
@@ -363,7 +356,7 @@ describe('e2e test suite', () => {
         })
 
         test('Search visibility:private|public', async () => {
-            const privateRepos = ['github.com/sourcegraph/test-test-private-repository']
+            const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
 
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
             await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length >= 1)
@@ -800,7 +793,7 @@ describe('e2e test suite', () => {
                     line: 65,
                 },
                 {
-                    name: 'highlights correct line for Typescript',
+                    name: 'highlights correct line for TypeScript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
                     index: 2,
@@ -1275,7 +1268,7 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe('Search pattern type setting', () => {
+    describe.skip('Search pattern type setting', () => {
         test('Search pattern type setting correctly sets default pattern type', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
             await driver.replaceText({
@@ -1481,91 +1474,7 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe('Campaigns', () => {
-        let previousExperimentalFeatures: any
-        before(async () => {
-            await driver.setConfig(['experimentalFeatures'], previous => {
-                previousExperimentalFeatures = previous?.value
-                return { automation: 'enabled' }
-            })
-            // wait for configuration to be applied
-            await retry(async () => {
-                await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-                try {
-                    // wait for splash page to disappear
-                    await driver.page.waitForSelector('.test-campaign-form', { visible: true, timeout: 1000 })
-                } catch (error) {
-                    await new Promise(resolve => setTimeout(resolve, 1000))
-                    throw asError(error)
-                }
-            })
-        })
-        after(async () => {
-            await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
-        })
-        async function testCampaignPreview({
-            previewURL,
-            changesetCount,
-            snapshotName,
-        }: {
-            previewURL: string
-            changesetCount: number
-            snapshotName: string
-        }): Promise<void> {
-            await driver.page.goto(previewURL.replace('127.0.0.1', 'localhost'))
-            await driver.page.waitForSelector('.test-campaign-form')
-
-            // fill campaign preview form
-            await driver.page.type('.test-campaign-title', 'E2E campaign')
-
-            await driver.page.waitForSelector('.test-changeset-node')
-            // check there were exactly as expected diffs generated
-            const generatedChangesetCount = await driver.page.evaluate(
-                () => document.querySelectorAll('.test-changeset-node').length
-            )
-            expect(generatedChangesetCount).toEqual(changesetCount)
-            await percySnapshot(driver.page, snapshotName)
-        }
-        test('View campaign preview for patch set', async () => {
-            const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-test-test')
-            const { previewURL } = await driver.createPatchSetFromPatches([
-                {
-                    repository: repo.id,
-                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
-                    baseRef: 'refs/heads/master',
-                    patch: `diff --unified file1.txt file1.txt
---- file1.txt 2020-01-01 01:02:03 -0700
-+++ file1.txt 2020-01-01 03:04:05 -0700
-@@ -1 +1,2 @@
- this is file 1
-+hello
-`,
-                },
-            ])
-            await testCampaignPreview({
-                previewURL,
-                changesetCount: 1,
-                snapshotName: 'Campaign preview page',
-            })
-        })
-        // TODO(eseliger): reenable once the dates of the chart are stable
-        test.skip('Manual campaign workflow', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-            await driver.page.waitForSelector('.test-campaign-form')
-            await percySnapshot(driver.page, 'Create manual campaign form')
-            await driver.page.type('.test-campaign-title', 'E2E manual campaign')
-            await driver.page.click('.test-campaign-create-btn')
-            await driver.page.waitForSelector('.test-campaign-get-started')
-            await percySnapshot(driver.page, 'Create manual campaign empty')
-            await driver.page.type('.test-track-changeset-repo', 'github.com/sourcegraph-testing/automation-test-test')
-            await driver.page.type('.test-track-changeset-id', '1')
-            await driver.page.click('.test-track-changeset-btn')
-            await driver.page.waitForSelector('.test-changeset-node')
-            await percySnapshot(driver.page, 'Create manual campaign added changeset')
-        })
-    })
-
-    describe('Interactive search mode (feature flagged)', () => {
+    describe.skip('Interactive search mode (feature flagged)', () => {
         let previousExperimentalFeatures: any
 
         before(async () => {
@@ -1637,8 +1546,8 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocation('/search?q=repo:%22gorilla%22&patternType=literal')
 
             // Edit the filter
-            await driver.page.waitForSelector('.filter-input')
-            await driver.page.click('.filter-input')
+            await driver.page.waitForSelector('.filter-input__button-text')
+            await driver.page.click('.filter-input__button-text')
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             // Press enter to lock in filter
@@ -1710,6 +1619,11 @@ describe('e2e test suite', () => {
 
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
+            // Enable interactive search
+            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
+            await driver.page.click('.test-search-mode-toggle')
+            await driver.page.click('.test-search-mode-toggle__interactive-mode')
+            // Execute search with filter
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-filter-dropdown')
             await driver.page.type('.test-query-input', 'test')
@@ -1743,15 +1657,15 @@ describe('e2e test suite', () => {
     describe('Case sensitivity toggle', () => {
         test('Clicking toggle turns on case sensitivity', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
-            await driver.page.type('.test-query-input', 'test')
+            await driver.page.type('#monaco-query-input', 'test')
             await driver.page.click('.test-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
         })
 
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
             await driver.page.click('.test-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
@@ -1761,23 +1675,23 @@ describe('e2e test suite', () => {
     describe('Structural search toggle', () => {
         test('Clicking toggle turns on structural search', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
-            await driver.page.type('.test-query-input', 'test')
+            await driver.page.type('#monaco-query-input', 'test')
             await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
         })
 
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
         })
 
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')

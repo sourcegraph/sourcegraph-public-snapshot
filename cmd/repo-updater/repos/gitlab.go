@@ -366,7 +366,6 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
 	// will allow us to query multiple MRs at once.
 	for _, c := range cs {
-		old := c.Changeset.Metadata.(*gitlab.MergeRequest)
 		project := c.Repo.Metadata.(*gitlab.Project)
 
 		iid, err := strconv.ParseInt(c.ExternalID, 10, 64)
@@ -381,7 +380,7 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 
 		// As above, these additional API calls can go away once we can use
 		// GraphQL.
-		if err := s.decorateMergeRequestData(ctx, project, mr, old); err != nil {
+		if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
 			return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
 		}
 
@@ -393,13 +392,13 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 	return nil
 }
 
-func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) error {
-	notes, err := s.getMergeRequestNotes(ctx, project, mr, old)
+func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) error {
+	notes, err := s.getMergeRequestNotes(ctx, project, mr)
 	if err != nil {
 		return errors.Wrap(err, "retrieving notes")
 	}
 
-	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr, old)
+	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
 	if err != nil {
 		return errors.Wrap(err, "retrieving pipelines")
 	}
@@ -409,47 +408,23 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 	return nil
 }
 
-type idSet map[gitlab.ID]struct{}
-
-func (s idSet) add(id gitlab.ID) { s[id] = struct{}{} }
-
-func (s idSet) has(id gitlab.ID) bool {
-	_, ok := s[id]
-	return ok
-}
-
 // getMergeRequestNotes retrieves the notes attached to a merge request in
-// descending time order. The old merge request is used to prevent retrieving
-// notes that have already been seen.
-func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Note, error) {
-	// Firstly, we'll set up a set containing the old note IDs so that we know
-	// where we can stop iterating: on a MR with lots of notes, this will mean
-	// we shouldn't need to load all pages on every sync.
-	extant := make(idSet)
-	for _, note := range old.Notes {
-		extant.add(note.ID)
-	}
-
-	// Secondly, we'll get the forward iterator that gives us a note page at a
-	// time.
+// descending time order.
+func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.Note, error) {
+	// Get the forward iterator that gives us a note page at a time.
 	it := s.client.GetMergeRequestNotes(ctx, project, mr.IID)
 
 	// Now we can iterate over the pages of notes and fill in the slice to be
 	// returned.
-	notes, err := readNotesUntilSeen(it, extant)
+	notes, err := readSystemNotes(it)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading note pages")
 	}
 
-	// Finally, we should append the old notes to the new notes. Doing so after
-	// handling the new notes means that all the notes should be in descending
-	// order without needing to explicitly sort.
-	notes = append(notes, old.Notes...)
-
 	return notes, nil
 }
 
-func readNotesUntilSeen(it func() ([]*gitlab.Note, error), extant idSet) ([]*gitlab.Note, error) {
+func readSystemNotes(it func() ([]*gitlab.Note, error)) ([]*gitlab.Note, error) {
 	var notes []*gitlab.Note
 
 	for {
@@ -468,11 +443,6 @@ func readNotesUntilSeen(it func() ([]*gitlab.Note, error), extant idSet) ([]*git
 			// include the review state changes we need; let's not even bother
 			// storing the non-system ones.
 			if note.System {
-				if extant.has(note.ID) {
-					// We've seen this note before, which means that nothing
-					// after this point should be new.
-					return notes, nil
-				}
 				notes = append(notes, note)
 			}
 		}
@@ -480,37 +450,21 @@ func readNotesUntilSeen(it func() ([]*gitlab.Note, error), extant idSet) ([]*git
 }
 
 // getMergeRequestPipelines retrieves the pipelines attached to a merge request
-// in descending time order. The old merge request is used to prevent
-// retrieving pipelines that have already been seen.
-func (s *GitLabSource) getMergeRequestPipelines(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Pipeline, error) {
-	// Firstly, we'll set up a set containing the old pipeline IDs so that we
-	// know where we can stop iterating: on a MR with lots of pipelines, this
-	// will mean we shouldn't need to load all pages on every sync.
-	extant := make(idSet)
-	for _, pipeline := range old.Pipelines {
-		extant.add(pipeline.ID)
-	}
-
-	// Secondly, we'll get the forward iterator that gives us a pipeline page at
-	// a time.
+// in descending time order.
+func (s *GitLabSource) getMergeRequestPipelines(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.Pipeline, error) {
+	// Get the forward iterator that gives us a pipeline page at a time.
 	it := s.client.GetMergeRequestPipelines(ctx, project, mr.IID)
 
 	// Now we can iterate over the pages of pipelines and fill in the slice to
 	// be returned.
-	pipelines, err := readPipelinesUntilSeen(it, extant)
+	pipelines, err := readPipelines(it)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading pipeline pages")
 	}
-
-	// Finally, we should append the old pipelines to the new pipelines. Doing
-	// so after handling the new pipelines means that all the pipelines should
-	// be in descending order without needing to explicitly sort.
-	pipelines = append(pipelines, old.Pipelines...)
-
 	return pipelines, nil
 }
 
-func readPipelinesUntilSeen(it func() ([]*gitlab.Pipeline, error), extant idSet) ([]*gitlab.Pipeline, error) {
+func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, error) {
 	var pipelines []*gitlab.Pipeline
 
 	for {
@@ -524,14 +478,7 @@ func readPipelinesUntilSeen(it func() ([]*gitlab.Pipeline, error), extant idSet)
 			return pipelines, nil
 		}
 
-		for _, pipeline := range page {
-			if extant.has(pipeline.ID) {
-				// We've seen this pipeline before, which means that nothing
-				// after this point should be new.
-				return pipelines, nil
-			}
-			pipelines = append(pipelines, pipeline)
-		}
+		pipelines = append(pipelines, page...)
 	}
 }
 

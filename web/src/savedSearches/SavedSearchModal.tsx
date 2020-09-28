@@ -1,13 +1,13 @@
 import * as H from 'history'
 import * as React from 'react'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
 import { PatternTypeProps } from '../search'
+import { AuthenticatedUser } from '../auth'
 
 interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     query?: string
     onDidCancel: () => void
 }

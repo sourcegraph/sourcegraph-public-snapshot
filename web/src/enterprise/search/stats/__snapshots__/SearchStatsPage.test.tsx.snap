@@ -24,7 +24,7 @@ exports[`SearchStatsPage limitHit 1`] = `
        Code statistics
        
       <small
-        className="badge badge-secondary ml-2"
+        className="badge badge-secondary text-uppercase ml-2"
       >
         Experimental
       </small>
@@ -92,7 +92,7 @@ exports[`SearchStatsPage renders 1`] = `
        Code statistics
        
       <small
-        className="badge badge-secondary ml-2"
+        className="badge badge-secondary text-uppercase ml-2"
       >
         Experimental
       </small>

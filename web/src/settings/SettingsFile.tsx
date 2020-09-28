@@ -9,8 +9,9 @@ import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     history: H.History
 
     settings: GQL.ISettings | null
@@ -215,7 +216,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
                         if (this.editor && MonacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
                             for (const { id, label, run } of settingsActions) {
-                                MonacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(
+                                    this.editor,
+                                    model,
+                                    label,
+                                    id,
+                                    run,
+                                    this.props.telemetryService
+                                )
                             }
                         }
                     })

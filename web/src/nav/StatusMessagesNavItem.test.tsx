@@ -1,17 +1,13 @@
 import React from 'react'
 import { of, Observable } from 'rxjs'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
-
-jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
-jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')
-jest.mock('mdi-react/CloudSyncIcon', () => 'CloudSyncIcon')
+import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations'
 
 describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
-        const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
+        const fetchMessages = (): Observable<StatusMessagesResult['statusMessages']> => of([])
         expect(
             mount(
                 <StatusMessagesNavItem
@@ -24,12 +20,12 @@ describe('StatusMessagesNavItem', () => {
     })
 
     describe('one CloningProgress message', () => {
-        const message: GQL.StatusMessage = {
+        const message: StatusMessageFields = {
             __typename: 'CloningProgress',
             message: 'Currently cloning repositories...',
         }
 
-        const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([message])
+        const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
                 mount(
@@ -56,19 +52,12 @@ describe('StatusMessagesNavItem', () => {
     })
 
     describe('one ExternalServiceSyncError message', () => {
-        const message: GQL.StatusMessage = {
+        const message: StatusMessageFields = {
             __typename: 'ExternalServiceSyncError',
             message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
             externalService: {
-                __typename: 'ExternalService',
                 id: 'abcd',
                 displayName: 'GitHub.com',
-                kind: GQL.ExternalServiceKind.GITHUB,
-                config: '{}',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                webhookURL: null,
-                warning: '',
             },
         }
 
@@ -99,7 +88,7 @@ describe('StatusMessagesNavItem', () => {
     })
 
     describe('one SyncError message', () => {
-        const message: GQL.StatusMessage = {
+        const message: StatusMessageFields = {
             __typename: 'SyncError',
             message: 'syncer.sync.store.upsert-repos: pg: unique constraint foobar',
         }

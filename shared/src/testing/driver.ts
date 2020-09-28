@@ -14,21 +14,21 @@ import puppeteer, {
 } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../graphql/schema'
 import { readEnvironmentBoolean, retry } from './utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
-import { readFile, appendFile } from 'mz/fs'
+import { readFile, appendFile, mkdir } from 'mz/fs'
 import { Settings } from '../settings/settings'
 import { fromEvent, merge } from 'rxjs'
 import { filter, map, concatAll, mergeMap } from 'rxjs/operators'
-import mkdirpPromise from 'mkdirp-promise'
 import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
 import { isDefined } from '../util/types'
 import { getConfig } from './config'
+import { ExternalServiceKind } from '../graphql-operations'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -432,12 +432,12 @@ export class Driver {
         return (await handle.jsonValue()) as T
     }
 
-    private async makeGraphQLRequest<T extends IQuery | IMutation>({
+    private async makeGraphQLRequest<T, V = object>({
         request,
         variables,
     }: {
         request: string
-        variables: {}
+        variables: V
     }): Promise<GraphQLResult<T>> {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
         const xhrHeaders =
@@ -477,21 +477,6 @@ export class Driver {
             throw new Error(`repository not found: ${name}`)
         }
         return repository
-    }
-
-    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
-        const response = await this.makeGraphQLRequest<IMutation>({
-            request: gql`
-                mutation($patches: [PatchInput!]!) {
-                    createPatchSetFromPatches(patches: $patches) {
-                        previewURL
-                    }
-                }
-            `,
-            variables: { patches },
-        })
-        const { createPatchSetFromPatches } = dataOrThrowErrors(response)
-        return createPatchSetFromPatches
     }
 
     public async setConfig(
@@ -668,7 +653,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
     } else if (process.platform === 'linux') {
-        await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'), { recursive: true })
         configPath = firefoxFolder
     } else if (process.platform === 'win32') {
         configPath = firefoxFolder
@@ -703,6 +688,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
     const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
+        ignoreHTTPSErrors: true,
         ...options,
         args,
         defaultViewport: null,
@@ -778,7 +764,8 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
                         !message.text().includes('Download the React DevTools') &&
                         !message.text().includes('[HMR]') &&
                         !message.text().includes('[WDS]') &&
-                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed') &&
+                        !message.text().includes('React-Hot-Loader')
                 ),
                 // Immediately format remote handles to strings, but maintain order.
                 map(formatPuppeteerConsoleMessage),

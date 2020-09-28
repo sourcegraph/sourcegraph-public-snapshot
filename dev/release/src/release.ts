@@ -252,7 +252,7 @@ Key dates:
 
             const message = `:captain: Release \`${version}\` has been cut :captain:
 
-- Please ensure \`CHANGELOG.md\` on \`master\` is up-to-date.
+- Please ensure \`CHANGELOG.md\` on \`main\` is up-to-date.
 - Run this release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
 - It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
@@ -313,7 +313,7 @@ Key dates:
                 {
                     owner: 'sourcegraph',
                     repo: 'sourcegraph',
-                    base: 'master',
+                    base: 'main',
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
@@ -322,8 +322,8 @@ Key dates:
                         parsedVersion.patch === 0
                             ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${parsedVersion.version}"}} {{$currentReleaseVersion := "${parsedVersion.major}.${parsedVersion.minor}"}}' doc/_resources/templates/document.html`
                             : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${parsedVersion.version}"' doc/_resources/templates/document.html`,
-                        `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
-                        `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
+                        `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                        `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },
@@ -346,6 +346,17 @@ Key dates:
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
                         `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph-dot-com',
+                    base: 'release',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },

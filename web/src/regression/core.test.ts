@@ -14,7 +14,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -49,7 +49,7 @@ describe('Core functionality regression test suite', () => {
         screenshots = new ScreenshotVerifier(driver)
     })
 
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     after(async () => {
         if (!config.noCleanup) {
@@ -73,10 +73,11 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
-            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
-                const editor = document.querySelector('.test-settings-file .monaco-editor') as HTMLElement
-                return editor ? editor.textContent : null
+                const editor = document.querySelector('.test-settings-file .monaco-editor .view-lines') as HTMLElement
+                // eslint-disable-next-line unicorn/prefer-text-content
+                return editor ? editor.innerText : null
             })
         }
 
@@ -298,9 +299,5 @@ describe('Core functionality regression test suite', () => {
         })
         await driver.page.waitForNavigation()
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
-    })
-
-    test('2.4 Explore page', async () => {
-        // TODO(@sourcegraph/web)
     })
 })

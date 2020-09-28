@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
 )
 
@@ -60,6 +61,18 @@ func containsAndOrExpression(nodes []Node) bool {
 	return exists(nodes, func(node Node) bool {
 		term, ok := node.(Operator)
 		return ok && (term.Kind == And || term.Kind == Or)
+	})
+}
+
+// containsNegatedPattern returns true if any search pattern is negated in nodes.
+func containsNegatedPattern(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		if p, ok := node.(Pattern); ok {
+			if p.Negated {
+				return true
+			}
+		}
+		return false
 	})
 }
 
@@ -273,7 +286,8 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isNotNegated)
 	case
 		FieldPatternType,
-		FieldContent:
+		FieldContent,
+		FieldVisibility:
 		return satisfies(isSingular, isNotNegated)
 	case
 		FieldRepoHasFile:
@@ -302,8 +316,10 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldMax,
 		FieldTimeout,
-		FieldReplace,
 		FieldCombyRule:
+		return satisfies(isSingular, isNotNegated)
+	case
+		FieldRev:
 		return satisfies(isSingular, isNotNegated)
 	default:
 		return isUnrecognizedField()
@@ -311,10 +327,74 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	return nil
 }
 
+// A query is invalid if it contains a rev: filter and a repo is specified with @.
+func validateRepoRevPair(nodes []Node) error {
+	var seenRepoWithCommit bool
+	VisitField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) {
+		if !negated && strings.ContainsRune(value, '@') {
+			seenRepoWithCommit = true
+		}
+	})
+	revSpecified := exists(nodes, func(node Node) bool {
+		n, ok := node.(Parameter)
+		if ok && n.Field == FieldRev {
+			return true
+		}
+		return false
+	})
+	if seenRepoWithCommit && revSpecified {
+		return errors.New("invalid syntax. You specified both @ and rev: for a" +
+			" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+	}
+	return nil
+}
+
+// Queries containing commit parameters without type:diff or type:commit are not
+// valid. cf. https://docs.sourcegraph.com/user/search/language#commit-parameter
+func validateCommitParameters(nodes []Node) error {
+	var seenCommitParam string
+	var typeCommitExists bool
+	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
+		if field == FieldAuthor || field == FieldBefore || field == FieldAfter || field == FieldMessage {
+			seenCommitParam = field
+		}
+		if field == FieldType && (value == "commit" || value == "diff") {
+			typeCommitExists = true
+		}
+	})
+	if seenCommitParam != "" && !typeCommitExists {
+		return fmt.Errorf(`your query contains the field '%s', which requires type:commit or type:diff in the query`, seenCommitParam)
+	}
+	return nil
+}
+
+// validatePureLiteralPattern checks that no pattern expression contains and/or
+// operators nested inside concat. It may happen that we interpret a query this
+// way due to ambiguity. If this happens, return an error message.
+func validatePureLiteralPattern(nodes []Node, balanced bool) error {
+	impure := exists(nodes, func(node Node) bool {
+		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
+			for _, node := range operator.Operands {
+				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
+					return true
+				}
+			}
+		}
+		return false
+	})
+	if impure {
+		if !balanced {
+			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
+		}
+		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
+	}
+	return nil
+}
+
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool) {
+	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
 		if err != nil {
 			return
 		}
@@ -329,5 +409,13 @@ func validate(nodes []Node) error {
 			_, err = regexp.Compile(value)
 		}
 	})
+	if err != nil {
+		return err
+	}
+	err = validateRepoRevPair(nodes)
+	if err != nil {
+		return err
+	}
+	err = validateCommitParameters(nodes)
 	return err
 }

@@ -179,23 +179,22 @@ export class Lexer {
         throw new SyntaxError(`Unexpected character ${JSON.stringify(this.peekNextChar())} (at ${this.index})`)
     }
 
-    public peek(): Pick<Token, Exclude<keyof Token, 'start' | 'end'>> | undefined {
+    public peek(): Omit<Token, 'start' | 'end'> | undefined {
         const savedIndex = this._index
         const savedCurlyStack = this.curlyStack
         let token: Token | undefined
         try {
             token = this.next()
-            if (token) {
-                delete token.start
-                delete token.end
-            }
         } catch {
             token = undefined
         }
         this._index = savedIndex
         this.curlyStack = savedCurlyStack
 
-        return token
+        if (!token) {
+            return undefined
+        }
+        return { type: token.type, value: token.value }
     }
 
     protected scanNext(): Token | undefined {

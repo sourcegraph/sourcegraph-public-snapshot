@@ -88,8 +88,16 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 description: '"string specifying time frame" (time frame to match commits before)',
             },
             {
+                value: 'author:',
+                description: 'username or git email of commit author',
+            },
+            {
                 value: 'message:',
                 description: 'commit message contents',
+            },
+            {
+                value: 'committer:',
+                description: 'git email of committer',
             },
             {
                 value: 'content:',
@@ -98,6 +106,14 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             {
                 value: 'visibility:',
                 description: 'any | public | private',
+            },
+            {
+                value: 'stable',
+                description: 'yes | no',
+            },
+            {
+                value: 'rev',
+                description: 'repository revision (branch, commit hash, or tag), ',
             },
         ].map(
             assign({
@@ -190,6 +206,9 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
     author: {
         values: [],
     },
+    committer: {
+        values: [],
+    },
     message: {
         values: [],
     },
@@ -218,5 +237,15 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 type: FilterType.index,
             })
         ),
+    },
+    stable: {
+        values: [{ value: 'no' }, { value: 'yes' }].map(
+            assign({
+                type: FilterType.stable,
+            })
+        ),
+    },
+    rev: {
+        values: [],
     },
 }

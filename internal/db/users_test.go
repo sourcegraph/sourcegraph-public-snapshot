@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames and org names.
@@ -99,7 +100,7 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	ctx := context.Background()
 
 	minPasswordRunes := conf.AuthMinPasswordLength()
-	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
+	expErr := fmt.Sprintf("Password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
 	tests := []struct {
 		name     string
 		username string
@@ -345,7 +346,7 @@ func TestUsers_ListCount(t *testing.T) {
 	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
-		t.Errorf("got %+v, want %+v", users, want)
+		t.Errorf("got %+v, want %+v", users[0], user)
 	}
 
 	if err := Users.Delete(ctx, user.ID); err != nil {
@@ -512,8 +513,8 @@ func TestUsers_GetByUsernames(t *testing.T) {
 }
 
 func TestUsers_Delete(t *testing.T) {
-	for name, hard := range map[string]bool{"": false, "_Hard": true} {
-		t.Run("TestUsers_Delete"+name, func(t *testing.T) {
+	for name, hard := range map[string]bool{"soft": false, "hard": true} {
+		t.Run(name, func(t *testing.T) {
 			if testing.Short() {
 				t.Skip()
 			}
@@ -531,6 +532,20 @@ func TestUsers_Delete(t *testing.T) {
 				Username:              "u",
 				Password:              "p",
 				EmailVerificationCode: "c",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Create external service owned by the user
+			confGet := func() *conf.Unified {
+				return &conf.Unified{}
+			}
+			err = ExternalServices.Create(ctx, confGet, &types.ExternalService{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #1",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: &user.ID,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -588,6 +603,17 @@ func TestUsers_Delete(t *testing.T) {
 				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
 			}
 
+			// User's external services no longer exist
+			ess, err := ExternalServices.List(ctx, ExternalServicesListOptions{
+				NamespaceUserID: user.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(ess) > 0 {
+				t.Errorf("got %d external services, want 0", len(ess))
+			}
+
 			// Can't delete already-deleted user.
 			err = Users.Delete(ctx, user.ID)
 			if !errcode.IsNotFound(err) {
@@ -597,10 +623,52 @@ func TestUsers_Delete(t *testing.T) {
 	}
 }
 
+func TestUsers_InvalidateSessions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users.Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := Users.GetByUsernames(ctx, "alice", "bob")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(users) != 2 {
+		t.Fatalf("got %d users, but want 2", len(users))
+	}
+	for i := range users {
+		if err := Users.InvalidateSessionsByID(ctx, users[i].ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
 		u.UpdatedAt = u.UpdatedAt.Local().Round(time.Second)
+		u.InvalidatedSessionsAt = u.InvalidatedSessionsAt.Local().Round(time.Second)
 	}
 	return users
 }

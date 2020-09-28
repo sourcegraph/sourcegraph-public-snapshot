@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -50,7 +51,7 @@ func TestRemoveOrphanedUploadFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedUploadFiles(); err != nil {
+	if err := j.removeOrphanedUploadFiles(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing orphaned upload files: %s", err)
 	}
 
@@ -80,7 +81,7 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 	ids := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 	for _, id := range ids {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -106,7 +107,7 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedBundleFiles(); err != nil {
+	if err := j.removeOrphanedBundleFiles(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing orphaned bundle files: %s", err)
 	}
 
@@ -139,7 +140,7 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	}
 
 	for _, id := range ids {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -162,7 +163,7 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedBundleFiles(); err != nil {
+	if err := j.removeOrphanedBundleFiles(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 

@@ -2,6 +2,7 @@ package basestore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -13,21 +14,27 @@ import (
 type TransactableHandle struct {
 	db         dbutil.DB
 	savepoints []*savepoint
+	txOptions  sql.TxOptions
 }
 
 // NewHandle returns a new transactable database handle connected to the given dsn (data store name).
-func NewHandle(postgresDSN, app string) (*TransactableHandle, error) {
+func NewHandle(postgresDSN, app string, txOptions sql.TxOptions) (*TransactableHandle, error) {
 	db, err := dbutil.NewDB(postgresDSN, app)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewHandleWithDB(db), nil
+	return NewHandleWithDB(db, txOptions), nil
 }
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
-func NewHandleWithDB(db dbutil.DB) *TransactableHandle {
-	return &TransactableHandle{db: db}
+func NewHandleWithDB(db dbutil.DB, txOptions sql.TxOptions) *TransactableHandle {
+	return &TransactableHandle{db: db, txOptions: txOptions}
+}
+
+// DB returns the underlying database handle.
+func (h *TransactableHandle) DB() dbutil.DB {
+	return h.db
 }
 
 // InTransaction returns true if the underlying database handle is in a transaction.
@@ -60,15 +67,15 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 		return nil, ErrNotTransactable
 	}
 
-	tx, err := tb.BeginTx(ctx, nil)
+	tx, err := tb.BeginTx(ctx, &h.txOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	return &TransactableHandle{db: tx}, nil
+	return &TransactableHandle{db: tx, txOptions: h.txOptions}, nil
 }
 
-// Done performs a commit or rollback of the underlying the transaction/savepoint depending
+// Done performs a commit or rollback of the underlying transaction/savepoint depending
 // on the value of the error parameter. The resulting error value is a multierror containing
 // the error parameter along with any error that occurs during commit or rollback of the
 // transaction/savepoint. If the store does not wrap a transaction the original error value

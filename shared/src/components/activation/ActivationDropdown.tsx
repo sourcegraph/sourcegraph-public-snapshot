@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'

@@ -26,6 +26,6 @@
     "prepublishOnly": "yarn run eslint && yarn run docs"
   },
   "devDependencies": {
-    "typedoc": "^0.17.7"
+    "typedoc": "^0.17.8"
   }
 }

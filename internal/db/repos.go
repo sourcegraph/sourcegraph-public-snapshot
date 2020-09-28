@@ -9,9 +9,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -117,10 +117,34 @@ func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo,
 	return s.getReposBySQL(ctx, true, q)
 }
 
-func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
+// GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
+// entries could be less than the candidate list due to no repository is associated with some IDs.
+func (s *repos) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
+	repos, err := s.GetByIDs(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoMap := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, r := range repos {
+		repoMap[r.ID] = r
+	}
+
+	return repoMap, nil
+}
+
+func (s *repos) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
 	}
+
+	tr, ctx := trace.New(ctx, "repos.Count", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.Finish()
+	}()
 
 	conds, err := s.listSQL(opt)
 	if err != nil {
@@ -128,6 +152,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	}
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE %s", sqlf.Join(conds, "AND"))
+	tr.LazyPrintf("SQL: %v", q.Query(sqlf.PostgresBindVar))
 
 	var count int
 	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
@@ -401,16 +426,14 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 		}
 	}
 	if len(like) > 0 {
-		var likeConds []*sqlf.Query
 		for _, v := range like {
-			likeConds = append(likeConds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
+			conds = append(conds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
 		}
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
 	}
 	if pattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
 	}
-	return conds, nil
+	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {

@@ -32,7 +32,6 @@ export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = re
                         to: '/permissions',
                         exact: true,
                         label: 'Permissions',
-                        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
                     },
                 ],
             },

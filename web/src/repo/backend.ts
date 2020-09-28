@@ -20,6 +20,14 @@ import {
     ResolvedRevisionSpec,
 } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
+import { TreeFields, ExternalLinkFields } from '../graphql-operations'
+
+export const externalLinkFieldsFragment = gql`
+    fragment ExternalLinkFields on ExternalLink {
+        url
+        serviceType
+    }
+`
 
 /**
  * Fetch the repository.
@@ -215,7 +223,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
-    (context: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
+    (context: RepoRev & { filePath: string }): Observable<ExternalLinkFields[]> =>
         queryGraphQL(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
@@ -223,13 +231,14 @@ export const fetchFileExternalLinks = memoizeObservable(
                         commit(rev: $revision) {
                             file(path: $filePath) {
                                 externalURLs {
-                                    url
-                                    serviceType
+                                    ...ExternalLinkFields
                                 }
                             }
                         }
                     }
                 }
+
+                ${externalLinkFieldsFragment}
             `,
             context
         ).pipe(
@@ -244,7 +253,7 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
+    (args: AbsoluteRepoFile & { first?: number }): Observable<TreeFields> =>
         queryGraphQL(
             gql`
                 query TreeEntries(
@@ -257,22 +266,28 @@ export const fetchTreeEntries = memoizeObservable(
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $revision) {
                             tree(path: $filePath) {
-                                isRoot
-                                url
-                                entries(first: $first, recursiveSingleChild: true) {
-                                    name
-                                    path
-                                    isDirectory
-                                    url
-                                    submodule {
-                                        url
-                                        commit
-                                    }
-                                    isSingleChild
-                                }
+                                ...TreeFields
                             }
                         }
                     }
+                }
+                fragment TreeFields on GitTree {
+                    isRoot
+                    url
+                    entries(first: $first, recursiveSingleChild: true) {
+                        ...TreeEntryFields
+                    }
+                }
+                fragment TreeEntryFields on TreeEntry {
+                    name
+                    path
+                    isDirectory
+                    url
+                    submodule {
+                        url
+                        commit
+                    }
+                    isSingleChild
                 }
             `,
             args

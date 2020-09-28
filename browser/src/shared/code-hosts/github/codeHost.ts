@@ -289,7 +289,9 @@ export const githubCodeHost: CodeHost = {
     textFieldResolvers: [commentTextFieldResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
-        const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
+        const repoHeaderHasPrivateMarker =
+            !!document.querySelector('.repohead .private') ||
+            !!document.querySelector('#js-repo-pjax-container h1 .octicon-lock')
         const parsedURL = parseURL()
         return {
             ...parsedURL,

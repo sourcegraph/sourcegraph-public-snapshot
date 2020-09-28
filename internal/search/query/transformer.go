@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -20,6 +22,7 @@ func SubstituteAliases(nodes []Node) []Node {
 		"until":    FieldBefore,
 		"m":        FieldMessage,
 		"msg":      FieldMessage,
+		"revision": FieldRev,
 	}
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == "content" {
@@ -46,80 +49,66 @@ func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
 	i := startIx
 	lenR := len(r)
-Loop:
+
+	switch r[i] {
+	case '!':
+		if i < lenR-1 && r[i+1] == ']' {
+			// the character class cannot contain just "!"
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune('^')
+		i++
+	case '^':
+		sb.WriteString("//^")
+		i++
+	}
+
 	for i < lenR {
-		switch r[i] {
-		case '!':
-			if i == startIx {
-				sb.WriteRune('^')
-			} else {
-				sb.WriteRune(r[i])
-			}
-			i++
-		case ']':
+		if r[i] == ']' {
 			if i > startIx {
-				break Loop
+				break
 			}
 			sb.WriteRune(r[i])
 			i++
-		default: // translate character range lo-hi.
-
-			// '-' is treated literally at the start and end of
-			// of a character class.
-			if r[i] == '-' {
-				if i == lenR-1 {
-					// no closing bracket
-					return -1, "", ErrBadGlobPattern
-				}
-
-				if i > startIx && r[i+1] != ']' {
-					// '-' cannot be the lower end of a range
-					// unless it is the first character within
-					// the character class.
-					return -1, "", ErrBadGlobPattern
-				}
-			}
-			lo := r[i]
-			sb.WriteRune(r[i]) // lo
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			// lo = hi
-			if r[i] != '-' {
-				continue
-			}
-
-			sb.WriteRune(r[i]) // -
-			i++
-
-			if i == lenR {
-				// no closing bracket
-				return -1, "", ErrBadGlobPattern
-			}
-
-			if r[i] == ']' {
-				continue
-			}
-
-			hi := r[i]
-			if lo > hi {
-				// range is reversed
-				return -1, "", ErrBadGlobPattern
-			}
-			sb.WriteRune(r[i]) // hi
-			i++
+			continue
 		}
+
+		lo := r[i]
+		sb.WriteRune(r[i]) // lo
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		// lo = hi
+		if r[i] != '-' {
+			continue
+		}
+
+		sb.WriteRune(r[i]) // -
+		i++
+		if i == lenR {
+			// no closing bracket
+			return -1, "", ErrBadGlobPattern
+		}
+
+		if r[i] == ']' {
+			continue
+		}
+
+		hi := r[i]
+		if lo > hi {
+			// range is reversed
+			return -1, "", ErrBadGlobPattern
+		}
+		sb.WriteRune(r[i]) // hi
+		i++
 	}
 	if i == lenR {
 		return -1, "", ErrBadGlobPattern
 	}
-
 	return i - startIx, sb.String(), nil
-
 }
 
 var globSpecialSymbols = map[rune]struct{}{
@@ -140,14 +129,13 @@ func globToRegex(value string) (string, error) {
 	l := len(r)
 	sb := strings.Builder{}
 
-	i := 0
-	// Add regex anchor "^" if glob does not start with *.
-	if r[i] != '*' {
-		sb.WriteRune('^')
-	}
-	for i = 0; i < l; i++ {
+	// Add regex anchor "^" as prefix to all patterns
+	sb.WriteRune('^')
+
+	for i := 0; i < l; i++ {
 		switch r[i] {
 		case '*':
+			// **
 			if i < l-1 && r[i+1] == '*' {
 				sb.WriteString(".*?")
 			} else {
@@ -160,14 +148,23 @@ func globToRegex(value string) (string, error) {
 		case '?':
 			sb.WriteRune('.')
 		case '\\':
-			// Handle escaped special characters.
+			// trailing backslashes are not allowed
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
+
 			sb.WriteRune('\\')
 			i++
+
+			// we only support escaping of special characters
 			if _, ok := globSpecialSymbols[r[i]]; !ok {
 				return "", ErrBadGlobPattern
 			}
 			sb.WriteRune(r[i])
 		case '[':
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
 			sb.WriteRune('[')
 			i++
 
@@ -184,11 +181,8 @@ func globToRegex(value string) (string, error) {
 			sb.WriteString(regexp.QuoteMeta(string(r[i])))
 		}
 	}
-
-	// add regex anchor "$" if glob doesn't end with *
-	if r[l-1] != '*' {
-		sb.WriteRune('$')
-	}
+	// add regex anchor '$' as suffix to all patterns
+	sb.WriteRune('$')
 	return sb.String(), nil
 }
 
@@ -203,17 +197,69 @@ func (g globError) Error() string {
 	return g.err.Error()
 }
 
+// reporevToRegex is a wrapper around globToRegex that takes care of
+// treating repo and rev (as in repo@rev) separately during translation
+// from glob to regex.
+func reporevToRegex(value string) (string, error) {
+	reporev := strings.SplitN(value, "@", 2)
+	containsNoRev := len(reporev) == 1
+	repo := reporev[0]
+	if containsNoRev && ContainsNoGlobSyntax(repo) && !LooksLikeGitHubRepo(repo) {
+		repo = fuzzifyGlobPattern(repo)
+	}
+	repo, err := globToRegex(repo)
+	if err != nil {
+		return "", err
+	}
+	value = repo
+	if len(reporev) > 1 {
+		value = value + "@" + reporev[1]
+	}
+	return value, nil
+}
+
+var globSyntax = lazyregexp.New(`[][*?]`)
+
+func ContainsNoGlobSyntax(value string) bool {
+	return !globSyntax.MatchString(value)
+}
+
+var gitHubRepoPath = lazyregexp.New(`github\.com\/([a-z\d]+-)*[a-z\d]+\/(.+)`)
+
+// LooksLikeGitHubRepo returns whether string value looks like a valid
+// GitHub repo path. This condition is used to guess whether we should
+// make a pattern fuzzy, or try it as an exact match.
+func LooksLikeGitHubRepo(value string) bool {
+	return gitHubRepoPath.MatchString(value)
+}
+
+func fuzzifyGlobPattern(value string) string {
+	if value == "" {
+		return value
+	}
+	if strings.HasPrefix(value, "github.com") {
+		return value + "**"
+	}
+	return "**" + value + "**"
+}
+
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	var globErrors []globError
-	var err error
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
-			value, err = globToRegex(value)
-			if err != nil {
-				globErrors = append(globErrors, globError{field: field, err: err})
+		var err error
+		switch field {
+		case FieldRepo:
+			value, err = reporevToRegex(value)
+		case FieldFile, FieldRepoHasFile:
+			if ContainsNoGlobSyntax(value) {
+				value = fuzzifyGlobPattern(value)
 			}
+			value, err = globToRegex(value)
+		}
+		if err != nil {
+			globErrors = append(globErrors, globError{field: field, err: err})
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
@@ -324,6 +370,67 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 	return left, right
 }
 
+// product appends the list of n elements in right to each of the m rows in
+// left. If left is empty, it is initialized with right.
+func product(left [][]Node, right []Node) [][]Node {
+	result := [][]Node{}
+	if len(left) == 0 {
+		return append(result, right)
+	}
+
+	for _, row := range left {
+		newRow := make([]Node, len(row))
+		copy(newRow, row)
+		result = append(result, append(newRow, right...))
+	}
+	return result
+}
+
+// distribute applies the distributed property to nodes. See the dnf function
+// for context. Its first argument takes the current set of prefixes to prepend
+// to each term in an or-expression.
+func distribute(prefixes [][]Node, nodes []Node) [][]Node {
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			switch v.Kind {
+			case Or:
+				result := [][]Node{}
+				for _, o := range v.Operands {
+					var newPrefixes [][]Node
+					newPrefixes = distribute(newPrefixes, []Node{o})
+					for _, newPrefix := range newPrefixes {
+						result = append(result, product(prefixes, newPrefix)...)
+					}
+				}
+				prefixes = result
+			case And, Concat:
+				prefixes = distribute(prefixes, v.Operands)
+			}
+		case Parameter, Pattern:
+			prefixes = product(prefixes, []Node{v})
+		}
+	}
+	return prefixes
+}
+
+// dnf returns the Disjunctive Normal Form of a query (a flat sequence of
+// or-expressions) by applying the distributive property on (possibly nested)
+// or-expressions. For example, the query:
+//
+// (repo:a (file:b OR file:c))
+// in DNF becomes:
+// (repo:a file:b) OR (repo:a file:c)
+//
+// Using the DNF expression makes it easy to support general nested queries that
+// imply scope, like the one above: We simply evaluate all disjuncts and union
+// the results. Note that various optimizations are possible
+// during evaluation, but those are separate query pre- or postprocessing steps
+// separate from this general transformation.
+func dnf(query []Node) [][]Node {
+	return distribute([][]Node{}, query)
+}
+
 func substituteOrForRegexp(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
@@ -412,15 +519,73 @@ func substituteConcat(nodes []Node, separator string) []Node {
 	return new
 }
 
-// EmptyGroupsToLiteral is a heuristic used in the context of regular expression
-// search. It labels any pattern containing "()" as a literal pattern since in
-// regex it implies the empty string, which is meaningless as a search query and
-// probably not what the user intended.
-func EmptyGroupsToLiteral(nodes []Node) []Node {
+// escapeParens is a heuristic used in the context of regular expression search.
+// It escapes two kinds of patterns:
+//
+// 1. Any occurrence of () is converted to \(\).
+// In regex () implies the empty string, which is meaningless as a search
+// query and probably not what the user intended.
+//
+// 2. If the pattern ends with a trailing and unescaped (, it is escaped.
+// Normally, a pattern like foo.*bar( would be an invalid regexp, and we would
+// show no results. But, it is a common and convenient syntax to search for, so
+// we convert thsi pattern to interpret a trailing parenthesis literally.
+//
+// Any other forms are ignored, for example, foo.*(bar is unchanged. In the
+// parser pipeline, such unchanged and invalid patterns are rejected by the
+// validate function.
+func escapeParens(s string) string {
+	var i int
+	for i := 0; i < len(s); i++ {
+		if s[i] == '(' || s[i] == '\\' {
+			break
+		}
+	}
+
+	// No special characters found, so return original string.
+	if i >= len(s) {
+		return s
+	}
+
+	var result []byte
+	for i < len(s) {
+		switch s[i] {
+		case '\\':
+			if i+1 < len(s) {
+				result = append(result, '\\', s[i+1])
+				i += 2 // Next char.
+				continue
+			}
+			i++
+			result = append(result, '\\')
+		case '(':
+			if i+1 == len(s) {
+				// Escape a trailing and unescaped ( => \(.
+				result = append(result, '\\', '(')
+				i++
+				continue
+			}
+			if i+1 < len(s) && s[i+1] == ')' {
+				// Escape () => \(\).
+				result = append(result, '\\', '(', '\\', ')')
+				i += 2 // Next char.
+				continue
+			}
+			result = append(result, s[i])
+			i++
+		default:
+			result = append(result, s[i])
+			i++
+		}
+	}
+	return string(result)
+}
+
+// escapeParensHeuristic escapes certain parentheses in search patterns (see escapeParens).
+func escapeParensHeuristic(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
-			annotation.Labels.set(Literal)
-			annotation.Labels.unset(Regexp)
+		if !annotation.Labels.isSet(Quoted) {
+			value = escapeParens(value)
 		}
 		return Pattern{
 			Value:      value,
@@ -436,4 +601,43 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 		query = fn(query)
 	}
 	return query
+}
+
+func FuzzifyRegexPatterns(nodes []Node) []Node {
+	return MapParameter(nodes, func(field string, value string, negated bool, annotation Annotation) Node {
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			value = strings.TrimSuffix(value, "$")
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+}
+
+// concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
+// Invariant: Guaranteed to succeed on a validated and DNF query.
+func concatRevFilters(nodes []Node) []Node {
+	var revision string
+	nodes = MapField(nodes, FieldRev, func(value string, _ bool) Node {
+		revision = value
+		return nil // remove this node
+	})
+	if revision == "" {
+		return nodes
+	}
+	return MapField(nodes, FieldRepo, func(value string, negated bool) Node {
+		if !negated {
+			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
+		}
+		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+	})
+}
+
+// ellipsesForHoles substitutes ellipses ... for :[_] holes in structural search queries.
+func ellipsesForHoles(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		return Pattern{
+			Value:      strings.ReplaceAll(value, "...", ":[_]"),
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
 }

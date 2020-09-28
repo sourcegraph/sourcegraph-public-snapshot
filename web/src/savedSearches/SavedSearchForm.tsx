@@ -6,6 +6,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
 import { NamespaceProps } from '../namespaces'
 import { ErrorAlert } from '../components/alerts'
+import { AuthenticatedUser } from '../auth'
 
 export interface SavedQueryFields {
     id: GQL.ID
@@ -19,7 +20,7 @@ export interface SavedQueryFields {
 interface Props extends RouteComponentProps<{}>, NamespaceProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string

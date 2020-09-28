@@ -4,7 +4,6 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { Form } from '../../../components/Form'
 import { PageTitle } from '../../../components/PageTitle'
@@ -12,10 +11,12 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../../../auth'
+import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
-    authenticatedUser: GQL.IUser
+    user: UserAreaUserFields
+    authenticatedUser: AuthenticatedUser
     history: H.History
 }
 
@@ -59,8 +60,10 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                             oldPassword: this.state.oldPassword,
                             newPassword: this.state.newPassword,
                         }).pipe(
-                            // Change URL after updating to trigger Chrome to show "Update password?" dialog.
-                            tap(() => this.props.history.replace({ hash: 'updated' })),
+                            // Sign the user out after their password is changed.
+                            // We do this because the backend will no longer accept their current session
+                            // and failing to sign them out will leave them in a confusing state
+                            tap(() => (window.location.href = '/-/sign-out')),
                             catchError(error => this.handleError(error))
                         )
                     )

@@ -36,9 +36,20 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Code intelligence events (e.g., hover tooltips) 
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
+<!-- depends-on-source: ~/cmd/frontend/internal/usagestats/campaigns.go -->
 - Campaign usage data
   - Total count of created campaigns
   - Total count of changesets created by campaigns
   - Total count of changesets created by campaigns that have been merged
   - Total count of changesets manually added to a campaign
   - Total count of changesets manually added to a campaign that have been merged
+- Aggregated counts of users created, deleted, retained, resurrected and churned within the month
+- Saved searches usage data
+  - Count of saved searches
+  - Count of users using saved searches
+  - Count of notifications triggered
+  - Count of notifications clicked
+  - Count of saved search views
+- Aggregated repository statistics
+  - Total size of git repositories stored in bytes
+  - Total number of lines of code stored in text search index

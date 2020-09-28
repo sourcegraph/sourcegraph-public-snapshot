@@ -171,6 +171,11 @@ function queryStringTelemetryData(query: string, caseSensitive: boolean) {
                   count: count(query, /(^|\s)(repohasfile):/g),
               }
             : undefined,
+        field_stable: filterExistsInQuery(parsedQuery, 'stable')
+            ? {
+                  count: count(query, /(^|\s)(stable):/g),
+              }
+            : undefined,
         field_timeout: filterExistsInQuery(parsedQuery, 'timeout')
             ? {
                   count: count(query, /(^|\s)timeout:/g),

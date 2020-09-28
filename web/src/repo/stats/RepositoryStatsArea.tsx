@@ -1,15 +1,12 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subscription } from 'rxjs'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
-import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
 import { PatternTypeProps } from '../../search'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -19,11 +16,9 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props
-    extends RouteComponentProps<{}>,
-        RepoHeaderContributionsLifecycleProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, Omit<PatternTypeProps, 'setPatternType'> {
     repo: GQL.IRepository
+    globbing: boolean
 }
 
 /**
@@ -41,44 +36,29 @@ const showNavbar = false
 /**
  * Renders pages related to repository stats.
  */
-export class RepositoryStatsArea extends React.Component<Props> {
-    private subscriptions = new Subscription()
+export const RepositoryStatsArea: React.FunctionComponent<Props> = ({
+    useBreadcrumb,
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    ...props
+}) => {
+    useBreadcrumb(useMemo(() => ({ key: 'contributors', element: 'Contributors' }), []))
 
-    public render(): JSX.Element | null {
-        const transferProps: RepositoryStatsAreaPageProps = {
-            repo: this.props.repo,
-        }
-
-        return (
-            <div className="repository-stats-area container mt-3">
-                <RepoHeaderContributionPortal
-                    position="nav"
-                    element={<RepoHeaderBreadcrumbNavItem key="stats">Contributors</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+    return (
+        <div className="repository-stats-area container mt-3">
+            {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={props.repo.name} />}
+            <Switch>
+                {/* eslint-disable react/jsx-no-bind */}
+                <Route
+                    path={`${props.match.url}/contributors`}
+                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                    exact={true}
+                    render={routeComponentProps => (
+                        <RepositoryStatsContributorsPage {...routeComponentProps} {...props} />
+                    )}
                 />
-                {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={this.props.repo.name} />}
-                <Switch>
-                    {/* eslint-disable react/jsx-no-bind */}
-                    <Route
-                        path={`${this.props.match.url}/contributors`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        render={routeComponentProps => (
-                            <RepositoryStatsContributorsPage
-                                {...routeComponentProps}
-                                {...transferProps}
-                                patternType={this.props.patternType}
-                            />
-                        )}
-                    />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
-                    {/* eslint-enable react/jsx-no-bind */}
-                </Switch>
-            </div>
-        )
-    }
+                <Route key="hardcoded-key" component={NotFoundPage} />
+                {/* eslint-enable react/jsx-no-bind */}
+            </Switch>
+        </div>
+    )
 }

@@ -10,6 +10,7 @@ export type FiniteFilterType =
     | FilterType.type
     | FilterType.index
     | FilterType.visibility
+    | FilterType.stable
 
 const withBooleanSuggestions = (type: FiniteFilterType): Suggestion[] =>
     ['no', 'only', 'yes'].map(value => ({ type, value }))
@@ -56,6 +57,14 @@ export const finiteFilters: Record<
             })
         ),
     },
+    stable: {
+        default: 'no',
+        values: [{ value: 'yes' }, { value: 'no' }].map(
+            assign({
+                type: FilterType.stable,
+            })
+        ),
+    },
 }
 
 export const isFiniteFilter = (filter: FilterType): filter is FiniteFilterType =>
@@ -89,9 +98,12 @@ export const FilterTypeToProseNames: Record<FilterType, string> = {
     before: 'Committed before',
     message: 'Commit message contains',
     author: 'Commit author',
+    committer: 'Committer',
     type: 'Type',
     content: 'Content',
     patterntype: 'Pattern type',
     index: 'Indexed repos',
     visibility: 'Repository visiblity',
+    stable: 'Stable result ordering',
+    rev: 'Revision',
 }

@@ -12,7 +12,6 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { fetchTreeEntries } from '../repo/backend'
@@ -30,6 +29,7 @@ import {
 } from './util'
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
+import { TreeFields } from '../graphql-operations'
 
 export interface TreeLayerProps extends AbsoluteRepo {
     history: H.History
@@ -54,7 +54,7 @@ export interface TreeLayerProps extends AbsoluteRepo {
 
 const LOADING = 'loading' as const
 interface TreeLayerState {
-    treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
+    treeOrError?: typeof LOADING | TreeFields | ErrorLike
 }
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {

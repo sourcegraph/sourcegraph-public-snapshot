@@ -34,8 +34,8 @@ import {
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { EventLoggerProps } from '../../tracking/eventLogger'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
@@ -47,7 +47,7 @@ interface BlobProps
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
-        EventLoggerProps,
+        TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */

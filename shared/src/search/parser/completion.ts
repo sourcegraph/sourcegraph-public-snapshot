@@ -4,16 +4,22 @@ import { FILTERS, resolveFilter } from './filters'
 import { Sequence, toMonacoRange } from './parser'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
-import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, SymbolKind } from '../../graphql/schema'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
 import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
 import { first } from 'rxjs/operators'
+import { SymbolKind } from '../../graphql-operations'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
+
+export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
+    id: 'completionItemSelected',
+    title: 'completion item selected',
+}
 
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
     .flatMap(label => {
@@ -52,24 +58,35 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
         sortText: `0${index}`,
     }))
 
-const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({
-    label: name,
-    kind: repositoryCompletionItemKind,
-    insertText: options.isFilterValue ? `^${escapeRegExp(name)}$ ` : `repo:^${escapeRegExp(name)}$ `,
-    filterText: name,
-    detail: options.isFilterValue ? undefined : 'Repository',
-})
+const repositoryToCompletion = (
+    { name }: IRepository,
+    options: { isFilterValue: boolean; globbing: boolean }
+): PartialCompletionItem => {
+    let insertText = options.globbing ? name : `^${escapeRegExp(name)}$`
+    insertText = (options.isFilterValue ? insertText : `${FilterType.repo}:${insertText}`) + ' '
+    return {
+        label: name,
+        kind: repositoryCompletionItemKind,
+        insertText,
+        filterText: name,
+        detail: options.isFilterValue ? undefined : 'Repository',
+    }
+}
 
 const fileToCompletion = (
     { name, path, repository, isDirectory }: IFile,
-    options: { isFilterValue: boolean }
-): PartialCompletionItem => ({
-    label: name,
-    kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(path)}$ `,
-    filterText: name,
-    detail: `${path} - ${repository.name}`,
-})
+    options: { isFilterValue: boolean; globbing: boolean }
+): PartialCompletionItem => {
+    let insertText = options.globbing ? path : `^${escapeRegExp(path)}$`
+    insertText = (options.isFilterValue ? insertText : `${FilterType.file}:${insertText}`) + ' '
+    return {
+        label: name,
+        kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
+        insertText,
+        filterText: name,
+        detail: `${path} - ${repository.name}`,
+    }
+}
 
 /**
  * Maps Sourcegraph SymbolKinds to Monaco CompletionItemKinds.
@@ -131,7 +148,7 @@ const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => (
 
 const suggestionToCompletionItem = (
     suggestion: SearchSuggestion,
-    options: { isFilterValue: boolean }
+    options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem | undefined => {
     switch (suggestion.__typename) {
         case 'File':
@@ -166,7 +183,8 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
 export async function getCompletionItems(
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
-    dynamicSuggestions: Observable<SearchSuggestion[]>
+    dynamicSuggestions: Observable<SearchSuggestion[]>,
+    globbing: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -174,6 +192,7 @@ export async function getCompletionItems(
         startColumn: column,
         endColumn: column,
     }
+
     // Show all filter suggestions on the first column.
     if (column === 1) {
         return {
@@ -212,11 +231,12 @@ export async function getCompletionItems(
         ) {
             return { suggestions: staticSuggestions }
         }
+
         return {
             suggestions: [
                 ...staticSuggestions,
                 ...(await dynamicSuggestions.pipe(first()).toPromise())
-                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
                     .filter(isDefined)
                     .map(completionItem => ({
                         ...completionItem,
@@ -224,6 +244,7 @@ export async function getCompletionItems(
                         // Set a sortText so that dynamic suggestions
                         // are shown after filter type suggestions.
                         sortText: '1',
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
             ],
         }
@@ -246,6 +267,7 @@ export async function getCompletionItems(
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: label,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
                 }
             }
@@ -255,7 +277,7 @@ export async function getCompletionItems(
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,
@@ -268,6 +290,7 @@ export async function getCompletionItems(
                                 ? filterValue.token.value
                                 : filterValue.token.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
             }
         }
@@ -280,6 +303,7 @@ export async function getCompletionItems(
                         insertText: `${label} `,
                         filterText: label,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })
                 ),
             }

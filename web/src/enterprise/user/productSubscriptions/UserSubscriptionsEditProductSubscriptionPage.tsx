@@ -140,12 +140,12 @@ function queryProductSubscription(uuid: string): Observable<ProductSubscription>
             query ProductSubscriptionOnEditPage($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
-                        ...ProductSubscriptionFields
+                        ...ProductSubscriptionFieldsOnEditPage
                     }
                 }
             }
 
-            fragment ProductSubscriptionFields on ProductSubscription {
+            fragment ProductSubscriptionFieldsOnEditPage on ProductSubscription {
                 id
                 name
                 invoiceItem {

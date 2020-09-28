@@ -1,4 +1,4 @@
-import mkdirp from 'mkdirp-promise'
+import { mkdir } from 'mz/fs'
 import * as path from 'path'
 import * as puppeteer from 'puppeteer'
 import { afterEach } from 'mocha'
@@ -7,7 +7,7 @@ import { afterEach } from 'mocha'
  * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
  * the browser when a test fails. It is used by e2e and integration tests.
  */
-export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
+export function afterEachSaveScreenshotIfFailed(getPage: () => puppeteer.Page): void {
     afterEach('Save screenshot', async function () {
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({
@@ -31,7 +31,7 @@ async function takeScreenshot({
     screenshotDir: string
     testName: string
 }): Promise<void> {
-    await mkdirp(screenshotDir)
+    await mkdir(screenshotDir, { recursive: true })
     const fileName = testName.replace(/\W/g, '_') + '.png'
     const filePath = path.join(screenshotDir, fileName)
     const screenshot = await page.screenshot({ path: filePath })

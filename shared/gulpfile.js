@@ -2,29 +2,28 @@
 
 const { generateNamespace } = require('@gql2ts/from-schema')
 const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
-const { buildSchema, graphql, introspectionQuery } = require('graphql')
+const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
-const mkdirp = require('mkdirp-promise')
-const { readFile, writeFile } = require('mz/fs')
+const { readFile, writeFile, mkdir } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
+
+const { generateGraphQlOperations } = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/schema.graphql')
 
 /**
- * Generates the TypeScript types for the GraphQL schema
+ * Generates the TypeScript types for the GraphQL schema.
+ * These are used by older code, new code should rely on the new query-specific generated types.
  *
  * @returns {Promise<void>}
  */
-async function graphQLTypes() {
+async function graphQlSchema() {
   const schemaString = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
   const schema = buildSchema(schemaString)
 
-  const result = /** @type {{ data: import('graphql').IntrospectionQuery }} */ (await graphql(
-    schema,
-    introspectionQuery
-  ))
+  const result = introspectionFromSchema(schema)
 
   const formatOptions = await resolveConfig(__dirname, { config: __dirname + '/../prettier.config.js' })
   const typings =
@@ -58,10 +57,27 @@ async function graphQLTypes() {
   await writeFile(__dirname + '/src/graphql/schema.ts', typings)
 }
 
-async function watchGraphQLTypes() {
+/**
+ * Generates the legacy graphql.ts types on file changes.
+ */
+async function watchGraphQlSchema() {
   await new Promise((resolve, reject) => {
-    gulp.watch(GRAPHQL_SCHEMA_PATH, graphQLTypes).on('error', reject)
+    gulp.watch(GRAPHQL_SCHEMA_PATH, graphQlSchema).on('error', reject)
   })
+}
+
+/**
+ * Generates the new query-specific types on file changes.
+ */
+async function watchGraphQlOperations() {
+  await generateGraphQlOperations({ watch: true })
+}
+
+/**
+ * Generates the new query-specific types.
+ */
+async function graphQlOperations() {
+  await generateGraphQlOperations()
 }
 
 /**
@@ -81,7 +97,7 @@ const draftV7resolver = {
  */
 async function schema() {
   const outputDirectory = path.join(__dirname, '..', 'web', 'src', 'schema')
-  await mkdirp(outputDirectory)
+  await mkdir(outputDirectory, { recursive: true })
   const schemaDirectory = path.join(__dirname, '..', 'schema')
   await Promise.all(
     ['json-schema-draft-07', 'settings', 'site'].map(async file => {
@@ -109,10 +125,15 @@ async function schema() {
   )
 }
 
-async function watchSchema() {
-  await new Promise((_resolve, reject) => {
-    gulp.watch(__dirname + '/../schema/*.schema.json', schema).on('error', reject)
-  })
+function watchSchema() {
+  return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
 }
 
-module.exports = { watchSchema, schema, graphQLTypes, watchGraphQLTypes }
+module.exports = {
+  watchSchema,
+  schema,
+  graphQlSchema,
+  watchGraphQlSchema,
+  graphQlOperations,
+  watchGraphQlOperations,
+}

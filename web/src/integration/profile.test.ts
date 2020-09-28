@@ -2,7 +2,7 @@ import assert from 'assert'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 
 describe('User profile page', () => {
     let driver: Driver
@@ -18,7 +18,7 @@ describe('User profile page', () => {
             directory: __dirname,
         })
     })
-    saveScreenshotsUponFailures(() => driver.page)
+    afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     it('updates display name', async () => {
@@ -40,6 +40,7 @@ describe('User profile page', () => {
                     emails: [{ email: 'test@example.com', verified: true }],
                     organizations: { nodes: [] },
                     permissionsInfo: null,
+                    tags: [],
                 },
             }),
             UserForProfilePage: () => ({

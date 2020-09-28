@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
@@ -21,9 +22,14 @@ type Index struct {
 	FinishedAt     *time.Time `json:"finishedAt"`
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
+	NumFailures    int        `json:"numFailures"`
 	RepositoryID   int        `json:"repositoryId"`
 	RepositoryName string     `json:"repositoryName"`
 	Rank           *int       `json:"placeInQueue"`
+}
+
+func (i Index) RecordID() int {
+	return i.ID
 }
 
 // scanIndexes scans a slice of indexes from the return value of `*store.query`.
@@ -46,6 +52,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.FinishedAt,
 			&index.ProcessAfter,
 			&index.NumResets,
+			&index.NumFailures,
 			&index.RepositoryID,
 			&index.RepositoryName,
 			&index.Rank,
@@ -73,6 +80,11 @@ func scanFirstIndexInterface(rows *sql.Rows, err error) (interface{}, bool, erro
 	return scanFirstIndex(rows, err)
 }
 
+// scanFirstIndexInterface scans a slice of indexes from the return value of `*store.query` and returns the first.
+func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return scanFirstIndex(rows, err)
+}
+
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 	return scanFirstIndex(s.query(ctx, sqlf.Sprintf(`
@@ -86,6 +98,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.finished_at,
 			u.process_after,
 			u.num_resets,
+			u.num_failures,
 			u.repository_id,
 			u.repository_name,
 			s.rank
@@ -153,6 +166,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.finished_at,
 				u.process_after,
 				u.num_resets,
+				u.num_failures,
 				u.repository_id,
 				u.repository_name,
 				s.rank
@@ -204,7 +218,7 @@ func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) WHERE EXISTS (
-			SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s
+			SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
 			UNION
 			SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 		)
@@ -258,6 +272,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.finished_at"),
 	sqlf.Sprintf("u.process_after"),
 	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
 	sqlf.Sprintf("NULL"),
@@ -305,14 +320,14 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 // that were removed for that repository.
 func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are  completed or visible at tip.
+	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
 	return scanCounts(s.query(ctx, sqlf.Sprintf(`
 		WITH deleted_repos AS (
 			SELECT r.id AS id FROM repo r
 			WHERE
 				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT COUNT(*) from lsif_indexes u WHERE u.repository_id = r.id)
+				EXISTS (SELECT 1 from lsif_indexes u WHERE u.repository_id = r.id)
 		),
 		deleted_uploads AS (
 			DELETE FROM lsif_indexes u WHERE repository_id IN (SELECT id FROM deleted_repos)
@@ -341,12 +356,16 @@ func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, 
 	return s.makeIndexWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeIndexWorkQueueStore() *workerutil.Store {
-	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+func (s *store) makeIndexWorkQueueStore() dbworkerstore.Store {
+	return WorkerutilIndexStore(s)
+}
+
+func WorkerutilIndexStore(s Store) dbworkerstore.Store {
+	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: indexColumnsWithNullRank,
-		Scan:              scanFirstIndexInterface,
+		Scan:              scanFirstIndexRecord,
 		OrderByExpression: sqlf.Sprintf("queued_at"),
 		StalledMaxAge:     StalledIndexMaxAge,
 		MaxNumResets:      IndexMaxNumResets,

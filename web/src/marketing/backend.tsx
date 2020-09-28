@@ -4,6 +4,7 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { SurveyResponse } from './SurveyPage'
+import { UserActivePeriod } from '../graphql-operations'
 
 /**
  * Submits a user satisfaction survey.
@@ -61,7 +62,7 @@ export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQ
  * Fetches users, with their survey responses.
  */
 export function fetchAllUsersWithSurveyResponses(args: {
-    activePeriod?: GQL.UserActivePeriod
+    activePeriod?: UserActivePeriod
     first?: number
     query?: string
 }): Observable<GQL.IUserConnection> {

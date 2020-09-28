@@ -58,7 +58,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     mergeMap(() =>
-                        createOrganization(this.state).pipe(
+                        createOrganization({ name: this.state.name, displayName: this.state.displayName }).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error })
@@ -130,7 +130,11 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
+                    <button
+                        type="submit"
+                        className="btn btn-primary test-create-org-submit-button"
+                        disabled={this.state.loading}
+                    >
                         Create organization
                     </button>
                     {this.state.loading && <LoadingSpinner className="icon-inline" />}

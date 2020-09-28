@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import { useEffect, useState } from 'react'
 import { tryCatch } from '../../../shared/src/util/errors'
 

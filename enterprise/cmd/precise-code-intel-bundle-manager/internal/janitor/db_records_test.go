@@ -1,9 +1,10 @@
 package janitor
 
 import (
-	"fmt"
+	"context"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,11 +14,65 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
+func TestHardDeleteDeletedRecords(t *testing.T) {
+	bundleDir := testRoot(t)
+
+	mockStore := storemocks.NewMockStore()
+	mockStore.GetUploadsFunc.PushReturn([]store.Upload{{ID: 1}, {ID: 2}, {ID: 3}}, 5, nil)
+	mockStore.GetUploadsFunc.PushReturn([]store.Upload{{ID: 4}, {ID: 5}}, 5, nil)
+
+	j := &Janitor{
+		store:     mockStore,
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+	}
+
+	if err := j.hardDeleteDeletedRecords(context.Background()); err != nil {
+		t.Fatalf("unexpected error hard deleting records: %s", err)
+	}
+
+	if len(mockStore.HardDeleteUploadByIDFunc.History()) != 5 {
+		t.Errorf("unexpected number of HardDeleteUploadByID calls. want=%d have=%d", 5, len(mockStore.DeleteUploadByIDFunc.History()))
+	} else {
+		ids := []int{
+			mockStore.HardDeleteUploadByIDFunc.History()[0].Arg1,
+			mockStore.HardDeleteUploadByIDFunc.History()[1].Arg1,
+			mockStore.HardDeleteUploadByIDFunc.History()[2].Arg1,
+			mockStore.HardDeleteUploadByIDFunc.History()[3].Arg1,
+			mockStore.HardDeleteUploadByIDFunc.History()[4].Arg1,
+		}
+		sort.Ints(ids)
+
+		if diff := cmp.Diff([]int{1, 2, 3, 4, 5}, ids); diff != "" {
+			t.Errorf("unexpected dump ids (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestRemoveRecordsForDeletedRepositories(t *testing.T) {
+	bundleDir := testRoot(t)
+	mockStore := storemocks.NewMockStore()
+
+	j := &Janitor{
+		store:     mockStore,
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+	}
+
+	if err := j.removeRecordsForDeletedRepositories(context.Background()); err != nil {
+		t.Fatalf("unexpected error deleting records: %s", err)
+	}
+
+	if len(mockStore.DeleteUploadsWithoutRepositoryFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteUploadsWithoutRepository calls. want=%d have=%d", 1, len(mockStore.DeleteUploadsWithoutRepositoryFunc.History()))
+	}
+}
+
 func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 
 	for _, id := range []int{1, 3, 5, 7, 9} {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
+		path := filepath.Join(bundleDir, "dbs", strconv.Itoa(id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -33,7 +88,7 @@ func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeCompletedRecordsWithoutBundleFile(); err != nil {
+	if err := j.removeCompletedRecordsWithoutBundleFile(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing completed uploads without bundle files: %s", err)
 	}
 
@@ -68,7 +123,7 @@ func TestRemoveOldUploadingRecords(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldUploadingRecords(); err != nil {
+	if err := j.removeOldUploadingRecords(context.Background()); err != nil {
 		t.Fatalf("unexpected error removing old records that have not finished uploading: %s", err)
 	}
 

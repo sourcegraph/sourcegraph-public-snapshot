@@ -209,8 +209,9 @@ export function getFilePath(): string {
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
     // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
-    const [, , , , , ...path] = url.pathname.split('/')
-    if (path.length === 0) {
+    const [, , , pageType, , ...path] = url.pathname.split('/')
+    // Check for page type because a tree page can be the repo root, so it shouldn't throw an error despite an empty path
+    if (pageType !== 'tree' && path.length === 0) {
         throw new Error(
             `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
         )

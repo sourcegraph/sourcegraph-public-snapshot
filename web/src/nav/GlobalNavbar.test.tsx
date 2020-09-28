@@ -1,14 +1,18 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../shared/src/components/Link'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import { SearchPatternType } from '../graphql-operations'
 
-const PROPS: GlobalNavbar['props'] = {
+jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
+jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
+
+const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
+    authRequired: false,
     extensionsController: {} as any,
     location: createLocation('/'),
     history: createMemoryHistory(),
@@ -19,7 +23,7 @@ const PROPS: GlobalNavbar['props'] = {
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
-    patternType: GQL.SearchPatternType.literal,
+    patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,
     setCaseSensitivity: () => undefined,
@@ -33,13 +37,15 @@ const PROPS: GlobalNavbar['props'] = {
     interactiveSearchMode: false,
     toggleSearchMode: () => undefined,
     onFiltersInQueryChange: () => undefined,
-    smartSearchField: false,
     isSearchRelatedPage: true,
     copyQueryButton: false,
     versionContext: undefined,
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     variant: 'default',
+    globbing: false,
+    showOnboardingTour: false,
+    branding: undefined,
 }
 
 describe('GlobalNavbar', () => {
@@ -50,9 +56,6 @@ describe('GlobalNavbar', () => {
 
     test('low-profile', () =>
         expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile" />).toJSON()).toMatchSnapshot())
-
-    test('low-profile-with-logo', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile-with-logo" />).toJSON()).toMatchSnapshot())
 
     test('no-search-input', () =>
         expect(renderer.create(<GlobalNavbar {...PROPS} variant="no-search-input" />).toJSON()).toMatchSnapshot())

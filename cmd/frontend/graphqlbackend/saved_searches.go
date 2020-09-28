@@ -82,7 +82,7 @@ func (r savedSearchResolver) Query() string { return r.s.Query }
 
 func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.s.OrgID != nil {
-		n, err := NamespaceByID(ctx, marshalOrgID(*r.s.OrgID))
+		n, err := NamespaceByID(ctx, MarshalOrgID(*r.s.OrgID))
 		if err != nil {
 			return nil, err
 		}

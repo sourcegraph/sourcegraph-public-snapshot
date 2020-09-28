@@ -1,8 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
@@ -11,6 +9,8 @@ import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import * as H from 'history'
+import { AuthenticatedUser } from '../auth'
+import { SourcegraphIcon } from './icons'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -44,10 +44,7 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
 
         return (
             <Form className="reset-password-page__form" onSubmit={this.handleSubmitResetPasswordInit}>
-                <p>
-                    Enter the email address associated with your account. You'll receive an email with a link to reset
-                    your password.
-                </p>
+                <p>Enter your account email address and we will send you a password reset link</p>
                 <div className="form-group">
                     <input
                         className="form-control"
@@ -70,6 +67,9 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                 >
                     Send reset password link
                 </button>
+                <small className="form-text text-muted">
+                    <Link to="/sign-in">Return to sign in</Link>
+                </small>
                 {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
                     <ErrorAlert className="mt-2" error={this.state.submitOrError} history={this.props.history} />
@@ -196,11 +196,11 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 password: this.state.password,
             }),
         })
-            .then(response => {
+            .then(async response => {
                 if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (response.status === 401) {
-                    this.setState({ submitOrError: new Error('Password reset code was invalid or expired.') })
+                } else if (response.status >= 400 && response.status < 500) {
+                    this.setState({ submitOrError: new Error(await response.text()) })
                 } else {
                     this.setState({ submitOrError: new Error('Password reset failed.') })
                 }
@@ -210,7 +210,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 }
 
 interface ResetPasswordPageProps extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**
@@ -250,7 +250,13 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
         return (
             <>
                 <PageTitle title="Reset password" />
-                <HeroPage icon={KeyIcon} title="Reset password" cta={body} />
+                <HeroPage
+                    icon={SourcegraphIcon}
+                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                    iconClassName="bg-transparent"
+                    title="Reset password"
+                    cta={body}
+                />
             </>
         )
     }

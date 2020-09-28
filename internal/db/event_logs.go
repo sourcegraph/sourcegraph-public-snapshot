@@ -85,6 +85,8 @@ type EventLogsListOptions struct {
 	UserID int32
 
 	*LimitOffset
+
+	EventName *string
 }
 
 // ListAll gets all event logs in descending order of timestamp.
@@ -92,6 +94,9 @@ func (l *eventLogs) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*t
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
+	}
+	if opt.EventName != nil {
+		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }

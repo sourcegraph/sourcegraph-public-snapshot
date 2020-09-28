@@ -7,6 +7,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import { Observable } from 'rxjs'
+import { GitRefType } from '../../graphql-operations'
 
 interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
 
@@ -37,5 +38,5 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
     }
 
     private queryBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-        queryGitReferences({ ...args, repo: this.props.repo.id, type: GQL.GitRefType.GIT_BRANCH })
+        queryGitReferences({ ...args, repo: this.props.repo.id, type: GitRefType.GIT_BRANCH })
 }

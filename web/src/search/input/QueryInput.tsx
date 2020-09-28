@@ -39,6 +39,7 @@ import { Toggles } from './toggles/Toggles'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
 
 interface Props
     extends PatternTypeProps,
@@ -90,6 +91,9 @@ interface Props
 
     /** Keyboard shortcut to focus the query input. */
     keyboardShortcutForFocus?: KeyboardShortcut
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
 }
 
 /**
@@ -213,7 +217,7 @@ export class QueryInput extends React.Component<Props, State> {
                             const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
                                 map((suggestions): Suggestion[] =>
                                     suggestions
-                                        .map(createSuggestion)
+                                        .map((item: SearchSuggestion) => createSuggestion(item, this.props.globbing))
                                         .filter(isDefined)
                                         .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
                                         .filter(suggestion => {

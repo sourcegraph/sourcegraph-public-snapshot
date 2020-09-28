@@ -11,7 +11,9 @@ interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     className?: string
 }
 
-export type UserAreaHeaderContext = Pick<Props, 'user'>
+export interface UserAreaHeaderContext extends Pick<Props, 'user'> {
+    isSourcegraphDotCom: boolean
+}
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
 

@@ -1,11 +1,11 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { AuthenticatedUser } from '../../../auth'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**

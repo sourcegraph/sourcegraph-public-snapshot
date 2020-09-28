@@ -11,7 +11,7 @@ exports[`SiteInitPage normal 1`] = `
       className="card-body p-4"
     >
       <img
-        className="w-100 mb-3"
+        className="brand-logo w-100 mb-3"
         src="/img/sourcegraph-light-head-logo.svg?v2"
       />
       <h2
@@ -106,7 +106,7 @@ exports[`SiteInitPage unexpected authed user 1`] = `
       className="card-body p-4"
     >
       <img
-        className="w-100 mb-3"
+        className="brand-logo w-100 mb-3"
         src="/img/sourcegraph-light-head-logo.svg?v2"
       />
       <p>

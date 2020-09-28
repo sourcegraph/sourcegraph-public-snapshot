@@ -2,11 +2,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
+import { AuthenticatedUser } from '../../../auth'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -15,9 +16,9 @@ interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}
 /**
  * Properties passed to all page components in the registry area.
  */
-export interface RegistryAreaPageProps extends PlatformContextProps {
+export interface RegistryAreaPageProps extends PlatformContextProps, BreadcrumbSetters {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**
@@ -43,6 +44,8 @@ export class RegistryArea extends React.Component<Props> {
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.authenticatedUser,
             platformContext: this.props.platformContext,
+            useBreadcrumb: this.props.useBreadcrumb,
+            setBreadcrumb: this.props.setBreadcrumb,
         }
 
         return (

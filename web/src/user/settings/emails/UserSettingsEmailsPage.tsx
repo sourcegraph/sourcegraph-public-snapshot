@@ -17,10 +17,11 @@ import { setUserEmailVerified } from '../backend'
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface UserEmailNodeProps {
     node: GQL.IUserEmail
-    user: GQL.IUser
+    user: UserAreaUserFields
 
     onDidUpdate: () => void
     history: H.History
@@ -150,7 +151,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
 }
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
+    user: UserAreaUserFields
     history: H.History
 }
 

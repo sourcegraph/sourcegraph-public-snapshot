@@ -11,7 +11,6 @@ import React from 'react'
 import { render } from 'react-dom'
 import '../enterprise.scss'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
-import { enterpriseExploreSections } from './explore/exploreSections'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -35,7 +34,6 @@ import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritem
 window.addEventListener('DOMContentLoaded', () => {
     render(
         <SourcegraphWebApp
-            exploreSections={enterpriseExploreSections}
             extensionAreaRoutes={enterpriseExtensionAreaRoutes}
             extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
             extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}
@@ -56,7 +54,7 @@ window.addEventListener('DOMContentLoaded', () => {
             repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
             routes={enterpriseRoutes}
             keyboardShortcuts={KEYBOARD_SHORTCUTS}
-            showCampaigns={true}
+            showCampaigns={window.context.campaignsEnabled}
         />,
         document.querySelector('#root')
     )

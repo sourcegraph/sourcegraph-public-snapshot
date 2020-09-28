@@ -945,6 +945,9 @@ li.content-nav-no-hover:hover {
 
 /* This sound not be modified */
 
+.footer-container {
+    border-top: 1px solid #eaeaea;
+}
 .footer-content-container {
     width: 100%;
     padding-right: 15px;

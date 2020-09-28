@@ -3,16 +3,17 @@ import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
 import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
+import { AuthenticatedUser } from '../auth'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
-interface Props extends ThemeProps, ThemePreferenceProps {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     location: H.Location
     authenticatedUser: Pick<
-        GQL.IUser,
+        AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
     showDotComMarketing: boolean
@@ -27,14 +28,14 @@ interface State {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export class UserNavItem extends React.PureComponent<Props, State> {
+export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
     private supportsSystemTheme = Boolean(
         window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
     )
 
     public state: State = { isOpen: false }
 
-    public componentDidUpdate(previousProps: Props): void {
+    public componentDidUpdate(previousProps: UserNavItemProps): void {
         // Close dropdown after clicking on a dropdown item.
         if (this.state.isOpen && this.props.location !== previousProps.location) {
             /* eslint react/no-did-update-set-state: warn */
@@ -119,16 +120,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Site admin
                         </Link>
                     )}
-                    {this.props.showDotComMarketing ? (
-                        // eslint-disable-next-line react/jsx-no-target-blank
-                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
-                            Help
-                        </a>
-                    ) : (
-                        <Link to="/help" className="dropdown-item">
-                            Help
-                        </Link>
-                    )}
+                    <Link to="/help" className="dropdown-item" target="_blank" rel="noopener">
+                        Help <OpenInNewIcon className="icon-inline" />
+                    </Link>
                     {this.props.authenticatedUser.session?.canSignOut && (
                         <a href="/-/sign-out" className="dropdown-item">
                             Sign out
@@ -137,9 +131,13 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     {this.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
-                                About Sourcegraph
+                            <a
+                                href="https://about.sourcegraph.com"
+                                target="_blank"
+                                rel="noopener"
+                                className="dropdown-item"
+                            >
+                                About Sourcegraph <OpenInNewIcon className="icon-inline" />
                             </a>
                         </>
                     )}

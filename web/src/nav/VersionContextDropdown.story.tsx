@@ -4,8 +4,8 @@ import React from 'react'
 import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 import webMainStyles from '../SourcegraphWebApp.scss'
 import { subtypeOf } from '../../../shared/src/util/types'
-import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { action } from '@storybook/addon-actions'
+import { SearchPatternType } from '../graphql-operations'
 
 const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(story => (
     <>

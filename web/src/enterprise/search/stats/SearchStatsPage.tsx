@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import H from 'history'
+import * as H from 'history'
 import { Form } from '../../../components/Form'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { querySearchResultsStats } from './backend'
@@ -55,7 +55,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="d-flex align-items-center mb-0">
                     <ChartLineIcon className="icon-inline mr-2" /> Code statistics{' '}
-                    <small className="badge badge-secondary ml-2">Experimental</small>
+                    <small className="badge badge-secondary text-uppercase ml-2">Experimental</small>
                 </h2>
             </header>
             <Form onSubmit={onSubmit} className="form">

@@ -21,30 +21,7 @@
 
     &__logo {
         height: 1.5rem;
-
         width: 1.5rem;
-    }
-
-    &__logo-with-name {
-        max-height: 100%;
-        max-width: 9rem;
-        padding-top: 0.5rem;
-    }
-
-    &__logo-animated {
-        &:hover {
-            animation: spin 0.5s ease-in-out 1;
-
-            @keyframes spin {
-                50% {
-                    transform: rotate(180deg) scale(1.2);
-                }
-
-                100% {
-                    transform: rotate(180deg) scale(1);
-                }
-            }
-        }
     }
 
     &__search-box-container {

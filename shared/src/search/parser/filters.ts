@@ -7,6 +7,8 @@ import {
     NegatableFilter,
     isNegatableFilter,
     isFilterType,
+    isAliasedFilterType,
+    AliasedFilterType,
 } from '../interactive/util'
 import { Omit } from 'utility-types'
 
@@ -27,7 +29,7 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
 
 export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
-const LANGUAGES: string[] = [
+export const LANGUAGES: string[] = [
     'c',
     'cpp',
     'csharp',
@@ -61,7 +63,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.author]: {
-        description: 'The author of a commit',
+        negatable: true,
+        description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
         description: 'Commits made before a certain date',
@@ -72,9 +75,16 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         default: 'no',
         singular: true,
     },
+    [FilterType.committer]: {
+        description: (negated: boolean): string =>
+            `${negated ? 'Exclude' : 'Include only'} commits and diffs committed by a user.`,
+        negatable: true,
+        singular: true,
+    },
     [FilterType.content]: {
-        description:
-            'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
+        description: (negated: boolean): string =>
+            `${negated ? 'Exclude' : 'Include only'} results from files if their content matches the search pattern.`,
+        negatable: true,
         singular: true,
     },
     [FilterType.count]: {
@@ -85,7 +95,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'f',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from files matching the given regex pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from files matching the given search pattern.`,
         suggestions: 'File',
     },
     [FilterType.fork]: {
@@ -104,7 +114,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: LANGUAGES,
     },
     [FilterType.message]: {
-        description: 'Commits with messages matching a certain string',
+        negatable: true,
+        description: negated =>
+            `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
     },
     [FilterType.patterntype]: {
         discreteValues: ['regexp', 'literal', 'structural'],
@@ -115,7 +127,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'r',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given regex pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
         suggestions: 'Repository',
     },
     [FilterType.repogroup]: {
@@ -132,6 +144,16 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
+    [FilterType.rev]: {
+        description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        singular: true,
+    },
+    [FilterType.stable]: {
+        discreteValues: ['yes', 'no'],
+        default: 'no',
+        description: 'Forces search to return a stable result ordering (currently limited to file content matches).',
+        singular: true,
+    },
     [FilterType.timeout]: {
         description: 'Duration before timeout',
         singular: true,
@@ -140,7 +162,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Limit results to the specified type.',
         discreteValues: ['diff', 'commit', 'symbol', 'repo', 'path', 'file'],
     },
-
     [FilterType.visibility]: {
         discreteValues: ['any', 'private', 'public'],
         description: 'Include results from repositories with the matching visibility (private, public, any).',
@@ -164,6 +185,12 @@ export const resolveFilter = (
     | { type: Exclude<FilterType, NegatableFilter>; definition: BaseFilterDefinition }
     | undefined => {
     filterType = filterType.toLowerCase()
+
+    if (isAliasedFilterType(filterType)) {
+        const aliasKey = filterType as keyof typeof AliasedFilterType
+        filterType = AliasedFilterType[aliasKey]
+    }
+
     if (isNegatedFilter(filterType)) {
         const type = resolveNegatedFilter(filterType)
         return {

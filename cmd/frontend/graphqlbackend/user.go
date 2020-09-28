@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -268,7 +268,7 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 }
 
 func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); errcode.IsUnauthorized(err) {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -315,6 +315,12 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 // ViewerCanChangeUsername returns if the current user can change the username of the user.
 func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.user.ID)
+}
+
+func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error) {
+	id := r.ID()
+	args.Namespace = &id
+	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {

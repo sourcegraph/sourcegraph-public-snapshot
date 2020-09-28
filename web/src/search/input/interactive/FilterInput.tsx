@@ -72,7 +72,10 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
      */
     negated?: boolean
 
-    isHomepage: boolean
+    /**
+     * Whether globbing is enabled for filters.
+     */
+    globbing: boolean
 
     /**
      * Callback that handles a filter input being submitted. Triggers a search
@@ -190,7 +193,7 @@ export class FilterInput extends React.Component<Props, State> {
                         const suggestions = fetchSuggestions(fullQuery).pipe(
                             map((suggestions): Suggestion[] =>
                                 suggestions
-                                    .map(createSuggestion)
+                                    .map(item => createSuggestion(item, props.globbing))
                                     .filter(isDefined)
                                     .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
                                     .filter(suggestion => {
@@ -393,12 +396,9 @@ export class FilterInput extends React.Component<Props, State> {
         const isEditableAndText = this.props.editable && isText
         return (
             <div
-                className={`${classNames(
-                    'filter-input',
-                    `test-filter-input-${this.props.mapKey}`,
-                    { 'filter-input--active-homepage': isEditableAndText && this.props.isHomepage },
-                    { 'filter-input--active': isEditableAndText && !this.props.isHomepage }
-                )}`}
+                className={`${classNames('filter-input', `test-filter-input-${this.props.mapKey}`, {
+                    'filter-input--active': isEditableAndText,
+                })}`}
                 onBlur={this.onInputBlur}
                 tabIndex={0}
             >

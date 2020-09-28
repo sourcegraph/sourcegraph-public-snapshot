@@ -57,27 +57,27 @@ export const createFileExternalLinksResult = (
 })
 
 export const createRepositoryRedirectResult = (
-    repoUrl: string,
+    repoName: string,
     serviceType: string = 'github'
 ): RepositoryRedirectResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
-        id: 'UmVwb3NpdG9yeTo0MDk1Mzg=', // TODO is this ok to be hardcoded?
-        name: repoUrl,
-        url: `/${repoUrl}`,
-        externalURLs: [{ url: `https://${repoUrl}`, serviceType }],
+        id: `RepositoryID:${repoName}`,
+        name: repoName,
+        url: `/${repoName}`,
+        externalURLs: [{ url: new URL(`https://${repoName}`).href, serviceType }],
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master' },
     },
 })
 
-export const createResolveRevisionResult = (treeUrl: string): ResolveRevResult => ({
+export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40)): ResolveRevResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
-            oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81', // TODO is this ok to be hardcoded?
+            oid,
             tree: { url: treeUrl },
         },
         defaultBranch: { abbrevName: 'master' },

@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useMemo } from 'react'
-import H from 'history'
+import * as H from 'history'
 import { LineChartContent, BarChartContent, ChartContent, PieChartContent } from 'sourcegraph'
 import {
     LineChart,

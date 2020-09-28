@@ -233,6 +233,7 @@ func TestIsQueued(t *testing.T) {
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
 	insertUploads(t, dbconn.Global, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
+	insertUploads(t, dbconn.Global, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
 
 	testCases := []struct {
 		repositoryID int
@@ -245,6 +246,7 @@ func TestIsQueued(t *testing.T) {
 		{2, makeCommit(2), true},
 		{3, makeCommit(1), false},
 		{3, makeCommit(2), false},
+		{3, makeCommit(3), false},
 	}
 
 	for _, testCase := range testCases {
@@ -267,7 +269,7 @@ func TestInsertIndex(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertRepo(t, dbconn.Global, 50, "")
 
@@ -313,7 +315,7 @@ func TestMarkIndexComplete(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
@@ -335,7 +337,7 @@ func TestMarkIndexErrored(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
@@ -555,7 +557,7 @@ func TestRequeueIndex(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := rawTestStore()
+	store := testStore()
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "processing"})
 
