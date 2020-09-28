@@ -17,8 +17,6 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
-import { IS_CHROME } from '../marketing/util'
 import { ThemeProps } from '../../../shared/src/theme'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
@@ -215,7 +213,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
     return (
         <div className="repo-revision-container">
-            {IS_CHROME && <ChromeExtensionToast />}
             <Switch>
                 {/* eslint-disable react/jsx-no-bind */}
                 {props.routes.map(
