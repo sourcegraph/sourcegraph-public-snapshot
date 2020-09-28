@@ -10,7 +10,7 @@ import { ErrorLike } from '../../../shared/src/util/errors'
 import { addSouregraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, of } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { switchMap, switchMapTo } from 'rxjs/operators'
+import { first, switchMap, switchMapTo } from 'rxjs/operators'
 import { search } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
@@ -42,6 +42,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             searchRequests =>
                 searchRequests.pipe(
                     switchMapTo(searchQueries),
+                    first(),
                     switchMap(query =>
                         concat(
                             of('loading' as const),
