@@ -2,8 +2,6 @@
 
 exports[`LoaderButton should not render a loading spinner when loading prop is false 1`] = `
 <button
-  label="Test"
-  loading={false}
   type="button"
 >
   Test
@@ -12,8 +10,6 @@ exports[`LoaderButton should not render a loading spinner when loading prop is f
 
 exports[`LoaderButton should render a loading spinner when loading prop is true 1`] = `
 <button
-  label="Test"
-  loading={true}
   type="button"
 >
   <LoadingSpinner

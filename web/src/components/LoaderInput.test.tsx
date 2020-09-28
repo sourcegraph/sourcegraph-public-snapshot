@@ -6,7 +6,6 @@ jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'Loadin
 
 describe('LoaderInput', () => {
     it('should render a loading spinner when loading prop is true', () => {
-        console.log('LoaderInput', LoaderInput)
         expect(
             renderer
                 .create(

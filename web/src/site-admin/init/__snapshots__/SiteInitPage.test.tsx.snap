@@ -125,8 +125,6 @@ exports[`SiteInitPage normal 1`] = `
           <button
             className="btn btn-primary btn-block"
             disabled={true}
-            label="Create admin account & continue"
-            loading={false}
             type="submit"
           >
             Create admin account & continue
