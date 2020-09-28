@@ -300,7 +300,7 @@ Key dates:
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
-            const requiredCommands = ['comby', sed, 'find']
+            const requiredCommands = ['comby', sed, 'find', 'go']
             for (const command of requiredCommands) {
                 try {
                     await commandExists(command)
@@ -324,6 +324,19 @@ Key dates:
                             : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${parsedVersion.version}"' doc/_resources/templates/document.html`,
                         `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                         `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph',
+                    base: `${parsedVersion.major}.${parsedVersion.minor}`,
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        // installs version pinned by deploy-sourcegraph
+                        'go install github.com/slimsag/update-docker-tags',
+                        `.github/workflows/scripts/update-docker-tags.sh ${parsedVersion.version}`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },
