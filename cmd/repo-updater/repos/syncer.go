@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -40,6 +41,10 @@ type Syncer struct {
 	Now func() time.Time
 
 	Registerer prometheus.Registerer
+
+	// MaxReposPerUser can be used to override the value read from config.
+	// If zero, we'll read from config instead.
+	MaxReposPerUser int
 
 	// syncErrors contains the last error returned by the Sourcer during each
 	// sync per external service. It's reset with each service sync and if the sync produced no error, it's
@@ -179,16 +184,28 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		return errors.Errorf("want 1 external service but got %d", len(svcs))
 	}
 	svc := svcs[0]
-
 	isUserOwned := svc.NamespaceUserID > 0
 
-	var streamingInserter func(*Repo)
-	if s.SubsetSynced == nil {
-		streamingInserter = func(*Repo) {} //noop
-	} else {
+	onSourced := func(*Repo) error { return nil } //noop
+	if isUserOwned {
+		// If this is a user owned external service we won't stream our inserts as we limit the number allowed.
+		// Instead, we'll track the number of sourced repos and if we exceed our limit we'll bail out.
+		var sourcedRepoCount int64
+		maxAllowed := s.MaxReposPerUser
+		if maxAllowed == 0 {
+			maxAllowed = GetMaxReposPerUser()
+		}
+		onSourced = func(r *Repo) error {
+			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
+			if newCount >= int64(maxAllowed) {
+				return fmt.Errorf("sync cancelled, repo count has exceeded allowed limit: %d", maxAllowed)
+			}
+			return nil
+		}
+	} else if s.SubsetSynced != nil {
 		// The streaming inserter should insert outside of our transaction so that repos
 		// are added to our database ASAP.
-		streamingInserter, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
+		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
@@ -196,7 +213,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 
 	// Fetch repos from the source
 	var sourced Repos
-	if sourced, err = s.sourced(ctx, svcs, streamingInserter); err != nil {
+	if sourced, err = s.sourced(ctx, svcs, onSourced); err != nil {
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -720,16 +737,20 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, observe ...func(*Repo)) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
 	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err
 	}
 
-	return listAll(ctx, srcs, observe...)
+	return listAll(ctx, srcs, onSourced...)
 }
 
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*Repo), error) {
+// makeNewRepoInserter returns a function that will insert repos.
+// If publicOnly is set it will never insert a private repo.
+// If insertLimit is greater than zero, it will insert up to insertLimit repos. Once the limit is reached calling the
+// function again is a noop.
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
@@ -740,10 +761,10 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnl
 		return nil, err
 	}
 
-	return func(r *Repo) {
+	return func(r *Repo) error {
 		// We know this won't be an insert.
 		if _, ok := ids[r.ExternalRepo]; ok {
-			return
+			return nil
 		}
 
 		err := s.insertIfNew(ctx, store, publicOnly, r)
@@ -751,6 +772,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnl
 			// Best-effort, final syncer will handle this repo if this failed.
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
 		}
+		return nil
 	}, nil
 }
 

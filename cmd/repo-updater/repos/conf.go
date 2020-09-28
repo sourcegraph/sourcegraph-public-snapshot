@@ -21,3 +21,11 @@ func GetConcurrentSyncers() int {
 	}
 	return v
 }
+
+func GetMaxReposPerUser() int {
+	v := conf.Get().UserReposMaxPerUser
+	if v == 0 {
+		return 2000
+	}
+	return v
+}
