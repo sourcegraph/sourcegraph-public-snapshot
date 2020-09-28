@@ -72,7 +72,6 @@ export function useInputValidation(
 
     const validationPipeline = useCallback(
         (events: Observable<React.ChangeEvent<HTMLInputElement>>): Observable<ValidationResult> =>
-            // debounce everything
             events.pipe(
                 tap(event => {
                     event.preventDefault()
@@ -80,9 +79,11 @@ export function useInputValidation(
                 }),
                 map(event => event.target.value),
                 tap(value => {
-                    setInputState({ value, loading: true })
-                    onInputChange?.(() => ({ value, loading: true, kind: 'VALID' }))
+                    setInputState({ value, loading: asynchronousValidators.length > 0 })
+                    onInputChange?.(() => ({ value, loading: asynchronousValidators.length > 0, kind: 'VALID' }))
                 }),
+                // Debounce everything.
+                // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
                 debounceTime(typingDebounceTime),
                 switchMap(value => {
                     // check validity (synchronous)
