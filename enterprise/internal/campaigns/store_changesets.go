@@ -489,7 +489,10 @@ func (s *Store) ListChangesetsAttachedOrOwnedByCampaign(ctx context.Context, cam
 -- source: enterprise/internal/campaigns/store.go:ListChangesetsAttachedOrOwnedByCampaign
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
-WHERE (changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s
+WHERE
+  ((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
+AND
+  repo.deleted_at IS NULL
 ORDER BY id ASC
 `,
 		sqlf.Join(changesetColumns, ", "),
