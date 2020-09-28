@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LawnGnome/campaign-schema/override"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -289,14 +290,14 @@ func TestApplyCampaign(t *testing.T) {
 		Spec: campaigns.CampaignSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
-			ChangesetTemplate: campaigns.ChangesetTemplate{
-				Title:  "Hello there",
-				Body:   "This is the body",
-				Branch: "my-branch",
+			ChangesetTemplate: &campaigns.ChangesetTemplate{
+				Title:  override.FromString("Hello there"),
+				Body:   override.FromString("This is the body"),
+				Branch: override.FromString("my-branch"),
 				Commit: campaigns.CommitTemplate{
-					Message: "Add hello world",
+					Message: override.FromString("Add hello world"),
 				},
-				Published: false,
+				Published: override.FromBool(false),
 			},
 		},
 		UserID:          userID,
