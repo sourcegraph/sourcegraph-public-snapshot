@@ -42,8 +42,13 @@ exports[`ExtensionCard renders 1`] = `
               className="text-muted"
             >
                
-              by 
-              x
+              by
+               
+              <span
+                className=""
+              >
+                x
+              </span>
             </span>
           </span>
         </div>
