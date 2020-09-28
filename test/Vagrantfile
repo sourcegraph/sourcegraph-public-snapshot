@@ -36,7 +36,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       srv.vm.provider :google do |g, o|
         g.machine_type = server['machine_type']
-        g.image = 'e2e-ca165ec2-2020-09-24t17-18-40z'
+        g.image = 'e2e-1e5a682e-2020-09-25t14-38-03z'
         g.image_project_id = 'sourcegraph-ci'
         g.google_project_id = project_id
         g.name = "#{server['name']}-"+"#{Time.now.to_i}"
@@ -51,12 +51,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       srv.vm.provision 'shell', inline: <<-SHELL
         #!/usr/bin/env bash
         apt-get update -y
-        ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-        NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
-        curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh | sh
         cat << EOF >> /root/.profile
-        cd /sourcegraph
-        nvm install
 export ENTERPRISE=#{ENV['ENTERPRISE']}
 export DOCKER_BUILDKIT=#{ENV['DOCKER_BUILDKIT']}
 export FORCE_COLOR=#{ENV['FORCE_COLOR']}
