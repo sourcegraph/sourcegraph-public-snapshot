@@ -41,8 +41,8 @@ type Syncer struct {
 
 	Registerer prometheus.Registerer
 
-	// syncErrors contains the last error returned by the Sourcer in each
-	// Sync per external service. It's reset with each service Sync and if the sync produced no error, it's
+	// syncErrors contains the last error returned by the Sourcer during each
+	// sync per external service. It's reset with each service sync and if the sync produced no error, it's
 	// set to nil.
 	syncErrors   map[int64]error
 	syncErrorsMu sync.Mutex
