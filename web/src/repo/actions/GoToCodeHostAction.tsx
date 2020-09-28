@@ -13,6 +13,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { ExternalLinkFields } from '../../graphql-operations'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: GQL.IRepository | null
@@ -155,7 +156,7 @@ function serviceTypeDisplayNameAndIcon(
         case 'github':
             return { displayName: 'GitHub', icon: GithubIcon }
         case 'gitlab':
-            return { displayName: 'GitLab' }
+            return { displayName: 'GitLab', icon: GitlabIcon }
         case 'bitbucketServer':
             // TODO: Why is bitbucketServer (correctly) camelCase but
             // awscodecommit is (correctly) lowercase? Why is serviceType
