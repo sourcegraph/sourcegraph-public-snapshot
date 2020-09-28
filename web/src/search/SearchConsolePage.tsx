@@ -146,7 +146,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 <div className="flex-1 p-1">
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
-                        <button className="btn btn-primary" type="button" onClick={nextSearch}>
+                        <button className="btn btn-lg btn-primary" type="button" onClick={nextSearch}>
                             Search
                         </button>
                     </div>
