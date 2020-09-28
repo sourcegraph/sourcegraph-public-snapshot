@@ -209,7 +209,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                                     onSelect={onRejection}
                                     to={url}
                                 >
-                                    No, thanks a
+                                    No, thanks
                                 </LinkOrButton>
 
                                 <LinkOrButton className="btn btn-outline-secondary mr-2" onSelect={onClose} to={url}>
