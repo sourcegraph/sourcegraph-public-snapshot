@@ -7,7 +7,7 @@ import { MonacoEditor } from '../components/MonacoEditor'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
 import { ErrorLike } from '../../../shared/src/util/errors'
-import { addSouregraphSearchCodeIntelligence } from './input/MonacoQueryInput'
+import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, of } from 'rxjs'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
 import { first, switchMap, switchMapTo, tap } from 'rxjs/operators'
@@ -81,7 +81,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         if (!monacoInstance) {
             return
         }
-        const subscription = addSouregraphSearchCodeIntelligence(
+        const subscription = addSourcegraphSearchCodeIntelligence(
             monacoInstance,
             searchQueries,
             of(props.patternType),
