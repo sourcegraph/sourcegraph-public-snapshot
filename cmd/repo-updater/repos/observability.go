@@ -371,7 +371,7 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 	}, nil
 }
 
-// With calls the With method of the underlying store if exists,
+// With calls the With method of the underlying store if it exists,
 // otherwise it returns the store unchanged.
 // It implements the WithStore interface.
 func (o *ObservedStore) With(db dbutil.DB) Store {
