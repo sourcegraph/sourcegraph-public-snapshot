@@ -29,5 +29,5 @@ func SafeRedirectURL(urlStr string) string {
 //
 // 🚨 SECURITY: The `message` must not contain any confidential information.
 func ProviderErrorRedirect(w http.ResponseWriter, r *http.Request, message string) {
-	http.Redirect(w, r, "/sign-in?auth_error="+message, http.StatusFound)
+	http.Redirect(w, r, "/sign-in?auth_error="+url.QueryEscape(message), http.StatusFound)
 }
