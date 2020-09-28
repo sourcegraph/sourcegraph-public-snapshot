@@ -250,9 +250,13 @@ func HandleCheckUsernameTaken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Users.GetByUsername(r.Context(), username)
-	if err != nil {
+	_, err = db.Namespaces.GetByName(r.Context(), username)
+	if err == db.ErrNamespaceNotFound {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		httpLogAndError(w, "Error checking username uniqueness", http.StatusInternalServerError, "err", err)
 		return
 	}
 
