@@ -6,17 +6,23 @@ import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 import { asError } from '../../../shared/src/util/errors'
+import classNames from 'classnames'
 
 interface Props {
     location: H.Location
     history: H.History
     onAuthError: (error: Error | null) => void
+    noThirdPartyProviders?: boolean
 }
 
 /**
  * The form for signing in with a username and password.
  */
-export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ location, onAuthError }) => {
+export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
+    location,
+    onAuthError,
+    noThirdPartyProviders,
+}) => {
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -78,8 +84,11 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
         <>
             <Form onSubmit={handleSubmit}>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label className="align-self-start">Username or email</label>
+                    <label htmlFor="username-or-email" className="align-self-start">
+                        Username or email
+                    </label>
                     <input
+                        id="username-or-email"
                         className="form-control signin-signup-form__input"
                         type="text"
                         onChange={onUsernameOrEmailFieldChange}
@@ -93,7 +102,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
                     <div className="d-flex justify-content-between">
-                        <label>Password</label>
+                        <label htmlFor="password">Password</label>
                         {window.context.resetPasswordEnabled && (
                             <small className="form-text text-muted">
                                 <Link to="/password-reset">Forgot password?</Link>
@@ -110,7 +119,11 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({ loc
                         placeholder=" "
                     />
                 </div>
-                <div className="form-group">
+                <div
+                    className={classNames('form-group', {
+                        'mb-0': noThirdPartyProviders,
+                    })}
+                >
                     <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
                         {loading ? <LoadingSpinner className="icon-inline" /> : 'Sign in'}
                     </button>

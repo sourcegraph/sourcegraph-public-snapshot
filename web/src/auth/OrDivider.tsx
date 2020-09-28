@@ -8,7 +8,7 @@ interface Props {
 export const OrDivider: React.FunctionComponent<Props> = ({ className }) => (
     <div className={classNames(className, 'd-flex align-items-center')}>
         <div className="w-100 or-divider__border" />
-        <span className="px-2 font-weight-lighter text-muted">OR</span>
+        <small className="px-2 text-muted ">OR</small>
         <div className="w-100 or-divider__border" />
     </div>
 )

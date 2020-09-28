@@ -47,17 +47,28 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 No authentication providers are available. Contact a site administrator for help.
             </div>
         ) : (
-            <div className="mb-4 signin-page__container">
+            <div className="mb-4 signin-page__container pb-5">
                 {authError && (
-                    <ErrorAlert className="mt-4 mb-0" error={authError} icon={false} history={props.history} />
+                    <ErrorAlert
+                        className="mt-4 mb-0 text-left"
+                        error={authError}
+                        icon={false}
+                        history={props.history}
+                    />
                 )}
                 <div
                     className={classNames(
-                        'signin-signup-form signin-form test-signin-form border rounded p-4 my-3',
+                        'signin-signup-form signin-form test-signin-form rounded p-4 my-3',
                         authError ? 'mt-3' : 'mt-4'
                     )}
                 >
-                    {builtInAuthProvider && <UsernamePasswordSignInForm {...props} onAuthError={setAuthError} />}
+                    {builtInAuthProvider && (
+                        <UsernamePasswordSignInForm
+                            {...props}
+                            onAuthError={setAuthError}
+                            noThirdPartyProviders={thirdPartyAuthProviders.length === 0}
+                        />
+                    )}
                     {builtInAuthProvider && thirdPartyAuthProviders.length > 0 && <OrDivider className="mb-3 py-1" />}
                     {thirdPartyAuthProviders.map((provider, index) => (
                         // Use index as key because display name may not be unique. This is OK
@@ -77,10 +88,10 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 </div>
                 {window.context.allowSignup ? (
                     <p>
-                        <Link to={`/sign-up${location.search}`}>New to Sourcegraph? Sign up.</Link>
+                        New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
                     </p>
                 ) : (
-                    <p className="text-muted">To create an account, contact the site admin.</p>
+                    <p className="text-muted">Need an account? Contact your site admin</p>
                 )}
             </div>
         )
@@ -92,6 +103,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 icon={SourcegraphIcon}
                 iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
+                lessPadding={true}
                 title={
                     window.context.sourcegraphDotComMode
                         ? 'Sign in to Sourcegraph Cloud'

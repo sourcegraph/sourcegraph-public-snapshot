@@ -11,6 +11,7 @@ export const PasswordInput: React.FunctionComponent<InputProps> = props => {
     return (
         <input
             name="password"
+            id="password"
             {...other}
             className={`form-control ${props.className || ''}`}
             placeholder={props.placeholder || 'Password'}
@@ -26,6 +27,7 @@ export const EmailInput: React.FunctionComponent<InputProps> = props => {
     return (
         <input
             name="email"
+            id="email"
             {...other}
             className={`form-control ${props.className || ''}`}
             type="email"
@@ -42,6 +44,7 @@ export const UsernameInput: React.FunctionComponent<InputProps> = props => {
     return (
         <input
             name="username"
+            id="username"
             {...other}
             className={`form-control ${props.className || ''}`}
             type="text"

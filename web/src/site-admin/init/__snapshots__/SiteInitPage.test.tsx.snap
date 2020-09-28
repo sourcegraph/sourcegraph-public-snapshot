@@ -23,9 +23,8 @@ exports[`SiteInitPage normal 1`] = `
         Create an admin account to start using Sourcegraph.
       </p>
       <form
-        className="signin-signup-form signup-form test-signup-form border rounded p-4 text-left mt-4 w-100 "
+        className="signin-signup-form signup-form test-signup-form rounded p-4 text-left mt-4 w-100"
         noValidate={true}
-        onInvalid={[Function]}
         onSubmit={[Function]}
       >
         <div
@@ -33,19 +32,20 @@ exports[`SiteInitPage normal 1`] = `
         >
           <label
             className="align-self-start"
+            htmlFor="email"
           >
             Email
           </label>
           <div
-            className="signin-signup-form__input-container"
+            className="loader-input__container"
           >
             <input
               autoComplete="email"
               autoFocus={true}
               className="form-control signin-signup-form__input"
               disabled={false}
+              id="email"
               name="email"
-              onBlur={[Function]}
               onChange={[Function]}
               placeholder=" "
               required={true}
@@ -60,20 +60,21 @@ exports[`SiteInitPage normal 1`] = `
         >
           <label
             className="align-self-start"
+            htmlFor="username"
           >
             Username
           </label>
           <div
-            className="signin-signup-form__input-container"
+            className="loader-input__container"
           >
             <input
               autoCapitalize="off"
               autoComplete="username"
               className="form-control signin-signup-form__input"
               disabled={false}
+              id="username"
               maxLength={255}
               name="username"
-              onBlur={[Function]}
               onChange={[Function]}
               pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
               placeholder=" "
@@ -89,19 +90,23 @@ exports[`SiteInitPage normal 1`] = `
         >
           <label
             className="align-self-start"
+            htmlFor="password"
           >
             Password
           </label>
           <div
-            className="signin-signup-form__input-container"
+            className="loader-input__container"
           >
             <input
               autoComplete="new-password"
               className="form-control signin-signup-form__input"
               disabled={false}
+              formNoValidate={true}
+              id="password"
+              minLength={12}
               name="password"
-              onBlur={[Function]}
               onChange={[Function]}
+              onInvalid={[Function]}
               placeholder=" "
               required={true}
               type="password"
@@ -109,7 +114,7 @@ exports[`SiteInitPage normal 1`] = `
             />
           </div>
           <small
-            className="mt-2"
+            className="form-text text-muted"
           >
             At least 12 characters
           </small>
@@ -120,6 +125,8 @@ exports[`SiteInitPage normal 1`] = `
           <button
             className="btn btn-primary btn-block"
             disabled={true}
+            label="Create admin account & continue"
+            loading={false}
             type="submit"
           >
             Create admin account & continue

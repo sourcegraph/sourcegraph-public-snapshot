@@ -42,15 +42,16 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                             ? 'Sign up for Sourcegraph Cloud'
                             : 'Sign up for Sourcegraph Server'
                     }
+                    lessPadding={true}
                     body={
-                        <div className="signup-page__container">
+                        <div className="signup-page__container pb-5">
                             {window.context.sourcegraphDotComMode && (
                                 <p className="pt-1 pb-2">Start searching public code now</p>
                             )}
                             <SignUpForm {...this.props} doSignUp={this.doSignUp} />
                             <p className="mt-3">
                                 Already have an account?{' '}
-                                <Link to={`/sign-in${this.props.location.search}`}>Sign in.</Link>
+                                <Link to={`/sign-in${this.props.location.search}`}>Sign in</Link>
                             </p>
                         </div>
                     }
