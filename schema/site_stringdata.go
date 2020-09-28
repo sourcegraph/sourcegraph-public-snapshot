@@ -347,6 +347,12 @@ const SiteSchemaJSON = `{
       "default": 1,
       "group": "External services"
     },
+    "repoSyncConcurrency": {
+      "description": "Number of concurrent syncers to run",
+      "type": "integer",
+      "default": 3,
+      "group": "External services"
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",

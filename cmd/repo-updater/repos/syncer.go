@@ -72,7 +72,6 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 
 	s.initialUnmodifiedDiffFromStore(pctx, store)
 
-	// TODO: Make numHandlers configurable
 	worker, resetter := NewSyncWorker(pctx, db, &syncHandler{
 		db:              db,
 		syncer:          s,
@@ -80,7 +79,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 		minSyncInterval: opts.MinSyncInterval,
 	}, SyncWorkerOptions{
 		WorkerInterval:       opts.DequeueInterval,
-		NumHandlers:          3,
+		NumHandlers:          GetSyncConcurrency(),
 		PrometheusRegisterer: s.Registerer,
 	})
 
