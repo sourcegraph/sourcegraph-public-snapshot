@@ -754,7 +754,8 @@ async function performUpload(
     try {
         // Upload data
         const uploadCommand = [
-            `src -endpoint ${config.sourcegraphBaseUrl}`,
+            `SRC_ENDPOINT=${config.sourcegraphBaseUrl}`,
+            `src`,
             'lsif upload',
             `-repo ${repository}`,
             `-commit ${commit}`,
