@@ -13,11 +13,3 @@ func GetUpdateInterval() time.Duration {
 	}
 	return time.Duration(v) * time.Minute
 }
-
-func GetSyncConcurrency() int {
-	v := conf.Get().RepoSyncConcurrency
-	if v == 0 { //  default to 3
-		v = 3
-	}
-	return v
-}

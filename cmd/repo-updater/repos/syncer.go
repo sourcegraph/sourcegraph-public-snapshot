@@ -79,7 +79,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 		minSyncInterval: opts.MinSyncInterval,
 	}, SyncWorkerOptions{
 		WorkerInterval:       opts.DequeueInterval,
-		NumHandlers:          GetSyncConcurrency(),
+		NumHandlers:          3,
 		PrometheusRegisterer: s.Registerer,
 	})
 
