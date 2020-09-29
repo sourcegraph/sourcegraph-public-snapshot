@@ -19,6 +19,9 @@ are available as logs (stream and file).
     ./scripts/build.sh <next-version, e.g. 0.0.2>
     ```
 3.  Update the image tag in [deploy-sourcegraph-dot-com](https://github.com/sourcegraph/deploy-sourcegraph-dot-com/blob/release/configure/search-blitz/search-blitz.StatefulSet.yaml#L36)
+    ```
+    ./scripts/update-deploy-sourcegraph-dot-com.sh <next-version, e.g. 0.0.2>
+    ```
 
 ## How to access the Grafana dashboard
 ```
