@@ -24,7 +24,10 @@ func TestSearchRepositories(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
 	mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
-		repos, _ := getRepos(context.Background(), args.RepoPromise)
+		repos, err := getRepos(context.Background(), args.RepoPromise)
+		if err != nil {
+			return nil, nil, err
+		}
 		repoName := repos[0].Repo.Name
 		switch repoName {
 		case "foo/one":
@@ -119,7 +122,10 @@ func TestSearchRepositories(t *testing.T) {
 
 func TestRepoShouldBeAdded(t *testing.T) {
 	mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
-		repos, _ := getRepos(context.Background(), args.RepoPromise)
+		repos, err := getRepos(context.Background(), args.RepoPromise)
+		if err != nil {
+			return nil, nil, err
+		}
 		repoName := repos[0].Repo.Name
 		switch repoName {
 		case "foo/one":

@@ -244,7 +244,10 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			repos, _ := getRepos(context.Background(), args.RepoPromise)
+			repos, err := getRepos(context.Background(), args.RepoPromise)
+			if err != nil {
+				t.Error(err)
+			}
 			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", repos, want)
 			}
@@ -347,7 +350,10 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			repos, _ := getRepos(context.Background(), args.RepoPromise)
+			repos, err := getRepos(context.Background(), args.RepoPromise)
+			if err != nil {
+				t.Error(err)
+			}
 			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", repos, want)
 			}
