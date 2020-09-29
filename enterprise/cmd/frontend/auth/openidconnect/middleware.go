@@ -90,7 +90,7 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 	// anything else anyway; there's no point in showing them a signin screen with just a single
 	// signin option.
 	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
-		p, handled := handleGetProvider(r.Context(), w, r, ps[0].ConfigID().ID)
+		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return
 		}
@@ -112,7 +112,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 	case "/login":
 		// Endpoint that starts the Authentication Request Code Flow.
-		p, handled := handleGetProvider(r.Context(), w, r, r.URL.Query().Get("pc"))
+		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
 		if handled {
 			return
 		}
@@ -160,7 +160,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// 🚨 SECURITY: TODO(sqs): Do we need to check state.CSRFToken?
 
-		p, handled := handleGetProvider(r.Context(), w, r, state.ProviderID)
+		p, handled := handleGetProvider(r.Context(), w, state.ProviderID)
 		if handled {
 			return
 		}

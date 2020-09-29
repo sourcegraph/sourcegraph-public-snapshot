@@ -25,7 +25,7 @@ func getProvider(id string) *provider {
 	return p
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, r *http.Request, id string) (p *provider, handled bool) {
+func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
 	handled = true // safer default
 
 	p = getProvider(id)
