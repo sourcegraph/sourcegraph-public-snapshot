@@ -24,6 +24,7 @@ import { Settings } from '../schema/settings.schema'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -72,6 +73,9 @@ export class NavLinks extends React.PureComponent<Props> {
                             <InsightsNavItem />
                         </li>
                     )}
+                <li className="nav-item">
+                    <ExtensionsNavItem />
+                </li>
                 {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />

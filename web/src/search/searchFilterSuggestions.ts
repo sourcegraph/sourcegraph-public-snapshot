@@ -88,8 +88,16 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 description: '"string specifying time frame" (time frame to match commits before)',
             },
             {
+                value: 'author:',
+                description: 'username or git email of commit author',
+            },
+            {
                 value: 'message:',
                 description: 'commit message contents',
+            },
+            {
+                value: 'committer:',
+                description: 'git email of committer',
             },
             {
                 value: 'content:',
@@ -196,6 +204,9 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     author: {
+        values: [],
+    },
+    committer: {
         values: [],
     },
     message: {

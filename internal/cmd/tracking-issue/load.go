@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -87,6 +88,9 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 }
 
 func loadTrackingIssue(ctx context.Context, cli *graphql.Client, org string, issue *TrackingIssue) error {
+	issuesMap := map[string]*Issue{}
+	prsMap := map[string]*PullRequest{}
+
 	var q bytes.Buffer
 	q.WriteString("query(\n")
 
@@ -99,15 +103,22 @@ func loadTrackingIssue(ctx context.Context, cli *graphql.Client, org string, iss
 	if issue.Milestone == "" {
 		name := "tracking" + strconv.Itoa(issue.Number)
 		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!\n", name)
-		queries[name] = &query{query: listIssuesSearchQuery(org, "", issue.Labels, false)}
+		queries[name] = &query{query: listIssuesSearchQuery(org, "", nonTracking(issue.Labels), false)}
 	} else {
 		milestoned := "tracking" + strconv.Itoa(issue.Number) + "Milestoned"
 		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", milestoned)
-		queries[milestoned] = &query{query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, false)}
+		queries[milestoned] = &query{query: listIssuesSearchQuery(org, issue.Milestone, nonTracking(issue.Labels), false)}
 
 		demilestoned := "tracking" + strconv.Itoa(issue.Number) + "Demilestoned"
-		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!\n", demilestoned)
-		queries[demilestoned] = &query{query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, true)}
+		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", demilestoned)
+		queries[demilestoned] = &query{query: listIssuesSearchQuery(org, issue.Milestone, nonTracking(issue.Labels), true)}
+
+		// Look for other tracking issues so that we can correlate the tracking issue
+		// containing a milestone-tagged ticket, even if that tracking issue doesn't
+		// fit into the same milestone.
+		name := "tracking" + strconv.Itoa(issue.Number) + "Tracking"
+		fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!\n", name)
+		queries[name] = &query{query: listIssuesSearchQuery(org, "", issue.Labels, false)}
 	}
 
 	q.WriteString(") {")
@@ -146,8 +157,12 @@ func loadTrackingIssue(ctx context.Context, cli *graphql.Client, org string, iss
 			}
 
 			issues, prs := unmarshalSearchNodes(s.Nodes)
-			issue.Issues = append(issue.Issues, issues...)
-			issue.PRs = append(issue.PRs, prs...)
+			for _, issue := range issues {
+				issuesMap[issue.ID] = issue
+			}
+			for _, pr := range prs {
+				prsMap[pr.ID] = pr
+			}
 		}
 
 		if !hasNextPage {
@@ -155,6 +170,17 @@ func loadTrackingIssue(ctx context.Context, cli *graphql.Client, org string, iss
 		}
 	}
 
+	// deduplicate
+	for _, v := range issuesMap {
+		issue.Issues = append(issue.Issues, v)
+	}
+	for _, v := range prsMap {
+		issue.PRs = append(issue.PRs, v)
+	}
+
+	// Ensure we have a deterministic order here
+	sort.Slice(issue.Issues, func(i, j int) bool { return issue.Issues[i].Number < issue.Issues[j].Number })
+	sort.Slice(issue.PRs, func(i, j int) bool { return issue.PRs[i].Number < issue.PRs[j].Number })
 	return nil
 }
 
@@ -320,10 +346,20 @@ func listIssuesSearchQuery(org, milestone string, labels []string, demilestoned 
 	}
 
 	for _, label := range labels {
-		if label != "" && label != "tracking" {
+		if label != "" {
 			fmt.Fprintf(&q, " label:%q", label)
 		}
 	}
 
 	return q.String()
+}
+
+func nonTracking(labels []string) (filtered []string) {
+	for _, label := range labels {
+		if label != "tracking" {
+			filtered = append(filtered, label)
+		}
+	}
+
+	return filtered
 }
