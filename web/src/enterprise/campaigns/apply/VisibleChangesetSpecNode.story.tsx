@@ -35,9 +35,12 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             body: 'Body text',
             commits: [
                 {
-                    subject: 'Commit message',
-                    body:
-                        'And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body.',
+                    subject: 'This is the first line of the commit message',
+                    body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
                     author: {
                         avatarURL: null,
                         displayName: 'john',
@@ -68,9 +71,12 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             body: 'Body text',
             commits: [
                 {
-                    subject: 'Commit message',
-                    body:
-                        'And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body. And the more explanatory body.',
+                    subject: 'This is the first line of the commit message',
+                    body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
                     author: {
                         avatarURL: null,
                         displayName: 'john',

@@ -3,6 +3,8 @@ import { GitBranchChangesetDescriptionFields } from '../../../graphql-operations
 import { formatPersonName, PersonLink } from '../../../person/PersonLink'
 import { UserAvatar } from '../../../user/UserAvatar'
 
+const dotDotDot = '\u22EF'
+
 interface Props {
     description: GitBranchChangesetDescriptionFields
 
@@ -22,29 +24,11 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
 
     return (
         <>
-            <h4>Commits</h4>
             {description.commits.map((commit, index) => (
-                <div className="card mb-3" key={index}>
-                    <div className="card-body">
-                        <div className="w-100">
-                            <div className="d-flex align-items-center flex-grow-1">
-                                <span
-                                    className="overflow-hidden font-weight-bold text-nowrap text-truncate pr-2"
-                                    data-tooltip={commit.subject}
-                                >
-                                    {commit.subject}
-                                </span>
-                                {commit.body && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary btn-sm px-1 py-0 font-weight-bold align-item-center mr-2"
-                                        onClick={toggleShowCommitMessageBody}
-                                    >
-                                        &#8943;
-                                    </button>
-                                )}
-                            </div>
-                            <small>
+                <React.Fragment key={index}>
+                    <div className="w-100">
+                        <div className="d-flex align-items-center flex-grow-1">
+                            <small className="mr-2">
                                 <UserAvatar
                                     className="icon-inline mr-1"
                                     user={commit.author}
@@ -52,16 +36,32 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                                 />{' '}
                                 <PersonLink person={commit.author} className="font-weight-bold" />
                             </small>
+                            <span
+                                className="overflow-hidden font-weight-bold text-nowrap text-truncate pr-2"
+                                data-tooltip={commit.subject}
+                            >
+                                {commit.subject}
+                            </span>
+                            {commit.body && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm px-1 py-0 font-weight-bold align-item-center mr-2"
+                                    onClick={toggleShowCommitMessageBody}
+                                >
+                                    {dotDotDot}
+                                </button>
+                            )}
                         </div>
-                        {showCommitMessageBody && (
-                            <div className="w-100 mt-1">
-                                <small>
-                                    <pre className="text-wrap mb-0">{commit.body}</pre>
-                                </small>
-                            </div>
-                        )}
                     </div>
-                </div>
+                    {showCommitMessageBody && (
+                        <div className="w-100 mt-1">
+                            <small>
+                                <pre className="text-wrap mb-0">{commit.body}</pre>
+                            </small>
+                        </div>
+                    )}
+                    <hr className="mb-3" />
+                </React.Fragment>
             ))}
         </>
     )

@@ -103,6 +103,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     <div className="visible-changeset-spec-node__expanded-section">
                         {node.description.__typename === 'GitBranchChangesetDescription' && (
                             <>
+                                <h4>Commits</h4>
                                 <GitBranchChangesetDescriptionInfo
                                     description={node.description}
                                     isExpandedInitially={expandChangesetDescriptions}
