@@ -50,19 +50,14 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore repos.Store
 			h := &fakeRepoSyncHandler{
 				jobChan: jobChan,
 			}
-			worker, resetter := repos.NewSyncWorker(ctx, db, h, repos.SyncWorkerOptions{
-				NumHandlers:    1,
-				WorkerInterval: 1 * time.Millisecond,
-			})
+			worker := repos.NewSyncWorker(ctx, db, h, 1)
 			go worker.Start()
-			go resetter.Start()
 
 			// There is a race between the worker being stopped and the worker util
 			// finalising the row which means that when running tests in verbose mode we'll
 			// see "sql: transaction has already been committed or rolled back". These
 			// errors can be ignored.
 			defer worker.Stop()
-			defer resetter.Stop()
 
 			var job *repos.SyncJob
 			select {
@@ -84,14 +79,14 @@ type fakeRepoSyncHandler struct {
 }
 
 func (h *fakeRepoSyncHandler) Handle(ctx context.Context, tx dbws.Store, record workerutil.Record) error {
-	sj, ok := record.(*repos.SyncJob)
+	r, ok := record.(*repos.SyncJob)
 	if !ok {
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case h.jobChan <- sj:
+	case h.jobChan <- r:
 		return nil
 	}
 }
