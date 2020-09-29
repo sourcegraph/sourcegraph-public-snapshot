@@ -123,7 +123,12 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'filter-lang',
-                    text: generateStepTooltip(tour, 'Type to filter the language autocomplete', 2, 5),
+                    text: generateStepTooltip({
+                        tour,
+                        dangerousTitleHtml: 'Type to filter the language autocomplete',
+                        stepNumber: 2,
+                        totalStepCount: 5,
+                    }),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourFilterLangStep')
@@ -136,12 +141,13 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'filter-repository',
-                    text: generateStepTooltip(
+                    text: generateStepTooltip({
                         tour,
-                        "Type the name of a repository you've used recently to filter the autocomplete list",
-                        2,
-                        5
-                    ),
+                        dangerousTitleHtml:
+                            "Type the name of a repository you've used recently to filter the autocomplete list",
+                        stepNumber: 2,
+                        totalStepCount: 5,
+                    }),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourFilterRepoStep')
@@ -154,13 +160,13 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'add-query-term',
-                    text: generateStepTooltip(
+                    text: generateStepTooltip({
                         tour,
-                        'Add code to your search',
-                        3,
-                        5,
-                        'Type the name of a function, variable or other code.'
-                    ),
+                        dangerousTitleHtml: 'Add code to your search',
+                        stepNumber: 3,
+                        totalStepCount: 5,
+                        description: 'Type the name of a function, variable or other code.',
+                    }),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
@@ -173,12 +179,12 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 },
                 {
                     id: 'submit-search',
-                    text: generateStepTooltip(
+                    text: generateStepTooltip({
                         tour,
-                        'Use <kbd>return</kbd> or the search button to run your search',
-                        4,
-                        5
-                    ),
+                        dangerousTitleHtml: 'Use <kbd>return</kbd> or the search button to run your search',
+                        stepNumber: 4,
+                        totalStepCount: 5,
+                    }),
                     when: {
                         show() {
                             eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
