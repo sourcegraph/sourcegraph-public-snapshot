@@ -7,6 +7,7 @@ import {
     getIssueByTitle,
     trackingIssueTitle,
     ensurePatchReleaseIssue,
+    createChangesets,
     createBranchWithChanges,
     createPR,
     CreateBranchWithChangesOptions,
@@ -217,24 +218,46 @@ Key dates:
     {
         id: 'changelog:cut',
         argNames: ['version', 'changelogFile'],
-        run: (_config, version, changelogFile = './CHANGELOG.md') => {
+        run: async (_config, version, changelogFile = './CHANGELOG.md') => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
             }
-            console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
-            let changelogContents = readFileSync(changelogFile).toString()
 
-            // Convert 'unreleased' to a release
-            const releaseHeader = `## ${parsedVersion.format()}`
-            const unreleasedHeader = '## Unreleased'
-            changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
+            await createChangesets({
+                requiredCommands: [],
+                changes: [
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        base: 'main',
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
+                                const changelogPath = `${directory}/${changelogFile}`
+                                let changelogContents = readFileSync(changelogPath).toString()
 
-            // Add a blank changelog template for the next release
-            changelogContents = changelogContents.replace(changelog.divider, changelog.releaseTemplate)
+                                // Convert 'unreleased' to a release
+                                const releaseHeader = `## ${parsedVersion.format()}`
+                                const unreleasedHeader = '## Unreleased'
+                                changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
 
-            // Update changelog
-            writeFileSync(changelogFile, changelogContents)
+                                // Add a blank changelog template for the next release
+                                changelogContents = changelogContents.replace(
+                                    changelog.divider,
+                                    changelog.releaseTemplate
+                                )
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ], // Changes already done
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                ],
+            })
         },
     },
     {
@@ -342,7 +365,7 @@ Key dates:
                     base: 'main',
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
+                    edits: [
                         `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
                         `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${parsedVersion.version}\`/g' doc/index.md`,
                         parsedVersion.patch === 0
@@ -359,7 +382,7 @@ Key dates:
                     base: 'master',
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
+                    edits: [
                         `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
@@ -370,7 +393,7 @@ Key dates:
                     base: 'master',
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
+                    edits: [
                         `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
@@ -381,7 +404,7 @@ Key dates:
                     base: 'release',
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
+                    edits: [
                         `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
