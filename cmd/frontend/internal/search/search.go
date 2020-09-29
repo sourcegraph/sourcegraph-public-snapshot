@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -18,10 +19,9 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	qvals := r.URL.Query()
-	queryStr := qvals.Get("q")
-	if queryStr == "" {
-		http.Error(w, "no query found", http.StatusBadRequest)
+	args, err := parseURLQuery(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -32,8 +32,10 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
-		Query:   queryStr,
-		Version: "V2",
+		Query:          args.Query,
+		Version:        args.Version,
+		PatternType:    strPtr(args.PatternType),
+		VersionContext: strPtr(args.VersionContext),
 	})
 	if err != nil {
 		eventWriter.Event("error", err.Error())
@@ -116,6 +118,43 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 
 	// TODO stats
 	_ = eventWriter.Event("done", map[string]interface{}{})
+}
+
+type args struct {
+	Query          string
+	Version        string
+	PatternType    string
+	VersionContext string
+}
+
+func parseURLQuery(q url.Values) (*args, error) {
+	get := func(k, def string) string {
+		v := q.Get(k)
+		if v == "" {
+			return def
+		}
+		return v
+	}
+
+	a := args{
+		Query:          get("q", ""),
+		Version:        get("v", "V2"),
+		PatternType:    get("t", "literal"),
+		VersionContext: get("vc", ""),
+	}
+
+	if a.Query == "" {
+		return nil, errors.New("no query found")
+	}
+
+	return &a, nil
+}
+
+func strPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 type eventStreamWriter struct {
