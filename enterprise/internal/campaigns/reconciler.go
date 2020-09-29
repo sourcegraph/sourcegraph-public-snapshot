@@ -216,18 +216,6 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		return err
 	}
 
-	if reopen {
-		reopener, ok := ccs.(repos.ChangesetReopener)
-		if !ok {
-			return fmt.Errorf("reopening changesets on %s code hosts is not yet supported", extSvc.Kind)
-		}
-
-		cs := repos.Changeset{Repo: repo, Changeset: ch}
-		if err := reopener.ReopenChangeset(ctx, &cs); err != nil {
-			return errors.Wrap(err, "reopening changeset")
-		}
-	}
-
 	if delta.NeedCommitUpdate() {
 		opts, err := buildCommitOpts(repo, spec)
 		if err != nil {
@@ -260,7 +248,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	}
 
 	// Otherwise, we need to update the pull request on the code host or, if we
-	// reopened it, update it to make sure it has the newest state.
+	// need to reopen it, update it to make sure it has the newest state.
 	cs := repos.Changeset{
 		Title:     spec.Spec.Title,
 		Body:      spec.Spec.Body,
@@ -268,6 +256,12 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		HeadRef:   git.EnsureRefPrefix(spec.Spec.HeadRef),
 		Repo:      repo,
 		Changeset: ch,
+	}
+
+	if reopen {
+		if err := ccs.ReopenChangeset(ctx, &cs); err != nil {
+			return errors.Wrap(err, "reopening changeset")
+		}
 	}
 
 	// Depending on the changeset, we may want to add to the body (for example,
@@ -307,14 +301,8 @@ func (r *reconciler) reopenChangeset(ctx context.Context, tx *Store, ch *campaig
 		return err
 	}
 
-	reopener, ok := ccs.(repos.ChangesetReopener)
-	if !ok {
-		return fmt.Errorf("reopening changesets on %s code hosts is not yet supported", extSvc.Kind)
-	}
-
 	cs := repos.Changeset{Repo: repo, Changeset: ch}
-
-	if err := reopener.ReopenChangeset(ctx, &cs); err != nil {
+	if err := ccs.ReopenChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
 

@@ -114,13 +114,6 @@ type ChangesetSource interface {
 	CloseChangeset(context.Context, *Changeset) error
 	// UpdateChangeset can update Changesets.
 	UpdateChangeset(context.Context, *Changeset) error
-}
-
-// A ChangesetReopener is a ChangesetSource that can reopen Changesets.
-// We can remove this once all ChangesetSources can reopen changesets.
-type ChangesetReopener interface {
-	ChangesetSource
-
 	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
 	// If not, it's a noop.
 	ReopenChangeset(context.Context, *Changeset) error
