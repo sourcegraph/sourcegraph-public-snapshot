@@ -58,9 +58,9 @@ func (m *Matcher) testLabels(labels []string) bool {
 }
 
 // testMilestone returns true if the given milestone matches the milestone the matcher
-// was configured with, or one of them are empty.
+// was configured with, or the milestone on the tracking issue is not restricted.
 func (m *Matcher) testMilestone(milestone string) bool {
-	return m.milestone == "" || milestone == "" || milestone == m.milestone
+	return m.milestone == "" || milestone == m.milestone
 }
 
 // testAll returns true if all of the given values are true.
