@@ -4,24 +4,12 @@ import (
 	"context"
 	"reflect"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func repoRev(revSpec string) *RepositoryRevisions {
-	return &RepositoryRevisions{
-		Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
-		Revs: []RevisionSpecifier{
-			{RevSpec: revSpec},
-		},
-	}
-}
-
-func TestRepoPromise(t *testing.T) {
-	in := []*RepositoryRevisions{repoRev("HEAD")}
-	rp := (&Promise{}).Resolve(in)
-	out, err := rp.Get(context.Background())
+func TestPromiseGet(t *testing.T) {
+	in := "anything"
+	p := (&Promise{}).Resolve(in)
+	out, err := p.Get(context.Background())
 	if err != nil {
 		t.Fatal("error should have been nil, because we supplied a context.Background()")
 	}
@@ -30,7 +18,7 @@ func TestRepoPromise(t *testing.T) {
 	}
 }
 
-func TestRepoPromiseWithCancel(t *testing.T) {
+func TestPromiseGetWithCancel(t *testing.T) {
 	rp := Promise{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -40,14 +28,14 @@ func TestRepoPromiseWithCancel(t *testing.T) {
 	}
 }
 
-func TestRepoPromiseConcurrent(t *testing.T) {
+func TestPromiseGetConcurrent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	in := []*RepositoryRevisions{repoRev("HEAD")}
-	rp := Promise{}
+	in := "anything"
+	p := Promise{}
 	go func() {
-		rp.Resolve(in)
+		p.Resolve(in)
 	}()
-	out, err := rp.Get(ctx)
+	out, err := p.Get(ctx)
 	if err != nil {
 		t.Fatal("error should have been nil, because we didn't cancel the context")
 	}
@@ -57,7 +45,7 @@ func TestRepoPromiseConcurrent(t *testing.T) {
 
 	cancel()
 
-	out, err = rp.Get(ctx)
+	out, err = p.Get(ctx)
 	if err != nil {
 		t.Fatal("error should have been nil, because we canceled the context after the first call to get")
 	}
