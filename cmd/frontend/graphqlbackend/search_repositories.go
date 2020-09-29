@@ -60,7 +60,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 
 	// Filter args.Repos by matching their names against the query pattern.
 	common = &searchResultsCommon{}
-	resolved, err := args.RepoPromise.Get(ctx)
+	resolved, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,7 +118,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			}
 			newArgs := *args
 			newArgs.PatternInfo = &p
-			newArgs.RepoPromise = search.NewRepoPromise().Resolve(repos)
+			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
@@ -145,7 +145,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			}
 			newArgs := *args
 			newArgs.PatternInfo = &p
-			rp := search.NewRepoPromise().Resolve(repos)
+			rp := (&search.Promise{}).Resolve(repos)
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true

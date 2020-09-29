@@ -1464,7 +1464,10 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 // diff and commit searches where more than repoLimit repos need to be searched.
 func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
 	limits := searchLimits()
-	repos, _ := args.RepoPromise.Get(context.Background())
+	// we don't need to handle the error here, because we don't have context and the
+	// promise can only return context errors
+	repos, _ := getRepos(context.Background(), args.RepoPromise)
+
 	for _, resultType := range resultTypes {
 		if resultType != "commit" && resultType != "diff" {
 			continue
@@ -1616,10 +1619,12 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: tp.PatternInfo.PathPatternsAreCaseSensitive,
 	}
-	repos, err := tp.RepoPromise.Get(ctx)
+	repos, err := getRepos(ctx, tp.RepoPromise)
 	if err != nil {
-		log15.Info("doDiffSearch: context error while getting repos.")
+		log15.Warn("doDiffSearch: error while getting repos from promise:", err.Error())
+		return
 	}
+
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
 		Repos:       repos,
@@ -1656,9 +1661,10 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 	}
-	repos, err := tp.RepoPromise.Get(ctx)
+	repos, err := getRepos(ctx, tp.RepoPromise)
 	if err != nil {
-		log15.Info("doCommitSearch: context error while getting repos.")
+		log15.Warn("doCommitSearch: error while getting repos from promise:", err.Error())
+		return
 	}
 
 	args := search.TextParametersForCommitParameters{
@@ -1747,7 +1753,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
-		RepoPromise:     search.NewRepoPromise(),
+		RepoPromise:     &search.Promise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}

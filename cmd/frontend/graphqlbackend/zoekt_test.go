@@ -301,7 +301,7 @@ func TestIndexedSearch(t *testing.T) {
 			args := &search.TextParameters{
 				Query:           q,
 				PatternInfo:     tt.args.patternInfo,
-				RepoPromise:     search.NewRepoPromise().Resolve(tt.args.repos),
+				RepoPromise:     (&search.Promise{}).Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
 					Client: &fakeSearcher{

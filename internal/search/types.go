@@ -77,50 +77,45 @@ const (
 	SearcherOnly
 )
 
-// RepoPromise can be used in place of []*RepositoryRevisions whenever we resolve
-// repositories concurrently. Its implementation is a thin wrapper around a
-// channel. However, unlike a channel, a RepoPromise can only be set once, but
-// consumed many times. Use Resolve to set the value, and Get to get the value.
-type RepoPromise struct {
-	closeOnce sync.Once
-	repoChan  chan []*RepositoryRevisions
+type Promise struct {
+	getOnce sync.Once
+	err     error
 
-	resolveOnce sync.Once
-	repos       []*RepositoryRevisions
+	initOnce sync.Once
+	done     chan struct{}
 
-	err error
+	valueOnce sync.Once
+	value     interface{}
 }
 
-// NewRepoPromise returns an unresolved promise.
-func NewRepoPromise() *RepoPromise {
-	return &RepoPromise{
-		repoChan: make(chan []*RepositoryRevisions, 1),
-	}
-}
-
-// Get returns the repository revisions. It blocks until the promise resolves or
-// the context is canceled. Further calls to Get will always return the original
-// results, IE err will stay nil even if the context expired between the first
-// and the second call.
-func (rp *RepoPromise) Get(ctx context.Context) ([]*RepositoryRevisions, error) {
-	rp.resolveOnce.Do(func() {
-		select {
-		case <-ctx.Done():
-			rp.err = ctx.Err()
-
-		case rp.repos = <-rp.repoChan:
-		}
-	})
-	return rp.repos, rp.err
+func (p *Promise) init() {
+	p.initOnce.Do(func() { p.done = make(chan struct{}) })
 }
 
 // Resolve returns a promise that is resolved with a given value.
-func (rp *RepoPromise) Resolve(repos []*RepositoryRevisions) *RepoPromise {
-	rp.closeOnce.Do(func() {
-		rp.repoChan <- repos
-		close(rp.repoChan)
+func (p *Promise) Resolve(v interface{}) *Promise {
+	p.valueOnce.Do(func() {
+		p.init()
+		p.value = v
+		close(p.done)
 	})
-	return rp
+	return p
+}
+
+// Get returns the value. It blocks until the promise resolves or the context is
+// canceled. Further calls to Get will always return the original results, IE err
+// will stay nil even if the context expired between the first and the second
+// call.
+func (p *Promise) Get(ctx context.Context) (interface{}, error) {
+	p.getOnce.Do(func() {
+		p.init()
+		select {
+		case <-ctx.Done():
+			p.err = ctx.Err()
+		case <-p.done:
+		}
+	})
+	return p.value, p.err
 }
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
@@ -131,7 +126,7 @@ type TextParameters struct {
 
 	// Performance optimization: For global queries, resolving repositories and
 	// querying zoekt happens concurrently.
-	RepoPromise *RepoPromise
+	RepoPromise *Promise
 	Mode        GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern

@@ -20,7 +20,7 @@ func repoRev(revSpec string) *RepositoryRevisions {
 
 func TestRepoPromise(t *testing.T) {
 	in := []*RepositoryRevisions{repoRev("HEAD")}
-	rp := NewRepoPromise().Resolve(in)
+	rp := (&Promise{}).Resolve(in)
 	out, err := rp.Get(context.Background())
 	if err != nil {
 		t.Fatal("error should have been nil, because we supplied a context.Background()")
@@ -31,7 +31,7 @@ func TestRepoPromise(t *testing.T) {
 }
 
 func TestRepoPromiseWithCancel(t *testing.T) {
-	rp := NewRepoPromise()
+	rp := Promise{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := rp.Get(ctx)
@@ -43,7 +43,7 @@ func TestRepoPromiseWithCancel(t *testing.T) {
 func TestRepoPromiseConcurrent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	in := []*RepositoryRevisions{repoRev("HEAD")}
-	rp := NewRepoPromise()
+	rp := Promise{}
 	go func() {
 		rp.Resolve(in)
 	}()

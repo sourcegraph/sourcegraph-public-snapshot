@@ -595,7 +595,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return nil, common, searchErr
 	}
 
-	repos, err := args.RepoPromise.Get(ctx)
+	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, common, err
 	}

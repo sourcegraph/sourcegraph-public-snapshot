@@ -90,7 +90,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	repos, err := args.RepoPromise.Get(ctx)
+	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, err
 	}
@@ -394,10 +394,11 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		for _, file := range resp.Files {
 			m[file.Repository] = nil
 		}
-		repos, err := args.RepoPromise.Get(ctx)
+		repos, err := getRepos(ctx, args.RepoPromise)
 		if err != nil {
 			return nil, false, nil, err
 		}
+
 		for _, repo := range repos {
 			if _, ok := m[string(repo.Repo.Name)]; !ok {
 				continue

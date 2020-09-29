@@ -51,7 +51,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		return mockSearchSymbols(ctx, args, limit)
 	}
 
-	repos, err := args.RepoPromise.Get(ctx)
+	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, err
 	}
