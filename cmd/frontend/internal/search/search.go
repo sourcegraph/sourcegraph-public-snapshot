@@ -19,7 +19,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	args, err := parseQuery(r.URL.Query())
+	args, err := parseURLQuery(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -127,7 +127,7 @@ type args struct {
 	VersionContext string
 }
 
-func parseQuery(q url.Values) (*args, error) {
+func parseURLQuery(q url.Values) (*args, error) {
 	get := func(k, def string) string {
 		v := q.Get(k)
 		if v == "" {
