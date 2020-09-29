@@ -39,42 +39,60 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
 
     public render(): JSX.Element | null {
         if (this.state.submitOrError === null) {
-            return <div className="alert alert-success">Password reset email sent.</div>
+            return (
+                <>
+                    <div className="reset-password-page__form signin-signup-form border rounded p-4 mb-3">
+                        <p className="text-left mb-0">Check your email for a link to reset your password.</p>
+                    </div>
+                    <span className="form-text text-muted">
+                        <Link to="/sign-in">Return to sign in</Link>
+                    </span>
+                </>
+            )
         }
 
         return (
-            <Form className="reset-password-page__form" onSubmit={this.handleSubmitResetPasswordInit}>
-                <p>Enter your account email address and we will send you a password reset link</p>
-                <div className="form-group">
-                    <input
-                        className="form-control"
-                        onChange={this.onEmailFieldChange}
-                        value={this.state.email}
-                        type="email"
-                        name="email"
-                        autoFocus={true}
-                        spellCheck={false}
-                        placeholder="Email"
-                        required={true}
-                        autoComplete="email"
-                        disabled={this.state.submitOrError === 'loading'}
-                    />
-                </div>
-                <button
-                    className="btn btn-primary btn-block"
-                    type="submit"
-                    disabled={this.state.submitOrError === 'loading'}
-                >
-                    Send reset password link
-                </button>
-                <small className="form-text text-muted">
-                    <Link to="/sign-in">Return to sign in</Link>
-                </small>
-                {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
+            <>
                 {isErrorLike(this.state.submitOrError) && (
                     <ErrorAlert className="mt-2" error={this.state.submitOrError} history={this.props.history} />
                 )}
-            </Form>
+                <Form
+                    className="reset-password-page__form signin-signup-form border rounded p-4 mb-3"
+                    onSubmit={this.handleSubmitResetPasswordInit}
+                >
+                    <p className="text-left">
+                        Enter your account email address and we will send you a password reset link
+                    </p>
+                    <div className="form-group">
+                        <input
+                            className="form-control"
+                            onChange={this.onEmailFieldChange}
+                            value={this.state.email}
+                            type="email"
+                            name="email"
+                            autoFocus={true}
+                            spellCheck={false}
+                            required={true}
+                            autoComplete="email"
+                            disabled={this.state.submitOrError === 'loading'}
+                        />
+                    </div>
+                    <button
+                        className="btn btn-primary btn-block mt-4"
+                        type="submit"
+                        disabled={this.state.submitOrError === 'loading'}
+                    >
+                        {this.state.submitOrError === 'loading' ? (
+                            <LoadingSpinner className="icon-inline" />
+                        ) : (
+                            'Send reset password link'
+                        )}
+                    </button>
+                </Form>
+                <span className="form-text text-muted">
+                    <Link to="/sign-in">Return to sign in</Link>
+                </span>
+            </>
         )
     }
 
@@ -148,31 +166,40 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
         }
 
         return (
-            <Form className="reset-password-page__form" onSubmit={this.handleSubmitResetPassword}>
-                <p>Enter a new password for your account.</p>
-                <div className="form-group">
-                    <PasswordInput
-                        name="password"
-                        onChange={this.onPasswordFieldChange}
-                        value={this.state.password}
-                        required={true}
-                        autoFocus={true}
-                        autoComplete="new-password"
-                        disabled={this.state.submitOrError === 'loading'}
-                    />
-                </div>
-                <button
-                    className="btn btn-primary btn-block"
-                    type="submit"
-                    disabled={this.state.submitOrError === 'loading'}
-                >
-                    Reset password
-                </button>
-                {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
+            <>
                 {isErrorLike(this.state.submitOrError) && (
                     <ErrorAlert className="mt-2" error={this.state.submitOrError} history={this.props.history} />
                 )}
-            </Form>
+                <Form
+                    className="reset-password-page__form signin-signup-form border rounded p-4 mb-3"
+                    onSubmit={this.handleSubmitResetPassword}
+                >
+                    <p className="text-left">Enter a new password for your account.</p>
+                    <div className="form-group">
+                        <PasswordInput
+                            name="password"
+                            onChange={this.onPasswordFieldChange}
+                            value={this.state.password}
+                            required={true}
+                            autoFocus={true}
+                            autoComplete="new-password"
+                            placeholder=" "
+                            disabled={this.state.submitOrError === 'loading'}
+                        />
+                    </div>
+                    <button
+                        className="btn btn-primary btn-block mt-4"
+                        type="submit"
+                        disabled={this.state.submitOrError === 'loading'}
+                    >
+                        {this.state.submitOrError === 'loading' ? (
+                            <LoadingSpinner className="icon-inline" />
+                        ) : (
+                            'Reset password'
+                        )}
+                    </button>
+                </Form>
+            </>
         )
     }
 
@@ -249,13 +276,13 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
 
         return (
             <>
-                <PageTitle title="Reset password" />
+                <PageTitle title="Reset your password" />
                 <HeroPage
                     icon={SourcegraphIcon}
                     iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
                     iconClassName="bg-transparent"
-                    title="Reset password"
-                    cta={body}
+                    title="Reset your password"
+                    body={<div className="web-content mt-4 signin-page__container">{body}</div>}
                 />
             </>
         )

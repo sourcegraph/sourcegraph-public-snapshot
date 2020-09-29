@@ -19,8 +19,9 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Interactive search mode is now disabled by default because the new plain text search input is smarter. To reenable it, add `{ "experimentalFeatures": { "splitSearchModes": true } }` in user settings.
-- The extension registry has been redesigned to make it easier to find useful Sourcegraph extensions.
+- The extension registry has been redesigned to make it easier to find non-default Sourcegraph extensions.
 - Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page. [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153)
+- The sign in and sign up forms have been redesigned with better input validation.
 
 ### Fixed
 
@@ -35,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search scope pages (`/search/scope/:id`) were removed.
 - User-defined search scopes are no longer shown below the search bar on the homepage. Use the [`quicklinks`](https://docs.sourcegraph.com/user/quick_links) setting instead to display links there.
 - The explore page (`/explore`) was removed.
+- The sign out page was removed.
 
 ## 3.20.1
 
