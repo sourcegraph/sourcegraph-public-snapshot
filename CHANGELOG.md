@@ -19,24 +19,24 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Interactive search mode is now disabled by default because the new plain text search input is smarter. To reenable it, add `{ "experimentalFeatures": { "splitSearchModes": true } }` in user settings.
-- The sign-in and sign-up forms have been redesigned with better input validation. [13939](https://github.com/sourcegraph/sourcegraph/pull/13939)
-- The extension registry has been redesigned to make it easier to find useful Sourcegraph extensions. [13699](https://github.com/sourcegraph/sourcegraph/pull/13699)
-
-### Changed
-
-- Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153).
+- The extension registry has been redesigned to make it easier to find non-default Sourcegraph extensions.
+- Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page. [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153)
+- The sign in and sign up forms have been redesigned with better input validation.
 
 ### Fixed
 
 - Usernames set in Slack `observability.alerts` now apply correctly. [#14079](https://github.com/sourcegraph/sourcegraph/pull/14079)
 - Path segments in breadcrumbs get truncated correctly again on small screen sizes instead of inflating the header bar. [#14097](https://github.com/sourcegraph/sourcegraph/pull/14097)
 - GitLab pipelines are now parsed correctly and show their current status in campaign changesets. [#14129](https://github.com/sourcegraph/sourcegraph/pull/14129)
+- Fixed an issue where specifying any repogroups would effectively search all repositories for all repogroups. [#14190](https://github.com/sourcegraph/sourcegraph/pull/14190)
+- Changesets that were previously closed after being detached from a campaign are now reopened when being reattached. [#14099](https://github.com/sourcegraph/sourcegraph/pull/14099)
 
 ### Removed
 
 - Search scope pages (`/search/scope/:id`) were removed.
 - User-defined search scopes are no longer shown below the search bar on the homepage. Use the [`quicklinks`](https://docs.sourcegraph.com/user/quick_links) setting instead to display links there.
 - The explore page (`/explore`) was removed.
+- The sign out page was removed.
 
 ## 3.20.1
 
