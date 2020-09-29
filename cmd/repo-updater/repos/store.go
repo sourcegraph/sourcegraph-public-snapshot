@@ -752,57 +752,21 @@ ORDER BY id ASC LIMIT %s
 	)
 }
 
-var (
-	_ json.Marshaler   = (externalServiceRepos)(nil)
-	_ json.Unmarshaler = (*externalServiceRepos)(nil)
-)
-
-type externalServiceRepos []externalServiceRepo
-
-func (srcs externalServiceRepos) MarshalJSON() ([]byte, error) {
-	var err error
-	for _, src := range srcs {
-		src.CloneURL, err = secret.Encrypt(src.CloneURL)
-		if err != nil {
-			return nil, errors.Wrapf(err, "encrypt %q", src.CloneURL)
-		}
-	}
-
-	return json.Marshal([]externalServiceRepo(srcs))
-}
-
-func (srcs *externalServiceRepos) UnmarshalJSON(bytes []byte) error {
-	var rawSrcs []externalServiceRepo
-	err := json.Unmarshal(bytes, &rawSrcs)
-	if err != nil {
-		return err
-	}
-
-	for i := range rawSrcs {
-		rawSrcs[i].CloneURL, err = secret.Decrypt(rawSrcs[i].CloneURL)
-		if err != nil {
-			return errors.Wrapf(err, "decrypt %q", rawSrcs[i].CloneURL)
-		}
-	}
-	*srcs = rawSrcs
-	return nil
-}
-
 type externalServiceRepo struct {
-	ExternalServiceID int64  `json:"external_service_id"`
-	RepoID            int64  `json:"repo_id"`
-	CloneURL          string `json:"clone_url"`
+	ExternalServiceID int64              `json:"external_service_id"`
+	RepoID            int64              `json:"repo_id"`
+	CloneURL          secret.StringValue `json:"clone_url"`
 }
 
 func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
 	marshalSourceList := func(sources map[api.RepoID][]SourceInfo) ([]byte, error) {
-		srcs := make(externalServiceRepos, 0, len(sources))
+		srcs := make([]externalServiceRepo, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
 				srcs = append(srcs, externalServiceRepo{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          info.CloneURL,
+					CloneURL:          secret.StringValue{S: &info.CloneURL},
 				})
 			}
 		}
@@ -1265,12 +1229,12 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 }
 
 func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawMessage, error) {
-	var records externalServiceRepos
+	var records []externalServiceRepo
 	for _, src := range sources {
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          src.CloneURL,
+			CloneURL:          secret.StringValue{S: &src.CloneURL},
 		})
 	}
 
@@ -1322,45 +1286,9 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 	)
 }
 
-var (
-	_ json.Marshaler   = (externalServiceRepos)(nil)
-	_ json.Unmarshaler = (*externalServiceRepos)(nil)
-)
-
-type sourceInfos []sourceInfo
-
-func (srcs sourceInfos) MarshalJSON() ([]byte, error) {
-	var err error
-	for _, src := range srcs {
-		src.CloneURL, err = secret.Encrypt(src.CloneURL)
-		if err != nil {
-			return nil, errors.Wrapf(err, "encrypt %q", src.CloneURL)
-		}
-	}
-
-	return json.Marshal([]sourceInfo(srcs))
-}
-
-func (srcs *sourceInfos) UnmarshalJSON(bytes []byte) error {
-	var rawSrcs []sourceInfo
-	err := json.Unmarshal(bytes, &rawSrcs)
-	if err != nil {
-		return err
-	}
-
-	for i := range rawSrcs {
-		rawSrcs[i].CloneURL, err = secret.Decrypt(rawSrcs[i].CloneURL)
-		if err != nil {
-			return errors.Wrapf(err, "decrypt %q", rawSrcs[i].CloneURL)
-		}
-	}
-	*srcs = rawSrcs
-	return nil
-}
-
 type sourceInfo struct {
 	ID       int64
-	CloneURL string
+	CloneURL secret.StringValue
 	Kind     string
 }
 
@@ -1393,7 +1321,7 @@ func scanRepo(r *Repo, s scanner) error {
 	r.Sources = make(map[string]*SourceInfo)
 
 	if sources.Raw != nil {
-		var srcs sourceInfos
+		var srcs []sourceInfo
 		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
 			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
 		}
@@ -1401,7 +1329,7 @@ func scanRepo(r *Repo, s scanner) error {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &SourceInfo{
 				ID:       urn,
-				CloneURL: src.CloneURL,
+				CloneURL: *src.CloneURL.S,
 			}
 		}
 	}
