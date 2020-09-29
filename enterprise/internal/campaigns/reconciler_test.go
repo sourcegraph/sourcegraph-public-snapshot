@@ -487,6 +487,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:    githubPR.HeadRefName,
 				externalState:     campaigns.ChangesetExternalStateClosed,
 				createdByCampaign: true,
+				closing:           false,
 			},
 			// We return the open GitHub PR here
 			sourcerMetadata: githubPR,
@@ -530,6 +531,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:    githubPR.HeadRefName,
 				externalState:     campaigns.ChangesetExternalStateClosed,
 				createdByCampaign: true,
+				closing:           false,
 			},
 			sourcerMetadata: githubPR,
 
