@@ -13,6 +13,8 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { ExternalLinkFields } from '../../graphql-operations'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: GQL.IRepository | null
@@ -135,12 +137,17 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             }
         }
 
+        function logEvent(): void {
+            eventLogger.log('GoToCodeHostClicked', { codeHost: displayName })
+        }
+
         return (
             <LinkOrButton
                 className="nav-link test-go-to-code-host"
                 to={url}
                 target="_self"
                 data-tooltip={`View on ${displayName}`}
+                onSelect={logEvent}
             >
                 <Icon className="icon-inline" />
             </LinkOrButton>
@@ -155,7 +162,7 @@ function serviceTypeDisplayNameAndIcon(
         case 'github':
             return { displayName: 'GitHub', icon: GithubIcon }
         case 'gitlab':
-            return { displayName: 'GitLab' }
+            return { displayName: 'GitLab', icon: GitlabIcon }
         case 'bitbucketServer':
             // TODO: Why is bitbucketServer (correctly) camelCase but
             // awscodecommit is (correctly) lowercase? Why is serviceType

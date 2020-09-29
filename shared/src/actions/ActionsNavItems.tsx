@@ -54,7 +54,7 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
-    private extraContextChanges = new Subject<Context<any> | undefined>()
+    private extraContextChanges = new Subject<Context | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
