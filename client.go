@@ -70,7 +70,7 @@ func (s *client) search(ctx context.Context, queryString string) (*result, *metr
 	case 200:
 		break
 	default:
-		return nil, nil, fmt.Errorf("Unexpected status code", resp.StatusCode)
+		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	m.trace = resp.Header.Get("x-trace")

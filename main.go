@@ -42,14 +42,13 @@ OUTER:
 		for group, queries := range groupsOfQueries {
 			log15.Info("new group", "group", group)
 			for _, query := range queries {
-				func(ctx context.Context, query string) {
-					_, m, err := c.search(ctx, query)
-					if err != nil {
-						log15.Error(err.Error())
-					}
-					log15.Info("metrics", "group", group, "query", query, "trace", m.trace, "duration_ms", m.took)
-					durationSearchHistogram.WithLabelValues(group).Observe(float64(m.took))
-				}(ctx, query)
+				_, m, err := c.search(ctx, query)
+				if err != nil {
+					log15.Error(err.Error())
+					continue
+				}
+				log15.Info("metrics", "group", group, "query", query, "trace", m.trace, "duration_ms", m.took)
+				durationSearchHistogram.WithLabelValues(group).Observe(float64(m.took))
 			}
 		}
 		select {
