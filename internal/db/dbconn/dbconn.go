@@ -176,7 +176,7 @@ func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (c
 	)
 	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
 		for i, arg := range args {
-			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%q", arg))
+			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%v", arg))
 		}
 	}))
 
