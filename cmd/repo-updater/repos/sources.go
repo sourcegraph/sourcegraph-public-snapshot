@@ -114,6 +114,9 @@ type ChangesetSource interface {
 	CloseChangeset(context.Context, *Changeset) error
 	// UpdateChangeset can update Changesets.
 	UpdateChangeset(context.Context, *Changeset) error
+	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
+	// If not, it's a noop.
+	ReopenChangeset(context.Context, *Changeset) error
 }
 
 // ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
