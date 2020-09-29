@@ -1235,6 +1235,8 @@ github.com/sourcegraph/go-diff v0.5.3 h1:lhIKJ2nXLZZ+AfbHpYxTn0pXpNTTui0DX7DO3xe
 github.com/sourcegraph/go-diff v0.5.3/go.mod h1:v9JDtjCE4HHHCZGId75rg8gkKKa98RVjBcBGsVmMmak=
 github.com/sourcegraph/go-diff v0.6.0 h1:WbN9e/jD8ujU+o0vd9IFN5AEwtfB0rn/zM/AANaClqQ=
 github.com/sourcegraph/go-diff v0.6.0/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
+github.com/sourcegraph/go-diff v0.6.1 h1:hmA1LzxW0n1c3Q4YbrFgg4P99GSnebYa3x8gr0HZqLQ=
+github.com/sourcegraph/go-diff v0.6.1/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
 github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28 h1:V0lV1kvLC6Znybs6pQbaNpBNhoUbAIneg2QsGjwurBI=
 github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28/go.mod h1:SJwWIH9fe2RW2FouXEXM4Cm4ZczlewF2xNQAL2VaU1M=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible h1:EX1bSaIbVia2U/Pt/2Z62y8wJS4Z4iNiK5VCeUKuBx8=
