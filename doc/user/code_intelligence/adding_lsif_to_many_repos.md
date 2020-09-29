@@ -14,6 +14,10 @@
 
 ## Directions
 
+Watch the video or follow the written directions below:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/tfk3nwvltAw" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 1. Generate an access token for your Sourcegraph instance. The access token does
    NOT need `sudo` privileges, but should have permission to read every
    repository for which LSIF should be enabled.

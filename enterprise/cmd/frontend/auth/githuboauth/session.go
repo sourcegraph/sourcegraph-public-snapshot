@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"strconv"
 	"strings"
 
@@ -176,16 +174,4 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	}
 
 	return false
-}
-
-func SignOutURL(githubURL string) (string, error) {
-	if githubURL == "" {
-		githubURL = "https://github.com"
-	}
-	ghURL, err := url.Parse(githubURL)
-	if err != nil {
-		return "", err
-	}
-	ghURL.Path = path.Join(ghURL.Path, "logout")
-	return ghURL.String(), nil
 }

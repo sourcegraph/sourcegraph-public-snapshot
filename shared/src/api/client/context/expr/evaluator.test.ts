@@ -1,14 +1,14 @@
+import { Context } from '../context'
 import { parse, parseTemplate } from './evaluator'
 
-const FIXTURE_CONTEXT = new Map<string, any>(
-    Object.entries({
-        a: 1,
-        b: 1,
-        c: 2,
-        x: 'y',
-        o: { k: 'v' },
-    })
-)
+const FIXTURE_CONTEXT: Context = {
+    a: 1,
+    b: 1,
+    c: 2,
+    x: 'y',
+    o: { k: 'v' },
+    array: [7],
+}
 
 describe('Expression', () => {
     /* eslint-disable no-template-curly-in-string */
@@ -39,6 +39,8 @@ describe('Expression', () => {
         '`_${x}_${a}_${a+b}`': '_y_1_2',
         '`_${`-${x}-`}_`': '_-y-_',
         'a || isnotdefined': 1, // short-circuit (if not, the use of an undefined ident would cause an error)
+        'get(array, 0)': 7,
+        'get(array, 1)': undefined, // out-of-bounds array index is undefined
     }
     /* eslint-enable no-template-curly-in-string */
     for (const [expression, want] of Object.entries(TESTS)) {
