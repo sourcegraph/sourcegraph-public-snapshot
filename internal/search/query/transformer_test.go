@@ -278,21 +278,62 @@ func TestEllipsesForHoles(t *testing.T) {
 func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	cases := []struct {
 		input      string
+		want       string
 		wantLabels labels
 	}{
 		{
 			input:      "func()",
-			wantLabels: HeuristicParensAsPatterns | Literal,
+			want:       `"func\\(\\)"`,
+			wantLabels: Regexp,
 		},
 		{
 			input:      "func(.*)",
+			want:       `"func(.*)"`,
 			wantLabels: Regexp,
+		},
+		{
+			input:      `(search\()`,
+			want:       `"(search\\()"`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `()search\(()`,
+			want:       `"\\(\\)search\\(\\(\\)"`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `search\(`,
+			want:       `"search\\("`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `\`,
+			want:       `"\\"`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `search(`,
+			want:       `"search\\("`,
+			wantLabels: Regexp | HeuristicDanglingParens,
+		},
+		{
+			input:      `"search("`,
+			want:       `"search("`,
+			wantLabels: Quoted | Literal,
+		},
+		{
+			input:      `"search()"`,
+			want:       `"search()"`,
+			wantLabels: Quoted | Literal,
 		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := EmptyGroupsToLiteral(query)[0].(Pattern)
+			got := escapeParensHeuristic(query)[0].(Pattern)
+			if diff := cmp.Diff(c.want, prettyPrint([]Node{got})); diff != "" {
+				t.Error(diff)
+			}
 			if diff := cmp.Diff(c.wantLabels, got.Annotation.Labels); diff != "" {
 				t.Fatal(diff)
 			}

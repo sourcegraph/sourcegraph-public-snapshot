@@ -13,6 +13,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -83,7 +84,13 @@ func containsRefGlobs(q query.QueryInfo) bool {
 	return containsRefGlobs
 }
 
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (_ *indexedSearchRequest, err error) {
+	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
 	if index, _ := args.Query.StringValues(query.FieldIndex); len(index) > 0 {
@@ -151,8 +158,15 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}, ctx.Err()
 	}
 
+	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
+
 	// Split based on indexed vs unindexed
 	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+
+	tr.LogFields(
+		log.Int("indexed.size", len(indexed.repoRevs)),
+		log.Int("searcher_repos.size", len(searcherRepos)),
+	)
 
 	// We do not yet support searching non-HEAD for fileRequest (structural
 	// search).

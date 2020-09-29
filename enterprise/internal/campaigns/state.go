@@ -405,9 +405,9 @@ func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.Changeset
 	switch status {
 	case gitlab.PipelineStatusSuccess:
 		return campaigns.ChangesetCheckStatePassed
-	case gitlab.PipelineStatusFailed:
+	case gitlab.PipelineStatusFailed, gitlab.PipelineStatusCanceled:
 		return campaigns.ChangesetCheckStateFailed
-	case gitlab.PipelineStatusPending:
+	case gitlab.PipelineStatusPending, gitlab.PipelineStatusRunning, gitlab.PipelineStatusCreated:
 		return campaigns.ChangesetCheckStatePending
 	default:
 		return campaigns.ChangesetCheckStateUnknown

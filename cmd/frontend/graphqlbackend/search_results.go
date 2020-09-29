@@ -1497,13 +1497,193 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 	return resultTypes, nil
 }
 
+type aggregator struct {
+	resultsMu sync.Mutex
+	results   []SearchResultResolver
+
+	commonMu sync.Mutex
+	common   searchResultsCommon
+
+	multiErrMu sync.Mutex
+	multiErr   *multierror.Error
+
+	// fileMatches is a map from git:// URI of the file to FileMatch resolver
+	// to merge multiple results of different types for the same file
+	fileMatchesMu sync.Mutex
+	fileMatches   map[string]*FileMatchResolver
+}
+
+func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
+	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErrMu.Lock()
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
+		a.multiErrMu.Unlock()
+	}
+	if repoResults != nil {
+		a.resultsMu.Lock()
+		a.results = append(a.results, repoResults...)
+		a.resultsMu.Unlock()
+	}
+	if repoCommon != nil {
+		a.commonMu.Lock()
+		a.common.update(*repoCommon)
+		a.commonMu.Unlock()
+	}
+}
+func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
+	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErrMu.Lock()
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "symbol search failed"))
+		a.multiErrMu.Unlock()
+	}
+	for _, symbolFileMatch := range symbolFileMatches {
+		key := symbolFileMatch.uri
+		a.fileMatchesMu.Lock()
+		if m, ok := a.fileMatches[key]; ok {
+			m.symbols = symbolFileMatch.symbols
+		} else {
+			a.fileMatches[key] = symbolFileMatch
+			a.resultsMu.Lock()
+			a.results = append(a.results, symbolFileMatch)
+			a.resultsMu.Unlock()
+		}
+		a.fileMatchesMu.Unlock()
+	}
+	if symbolsCommon != nil {
+		a.commonMu.Lock()
+		a.common.update(*symbolsCommon)
+		a.commonMu.Unlock()
+	}
+}
+func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
+	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErrMu.Lock()
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "text search failed"))
+		a.multiErrMu.Unlock()
+	}
+	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
+		// No results for structural search? Automatically search again and force Zoekt
+		// to resolve more potential file matches by setting a higher FileMatchLimit.
+		args.PatternInfo.FileMatchLimit = 1000
+		fileResults, fileCommon, err = searchFilesInRepos(ctx, args)
+		if len(fileResults) == 0 {
+			// Still no results? Give up.
+			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			if fileCommon != nil {
+				fileCommon.limitHit = false // Ensure we don't display "Show more".
+			}
+		}
+	}
+	for _, r := range fileResults {
+		key := r.uri
+		a.fileMatchesMu.Lock()
+		m, ok := a.fileMatches[key]
+		if ok {
+			// TODO(keegan) This looks broken? It isn't merging.
+			// merge line match results with an existing symbol result
+			m.JLimitHit = m.JLimitHit || r.JLimitHit
+			m.JLineMatches = r.JLineMatches
+		} else {
+			a.fileMatches[key] = r
+			a.resultsMu.Lock()
+			a.results = append(a.results, r)
+			a.resultsMu.Unlock()
+		}
+		a.fileMatchesMu.Unlock()
+	}
+	if fileCommon != nil {
+		a.commonMu.Lock()
+		a.common.update(*fileCommon)
+		a.commonMu.Unlock()
+	}
+}
+
+func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
+	old := tp.PatternInfo
+	patternInfo := &search.CommitPatternInfo{
+		Pattern:                      old.Pattern,
+		IsRegExp:                     old.IsRegExp,
+		IsCaseSensitive:              old.IsCaseSensitive,
+		FileMatchLimit:               old.FileMatchLimit,
+		IncludePatterns:              old.IncludePatterns,
+		ExcludePattern:               old.ExcludePattern,
+		PathPatternsAreRegExps:       true,
+		PathPatternsAreCaseSensitive: tp.PatternInfo.PathPatternsAreCaseSensitive,
+	}
+	args := search.TextParametersForCommitParameters{
+		PatternInfo: patternInfo,
+		Repos:       tp.Repos,
+		Query:       tp.Query,
+	}
+	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErrMu.Lock()
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "diff search failed"))
+		a.multiErrMu.Unlock()
+	}
+	if diffResults != nil {
+		a.resultsMu.Lock()
+		a.results = append(a.results, diffResults...)
+		a.resultsMu.Unlock()
+	}
+	if diffCommon != nil {
+		a.commonMu.Lock()
+		a.common.update(*diffCommon)
+		a.commonMu.Unlock()
+	}
+}
+
+func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
+	old := tp.PatternInfo
+	patternInfo := &search.CommitPatternInfo{
+		Pattern:                      old.Pattern,
+		IsRegExp:                     old.IsRegExp,
+		IsCaseSensitive:              old.IsCaseSensitive,
+		FileMatchLimit:               old.FileMatchLimit,
+		IncludePatterns:              old.IncludePatterns,
+		ExcludePattern:               old.ExcludePattern,
+		PathPatternsAreRegExps:       true,
+		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+	}
+	args := search.TextParametersForCommitParameters{
+		PatternInfo: patternInfo,
+		Repos:       tp.Repos,
+		Query:       tp.Query,
+	}
+	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErrMu.Lock()
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "commit search failed"))
+		a.multiErrMu.Unlock()
+	}
+	if commitResults != nil {
+		a.resultsMu.Lock()
+		a.results = append(a.results, commitResults...)
+		a.resultsMu.Unlock()
+	}
+	if commitCommon != nil {
+		a.commonMu.Lock()
+		a.common.update(*commitCommon)
+		a.commonMu.Unlock()
+	}
+}
+
 // doResults is one of the highest level search functions that handles finding results.
 //
 // If forceOnlyResultType is specified, only results of the given type are returned,
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *SearchResultsResolver, err error) {
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (*SearchResultsResolver, error) {
+	var err error
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1570,16 +1750,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
-		results    []SearchResultResolver
-		resultsMu  sync.Mutex
-		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
-		commonMu   sync.Mutex
-		multiErr   *multierror.Error
-		multiErrMu sync.Mutex
-		// fileMatches is a map from git:// URI of the file to FileMatch resolver
-		// to merge multiple results of different types for the same file
-		fileMatches   = make(map[string]*FileMatchResolver)
-		fileMatchesMu sync.Mutex
 		// Alert is a potential alert shown to the user.
 		alert           *searchAlert
 		seenResultTypes = make(map[string]struct{})
@@ -1596,7 +1766,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	common.excluded = resolved.excludedRepos
+	agg := aggregator{
+		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
+		fileMatches: make(map[string]*FileMatchResolver),
+	}
+	agg.common.excluded = resolved.excludedRepos
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
@@ -1612,61 +1786,18 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
 		case "repo":
-			// Search for repos
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-
-				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.maxResults())
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "repository search failed"))
-					multiErrMu.Unlock()
-				}
-				if repoResults != nil {
-					resultsMu.Lock()
-					results = append(results, repoResults...)
-					resultsMu.Unlock()
-				}
-				if repoCommon != nil {
-					commonMu.Lock()
-					common.update(*repoCommon)
-					commonMu.Unlock()
-				}
+				agg.doRepoSearch(ctx, &args, r.maxResults())
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-
-				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, int(r.maxResults()))
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "symbol search failed"))
-					multiErrMu.Unlock()
-				}
-				for _, symbolFileMatch := range symbolFileMatches {
-					key := symbolFileMatch.uri
-					fileMatchesMu.Lock()
-					if m, ok := fileMatches[key]; ok {
-						m.symbols = symbolFileMatch.symbols
-					} else {
-						fileMatches[key] = symbolFileMatch
-						resultsMu.Lock()
-						results = append(results, symbolFileMatch)
-						resultsMu.Unlock()
-					}
-					fileMatchesMu.Unlock()
-				}
-				if symbolsCommon != nil {
-					commonMu.Lock()
-					common.update(*symbolsCommon)
-					commonMu.Unlock()
-				}
+				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {
@@ -1678,128 +1809,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-
-				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
-					multiErrMu.Unlock()
-				}
-				if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
-					// No results for structural search? Automatically search again and force Zoekt to resolve
-					// more potential file matches by setting a higher FileMatchLimit.
-					args.PatternInfo.FileMatchLimit = 1000
-					fileResults, fileCommon, err = searchFilesInRepos(ctx, &args)
-					if len(fileResults) == 0 {
-						// Still no results? Give up.
-						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-						if fileCommon != nil {
-							fileCommon.limitHit = false // Ensure we don't display "Show more".
-						}
-					}
-				}
-				for _, r := range fileResults {
-					key := r.uri
-					fileMatchesMu.Lock()
-					m, ok := fileMatches[key]
-					if ok {
-						// TODO(keegan) This looks broken? It isn't merging.
-						// merge line match results with an existing symbol result
-						m.JLimitHit = m.JLimitHit || r.JLimitHit
-						m.JLineMatches = r.JLineMatches
-					} else {
-						fileMatches[key] = r
-						resultsMu.Lock()
-						results = append(results, r)
-						resultsMu.Unlock()
-					}
-					fileMatchesMu.Unlock()
-				}
-				if fileCommon != nil {
-					commonMu.Lock()
-					common.update(*fileCommon)
-					commonMu.Unlock()
-				}
+				agg.doFilePathSearch(ctx, &args)
 			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				old := args.PatternInfo
-				patternInfo := &search.CommitPatternInfo{
-					Pattern:                      old.Pattern,
-					IsRegExp:                     old.IsRegExp,
-					IsCaseSensitive:              old.IsCaseSensitive,
-					FileMatchLimit:               old.FileMatchLimit,
-					IncludePatterns:              old.IncludePatterns,
-					ExcludePattern:               old.ExcludePattern,
-					PathPatternsAreRegExps:       true,
-					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-				}
-				args := search.TextParametersForCommitParameters{
-					PatternInfo: patternInfo,
-					Repos:       args.Repos,
-					Query:       args.Query,
-				}
-				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "diff search failed"))
-					multiErrMu.Unlock()
-				}
-				if diffResults != nil {
-					resultsMu.Lock()
-					results = append(results, diffResults...)
-					resultsMu.Unlock()
-				}
-				if diffCommon != nil {
-					commonMu.Lock()
-					common.update(*diffCommon)
-					commonMu.Unlock()
-				}
+				agg.doDiffSearch(ctx, &args)
 			})
 		case "commit":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-
-				old := args.PatternInfo
-				patternInfo := &search.CommitPatternInfo{
-					Pattern:                      old.Pattern,
-					IsRegExp:                     old.IsRegExp,
-					IsCaseSensitive:              old.IsCaseSensitive,
-					FileMatchLimit:               old.FileMatchLimit,
-					IncludePatterns:              old.IncludePatterns,
-					ExcludePattern:               old.ExcludePattern,
-					PathPatternsAreRegExps:       true,
-					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
-				}
-				args := search.TextParametersForCommitParameters{
-					PatternInfo: patternInfo,
-					Repos:       args.Repos,
-					Query:       args.Query,
-				}
-				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "commit search failed"))
-					multiErrMu.Unlock()
-				}
-				if commitResults != nil {
-					resultsMu.Lock()
-					results = append(results, commitResults...)
-					resultsMu.Unlock()
-				}
-				if commitCommon != nil {
-					commonMu.Lock()
-					common.update(*commitCommon)
-					commonMu.Unlock()
-				}
+				agg.doCommitSearch(ctx, &args)
 			})
 		}
 	}
@@ -1819,20 +1843,20 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	timer.Stop()
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(results),
-		common.limitHit,
-		len(common.cloning),
-		len(common.missing),
-		common.excluded.forks,
-		common.excluded.archived,
-		len(common.timedout))
+		len(agg.results),
+		agg.common.limitHit,
+		len(agg.common.cloning),
+		len(agg.common.missing),
+		agg.common.excluded.forks,
+		agg.common.excluded.archived,
+		len(agg.common.timedout))
 
-	multiErr, newAlert := alertForStructuralSearch(multiErr)
+	multiErr, newAlert := alertForStructuralSearch(agg.multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}
 
-	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+	if len(agg.results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
@@ -1840,23 +1864,23 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
+	if len(agg.results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
 		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 
 	// If we have some results, only log the error instead of returning it,
 	// because otherwise the client would not receive the partial results
-	if len(results) > 0 && multiErr != nil {
+	if len(agg.results) > 0 && multiErr != nil {
 		log15.Error("Errors during search", "error", multiErr)
 		multiErr = nil
 	}
 
-	r.sortResults(ctx, results)
+	r.sortResults(ctx, agg.results)
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
-		searchResultsCommon: common,
-		SearchResults:       results,
+		searchResultsCommon: agg.common,
+		SearchResults:       agg.results,
 		alert:               alert,
 	}
 

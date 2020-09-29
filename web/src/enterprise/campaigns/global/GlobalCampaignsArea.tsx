@@ -86,9 +86,9 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
         )
     )
     return (
-        <div className="w-100 web-content">
+        <div className="w-100">
             <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
-            <div className="container">
+            <div className="container web-content">
                 {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
                     <Route
@@ -128,9 +128,9 @@ export const UserCampaignsArea = withAuthenticatedUser<
         return <></>
     }
     return (
-        <div className="w-100 web-content">
+        <div className="w-100">
             <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
-            <div className="container">
+            <div className="container web-content">
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
                     <Route
@@ -204,9 +204,9 @@ export const OrgCampaignsArea = withAuthenticatedUser<OrgCampaignsAreaProps & { 
             return <></>
         }
         return (
-            <div className="w-100 web-content">
+            <div className="w-100">
                 <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
-                <div className="container">
+                <div className="container web-content">
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         <Route

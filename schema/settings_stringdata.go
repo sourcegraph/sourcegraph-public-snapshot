@@ -20,7 +20,7 @@ const SettingsSchemaJSON = `{
         "splitSearchModes": {
           "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": { "pointer": true }
         },
         "codeInsights": {
@@ -123,7 +123,7 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.repositoryGroups": {
-      "description": "Named groups of repositories that can be referenced in a search query using the ` + "`" + `repogroup:` + "`" + ` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression).",
+      "description": "Named groups of repositories that can be referenced in a search query using the ` + "`" + `repogroup:` + "`" + ` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -244,10 +244,6 @@ const SettingsSchemaJSON = `{
       "additionalProperties": false,
       "required": ["name", "value"],
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
-        },
         "name": {
           "type": "string",
           "description": "The human-readable name for this search scope"
@@ -255,10 +251,6 @@ const SettingsSchemaJSON = `{
         "value": {
           "type": "string",
           "description": "The query string of this search scope"
-        },
-        "description": {
-          "type": "string",
-          "description": "A description for this search scope"
         }
       }
     },

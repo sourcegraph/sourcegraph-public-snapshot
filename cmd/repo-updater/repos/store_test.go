@@ -1203,7 +1203,7 @@ func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
 				Cloned: false,
 				ExternalRepo: api.ExternalRepoSpec{
-					ID:          fmt.Sprintf("%d", i),
+					ID:          strconv.Itoa(i),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "http://github.com",
 				},
@@ -1317,7 +1317,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store repos.Store) func(*testing
 				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
 				Cloned: false,
 				ExternalRepo: api.ExternalRepoSpec{
-					ID:          fmt.Sprintf("%d", i),
+					ID:          strconv.Itoa(i),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "http://github.com",
 				},

@@ -36,7 +36,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           className="list-inline-item mb-2 small"
         >
           <a
-            className="rounded border p-1"
+            className="rounded border p-1 btm-sm btn-outline extension-area-link"
             href="/extensions?query=category%3AOther"
             onClick={[Function]}
           >
@@ -47,7 +47,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           className="list-inline-item mb-2 small"
         >
           <a
-            className="rounded border p-1"
+            className="rounded border p-1 btm-sm btn-outline extension-area-link"
             href="/extensions?query=category%3A%22Programming+languages%22"
             onClick={[Function]}
           >
@@ -71,7 +71,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           className="list-inline-item mb-2 small"
         >
           <a
-            className="rounded border p-1"
+            className="rounded border p-1 btn-outline btn-sm extension-area-link"
             href="/extensions?query=tag%3AT1"
             onClick={[Function]}
           >
@@ -82,7 +82,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           className="list-inline-item mb-2 small"
         >
           <a
-            className="rounded border p-1"
+            className="rounded border p-1 btn-outline btn-sm extension-area-link"
             href="/extensions?query=tag%3AT2"
             onClick={[Function]}
           >

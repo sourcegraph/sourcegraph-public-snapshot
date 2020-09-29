@@ -366,12 +366,13 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             <TooltipPopoverWrapper
                 isOpen={isOpen}
                 toggle={toggleIsOpen}
-                popperClassName={classNames('show', popoverClassName)}
+                popperClassName={popoverClassName}
                 innerClassName={classNames('popover-inner', popoverInnerClassName)}
                 placement="bottom-end"
                 target={id}
                 trigger="legacy"
                 delay={0}
+                fade={false}
                 hideArrow={true}
             >
                 <CommandList {...props} onSelect={close} />

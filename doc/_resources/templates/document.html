@@ -4,11 +4,12 @@
     {{if (or (not .Content) .ContentVersion)}}
         <meta name="robots" content="noindex">
     {{end}}
+    {{with .Content}}<link ref="canonical" href="https://docs.sourcegraph.com/{{.Path}}">{{end}}
 {{end}}
 
 {{define "versionSelector"}}
     <div id="version-selector" class="dropdown version-dropdown ml-2">
-        {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.18.0"}} {{$previousReleaseVersion := "3.18"}} {{$currentReleaseRevspec := "v3.19.2"}} {{$currentReleaseVersion := "3.19"}} {{$nextReleaseVersion := "main"}}
+        {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.19.2"}} {{$previousReleaseVersion := "3.19"}} {{$currentReleaseRevspec := "v3.20.1"}} {{$currentReleaseVersion := "3.20"}} {{$nextReleaseVersion := "main"}}
         <button class="btn btn-outline dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           {{.ContentVersion}}{{/* If no version is specified we are on the currentReleaseVersion */}}{{if eq .ContentVersion ""}}{{$currentReleaseVersion}}{{end}}
         </button>
@@ -97,6 +98,7 @@
                                     <li><a href="/user/code_intelligence/adding_lsif_to_workflows">Adding LSIF to workflows</a></li>
                                     <li><a href="/user/code_intelligence/languages">Language-specific guides</a></li>
                                     <li><a href="/user/code_intelligence/writing_an_indexer">Writing an indexer</a></li>
+                                    <li><a href="/user/code_intelligence/adding_lsif_to_many_repos">Tutorial: Adding LSIF to many repositories</a></li>
                                 </ul>
                             </li>
                             <li><a href="/user/search">Code Search</a></li>
@@ -153,6 +155,7 @@
                                     </li>
                                     <li><a href="/admin/install/kubernetes">Installing Sourcegraph with Kubernetes</a></li>
                                     <li><a href="/admin/install/managed">Setting up a managed instance</a></li>
+                                    <li><a href="/admin/install/migrate-backup">Back up or migrate to a new Sourcegraph instance</a></li>
                                 </ul>
                             </li>
                             <li><a href="/admin/config">Configuring Sourcegraph</a></li>

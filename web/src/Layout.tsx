@@ -14,7 +14,6 @@ import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
-import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -84,7 +83,6 @@ export interface LayoutProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         EnterpriseHomePanelsProps {
-    exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -147,7 +145,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
-    const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
+    const isSignInOrUp =
+        props.location.pathname === '/sign-in' ||
+        props.location.pathname === '/sign-up' ||
+        props.location.pathname === '/password-reset'
 
     const authRequired = useObservable(authRequiredObservable)
 

@@ -300,8 +300,4 @@ describe('Core functionality regression test suite', () => {
         await driver.page.waitForNavigation()
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })
-
-    test('2.4 Explore page', async () => {
-        // TODO(@sourcegraph/web)
-    })
 })

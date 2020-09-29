@@ -10,6 +10,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   location="[Location path=/]"
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
+  queryChangesets={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
     Object {
@@ -74,7 +75,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           <CampaignsIconWithBetaBadge
             className="icon-inline page-header__icon"
           >
-            <Memo(ImageAutoAdjustIcon)
+            <Memo(CampaignsFlushEdgesIcon)
               className="icon-inline page-header__icon"
             />
              
@@ -144,65 +145,28 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     }
   >
     <div
-      className="mb-3"
+      className="text-muted mb-3"
     >
-      <span
-        className="text-muted"
+      <AnchorLink
+        to="/users/alice"
       >
-        Created 
-        <Timestamp
-          date="2020-01-01"
+        <a
+          href="/users/alice"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/alice"
-        >
-          <a
-            href="/users/alice"
-          >
-            alice
-          </a>
-        </AnchorLink>
-      </span>
-      <span
-        className="mx-2 text-muted"
+          alice
+        </a>
+      </AnchorLink>
+       
+      <Timestamp
+        date="2020-01-01"
       >
-        |
-      </span>
-      <span
-        className="text-muted"
-      >
-        Updated 
-        <Timestamp
-          date="2020-01-01"
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/bob"
-        >
-          <a
-            href="/users/bob"
-          >
-            bob
-          </a>
-        </AnchorLink>
-      </span>
+          in almost 14 years
+        </span>
+      </Timestamp>
     </div>
   </CampaignInfoByline>
   <CampaignStatsCard
@@ -381,28 +345,24 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     history="[History]"
   >
     <div
-      className=""
+      className="mb-3"
     >
-      <div
-        className="px-4 pb-3"
-      >
-        <Markdown
-          dangerousInnerHTML="<p>d</p>
+      <Markdown
+        dangerousInnerHTML="<p>d</p>
 "
-          history="[History]"
-        >
-          <div
-            className="markdown"
-            dangerouslySetInnerHTML={
-              Object {
-                "__html": "<p>d</p>
+        history="[History]"
+      >
+        <div
+          className="markdown"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>d</p>
 ",
-              }
             }
-            onClick={[Function]}
-          />
-        </Markdown>
-      </div>
+          }
+          onClick={[Function]}
+        />
+      </Markdown>
     </div>
   </CampaignDescription>
   <CampaignTabs
@@ -456,6 +416,7 @@ description: somestring",
     isLightTheme={true}
     location="[Location path=/]"
     queryChangesetCountsOverTime={[Function]}
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -505,7 +466,7 @@ description: somestring",
           <Memo(FileDocumentIcon)
             className="icon-inline text-muted mr-1"
           />
-           Campaign spec
+           Spec
         </a>
       </li>
     </ul>
@@ -514,6 +475,7 @@ description: somestring",
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
+      queryChangesets={[Function]}
       telemetryService={
         Object {
           "log": [Function],
@@ -762,17 +724,110 @@ description: somestring",
           <div
             className="filtered-connection test-filtered-connection filtered-connection--noncompact mt-2"
           >
-            <span
-              className="filtered-connection__loader test-filtered-connection__loader"
+            <ConnectionNodes
+              connection={
+                Object {
+                  "nodes": Array [],
+                  "pageInfo": Object {
+                    "endCursor": null,
+                    "hasNextPage": false,
+                  },
+                  "totalCount": 0,
+                }
+              }
+              connectionQuery=""
+              emptyElement={<EmptyChangesetListElement />}
+              first={15}
+              headComponent={[Function]}
+              listClassName="campaign-changesets__grid mb-3"
+              listComponent="div"
+              loading={false}
+              location="[Location path=/]"
+              noSummaryIfAllNodesVisible={true}
+              nodeComponent={[Function]}
+              nodeComponentProps={
+                Object {
+                  "extensionInfo": Object {
+                    "extensionsController": undefined,
+                    "hoverifier": Object {
+                      "hoverState": Object {
+                        "actionsOrError": undefined,
+                        "highlightedRange": undefined,
+                        "hoverOverlayProps": undefined,
+                        "hoveredTokenElement": undefined,
+                        "selectedPosition": undefined,
+                      },
+                      "hoverStateUpdates": "[Subject]",
+                      "hoverify": [Function],
+                      "unsubscribe": [Function],
+                    },
+                  },
+                  "history": "[History]",
+                  "isLightTheme": true,
+                  "location": "[Location path=/]",
+                  "queryExternalChangesetWithFileDiffs": undefined,
+                  "viewerCanAdminister": false,
+                }
+              }
+              noun="changeset"
+              onShowMore={[Function]}
+              pluralNoun="changesets"
+              query=""
             >
-              <LoadingSpinner
-                className="icon-inline"
-              >
+              <EmptyChangesetListElement>
                 <div
-                  className="loading-spinner icon-inline"
-                />
-              </LoadingSpinner>
-            </span>
+                  className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+                >
+                  <div
+                    className="card-body p-5"
+                  >
+                    <h2
+                      className="text-center mb-4"
+                    >
+                      This campaign does not contain changesets
+                    </h2>
+                    <p>
+                      This can occur for several reasons:
+                    </p>
+                    <p>
+                      <strong>
+                        The query specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          repositorieMatchingQuery:
+                        </span>
+                         may not have matched any repositories.
+                      </strong>
+                    </p>
+                    <p>
+                      Test your query in the search bar and ensure it returns results.
+                    </p>
+                    <p>
+                      <strong>
+                        The code specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          steps:
+                        </span>
+                         may not have resulted in changes being made.
+                      </strong>
+                    </p>
+                    <p>
+                      Try the command on a local instance of one of the repositories returned in your search results. Run
+                       
+                      <span
+                        className="text-monospace"
+                      >
+                        git status
+                      </span>
+                       and ensure it produced changed files.
+                    </p>
+                  </div>
+                </div>
+              </EmptyChangesetListElement>
+            </ConnectionNodes>
           </div>
         </FilteredConnection>
       </div>
@@ -791,6 +846,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   location="[Location path=/]"
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
+  queryChangesets={[Function]}
   setBreadcrumb={[Function]}
   telemetryService={
     Object {
@@ -855,7 +911,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           <CampaignsIconWithBetaBadge
             className="icon-inline page-header__icon"
           >
-            <Memo(ImageAutoAdjustIcon)
+            <Memo(CampaignsFlushEdgesIcon)
               className="icon-inline page-header__icon"
             />
              
@@ -925,65 +981,28 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     }
   >
     <div
-      className="mb-3"
+      className="text-muted mb-3"
     >
-      <span
-        className="text-muted"
+      <AnchorLink
+        to="/users/alice"
       >
-        Created 
-        <Timestamp
-          date="2020-01-01"
+        <a
+          href="/users/alice"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/alice"
-        >
-          <a
-            href="/users/alice"
-          >
-            alice
-          </a>
-        </AnchorLink>
-      </span>
-      <span
-        className="mx-2 text-muted"
+          alice
+        </a>
+      </AnchorLink>
+       
+      <Timestamp
+        date="2020-01-01"
       >
-        |
-      </span>
-      <span
-        className="text-muted"
-      >
-        Updated 
-        <Timestamp
-          date="2020-01-01"
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
         >
-          <span
-            className="timestamp"
-            data-tooltip="2020-01-01"
-          >
-            in almost 14 years
-          </span>
-        </Timestamp>
-         by
-         
-        <AnchorLink
-          to="/users/bob"
-        >
-          <a
-            href="/users/bob"
-          >
-            bob
-          </a>
-        </AnchorLink>
-      </span>
+          in almost 14 years
+        </span>
+      </Timestamp>
     </div>
   </CampaignInfoByline>
   <CampaignStatsCard
@@ -1162,28 +1181,24 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     history="[History]"
   >
     <div
-      className=""
+      className="mb-3"
     >
-      <div
-        className="px-4 pb-3"
-      >
-        <Markdown
-          dangerousInnerHTML="<p>d</p>
+      <Markdown
+        dangerousInnerHTML="<p>d</p>
 "
-          history="[History]"
-        >
-          <div
-            className="markdown"
-            dangerouslySetInnerHTML={
-              Object {
-                "__html": "<p>d</p>
+        history="[History]"
+      >
+        <div
+          className="markdown"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>d</p>
 ",
-              }
             }
-            onClick={[Function]}
-          />
-        </Markdown>
-      </div>
+          }
+          onClick={[Function]}
+        />
+      </Markdown>
     </div>
   </CampaignDescription>
   <CampaignTabs
@@ -1237,6 +1252,7 @@ description: somestring",
     isLightTheme={true}
     location="[Location path=/]"
     queryChangesetCountsOverTime={[Function]}
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -1286,7 +1302,7 @@ description: somestring",
           <Memo(FileDocumentIcon)
             className="icon-inline text-muted mr-1"
           />
-           Campaign spec
+           Spec
         </a>
       </li>
     </ul>
@@ -1295,6 +1311,7 @@ description: somestring",
       history="[History]"
       isLightTheme={true}
       location="[Location path=/]"
+      queryChangesets={[Function]}
       telemetryService={
         Object {
           "log": [Function],
@@ -1543,17 +1560,110 @@ description: somestring",
           <div
             className="filtered-connection test-filtered-connection filtered-connection--noncompact mt-2"
           >
-            <span
-              className="filtered-connection__loader test-filtered-connection__loader"
+            <ConnectionNodes
+              connection={
+                Object {
+                  "nodes": Array [],
+                  "pageInfo": Object {
+                    "endCursor": null,
+                    "hasNextPage": false,
+                  },
+                  "totalCount": 0,
+                }
+              }
+              connectionQuery=""
+              emptyElement={<EmptyChangesetListElement />}
+              first={15}
+              headComponent={[Function]}
+              listClassName="campaign-changesets__grid mb-3"
+              listComponent="div"
+              loading={false}
+              location="[Location path=/]"
+              noSummaryIfAllNodesVisible={true}
+              nodeComponent={[Function]}
+              nodeComponentProps={
+                Object {
+                  "extensionInfo": Object {
+                    "extensionsController": undefined,
+                    "hoverifier": Object {
+                      "hoverState": Object {
+                        "actionsOrError": undefined,
+                        "highlightedRange": undefined,
+                        "hoverOverlayProps": undefined,
+                        "hoveredTokenElement": undefined,
+                        "selectedPosition": undefined,
+                      },
+                      "hoverStateUpdates": "[Subject]",
+                      "hoverify": [Function],
+                      "unsubscribe": [Function],
+                    },
+                  },
+                  "history": "[History]",
+                  "isLightTheme": true,
+                  "location": "[Location path=/]",
+                  "queryExternalChangesetWithFileDiffs": undefined,
+                  "viewerCanAdminister": true,
+                }
+              }
+              noun="changeset"
+              onShowMore={[Function]}
+              pluralNoun="changesets"
+              query=""
             >
-              <LoadingSpinner
-                className="icon-inline"
-              >
+              <EmptyChangesetListElement>
                 <div
-                  className="loading-spinner icon-inline"
-                />
-              </LoadingSpinner>
-            </span>
+                  className="col-md-8 offset-md-2 col-sm-12 card mt-5"
+                >
+                  <div
+                    className="card-body p-5"
+                  >
+                    <h2
+                      className="text-center mb-4"
+                    >
+                      This campaign does not contain changesets
+                    </h2>
+                    <p>
+                      This can occur for several reasons:
+                    </p>
+                    <p>
+                      <strong>
+                        The query specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          repositorieMatchingQuery:
+                        </span>
+                         may not have matched any repositories.
+                      </strong>
+                    </p>
+                    <p>
+                      Test your query in the search bar and ensure it returns results.
+                    </p>
+                    <p>
+                      <strong>
+                        The code specified in 
+                        <span
+                          className="text-monospace"
+                        >
+                          steps:
+                        </span>
+                         may not have resulted in changes being made.
+                      </strong>
+                    </p>
+                    <p>
+                      Try the command on a local instance of one of the repositories returned in your search results. Run
+                       
+                      <span
+                        className="text-monospace"
+                      >
+                        git status
+                      </span>
+                       and ensure it produced changed files.
+                    </p>
+                  </div>
+                </div>
+              </EmptyChangesetListElement>
+            </ConnectionNodes>
           </div>
         </FilteredConnection>
       </div>

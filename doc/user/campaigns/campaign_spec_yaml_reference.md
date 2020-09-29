@@ -53,7 +53,7 @@ on:
   - repository: github.com/sourcegraph/sourcegraph
 ```
 
-## [`on.repositoriesMatchingQuery`](#on-repositoriesMatchingQuery)
+## [`on.repositoriesMatchingQuery`](#on-repositoriesmatchingquery)
 
 A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
 
@@ -136,7 +136,7 @@ It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src
 
 Environment variables to set in the environment when running this command.
 
-## [`importChangesets`](#importChangesets)
+## [`importChangesets`](#importchangesets)
 
 An array describing which already-existing changesets should be imported from the code host into the campaign.
 
@@ -150,15 +150,15 @@ importChangesets:
     externalIDs: [260, 271]
 ```
 
-## [`importChangesets.repository`](#importChangesets-repository)
+## [`importChangesets.repository`](#importchangesets-repository)
 
 The repository name as configured on your Sourcegraph instance.
 
-## [`importChangesets.externalIDs`](#importChangesets-externalIDs)
+## [`importChangesets.externalIDs`](#importchangesets-externalids)
 
 The changesets to import from the code host. For GitHub this is the pull request number, for GitLab this is the merge request number, for Bitbucket Server this is the pull request number.
 
-## [`changesetTemplate`](#changesetTemplate)
+## [`changesetTemplate`](#changesettemplate)
 
 A template describing how to create (and update) changesets with the file changes produced by the command steps.
 
@@ -173,6 +173,9 @@ changesetTemplate:
   branch: campaigns/sprintf-to-itoa
   commit:
     message: Replacing fmt.Sprintf with strconv.Iota
+    author:
+      name: Lisa Coder
+      email: lisa@example.com
   published: false
 ```
 
@@ -193,30 +196,47 @@ changesetTemplate:
   branch: go-fmt
   commit:
     message: Run go fmt
+    author:
+      name: Anna Wizard
+      email: anna@example.com
   published: true
 ```
 
-## [`changesetTemplate.title`](#changesetTemplate-title)
+## [`changesetTemplate.title`](#changesettemplate-title)
 
 The title of the changeset on the code host.
 
-## [`changesetTemplate.body`](#changesetTemplate-body)
+## [`changesetTemplate.body`](#changesettemplate-body)
 
 The body (description) of the changeset on the code host. If the code supports Markdown you can use it here.
 
-## [`changesetTemplate.branch`](#changesetTemplate-branch)
+## [`changesetTemplate.branch`](#changesettemplate-branch)
 
 The name of the Git branch to create or update on each repository with the changes.
 
-## [`changesetTemplate.commit`](#changesetTemplate-commit)
+## [`changesetTemplate.commit`](#changesettemplate-commit)
 
 The Git commit to create with the changes.
 
-## [`changesetTemplate.commit.message`](#changesetTemplate-commit-message)
+## [`changesetTemplate.commit.message`](#changesettemplate-commit-message)
 
 The Git commit message.
 
-## [`changesetTemplate.published`](#changesetTemplate-published)
+## [`changesetTemplate.commit.author`](#changesettemplate-commit-author)
+
+The `name` and `email` of the Git commit author.
+
+### Examples
+
+```yaml
+changesetTemplate:
+  commit:
+    author:
+      name: Alan Turing
+      email: alan.turing@example.com
+```
+
+## [`changesetTemplate.published`](#changesettemplate-published)
 
 Whether to publish the changeset.
 

@@ -1,6 +1,8 @@
 package store
 
 import (
+	"database/sql"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -13,5 +15,5 @@ func init() {
 
 func testStore() Store {
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(&store{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))}, &observation.TestContext)
+	return NewObserved(&store{Store: basestore.NewWithDB(dbconn.Global, sql.TxOptions{})}, &observation.TestContext)
 }
