@@ -309,6 +309,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	if err != nil {
 		return nil, false, nil, err
 	}
+	// Performance optimization: For queries without repo: filters, it is not
+	// necessary to send the list of all repoBranches to zoekt. Zoekt can simply
+	// search all its shards and we filter the results later against the list of
+	// repos we resolve concurrently.
 	var finalQuery zoektquery.Q
 	if args.Mode == search.ZoektGlobalSearch {
 		finalQuery = zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
