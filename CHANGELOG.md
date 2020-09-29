@@ -20,10 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Interactive search mode is now disabled by default because the new plain text search input is smarter. To reenable it, add `{ "experimentalFeatures": { "splitSearchModes": true } }` in user settings.
 - The extension registry has been redesigned to make it easier to find useful Sourcegraph extensions.
-
-### Changed
-
-- Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153).
+- Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page. [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153)
 
 ### Fixed
 
