@@ -25,9 +25,9 @@ func toSignatureResolver(sig *git.Signature, includeUserInfo bool) *signatureRes
 	}
 	return &signatureResolver{
 		person: &PersonResolver{
-			UserName:        sig.Name,
-			UserEmail:       sig.Email,
-			IncludeUserInfo: includeUserInfo,
+			name:            sig.Name,
+			email:           sig.Email,
+			includeUserInfo: includeUserInfo,
 		},
 		date: sig.Date,
 	}

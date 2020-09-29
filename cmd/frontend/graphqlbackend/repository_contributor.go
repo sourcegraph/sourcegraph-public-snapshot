@@ -10,7 +10,7 @@ type repositoryContributorResolver struct {
 }
 
 func (r *repositoryContributorResolver) Person() *PersonResolver {
-	return &PersonResolver{UserName: r.name, UserEmail: r.email}
+	return &PersonResolver{name: r.name, email: r.email}
 }
 
 func (r *repositoryContributorResolver) Count() int32 { return r.count }

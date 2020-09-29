@@ -11,11 +11,11 @@ import (
 )
 
 type PersonResolver struct {
-	UserName  string
-	UserEmail string
+	name  string
+	email string
 
 	// fetch + serve sourcegraph stored user information
-	IncludeUserInfo bool
+	includeUserInfo bool
 
 	// cache result because it is used by multiple fields
 	once sync.Once
@@ -23,12 +23,20 @@ type PersonResolver struct {
 	err  error
 }
 
+func NewPersonResolver(name, email string, includeUserInfo bool) *PersonResolver {
+	return &PersonResolver{
+		name:            name,
+		email:           email,
+		includeUserInfo: includeUserInfo,
+	}
+}
+
 // resolveUser resolves the person to a user (using the email address). Not all persons can be
 // resolved to a user.
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
-		if r.IncludeUserInfo && r.UserEmail != "" {
-			r.user, r.err = db.Users.GetByVerifiedEmail(ctx, r.UserEmail)
+		if r.includeUserInfo && r.email != "" {
+			r.user, r.err = db.Users.GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
 			}
@@ -47,11 +55,11 @@ func (r *PersonResolver) Name(ctx context.Context) (string, error) {
 	}
 
 	// Fall back to provided username.
-	return r.UserName, nil
+	return r.name, nil
 }
 
 func (r *PersonResolver) Email() string {
-	return r.UserEmail
+	return r.email
 }
 
 func (r *PersonResolver) DisplayName(ctx context.Context) (string, error) {
@@ -63,11 +71,11 @@ func (r *PersonResolver) DisplayName(ctx context.Context) (string, error) {
 		return user.DisplayName, nil
 	}
 
-	if name := strings.TrimSpace(r.UserName); name != "" {
+	if name := strings.TrimSpace(r.name); name != "" {
 		return name, nil
 	}
-	if r.UserEmail != "" {
-		return r.UserEmail, nil
+	if r.email != "" {
+		return r.email, nil
 	}
 	return "unknown", nil
 }

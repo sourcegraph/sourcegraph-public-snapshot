@@ -215,12 +215,12 @@ type gitCommitDescriptionResolver struct {
 }
 
 func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
-	return &graphqlbackend.PersonResolver{
-		UserEmail: r.authorEmail,
-		UserName:  r.authorName,
+	return graphqlbackend.NewPersonResolver(
+		r.authorName,
+		r.authorEmail,
 		// Try to find the corresponding Sourcegraph user.
-		IncludeUserInfo: true,
-	}
+		true,
+	)
 }
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Subject() string {
