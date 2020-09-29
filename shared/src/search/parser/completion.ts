@@ -124,7 +124,7 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
 const symbolToCompletion = ({ name, kind, location }: ISymbol): PartialCompletionItem => ({
     label: name,
     kind: symbolKindToCompletionItemKind[kind],
-    insertText: name,
+    insertText: name + ' ',
     filterText: name,
     detail: `${startCase(kind.toLowerCase())} - ${location.resource.repository.name}`,
 })
@@ -142,7 +142,7 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
 const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
-    insertText: name,
+    insertText: name + ' ',
     filterText: name,
 })
 
