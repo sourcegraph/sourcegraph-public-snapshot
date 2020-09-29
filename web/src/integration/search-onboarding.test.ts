@@ -1,4 +1,4 @@
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -85,7 +85,6 @@ describe('Search onboarding', () => {
         it('displays all steps in the language onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.tour-card')
-            await percySnapshot(driver.page, 'Search tour start')
             await driver.page.waitForSelector('.test-tour-language-button')
             await driver.page.click('.test-tour-language-button')
             await driver.page.waitForSelector('#monaco-query-input')
@@ -99,12 +98,10 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
             await driver.page.keyboard.press('Tab')
             await driver.page.waitForSelector('.test-tour-step-3')
-            await percySnapshot(driver.page, 'Search tour language path: add query term')
             await driver.page.keyboard.press('Space')
             await driver.page.keyboard.type('test')
 
             await driver.page.waitForSelector('.test-tour-step-4')
-            await percySnapshot(driver.page, 'Search tour language path: click to search')
             await driver.page.click('.test-search-button')
             await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-help-dropdown-button-icon')
