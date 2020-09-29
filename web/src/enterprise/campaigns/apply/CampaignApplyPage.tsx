@@ -29,6 +29,8 @@ export interface CampaignApplyPageProps extends ThemeProps, BreadcrumbSetters {
     queryChangesetSpecs?: typeof queryChangesetSpecs
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
+    /** Expand changeset descriptions, for testing only. */
+    expandChangesetDescriptions?: boolean
 }
 
 export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> = ({
@@ -40,6 +42,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     fetchCampaignSpecById = _fetchCampaignSpecById,
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
+    expandChangesetDescriptions,
 }) => {
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
 
@@ -87,6 +90,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 isLightTheme={isLightTheme}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                expandChangesetDescriptions={expandChangesetDescriptions}
             />
         </>
     )
