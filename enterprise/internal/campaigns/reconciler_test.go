@@ -476,12 +476,12 @@ func TestReconcilerProcess(t *testing.T) {
 				body:  "body",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        githubPR.ID,
-				externalBranch:    githubPR.HeadRefName,
-				externalState:     campaigns.ChangesetExternalStateClosed,
-				createdByCampaign: true,
-				closing:           false,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateClosed,
+				ownedByCampaign:  campaign.ID,
+				closing:          false,
 			},
 			// We return the open GitHub PR here
 			sourcerMetadata: githubPR,
@@ -520,12 +520,12 @@ func TestReconcilerProcess(t *testing.T) {
 				commitMessage: "old message",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        githubPR.ID,
-				externalBranch:    githubPR.HeadRefName,
-				externalState:     campaigns.ChangesetExternalStateClosed,
-				createdByCampaign: true,
-				closing:           false,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateClosed,
+				ownedByCampaign:  campaign.ID,
+				closing:          false,
 			},
 			sourcerMetadata: githubPR,
 
@@ -586,9 +586,6 @@ func TestReconcilerProcess(t *testing.T) {
 			changesetOpts := tc.changeset
 			changesetOpts.repo = rs[0].ID
 			changesetOpts.campaign = campaign.ID
-			if tc.changeset.createdByCampaign {
-				changesetOpts.ownedByCampaign = campaign.ID
-			}
 			if changesetSpec != nil {
 				changesetOpts.currentSpec = changesetSpec.ID
 			}
