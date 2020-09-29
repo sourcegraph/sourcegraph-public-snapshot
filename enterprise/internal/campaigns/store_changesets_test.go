@@ -973,6 +973,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		opts3.ownedByCampaign = campaignID + 999
 		createChangeset(t, ctx, s, opts3)
 
+		opts4 := baseOpts
+		opts4.repo = deletedRepo.ID
+		opts4.campaign = campaignID
+		opts4.ownedByCampaign = 0
+		createChangeset(t, ctx, s, opts4)
+
 		cs, err := s.ListChangesetsAttachedOrOwnedByCampaign(ctx, campaignID)
 		if err != nil {
 			t.Fatal(err)
