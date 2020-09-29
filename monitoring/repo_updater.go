@@ -19,6 +19,146 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
+				Title: "Repositories",
+				// Hidden: true,
+				Rows: []Row{
+					{
+						Observable{
+							Name:              "syncer_sync_last_time",
+							Description:       "time gap since last sync",
+							Query:             `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: time.Hour.Seconds(), For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Make sure there are external serviced added with valid tokens",
+						},
+					},
+					{
+						Observable{
+							Name:              "syncer_sync_duration",
+							Description:       "95th repositories sync duration",
+							Query:             `histogram_quantile(0.95, rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 30, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
+						},
+						Observable{
+							Name:              "source_duration",
+							Description:       "95th repositories source duration",
+							Query:             `histogram_quantile(0.95, rate(src_repoupdater_source_duration_seconds_bucket[1m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 30, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
+						},
+					},
+					{
+						Observable{
+							Name:              "syncer_synced_repos",
+							Description:       "repositories synced",
+							Query:             `rate(src_repoupdater_syncer_synced_repos_total[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().LegendFormat("{{state}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "source_repos",
+							Description:       "repositories sourced",
+							Query:             `rate(src_repoupdater_source_repos_total[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "purge_failed",
+							Description:       "repositories purge failed",
+							Query:             `rate(src_repoupdater_purge_failed[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "purge_success",
+							Description:       "repositories purge succeeded",
+							Query:             `rate(src_repoupdater_purge_success[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 10, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "sched_auto_fetch",
+							Description:       "repositories scheduled due to hitting a deadline",
+							Query:             `rate(src_repoupdater_sched_auto_fetch[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "sched_manual_fetch",
+							Description:       "repositories scheduled due to user traffic",
+							Query:             `rate(src_repoupdater_sched_manual_fetch[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "sched_known_repos",
+							Description:       "repositories are managed by the scheduler",
+							Query:             `src_repoupdater_sched_known_repos`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "sched_loops",
+							Description:       "scheduler loops",
+							Query:             `rate(src_repoupdater_sched_loops[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 10, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "sched_error",
+							Description:       "repositories schedule error rate",
+							Query:             `rate(src_repoupdater_sched_error[1m])`,
+							DataMayNotExist:   true,
+							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Permissions",
 				Hidden: true,
 				Rows: []Row{
