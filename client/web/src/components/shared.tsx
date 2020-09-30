@@ -19,7 +19,7 @@ export interface HoverThresholdProps {
     /**
      * Called when the threshold of hovers with a content is reached.
      */
-    onHoverThresholdReached: () => void
+    onHoverThresholdReached?: () => void
 }
 
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverThresholdProps> = props => {
