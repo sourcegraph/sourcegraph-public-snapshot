@@ -161,7 +161,7 @@
             },
             {
               "type": "array",
-              "description": "A list of repository patterns to match. In the event multiple patterns match, the last matching pattern in the list will be used.",
+              "description": "A list of glob patterns to match repository names. In the event multiple patterns match, the last matching pattern in the list will be used.",
               "items": {
                 "type": "object",
                 "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
