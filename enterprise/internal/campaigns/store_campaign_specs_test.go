@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/campaignutils/override"
+	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -29,7 +29,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 						Commit: campaigns.CommitTemplate{
 							Message: "commit message",
 						},
-						Published: override.FromBool(false),
+						Published: overridable.FromBool(false),
 					},
 				},
 				UserID: int32(i + 1234),

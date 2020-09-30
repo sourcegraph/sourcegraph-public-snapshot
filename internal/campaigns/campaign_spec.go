@@ -3,7 +3,7 @@ package campaigns
 import (
 	"time"
 
-	"github.com/sourcegraph/campaignutils/override"
+	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -77,11 +77,11 @@ type CampaignImportChangeset struct {
 }
 
 type ChangesetTemplate struct {
-	Title     string         `json:"title"`
-	Body      string         `json:"body"`
-	Branch    string         `json:"branch"`
-	Commit    CommitTemplate `json:"commit"`
-	Published override.Bool  `json:"published"`
+	Title     string           `json:"title"`
+	Body      string           `json:"body"`
+	Branch    string           `json:"branch"`
+	Commit    CommitTemplate   `json:"commit"`
+	Published overridable.Bool `json:"published"`
 }
 
 type CommitTemplate struct {

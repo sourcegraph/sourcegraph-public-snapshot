@@ -1221,8 +1221,8 @@ github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4k
 github.com/sony/gobreaker v0.4.1/go.mod h1:ZKptC7FHNvhBz7dN2LGjPVBz2sZJmc0/PkyDJOjmxWY=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9Ev6lojP2XaIshpT4ymkqhMeSghO5Ps00E=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
-github.com/sourcegraph/campaignutils v0.0.0-20200930010549-508f59a6ab8f h1:VOEPaxP5OzsOHfZx7Y1Kvz+D/1IQld8CUOY2S+KCHtk=
-github.com/sourcegraph/campaignutils v0.0.0-20200930010549-508f59a6ab8f/go.mod h1:5P8k8KlKz78RZJ2EFk9k9ln/j/twj28z/+BvO5hHZJ8=
+github.com/sourcegraph/campaignutils v0.0.0-20200930165749-a8777d33a817 h1:mdFA7I2rnfl8AV0m8iMb4uoQb3GRdjRsgRMREoNGEk4=
+github.com/sourcegraph/campaignutils v0.0.0-20200930165749-a8777d33a817/go.mod h1:5P8k8KlKz78RZJ2EFk9k9ln/j/twj28z/+BvO5hHZJ8=
 github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58 h1:Ps+U1xoZP+Zoph39YfRB6Q846ghO8pgrAgp0MiObvPs=
 github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
