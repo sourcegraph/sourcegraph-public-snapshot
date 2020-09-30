@@ -55,8 +55,6 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 }
 
 // SetPassword sets the user's password given a new password and a password reset code
-// Tries to email the user that their password has been reset
-// does not fail  if the email cannot be sent for any reason
 func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
@@ -92,8 +90,6 @@ func (u *users) DeletePasswordResetCode(ctx context.Context, id int32) error {
 }
 
 // UpdatePassword updates a user's password given the current password.
-// Tries to email the user that their password has been updated
-// does not fail  if the email cannot be sent for any reason
 func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error {
 	// 🚨 SECURITY: No empty passwords.
 	if oldPassword == "" {
