@@ -389,7 +389,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 		return nil, ErrBatchTooLarge
 	}
 
-	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
+	query, err := c.buildGetReposBatchQuery(namesWithOwners)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +419,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 	return repos, nil
 }
 
-func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+func (c *Client) buildGetReposBatchQuery(namesWithOwners []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")
