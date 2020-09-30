@@ -1464,6 +1464,9 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 // diff and commit searches where more than repoLimit repos need to be searched.
 func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
 	limits := searchLimits()
+	// we don't need to handle the error here, because we don't have context and the
+	// promise can only return context errors
+	repos, _ := getRepos(context.Background(), args.RepoPromise)
 
 	for _, resultType := range resultTypes {
 		if resultType != "commit" && resultType != "diff" {
@@ -1478,14 +1481,14 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 			hasTimeFilter = true
 		}
 
-		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
+		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
 				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
 			}
 		}
-		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
+		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
 			return []string{}, &searchAlert{
 				prometheusType: "exceeded_diff_commit_with_time_search_limit",
 				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
@@ -1616,9 +1619,15 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: tp.PatternInfo.PathPatternsAreCaseSensitive,
 	}
+	repos, err := getRepos(ctx, tp.RepoPromise)
+	if err != nil {
+		log15.Warn("doDiffSearch: error while getting repos from promise:", err.Error())
+		return
+	}
+
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.Repos,
+		Repos:       repos,
 		Query:       tp.Query,
 	}
 	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
@@ -1652,9 +1661,15 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 	}
+	repos, err := getRepos(ctx, tp.RepoPromise)
+	if err != nil {
+		log15.Warn("doCommitSearch: error while getting repos from promise:", err.Error())
+		return
+	}
+
 	args := search.TextParametersForCommitParameters{
 		PatternInfo: patternInfo,
-		Repos:       tp.Repos,
+		Repos:       repos,
 		Query:       tp.Query,
 	}
 	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
@@ -1674,6 +1689,19 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		a.common.update(*commitCommon)
 		a.commonMu.Unlock()
 	}
+}
+
+// isGlobalSearch returns true if the query contains the filters repo or
+// repogroup. For structural queries and queries with version context
+// isGlobalSearch always return false.
+func (r *searchResolver) isGlobalSearch() bool {
+	if r.patternType == query.SearchTypeStructural {
+		return false
+	}
+	if r.versionContext != nil && *r.versionContext != "" {
+		return false
+	}
+	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
 }
 
 // doResults is one of the highest level search functions that handles finding results.
@@ -1698,14 +1726,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
-	if err != nil {
-		return nil, err
-	}
-	if alertResult != nil {
-		return alertResult, nil
-	}
-
 	options := &getPatternInfoOptions{}
 	if r.patternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
@@ -1729,11 +1749,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           resolved.repoRevs,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
+		RepoPromise:     &search.Promise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -1746,7 +1766,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
-
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
@@ -1770,7 +1789,46 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
 		fileMatches: make(map[string]*FileMatchResolver),
 	}
+
+	isFileOrPath := func() bool {
+		for _, rt := range resultTypes {
+			if rt == "file" || rt == "path" {
+				return true
+			}
+		}
+		return false
+	}
+
+	// performance optimization: call zoekt early, resolve repos concurrently, filter
+	// search results with resolved repos.
+	if r.isGlobalSearch() && isFileOrPath() {
+		// to protect us from regression, we explicitly create a child context which is
+		// canceled if we return from doResults
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		argsIndexed := args
+		argsIndexed.Mode = search.ZoektGlobalSearch
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			agg.doFilePathSearch(ctx, &argsIndexed)
+		})
+		args.Mode = search.SearcherOnly
+	}
+
+	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	if err != nil {
+		return nil, err
+	}
+	if alertResult != nil {
+		return alertResult, nil
+	}
+	args.RepoPromise.Resolve(resolved.repoRevs)
+
+	agg.commonMu.Lock()
 	agg.common.excluded = resolved.excludedRepos
+	agg.commonMu.Unlock()
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of

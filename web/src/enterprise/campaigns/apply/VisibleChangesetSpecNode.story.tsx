@@ -33,7 +33,22 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             baseRef: 'master',
             headRef: 'cool-branch',
             body: 'Body text',
-            commits: [{ message: 'Commit message' }],
+            commits: [
+                {
+                    subject: 'This is the first line of the commit message',
+                    body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
+                    author: {
+                        avatarURL: null,
+                        displayName: 'john',
+                        email: 'john@test.not',
+                        user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
+                    },
+                },
+            ],
             diffStat: {
                 added: 10,
                 changed: 8,
@@ -54,7 +69,22 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             baseRef: 'master',
             headRef: 'cool-branch',
             body: 'Body text',
-            commits: [{ message: 'Commit message' }],
+            commits: [
+                {
+                    subject: 'This is the first line of the commit message',
+                    body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
+                    author: {
+                        avatarURL: null,
+                        displayName: 'john',
+                        email: 'john@test.not',
+                        user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
+                    },
+                },
+            ],
             diffStat: {
                 added: 10,
                 changed: 8,

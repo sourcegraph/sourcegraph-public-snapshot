@@ -65,6 +65,10 @@ var (
 		Name: "src_repoupdater_sched_known_repos",
 		Help: "The number of repositories that are managed by the scheduler.",
 	})
+	schedHeapCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_repoupdater_sched_heap_count",
+		Help: "The number of repositories currently in the scheduler heap.",
+	})
 )
 
 func MustRegisterMetrics(db dbutil.DB) {

@@ -1119,9 +1119,10 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
+
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           resolved.repoRevs,
+		RepoPromise:     (&search.Promise{}).Resolve(resolved.repoRevs),
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
@@ -1293,4 +1294,18 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 		return searchErr
 	}
 	return nil
+}
+
+// getRepos is a wrapper around p.Get. It returns an error if the promise
+// contains an underlying type other than []*search.RepositoryRevisions.
+func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
+	v, err := p.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	repoRevs, ok := v.([]*search.RepositoryRevisions)
+	if !ok {
+		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
+	}
+	return repoRevs, nil
 }

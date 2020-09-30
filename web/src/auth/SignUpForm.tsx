@@ -1,15 +1,22 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import * as React from 'react'
-import { from, Subscription } from 'rxjs'
+import React, { useCallback, useMemo, useState } from 'react'
 import { asError } from '../../../shared/src/util/errors'
-import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { enterpriseTrial, signupTerms } from '../util/features'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
 import * as H from 'history'
+import { OrDivider } from './OrDivider'
+import GithubIcon from 'mdi-react/GithubIcon'
+import { size } from 'lodash'
+import { Observable, of } from 'rxjs'
+import { catchError, switchMap } from 'rxjs/operators'
+import { fromFetch } from 'rxjs/fetch'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import { LoaderButton } from '../components/LoaderButton'
+import { LoaderInput } from '../components/LoaderInput'
+import { useInputValidation, InputValidationState, FieldValidators } from '../components/useInputValidation'
 
 export interface SignUpArgs {
     email: string
@@ -28,66 +35,191 @@ interface SignUpFormProps {
     history: H.History
 }
 
-interface SignUpFormState {
-    email: string
-    username: string
-    password: string
-    error?: Error
-    loading: boolean
-    requestedTrial: boolean
-}
+/**
+ * The form for creating an account
+ */
+export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, history, buttonLabel, className }) => {
+    const [loading, setLoading] = useState(false)
+    const [requestedTrial, setRequestedTrial] = useState(false)
+    const [error, setError] = useState<Error | null>(null)
 
-export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
-    private subscriptions = new Subscription()
+    const signUpFieldValidators: Record<'email' | 'username' | 'password', FieldValidators> = useMemo(
+        () => ({
+            email: {
+                synchronousValidators: [],
+                asynchronousValidators: [],
+            },
+            username: {
+                synchronousValidators: [],
+                asynchronousValidators: [isUsernameUnique],
+            },
+            password: {
+                synchronousValidators: [],
+            },
+        }),
+        []
+    )
 
-    constructor(props: SignUpFormProps) {
-        super(props)
-        this.state = {
-            email: '',
-            username: '',
-            password: '',
-            loading: false,
-            requestedTrial: false,
+    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
+        'email',
+        signUpFieldValidators.email
+    )
+
+    const [usernameState, nextUsernameFieldChange, usernameInputReference] = useInputValidation(
+        'username',
+        signUpFieldValidators.username
+    )
+
+    const [passwordState, nextPasswordFieldChange, passwordInputReference] = useInputValidation(
+        'password',
+        signUpFieldValidators.password
+    )
+
+    const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
+
+    const disabled = loading || !canRegister
+
+    const handleSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>): void => {
+            event.preventDefault()
+            if (disabled) {
+                return
+            }
+
+            setLoading(true)
+            doSignUp({
+                email: emailState.value,
+                username: usernameState.value,
+                password: passwordState.value,
+                requestedTrial,
+            }).catch(error => {
+                setError(asError(error))
+                setLoading(false)
+            })
+            eventLogger.log('InitiateSignUp')
+        },
+        [doSignUp, disabled, emailState, usernameState, passwordState, requestedTrial]
+    )
+
+    const onRequestTrialFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
+        setRequestedTrial(event.target.checked)
+    }, [])
+
+    const preventDefault = useCallback((event: React.FormEvent) => event.preventDefault(), [])
+
+    const deriveInputClassName = useCallback((inputState: InputValidationState): string => {
+        if (inputState.loading || inputState.kind === 'NOT_VALIDATED') {
+            return ''
         }
-    }
+        return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
+    }, [])
 
-    public render(): JSX.Element | null {
-        return (
-            <Form
-                className={classNames('signin-signup-form', 'test-signup-form', this.props.className)}
-                onSubmit={this.handleSubmit}
-            >
-                {this.state.error && (
-                    <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+    return (
+        <>
+            {error && <ErrorAlert className="mt-4 mb-0" error={error} history={history} />}
+            {/* Using  <form /> to set 'valid' + 'is-invaild' at the input level */}
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <form
+                className={classNames(
+                    'signin-signup-form',
+                    'signup-form',
+                    'test-signup-form',
+                    'rounded p-4',
+                    'text-left',
+                    window.context.sourcegraphDotComMode || error ? 'mt-3' : 'mt-4',
+                    className
                 )}
-                <div className="form-group">
-                    <EmailInput
-                        className="signin-signup-form__input"
-                        onChange={this.onEmailFieldChange}
-                        required={true}
-                        value={this.state.email}
-                        disabled={this.state.loading}
-                        autoFocus={true}
-                    />
+                onSubmit={handleSubmit}
+                noValidate={true}
+            >
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label
+                        htmlFor="email"
+                        className={classNames('align-self-start', {
+                            'text-danger font-weight-bold': emailState.kind === 'INVALID' && !emailState.loading,
+                        })}
+                    >
+                        Email
+                    </label>
+                    <LoaderInput className={classNames(deriveInputClassName(emailState))} loading={emailState.loading}>
+                        <EmailInput
+                            className={classNames('signin-signup-form__input', deriveInputClassName(emailState))}
+                            onChange={nextEmailFieldChange}
+                            required={true}
+                            value={emailState.value}
+                            disabled={loading}
+                            autoFocus={true}
+                            placeholder=" "
+                            inputRef={emailInputReference}
+                        />
+                    </LoaderInput>
+                    {!emailState.loading && emailState.kind === 'INVALID' && (
+                        <small className="invalid-feedback">{emailState.reason}</small>
+                    )}
                 </div>
-                <div className="form-group">
-                    <UsernameInput
-                        className="signin-signup-form__input"
-                        onChange={this.onUsernameFieldChange}
-                        value={this.state.username}
-                        required={true}
-                        disabled={this.state.loading}
-                    />
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label
+                        htmlFor="username"
+                        className={classNames('align-self-start', {
+                            'text-danger font-weight-bold': !usernameState.loading && usernameState.kind === 'INVALID',
+                        })}
+                    >
+                        Username
+                    </label>
+                    <LoaderInput
+                        className={classNames(deriveInputClassName(usernameState))}
+                        loading={usernameState.loading}
+                    >
+                        <UsernameInput
+                            className={classNames('signin-signup-form__input', deriveInputClassName(usernameState))}
+                            onChange={nextUsernameFieldChange}
+                            value={usernameState.value}
+                            required={true}
+                            disabled={loading}
+                            placeholder=" "
+                            inputRef={usernameInputReference}
+                        />
+                    </LoaderInput>
+                    {!usernameState.loading && usernameState.kind === 'INVALID' && (
+                        <small className="invalid-feedback" role="alert">
+                            {usernameInputReference.current?.validationMessage}
+                        </small>
+                    )}
                 </div>
-                <div className="form-group">
-                    <PasswordInput
-                        className="signin-signup-form__input"
-                        onChange={this.onPasswordFieldChange}
-                        value={this.state.password}
-                        required={true}
-                        disabled={this.state.loading}
-                        autoComplete="new-password"
-                    />
+                <div className="form-group d-flex flex-column align-content-start">
+                    <label
+                        htmlFor="password"
+                        className={classNames('align-self-start', {
+                            'text-danger font-weight-bold': passwordState.kind === 'INVALID' && !passwordState.loading,
+                        })}
+                    >
+                        Password
+                    </label>
+                    <LoaderInput
+                        className={classNames(deriveInputClassName(passwordState))}
+                        loading={passwordState.loading}
+                    >
+                        <PasswordInput
+                            className={classNames('signin-signup-form__input', deriveInputClassName(passwordState))}
+                            onChange={nextPasswordFieldChange}
+                            value={passwordState.value}
+                            required={true}
+                            disabled={loading}
+                            autoComplete="new-password"
+                            placeholder=" "
+                            onInvalid={preventDefault}
+                            minLength={12}
+                            inputRef={passwordInputReference}
+                            formNoValidate={true}
+                        />
+                    </LoaderInput>
+                    {!passwordState.loading && passwordState.kind === 'INVALID' ? (
+                        <small className="invalid-feedback" role="alert">
+                            {passwordState.reason}
+                        </small>
+                    ) : (
+                        <small className="form-text text-muted">At least 12 characters</small>
+                    )}
                 </div>
                 {enterpriseTrial && (
                     <div className="form-group">
@@ -96,7 +228,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                                 <input
                                     className="form-check-input"
                                     type="checkbox"
-                                    onChange={this.onRequestTrialFieldChange}
+                                    onChange={onRequestTrialFieldChange}
                                 />
                                 Try Sourcegraph Enterprise free for 30 days{' '}
                                 {/* eslint-disable-next-line react/jsx-no-target-blank */}
@@ -108,25 +240,39 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                     </div>
                 )}
                 <div className="form-group mb-0">
-                    <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        {this.state.loading ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            this.props.buttonLabel || 'Sign up'
-                        )}
-                    </button>
+                    <LoaderButton
+                        loading={loading}
+                        label={buttonLabel || 'Register'}
+                        type="submit"
+                        disabled={disabled}
+                        className="btn btn-primary btn-block"
+                    />
                 </div>
                 {window.context.sourcegraphDotComMode && (
-                    <p className="mt-1 mb-0">
-                        Create a public account to search/navigate open-source code and manage Sourcegraph
-                        subscriptions.
-                    </p>
+                    <>
+                        {size(window.context.authProviders) > 0 && <OrDivider className="my-4" />}
+                        {window.context.authProviders?.map((provider, index) => (
+                            // Use index as key because display name may not be unique. This is OK
+                            // here because this list will not be updated during this component's lifetime.
+                            /* eslint-disable react/no-array-index-key */
+                            <div className="mb-2" key={index}>
+                                <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
+                                    {provider.serviceType === 'github' ? (
+                                        <GithubIcon className="icon-inline" />
+                                    ) : provider.serviceType === 'gitlab' ? (
+                                        <GitlabIcon className="icon-inline" />
+                                    ) : null}{' '}
+                                    Continue with {provider.displayName}
+                                </a>
+                            </div>
+                        ))}
+                    </>
                 )}
+
                 {signupTerms && (
-                    <p className="mt-1 mb-0">
+                    <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
-                            By signing up, you agree to our
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
                             <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                                 Terms of Service
                             </a>{' '}
@@ -138,45 +284,27 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         </small>
                     </p>
                 )}
-            </Form>
-        )
-    }
+            </form>
+        </>
+    )
+}
 
-    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: event.target.value })
-    }
+// Asynchronous Validators
 
-    private onUsernameFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: event.target.value })
-    }
+function isUsernameUnique(username: string): Observable<string | undefined> {
+    return fromFetch(`/-/check-username-taken/${username}`).pipe(
+        switchMap(response => {
+            switch (response.status) {
+                case 200:
+                    return of('Username is already taken.')
+                case 404:
+                    // Username is unique
+                    return of(undefined)
 
-    private onPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ password: event.target.value })
-    }
-
-    private onRequestTrialFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ requestedTrial: event.target.checked })
-    }
-
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
-        if (this.state.loading) {
-            return
-        }
-
-        this.setState({ loading: true })
-        this.subscriptions.add(
-            from(
-                this.props
-                    .doSignUp({
-                        email: this.state.email,
-                        username: this.state.username,
-                        password: this.state.password,
-                        requestedTrial: this.state.requestedTrial,
-                    })
-                    .catch(error => this.setState({ error: asError(error), loading: false }))
-            ).subscribe()
-        )
-        eventLogger.log('InitiateSignUp')
-    }
+                default:
+                    return of('Unknown error validating username')
+            }
+        }),
+        catchError(() => of('Unknown error validating username'))
+    )
 }

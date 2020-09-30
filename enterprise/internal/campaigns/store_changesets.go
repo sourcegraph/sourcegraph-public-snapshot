@@ -36,7 +36,6 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.external_state"),
 	sqlf.Sprintf("changesets.external_review_state"),
 	sqlf.Sprintf("changesets.external_check_state"),
-	sqlf.Sprintf("changesets.created_by_campaign"),
 	sqlf.Sprintf("changesets.added_to_campaign"),
 	sqlf.Sprintf("changesets.diff_stat_added"),
 	sqlf.Sprintf("changesets.diff_stat_changed"),
@@ -73,7 +72,6 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_state"),
 	sqlf.Sprintf("external_review_state"),
 	sqlf.Sprintf("external_check_state"),
-	sqlf.Sprintf("created_by_campaign"),
 	sqlf.Sprintf("added_to_campaign"),
 	sqlf.Sprintf("diff_stat_added"),
 	sqlf.Sprintf("diff_stat_changed"),
@@ -125,7 +123,6 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullStringColumn(string(c.ExternalState)),
 		nullStringColumn(string(c.ExternalReviewState)),
 		nullStringColumn(string(c.ExternalCheckState)),
-		c.CreatedByCampaign,
 		c.AddedToCampaign,
 		c.DiffStatAdded,
 		c.DiffStatChanged,
@@ -176,7 +173,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -529,7 +526,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -693,7 +690,6 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullString{S: &externalState},
 		&dbutil.NullString{S: &externalReviewState},
 		&dbutil.NullString{S: &externalCheckState},
-		&t.CreatedByCampaign,
 		&t.AddedToCampaign,
 		&t.DiffStatAdded,
 		&t.DiffStatChanged,

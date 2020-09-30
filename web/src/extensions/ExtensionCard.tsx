@@ -271,5 +271,5 @@ areEqual)
 
 /** Custom compareFunction for ExtensionCard */
 function areEqual(oldProps: Props, newProps: Props): boolean {
-    return oldProps.enabled === newProps.enabled
+    return oldProps.enabled === newProps.enabled && oldProps.isLightTheme === newProps.isLightTheme
 }

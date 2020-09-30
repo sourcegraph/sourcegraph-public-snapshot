@@ -117,17 +117,21 @@ $body-bg-color-dark: #04070e;
     --merged: #{$merged};
     --body-color: #{$body-color-light};
     --body-bg: #{$body-bg-color-light};
+    --color-bg-1: #{$color-light-bg-1};
     --text-muted: #{$color-light-text-2};
     --link-color: #{$gray-13};
     --link-active-color: #{$gray-18};
     --link-hover-color: #{$gray-21};
     --color-border: #{$color-light-border};
+    --color-border-2: #{$color-light-border-2};
 }
 .theme-dark {
     --secondary: #{$secondary};
     --color-border: #{$color-border};
+    --color-border-2: #{$color-border};
     --body-color: #{$body-color-dark};
     --body-bg: #{$body-bg-color-dark};
+    --color-bg-1: #{$color-bg-1};
     --text-muted: #{$color-text-1};
     --link-color: #{$gray-07};
     --link-active-color: #{$gray-02};
