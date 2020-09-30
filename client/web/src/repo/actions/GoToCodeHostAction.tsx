@@ -44,22 +44,17 @@ const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
  * A repository header action that goes to the corresponding URL on an external code host.
  */
 export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
-    const [modalOpen, setModalOpen] = useState(false)
-    /**
-     * TODO: only set popover open when "canShowPopover" is true AND "hasDismissedPopover" is false
-     */
+    const [showPopover, setShowPopover] = useState(false)
 
     const { onPopoverDismissed } = props
 
     const isExtensionInstalled = useObservable(props.browserExtensionInstalled)
 
-    const [hasDissmissedPopup, setHasDismissedPopup] = useState(false)
+    const [hasDissmissedPopup, setHasDismissedPopup] = useState(
+        () => localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true'
+    )
 
-    const hijackLink = !isExtensionInstalled && !hasDissmissedPopup
-
-    useEffect(() => {
-        setHasDismissedPopup(localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true')
-    }, [])
+    const hijackLink = !isExtensionInstalled && !hasDissmissedPopup && props.canShowPopover
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not
@@ -110,7 +105,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
         onPopoverDismissed()
-        setModalOpen(false)
+        setShowPopover(false)
         eventLogger.log('BrowserExtensionPopupClosed')
     }, [onPopoverDismissed])
 
@@ -124,15 +119,15 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     }, [onPopoverDismissed])
 
     const onSelect = useCallback(() => {
-        if (modalOpen) {
-            setModalOpen(false)
+        if (showPopover) {
+            setShowPopover(false)
             return
         }
 
         if (hijackLink) {
-            setModalOpen(true)
+            setShowPopover(true)
         }
-    }, [hijackLink, modalOpen])
+    }, [hijackLink, showPopover])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =
@@ -205,7 +200,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 <Icon className="icon-inline" />
             </ButtonLink>
 
-            {modalOpen && (
+            {showPopover && (
                 <CodeHostExtensionPopover
                     url={url}
                     serviceType={externalURL.serviceType}
