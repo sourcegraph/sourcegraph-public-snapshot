@@ -12,8 +12,8 @@ import { useLocalStorage } from '../util/useLocalStorage'
 
 // Components from shared with web-styling class names applied
 
-const HOVER_COUNT_KEY = 'hover-count'
-const HOVER_THRESHOLD = 5
+export const HOVER_COUNT_KEY = 'hover-count'
+export const HOVER_THRESHOLD = 5
 
 export interface HoverThresholdProps {
     /**

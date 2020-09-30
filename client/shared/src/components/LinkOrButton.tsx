@@ -34,6 +34,8 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     className?: string
 
     disabled?: boolean
+
+    id?: string
 }
 
 /**
@@ -52,6 +54,7 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
     'data-tooltip': tooltip,
     onSelect = noop,
     children,
+    id,
 }) => {
     // We need to set up a keypress listener because <a onclick> doesn't get
     // triggered by enter.
@@ -75,6 +78,7 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
         tabIndex: 0,
         onClick: onSelect,
         onKeyPress: onAnchorKeyPress,
+        id,
     }
 
     const onClickPreventDefault: React.MouseEventHandler<HTMLAnchorElement> = useCallback(

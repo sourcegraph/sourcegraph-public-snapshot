@@ -12,7 +12,8 @@ function getFocusableElements(element: HTMLElement): HTMLElement[] {
  * `useModality` adds focus trapping and intuitive close logic to modal containers.
  */
 export function useModality(
-    onClose?: () => void
+    onClose?: () => void,
+    targetID?: string
 ): {
     modalContainerReference: React.MutableRefObject<HTMLDivElement | null>
     modalBodyReference: React.MutableRefObject<HTMLDivElement | null>
@@ -24,7 +25,7 @@ export function useModality(
     // Add keydown event listener for: 1) focus trapping, 2) `esc` to close
     useEffect(() => {
         const focusedElement = document.activeElement
-
+        console.log('modal rendered')
         // TODO: use body ref instead?
         const containerElement = modalContainerReference.current
         containerElement?.focus()
@@ -72,12 +73,19 @@ export function useModality(
         }
     }, [modalBodyReference, modalContainerReference, onClose])
 
-    // Close modal when user clicks outside of modal body
-    // (optional behavior: user opts in by using `bodyReference` as the ref attribute to the body element)
+    // Close modal when user clicks outside of modal body, or clicks the target element again (for popovers)
+    // (optional behavior: user opts in by using `bodyReference` as the ref attribute to the body element and/or id of target)
     useEffect(() => {
         function handleMouseDownOutside(event: MouseEvent): void {
             const modalBody = modalBodyReference.current
-            if (onClose && modalBody && modalBody !== event.target && !modalBody.contains(event.target as Node)) {
+            const targetElement = targetID ? document.querySelector(`#${targetID}`) : null
+
+            const isNotModalBody =
+                !modalBody || (modalBody !== event.target && !modalBody.contains(event.target as Node))
+            const isNotTargetElement =
+                !targetElement || (targetElement !== event.target && !targetElement.contains(event.target as Node))
+
+            if (onClose && isNotModalBody && isNotTargetElement) {
                 document.addEventListener('mouseup', handleMouseUp)
             }
         }
@@ -87,8 +95,15 @@ export function useModality(
             document.removeEventListener('mouseup', handleMouseUp)
 
             const modalBody = modalBodyReference.current
+            const targetElement = targetID ? document.querySelector(`#${targetID}`) : null
+
             // if mouse is still outside of modal body, close the modal
-            if (onClose && modalBody && modalBody !== event.target && !modalBody.contains(event.target as Node)) {
+            const isNotModalBody =
+                !modalBody || (modalBody !== event.target && !modalBody.contains(event.target as Node))
+            const isNotTargetElement =
+                !targetElement || (targetElement !== event.target && !targetElement.contains(event.target as Node))
+
+            if (onClose && isNotModalBody && isNotTargetElement) {
                 onClose()
             }
         }
@@ -100,7 +115,7 @@ export function useModality(
             // just in case (e.g. modal could close from a timeout between mousedown and mouseup)
             document.removeEventListener('mouseup', handleMouseUp)
         }
-    }, [modalBodyReference, onClose])
+    }, [modalBodyReference, onClose, targetID])
 
     return {
         modalBodyReference,

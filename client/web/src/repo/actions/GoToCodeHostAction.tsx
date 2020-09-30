@@ -4,7 +4,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { merge, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, startWith, switchMap } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
@@ -14,14 +14,14 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { ExternalLinkFields } from '../../graphql-operations'
-import { ModalContainer } from '../../components/ModalContainer'
 import { useEventObservable, useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { SourcegraphIcon } from '../../auth/icons'
 import { eventLogger } from '../../tracking/eventLogger'
+import { PopoverContainer } from '../../components/PopoverContainer'
 
 interface GoToCodeHostPopoverProps {
-    showPopover: boolean
+    canShowPopover: boolean
     onPopoverDismissed: () => void
 }
 
@@ -59,7 +59,6 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     useEffect(() => {
         setHasDismissedPopup(localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true')
-        console.log('mounted')
     }, [])
 
     /**
@@ -111,7 +110,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
         onPopoverDismissed()
-
+        setModalOpen(false)
         eventLogger.log('BrowserExtensionPopupClosed')
     }, [onPopoverDismissed])
 
@@ -125,10 +124,15 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     }, [onPopoverDismissed])
 
     const onSelect = useCallback(() => {
+        if (modalOpen) {
+            setModalOpen(false)
+            return
+        }
+
         if (hijackLink) {
             setModalOpen(true)
         }
-    }, [hijackLink])
+    }, [hijackLink, modalOpen])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =
@@ -185,6 +189,8 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         }
     }
 
+    const TARGET_ID = 'go-to-code-host'
+
     return (
         <>
             <ButtonLink
@@ -194,16 +200,19 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 target="_self"
                 data-tooltip={`View on ${displayName}`}
                 onSelect={onSelect}
+                id={TARGET_ID}
             >
                 <Icon className="icon-inline" />
             </ButtonLink>
-            {props.showPopover && (
+
+            {modalOpen && (
                 <CodeHostExtensionPopover
                     url={url}
                     serviceType={externalURL.serviceType}
                     onClose={onClose}
                     onRejection={onRejection}
                     onClickInstall={onClickInstall}
+                    targetID={TARGET_ID}
                 />
             )}
         </>
@@ -216,6 +225,7 @@ interface CodeHostExtensionPopoverProps {
     onClose: () => void
     onRejection: () => void
     onClickInstall: () => void
+    targetID: string
 }
 
 export const CodeHostExtensionPopover: React.FunctionComponent<CodeHostExtensionPopoverProps> = ({
@@ -224,16 +234,34 @@ export const CodeHostExtensionPopover: React.FunctionComponent<CodeHostExtension
     onClose,
     onRejection,
     onClickInstall,
+    targetID,
 }) => {
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
     const Icon = icon || ExportIcon
 
     return (
-        <ModalContainer onClose={onClose} hideCloseIcon={true} className="justify-content-center">
+        <PopoverContainer
+            onClose={onClose}
+            targetID={targetID}
+            popperOptions={useMemo(
+                () => ({
+                    placement: 'bottom-start' as const,
+                    modifiers: [
+                        {
+                            name: 'offset',
+                            options: {
+                                offset: [64, 4],
+                            },
+                        },
+                    ],
+                }),
+                []
+            )}
+        >
             {modalBodyReference => (
                 <div
                     ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>}
-                    className="extension-permission-modal  p-4 web-content text-wrap"
+                    className="extension-permission-modal p-4 web-content text-wrap border shadow"
                 >
                     <h3 className="mb-0">Take Sourcegraph's code intelligence to {displayName}!</h3>
                     <p className="py-3">
@@ -266,7 +294,7 @@ export const CodeHostExtensionPopover: React.FunctionComponent<CodeHostExtension
                     </div>
                 </div>
             )}
-        </ModalContainer>
+        </PopoverContainer>
     )
 }
 

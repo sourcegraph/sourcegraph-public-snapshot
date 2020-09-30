@@ -56,7 +56,7 @@ import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
-import { HoverThresholdProps } from '../components/shared'
+import { HoverThresholdProps, HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../components/shared'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -308,15 +308,21 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
-    const [showPopover, setShowPopover] = useState(false)
+    const [canShowPopover, setCanShowPopover] = useState(() => {
+        if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
+            return true
+        }
+
+        return false
+    })
 
     const onHoverThresholdReached = useCallback(() => {
-        setShowPopover(true)
+        setCanShowPopover(true)
         // TODO(tj): Trigger "Install extension" alert here
     }, [])
 
     const onPopoverDismissed = useCallback(() => {
-        setShowPopover(false)
+        setCanShowPopover(false)
     }, [])
 
     if (!repoOrError) {
@@ -380,7 +386,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         externalLinks={externalLinks}
                         browserExtensionInstalled={browserExtensionInstalled}
                         fetchFileExternalLinks={fetchFileExternalLinks}
-                        showPopover={showPopover}
+                        canShowPopover={canShowPopover}
                         onPopoverDismissed={onPopoverDismissed}
                     />
                 }
