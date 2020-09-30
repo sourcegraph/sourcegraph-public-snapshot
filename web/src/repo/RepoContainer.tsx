@@ -316,6 +316,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         return false
     })
 
+    /** TODO description */
     const onHoverThresholdReached = useCallback(() => {
         setCanShowPopover(true)
         // TODO(tj): Trigger "Install extension" alert here
