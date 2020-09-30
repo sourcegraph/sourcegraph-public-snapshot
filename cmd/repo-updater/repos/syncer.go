@@ -70,7 +70,9 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 		opts.DequeueInterval = 10 * time.Second
 	}
 
-	s.initialUnmodifiedDiffFromStore(pctx, store)
+	if !opts.IsCloud {
+		s.initialUnmodifiedDiffFromStore(pctx, store)
+	}
 
 	worker, resetter := NewSyncWorker(pctx, db, &syncHandler{
 		db:              db,

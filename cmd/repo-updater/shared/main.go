@@ -180,9 +180,12 @@ func Main(enterpriseInit EnterpriseInit) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	syncer.Synced = make(chan repos.Diff)
-	syncer.SubsetSynced = make(chan repos.Diff)
-	go watchSyncer(ctx, syncer, scheduler, gps)
+	if !envvar.SourcegraphDotComMode() {
+		syncer.Synced = make(chan repos.Diff)
+		syncer.SubsetSynced = make(chan repos.Diff)
+		go watchSyncer(ctx, syncer, scheduler, gps)
+	}
+
 	go func() {
 		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
 			EnqueueInterval: repos.GetUpdateInterval,
