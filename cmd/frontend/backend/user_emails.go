@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -132,6 +133,18 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		}
 	}
 
+	if conf.CanSendEmail() {
+		usr, err := db.Users.GetByID(ctx, userID)
+		if err != nil {
+			log15.Warn("Failed to get user from database", "error", err, ctx)
+			return nil
+		}
+		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, email, usr.DisplayName, "updated the password"); err != nil {
+			log15.Warn("Failed send email to inform user of password update", "error", err, ctx)
+			return nil
+		}
+	}
+
 	return nil
 }
 
@@ -179,5 +192,39 @@ Verify your email address {{printf "%q" .Email}} on Sourcegraph by following thi
 <p>Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:</p>
 
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
+`,
+})
+
+// SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
+// The change is the information we want to provide the user about the change
+func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, email, username, change string) error {
+	return txemail.Send(ctx, txemail.Message{
+		To:       []string{email},
+		Template: updateAccountEmailTemplate,
+		Data: struct {
+			Email    string
+			Change   string
+			Username string
+		}{
+			Email:    email,
+			Change:   change,
+			Username: username,
+		},
+	})
+}
+
+var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	Subject: `Update to your Sourcegraph account`,
+	Text: `
+Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph.
+
+If this was not you please change your password immediately.
+`,
+	HTML: `
+<p>
+Somebody (likely you) updated <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph.
+</p>
+
+<p><strong>If this was not you please change your password immediately.</strong></p>
 `,
 })
