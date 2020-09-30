@@ -6,10 +6,8 @@ var graphQLQuery = `fragment FileMatchFields on FileMatch {
 					url
 				}
 				file {
-					name
 					path
 					url
-					content
 					commit {
 						oid
 					}
