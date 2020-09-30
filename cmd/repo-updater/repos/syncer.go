@@ -83,6 +83,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 		WorkerInterval:       opts.DequeueInterval,
 		NumHandlers:          3,
 		PrometheusRegisterer: s.Registerer,
+		CleanupOldJobs:       true,
 	})
 
 	go worker.Start()
