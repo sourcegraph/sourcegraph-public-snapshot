@@ -3,7 +3,6 @@
 exports[`ExtensionPermissionModal renders 1`] = `
 <div
   className="modal-container justify-content-center"
-  onKeyDown={[Function]}
   tabIndex={-1}
 >
   <div
