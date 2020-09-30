@@ -133,7 +133,7 @@ changesetTemplate:
   published: true
 ```
 
-> NOTE: You can also [publish some of a campaign's changesets](campaign_spec_yaml_reference#publishing-only-specific-changesets).
+> NOTE: You can also [publish some of a campaign's changesets](campaign_spec_yaml_reference.md#publishing-only-specific-changesets).
 
 Then run the `src campaign preview` command again, or `src campaign apply` to immediately publish the changesets.
 
