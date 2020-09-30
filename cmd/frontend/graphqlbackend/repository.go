@@ -257,6 +257,10 @@ func (r *RepositoryResolver) Icon() string {
 	return r.icon
 }
 
+func (r *RepositoryResolver) Rev() string {
+	return r.rev
+}
+
 func (r *RepositoryResolver) Label() (*markdownResolver, error) {
 	var label string
 	if r.rev != "" {
