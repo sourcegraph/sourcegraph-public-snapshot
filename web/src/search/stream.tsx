@@ -1,6 +1,6 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
-import { defaultIfEmpty, scan } from 'rxjs/operators'
+import { defaultIfEmpty, map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -168,6 +168,21 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
     defaultIfEmpty(emptyGQLSearchResults)
 )
 
+const observeMessages = <T extends {}>(eventSource: EventSource, eventName: SearchEvent['type']): Observable<T> =>
+    fromEvent(eventSource, eventName).pipe(
+        map((event: Event) => {
+            if (!(event instanceof MessageEvent)) {
+                throw new TypeError(`internal error: expected MessageEvent in streaming search ${eventName}`)
+            }
+            try {
+                const parsedData = JSON.parse(event.data) as T
+                return parsedData
+            } catch {
+                throw new Error(`Could not parse ${eventName} message data in streaming search`)
+            }
+        })
+    )
+
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
  * The observable will emit each event returned from the backend.
@@ -194,28 +209,19 @@ export function search(
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
         subscriptions.add(
-            fromEvent(eventSource, 'filematches').subscribe((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError('internal error: expected MessageEvent in streaming search filematches')
-                }
-                observer.next({ type: 'filematches', matches: JSON.parse(event.data) as FileMatch[] })
-            })
+            observeMessages<FileMatch[]>(eventSource, 'filematches')
+                .pipe(map(matches => ({ type: 'filematches' as const, matches })))
+                .subscribe(observer)
         )
         subscriptions.add(
-            fromEvent(eventSource, 'repomatches').subscribe((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError('internal error: expected MessageEvent in streaming search filematches')
-                }
-                observer.next({ type: 'repomatches', matches: JSON.parse(event.data) as RepositoryMatch[] })
-            })
+            observeMessages<RepositoryMatch[]>(eventSource, 'repomatches')
+                .pipe(map(matches => ({ type: 'repomatches' as const, matches })))
+                .subscribe(observer)
         )
         subscriptions.add(
-            fromEvent(eventSource, 'filters').subscribe((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError('internal error: expected MessageEvent in streaming search filters')
-                }
-                observer.next({ type: 'filters', filters: JSON.parse(event.data) as Filter[] })
-            })
+            observeMessages<Filter[]>(eventSource, 'filters')
+                .pipe(map(filters => ({ type: 'filters' as const, filters })))
+                .subscribe(observer)
         )
         subscriptions.add(
             fromEvent(eventSource, 'done').subscribe(() => {
