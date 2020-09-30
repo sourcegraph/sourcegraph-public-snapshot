@@ -221,6 +221,7 @@ replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-202009290
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
+replace golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v1.0.0
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 
