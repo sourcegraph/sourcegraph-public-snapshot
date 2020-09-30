@@ -55,7 +55,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 }
 
 // SetPassword sets the user's password given a new password and a password reset code
-func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
