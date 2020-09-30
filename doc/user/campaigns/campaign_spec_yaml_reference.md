@@ -253,8 +253,8 @@ To publish only specific changesets within a campaign, an array of single-elemen
 
 ```yaml
 published:
-  - github.com/*: true
-  - gitlab.com/*: false
+  - github.com/sourcegraph/sourcegraph: true
+  - github.com/sourcegraph/src-cli: false
 ```
 
 Each key will be matched against the repository name using [glob](https://godoc.org/github.com/gobwas/glob#Compile) syntax. The [gobwas/glob library](https://godoc.org/github.com/gobwas/glob#Compile) is used for matching, with the key operators being:
