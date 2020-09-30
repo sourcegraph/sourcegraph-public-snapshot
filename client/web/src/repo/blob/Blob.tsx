@@ -32,7 +32,7 @@ import {
     toURIWithPath,
 } from '../../../../shared/src/util/url'
 import { getHover, getDocumentHighlights } from '../../backend/features'
-import { WebHoverOverlay } from '../../components/shared'
+import { HoverThresholdProps, WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -48,6 +48,7 @@ interface BlobProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */

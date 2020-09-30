@@ -37,6 +37,7 @@ import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { HoverThresholdProps } from 'src/components/shared'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -46,6 +47,7 @@ export interface RepoRevisionContainerContext
         PlatformContextProps,
         ThemeProps,
         TelemetryProps,
+        HoverThresholdProps,
         ActivationProps,
         Pick<
             RepoContainerContext,
@@ -75,6 +77,7 @@ interface RepoRevisionContainerProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
