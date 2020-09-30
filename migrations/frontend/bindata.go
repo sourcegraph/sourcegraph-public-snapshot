@@ -78,6 +78,8 @@
 // 1528395721_lsif_deleted.up.sql (1.619kB)
 // 1528395722_drop_created_by_campaign.down.sql (243B)
 // 1528395722_drop_created_by_campaign.up.sql (83B)
+// 1528395723_convert_secret_jsonb_to_text.down.sql (318B)
+// 1528395723_convert_secret_jsonb_to_text.up.sql (178B)
 
 package migrations
 
@@ -1706,6 +1708,46 @@ func _1528395722_drop_created_by_campaignUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395723_convert_secret_jsonb_to_textDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8d\x3d\x6e\x84\x30\x10\x46\x7b\x4e\xf1\x5d\x80\x2e\x4a\x01\xd5\xb2\x42\x2b\x22\x30\x51\xd6\x5b\xa4\x42\x63\x33\x2b\x9c\x58\xe3\x08\xdb\xf9\xb9\x7d\x84\x50\x94\x34\x29\xb6\x7d\x6f\xe6\x7d\x4d\x7b\xea\x54\x5d\x94\x65\x09\x15\x12\x57\xd0\x8b\x8b\x58\x83\xf7\x86\xec\x2b\x3e\x9c\xf7\xb8\x92\xf3\x70\x57\xb0\xd8\xf5\xeb\x2d\xb9\x20\x58\x28\xc2\x30\x0b\x58\xc8\x78\x9e\x11\x9d\x58\x46\x5a\x18\x86\x22\xdf\xdf\xe1\x9d\x7c\xe6\xfd\x5f\x42\x82\xe1\x8d\xb8\x19\x2f\x31\x88\x29\x0e\xbd\x6e\x9f\xa0\x0f\x4d\xdf\x22\x47\x5e\x27\xfe\x4c\xbc\x0a\xf9\x89\xac\x0d\x59\x52\xc4\x7e\x72\x1c\xfb\xcb\xa0\x40\x39\x2d\xd3\x4c\x89\xa0\x9f\x1f\x5b\x3c\x9c\x47\xd5\xe0\x72\xee\xd4\xe9\x57\x55\xd5\x86\xeb\xdb\xdb\x3b\xfd\x2f\xff\xc7\xfe\x2c\x14\xc7\x71\x18\x3a\x5d\x17\xdf\x01\x00\x00\xff\xff\x9d\x83\xe7\x6b\x3e\x01\x00\x00")
+
+func _1528395723_convert_secret_jsonb_to_textDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395723_convert_secret_jsonb_to_textDownSql,
+		"1528395723_convert_secret_jsonb_to_text.down.sql",
+	)
+}
+
+func _1528395723_convert_secret_jsonb_to_textDownSql() (*asset, error) {
+	bytes, err := _1528395723_convert_secret_jsonb_to_textDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395723_convert_secret_jsonb_to_text.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf0, 0xac, 0x36, 0x5e, 0x76, 0x63, 0xd8, 0x21, 0x36, 0x65, 0x4c, 0xc4, 0x6c, 0xbf, 0x95, 0x3a, 0xcd, 0x36, 0x84, 0xbf, 0x14, 0x84, 0xbc, 0xde, 0xe1, 0xeb, 0xc8, 0xce, 0xd7, 0xd0, 0xfc, 0xa6}}
+	return a, nil
+}
+
+var __1528395723_convert_secret_jsonb_to_textUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x4f\x4c\x4e\xce\x2f\xcd\x2b\x29\x56\x80\x28\x76\xf6\xf7\x09\xf5\xf5\x53\x48\x2c\x2d\xc9\x88\x4f\x49\x2c\x49\x54\x08\x89\x0c\x70\x55\x08\x71\x8d\x08\xb1\xa6\xc4\x38\x88\x28\x86\x89\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xf0\x3d\x63\x46\xb2\x00\x00\x00")
+
+func _1528395723_convert_secret_jsonb_to_textUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395723_convert_secret_jsonb_to_textUpSql,
+		"1528395723_convert_secret_jsonb_to_text.up.sql",
+	)
+}
+
+func _1528395723_convert_secret_jsonb_to_textUpSql() (*asset, error) {
+	bytes, err := _1528395723_convert_secret_jsonb_to_textUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395723_convert_secret_jsonb_to_text.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xaa, 0x0, 0xe3, 0x10, 0x88, 0x1, 0xaa, 0xd2, 0xc3, 0xda, 0x60, 0x76, 0x9e, 0xc, 0xc3, 0x20, 0x78, 0x11, 0x1, 0x11, 0x2d, 0x60, 0x6a, 0xf4, 0xb4, 0xce, 0x76, 0xd6, 0x7c, 0xfa, 0x1c, 0xfa}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1875,6 +1917,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395721_lsif_deleted.up.sql":                                               _1528395721_lsif_deletedUpSql,
 	"1528395722_drop_created_by_campaign.down.sql":                                 _1528395722_drop_created_by_campaignDownSql,
 	"1528395722_drop_created_by_campaign.up.sql":                                   _1528395722_drop_created_by_campaignUpSql,
+	"1528395723_convert_secret_jsonb_to_text.down.sql":                             _1528395723_convert_secret_jsonb_to_textDownSql,
+	"1528395723_convert_secret_jsonb_to_text.up.sql":                               _1528395723_convert_secret_jsonb_to_textUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1999,6 +2043,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395721_lsif_deleted.up.sql":                                               {_1528395721_lsif_deletedUpSql, map[string]*bintree{}},
 	"1528395722_drop_created_by_campaign.down.sql":                                 {_1528395722_drop_created_by_campaignDownSql, map[string]*bintree{}},
 	"1528395722_drop_created_by_campaign.up.sql":                                   {_1528395722_drop_created_by_campaignUpSql, map[string]*bintree{}},
+	"1528395723_convert_secret_jsonb_to_text.down.sql":                             {_1528395723_convert_secret_jsonb_to_textDownSql, map[string]*bintree{}},
+	"1528395723_convert_secret_jsonb_to_text.up.sql":                               {_1528395723_convert_secret_jsonb_to_textUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

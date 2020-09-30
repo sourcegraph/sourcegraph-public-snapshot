@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
@@ -11,6 +12,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -49,11 +51,20 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
+	var esAuthData, esData secret.NullStringValue
+	if data.AuthData != nil {
+		authDataStr := string(*data.AuthData)
+		esAuthData = secret.NullStringValue{S: &authDataStr}
+	}
+	if data.Data != nil {
+		dataStr := string(*data.Data)
+		esData = secret.NullStringValue{S: &dataStr}
+	}
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -113,11 +124,20 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
+	var esAuthData, esData secret.NullStringValue
+	if data.AuthData != nil {
+		authDataStr := string(*data.AuthData)
+		esAuthData = secret.NullStringValue{S: &authDataStr}
+	}
+	if data.Data != nil {
+		dataStr := string(*data.Data)
+		esData = secret.NullStringValue{S: &dataStr}
+	}
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, esAuthData, esData)
 	if err != nil {
 		return err
 	}
@@ -167,10 +187,20 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
+	var esAuthData, esData secret.NullStringValue
+	if data.AuthData != nil {
+		authDataStr := string(*data.AuthData)
+		esAuthData = secret.NullStringValue{S: &authDataStr}
+	}
+	if data.Data != nil {
+		dataStr := string(*data.Data)
+		esData = secret.NullStringValue{S: &dataStr}
+	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData)
+
 	return err
 }
 
@@ -297,11 +327,27 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	var results []*extsvc.Account
 	defer rows.Close()
 	for rows.Next() {
-		var o extsvc.Account
-		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &o.AuthData, &o.Data, &o.CreatedAt, &o.UpdatedAt); err != nil {
+		var acct extsvc.Account
+		var authDataStr, dataStr string
+		esAuthData := secret.NullStringValue{S: &authDataStr}
+		esData := secret.NullStringValue{S: &dataStr}
+		if err := rows.Scan(
+			&acct.ID, &acct.UserID,
+			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+			&esAuthData, &esData,
+			&acct.CreatedAt, &acct.UpdatedAt); err != nil {
 			return nil, err
 		}
-		results = append(results, &o)
+
+		if esAuthData.Valid {
+			authData := json.RawMessage(authDataStr)
+			acct.AuthData = &authData
+		}
+		if esData.Valid {
+			data := json.RawMessage(dataStr)
+			acct.Data = &data
+		}
+		results = append(results, &acct)
 	}
 	return results, rows.Err()
 }
