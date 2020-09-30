@@ -23,9 +23,11 @@ import (
 )
 
 type SyncWorkerOptions struct {
-	NumHandlers          int                   // defaults to 3
-	WorkerInterval       time.Duration         // defaults to 10s
-	PrometheusRegisterer prometheus.Registerer // if non-nil, metrics will be collected
+	NumHandlers            int                   // defaults to 3
+	WorkerInterval         time.Duration         // defaults to 10s
+	PrometheusRegisterer   prometheus.Registerer // if non-nil, metrics will be collected
+	CleanupOldJobs         bool                  // run a background process to cleanup old jobs
+	CleanupOldJobsInterval time.Duration         // defaults to 1h
 }
 
 // NewSyncWorker creates a new external service sync worker.
@@ -35,6 +37,10 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	}
 	if opts.WorkerInterval == 0 {
 		opts.WorkerInterval = 10 * time.Second
+	}
+
+	if opts.CleanupOldJobsInterval == 0 {
+		opts.CleanupOldJobsInterval = time.Hour
 	}
 
 	dbHandle := basestore.NewHandleWithDB(db, sql.TxOptions{
@@ -74,6 +80,10 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
 	})
+
+	if opts.CleanupOldJobs {
+		go runJobCleaner(ctx, db, opts.CleanupOldJobsInterval)
+	}
 
 	return worker, resetter
 }
@@ -119,6 +129,29 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 			Name: "src_external_service_queue_reset_errors_total",
 			Help: "Total number of errors when running the external service resetter",
 		}),
+	}
+}
+
+func runJobCleaner(ctx context.Context, db dbutil.DB, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			_, err := db.ExecContext(ctx, `
+-- source: cmd/repo-updater/repos/sync_worker.go:runJobCleaner
+DELETE FROM external_service_sync_jobs
+WHERE
+  finished_at < now() - INTERVAL '1 day'
+  AND state IN ('completed', 'errored')
+`)
+			if err != nil && err != context.Canceled {
+				log15.Error("error while running job cleaner", "err", err)
+			}
+		}
 	}
 }
 
