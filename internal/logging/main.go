@@ -88,7 +88,7 @@ func LogEntryLevelString(l log15.Lvl) string {
 	case log15.LvlCrit:
 		return "CRITICAL"
 	default:
-		panic("bad level")
+		return "INVALID"
 	}
 }
 
