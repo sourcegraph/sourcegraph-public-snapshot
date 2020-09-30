@@ -1286,12 +1286,6 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 	)
 }
 
-type sourceInfo struct {
-	ID       int64
-	CloneURL secret.StringValue
-	Kind     string
-}
-
 func scanRepo(r *Repo, s scanner) error {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
@@ -1318,6 +1312,11 @@ func scanRepo(r *Repo, s scanner) error {
 		return err
 	}
 
+	type sourceInfo struct {
+		ID       int64
+		CloneURL secret.StringValue
+		Kind     string
+	}
 	r.Sources = make(map[string]*SourceInfo)
 
 	if sources.Raw != nil {
