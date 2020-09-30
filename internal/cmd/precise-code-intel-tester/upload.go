@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -270,7 +271,6 @@ func upload(ctx context.Context, name, rev string, limiter *util.Limiter) (strin
 	defer limiter.Release()
 
 	args := []string{
-		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", endpoint),
 		"lsif",
 		"upload",
 		"-root=/",
@@ -280,6 +280,7 @@ func upload(ctx context.Context, name, rev string, limiter *util.Limiter) (strin
 	}
 
 	cmd := exec.CommandContext(ctx, "src", args...)
+	cmd.Env = append(os.Environ(), fmt.Sprintf("SRC_ENDPOINT=%s", endpoint))
 	cmd.Dir = indexDir
 
 	output, err := cmd.CombinedOutput()
