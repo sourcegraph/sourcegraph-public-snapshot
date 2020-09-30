@@ -8,9 +8,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -85,22 +82,6 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}
-	if conf.CanSendEmail() {
-		email, _, err := UserEmails.GetPrimaryEmail(ctx, id)
-		if err != nil {
-			log15.Warn("Failed to get user email", "error", err, ctx)
-			return true, nil
-		}
-		usr, err := Users.GetByID(ctx, id)
-		if err != nil {
-			log15.Warn("Failed to get user from database", "error", err, ctx)
-			return true, nil
-		}
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, email, usr.DisplayName, "reset the password"); err != nil {
-			log15.Warn("Failed send email to inform user of password reset", "error", err, ctx)
-			return true, nil
-		}
-	}
 
 	return true, nil
 }
@@ -139,23 +120,6 @@ func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPa
 	// 🚨 SECURITY: Set the new password
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return err
-	}
-
-	if conf.CanSendEmail() {
-		email, _, err := UserEmails.GetPrimaryEmail(ctx, id)
-		if err != nil {
-			log15.Warn("Failed to get user email", "error", err, ctx)
-			return nil
-		}
-		usr, err := Users.GetByID(ctx, id)
-		if err != nil {
-			log15.Warn("Failed to get user from database", "error", err, ctx)
-			return nil
-		}
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, email, usr.DisplayName, "updated the password"); err != nil {
-			log15.Warn("Failed send email to inform user of password update", "error", err, ctx)
-			return nil
-		}
 	}
 
 	return nil

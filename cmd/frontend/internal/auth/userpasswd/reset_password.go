@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -185,6 +186,23 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 	if !success {
 		http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
 		return
+	}
+
+	if conf.CanSendEmail() {
+		email, _, err := db.UserEmails.GetPrimaryEmail(ctx, params.UserID)
+		if err != nil {
+			log15.Warn("Failed to get user email", "error", err, ctx)
+			return
+		}
+		usr, err := db.Users.GetByID(ctx, params.UserID)
+		if err != nil {
+			log15.Warn("Failed to get user from database", "error", err, ctx)
+			return
+		}
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, email, usr.DisplayName, "reset the password"); err != nil {
+			log15.Warn("Failed send email to inform user of password reset", "error", err, ctx)
+			return
+		}
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -308,6 +309,18 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 
 	if err := db.Users.UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
+	}
+
+	if conf.CanSendEmail() {
+		email, _, err := db.UserEmails.GetPrimaryEmail(ctx, user.ID)
+		if err != nil {
+			log15.Warn("Failed to get user email", "error", err, ctx)
+			return &EmptyResponse{}, nil
+		}
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, email, user.DisplayName, "updated the password"); err != nil {
+			log15.Warn("Failed send email to inform user of password update", "error", err, ctx)
+			return &EmptyResponse{}, nil
+		}
 	}
 	return &EmptyResponse{}, nil
 }
