@@ -50,36 +50,8 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 
 	const filematchesChunk = 1000
 	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
-
-	for _, result := range resultsResolver.Results() {
-		fm, ok := result.ToFileMatch()
-		if !ok {
-			continue
-		}
-
-		lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
-		for _, lm := range fm.JLineMatches {
-			lineMatches = append(lineMatches, eventLineMatch{
-				Line:             lm.JPreview,
-				LineNumber:       lm.JLineNumber,
-				OffsetAndLengths: lm.JOffsetAndLengths,
-			})
-		}
-
-		var branches []string
-		if fm.InputRev != nil {
-			branches = []string{*fm.InputRev}
-		}
-
-		filematchesBuf = append(filematchesBuf, eventFileMatch{
-			Path:        fm.JPath,
-			Repository:  fm.Repo.Name(),
-			Branches:    branches,
-			Version:     string(fm.CommitID),
-			LineMatches: lineMatches,
-		})
-
-		if len(filematchesBuf) == cap(filematchesBuf) {
+	flushFileMatchesBuf := func() {
+		if len(filematchesBuf) > 0 {
 			if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
 				// EOF
 				return
@@ -88,13 +60,16 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(filematchesBuf) > 0 {
-		if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
-			// EOF
-			return
+	for _, result := range resultsResolver.Results() {
+		if fm, ok := result.ToFileMatch(); ok {
+			filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
+			if len(filematchesBuf) == cap(filematchesBuf) {
+				flushFileMatchesBuf()
+			}
 		}
-		filematchesBuf = filematchesBuf[:0]
 	}
+
+	flushFileMatchesBuf()
 
 	// Send dynamic filters once. When this is true streaming we may want to
 	// send updated filters as we find more results.
@@ -155,6 +130,30 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
+	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
+	for _, lm := range fm.JLineMatches {
+		lineMatches = append(lineMatches, eventLineMatch{
+			Line:             lm.JPreview,
+			LineNumber:       lm.JLineNumber,
+			OffsetAndLengths: lm.JOffsetAndLengths,
+		})
+	}
+
+	var branches []string
+	if fm.InputRev != nil {
+		branches = []string{*fm.InputRev}
+	}
+
+	return eventFileMatch{
+		Path:        fm.JPath,
+		Repository:  fm.Repo.Name(),
+		Branches:    branches,
+		Version:     string(fm.CommitID),
+		LineMatches: lineMatches,
+	}
 }
 
 type eventStreamWriter struct {
