@@ -420,7 +420,7 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 			}
 		}
 		if update.Config != nil {
-			if err := execUpdate(ctx, tx, sqlf.Sprintf("config=%s", secret.StringValue{S: update.Config})); err != nil {
+			if err := execUpdate(ctx, tx, sqlf.Sprintf("config=%s, next_sync_at=now()", secret.StringValue{S: update.Config})); err != nil {
 				return err
 			}
 		}
