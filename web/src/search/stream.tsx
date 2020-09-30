@@ -1,6 +1,6 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
-import { defaultIfEmpty, map, scan } from 'rxjs/operators'
+import { defaultIfEmpty, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -83,8 +83,7 @@ const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => (
     ...filter,
 })
 
-// TODO fill in the fields we actually care about
-const toGQLSearchResults = (results: GQL.SearchResult[], filters: GQL.ISearchFilter[]): GQL.ISearchResults => ({
+const emptyGQLSearchResults: GQL.ISearchResults = {
     __typename: 'SearchResults',
     matchCount: 0,
     resultCount: 0,
@@ -101,39 +100,35 @@ const toGQLSearchResults = (results: GQL.SearchResult[], filters: GQL.ISearchFil
     indexUnavailable: false,
     alert: null,
     elapsedMilliseconds: 0,
-    dynamicFilters: filters,
-    results,
+    dynamicFilters: [],
+    results: [],
     pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-})
+}
 
 /**
  * Converts a stream of SearchEvents into an aggregated GQL.ISearchResult
  */
 export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
-    scan(
-        (allEvents: { matches: GQL.IFileMatch[]; filters: GQL.ISearchFilter[] }, newEvent: SearchEvent) => {
-            if (newEvent.type === 'filematches') {
-                return {
-                    ...allEvents,
-                    // File matches are additive
-                    matches: allEvents.matches.concat(newEvent.matches.map(toGQLFileMatch)),
-                }
+    scan((results: GQL.ISearchResults, newEvent: SearchEvent) => {
+        if (newEvent.type === 'filematches') {
+            return {
+                ...results,
+                // File matches are additive
+                results: results.results.concat(newEvent.matches.map(toGQLFileMatch)),
             }
+        }
 
-            if (newEvent.type === 'filters') {
-                return {
-                    ...allEvents,
-                    // New filter results replace all previous ones
-                    filters: newEvent.filters.map(toGQLSearchFilter),
-                }
+        if (newEvent.type === 'filters') {
+            return {
+                ...results,
+                // New filter results replace all previous ones
+                dynamicFilters: newEvent.filters.map(toGQLSearchFilter),
             }
+        }
 
-            throw new TypeError('internal error: expected valid events type in streaming search')
-        },
-        { matches: [] as GQL.IFileMatch[], filters: [] as GQL.ISearchFilter[] }
-    ),
-    defaultIfEmpty({ matches: [] as GQL.IFileMatch[], filters: [] as GQL.ISearchFilter[] }),
-    map(results => toGQLSearchResults(results.matches, results.filters))
+        throw new TypeError('internal error: expected valid events type in streaming search')
+    }, emptyGQLSearchResults),
+    defaultIfEmpty(emptyGQLSearchResults)
 )
 
 /**
