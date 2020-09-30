@@ -312,14 +312,8 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		email, _, err := db.UserEmails.GetPrimaryEmail(ctx, user.ID)
-		if err != nil {
-			log15.Warn("Failed to get user email", "error", err, ctx)
-			return &EmptyResponse{}, nil
-		}
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, email, user.DisplayName, "updated the password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
 			log15.Warn("Failed send email to inform user of password update", "error", err, ctx)
-			return &EmptyResponse{}, nil
 		}
 	}
 	return &EmptyResponse{}, nil

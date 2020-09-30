@@ -132,19 +132,6 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
-
-	if conf.CanSendEmail() {
-		usr, err := db.Users.GetByID(ctx, userID)
-		if err != nil {
-			log15.Warn("Failed to get user from database", "error", err, ctx)
-			return nil
-		}
-		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, email, usr.DisplayName, "updated the password"); err != nil {
-			log15.Warn("Failed send email to inform user of password update", "error", err, ctx)
-			return nil
-		}
-	}
-
 	return nil
 }
 
@@ -197,7 +184,18 @@ Verify your email address {{printf "%q" .Email}} on Sourcegraph by following thi
 
 // SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
 // The change is the information we want to provide the user about the change
-func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, email, username, change string) error {
+func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
+	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
+	if err != nil {
+		log15.Warn("Failed to get user email", "error", err, ctx)
+		return err
+	}
+	usr, err := db.Users.GetByID(ctx, id)
+	if err != nil {
+		log15.Warn("Failed to get user from database", "error", err, ctx)
+		return err
+	}
+
 	return txemail.Send(ctx, txemail.Message{
 		To:       []string{email},
 		Template: updateAccountEmailTemplate,
@@ -208,7 +206,7 @@ func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, email, usernam
 		}{
 			Email:    email,
 			Change:   change,
-			Username: username,
+			Username: usr.DisplayName,
 		},
 	})
 }
