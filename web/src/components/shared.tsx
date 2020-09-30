@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { ActionsNavItems, ActionsNavItemsProps } from '../../../shared/src/actions/ActionsNavItems'
 import { CommandListPopoverButton, CommandListPopoverButtonProps } from '../../../shared/src/commandPalette/CommandList'
 import {
@@ -12,7 +12,17 @@ import { useLocalStorage } from '../util/useLocalStorage'
 
 // Components from shared with web-styling class names applied
 
-export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
+const HOVER_COUNT_KEY = 'hover-count'
+const HOVER_THRESHOLD = 5
+
+export interface HoverThresholdProps {
+    /**
+     * Called when the threshold of hovers with a content is reached.
+     */
+    onHoverThresholdReached: () => void
+}
+
+export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverThresholdProps> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -30,6 +40,28 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props
         )
         propsToUse = { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } }
     }
+
+    const { hoverOrError } = propsToUse
+    const { onHoverThresholdReached, hoveredToken } = props
+
+    /** Whether the hover has actual content (that provides value to the user) */
+    const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
+
+    useEffect(() => {
+        if (hoverHasValue) {
+            const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
+
+            if (count > HOVER_THRESHOLD) {
+                return
+            }
+
+            if (count === HOVER_THRESHOLD) {
+                onHoverThresholdReached?.()
+            }
+
+            localStorage.setItem(HOVER_COUNT_KEY, count.toString())
+        }
+    }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverThresholdReached, hoverHasValue])
 
     return (
         <HoverOverlay

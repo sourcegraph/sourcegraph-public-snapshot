@@ -31,7 +31,7 @@ import {
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchRepository, resolveRevision } from './backend'
+import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
@@ -55,6 +55,8 @@ import { displayRepoName, splitPath } from '../../../shared/src/components/RepoF
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
+import { browserExtensionInstalled } from '../tracking/analyticsUtils'
+import { HoverThresholdProps } from '../components/shared'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -65,6 +67,7 @@ export interface RepoContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
+        HoverThresholdProps,
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
@@ -305,6 +308,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
+    const [showPopover, setShowPopover] = useState(false)
+
+    const onHoverThresholdReached = useCallback(() => {
+        setShowPopover(true)
+    }, [])
+
+    const onPopoverDismissed = useCallback(() => {
+        setShowPopover(false)
+    }, [])
+
     if (!repoOrError) {
         // Render nothing while loading
         return null
@@ -332,6 +345,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         ...props,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
+        onHoverThresholdReached,
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
@@ -363,6 +377,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         position={position}
                         range={range}
                         externalLinks={externalLinks}
+                        browserExtensionInstalled={browserExtensionInstalled}
+                        fetchFileExternalLinks={fetchFileExternalLinks}
+                        showPopover={showPopover}
+                        onPopoverDismissed={onPopoverDismissed}
                     />
                 }
             />

@@ -5,10 +5,10 @@ import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
-import { merge, of } from 'rxjs'
+import { merge, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, startWith, switchMap } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
-import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
+import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
@@ -16,19 +16,26 @@ import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { ExternalLinkFields } from '../../graphql-operations'
 import { ModalContainer } from '../../components/ModalContainer'
 import { useEventObservable, useObservable } from '../../../../shared/src/util/useObservable'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { SourcegraphIcon } from '../../auth/icons'
 import { eventLogger } from '../../tracking/eventLogger'
 
-interface Props extends RevisionSpec, Partial<FileSpec> {
-    repo?: GQL.IRepository | null
+interface GoToCodeHostPopoverProps {
+    showPopover: boolean
+    onPopoverDismissed: () => void
+}
+
+interface Props extends RevisionSpec, Partial<FileSpec>, GoToCodeHostPopoverProps {
+    repo?: Pick<GQL.IRepository, 'name' | 'defaultBranch' | 'externalURLs'> | null
     filePath?: string
     commitRange?: string
     position?: Position
     range?: Range
 
     externalLinks?: ExternalLinkFields[]
+
+    browserExtensionInstalled: Observable<boolean | { platform: unknown }>
+    fetchFileExternalLinks: typeof fetchFileExternalLinks
 }
 
 const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
@@ -39,7 +46,7 @@ const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const [modalOpen, setModalOpen] = useState(false)
 
-    const isExtensionInstalled = useObservable(browserExtensionInstalled)
+    const isExtensionInstalled = useObservable(props.browserExtensionInstalled)
 
     const [hasDissmissedPopup, setHasDismissedPopup] = useState(false)
 
@@ -47,6 +54,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     useEffect(() => {
         setHasDismissedPopup(localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true')
+        console.log('mounted')
     }, [])
 
     /**
@@ -174,7 +182,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     return (
         <>
-            <LinkOrButton
+            <ButtonLink
                 className="nav-link test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 to={hijackLink ? '' : url}
@@ -183,52 +191,77 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 onSelect={onSelect}
             >
                 <Icon className="icon-inline" />
-            </LinkOrButton>
-            {modalOpen && (
-                <ModalContainer onClose={onClose} hideCloseIcon={true} className="justify-content-center">
-                    {modalBodyReference => (
-                        <div
-                            ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>}
-                            className="extension-permission-modal  p-4 web-content text-wrap"
-                        >
-                            <h3 className="mb-0">Take Sourcegraph's code intelligence to {displayName}!</h3>
-                            <p className="py-3">
-                                Install Sourcegraph browser extension to get code intelligence while browsing files and
-                                reading PRs on {displayName}.
-                            </p>
-
-                            <div className="mx-auto code-host-action__graphic-container d-flex justify-content-between align-items-center">
-                                <SourcegraphIcon size={48} />
-                                <PlusThickIcon size={20} className="code-host-action__plus-icon" />
-                                <Icon size={56} />
-                            </div>
-
-                            <div className="d-flex justify-content-end">
-                                <LinkOrButton
-                                    className="btn btn-outline-secondary mr-2"
-                                    onSelect={onRejection}
-                                    to={url}
-                                >
-                                    No, thanks
-                                </LinkOrButton>
-
-                                <LinkOrButton className="btn btn-outline-secondary mr-2" onSelect={onClose} to={url}>
-                                    Remind me later
-                                </LinkOrButton>
-
-                                <LinkOrButton
-                                    className="btn btn-primary mr-2"
-                                    onSelect={onClickInstall}
-                                    to="/help/integration/browser_extension"
-                                >
-                                    Install browser extension
-                                </LinkOrButton>
-                            </div>
-                        </div>
-                    )}
-                </ModalContainer>
+            </ButtonLink>
+            {props.showPopover && (
+                <CodeHostExtensionModal
+                    url={url}
+                    serviceType={externalURL.serviceType}
+                    onClose={onClose}
+                    onRejection={onRejection}
+                    onClickInstall={onClickInstall}
+                />
             )}
         </>
+    )
+}
+
+interface CodeHostExtensionModalProps {
+    url: string
+    serviceType: string | null
+    onClose: () => void
+    onRejection: () => void
+    onClickInstall: () => void
+}
+
+export const CodeHostExtensionModal: React.FunctionComponent<CodeHostExtensionModalProps> = ({
+    url,
+    serviceType,
+    onClose,
+    onRejection,
+    onClickInstall,
+}) => {
+    const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
+    const Icon = icon || ExportIcon
+
+    return (
+        <ModalContainer onClose={onClose} hideCloseIcon={true} className="justify-content-center">
+            {modalBodyReference => (
+                <div
+                    ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>}
+                    className="extension-permission-modal  p-4 web-content text-wrap"
+                >
+                    <h3 className="mb-0">Take Sourcegraph's code intelligence to {displayName}!</h3>
+                    <p className="py-3">
+                        Install Sourcegraph browser extension to get code intelligence while browsing files and reading
+                        PRs on {displayName}.
+                    </p>
+
+                    <div className="mx-auto code-host-action__graphic-container d-flex justify-content-between align-items-center">
+                        <SourcegraphIcon size={48} />
+                        <PlusThickIcon size={20} className="code-host-action__plus-icon" />
+                        <Icon size={56} />
+                    </div>
+
+                    <div className="d-flex justify-content-end">
+                        <ButtonLink className="btn btn-outline-secondary mr-2" onSelect={onRejection} to={url}>
+                            No, thanks
+                        </ButtonLink>
+
+                        <ButtonLink className="btn btn-outline-secondary mr-2" onSelect={onClose} to={url}>
+                            Remind me later
+                        </ButtonLink>
+
+                        <ButtonLink
+                            className="btn btn-primary mr-2"
+                            onSelect={onClickInstall}
+                            to="/help/integration/browser_extension"
+                        >
+                            Install browser extension
+                        </ButtonLink>
+                    </div>
+                </div>
+            )}
+        </ModalContainer>
     )
 }
 
