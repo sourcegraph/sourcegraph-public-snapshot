@@ -21,10 +21,8 @@ interface RepositoryMatch {
     branches?: string[]
 }
 
-interface FileMatch {
+interface FileMatch extends RepositoryMatch {
     name: string
-    repository: string
-    branches?: string[]
     version?: string
     lineMatches: LineMatch[]
 }
