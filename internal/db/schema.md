@@ -176,7 +176,6 @@ Referenced by:
  external_state        | text                     | 
  external_review_state | text                     | 
  external_check_state  | text                     | 
- created_by_campaign   | boolean                  | not null default false
  added_to_campaign     | boolean                  | not null default false
  diff_stat_added       | integer                  | 
  diff_stat_changed     | integer                  | 
@@ -1046,8 +1045,8 @@ Foreign-key constraints:
  service_type | text                     | not null
  service_id   | text                     | not null
  account_id   | text                     | not null
- auth_data    | jsonb                    | 
- account_data | jsonb                    | 
+ auth_data    | text                     | 
+ account_data | text                     | 
  created_at   | timestamp with time zone | not null default now()
  updated_at   | timestamp with time zone | not null default now()
  deleted_at   | timestamp with time zone | 

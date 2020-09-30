@@ -2,51 +2,62 @@ import * as H from 'history'
 import * as React from 'react'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
-export const PasswordInput: React.FunctionComponent<
-    React.InputHTMLAttributes<HTMLInputElement> & {
-        inputRef?: React.Ref<HTMLInputElement>
-    }
-> = props => {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    inputRef?: React.Ref<HTMLInputElement>
+}
+
+export const PasswordInput: React.FunctionComponent<InputProps> = props => {
     const { inputRef, ...other } = props
     return (
         <input
             name="password"
+            id="password"
             {...other}
             className={`form-control ${props.className || ''}`}
+            placeholder={props.placeholder || 'Password'}
             type="password"
-            placeholder={props.placeholder === undefined ? 'Password' : props.placeholder}
             required={true}
             ref={inputRef}
         />
     )
 }
 
-export const EmailInput: React.FunctionComponent<React.InputHTMLAttributes<HTMLInputElement>> = props => (
-    <input
-        name="email"
-        {...props}
-        className={`form-control ${props.className || ''}`}
-        type="email"
-        placeholder="Email"
-        spellCheck={false}
-        autoComplete="email"
-    />
-)
+export const EmailInput: React.FunctionComponent<InputProps> = props => {
+    const { inputRef, ...other } = props
+    return (
+        <input
+            name="email"
+            id="email"
+            {...other}
+            className={`form-control ${props.className || ''}`}
+            type="email"
+            placeholder={props.placeholder || 'Email'}
+            spellCheck={false}
+            autoComplete="email"
+            ref={inputRef}
+        />
+    )
+}
 
-export const UsernameInput: React.FunctionComponent<React.InputHTMLAttributes<HTMLInputElement>> = props => (
-    <input
-        name="username"
-        {...props}
-        className={`form-control ${props.className || ''}`}
-        type="text"
-        placeholder="Username"
-        spellCheck={false}
-        pattern={VALID_USERNAME_REGEXP}
-        maxLength={USERNAME_MAX_LENGTH}
-        autoCapitalize="off"
-        autoComplete="username"
-    />
-)
+export const UsernameInput: React.FunctionComponent<InputProps> = props => {
+    const { inputRef, ...other } = props
+    return (
+        <input
+            name="username"
+            id="username"
+            {...other}
+            className={`form-control ${props.className || ''}`}
+            type="text"
+            placeholder={props.placeholder || 'Username'}
+            spellCheck={false}
+            pattern={VALID_USERNAME_REGEXP}
+            maxLength={USERNAME_MAX_LENGTH}
+            autoCapitalize="off"
+            autoComplete="username"
+            ref={inputRef}
+        />
+    )
+}
 
 /**
  * Returns the sanitized return-to relative URL (including only the path, search, and fragment).

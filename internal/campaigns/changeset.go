@@ -177,8 +177,6 @@ type Changeset struct {
 
 	// The campaign that "owns" this changeset: it can create/close it on code host.
 	OwnedByCampaignID int64
-	// Whether this changeset was created by a campaign on a code host.
-	CreatedByCampaign bool
 	// Whether it was imported/tracked by a campaign.
 	AddedToCampaign bool
 

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -168,12 +169,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		Metadata:            metadata,
 		Sources:             sources,
 	}, nil
-}
-
-type sourceRecord struct {
-	ExternalServiceID int64  `json:"external_service_id"`
-	RepoID            int64  `json:"repo_id"`
-	CloneURL          string `json:"clone_url"`
 }
 
 // DBStore implements the Store interface for reading and writing repos directly
@@ -782,25 +777,25 @@ ORDER BY id ASC LIMIT %s
 	)
 }
 
+type externalServiceRepo struct {
+	ExternalServiceID int64              `json:"external_service_id"`
+	RepoID            int64              `json:"repo_id"`
+	CloneURL          secret.StringValue `json:"clone_url"`
+}
+
 func (s DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
 	if len(inserts)+len(updates)+len(deletes) == 0 {
 		return nil
 	}
 
-	type source struct {
-		ExternalServiceID int64  `json:"external_service_id"`
-		RepoID            int64  `json:"repo_id"`
-		CloneURL          string `json:"clone_url"`
-	}
-
 	marshalSourceList := func(sources map[api.RepoID][]SourceInfo) ([]byte, error) {
-		srcs := make([]source, 0, len(sources))
+		srcs := make([]externalServiceRepo, 0, len(sources))
 		for rid, infoList := range sources {
 			for _, info := range infoList {
-				srcs = append(srcs, source{
+				srcs = append(srcs, externalServiceRepo{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          info.CloneURL,
+					CloneURL:          secret.StringValue{S: &info.CloneURL},
 				})
 			}
 		}
@@ -1332,12 +1327,12 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 }
 
 func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawMessage, error) {
-	var records []sourceRecord
+	var records []externalServiceRepo
 	for _, src := range sources {
-		records = append(records, sourceRecord{
+		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          src.CloneURL,
+			CloneURL:          secret.StringValue{S: &src.CloneURL},
 		})
 	}
 
@@ -1417,10 +1412,9 @@ func scanRepo(r *Repo, s scanner) error {
 
 	type sourceInfo struct {
 		ID       int64
-		CloneURL string
+		CloneURL secret.StringValue
 		Kind     string
 	}
-
 	r.Sources = make(map[string]*SourceInfo)
 
 	if sources.Raw != nil {
@@ -1432,7 +1426,7 @@ func scanRepo(r *Repo, s scanner) error {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &SourceInfo{
 				ID:       urn,
-				CloneURL: src.CloneURL,
+				CloneURL: *src.CloneURL.S,
 			}
 		}
 	}
