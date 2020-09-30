@@ -45,6 +45,11 @@ const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
  */
 export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const [modalOpen, setModalOpen] = useState(false)
+    /**
+     * TODO: only set popover open when "canShowPopover" is true AND "hasDismissedPopover" is false
+     */
+
+    const { onPopoverDismissed } = props
 
     const isExtensionInstalled = useObservable(props.browserExtensionInstalled)
 
@@ -98,26 +103,26 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const onRejection = useCallback(() => {
         localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
         setHasDismissedPopup(true)
-        setModalOpen(false)
+        onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupRejected')
-    }, [])
+    }, [onPopoverDismissed])
 
     /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
-        setModalOpen(false)
+        onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupClosed')
-    }, [])
+    }, [onPopoverDismissed])
 
     /** The user is likely to install the browser extension at this point, so don't show it again. */
     const onClickInstall = useCallback(() => {
         localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
         setHasDismissedPopup(true)
-        setModalOpen(false)
+        onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupClickedInstall')
-    }, [])
+    }, [onPopoverDismissed])
 
     const onSelect = useCallback(() => {
         if (hijackLink) {
@@ -193,7 +198,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 <Icon className="icon-inline" />
             </ButtonLink>
             {props.showPopover && (
-                <CodeHostExtensionModal
+                <CodeHostExtensionPopover
                     url={url}
                     serviceType={externalURL.serviceType}
                     onClose={onClose}
@@ -205,7 +210,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     )
 }
 
-interface CodeHostExtensionModalProps {
+interface CodeHostExtensionPopoverProps {
     url: string
     serviceType: string | null
     onClose: () => void
@@ -213,7 +218,7 @@ interface CodeHostExtensionModalProps {
     onClickInstall: () => void
 }
 
-export const CodeHostExtensionModal: React.FunctionComponent<CodeHostExtensionModalProps> = ({
+export const CodeHostExtensionPopover: React.FunctionComponent<CodeHostExtensionPopoverProps> = ({
     url,
     serviceType,
     onClose,

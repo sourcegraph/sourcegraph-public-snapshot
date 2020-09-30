@@ -59,7 +59,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
                 onHoverThresholdReached?.()
             }
 
-            localStorage.setItem(HOVER_COUNT_KEY, count.toString())
+            localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverThresholdReached, hoverHasValue])
 
