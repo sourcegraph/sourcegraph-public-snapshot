@@ -1,12 +1,3 @@
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
 .popover-container {
     z-index: $zindex-popover;
 
@@ -49,5 +40,14 @@
     /* stylelint-disable-next-line selector-max-compound-selectors */
     &[data-popper-placement^='right'] > &__arrow {
         left: -4px;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
