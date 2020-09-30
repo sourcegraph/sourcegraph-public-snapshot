@@ -40,10 +40,9 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
  * A component that is displayed in the same way, regardless of whether it's a link (with a
  * destination URL) or a button (with a click handler).
  *
- * It is keyboard accessible: unlike <Link> or <a>, pressing the enter key triggers it. Unlike
- * <button>, it shows a focus ring.
+ * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const LinkOrButton: React.FunctionComponent<Props> = ({
+export const ButtonLink: React.FunctionComponent<Props> = ({
     className = 'nav-link',
     to,
     target,
