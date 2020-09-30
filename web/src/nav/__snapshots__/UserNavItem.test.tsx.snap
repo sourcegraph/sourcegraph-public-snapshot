@@ -375,6 +375,17 @@ exports[`UserNavItem simple 1`] = `
                       className="icon-inline"
                     />
                   </a>
+                  <a
+                    className="dropdown-item"
+                    href="https://docs.sourcegraph.com/integration/browser_extension"
+                    rel="noopener"
+                    target="_blank"
+                  >
+                    Browser extension 
+                    <Memo(OpenInNewIcon)
+                      className="icon-inline"
+                    />
+                  </a>
                 </div>
               </DropdownMenu>
             </div>
