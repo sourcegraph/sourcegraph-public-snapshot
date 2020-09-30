@@ -67,7 +67,9 @@ func TestReconcilerProcess(t *testing.T) {
 		wantUpdateOnCodeHost bool
 		wantCloseOnCodeHost  bool
 		wantLoadFromCodeHost bool
-		wantGitserverCommit  bool
+		wantReopenOnCodeHost bool
+
+		wantGitserverCommit bool
 
 		wantChangeset changesetAssertions
 	}
@@ -184,11 +186,10 @@ func TestReconcilerProcess(t *testing.T) {
 				body:  "old body",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        "12345",
-				externalBranch:    "head-ref-on-github",
-				createdByCampaign: true,
-				ownedByCampaign:   campaign.ID,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -223,12 +224,11 @@ func TestReconcilerProcess(t *testing.T) {
 				body:  "old body",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        githubPR.ID,
-				externalBranch:    githubPR.HeadRefName,
-				externalState:     campaigns.ChangesetExternalStateOpen,
-				createdByCampaign: true,
-				ownedByCampaign:   campaign.ID,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				ownedByCampaign:  campaign.ID,
 				// Previous update failed:
 				failureMessage: "failed to update changeset metadata",
 			},
@@ -265,12 +265,11 @@ func TestReconcilerProcess(t *testing.T) {
 				commitMessage: "old message",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        "12345",
-				externalBranch:    "head-ref-on-github",
-				externalState:     campaigns.ChangesetExternalStateOpen,
-				createdByCampaign: true,
-				ownedByCampaign:   campaign.ID,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -303,12 +302,11 @@ func TestReconcilerProcess(t *testing.T) {
 				commitMessage: "old message",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        "12345",
-				externalBranch:    "head-ref-on-github",
-				externalState:     campaigns.ChangesetExternalStateOpen,
-				createdByCampaign: true,
-				ownedByCampaign:   campaign.ID,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				ownedByCampaign:  campaign.ID,
 
 				// Previous update failed:
 				failureMessage: "failed to update changeset commit",
@@ -346,12 +344,11 @@ func TestReconcilerProcess(t *testing.T) {
 				commitAuthorEmail: "larry@winamp.com",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        "12345",
-				externalBranch:    "head-ref-on-github",
-				externalState:     campaigns.ChangesetExternalStateOpen,
-				createdByCampaign: true,
-				ownedByCampaign:   campaign.ID,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "12345",
+				externalBranch:   "head-ref-on-github",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
 
@@ -380,11 +377,10 @@ func TestReconcilerProcess(t *testing.T) {
 				body:  "body",
 			},
 			changeset: testChangesetOpts{
-				publicationState:  campaigns.ChangesetPublicationStatePublished,
-				externalID:        githubPR.ID,
-				externalBranch:    githubPR.HeadRefName,
-				externalState:     campaigns.ChangesetExternalStateOpen,
-				createdByCampaign: true,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 			sourcerMetadata: githubPR,
 
@@ -462,6 +458,96 @@ func TestReconcilerProcess(t *testing.T) {
 				externalID:     closedGitHubPR.ID,
 				externalBranch: closedGitHubPR.HeadRefName,
 				externalState:  campaigns.ChangesetExternalStateClosed,
+			},
+		},
+		"reopening closed changeset without updates": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateClosed,
+				ownedByCampaign:  campaign.ID,
+				closing:          false,
+			},
+			// We return the open GitHub PR here
+			sourcerMetadata: githubPR,
+
+			wantReopenOnCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     githubPR.ID,
+				externalBranch: githubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+
+				title:    githubPR.Title,
+				body:     githubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
+
+		"reopening closed changeset with updates": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "title",
+				body:  "body",
+			},
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+
+				title: "old title",
+				body:  "old body",
+
+				commitDiff:    "old diff",
+				commitMessage: "old message",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       githubPR.ID,
+				externalBranch:   githubPR.HeadRefName,
+				externalState:    campaigns.ChangesetExternalStateClosed,
+				ownedByCampaign:  campaign.ID,
+				closing:          false,
+			},
+			sourcerMetadata: githubPR,
+
+			// Reopen it
+			wantReopenOnCodeHost: true,
+			// Update the metadata
+			wantUpdateOnCodeHost: true,
+			// Update the commit
+			wantGitserverCommit: true,
+
+			wantLoadFromCodeHost: false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     githubPR.ID,
+				externalBranch: githubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+
+				title:    githubPR.Title,
+				body:     githubPR.Body,
+				diffStat: state.DiffStat,
 			},
 		},
 	}
@@ -553,6 +639,10 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
+			if have, want := fakeSource.ReopenChangesetCalled, tc.wantReopenOnCodeHost; have != want {
+				t.Fatalf("wrong ReopenChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
 			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
 				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
 			}
@@ -564,6 +654,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
 			assertions.repo = rs[0].ID
+			assertions.ownedByCampaign = changesetOpts.ownedByCampaign
 			if changesetSpec != nil {
 				assertions.currentSpec = changesetSpec.ID
 			}
@@ -710,8 +801,7 @@ type testChangesetOpts struct {
 	failureMessage  string
 	numFailures     int64
 
-	createdByCampaign bool
-	ownedByCampaign   int64
+	ownedByCampaign int64
 
 	unsynced bool
 	closing  bool
@@ -741,7 +831,6 @@ func createChangeset(
 
 		PublicationState: opts.publicationState,
 
-		CreatedByCampaign: opts.createdByCampaign,
 		OwnedByCampaignID: opts.ownedByCampaign,
 
 		Unsynced: opts.unsynced,

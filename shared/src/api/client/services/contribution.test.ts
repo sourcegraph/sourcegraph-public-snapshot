@@ -4,7 +4,7 @@ import { TestScheduler } from 'rxjs/testing'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
 import { ContributableMenu, Contributions, Evaluated } from '../../protocol'
 import { Context, ContributionScope } from '../context/context'
-import { EMPTY_COMPUTED_CONTEXT, parse, parseTemplate } from '../context/expr/evaluator'
+import { parse, parseTemplate } from '../context/expr/evaluator'
 import {
     ContributionRegistry,
     ContributionsEntry,
@@ -357,13 +357,11 @@ describe('mergeContributions()', () => {
     })
 })
 
-const FIXTURE_CONTEXT = new Map<string, any>(
-    Object.entries({
-        a: true,
-        b: false,
-        replaceMe: 'x',
-    })
-)
+const FIXTURE_CONTEXT: Context = {
+    a: true,
+    b: false,
+    replaceMe: 'x',
+}
 
 describe('filterContributions()', () => {
     it('handles empty contributions', () => {
@@ -424,14 +422,14 @@ describe('filterContributions()', () => {
 describe('evaluateContributions()', () => {
     test('handles empty contributions', () => {
         const expected: Evaluated<Contributions> = {}
-        expect(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {})).toEqual(expected)
+        expect(evaluateContributions({}, {})).toEqual(expected)
     })
 
     test('handles empty array of command contributions', () => {
         const expected: Evaluated<Contributions> = {
             actions: [],
         }
-        expect(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { actions: [] })).toEqual(expected)
+        expect(evaluateContributions({}, { actions: [] })).toEqual(expected)
     })
 
     test('handles non-empty contributions', () => {

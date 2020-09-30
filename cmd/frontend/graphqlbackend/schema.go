@@ -895,9 +895,24 @@ A description of a Git commit.
 """
 type GitCommitDescription {
     """
-    The Git commit message.
+    The full commit message.
     """
     message: String!
+
+    """
+    The first line of the commit message.
+    """
+    subject: String!
+
+    """
+    The contents of the commit message after the first line.
+    """
+    body: String
+
+    """
+    The Git commit author.
+    """
+    author: Person!
 
     """
     The commit diff (in unified diff format).
@@ -4562,9 +4577,9 @@ type Person {
     """
     displayName: String!
     """
-    The avatar URL.
+    The avatar URL, if known.
     """
-    avatarURL: String!
+    avatarURL: String
     """
     The corresponding user account for this person, if one exists.
     """

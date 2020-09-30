@@ -595,6 +595,43 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
+// ReopenPullRequest reopens the PullRequest on Github.
+func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	ReopenPullRequest($input:ReopenPullRequestInput!) {
+  reopenPullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		ReopenPullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"reopenPullRequest"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	if err != nil {
+		return err
+	}
+
+	*pr = result.ReopenPullRequest.PullRequest.PullRequest
+	pr.TimelineItems = result.ReopenPullRequest.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.ReopenPullRequest.PullRequest.Participants.Nodes
+
+	return nil
+}
+
 // LoadPullRequests loads a list of PullRequests from Github.
 func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	const batchSize = 15

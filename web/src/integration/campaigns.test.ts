@@ -546,7 +546,18 @@ describe('Campaigns', () => {
                                             body: 'Body',
                                             commits: [
                                                 {
-                                                    message: 'Commit message',
+                                                    subject: 'Commit message',
+                                                    body: 'And the more explanatory body.',
+                                                    author: {
+                                                        avatarURL: null,
+                                                        displayName: 'john',
+                                                        email: 'john@test.not',
+                                                        user: {
+                                                            displayName: 'lejohn',
+                                                            url: '/users/lejohn',
+                                                            username: 'john',
+                                                        },
+                                                    },
                                                 },
                                             ],
                                             diffStat: {

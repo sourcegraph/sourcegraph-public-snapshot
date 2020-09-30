@@ -9,7 +9,7 @@ import { SearchPatternType } from '../graphql-operations'
 // change anything and everything here. We are iteratively improving this
 // until it is no longer a proof of concept and instead works well.
 
-type SearchEvent = FileMatch[]
+type SearchEvent = { type: 'filematches'; matches: FileMatch[] } | { type: 'filters'; filters: Filter[] }
 
 interface FileMatch {
     name: string
@@ -23,6 +23,14 @@ interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: [[number]]
+}
+
+interface Filter {
+    value: string
+    label: string
+    count: number
+    limitHit: boolean
+    kind: string
 }
 
 const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
@@ -70,8 +78,13 @@ function toGQLFileMatch(fm: FileMatch): GQL.IFileMatch {
     }
 }
 
+const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => ({
+    __typename: 'SearchFilter',
+    ...filter,
+})
+
 // TODO fill in the fields we actually care about
-const toGQLSearchResults = (results: GQL.SearchResult[]): GQL.ISearchResults => ({
+const toGQLSearchResults = (results: GQL.SearchResult[], filters: GQL.ISearchFilter[]): GQL.ISearchResults => ({
     __typename: 'SearchResults',
     matchCount: 0,
     resultCount: 0,
@@ -88,7 +101,7 @@ const toGQLSearchResults = (results: GQL.SearchResult[]): GQL.ISearchResults => 
     indexUnavailable: false,
     alert: null,
     elapsedMilliseconds: 0,
-    dynamicFilters: [],
+    dynamicFilters: filters,
     results,
     pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
 })
@@ -97,10 +110,30 @@ const toGQLSearchResults = (results: GQL.SearchResult[]): GQL.ISearchResults => 
  * Converts a stream of SearchEvents into an aggregated GQL.ISearchResult
  */
 export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
-    map(fileMatches => fileMatches.map(toGQLFileMatch)),
-    scan((allFileMatches: GQL.IFileMatch[], newFileMatches) => allFileMatches.concat(newFileMatches), []),
-    defaultIfEmpty([] as GQL.IFileMatch[]),
-    map(toGQLSearchResults)
+    scan(
+        (allEvents: { matches: GQL.IFileMatch[]; filters: GQL.ISearchFilter[] }, newEvent: SearchEvent) => {
+            if (newEvent.type === 'filematches') {
+                return {
+                    ...allEvents,
+                    // File matches are additive
+                    matches: allEvents.matches.concat(newEvent.matches.map(toGQLFileMatch)),
+                }
+            }
+
+            if (newEvent.type === 'filters') {
+                return {
+                    ...allEvents,
+                    // New filter results replace all previous ones
+                    filters: newEvent.filters.map(toGQLSearchFilter),
+                }
+            }
+
+            throw new TypeError('internal error: expected valid events type in streaming search')
+        },
+        { matches: [] as GQL.IFileMatch[], filters: [] as GQL.ISearchFilter[] }
+    ),
+    defaultIfEmpty({ matches: [] as GQL.IFileMatch[], filters: [] as GQL.ISearchFilter[] }),
+    map(results => toGQLSearchResults(results.matches, results.filters))
 )
 
 /**
@@ -133,7 +166,15 @@ export function search(
                 if (!(event instanceof MessageEvent)) {
                     throw new TypeError('internal error: expected MessageEvent in streaming search filematches')
                 }
-                observer.next(JSON.parse(event.data) as FileMatch[])
+                observer.next({ type: 'filematches', matches: JSON.parse(event.data) as FileMatch[] })
+            })
+        )
+        subscriptions.add(
+            fromEvent(eventSource, 'filters').subscribe((event: Event) => {
+                if (!(event instanceof MessageEvent)) {
+                    throw new TypeError('internal error: expected MessageEvent in streaming search filters')
+                }
+                observer.next({ type: 'filters', filters: JSON.parse(event.data) as Filter[] })
             })
         )
         subscriptions.add(

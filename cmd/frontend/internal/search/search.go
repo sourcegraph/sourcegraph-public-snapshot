@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -18,10 +19,9 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	qvals := r.URL.Query()
-	queryStr := qvals.Get("q")
-	if queryStr == "" {
-		http.Error(w, "no query found", http.StatusBadRequest)
+	args, err := parseURLQuery(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -32,8 +32,10 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
-		Query:   queryStr,
-		Version: "V2",
+		Query:          args.Query,
+		Version:        args.Version,
+		PatternType:    strPtr(args.PatternType),
+		VersionContext: strPtr(args.VersionContext),
 	})
 	if err != nil {
 		eventWriter.Event("error", err.Error())
@@ -94,8 +96,65 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		filematchesBuf = filematchesBuf[:0]
 	}
 
+	// Send dynamic filters once. When this is true streaming we may want to
+	// send updated filters as we find more results.
+	if filters := resultsResolver.DynamicFilters(ctx); len(filters) > 0 {
+		buf := make([]eventFilter, 0, len(filters))
+		for _, f := range filters {
+			buf = append(buf, eventFilter{
+				Value:    f.Value(),
+				Label:    f.Label(),
+				Count:    int(f.Count()),
+				LimitHit: f.LimitHit(),
+				Kind:     f.Kind(),
+			})
+		}
+
+		if err := eventWriter.Event("filters", buf); err != nil {
+			// EOF
+			return
+		}
+	}
+
 	// TODO stats
 	_ = eventWriter.Event("done", map[string]interface{}{})
+}
+
+type args struct {
+	Query          string
+	Version        string
+	PatternType    string
+	VersionContext string
+}
+
+func parseURLQuery(q url.Values) (*args, error) {
+	get := func(k, def string) string {
+		v := q.Get(k)
+		if v == "" {
+			return def
+		}
+		return v
+	}
+
+	a := args{
+		Query:          get("q", ""),
+		Version:        get("v", "V2"),
+		PatternType:    get("t", "literal"),
+		VersionContext: get("vc", ""),
+	}
+
+	if a.Query == "" {
+		return nil, errors.New("no query found")
+	}
+
+	return &a, nil
+}
+
+func strPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 type eventStreamWriter struct {
@@ -167,4 +226,14 @@ type eventLineMatch struct {
 	Line             string     `json:"line"`
 	LineNumber       int32      `json:"lineNumber"`
 	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
+}
+
+// eventFilter is a suggestion for a search filter. Currently has a 1-1
+// correspondance with the SearchFilter graphql type.
+type eventFilter struct {
+	Value    string `json:"value"`
+	Label    string `json:"label"`
+	Count    int    `json:"count"`
+	LimitHit bool   `json:"limitHit"`
+	Kind     string `json:"kind"`
 }
