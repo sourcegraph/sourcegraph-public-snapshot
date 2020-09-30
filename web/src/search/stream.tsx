@@ -110,23 +110,21 @@ const emptyGQLSearchResults: GQL.ISearchResults = {
  */
 export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
     scan((results: GQL.ISearchResults, newEvent: SearchEvent) => {
-        if (newEvent.type === 'filematches') {
-            return {
-                ...results,
-                // File matches are additive
-                results: results.results.concat(newEvent.matches.map(toGQLFileMatch)),
-            }
-        }
+        switch (newEvent.type) {
+            case 'filematches':
+                return {
+                    ...results,
+                    // File matches are additive
+                    results: results.results.concat(newEvent.matches.map(toGQLFileMatch)),
+                }
 
-        if (newEvent.type === 'filters') {
-            return {
-                ...results,
-                // New filter results replace all previous ones
-                dynamicFilters: newEvent.filters.map(toGQLSearchFilter),
-            }
+            case 'filters':
+                return {
+                    ...results,
+                    // New filter results replace all previous ones
+                    dynamicFilters: newEvent.filters.map(toGQLSearchFilter),
+                }
         }
-
-        throw new TypeError('internal error: expected valid events type in streaming search')
     }, emptyGQLSearchResults),
     defaultIfEmpty(emptyGQLSearchResults)
 )
