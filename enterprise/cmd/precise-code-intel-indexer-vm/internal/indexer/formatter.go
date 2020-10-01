@@ -95,7 +95,7 @@ func (r *dockerCommandFormatter) envFlags(env map[string]string) []string {
 		flattened = append(flattened, fmt.Sprintf("%s=%s", key, env[key]))
 	}
 
-	return interpolate("-e", flattened)
+	return intersperse("-e", flattened)
 }
 
 type firecrackerCommandFormatter struct {
@@ -107,6 +107,8 @@ type firecrackerCommandFormatter struct {
 
 var _ CommandFormatter = &firecrackerCommandFormatter{}
 
+const FirecrackerRepoDir = "/repo-dir"
+
 func NewFirecrackerCommandFormatter(
 	name string,
 	repoDir string,
@@ -117,7 +119,7 @@ func NewFirecrackerCommandFormatter(
 		repoDir: repoDir,
 		options: options,
 		formatter: NewDockerCommandFormatter(
-			"/repo-dir",
+			FirecrackerRepoDir,
 			options,
 		),
 	}
@@ -236,8 +238,8 @@ func (r *firecrackerCommandFormatter) copyfileFlags(images map[string]string) (c
 		))
 	}
 
-	return interpolate("--copy-files", append(
-		[]string{fmt.Sprintf("%s:%s", r.repoDir, "/repo-dir")},
+	return intersperse("--copy-files", append(
+		[]string{fmt.Sprintf("%s:%s", r.repoDir, FirecrackerRepoDir)},
 		copyfiles...,
 	))
 }
@@ -258,10 +260,10 @@ func orderedKeys(m map[string]string) (keys []string) {
 	return keys
 }
 
-func interpolate(flag string, vs []string) (interpolated []string) {
+func intersperse(flag string, vs []string) (interspersed []string) {
 	for _, v := range vs {
-		interpolated = append(interpolated, flag, v)
+		interspersed = append(interspersed, flag, v)
 	}
 
-	return interpolated
+	return interspersed
 }
