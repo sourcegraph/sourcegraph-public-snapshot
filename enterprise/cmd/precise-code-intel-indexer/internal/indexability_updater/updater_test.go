@@ -43,10 +43,11 @@ func TestUpdate(t *testing.T) {
 	})
 
 	updater := &Updater{
-		store:           mockStore,
-		gitserverClient: mockGitserverClient,
-		metrics:         NewUpdaterMetrics(metrics.TestRegisterer),
-		limiter:         rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
+		store:              mockStore,
+		gitserverClient:    mockGitserverClient,
+		metrics:            NewUpdaterMetrics(metrics.TestRegisterer),
+		limiter:            rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
+		enableIndexingCNCF: false,
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {

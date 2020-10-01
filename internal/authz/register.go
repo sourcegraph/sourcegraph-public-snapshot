@@ -3,6 +3,7 @@ package authz
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -58,5 +59,6 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 
 var isTest = (func() bool {
 	path, _ := os.Executable()
-	return filepath.Ext(path) == ".test"
+	return filepath.Ext(path) == ".test" ||
+		strings.Contains(path, "/T/___") // Test path used by GoLand
 })()

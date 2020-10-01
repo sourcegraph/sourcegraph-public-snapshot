@@ -456,8 +456,9 @@ func TestDeleteOldestDump(t *testing.T) {
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, UploadedAt: t1},
 		Upload{ID: 2, UploadedAt: t2},
-		Upload{ID: 3, UploadedAt: t3},
-		Upload{ID: 4, UploadedAt: t4},
+		Upload{ID: 3, UploadedAt: t3, State: "queued"},
+		Upload{ID: 4, UploadedAt: t3},
+		Upload{ID: 5, UploadedAt: t4},
 	)
 	insertVisibleAtTip(t, dbconn.Global, 50, 2)
 
@@ -470,6 +471,14 @@ func TestDeleteOldestDump(t *testing.T) {
 		t.Errorf("unexpected pruned identifier. want=%d have=%d", 1, id)
 	}
 
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
 	repositoryIDs, err := store.DirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
@@ -485,13 +494,20 @@ func TestDeleteOldestDump(t *testing.T) {
 		t.Errorf("expected repository to be marked dirty")
 	}
 
-	// Prune next oldest (skips visible at tip)
+	// Prune next oldest (skips visible at tip, non-completed uploads)
 	if id, prunable, err := store.DeleteOldestDump(context.Background()); err != nil {
 		t.Fatalf("unexpected error pruning dumps: %s", err)
 	} else if !prunable {
 		t.Fatal("unexpectedly non-prunable")
-	} else if id != 3 {
-		t.Errorf("unexpected pruned identifier. want=%d have=%d", 3, id)
+	} else if id != 4 {
+		t.Errorf("unexpected pruned identifier. want=%d have=%d", 4, id)
+	}
+
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{4}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{4: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }
 
@@ -597,11 +613,11 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 		t.Fatalf("unexpected error deleting dump: %s", err)
 	}
 
-	// Original dump no longer exists
-	if _, exists, err := store.GetDumpByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if exists {
-		t.Fatal("unexpected record")
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }
 

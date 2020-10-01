@@ -82,7 +82,7 @@ const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
     keyboardShortcuts: [],
     onFiltersInQueryChange: action('onFiltersInQueryChange'),
     setCaseSensitivity: action('setCaseSensitivity'),
-    splitSearchModes: true,
+    splitSearchModes: false,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     toggleSearchMode: action('toggleSearchMode'),
     versionContext: undefined,

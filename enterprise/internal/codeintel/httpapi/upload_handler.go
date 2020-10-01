@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -39,28 +40,27 @@ func NewUploadHandler(store store.Store, bundleManagerClient bundles.BundleManag
 	return http.HandlerFunc(handler.handleEnqueue)
 }
 
+var revhashPattern = regexp.MustCompile(`^[a-z0-9]{40}$`)
+
 // POST /upload
 func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	repoName := getQuery(r, "repository")
-	commit := getQuery(r, "commit")
-	root := sanitizeRoot(getQuery(r, "root"))
-	indexer := getQuery(r, "indexerName")
-
-	uploadArgs := UploadArgs{
-		Commit:  commit,
-		Root:    root,
-		Indexer: indexer,
-	}
-
+	var repositoryID int
 	if !hasQuery(r, "uploadId") {
-		repo, commit, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
+		repoName := getQuery(r, "repository")
+		commit := getQuery(r, "commit")
+
+		if !revhashPattern.Match([]byte(commit)) {
+			http.Error(w, "Commit must be a 40-character revhash", http.StatusBadRequest)
+			return
+		}
+
+		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
 		if !ok {
 			return
 		}
-		uploadArgs.RepositoryID = int(repo.ID)
-		uploadArgs.Commit = commit
+		repositoryID = int(repo.ID)
 
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
@@ -70,7 +70,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	payload, err := h.handleEnqueueErr(w, r, uploadArgs)
+	payload, err := h.handleEnqueueErr(w, r, repositoryID)
 	if err != nil {
 		if cerr, ok := err.(*ClientError); ok {
 			http.Error(w, cerr.Error(), http.StatusBadRequest)
@@ -98,9 +98,9 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 // UploadArgs are common arguments required to enqueue an upload for both
 // single-payload and multipart uploads.
 type UploadArgs struct {
-	RepositoryID int
 	Commit       string
 	Root         string
+	RepositoryID int
 	Indexer      string
 }
 
@@ -127,8 +127,15 @@ type enqueuePayload struct {
 //   - handleEnqueueMultipartSetup
 //   - handleEnqueueMultipartUpload
 //   - handleEnqueueMultipartFinalize
-func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request, uploadArgs UploadArgs) (interface{}, error) {
+func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request, repositoryID int) (interface{}, error) {
 	ctx := r.Context()
+
+	uploadArgs := UploadArgs{
+		Commit:       getQuery(r, "commit"),
+		Root:         sanitizeRoot(getQuery(r, "root")),
+		RepositoryID: repositoryID,
+		Indexer:      getQuery(r, "indexerName"),
+	}
 
 	if !hasQuery(r, "multiPart") && !hasQuery(r, "uploadId") {
 		return h.handleEnqueueSinglePayload(r, uploadArgs)
@@ -326,23 +333,22 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 	return nil, nil
 }
 
-func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoName, commit string) (*types.Repo, string, bool) {
+func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoName, commit string) (*types.Repo, bool) {
 	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown repository %q", repoName), http.StatusNotFound)
-			return nil, "", false
+			return nil, false
 		}
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil, "", false
+		return nil, false
 	}
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, commit)
-	if err != nil {
+	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
 		if gitserver.IsRevisionNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
-			return nil, "", false
+			return nil, false
 		}
 
 		// If the repository is currently being cloned (which is most likely to happen on dotcom),
@@ -350,9 +356,9 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 		// the worker wait until the rev is resolvable before starting to process.
 		if !vcs.IsCloneInProgress(err) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return nil, "", false
+			return nil, false
 		}
 	}
 
-	return repo, string(commitID), true
+	return repo, true
 }
