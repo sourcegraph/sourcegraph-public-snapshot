@@ -307,6 +307,6 @@ To publish all changesets that are not on GitLab:
 ```yaml
 changesetTemplate:
   published:
-    - gitlab.com/*: false
     - "*": true
+    - gitlab.com/*: false
 ```
