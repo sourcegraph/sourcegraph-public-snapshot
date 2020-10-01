@@ -235,7 +235,7 @@ func (sr *SearchResultsResolver) cacheUserSettings(ctx context.Context) {
 	if sr.userSettings == nil {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
-			log15.Warn("DynamicFilters: could not get user settings from db")
+			log15.Warn("cacheUserSettings: could not get user settings from db")
 		} else {
 			sr.userSettings = settings
 		}
@@ -248,10 +248,10 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		tr.Finish()
 	}()
 
-	// sr.userSettings is set in (r *searchResolver) Results(ctx context.Context).
-	// However we might call DynamicFilters from other code paths as well so we
-	// cannot be certain that sr.userSettings is not nil, in which case we get the
-	// user settings from the DB just like before.
+	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
+	// context.Context). However we might call DynamicFilters from other code paths
+	// as well, so we cannot be certain that user settings have been cached before
+	// and that sr.userSettings is not nil.
 	sr.cacheUserSettings(ctx)
 
 	globbing := false
