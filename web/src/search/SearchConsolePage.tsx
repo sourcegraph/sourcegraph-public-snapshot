@@ -15,7 +15,8 @@ import { search } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { parseSearchURL } from '.'
+import { parseSearchURL, parseSearchURLQuery, parseSearchURLPatternType } from '.'
+import { SearchPatternType } from '../graphql-operations'
 
 interface SearchConsolePageProps
     extends ThemeProps,
@@ -58,7 +59,8 @@ const options: Monaco.editor.IEditorOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURL(location.search).query || ''), [])
+    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(location.search) || ''), [])
+    const patternType = useMemo(() => parseSearchURLPatternType(location.search) || SearchPatternType.structural, [])
     const [nextSearch, resultsOrError] = useEventObservable<'loading' | GQL.ISearchResults | ErrorLike>(
         useCallback(
             searchRequests =>
@@ -68,11 +70,11 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     switchMap(query =>
                         concat(
                             of('loading' as const),
-                            search(query, 'V2', props.patternType, undefined, props.extensionsController.extHostAPI)
+                            search(query, 'V2', patternType, undefined, props.extensionsController.extHostAPI)
                         )
                     )
                 ),
-            [searchQuery, props.patternType, props.extensionsController, props.history]
+            [searchQuery, patternType, props.extensionsController, props.history]
         )
     )
     const [allExpanded, setAllExpanded] = useState(false)
