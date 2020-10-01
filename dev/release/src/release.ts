@@ -8,18 +8,14 @@ import {
     trackingIssueTitle,
     ensurePatchReleaseIssue,
     createChangesets,
-    createBranchWithChanges,
-    createPR,
-    CreateBranchWithChangesOptions,
 } from './github'
 import * as changelog from './changelog'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
-import commandExists from 'command-exists'
-import { PullsCreateParams } from '@octokit/rest'
 import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
+import * as path from 'path'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -222,7 +218,7 @@ Key dates:
     {
         id: 'changelog:cut',
         argNames: ['version', 'changelogFile'],
-        run: async ({ dryRun }, version, changelogFile = './CHANGELOG.md') => {
+        run: async ({ dryRun }, version, changelogFile = 'CHANGELOG.md') => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
@@ -240,7 +236,7 @@ Key dates:
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
-                                const changelogPath = `${directory}/${changelogFile}`
+                                const changelogPath = path.join(directory, changelogFile)
                                 let changelogContents = readFileSync(changelogPath).toString()
 
                                 // Convert 'unreleased' to a release

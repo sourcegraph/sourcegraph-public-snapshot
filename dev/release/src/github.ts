@@ -230,23 +230,23 @@ export async function createBranchWithChanges({
     // Set up repository
     const setupScript = `set -ex
 
-    cd ${tmpdir};
     git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
     cd ./${repo};
     git checkout ${baseRevision};`
-    await execa('bash', ['-c', setupScript], { stdio: 'inherit' })
+    await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })
+    const workdir = path.join(tmpdir, repo)
 
     // Apply edits
     for (const edit of edits) {
         switch (typeof edit) {
             case 'function':
-                edit(tmpdir)
+                edit(workdir)
                 break
             case 'string': {
                 const editScript = `set -ex
 
                 ${edit};`
-                await execa('bash', ['-c', editScript], { stdio: 'inherit' })
+                await execa('bash', ['-c', editScript], { stdio: 'inherit', cwd: workdir })
             }
         }
     }
@@ -255,7 +255,7 @@ export async function createBranchWithChanges({
         const showChangesScript = `set -ex
 
         git --no-pager diff;`
-        await execa('bash', ['-c', showChangesScript], { stdio: 'inherit' })
+        await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
     } else {
         // Publish changes
         const publishScript = `set -ex
@@ -263,7 +263,7 @@ export async function createBranchWithChanges({
         git add :/;
         git commit -a -m ${JSON.stringify(commitMessage)};
         git push origin HEAD:${headBranch};`
-        await execa('bash', ['-c', publishScript], { stdio: 'inherit' })
+        await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
     }
 }
 
