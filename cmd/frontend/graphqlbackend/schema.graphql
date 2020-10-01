@@ -2872,20 +2872,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
 }
 
 """
-A search result that is a diff between two diffable Git objects.
-"""
-type DiffSearchResult {
-    """
-    The diff that matched the search query.
-    """
-    diff: Diff!
-    """
-    The matching portion of the diff.
-    """
-    preview: HighlightedString!
-}
-
-"""
 A string that has highlights (e.g, query matches).
 """
 type HighlightedString {
@@ -6552,20 +6538,6 @@ type SiteUsageStages {
     The number of users using automation stage features.
     """
     automate: Int!
-}
-
-"""
-A deployment configuration.
-"""
-type DeploymentConfiguration {
-    """
-    The email.
-    """
-    email: String
-    """
-    The site ID.
-    """
-    siteID: String
 }
 
 """

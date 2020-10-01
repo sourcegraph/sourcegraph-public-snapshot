@@ -342,6 +342,12 @@
       "default": 1,
       "group": "External services"
     },
+    "repoConcurrentExternalServiceSyncers": {
+      "description": "The number of concurrent external service syncers that can run.",
+      "type": "integer",
+      "default": 3,
+      "group": "External services"
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",

@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Changesets created by campaigns will now include a link back to the campaign in their body text. [#14033](https://github.com/sourcegraph/sourcegraph/issues/14033)
 - Users can now preview commits that are going to be created in their repositories in the campaign preview UI. [#14181](https://github.com/sourcegraph/sourcegraph/pull/14181)
 - If emails are configured, the user will be sent an email when important account information is changed. This currently encompasses changing/resetting the password, adding/removing emails, and adding/removing access tokens. TODO : ADD PR
+- Homepage panels are now enabled by default on Sourcegraph Server. [#14287](https://github.com/sourcegraph/sourcegraph/issues/14287)
 
 ### Changed
 
@@ -28,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Git clone URLs now validate their format correctly. [#14313](https://github.com/sourcegraph/sourcegraph/pull/14313)
 - Usernames set in Slack `observability.alerts` now apply correctly. [#14079](https://github.com/sourcegraph/sourcegraph/pull/14079)
 - Path segments in breadcrumbs get truncated correctly again on small screen sizes instead of inflating the header bar. [#14097](https://github.com/sourcegraph/sourcegraph/pull/14097)
 - GitLab pipelines are now parsed correctly and show their current status in campaign changesets. [#14129](https://github.com/sourcegraph/sourcegraph/pull/14129)
@@ -41,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 - User-defined search scopes are no longer shown below the search bar on the homepage. Use the [`quicklinks`](https://docs.sourcegraph.com/user/quick_links) setting instead to display links there.
 - The explore page (`/explore`) was removed.
 - The sign out page was removed.
+- The unused GraphQL types `DiffSearchResult` and `DeploymentConfiguration` were removed.
 
 ## 3.20.1
 
