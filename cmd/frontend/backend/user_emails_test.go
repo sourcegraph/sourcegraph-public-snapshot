@@ -166,7 +166,7 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		return "a@example.com", true, nil
 	}
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{DisplayName: "DisplayName"}, nil
+		return &types.User{Username: "Foo"}, nil
 	}
 	defer func() {
 		txemail.MockSend = nil
@@ -185,13 +185,13 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		To:       []string{"a@example.com"},
 		Template: updateAccountEmailTemplate,
 		Data: struct {
-			Email       string
-			Change      string
-			DisplayName string
+			Email    string
+			Change   string
+			Username string
 		}{
-			Email:       "a@example.com",
-			Change:      "updated password",
-			DisplayName: "DisplayName",
+			Email:    "a@example.com",
+			Change:   "updated password",
+			Username: "foo",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
