@@ -58,7 +58,7 @@ func (u *Updater) Handle(ctx context.Context) error {
 	}
 
 	if u.enableIndexingCNCF {
-		stats = append(u.cncfStats(), stats...)
+		stats = append(stats, u.cncfStats()...)
 	}
 
 	for _, stat := range stats {
