@@ -50,36 +50,8 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 
 	const filematchesChunk = 1000
 	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
-
-	for _, result := range resultsResolver.Results() {
-		fm, ok := result.ToFileMatch()
-		if !ok {
-			continue
-		}
-
-		lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
-		for _, lm := range fm.JLineMatches {
-			lineMatches = append(lineMatches, eventLineMatch{
-				Line:             lm.JPreview,
-				LineNumber:       lm.JLineNumber,
-				OffsetAndLengths: lm.JOffsetAndLengths,
-			})
-		}
-
-		var branches []string
-		if fm.InputRev != nil {
-			branches = []string{*fm.InputRev}
-		}
-
-		filematchesBuf = append(filematchesBuf, eventFileMatch{
-			Path:        fm.JPath,
-			Repository:  fm.Repo.Name(),
-			Branches:    branches,
-			Version:     string(fm.CommitID),
-			LineMatches: lineMatches,
-		})
-
-		if len(filematchesBuf) == cap(filematchesBuf) {
+	flushFileMatchesBuf := func() {
+		if len(filematchesBuf) > 0 {
 			if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
 				// EOF
 				return
@@ -88,13 +60,35 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(filematchesBuf) > 0 {
-		if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
-			// EOF
-			return
+	const repomatchesChunk = 1000
+	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
+	flushRepoMatchesBuf := func() {
+		if len(repomatchesBuf) > 0 {
+			if err := eventWriter.Event("repomatches", repomatchesBuf); err != nil {
+				// EOF
+				return
+			}
+			repomatchesBuf = repomatchesBuf[:0]
 		}
-		filematchesBuf = filematchesBuf[:0]
 	}
+
+	for _, result := range resultsResolver.Results() {
+		if fm, ok := result.ToFileMatch(); ok {
+			filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
+			if len(filematchesBuf) == cap(filematchesBuf) {
+				flushFileMatchesBuf()
+			}
+		}
+		if repo, ok := result.ToRepository(); ok {
+			repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
+			if len(repomatchesBuf) == cap(repomatchesBuf) {
+				flushRepoMatchesBuf()
+			}
+		}
+	}
+
+	flushFileMatchesBuf()
+	flushRepoMatchesBuf()
 
 	// Send dynamic filters once. When this is true streaming we may want to
 	// send updated filters as we find more results.
@@ -155,6 +149,42 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
+	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
+	for _, lm := range fm.JLineMatches {
+		lineMatches = append(lineMatches, eventLineMatch{
+			Line:             lm.JPreview,
+			LineNumber:       lm.JLineNumber,
+			OffsetAndLengths: lm.JOffsetAndLengths,
+		})
+	}
+
+	var branches []string
+	if fm.InputRev != nil {
+		branches = []string{*fm.InputRev}
+	}
+
+	return eventFileMatch{
+		Path:        fm.JPath,
+		Repository:  fm.Repo.Name(),
+		Branches:    branches,
+		Version:     string(fm.CommitID),
+		LineMatches: lineMatches,
+	}
+}
+
+func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
+	var branches []string
+	if rev := repo.Rev(); rev != "" {
+		branches = []string{rev}
+	}
+
+	return eventRepoMatch{
+		Repository: repo.Name(),
+		Branches:   branches,
+	}
 }
 
 type eventStreamWriter struct {
@@ -226,6 +256,12 @@ type eventLineMatch struct {
 	Line             string     `json:"line"`
 	LineNumber       int32      `json:"lineNumber"`
 	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
+}
+
+// eventRepoMatch is a subset of zoekt.FileMatch for our event API.
+type eventRepoMatch struct {
+	Repository string   `json:"repository"`
+	Branches   []string `json:"branches,omitempty"`
 }
 
 // eventFilter is a suggestion for a search filter. Currently has a 1-1

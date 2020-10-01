@@ -316,6 +316,7 @@ describe('getCompletionItems()', () => {
             'python',
             'r',
             'ruby',
+            'rust',
             'sass',
             'swift',
             'typescript',
