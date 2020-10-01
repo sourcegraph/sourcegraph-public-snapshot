@@ -213,28 +213,16 @@ var cncfRepositoryIDs = []int{
 }
 
 func (u *Updater) cncfStats() (stats []store.RepoUsageStatistics) {
-	// p  = precise count
-	// mp = minimum precise count
-	// s  = search count
-	// ms = minimum search count
-	// r  = minimum precise/search ratio
-	//
-	//    p / s >= r (WHERE p >= mp AND s >= ms)
-	// => p * r >= s
-	// => p * r >= ms
-	// => p >= ms / r
-
-	searchCount := u.minimumSearchCount
-	preciseCount := int(float64(u.minimumSearchCount) / u.minimumSearchRatio)
-	if preciseCount < u.minimumPreciseCount {
-		preciseCount = u.minimumPreciseCount
+	max := u.minimumSearchCount
+	if max < u.minimumPreciseCount {
+		max = u.minimumPreciseCount
 	}
 
 	for _, repositoryID := range cncfRepositoryIDs {
 		stats = append(stats, store.RepoUsageStatistics{
 			RepositoryID: repositoryID,
-			SearchCount:  searchCount,
-			PreciseCount: preciseCount,
+			SearchCount:  max,
+			PreciseCount: max,
 		})
 	}
 
