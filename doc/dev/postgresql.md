@@ -247,33 +247,33 @@ Make sure the instance:
 - uses a fresh boot disk, and an additional **SSD** disk from most recent snapshot
 - Use a machine type that's similar to what we provision in k8s, 7CPU, 32GB (Check in prod if in doubt this changed).
 
-This is a convenience script to do the above without using the Cloud Console. (It uses a hardcoded snapshot from 2020-09-10, you need to replace that, at least).
+This is a convenience script to do the above without using the Cloud Console.
 
 ```shell
-gcloud beta compute --project=sourcegraph-dev instances create erik-keegan-test-pg \
-  --zone=us-central1-f \
-  --machine-type=e2-standard-8 \
-  --network=default \
-  --network-tier=PREMIUM \
-  --maintenance-policy=MIGRATE \
-  --service-account=527047051561-compute@developer.gserviceaccount.com \
-  --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
-  --image=debian-10-buster-v20200902 \
-  --image-project=debian-cloud \
-  --boot-disk-size=30GB \
-  --boot-disk-type=pd-standard \
-  --boot-disk-device-name=erik-keegan-test-pg \
-  --create-disk="mode=rw,size=200,type=projects/sourcegraph-dev/zones/us-central1-f/diskTypes/pd-ssd,name=erik-keegan-pg-test-data,description=Made from backup--pgsql-prod---cloud--2020-09-10--11-00,device-name=erik-keegan-pg-test-data" \
-  --no-shielded-secure-boot \
-  --shielded-vtpm \
-  --shielded-integrity-monitoring \
-  --reservation-affinity=any
+#!/bin/sh
+
+set -eux
+
+instance_name="$USER-test-pg"
+boot_disk_name="${instance_name}-boot"
+pg_disk_name="${instance_name}-data"
+snapshot="$(gcloud compute snapshots list | awk '/backup--pgsql-prod---cloud/ { print $1 }' | sort -n | tail -n1)"
+
+gcloud compute --project=sourcegraph-dev instances create "${instance_name}" \
+    --zone=us-central1-f \
+    --machine-type=e2-standard-8 \
+    --image=debian-10-buster-v20200902 \
+    --image-project=debian-cloud \
+    --boot-disk-size=30GB \
+    --boot-disk-type=pd-standard \
+    --boot-disk-device-name="${boot_disk_name}" \
+    --create-disk="mode=rw,size=200,type=projects/sourcegraph-dev/zones/us-central1-f/diskTypes/pd-ssd,name=${pg_disk_name},description=Made from ${snapshot},device-name=${pg_disk_name},auto-delete=yes,source-snapshot=${snapshot}"
 ```
 
 ### Connect to the instance
 
 ```shell
-gcloud compute ssh --zone "us-central1-f" "$SOMENAME" --project "sourcegraph-server"
+gcloud compute ssh --zone "us-central1-f" "$USER-test-pg" --project "sourcegraph-dev"
 ```
 
 ### Become root
@@ -285,7 +285,7 @@ sudo -i
 ### Install Postgres 11 (matches prod)
 
 ```shell
-apt update && apt install -y wget
+apt update && apt install -y wget locales
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 RELEASE=$(lsb_release -cs)
 echo "deb http://apt.postgresql.org/pub/repos/apt/ ${RELEASE}"-pgdg main | sudo tee  /etc/apt/sources.list.d/pgdg.list
@@ -307,7 +307,7 @@ chown -R postgres /mnt/pgdata
 
 ```shell
 # Select en_US.UTF-8, and set as default.
-sudo dpkg-reconfigure locales
+dpkg-reconfigure locales
 ```
 
 ### Start up the server
