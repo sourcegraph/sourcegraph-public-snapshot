@@ -14,8 +14,6 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
@@ -226,10 +224,8 @@ var commonFileFilters = []struct {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	var err error
 	tr, ctx := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
 	defer func() {
-		tr.SetError(err)
 		tr.Finish()
 	}()
 
@@ -1739,12 +1735,11 @@ func (r *searchResolver) isGlobalSearch() bool {
 //
 // Partial results AND an error may be returned.
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (_ *SearchResultsResolver, err error) {
-	tr, ctx := trace.New(ctx, "doResults", "")
+	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	tr.LogFields(otlog.String("query", r.rawQuery()))
 
 	start := time.Now()
 
