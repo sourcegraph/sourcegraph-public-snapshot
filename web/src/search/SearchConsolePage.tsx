@@ -35,6 +35,28 @@ interface SearchConsolePageProps
     location: H.Location
 }
 
+const options: Monaco.editor.IEditorOptions = {
+    readOnly: false,
+    minimap: {
+        enabled: false,
+    },
+    lineNumbers: 'off',
+    fontSize: 14,
+    glyphMargin: false,
+    overviewRulerBorder: false,
+    rulers: [],
+    overviewRulerLanes: 0,
+    wordBasedSuggestions: false,
+    quickSuggestions: false,
+    fixedOverflowWidgets: true,
+    renderLineHighlight: 'none',
+    contextmenu: false,
+    links: false,
+    // Display the cursor as a 1px line.
+    cursorStyle: 'line',
+    cursorWidth: 1,
+}
+
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURL(location.search).query || ''), [])
     const [nextSearch, resultsOrError] = useEventObservable<'loading' | GQL.ISearchResults | ErrorLike>(
@@ -55,27 +77,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
     )
     const [allExpanded, setAllExpanded] = useState(false)
 
-    const options: Monaco.editor.IEditorOptions = {
-        readOnly: false,
-        minimap: {
-            enabled: false,
-        },
-        lineNumbers: 'off',
-        fontSize: 14,
-        glyphMargin: false,
-        overviewRulerBorder: false,
-        rulers: [],
-        overviewRulerLanes: 0,
-        wordBasedSuggestions: false,
-        quickSuggestions: false,
-        fixedOverflowWidgets: true,
-        renderLineHighlight: 'none',
-        contextmenu: false,
-        links: false,
-        // Display the cursor as a 1px line.
-        cursorStyle: 'line',
-        cursorWidth: 1,
-    }
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
     useEffect(() => {
         if (!monacoInstance) {
