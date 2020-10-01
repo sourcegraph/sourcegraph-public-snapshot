@@ -138,7 +138,7 @@ describe('Blob viewer', () => {
                                     html:
                                         // Note: whitespace in this string is significant.
                                         '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; Log to console\n' +
-                                        '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)\n' +
+                                        '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)\n' +
                                         '</span></div></td></tr></tbody></table>',
                                 },
                             },
@@ -214,6 +214,46 @@ describe('Blob viewer', () => {
         it.skip('gets displayed when navigating to a URL with a token position', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/test.ts#2:9`)
             // TODO
+        })
+
+        describe('browser extension discoverability', () => {
+            const HOVER_THRESHOLD = 5
+            it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
+
+                // Don't open new pages when clicking `View on [code host]` button
+                await driver.page.evaluate(() => {
+                    document.body.addEventListener('click', event => {
+                        const path = event.composedPath()
+                        for (const element of path) {
+                            if (element instanceof HTMLAnchorElement) {
+                                event.preventDefault()
+                                break
+                            }
+                        }
+                    })
+                })
+
+                await driver.page.waitForSelector('.test-log-token', { visible: true })
+                // Click 'console' and 'log' 5 times combined
+
+                for (let index = 0; index < HOVER_THRESHOLD; index++) {
+                    await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
+                    await driver.page.waitForSelector('.hover-overlay', { visible: true })
+                }
+
+                await driver.page.click('.test-go-to-code-host', {})
+                await driver.page.waitForSelector('.test-install-extension-popover', { visible: true })
+                const popoverHeader = await driver.page.evaluate(
+                    () => document.querySelector('.test-install-extension-popover-header')?.textContent
+                )
+                assert.deepStrictEqual(popoverHeader, "Take Sourcegraph's code intelligence to GitHub!")
+            })
+
+            it.skip(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
+                // TODO
+            })
         })
     })
 })

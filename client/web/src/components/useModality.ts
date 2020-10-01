@@ -25,7 +25,7 @@ export function useModality(
     // Add keydown event listener for: 1) focus trapping, 2) `esc` to close
     useEffect(() => {
         const focusedElement = document.activeElement
-        console.log('modal rendered')
+
         // TODO: use body ref instead?
         const containerElement = modalContainerReference.current
         containerElement?.focus()
