@@ -325,4 +325,8 @@ sudo -u postgres /usr/lib/postgresql/11/bin/postgres -D /mnt/pgdata/pgdata-11
 ### FINAL NOTE: Don't forget to shut down and delete :)
 
 - Delete the instance itself (and it's boot disk, happens automatically)
-- Delete the newly created disk from the snapshot
+- Delete the newly created disk from the snapshot (should happen automatically)
+
+``` shell
+gcloud compute instances delete --zone "us-central1-f" "$USER-test-pg" --project "sourcegraph-dev"
+```
