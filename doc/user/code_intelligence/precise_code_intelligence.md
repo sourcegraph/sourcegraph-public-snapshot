@@ -55,6 +55,9 @@ The bulk of LSIF data is stored on-disk, and as code intelligence data for a com
 
 ## More about LSIF
 
+- [Writing an LSIF indexer](writing_an_indexer.md)
+- [Adding LSIF to many repositories](adding_lsif_to_many_repos.md)
+
 To learn more, check out our lightning talk about LSIF from GopherCon 2019 or the [introductory blog post](https://about.sourcegraph.com/go/code-intelligence-with-lsif):
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/fMIRKRj_A88" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

@@ -70,7 +70,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
+		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -100,7 +100,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo/no-rev@dev"),
+		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/no-rev@dev")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -145,12 +145,13 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
+		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	args.Repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+	repos, _ := getRepos(context.Background(), args.RepoPromise)
+	repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 	results, _, err := searchFilesInRepos(context.Background(), args)

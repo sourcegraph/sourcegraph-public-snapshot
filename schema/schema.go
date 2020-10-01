@@ -1217,13 +1217,15 @@ type SiteConfiguration struct {
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
+	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
+	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// SearchIndexEnabled description: Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
-	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
+	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`

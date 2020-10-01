@@ -3,16 +3,21 @@ package secret
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 
 	"github.com/pkg/errors"
 )
 
 var (
-	_ driver.Valuer = StringValue{}
-	_ sql.Scanner   = (*StringValue)(nil)
+	_ driver.Valuer    = StringValue{}
+	_ sql.Scanner      = (*StringValue)(nil)
+	_ json.Marshaler   = StringValue{}
+	_ json.Unmarshaler = (*StringValue)(nil)
 )
 
-// StringValue implements driver.Valuer and sql.Scanner for string type secret.
+// StringValue is a string type secret that implements driver.Valuer, sql.Scanner,
+// json.Marshaler and json.Unmarshaler for transparent encryption and decryption
+// during database access and JSON serialization.
 type StringValue struct {
 	S *string
 }
@@ -45,12 +50,47 @@ func (v *StringValue) Scan(src interface{}) (err error) {
 	return nil
 }
 
+func (v StringValue) MarshalJSON() ([]byte, error) {
+	if v.S == nil {
+		return nil, errors.New("unable to encrypt a nil string pointer")
+	}
+
+	ciphertext, err := Encrypt(*v.S)
+	if err != nil {
+		return nil, errors.Wrap(err, "encrypt")
+	}
+	return json.Marshal(ciphertext)
+}
+
+func (v *StringValue) UnmarshalJSON(src []byte) error {
+	if v.S == nil {
+		// It happens very often that fields are having zero values when unmarshal a JSON blob.
+		var s string
+		v.S = &s
+	}
+
+	var ciphertext string
+	err := json.Unmarshal(src, &ciphertext)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal")
+	}
+
+	plaintext, err := Decrypt(ciphertext)
+	if err != nil {
+		return errors.Wrap(err, "decrypt")
+	}
+
+	*v.S = plaintext
+	return nil
+}
+
 var (
 	_ driver.Valuer = NullStringValue{}
 	_ sql.Scanner   = (*NullStringValue)(nil)
 )
 
-// NullStringValue implements driver.Valuer and sql.Scanner for NULLABLE string type secret.
+// NullStringValue is a NULLABLE string type secret that implements driver.Valuer and sql.Scanner
+// for transparent encryption and decryption during database access.
 type NullStringValue struct {
 	S     *string
 	Valid bool // Valid is true if String is not NULL

@@ -2,6 +2,7 @@ package secret
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"os"
 	"testing"
@@ -86,6 +87,30 @@ func TestScanner(t *testing.T) {
 		}
 		if esMessage.Valid {
 			t.Fatal("expected not valid, got valid")
+		}
+	})
+
+	t.Run("JSON", func(t *testing.T) {
+		type record struct {
+			CloneURL StringValue
+		}
+
+		cloneURL := "git@github.com:foo/bar.git"
+		marshaled, err := json.Marshal(record{
+			CloneURL: StringValue{S: &cloneURL},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var r record
+		err = json.Unmarshal(marshaled, &r)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if r.CloneURL.S == nil || *r.CloneURL.S != cloneURL {
+			t.Fatalf("CloneURL: want %q but got %v", cloneURL, r.CloneURL.S)
 		}
 	})
 }

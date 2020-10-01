@@ -9,7 +9,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { size } from 'lodash'
 import { Observable, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 import { fromFetch } from 'rxjs/fetch'
@@ -113,6 +112,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         }
         return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
     }, [])
+
+    const externalAuthProviders = window.context.authProviders.filter(provider => !provider.isBuiltin)
 
     return (
         <>
@@ -250,8 +251,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                 </div>
                 {window.context.sourcegraphDotComMode && (
                     <>
-                        {size(window.context.authProviders) > 0 && <OrDivider className="my-4" />}
-                        {window.context.authProviders?.map((provider, index) => (
+                        {externalAuthProviders.length > 0 && <OrDivider className="my-4" />}
+                        {externalAuthProviders.map((provider, index) => (
                             // Use index as key because display name may not be unique. This is OK
                             // here because this list will not be updated during this component's lifetime.
                             /* eslint-disable react/no-array-index-key */

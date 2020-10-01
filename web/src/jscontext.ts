@@ -87,7 +87,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     externalServicesUserModeEnabled: boolean
 
     /** Authentication provider instances in site config. */
-    authProviders?: {
+    authProviders: {
         serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
         displayName: string
         isBuiltin: boolean

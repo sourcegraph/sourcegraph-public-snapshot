@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -59,13 +60,19 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
+func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplementer, err error) {
+	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
+	tr.LogFields(otlog.Bool("useNewParser", useNewParser))
 
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
@@ -80,6 +87,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	var queryInfo query.QueryInfo
 	if useNewParser {
 		globbing := getBoolPtr(settings.SearchGlobbing, false)
+		tr.LogFields(otlog.Bool("globbing", globbing))
 		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
@@ -100,6 +108,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 			return alertForQuery(queryString, err), nil
 		}
 	}
+	tr.LazyPrintf("parsing done")
 
 	// If stable:truthy is specified, make the query return a stable result ordering.
 	if queryInfo.BoolValue(query.FieldStable) {
@@ -1119,9 +1128,10 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
+
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           resolved.repoRevs,
+		RepoPromise:     (&search.Promise{}).Resolve(resolved.repoRevs),
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
@@ -1293,4 +1303,18 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 		return searchErr
 	}
 	return nil
+}
+
+// getRepos is a wrapper around p.Get. It returns an error if the promise
+// contains an underlying type other than []*search.RepositoryRevisions.
+func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
+	v, err := p.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	repoRevs, ok := v.([]*search.RepositoryRevisions)
+	if !ok {
+		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
+	}
+	return repoRevs, nil
 }
