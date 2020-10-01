@@ -14,15 +14,10 @@ type SearchEvent =
     | { type: 'repomatches'; matches: RepositoryMatch[] }
     | { type: 'filters'; filters: Filter[] }
 
-// TODO Notice that this is a subset of FileMatch. This is what Zoekt does. We explicitly call it out as a seperate type since that is more powerful.
-// This requires to add a RepositoryMatch event. We could however model FileMatch's as a generic type? What do you think is better?
-interface RepositoryMatch {
-    repository: string
-    branches?: string[]
-}
-
 interface FileMatch extends RepositoryMatch {
     name: string
+    repository: string
+    branches?: string[]
     version?: string
     lineMatches: LineMatch[]
 }
@@ -32,6 +27,8 @@ interface LineMatch {
     lineNumber: number
     offsetAndLengths: [[number]]
 }
+
+type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
 
 interface Filter {
     value: string
