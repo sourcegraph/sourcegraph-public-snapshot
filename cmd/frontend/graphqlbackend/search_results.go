@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
@@ -1517,6 +1519,12 @@ type aggregator struct {
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
+	var err error
+	tr, ctx := trace.New(ctx, "doRepoSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
@@ -1536,6 +1544,12 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 	}
 }
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
+	var err error
+	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
@@ -1563,6 +1577,12 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 	}
 }
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
+	var err error
+	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
@@ -1608,6 +1628,12 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
+	var err error
+	tr, ctx := trace.New(ctx, "doDiffSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	old := tp.PatternInfo
 	patternInfo := &search.CommitPatternInfo{
 		Pattern:                      old.Pattern,
@@ -1650,6 +1676,12 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
+	var err error
+	tr, ctx := trace.New(ctx, "doCommitSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	old := tp.PatternInfo
 	patternInfo := &search.CommitPatternInfo{
 		Pattern:                      old.Pattern,
@@ -1710,13 +1742,13 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (*SearchResultsResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (_ *SearchResultsResolver, err error) {
+	tr, ctx := trace.New(ctx, "doResults", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	tr.LogFields(otlog.String("query", r.rawQuery()))
 
 	start := time.Now()
 
