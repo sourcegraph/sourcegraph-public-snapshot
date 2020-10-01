@@ -275,12 +275,12 @@ published:
   - github.com/*: false
 ```
 
-If no entries match, then the repository will not be published. To make the default true, add a wildcard entry as the last item in the array:
+If no entries match, then the repository will not be published. To make the default true, add a wildcard entry as the first item in the array:
 
 ```yaml
 published:
-  - github.com/*: false
   - "*": true
+  - github.com/*: false
 ```
 
 > NOTE: The standalone `"*"` is quoted in the key to avoid ambiguity in the YAML document.
@@ -307,6 +307,6 @@ To publish all changesets that are not on GitLab:
 ```yaml
 changesetTemplate:
   published:
-    - gitlab.com/*: false
     - "*": true
+    - gitlab.com/*: false
 ```
