@@ -56,7 +56,7 @@ func decodeRepos(host, gitoliteInfo string) []*Repo {
 			repo := &Repo{Name: name}
 
 			u, err := url.Parse(host)
-			// see https: //github.com/sourcegraph/security-issues/issues/97
+			// see https://github.com/sourcegraph/security-issues/issues/97
 			if err != nil {
 				continue
 			}
