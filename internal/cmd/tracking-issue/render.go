@@ -14,6 +14,7 @@ func RenderTrackingIssue(context IssueContext) string {
 		nonTrackingLabels(context.trackingIssue.Labels),
 		context.trackingIssue.Milestone,
 		"",
+		false,
 	)))
 
 	var parts []string
@@ -22,6 +23,7 @@ func RenderTrackingIssue(context IssueContext) string {
 			nonTrackingLabels(context.trackingIssue.Labels),
 			context.trackingIssue.Milestone,
 			assignee,
+			assignee == "",
 		))
 
 		parts = append(parts, NewAssigneeRenderer(assigneeContext, assignee).Render())
@@ -38,6 +40,10 @@ func findAssignees(context IssueContext) (assignees []string) {
 	for _, issue := range context.issues {
 		for _, assignee := range issue.Assignees {
 			assigneeMap[assignee] = struct{}{}
+		}
+		if len(issue.Assignees) == 0 {
+			// Mark special empty assignee for the unassigned bucket
+			assigneeMap[""] = struct{}{}
 		}
 	}
 	for _, pullRequest := range context.pullRequests {
@@ -80,9 +86,14 @@ func (ar *AssigneeRenderer) Render() string {
 		estimateFragment = fmt.Sprintf(": __%.2fd__", estimate)
 	}
 
+	assignee := ar.assignee
+	if assignee == "" {
+		assignee = "unassigned"
+	}
+
 	s := ""
 	s += fmt.Sprintf(beginAssigneeMarkerFmt, ar.assignee)
-	s += fmt.Sprintf("\n@%s%s\n\n", ar.assignee, estimateFragment)
+	s += fmt.Sprintf("\n@%s%s\n\n", assignee, estimateFragment)
 	s += ar.renderPendingWork()
 	ar.resetDisplayFlags()
 	s += ar.renderCompletedWork()

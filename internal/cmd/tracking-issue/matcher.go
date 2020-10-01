@@ -1,17 +1,19 @@
 package main
 
 type Matcher struct {
-	labels    []string
-	milestone string
-	assignee  string
+	labels     []string
+	milestone  string
+	assignee   string
+	noAssignee bool
 }
 
 // NewMatcher returns a matcher with the given expected properties.
-func NewMatcher(labels []string, milestone string, assignee string) *Matcher {
+func NewMatcher(labels []string, milestone string, assignee string, noAssignee bool) *Matcher {
 	return &Matcher{
-		labels:    labels,
-		milestone: milestone,
-		assignee:  assignee,
+		labels:     labels,
+		milestone:  milestone,
+		assignee:   assignee,
+		noAssignee: noAssignee,
 	}
 }
 
@@ -38,6 +40,10 @@ func (m *Matcher) PullRequest(pullRequest *PullRequest) bool {
 // testAssignee returns true if this matcher was configured with a non-empty assignee
 // that is present in the given list of assignees.
 func (m *Matcher) testAssignee(assignees ...string) bool {
+	if m.noAssignee {
+		return len(assignees) == 0
+	}
+
 	if m.assignee == "" {
 		return true
 	}

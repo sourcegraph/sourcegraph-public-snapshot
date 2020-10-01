@@ -45,6 +45,7 @@ func linkTrackingIssues(trackingIssues, issues []*Issue, pullRequests []*PullReq
 			nonTrackingLabels(trackingIssue.Labels),
 			trackingIssue.Milestone,
 			"",
+			false,
 		)
 
 		for _, issue := range issues {
