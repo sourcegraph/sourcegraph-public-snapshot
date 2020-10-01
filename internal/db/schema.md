@@ -979,6 +979,7 @@ Indexes:
  author_user_id | integer                  | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
+    "settings_org_id_idx" btree (org_id)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
