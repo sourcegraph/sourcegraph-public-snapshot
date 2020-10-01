@@ -189,11 +189,13 @@ export interface CreateBranchWithChangesOptions {
     head: string
     commitMessage: string
     edits: Edit[]
+    dryRun?: boolean
 }
 
 export interface ChangesetsOptions {
     requiredCommands: string[]
     changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions)[]
+    dryRun?: boolean
 }
 
 export async function createChangesets(options: ChangesetsOptions): Promise<void> {
@@ -205,9 +207,11 @@ export async function createChangesets(options: ChangesetsOptions): Promise<void
         }
     }
     for (const changeset of options.changes) {
-        await createBranchWithChanges(changeset)
-        const prURL = await createPR(changeset)
-        console.log(`Pull request created: ${prURL}`)
+        await createBranchWithChanges({ ...changeset, dryRun: options.dryRun })
+        if (!options.dryRun) {
+            const prURL = await createPR(changeset)
+            console.log(`Pull request created: ${prURL}`)
+        }
     }
 }
 
@@ -218,6 +222,7 @@ export async function createBranchWithChanges({
     head: headBranch,
     commitMessage,
     edits,
+    dryRun,
 }: CreateBranchWithChangesOptions): Promise<void> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
@@ -246,13 +251,20 @@ export async function createBranchWithChanges({
         }
     }
 
-    // Publish changes
-    const publishScript = `set -ex
+    if (dryRun) {
+        const showChangesScript = `set -ex
 
-    git add :/;
-    git commit -a -m ${JSON.stringify(commitMessage)};
-    git push origin HEAD:${headBranch};`
-    await execa('bash', ['-c', publishScript], { stdio: 'inherit' })
+        git --no-pager diff;`
+        await execa('bash', ['-c', showChangesScript], { stdio: 'inherit' })
+    } else {
+        // Publish changes
+        const publishScript = `set -ex
+
+        git add :/;
+        git commit -a -m ${JSON.stringify(commitMessage)};
+        git push origin HEAD:${headBranch};`
+        await execa('bash', ['-c', publishScript], { stdio: 'inherit' })
+    }
 }
 
 export async function createPR(options: {
