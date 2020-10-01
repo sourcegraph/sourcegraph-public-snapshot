@@ -59,10 +59,10 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
                         PRs on {displayName}.
                     </p>
 
-                    <div className="mx-auto code-host-action__graphic-container d-flex justify-content-between align-items-center">
-                        <SourcegraphIcon size={48} />
-                        <PlusThickIcon size={20} className="code-host-action__plus-icon" />
-                        <Icon size={56} />
+                    <div className="mx-auto install-extension-popover__graphic-container d-flex justify-content-between align-items-center">
+                        <SourcegraphIcon className="install-extension-popover__logo p-1" />
+                        <PlusThickIcon className="install-extension-popover__plus-icon" />
+                        <Icon className="install-extension-popover__logo" />
                     </div>
 
                     <div className="d-flex justify-content-end">
