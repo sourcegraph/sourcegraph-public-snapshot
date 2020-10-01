@@ -106,7 +106,6 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
         matches: [],
     }
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return gqlRepo as GQL.IRepository
 }
 
