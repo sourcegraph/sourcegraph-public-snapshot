@@ -115,6 +115,12 @@ pre, code, kbd {
     font-family: var(--monospace-font-family);
 }
 
+code {
+    background-color: rgba(200,200,200,0.2);
+    padding: 0.2em;
+    border-radius: 0.2em;
+}
+
 /* LAYOUT */
 body {
     display: flex;
