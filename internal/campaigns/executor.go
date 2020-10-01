@@ -294,6 +294,8 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 }
 
 func createChangesetSpec(task *Task, diff string) *ChangesetSpec {
+	repo := task.Repository.Name
+
 	var authorName string
 	var authorEmail string
 
@@ -323,7 +325,7 @@ func createChangesetSpec(task *Task, diff string) *ChangesetSpec {
 					Diff:        string(diff),
 				},
 			},
-			Published: task.Template.Published,
+			Published: task.Template.Published.Value(repo),
 		},
 	}
 }

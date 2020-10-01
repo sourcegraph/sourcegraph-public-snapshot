@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/src-cli/schema"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v2"
@@ -40,7 +41,7 @@ type ChangesetTemplate struct {
 	Body      string                       `json:"body,omitempty" yaml:"body"`
 	Branch    string                       `json:"branch,omitempty" yaml:"branch"`
 	Commit    ExpandedGitCommitDescription `json:"commit,omitempty" yaml:"commit"`
-	Published bool                         `json:"published" yaml:"published"`
+	Published overridable.Bool             `json:"published" yaml:"published"`
 }
 
 type GitCommitAuthor struct {
