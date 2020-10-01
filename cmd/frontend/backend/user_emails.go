@@ -220,7 +220,7 @@ If this was not you please change your password immediately.
 `,
 	HTML: `
 <p>
-Somebody (likely you) updated <strong>{{.Change}}</strong> for the user <strong>{{.DisplayName}}</strong> on Sourcegraph.
+Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.DisplayName}}</strong> on Sourcegraph.
 </p>
 
 <p><strong>If this was not you please change your password immediately.</strong></p>
