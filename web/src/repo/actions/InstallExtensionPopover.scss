@@ -1,0 +1,17 @@
+.install-extension-popover {
+    &__graphic-container {
+        margin-bottom: 2rem;
+        width: 11.25rem;
+    }
+
+    &__plus-icon {
+        color: $gray-10;
+        height: 1.25rem;
+        width: 1.25rem;
+    }
+
+    &__logo {
+        height: 3.5rem;
+        width: 3.5rem;
+    }
+}
