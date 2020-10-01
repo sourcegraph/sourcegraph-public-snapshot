@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# This script is used by the executor integration test to simulate Docker.
+# It gets put into $PATH as "docker" and accepts the "run" command.
+
+# Depending on the arguments to the "run" command it either acts like it
+# created a tempfile, or it executes the script supplied as the last arg to
+# "run".
+
+dummy_temp_file="DUMMYDOCKER-TEMP-FILE"
+
+if [[ "${1}" == "run" ]]; then
+    last_arg="${@: -1}"
+
+    case "$last_arg" in
+      "mktemp")
+        # If the last arg is "mktemp" we're probing for a shell image and
+        # want to create a temp file in the container which we can put a script.
+        echo "${dummy_temp_file}"
+        exit 0
+        ;;
+
+      "${dummy_temp_file}")
+        # If the last arg is the temp file we "created" earlier, we now want to
+        # execute it.
+        #
+        # But the real script is in the matching host temp file, which should
+        # be mounted into the temp file inside the container.
+        #
+        # We need to find it in the args and then execute it.
+
+        host_temp_file=""
+        for i in "$@";
+        do
+          if [[ ${i} =~ ^type=bind,source=(.*),target=${dummy_temp_file},ro$ ]]; then
+            host_temp_file="${BASH_REMATCH[1]}"
+          fi
+        done
+        [ -z "$host_temp_file" ] && echo "host temp file not found in args" && exit 1;
+
+        # Now that we have the path to the host temp file, we can execute it
+        exec bash ${host_temp_file}
+        ;;
+      *)
+        echo "dummydocker doesn't know about this command: $last_arg"
+        exit 1
+        ;;
+    esac
+fi
+
+echo "dummydocker doesn't know about this command: $1"
+exit 1

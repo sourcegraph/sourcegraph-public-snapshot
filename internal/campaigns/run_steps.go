@@ -135,8 +135,8 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 				Stderr:      strings.TrimSpace(stderrBuffer.String()),
 			}
 		}
-		logger.Logf("[Step %d] complete in %s", i+1, elapsed)
 
+		logger.Logf("[Step %d] complete in %s", i+1, elapsed)
 	}
 
 	if _, err := runGitCmd("add", "--all"); err != nil {

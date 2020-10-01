@@ -19,15 +19,17 @@ fragment repositoryFields on Repository {
 }
 `
 
+type Branch struct {
+	Name   string
+	Target struct{ OID string }
+}
+
 type Repository struct {
 	ID                 string
 	Name               string
 	URL                string
 	ExternalRepository struct{ ServiceType string }
-	DefaultBranch      *struct {
-		Name   string
-		Target struct{ OID string }
-	}
+	DefaultBranch      *Branch
 }
 
 func (r *Repository) BaseRef() string {
