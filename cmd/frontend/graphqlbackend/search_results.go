@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/schema"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
@@ -165,6 +167,10 @@ type SearchResultsResolver struct {
 	// cursor to return for paginated search requests, or nil if the request
 	// wasn't paginated.
 	cursor *searchCursor
+
+	// cache for user settings. Ideally this should be set just once in the code path
+	// by an upstream resolver
+	userSettings *schema.Settings
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -223,15 +229,34 @@ var commonFileFilters = []struct {
 	},
 }
 
+// cacheUserSettings gets the user settings from the DB and caches them in
+// sr.userSettings.
+func (sr *SearchResultsResolver) cacheUserSettings(ctx context.Context) {
+	if sr.userSettings == nil {
+		settings, err := decodedViewerFinalSettings(ctx)
+		if err != nil {
+			log15.Warn("DynamicFilters: could not get user settings from db")
+		} else {
+			sr.userSettings = settings
+		}
+	}
+}
+
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 	tr, ctx := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
 	defer func() {
 		tr.Finish()
 	}()
 
+	// sr.userSettings is set in (r *searchResolver) Results(ctx context.Context).
+	// However we might call DynamicFilters from other code paths as well so we
+	// cannot be certain that sr.userSettings is not nil, in which case we get the
+	// user settings from the DB just like before.
+	sr.cacheUserSettings(ctx)
+
 	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
-		globbing = getBoolPtr(settings.SearchGlobbing, false)
+	if sr.userSettings != nil {
+		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
 	}
 
 	filters := map[string]*searchFilterResolver{}
@@ -1028,11 +1053,16 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	return result, nil
 }
 
-func (r *searchResolver) Results(ctx context.Context) (_ *SearchResultsResolver, err error) {
+func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
+	}()
+	defer func() {
+		// hand-over the cached user settings from the searchResolver to the
+		// SearchResultsResolver
+		srr.userSettings = r.userSettings
 	}()
 	switch q := r.query.(type) {
 	case *query.OrdinaryQuery:
