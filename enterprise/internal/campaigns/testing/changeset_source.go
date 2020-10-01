@@ -20,6 +20,7 @@ type FakeChangesetSource struct {
 	ExternalServicesCalled bool
 	LoadChangesetsCalled   bool
 	CloseChangesetCalled   bool
+	ReopenChangesetCalled  bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -40,8 +41,19 @@ type FakeChangesetSource struct {
 	// ClosedChangesets contains the changesets that were passed to CloseChangeset
 	ClosedChangesets []*repos.Changeset
 
+	// CreatedChangesets contains the changesets that were passed to
+	// CreateChangeset
+	CreatedChangesets []*repos.Changeset
+
 	// LoadedChangesets contains the changesets that were passed to LoadChangesets
 	LoadedChangesets []*repos.Changeset
+
+	// UpdateChangesets contains the changesets that were passed to
+	// UpdateChangeset
+	UpdatedChangesets []*repos.Changeset
+
+	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
+	ReopenedChangesets []*repos.Changeset
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
@@ -67,6 +79,7 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chan
 		return s.ChangesetExists, err
 	}
 
+	s.CreatedChangesets = append(s.CreatedChangesets, c)
 	return s.ChangesetExists, s.Err
 }
 
@@ -84,6 +97,7 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Chan
 		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
+	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
 	return c.SetMetadata(s.FakeMetadata)
 }
 
@@ -135,7 +149,24 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Chang
 	}
 
 	s.ClosedChangesets = append(s.ClosedChangesets, c)
-	return nil
+
+	return c.SetMetadata(s.FakeMetadata)
+}
+
+func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.ReopenChangesetCalled = true
+
+	if s.Err != nil {
+		return s.Err
+	}
+
+	if c.Repo == nil {
+		return NoReposErr
+	}
+
+	s.ReopenedChangesets = append(s.ReopenedChangesets, c)
+
+	return c.SetMetadata(s.FakeMetadata)
 }
 
 // FakeGitserverClient is a test implementation of the GitserverClient

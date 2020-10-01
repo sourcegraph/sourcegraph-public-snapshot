@@ -23,7 +23,7 @@ const GetStateBatchSize = 100
 const MinimumUploadAge = time.Minute
 
 // removeOrphanedUploadFiles removes any upload file on disk that is associated with an
-// errored (or missing) entry in the database.
+// terminal (errored or deleted) entry in the database.
 func (j *Janitor) removeOrphanedUploadFiles(ctx context.Context) error {
 	pathsByID, err := j.uploadPathsByID()
 	if err != nil {
@@ -37,7 +37,7 @@ func (j *Janitor) removeOrphanedUploadFiles(ctx context.Context) error {
 }
 
 // removeOrphanedUploadFiles removes any bundle file on disk that is associated with an
-// errored (or missing) entry in the database.
+// terminal (errored or deleted) entry in the database.
 func (j *Janitor) removeOrphanedBundleFiles(ctx context.Context) error {
 	pathsByID, err := j.databasePathsByID()
 	if err != nil {
@@ -51,8 +51,8 @@ func (j *Janitor) removeOrphanedBundleFiles(ctx context.Context) error {
 }
 
 // removeOrphans removes files from the given mapping if the upload identifier matches an
-// errored (or missing) entry in the database. The onRemove function is called when a file
-// or directory is successfully unlinked.
+// terminal (errored or deleted) entry in the database. The onRemove function is called
+// when a file or directory is successfully unlinked.
 func (j *Janitor) removeOrphans(ctx context.Context, pathsByID map[int]string, onRemove func(id int, path string)) error {
 	var ids []int
 	for id := range pathsByID {
@@ -72,7 +72,7 @@ func (j *Janitor) removeOrphans(ctx context.Context, pathsByID map[int]string, o
 	}
 
 	for id, path := range pathsByID {
-		if state, exists := states[id]; !exists || state == "errored" {
+		if state, exists := states[id]; !exists || state == "errored" || state == "deleted" {
 			if j.remove(path) {
 				onRemove(id, path)
 			}

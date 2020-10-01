@@ -2,11 +2,13 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // Store is the interface to Postgres for precise-code-intel features.
@@ -78,6 +80,9 @@ type Store interface {
 	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 	// that were removed for that repository.
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+
+	// HardDeleteUploadByID deletes the upload record with the given identifier.
+	HardDeleteUploadByID(ctx context.Context, id int) error
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
@@ -215,12 +220,16 @@ var _ Store = &store{}
 
 // New creates a new instance of store connected to the given Postgres DSN.
 func New(postgresDSN string) (Store, error) {
-	base, err := basestore.New(postgresDSN, "codeintel")
+	base, err := basestore.New(postgresDSN, "codeintel", sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{Store: base}, nil
+}
+
+func NewWithDB(db dbutil.DB) Store {
+	return &store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func NewWithHandle(handle *basestore.TransactableHandle) Store {

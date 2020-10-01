@@ -18,9 +18,13 @@
 @import './browser-extension/options-page/OptionsContainer';
 
 :root {
+    // Use the same root size as the webapp to maintain consistency
+    font-size: 16px;
+}
+
+body {
     // Use a smaller base size than the default 16px,
     // because an options menu should feel more like a
     // natural extension of the browser's UI than a webpage
-    // This also affects all border-radiuses etc (everything that uses rem).
     font-size: 14px;
 }

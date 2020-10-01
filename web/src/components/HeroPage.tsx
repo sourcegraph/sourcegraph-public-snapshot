@@ -12,10 +12,17 @@ interface HeroPageProps {
     detail?: React.ReactNode
     body?: React.ReactNode
     cta?: JSX.Element
+    lessPadding?: boolean
 }
 
 export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
-    <div className={`hero-page ${props.className || ''}`}>
+    <div
+        className={classNames(
+            'hero-page',
+            `hero-page__${props.lessPadding ? 'less' : 'default'}-padding`,
+            props.className
+        )}
+    >
         {props.icon && (
             <div className={classNames('hero-page__icon', props.iconClassName)}>
                 {props.iconLinkTo ? (

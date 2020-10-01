@@ -28,6 +28,7 @@ type ObservedStore struct {
 	getStatesOperation                      *observation.Operation
 	deleteUploadByIDOperation               *observation.Operation
 	deleteUploadsWithoutRepositoryOperation *observation.Operation
+	hardDeleteUploadByIDOperation           *observation.Operation
 	resetStalledOperation                   *observation.Operation
 	getDumpByIDOperation                    *observation.Operation
 	findClosestDumpsOperation               *observation.Operation
@@ -148,6 +149,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		deleteUploadsWithoutRepositoryOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteUploadsWithoutRepository",
 			MetricLabels: []string{"delete_uploads_without_repository"},
+			Metrics:      metrics,
+		}),
+		hardDeleteUploadByIDOperation: observationContext.Operation(observation.Op{
+			Name:         "store.HardDeleteUploadByID",
+			MetricLabels: []string{"hard_delete_upload_by_i"},
 			Metrics:      metrics,
 		}),
 		resetStalledOperation: observationContext.Operation(observation.Op{
@@ -325,6 +331,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		lockOperation:                           s.lockOperation,
 		getUploadByIDOperation:                  s.getUploadByIDOperation,
 		deleteUploadsWithoutRepositoryOperation: s.deleteUploadsWithoutRepositoryOperation,
+		hardDeleteUploadByIDOperation:           s.hardDeleteUploadByIDOperation,
 		getUploadsOperation:                     s.getUploadsOperation,
 		queueSizeOperation:                      s.queueSizeOperation,
 		insertUploadOperation:                   s.insertUploadOperation,
@@ -510,6 +517,13 @@ func (s *ObservedStore) DeleteUploadsWithoutRepository(ctx context.Context, now 
 	}()
 
 	return s.store.DeleteUploadsWithoutRepository(ctx, now)
+}
+
+// HardDeleteUploadByID calls into the inner store and registers the observed results.
+func (s *ObservedStore) HardDeleteUploadByID(ctx context.Context, id int) (err error) {
+	ctx, endObservation := s.hardDeleteUploadByIDOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.HardDeleteUploadByID(ctx, id)
 }
 
 // ResetStalled calls into the inner store and registers the observed results.

@@ -169,7 +169,8 @@ func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error)
 	defer func() { err = tx.Done(err) }()
 
 	id, repositoryID, deleted, err := scanFirstIntPair(tx.Store.Query(ctx, sqlf.Sprintf(`
-		DELETE FROM lsif_uploads
+		UPDATE lsif_uploads
+		SET state = 'deleted'
 		WHERE id IN (
 			SELECT d.id FROM lsif_dumps_with_repository_name d
 			WHERE NOT EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)
@@ -196,7 +197,8 @@ func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error)
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		DELETE from lsif_uploads
+		UPDATE lsif_uploads
+		SET state = 'deleted'
 		WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
 	`, repositoryID, commit, root, indexer))
 }

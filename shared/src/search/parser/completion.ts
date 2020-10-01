@@ -16,6 +16,15 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
+/**
+ * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
+ * This allows us to be notified and run custom code when a user selects a suggestion.
+ */
+export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
+    id: 'completionItemSelected',
+    title: 'completion item selected',
+}
+
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
     .flatMap(label => {
         const filterType = label as FilterType
@@ -119,7 +128,7 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
 const symbolToCompletion = ({ name, kind, location }: ISymbol): PartialCompletionItem => ({
     label: name,
     kind: symbolKindToCompletionItemKind[kind],
-    insertText: name,
+    insertText: name + ' ',
     filterText: name,
     detail: `${startCase(kind.toLowerCase())} - ${location.resource.repository.name}`,
 })
@@ -129,7 +138,7 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
         ? {
               label: name,
               kind: Monaco.languages.CompletionItemKind.TypeParameter,
-              insertText: name,
+              insertText: name + ' ',
               filterText: name,
           }
         : undefined
@@ -137,7 +146,7 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
 const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
-    insertText: name,
+    insertText: name + ' ',
     filterText: name,
 })
 
@@ -239,6 +248,7 @@ export async function getCompletionItems(
                         // Set a sortText so that dynamic suggestions
                         // are shown after filter type suggestions.
                         sortText: '1',
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
             ],
         }
@@ -261,6 +271,7 @@ export async function getCompletionItems(
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: label,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
                 }
             }
@@ -283,6 +294,7 @@ export async function getCompletionItems(
                                 ? filterValue.token.value
                                 : filterValue.token.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })),
             }
         }
@@ -295,6 +307,7 @@ export async function getCompletionItems(
                         insertText: `${label} `,
                         filterText: label,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        command: COMPLETION_ITEM_SELECTED,
                     })
                 ),
             }

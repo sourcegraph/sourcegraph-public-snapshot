@@ -219,7 +219,7 @@ func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) WHERE EXISTS (
-			SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s
+			SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
 			UNION
 			SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 		)

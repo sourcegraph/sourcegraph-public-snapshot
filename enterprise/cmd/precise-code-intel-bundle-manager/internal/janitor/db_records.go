@@ -14,6 +14,24 @@ import (
 // GetUploadsBatchSize is the maximum number of uploads to request from the database at once.
 const GetUploadsBatchSize = 100
 
+// hardDeleteDeletedRecords removes upload records in the deleted state.
+func (j *Janitor) hardDeleteDeletedRecords(ctx context.Context) error {
+	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{
+		State: "deleted",
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		if err := j.store.HardDeleteUploadByID(ctx, id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // removeRecordsForDeletedRepositories removes all upload records for deleted repositories.
 func (j *Janitor) removeRecordsForDeletedRepositories(ctx context.Context) error {
 	counts, err := j.store.DeleteUploadsWithoutRepository(ctx, time.Now())
