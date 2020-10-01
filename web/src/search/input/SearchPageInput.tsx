@@ -67,6 +67,8 @@ interface Props
     globbing: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
+    /** A query fragment to be appended to queries. This will not appear in the input until a search is submitted. */
+    hiddenQuerySuffix?: string
     autoFocus?: boolean
 }
 
@@ -236,7 +238,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
             event?.preventDefault()
             submitSearch({
                 ...props,
-                query: userQueryState.query,
+                query: props.hiddenQuerySuffix
+                    ? `${userQueryState.query} ${props.hiddenQuerySuffix}`
+                    : userQueryState.query,
                 source: 'home',
                 searchParameters: tourWasActive ? [{ key: 'onboardingTour', value: 'true' }] : undefined,
             })

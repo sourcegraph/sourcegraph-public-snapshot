@@ -30,7 +30,7 @@ export interface RepogroupMetadata {
     /**
      * A description of the repogroup to be displayed on the page.
      */
-    description: string
+    description: JSX.Element | string
     /**
      * Base64 data uri to an icon.
      */
