@@ -2,7 +2,6 @@
   // This is set from an environment variable
   "experimentalFeatures": {
     "showRepogroupHomepage": true,
-    "showEnterpriseHomePanels": true,
     "showMultilineSearchConsole": true
   },
   "search.repositoryGroups": {
