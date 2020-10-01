@@ -60,6 +60,18 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	const repomatchesChunk = 1000
+	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
+	flushRepoMatchesBuf := func() {
+		if len(repomatchesBuf) > 0 {
+			if err := eventWriter.Event("repomatches", repomatchesBuf); err != nil {
+				// EOF
+				return
+			}
+			repomatchesBuf = repomatchesBuf[:0]
+		}
+	}
+
 	for _, result := range resultsResolver.Results() {
 		if fm, ok := result.ToFileMatch(); ok {
 			filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
@@ -67,9 +79,16 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 				flushFileMatchesBuf()
 			}
 		}
+		if repo, ok := result.ToRepository(); ok {
+			repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
+			if len(repomatchesBuf) == cap(repomatchesBuf) {
+				flushRepoMatchesBuf()
+			}
+		}
 	}
 
 	flushFileMatchesBuf()
+	flushRepoMatchesBuf()
 
 	// Send dynamic filters once. When this is true streaming we may want to
 	// send updated filters as we find more results.
@@ -156,6 +175,18 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	}
 }
 
+func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
+	var branches []string
+	if rev := repo.Rev(); rev != "" {
+		branches = []string{rev}
+	}
+
+	return eventRepoMatch{
+		Repository: repo.Name(),
+		Branches:   branches,
+	}
+}
+
 type eventStreamWriter struct {
 	w     io.Writer
 	enc   *json.Encoder
@@ -225,6 +256,12 @@ type eventLineMatch struct {
 	Line             string     `json:"line"`
 	LineNumber       int32      `json:"lineNumber"`
 	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
+}
+
+// eventRepoMatch is a subset of zoekt.FileMatch for our event API.
+type eventRepoMatch struct {
+	Repository string   `json:"repository"`
+	Branches   []string `json:"branches,omitempty"`
 }
 
 // eventFilter is a suggestion for a search filter. Currently has a 1-1

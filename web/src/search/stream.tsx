@@ -1,6 +1,6 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
-import { defaultIfEmpty, scan } from 'rxjs/operators'
+import { defaultIfEmpty, map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -9,14 +9,17 @@ import { SearchPatternType } from '../graphql-operations'
 // change anything and everything here. We are iteratively improving this
 // until it is no longer a proof of concept and instead works well.
 
-type SearchEvent = { type: 'filematches'; matches: FileMatch[] } | { type: 'filters'; filters: Filter[] }
+type SearchEvent =
+    | { type: 'filematches'; matches: FileMatch[] }
+    | { type: 'repomatches'; matches: RepositoryMatch[] }
+    | { type: 'filters'; filters: Filter[] }
 
-interface FileMatch {
+interface FileMatch extends RepositoryMatch {
     name: string
     repository: string
-    branches?: [string]
+    branches?: string[]
     version?: string
-    lineMatches: [LineMatch]
+    lineMatches: LineMatch[]
 }
 
 interface LineMatch {
@@ -24,6 +27,8 @@ interface LineMatch {
     lineNumber: number
     offsetAndLengths: [[number]]
 }
+
+type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
 
 interface Filter {
     value: string
@@ -78,6 +83,29 @@ function toGQLFileMatch(fm: FileMatch): GQL.IFileMatch {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+const toMarkdown = (text: string): GQL.IMarkdown => ({ __typename: 'Markdown', text } as GQL.IMarkdown)
+
+function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
+    const branch = repo?.branches?.[0]
+    const revision = branch ? `@${branch}` : ''
+    const label = repo.repository + revision
+
+    // We only need to return the subset defined in IGenericSearchResultInterface
+    const gqlRepo: unknown = {
+        __typename: 'Repository',
+        // copy-pasta from repositories.go :'(
+        icon:
+            'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K',
+        label: toMarkdown(`[${label}](/${label})`),
+        url: '/' + label,
+        detail: toMarkdown('Repository name match'),
+        matches: [],
+    }
+
+    return gqlRepo as GQL.IRepository
+}
+
 const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => ({
     __typename: 'SearchFilter',
     ...filter,
@@ -118,6 +146,13 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
                     results: results.results.concat(newEvent.matches.map(toGQLFileMatch)),
                 }
 
+            case 'repomatches':
+                return {
+                    ...results,
+                    // Repository matches are additive
+                    results: results.results.concat(newEvent.matches.map(toGQLRepositoryMatch)),
+                }
+
             case 'filters':
                 return {
                     ...results,
@@ -128,6 +163,21 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
     }, emptyGQLSearchResults),
     defaultIfEmpty(emptyGQLSearchResults)
 )
+
+const observeMessages = <T extends {}>(eventSource: EventSource, eventName: SearchEvent['type']): Observable<T> =>
+    fromEvent(eventSource, eventName).pipe(
+        map((event: Event) => {
+            if (!(event instanceof MessageEvent)) {
+                throw new TypeError(`internal error: expected MessageEvent in streaming search ${eventName}`)
+            }
+            try {
+                const parsedData = JSON.parse(event.data) as T
+                return parsedData
+            } catch {
+                throw new Error(`Could not parse ${eventName} message data in streaming search`)
+            }
+        })
+    )
 
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
@@ -155,20 +205,19 @@ export function search(
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
         subscriptions.add(
-            fromEvent(eventSource, 'filematches').subscribe((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError('internal error: expected MessageEvent in streaming search filematches')
-                }
-                observer.next({ type: 'filematches', matches: JSON.parse(event.data) as FileMatch[] })
-            })
+            observeMessages<FileMatch[]>(eventSource, 'filematches')
+                .pipe(map(matches => ({ type: 'filematches' as const, matches })))
+                .subscribe(observer)
         )
         subscriptions.add(
-            fromEvent(eventSource, 'filters').subscribe((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError('internal error: expected MessageEvent in streaming search filters')
-                }
-                observer.next({ type: 'filters', filters: JSON.parse(event.data) as Filter[] })
-            })
+            observeMessages<RepositoryMatch[]>(eventSource, 'repomatches')
+                .pipe(map(matches => ({ type: 'repomatches' as const, matches })))
+                .subscribe(observer)
+        )
+        subscriptions.add(
+            observeMessages<Filter[]>(eventSource, 'filters')
+                .pipe(map(filters => ({ type: 'filters' as const, filters })))
+                .subscribe(observer)
         )
         subscriptions.add(
             fromEvent(eventSource, 'done').subscribe(() => {
