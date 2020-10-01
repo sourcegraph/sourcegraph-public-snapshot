@@ -250,7 +250,24 @@ Make sure the instance:
 This is a convenience script to do the above without using the Cloud Console. (It uses a hardcoded snapshot from 2020-09-10, you need to replace that, at least).
 
 ```shell
-gcloud beta compute --project=sourcegraph-dev instances create erik-keegan-test-pg --zone=us-central1-f --machine-type=e2-standard-8 --network=default --network-tier=PREMIUM --maintenance-policy=MIGRATE --service-account=527047051561-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --image=debian-10-buster-v20200902 --image-project=debian-cloud --boot-disk-size=30GB --boot-disk-type=pd-standard --boot-disk-device-name=erik-keegan-test-pg --create-disk="mode=rw,size=200,type=projects/sourcegraph-dev/zones/us-central1-f/diskTypes/pd-ssd,name=erik-keegan-pg-test-data,description=Made from backup--pgsql-prod---cloud--2020-09-10--11-00,device-name=erik-keegan-pg-test-data" --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+gcloud beta compute --project=sourcegraph-dev instances create erik-keegan-test-pg \
+  --zone=us-central1-f \
+  --machine-type=e2-standard-8 \
+  --network=default \
+  --network-tier=PREMIUM \
+  --maintenance-policy=MIGRATE \
+  --service-account=527047051561-compute@developer.gserviceaccount.com \
+  --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+  --image=debian-10-buster-v20200902 \
+  --image-project=debian-cloud \
+  --boot-disk-size=30GB \
+  --boot-disk-type=pd-standard \
+  --boot-disk-device-name=erik-keegan-test-pg \
+  --create-disk="mode=rw,size=200,type=projects/sourcegraph-dev/zones/us-central1-f/diskTypes/pd-ssd,name=erik-keegan-pg-test-data,description=Made from backup--pgsql-prod---cloud--2020-09-10--11-00,device-name=erik-keegan-pg-test-data" \
+  --no-shielded-secure-boot \
+  --shielded-vtpm \
+  --shielded-integrity-monitoring \
+  --reservation-affinity=any
 ```
 
 ### Connect to the instance
