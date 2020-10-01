@@ -521,6 +521,11 @@ Indexes:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
+ docker_steps    | jsonb[]                  | not null
+ root            | text                     | not null
+ indexer         | text                     | not null
+ indexer_args    | text[]                   | not null
+ outfile         | text                     | not null
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
