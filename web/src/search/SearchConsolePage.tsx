@@ -15,7 +15,7 @@ import { search } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { parseSearchURL, parseSearchURLQuery, parseSearchURLPatternType } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
 import { SearchPatternType } from '../graphql-operations'
 
 interface SearchConsolePageProps
