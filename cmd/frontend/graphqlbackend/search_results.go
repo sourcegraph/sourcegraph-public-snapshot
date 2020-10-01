@@ -1525,10 +1525,8 @@ type aggregator struct {
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
-	var err error
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer func() {
-		tr.SetError(err)
 		tr.Finish()
 	}()
 	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
@@ -1550,10 +1548,8 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 	}
 }
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
-	var err error
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
 	defer func() {
-		tr.SetError(err)
 		tr.Finish()
 	}()
 	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
@@ -1583,10 +1579,8 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 	}
 }
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
-	var err error
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	defer func() {
-		tr.SetError(err)
 		tr.Finish()
 	}()
 	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
@@ -1634,10 +1628,8 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
-	var err error
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
 	defer func() {
-		tr.SetError(err)
 		tr.Finish()
 	}()
 	old := tp.PatternInfo
@@ -1682,10 +1674,8 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
-	var err error
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
 	defer func() {
-		tr.SetError(err)
 		tr.Finish()
 	}()
 	old := tp.PatternInfo
