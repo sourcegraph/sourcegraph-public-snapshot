@@ -226,6 +226,12 @@ var commonFileFilters = []struct {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
+	var err error
+	tr, ctx := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	globbing := false
 	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
