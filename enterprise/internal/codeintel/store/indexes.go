@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -14,19 +15,24 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID             int        `json:"id"`
-	Commit         string     `json:"commit"`
-	QueuedAt       time.Time  `json:"queuedAt"`
-	State          string     `json:"state"`
-	FailureMessage *string    `json:"failureMessage"`
-	StartedAt      *time.Time `json:"startedAt"`
-	FinishedAt     *time.Time `json:"finishedAt"`
-	ProcessAfter   *time.Time `json:"processAfter"`
-	NumResets      int        `json:"numResets"`
-	NumFailures    int        `json:"numFailures"`
-	RepositoryID   int        `json:"repositoryId"`
-	RepositoryName string     `json:"repositoryName"`
-	Rank           *int       `json:"placeInQueue"`
+	ID             int          `json:"id"`
+	Commit         string       `json:"commit"`
+	QueuedAt       time.Time    `json:"queuedAt"`
+	State          string       `json:"state"`
+	FailureMessage *string      `json:"failureMessage"`
+	StartedAt      *time.Time   `json:"startedAt"`
+	FinishedAt     *time.Time   `json:"finishedAt"`
+	ProcessAfter   *time.Time   `json:"processAfter"`
+	NumResets      int          `json:"numResets"`
+	NumFailures    int          `json:"numFailures"`
+	RepositoryID   int          `json:"repositoryId"`
+	RepositoryName string       `json:"repositoryName"`
+	DockerSteps    []DockerStep `json:"docker_steps"`
+	Root           string       `json:"root"`
+	Indexer        string       `json:"indexer"`
+	IndexerArgs    []string     `json:"indexer_args"`
+	Outfile        string       `json:"outfile"`
+	Rank           *int         `json:"placeInQueue"`
 }
 
 func (i Index) RecordID() int {
@@ -56,6 +62,11 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.NumFailures,
 			&index.RepositoryID,
 			&index.RepositoryName,
+			pq.Array(&index.DockerSteps),
+			&index.Root,
+			&index.Indexer,
+			pq.Array(&index.IndexerArgs),
+			&index.Outfile,
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -102,6 +113,11 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.num_failures,
 			u.repository_id,
 			u.repository_name,
+			u.docker_steps,
+			u.root,
+			u.indexer,
+			u.indexer_args,
+			u.outfile,
 			s.rank
 		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
@@ -170,6 +186,11 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.num_failures,
 				u.repository_id,
 				u.repository_name,
+				u.docker_steps,
+				u.root,
+				u.indexer,
+				u.indexer_args,
+				u.outfile,
 				s.rank
 			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
@@ -234,12 +255,26 @@ func (s *store) InsertIndex(ctx context.Context, index Index) (int, error) {
 		ctx,
 		sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (
+				state,
 				commit,
 				repository_id,
-				state
-			) VALUES (%s, %s, %s)
+				docker_steps,
+				root,
+				indexer,
+				indexer_args,
+				outfile
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
-		`, index.Commit, index.RepositoryID, index.State),
+		`,
+			index.State,
+			index.Commit,
+			index.RepositoryID,
+			pq.Array(index.DockerSteps),
+			index.Root,
+			index.Indexer,
+			pq.Array(index.IndexerArgs),
+			index.Outfile,
+		),
 	))
 
 	return id, err
@@ -276,6 +311,11 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
+	sqlf.Sprintf(`u.docker_steps`),
+	sqlf.Sprintf(`u.root`),
+	sqlf.Sprintf(`u.indexer`),
+	sqlf.Sprintf(`u.indexer_args`),
+	sqlf.Sprintf(`u.outfile`),
 	sqlf.Sprintf("NULL"),
 }
 

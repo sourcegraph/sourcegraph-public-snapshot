@@ -40,7 +40,17 @@ func TestGetIndexByID(t *testing.T) {
 		FinishedAt:     nil,
 		RepositoryID:   123,
 		RepositoryName: "n-123",
-		Rank:           nil,
+		DockerSteps: []DockerStep{
+			{
+				Image:    "cimg/node:12.16",
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+			},
+		},
+		Root:        "/foo/bar",
+		Indexer:     "sourcegraph/lsif-tsc:latest",
+		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Outfile:     "dump.lsif",
+		Rank:        nil,
 	}
 
 	insertIndexes(t, dbconn.Global, expected)
@@ -275,9 +285,19 @@ func TestInsertIndex(t *testing.T) {
 	insertRepo(t, dbconn.Global, 50, "")
 
 	id, err := store.InsertIndex(context.Background(), Index{
-		Commit:       makeCommit(1),
 		State:        "queued",
+		Commit:       makeCommit(1),
 		RepositoryID: 50,
+		DockerSteps: []DockerStep{
+			{
+				Image:    "cimg/node:12.16",
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+			},
+		},
+		Root:        "/foo/bar",
+		Indexer:     "sourcegraph/lsif-tsc:latest",
+		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Outfile:     "dump.lsif",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
@@ -294,7 +314,17 @@ func TestInsertIndex(t *testing.T) {
 		FinishedAt:     nil,
 		RepositoryID:   50,
 		RepositoryName: "n-50",
-		Rank:           &rank,
+		DockerSteps: []DockerStep{
+			{
+				Image:    "cimg/node:12.16",
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+			},
+		},
+		Root:        "/foo/bar",
+		Indexer:     "sourcegraph/lsif-tsc:latest",
+		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Outfile:     "dump.lsif",
+		Rank:        &rank,
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
