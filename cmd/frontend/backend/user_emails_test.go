@@ -191,7 +191,7 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		}{
 			Email:    "a@example.com",
 			Change:   "updated password",
-			Username: "foo",
+			Username: "Foo",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
