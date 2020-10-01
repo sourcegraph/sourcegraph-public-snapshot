@@ -80,7 +80,7 @@ Publishing causes commits, branches, and changesets to be created on your code h
 
 You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?").
 
-On a real campaign, you would change the `published: false` in the `hello-world.campaign.yaml` to `published: true` and run the `src campaign preview` command again. The changesets will then be published when you create or update the campaign from the preview.
+On a real campaign, you would change the `published: false` in the `hello-world.campaign.yaml` to `published: true` and run the `src campaign preview` command again. The changesets will then be published when you create or update the campaign from the preview. You can also [publish only some of the changesets by setting `published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets).
 
 > NOTE: You can also create or update a campaign by running `src campaign apply`! This skips the preview stage, and is especially useful when updating an existing campaign.
 

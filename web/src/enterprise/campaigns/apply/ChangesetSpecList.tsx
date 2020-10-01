@@ -17,6 +17,8 @@ interface Props extends ThemeProps {
     queryChangesetSpecs?: typeof _queryChangesetSpecs
     /** For testing only. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
+    /** Expand changeset descriptions, for testing only. */
+    expandChangesetDescriptions?: boolean
 }
 
 /**
@@ -29,6 +31,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
     isLightTheme,
     queryChangesetSpecs = _queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
+    expandChangesetDescriptions,
 }) => {
     const queryChangesetSpecsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
@@ -52,6 +55,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
                     history,
                     location,
                     queryChangesetSpecFileDiffs,
+                    expandChangesetDescriptions,
                 }}
                 queryConnection={queryChangesetSpecsConnection}
                 hideSearch={true}

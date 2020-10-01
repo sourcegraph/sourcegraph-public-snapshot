@@ -10,6 +10,14 @@
     align-items: center;
     overflow-y: auto;
 
+    &__default-padding {
+        padding-top: 8rem;
+    }
+
+    &__less-padding {
+        padding-top: 4rem;
+    }
+
     &__icon {
         border-radius: 100%;
         width: 6rem;

@@ -329,21 +329,19 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         const tour = this.props.tour
 
         if (tour) {
-            if (!hasCommandService(editor)) {
-                throw new Error('Cannot add completionItemSelected command')
-            }
-            // When a suggestion gets selected, advance the tour.
-            this.subscriptions.add(
-                toUnsubscribable(
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                    (editor as any)._commandService.addCommand({
+            if (hasCommandService(editor)) {
+                // When a suggestion gets selected, advance the tour.
+                this.subscriptions.add(
+                    editor._commandService.addCommand({
                         id: 'completionItemSelected',
                         handler: () => {
                             runAdvanceLangOrRepoStep(this.props.queryState.query, tour)
                         },
                     })
                 )
-            )
+            } else {
+                throw new Error('Cannot add completionItemSelected command')
+            }
 
             // Handle advancing the search tour on the filter repo and filter lang steps, for events
             // where the user does NOT select a suggestion, and instead types a value.

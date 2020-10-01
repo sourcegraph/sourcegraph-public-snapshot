@@ -16,6 +16,10 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
+/**
+ * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
+ * This allows us to be notified and run custom code when a user selects a suggestion.
+ */
 export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
     id: 'completionItemSelected',
     title: 'completion item selected',
@@ -124,7 +128,7 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
 const symbolToCompletion = ({ name, kind, location }: ISymbol): PartialCompletionItem => ({
     label: name,
     kind: symbolKindToCompletionItemKind[kind],
-    insertText: name,
+    insertText: name + ' ',
     filterText: name,
     detail: `${startCase(kind.toLowerCase())} - ${location.resource.repository.name}`,
 })
@@ -134,7 +138,7 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
         ? {
               label: name,
               kind: Monaco.languages.CompletionItemKind.TypeParameter,
-              insertText: name,
+              insertText: name + ' ',
               filterText: name,
           }
         : undefined
@@ -142,7 +146,7 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
 const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
-    insertText: name,
+    insertText: name + ' ',
     filterText: name,
 })
 

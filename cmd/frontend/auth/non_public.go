@@ -58,15 +58,16 @@ var (
 	// 🚨 SECURITY: These maps define route names that anonymous users can access. They MUST NOT leak any sensitive
 	// data or allow unprivileged users to perform undesired actions.
 	anonymousAccessibleAPIRoutes = map[string]struct{}{
-		router.RobotsTxt:         {},
-		router.Favicon:           {},
-		router.Logout:            {},
-		router.SignUp:            {},
-		router.SiteInit:          {},
-		router.SignIn:            {},
-		router.SignOut:           {},
-		router.ResetPasswordInit: {},
-		router.ResetPasswordCode: {},
+		router.RobotsTxt:          {},
+		router.Favicon:            {},
+		router.Logout:             {},
+		router.SignUp:             {},
+		router.SiteInit:           {},
+		router.SignIn:             {},
+		router.SignOut:            {},
+		router.ResetPasswordInit:  {},
+		router.ResetPasswordCode:  {},
+		router.CheckUsernameTaken: {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
 		uirouter.RouteSignIn:        {},

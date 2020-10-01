@@ -332,7 +332,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, inner)
+			p.mockUpdateMergeRequest(mr, nil, gitlab.UpdateMergeRequestStateEventClose, inner)
 
 			have := p.source.CloseChangeset(p.ctx, p.changeset)
 			if !errors.Is(have, inner) {
@@ -346,9 +346,50 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, want, nil)
+			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
 
 			if err := p.source.CloseChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+		})
+	})
+
+	t.Run("ReopenChangeset", func(t *testing.T) {
+		t.Run("invalid metadata", func(t *testing.T) {
+			defer func() { _ = recover() }()
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
+				Repo: &Repo{
+					Metadata: struct{}{},
+				},
+			})
+			t.Error("invalid metadata did not panic")
+		})
+
+		t.Run("error from UpdateMergeRequest", func(t *testing.T) {
+			inner := errors.New("foo")
+			mr := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockUpdateMergeRequest(mr, nil, gitlab.UpdateMergeRequestStateEventReopen, inner)
+
+			have := p.source.ReopenChangeset(p.ctx, p.changeset)
+			if !errors.Is(have, inner) {
+				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			want := &gitlab.MergeRequest{}
+			mr := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventReopen, nil)
+
+			if err := p.source.ReopenChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 		})
@@ -546,7 +587,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, inner)
+			p.mockUpdateMergeRequest(mr, nil, "", inner)
 
 			have := p.source.UpdateChangeset(p.ctx, p.changeset)
 			if !errors.Is(have, inner) {
@@ -563,7 +604,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = in
-			p.mockUpdateMergeRequest(in, out, nil)
+			p.mockUpdateMergeRequest(in, out, "", nil)
 
 			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)
@@ -801,12 +842,16 @@ func (p *gitLabChangesetSourceTestProvider) mockGetOpenMergeRequestByRefs(mr *gi
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, updated *gitlab.MergeRequest, err error) {
+func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, updated *gitlab.MergeRequest, expectedStateEvent gitlab.UpdateMergeRequestStateEvent, err error) {
 	gitlab.MockUpdateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mrIn *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
 		p.testCommonParams(ctx, client, project)
 		if expectedMR != mrIn {
 			p.t.Errorf("unexpected MergeRequest: have %+v; want %+v", mrIn, expectedMR)
 		}
+		if len(expectedStateEvent) != 0 && opts.StateEvent != expectedStateEvent {
+			p.t.Errorf("unexpected StateEvent: have %+v; want %+v", opts.StateEvent, expectedStateEvent)
+		}
+
 		return updated, err
 	}
 }

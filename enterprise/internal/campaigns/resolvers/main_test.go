@@ -274,8 +274,7 @@ type testChangesetOpts struct {
 	failureMessage   string
 	unsynced         bool
 
-	createdByCampaign bool
-	ownedByCampaign   int64
+	ownedByCampaign int64
 
 	metadata interface{}
 }
@@ -307,7 +306,6 @@ func createChangeset(
 		ReconcilerState:  opts.reconcilerState,
 		Unsynced:         opts.unsynced,
 
-		CreatedByCampaign: opts.createdByCampaign,
 		OwnedByCampaignID: opts.ownedByCampaign,
 
 		Metadata: opts.metadata,

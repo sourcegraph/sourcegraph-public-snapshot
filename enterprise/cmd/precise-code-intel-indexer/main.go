@@ -75,6 +75,9 @@ func main() {
 		gitserver.DefaultClient,
 		indexabilityUpdaterInterval,
 		indexabilityUpdaterMetrics,
+		indexMinimumSearchCount,
+		float64(indexMinimumSearchRatio)/100,
+		indexMinimumPreciseCount,
 	)
 
 	scheduler := scheduler.NewScheduler(

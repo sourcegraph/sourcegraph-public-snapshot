@@ -102,30 +102,45 @@ export const changesetSpecFieldsFragment = gql`
         type
         description {
             __typename
-            ... on ExistingChangesetReference {
-                baseRepository {
-                    name
+            ...ExistingChangesetReferenceFields
+            ...GitBranchChangesetDescriptionFields
+        }
+    }
+
+    fragment ExistingChangesetReferenceFields on ExistingChangesetReference {
+        baseRepository {
+            name
+            url
+        }
+        externalID
+    }
+
+    fragment GitBranchChangesetDescriptionFields on GitBranchChangesetDescription {
+        baseRepository {
+            name
+            url
+        }
+        title
+        published
+        body
+        commits {
+            author {
+                avatarURL
+                email
+                displayName
+                user {
+                    username
+                    displayName
                     url
                 }
-                externalID
             }
-            ... on GitBranchChangesetDescription {
-                baseRepository {
-                    name
-                    url
-                }
-                title
-                published
-                body
-                commits {
-                    message
-                }
-                baseRef
-                headRef
-                diffStat {
-                    ...DiffStatFields
-                }
-            }
+            subject
+            body
+        }
+        baseRef
+        headRef
+        diffStat {
+            ...DiffStatFields
         }
     }
 

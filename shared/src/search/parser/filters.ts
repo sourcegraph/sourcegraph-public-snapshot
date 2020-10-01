@@ -48,6 +48,7 @@ export const LANGUAGES: string[] = [
     'python',
     'r',
     'ruby',
+    'rust',
     'sass',
     'swift',
     'typescript',

@@ -4,7 +4,7 @@ export const siteID = 'TestSiteID'
 export const siteGQLID = 'TestGQLSiteID'
 
 export const builtinAuthProvider = {
-    serviceType: 'builtin',
+    serviceType: 'builtin' as const,
     serviceID: '',
     clientID: '',
     displayName: 'Builtin username-password authentication',

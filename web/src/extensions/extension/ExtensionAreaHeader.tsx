@@ -35,15 +35,24 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 
     const iconURL = useMemo(() => {
         let iconURL: URL | undefined
+
         try {
-            if (manifest?.icon) {
+            if (props.isLightTheme) {
+                if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                    iconURL = new URL(manifest.icon)
+                }
+            } else if (manifest?.iconDark && isEncodedImage(manifest.iconDark)) {
+                iconURL = new URL(manifest.iconDark)
+            } else if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                // fallback: show default icon on dark theme if dark icon isn't specified
                 iconURL = new URL(manifest.icon)
             }
         } catch {
             // noop
         }
+
         return iconURL
-    }, [manifest])
+    }, [manifest?.icon, manifest?.iconDark, props.isLightTheme])
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
@@ -85,12 +94,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="extension-area-header__wrapper">
                             <div className="mb-3">
                                 <div className="d-flex align-items-start">
-                                    {manifest?.icon &&
-                                        iconURL &&
-                                        iconURL.protocol === 'data:' &&
-                                        isEncodedImage(manifest.icon) && (
-                                            <img className="extension-area-header__icon mr-2" src={manifest.icon} />
-                                        )}
+                                    {iconURL && <img className="extension-area-header__icon mr-2" src={iconURL.href} />}
                                     <div>
                                         <h1 className="d-flex align-items-center mb-0 font-weight-normal">{name}</h1>
                                         {manifest && (manifest.description || isWorkInProgress) && (
@@ -149,7 +153,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                             <li key={label} className="nav-item">
                                                 <NavLink
                                                     to={props.url + to}
-                                                    className="nav-link btn-sm extension-area-link"
+                                                    className="nav-link extension-area-link"
                                                     activeClassName="active"
                                                     exact={exact}
                                                 >

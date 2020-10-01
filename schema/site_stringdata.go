@@ -35,7 +35,7 @@ const SiteSchemaJSON = `{
       "group": "Search"
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
       "type": "array",
       "items": {
         "type": "string"
@@ -345,6 +345,12 @@ const SiteSchemaJSON = `{
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
       "default": 1,
+      "group": "External services"
+    },
+    "repoConcurrentExternalServiceSyncers": {
+      "description": "The number of concurrent external service syncers that can run.",
+      "type": "integer",
+      "default": 3,
       "group": "External services"
     },
     "maxReposToSearch": {
