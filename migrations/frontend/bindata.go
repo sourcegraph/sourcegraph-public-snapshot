@@ -80,6 +80,8 @@
 // 1528395722_drop_created_by_campaign.up.sql (83B)
 // 1528395723_convert_secret_jsonb_to_text.down.sql (318B)
 // 1528395723_convert_secret_jsonb_to_text.up.sql (178B)
+// 1528395724_settings_org_id_idx.down.sql (59B)
+// 1528395724_settings_org_id_idx.up.sql (85B)
 
 package migrations
 
@@ -1748,6 +1750,46 @@ func _1528395723_convert_secret_jsonb_to_textUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395724_settings_org_id_idxDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4e\x2d\x29\xc9\xcc\x4b\x2f\x8e\xcf\x2f\x4a\x8f\xcf\x4c\x89\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x78\x35\xe0\x20\x3b\x00\x00\x00")
+
+func _1528395724_settings_org_id_idxDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395724_settings_org_id_idxDownSql,
+		"1528395724_settings_org_id_idx.down.sql",
+	)
+}
+
+func _1528395724_settings_org_id_idxDownSql() (*asset, error) {
+	bytes, err := _1528395724_settings_org_id_idxDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395724_settings_org_id_idx.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc4, 0xb4, 0x37, 0xfd, 0x1, 0x96, 0x55, 0x7d, 0xed, 0x5a, 0xf7, 0xd6, 0xd5, 0x68, 0x37, 0xa1, 0x8c, 0x55, 0x9f, 0xe, 0xf8, 0x99, 0xfc, 0x1f, 0x1f, 0x2b, 0xb9, 0x8d, 0xc2, 0xc2, 0xd8, 0x68}}
+	return a, nil
+}
+
+var __1528395724_settings_org_id_idxUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4e\x2d\x29\xc9\xcc\x4b\x2f\x8e\xcf\x2f\x4a\x8f\xcf\x4c\x89\xcf\x4c\xa9\x50\xf0\xf7\x83\x0b\x6b\x40\x84\x35\x41\x86\xf8\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x8a\xe4\xe3\x54\x55\x00\x00\x00")
+
+func _1528395724_settings_org_id_idxUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395724_settings_org_id_idxUpSql,
+		"1528395724_settings_org_id_idx.up.sql",
+	)
+}
+
+func _1528395724_settings_org_id_idxUpSql() (*asset, error) {
+	bytes, err := _1528395724_settings_org_id_idxUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395724_settings_org_id_idx.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x41, 0xe7, 0x22, 0x7b, 0x7c, 0x9a, 0xd6, 0x56, 0x1b, 0x19, 0x9, 0x1d, 0xec, 0x50, 0xa4, 0x87, 0xc4, 0x59, 0xd, 0x3b, 0x62, 0x9, 0x4f, 0x11, 0x93, 0x40, 0x2e, 0x9, 0xce, 0x13, 0xae, 0x8e}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1919,6 +1961,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395722_drop_created_by_campaign.up.sql":                                   _1528395722_drop_created_by_campaignUpSql,
 	"1528395723_convert_secret_jsonb_to_text.down.sql":                             _1528395723_convert_secret_jsonb_to_textDownSql,
 	"1528395723_convert_secret_jsonb_to_text.up.sql":                               _1528395723_convert_secret_jsonb_to_textUpSql,
+	"1528395724_settings_org_id_idx.down.sql":                                      _1528395724_settings_org_id_idxDownSql,
+	"1528395724_settings_org_id_idx.up.sql":                                        _1528395724_settings_org_id_idxUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2045,6 +2089,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395722_drop_created_by_campaign.up.sql":                                   {_1528395722_drop_created_by_campaignUpSql, map[string]*bintree{}},
 	"1528395723_convert_secret_jsonb_to_text.down.sql":                             {_1528395723_convert_secret_jsonb_to_textDownSql, map[string]*bintree{}},
 	"1528395723_convert_secret_jsonb_to_text.up.sql":                               {_1528395723_convert_secret_jsonb_to_textUpSql, map[string]*bintree{}},
+	"1528395724_settings_org_id_idx.down.sql":                                      {_1528395724_settings_org_id_idxDownSql, map[string]*bintree{}},
+	"1528395724_settings_org_id_idx.up.sql":                                        {_1528395724_settings_org_id_idxUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
