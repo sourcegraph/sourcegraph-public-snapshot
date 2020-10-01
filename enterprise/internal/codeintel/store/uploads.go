@@ -177,7 +177,7 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			WHERE r.state = 'queued'
 		) s
 		ON u.id = s.id
-		WHERE u.id = %s
+		WHERE u.state != 'deleted' AND u.id = %s
 	`, id)))
 }
 
@@ -200,7 +200,6 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
-
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -209,16 +208,14 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
+	} else {
+		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id)"))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
-	}
-
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
 	count, _, err := scanFirstInt(tx.query(
@@ -366,7 +363,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
 	sqlf.Sprintf("u.root"),
-	sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip"),
+	sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE state != 'deleted' AND repository_id = u.repository_id AND upload_id = u.id) AS visible_at_tip"),
 	sqlf.Sprintf("u.uploaded_at"),
 	sqlf.Sprintf("u.state"),
 	sqlf.Sprintf("u.failure_message"),
@@ -410,7 +407,7 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 // GetStates returns the states for the uploads with the given identifiers.
 func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error) {
 	return scanStates(s.query(ctx, sqlf.Sprintf(`
-		SELECT id, state FROM lsif_uploads_with_repository_name
+		SELECT id, state FROM lsif_uploads
 		WHERE id IN (%s)
 	`, sqlf.Join(intsToQueries(ids), ", "))))
 }
@@ -428,7 +425,8 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 	repositoryID, deleted, err := scanFirstInt(tx.query(
 		ctx,
 		sqlf.Sprintf(`
-			DELETE FROM lsif_uploads
+			UPDATE lsif_uploads
+			SET state = 'deleted'
 			WHERE id = %s
 			RETURNING repository_id
 		`, id),
@@ -466,11 +464,18 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 				EXISTS (SELECT 1 from lsif_uploads u WHERE u.repository_id = r.id)
 		),
 		deleted_uploads AS (
-			DELETE FROM lsif_uploads u WHERE repository_id IN (SELECT id FROM deleted_repos)
+			UPDATE lsif_uploads u
+			SET state = 'deleted'
+			WHERE u.repository_id IN (SELECT id FROM deleted_repos)
 			RETURNING u.id, u.repository_id
 		)
 		SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
 	`, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+}
+
+// HardDeleteUploadByID deletes the upload record with the given identifier.
+func (s *store) HardDeleteUploadByID(ctx context.Context, id int) error {
+	return s.queryForEffect(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, id))
 }
 
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an

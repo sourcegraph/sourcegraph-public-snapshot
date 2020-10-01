@@ -176,7 +176,6 @@ Referenced by:
  external_state        | text                     | 
  external_review_state | text                     | 
  external_check_state  | text                     | 
- created_by_campaign   | boolean                  | not null default false
  added_to_campaign     | boolean                  | not null default false
  diff_stat_added       | integer                  | 
  diff_stat_changed     | integer                  | 
@@ -859,7 +858,6 @@ Referenced by:
  archived              | boolean                  | not null default false
  uri                   | citext                   | 
  deleted_at            | timestamp with time zone | 
- sources               | jsonb                    | not null default '{}'::jsonb
  metadata              | jsonb                    | not null default '{}'::jsonb
  private               | boolean                  | not null default false
  cloned                | boolean                  | not null default false
@@ -874,12 +872,10 @@ Indexes:
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
-    "repo_sources_gin_idx" gin (sources)
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
-    "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
@@ -888,7 +884,6 @@ Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()
-    trig_read_only_repo_sources_column BEFORE UPDATE OF sources ON repo FOR EACH ROW EXECUTE PROCEDURE make_repo_sources_column_read_only()
 
 ```
 
@@ -918,19 +913,6 @@ Indexes:
  user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
-
-```
-
-# Table "public.saved_queries"
-```
-      Column      |           Type           | Modifiers 
-------------------+--------------------------+-----------
- query            | text                     | not null
- last_executed    | timestamp with time zone | not null
- latest_result    | timestamp with time zone | not null
- exec_duration_ns | bigint                   | not null
-Indexes:
-    "saved_queries_query_unique" UNIQUE, btree (query)
 
 ```
 
@@ -1063,8 +1045,8 @@ Foreign-key constraints:
  service_type | text                     | not null
  service_id   | text                     | not null
  account_id   | text                     | not null
- auth_data    | jsonb                    | 
- account_data | jsonb                    | 
+ auth_data    | text                     | 
+ account_data | text                     | 
  created_at   | timestamp with time zone | not null default now()
  updated_at   | timestamp with time zone | not null default now()
  deleted_at   | timestamp with time zone | 
@@ -1114,24 +1096,25 @@ Indexes:
 
 # Table "public.users"
 ```
-       Column        |           Type           |                     Modifiers                      
----------------------+--------------------------+----------------------------------------------------
- id                  | integer                  | not null default nextval('users_id_seq'::regclass)
- username            | citext                   | not null
- display_name        | text                     | 
- avatar_url          | text                     | 
- created_at          | timestamp with time zone | not null default now()
- updated_at          | timestamp with time zone | not null default now()
- deleted_at          | timestamp with time zone | 
- invite_quota        | integer                  | not null default 15
- passwd              | text                     | 
- passwd_reset_code   | text                     | 
- passwd_reset_time   | timestamp with time zone | 
- site_admin          | boolean                  | not null default false
- page_views          | integer                  | not null default 0
- search_queries      | integer                  | not null default 0
- tags                | text[]                   | default '{}'::text[]
- billing_customer_id | text                     | 
+         Column          |           Type           |                     Modifiers                      
+-------------------------+--------------------------+----------------------------------------------------
+ id                      | integer                  | not null default nextval('users_id_seq'::regclass)
+ username                | citext                   | not null
+ display_name            | text                     | 
+ avatar_url              | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ updated_at              | timestamp with time zone | not null default now()
+ deleted_at              | timestamp with time zone | 
+ invite_quota            | integer                  | not null default 15
+ passwd                  | text                     | 
+ passwd_reset_code       | text                     | 
+ passwd_reset_time       | timestamp with time zone | 
+ site_admin              | boolean                  | not null default false
+ page_views              | integer                  | not null default 0
+ search_queries          | integer                  | not null default 0
+ tags                    | text[]                   | default '{}'::text[]
+ billing_customer_id     | text                     | 
+ invalidated_sessions_at | timestamp with time zone | not null default now()
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -1166,6 +1149,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:
+    trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()
 
 ```

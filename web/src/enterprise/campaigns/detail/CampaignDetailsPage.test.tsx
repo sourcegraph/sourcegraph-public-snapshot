@@ -61,6 +61,7 @@ describe('CampaignDetailsPage', () => {
                     },
                 })
             }
+            queryChangesets={() => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })}
             deleteCampaign={() => Promise.resolve(undefined)}
             queryChangesetCountsOverTime={() => of([])}
             {...NOOP_BREADCRUMB_SETTERS}

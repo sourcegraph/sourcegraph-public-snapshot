@@ -7,8 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,7 +21,7 @@ func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatistic
 		}
 	}
 
-	stats, err := usagestatsdeprecated.GetByUserID(r.user.ID)
+	stats, err := usagestats.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

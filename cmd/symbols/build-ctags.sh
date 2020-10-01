@@ -18,7 +18,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 
 # Build ctags docker image for universal-ctags-dev

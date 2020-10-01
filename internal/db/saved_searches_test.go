@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -269,8 +271,8 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		OrgID:       nil,
 	}}
 
-	if !reflect.DeepEqual(savedSearch, want) {
-		t.Errorf("query is '%v+', want '%v+'", *savedSearch, *want)
+	if diff := cmp.Diff(want, savedSearch); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 

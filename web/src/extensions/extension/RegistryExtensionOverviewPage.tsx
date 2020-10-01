@@ -70,7 +70,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                     <li key={index} className="list-inline-item mb-2 small">
                                         <Link
                                             to={urlToExtensionsQuery(extensionsQuery({ category }))}
-                                            className="rounded border p-1"
+                                            className="rounded border p-1 btm-sm btn-outline extension-area-link"
                                         >
                                             {category}
                                         </Link>
@@ -90,7 +90,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                         <li key={index} className="list-inline-item mb-2 small">
                                             <Link
                                                 to={urlToExtensionsQuery(extensionsQuery({ tag }))}
-                                                className="rounded border p-1"
+                                                className="rounded border p-1 btn-outline btn-sm extension-area-link"
                                             >
                                                 {truncate(tag, { length: 24 })}
                                             </Link>

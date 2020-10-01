@@ -135,3 +135,9 @@ add('All states', () => (
         )}
     </EnterpriseWebStory>
 ))
+
+add('No data', () => (
+    <EnterpriseWebStory>
+        {props => <CampaignBurndownChart {...props} campaignID="123" queryChangesetCountsOverTime={() => of([])} />}
+    </EnterpriseWebStory>
+))

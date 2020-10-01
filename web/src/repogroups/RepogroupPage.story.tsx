@@ -27,9 +27,10 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
 }
 
-const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
+const PLATFORM_CONTEXT: RepogroupPageProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
     settings: NEVER,
+    sourcegraphURL: '',
 }
 
 const authUser: AuthenticatedUser = {
@@ -81,7 +82,7 @@ const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
     keyboardShortcuts: [],
     onFiltersInQueryChange: action('onFiltersInQueryChange'),
     setCaseSensitivity: action('setCaseSensitivity'),
-    splitSearchModes: true,
+    splitSearchModes: false,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     toggleSearchMode: action('toggleSearchMode'),
     versionContext: undefined,

@@ -22,7 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/migrations"
+	migrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is
@@ -331,7 +331,10 @@ func (n *NullJSONRawMessage) Scan(value interface{}) error {
 	switch value := value.(type) {
 	case nil:
 	case []byte:
-		n.Raw = value
+		// We make a copy here because the given value could be reused by
+		// the SQL driver
+		n.Raw = make([]byte, len(value))
+		copy(n.Raw, value)
 	default:
 		return fmt.Errorf("value is not []byte: %T", value)
 	}

@@ -9,6 +9,29 @@
 }
 
 .signin-signup-form {
-    width: 22rem;
     max-width: calc(100vw - 2rem);
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--color-border-2);
+
+    &__input-container {
+        position: relative;
+    }
+
+    &__icon {
+        position: absolute;
+        right: calc(0.5rem - 1px);
+        top: calc(0.5rem - 1px);
+    }
+}
+
+.signin-page {
+    &__container {
+        width: 20rem;
+    }
+}
+
+.signup-page {
+    &__container {
+        width: 27.5rem;
+    }
 }

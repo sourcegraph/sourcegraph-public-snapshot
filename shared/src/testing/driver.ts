@@ -688,6 +688,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
     const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
+        ignoreHTTPSErrors: true,
         ...options,
         args,
         defaultViewport: null,

@@ -111,7 +111,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
-        props.telemetryService.logViewEvent('Blob')
+        props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, isLightTheme, renderMode, props.telemetryService])
 
     useBreadcrumb(
@@ -122,6 +122,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
 
             return {
                 key: 'filePath',
+                className: 'flex-shrink-past-contents',
                 element: (
                     // TODO should these be "flattened" all using setBreadcrumb()?
                     <FilePathBreadcrumbs

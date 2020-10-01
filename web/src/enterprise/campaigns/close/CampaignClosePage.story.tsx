@@ -24,6 +24,50 @@ const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDe
     <div className="p-3 container web-content">{story()}</div>
 ))
 
+const now = new Date()
+
+const campaignDefaults: CampaignFields = {
+    __typename: 'Campaign',
+    changesets: {
+        stats: {
+            closed: 1,
+            merged: 2,
+            open: 3,
+            total: 10,
+            unpublished: 5,
+        },
+    },
+    createdAt: subDays(now, 5).toISOString(),
+    initialApplier: {
+        url: '/users/alice',
+        username: 'alice',
+    },
+    diffStat: {
+        added: 10,
+        changed: 8,
+        deleted: 10,
+    },
+    id: 'specid',
+    url: '/users/alice/campaigns/specid',
+    namespace: {
+        namespaceName: 'alice',
+        url: '/users/alice',
+    },
+    viewerCanAdminister: true,
+    closedAt: null,
+    description: '## What this campaign does\n\nTruly awesome things for example.',
+    name: 'awesome-campaign',
+    updatedAt: subDays(now, 5).toISOString(),
+    lastAppliedAt: subDays(now, 5).toISOString(),
+    lastApplier: {
+        url: '/users/bob',
+        username: 'bob',
+    },
+    currentSpec: {
+        originalInput: 'name: awesome-campaign\ndescription: somestring',
+    },
+}
+
 const queryChangesets: typeof _queryChangesets = () =>
     of({
         pageInfo: {
@@ -34,43 +78,43 @@ const queryChangesets: typeof _queryChangesets = () =>
         nodes: [
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh1',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 reconcilerState: ChangesetReconcilerState.QUEUED,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh2',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 reconcilerState: ChangesetReconcilerState.PROCESSING,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh3',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 reconcilerState: ChangesetReconcilerState.ERRORED,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 id: 'someh4',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 reconcilerState: ChangesetReconcilerState.COMPLETED,
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'ExternalChangeset',
@@ -93,8 +137,8 @@ const queryChangesets: typeof _queryChangesets = () =>
                 },
                 reviewState: ChangesetReviewState.COMMENTED,
                 title: 'Add prettier to all projects',
-                createdAt: subDays(new Date(), 5).toISOString(),
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
                 externalState: ChangesetExternalState.OPEN,
                 nextSyncAt: null,
                 id: 'somev1',
@@ -122,8 +166,8 @@ const queryChangesets: typeof _queryChangesets = () =>
                 },
                 reviewState: null,
                 title: 'Add prettier to all projects',
-                createdAt: subDays(new Date(), 5).toISOString(),
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
                 externalState: null,
                 nextSyncAt: null,
                 id: 'somev2',
@@ -154,45 +198,8 @@ add('Overview', () => {
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
     const campaign: CampaignFields = useMemo(
         () => ({
-            __typename: 'Campaign',
-            changesets: {
-                stats: {
-                    closed: 1,
-                    merged: 2,
-                    open: 3,
-                    total: 10,
-                    unpublished: 5,
-                },
-            },
-            createdAt: subDays(new Date(), 5).toISOString(),
-            initialApplier: {
-                url: '/users/alice',
-                username: 'alice',
-            },
-            diffStat: {
-                added: 10,
-                changed: 8,
-                deleted: 10,
-            },
-            id: 'specid',
-            url: '/users/alice/campaigns/specid',
-            namespace: {
-                namespaceName: 'alice',
-                url: '/users/alice',
-            },
+            ...campaignDefaults,
             viewerCanAdminister,
-            closedAt: null,
-            description: '## What this campaign does\n\nTruly awesome things for example.',
-            name: 'awesome-campaign',
-            updatedAt: subDays(new Date(), 5).toISOString(),
-            lastAppliedAt: subDays(new Date(), 5).toISOString(),
-            lastApplier: {
-                url: '/users/bob',
-                username: 'bob',
-            },
-            currentSpec: {
-                originalInput: 'name: awesome-campaign\ndescription: somestring',
-            },
         }),
         [viewerCanAdminister]
     )
@@ -203,6 +210,39 @@ add('Overview', () => {
                 <CampaignClosePage
                     {...props}
                     queryChangesets={queryChangesets}
+                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                    namespaceID="n123"
+                    campaignName="c123"
+                    fetchCampaignByNamespace={fetchCampaign}
+                    extensionsController={{} as any}
+                    platformContext={{} as any}
+                />
+            )}
+        </EnterpriseWebStory>
+    )
+})
+
+add('No open changesets', () => {
+    const campaign: CampaignFields = useMemo(() => campaignDefaults, [])
+    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+    const queryEmptyChangesets = useCallback(
+        () =>
+            of({
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+                totalCount: 0,
+                nodes: [],
+            }),
+        []
+    )
+    return (
+        <EnterpriseWebStory>
+            {props => (
+                <CampaignClosePage
+                    {...props}
+                    queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
                     campaignName="c123"

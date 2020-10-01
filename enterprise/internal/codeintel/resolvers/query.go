@@ -85,7 +85,8 @@ func NewQueryResolver(
 }
 
 // Ranges returns code intelligence for the ranges that fall within the given range of lines. These
-// results do not include any data that requires cross-linking of bundles (cross-repo or cross-root).
+// results are partial and do not include references outside the current file, or any location that
+// requires cross-linking of bundles (cross-repo or cross-root).
 func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error) {
 	var adjustedRanges []AdjustedCodeIntelligenceRange
 	for i := range r.uploads {

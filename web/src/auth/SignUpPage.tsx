@@ -1,5 +1,4 @@
 import * as H from 'history'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
@@ -8,6 +7,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArgs, SignUpForm } from './SignUpForm'
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphIcon } from './icons'
 
 interface SignUpPageProps {
     location: H.Location
@@ -17,7 +17,7 @@ interface SignUpPageProps {
 
 export class SignUpPage extends React.Component<SignUpPageProps> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SignUp', false)
+        eventLogger.logViewEvent('SignUp', null, false)
     }
 
     public render(): JSX.Element | null {
@@ -31,22 +31,29 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
         }
 
         return (
-            <div className="signin-signup-page sign-up-page">
+            <div className="signin-signup-page sign-up-page web-content">
                 <PageTitle title="Sign up" />
                 <HeroPage
-                    icon={UserIcon}
+                    icon={SourcegraphIcon}
+                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                    iconClassName="bg-transparent"
                     title={
-                        window.context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph'
+                        window.context.sourcegraphDotComMode
+                            ? 'Sign up for Sourcegraph Cloud'
+                            : 'Sign up for Sourcegraph Server'
                     }
+                    lessPadding={true}
                     body={
-                        <>
-                            <p>
-                                <Link to={`/sign-in${this.props.location.search}`}>
-                                    Already have an account? Sign in.
-                                </Link>
-                            </p>
+                        <div className="signup-page__container pb-5">
+                            {window.context.sourcegraphDotComMode && (
+                                <p className="pt-1 pb-2">Start searching public code now</p>
+                            )}
                             <SignUpForm {...this.props} doSignUp={this.doSignUp} />
-                        </>
+                            <p className="mt-3">
+                                Already have an account?{' '}
+                                <Link to={`/sign-in${this.props.location.search}`}>Sign in</Link>
+                            </p>
+                        </div>
                     }
                 />
             </div>

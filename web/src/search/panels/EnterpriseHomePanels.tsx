@@ -1,27 +1,25 @@
 import * as React from 'react'
+import { AuthenticatedUser } from '../../auth'
+import { EnterpriseHomePanelsProps, PatternTypeProps } from '..'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 import { RepositoriesPanel } from './RepositoriesPanel'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { AuthenticatedUser } from '../../auth'
-import { PatternTypeProps } from '..'
-import { Observable } from 'rxjs'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
-interface Props extends Pick<PatternTypeProps, 'patternType'> {
+interface Props extends Pick<PatternTypeProps, 'patternType'>, TelemetryProps, EnterpriseHomePanelsProps {
     authenticatedUser: AuthenticatedUser | null
-    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
 }
 
 export const EnterpriseHomePanels: React.FunctionComponent<Props> = (props: Props) => (
     <div className="enterprise-home-panels container">
         <div className="row">
-            <RepositoriesPanel className="enterprise-home-panels__panel col-lg-4" />
-            <RecentSearchesPanel className="enterprise-home-panels__panel col-lg-8" />
+            <RepositoriesPanel {...props} className="enterprise-home-panels__panel col-lg-4" />
+            <RecentSearchesPanel {...props} className="enterprise-home-panels__panel col-lg-8" />
         </div>
         <div className="row">
-            <RecentFilesPanel className="enterprise-home-panels__panel col-md-7" />
-            <SavedSearchesPanel {...props} className="enterprise-home-panels__panel col-md-5" />
+            <RecentFilesPanel {...props} className="enterprise-home-panels__panel col-lg-7" />
+            <SavedSearchesPanel {...props} className="enterprise-home-panels__panel col-lg-5" />
         </div>
     </div>
 )

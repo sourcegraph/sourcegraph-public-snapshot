@@ -39,7 +39,7 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, erro
 	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_uploads
-		WHERE repository_id = %s
+		WHERE state != 'deleted' AND repository_id = %s
 		LIMIT 1
 	`, repositoryID)))
 

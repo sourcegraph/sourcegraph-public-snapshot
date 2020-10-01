@@ -20,7 +20,7 @@ export interface ChangesetFilters {
     externalState: ChangesetExternalState | null
     reviewState: ChangesetReviewState | null
     checkState: ChangesetCheckState | null
-    reconcilerState: ChangesetReconcilerState | null
+    reconcilerState: ChangesetReconcilerState[] | null
     publicationState: ChangesetPublicationState | null
 }
 
@@ -84,10 +84,9 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uiState, reviewState, checkState])
     return (
-        <div className="form-inline m-0">
-            <ChangesetFilter<ChangesetUIState>
+        <div className="form-inline m-0 my-2">
+            <ChangesetUIStateFilter
                 values={Object.values(ChangesetUIState)}
-                label="Status"
                 selected={uiState}
                 onChange={setUIState}
                 className="mr-2"
@@ -140,6 +139,40 @@ export const ChangesetFilter = <T extends string>({
     </>
 )
 
+export interface ChangesetUIStateFilterProps {
+    values: ChangesetUIState[]
+    selected: ChangesetUIState | undefined
+    onChange: (value: ChangesetUIState | undefined) => void
+    className?: string
+}
+
+export const ChangesetUIStateFilter: React.FunctionComponent<ChangesetUIStateFilterProps> = ({
+    values,
+    selected,
+    onChange,
+    className,
+}) => (
+    <div className={classNames('btn-group flex-wrap', className)} role="group">
+        <button
+            type="button"
+            className={classNames('btn btn-outline-secondary', selected === undefined && 'active')}
+            onClick={() => onChange(undefined)}
+        >
+            All
+        </button>
+        {values.map(value => (
+            <button
+                type="button"
+                className={classNames('btn btn-outline-secondary', selected === value && 'active')}
+                onClick={() => onChange(value)}
+                key={value}
+            >
+                {upperFirst(lowerCase(value))}
+            </button>
+        ))}
+    </div>
+)
+
 function changesetUIStateToChangesetFilters(
     state: ChangesetUIState
 ): Omit<ChangesetFilters, 'checkState' | 'reviewState'> {
@@ -147,43 +180,42 @@ function changesetUIStateToChangesetFilters(
         case ChangesetUIState.OPEN:
             return {
                 externalState: ChangesetExternalState.OPEN,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.CLOSED:
             return {
                 externalState: ChangesetExternalState.CLOSED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.MERGED:
             return {
                 externalState: ChangesetExternalState.MERGED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.DELETED:
             return {
                 externalState: ChangesetExternalState.DELETED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
         case ChangesetUIState.UNPUBLISHED:
             return {
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 externalState: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
             }
         case ChangesetUIState.PROCESSING:
             return {
-                reconcilerState: ChangesetReconcilerState.PROCESSING,
-                // TODO: reconcilerState: [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING],
+                reconcilerState: [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING],
                 externalState: null,
                 publicationState: null,
             }
         case ChangesetUIState.ERRORED:
             return {
-                reconcilerState: ChangesetReconcilerState.ERRORED,
+                reconcilerState: [ChangesetReconcilerState.ERRORED],
                 publicationState: null,
                 externalState: null,
             }

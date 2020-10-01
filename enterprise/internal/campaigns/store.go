@@ -38,8 +38,7 @@ func NewStore(db dbutil.DB) *Store {
 // NewStoreWithClock returns a new Store backed by the given db and
 // clock for timestamps.
 func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	handle := basestore.NewHandleWithDB(db)
-	return &Store{Store: basestore.NewWithHandle(handle), now: clock}
+	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
 }
 
 // Clock returns the clock used by the Store.

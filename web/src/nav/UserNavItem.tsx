@@ -128,19 +128,25 @@ export class UserNavItem extends React.PureComponent<UserNavItemProps, State> {
                             Sign out
                         </a>
                     )}
+                    <DropdownItem divider={true} />
                     {this.props.showDotComMarketing && (
-                        <>
-                            <DropdownItem divider={true} />
-                            <a
-                                href="https://about.sourcegraph.com"
-                                target="_blank"
-                                rel="noopener"
-                                className="dropdown-item"
-                            >
-                                About Sourcegraph <OpenInNewIcon className="icon-inline" />
-                            </a>
-                        </>
+                        <a
+                            href="https://about.sourcegraph.com"
+                            target="_blank"
+                            rel="noopener"
+                            className="dropdown-item"
+                        >
+                            About Sourcegraph <OpenInNewIcon className="icon-inline" />
+                        </a>
                     )}
+                    <a
+                        href="https://docs.sourcegraph.com/integration/browser_extension"
+                        target="_blank"
+                        rel="noopener"
+                        className="dropdown-item"
+                    >
+                        Browser extension <OpenInNewIcon className="icon-inline" />
+                    </a>
                 </DropdownMenu>
             </ButtonDropdown>
         )

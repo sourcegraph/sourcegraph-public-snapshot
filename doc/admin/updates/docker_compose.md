@@ -4,6 +4,12 @@ This document describes the exact changes needed to update a Docker Compose Sour
 
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.19.2 -> 3.20.1
+
+No manual migration required.
+
+Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
 ## 3.19.1 -> 3.19.2
 
 No manual migration required.

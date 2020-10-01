@@ -6,6 +6,7 @@ import { Scalars, ChangesetSpecFields } from '../../../graphql-operations'
 import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetSpecNode, ChangesetSpecNodeProps } from './ChangesetSpecNode'
 import { ChangesetSpecListHeader } from './ChangesetSpecListHeader'
+import { EmptyChangesetSpecListElement } from './EmptyChangesetSpecListElement'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
@@ -16,6 +17,8 @@ interface Props extends ThemeProps {
     queryChangesetSpecs?: typeof _queryChangesetSpecs
     /** For testing only. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
+    /** Expand changeset descriptions, for testing only. */
+    expandChangesetDescriptions?: boolean
 }
 
 /**
@@ -28,6 +31,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
     isLightTheme,
     queryChangesetSpecs = _queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
+    expandChangesetDescriptions,
 }) => {
     const queryChangesetSpecsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
@@ -40,27 +44,34 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <FilteredConnection<ChangesetSpecFields, Omit<ChangesetSpecNodeProps, 'node'>>
-            className="mt-2"
-            nodeComponent={ChangesetSpecNode}
-            nodeComponentProps={{
-                isLightTheme,
-                history,
-                location,
-                queryChangesetSpecFileDiffs,
-            }}
-            queryConnection={queryChangesetSpecsConnection}
-            hideSearch={true}
-            defaultFirst={15}
-            noun="changeset"
-            pluralNoun="changesets"
-            history={history}
-            location={location}
-            useURLQuery={true}
-            listComponent="div"
-            listClassName="changeset-spec-list__grid mb-3"
-            headComponent={ChangesetSpecListHeader}
-            cursorPaging={true}
-        />
+        <>
+            <h3>Changesets</h3>
+            <hr className="mb-3" />
+            <FilteredConnection<ChangesetSpecFields, Omit<ChangesetSpecNodeProps, 'node'>>
+                className="mt-2"
+                nodeComponent={ChangesetSpecNode}
+                nodeComponentProps={{
+                    isLightTheme,
+                    history,
+                    location,
+                    queryChangesetSpecFileDiffs,
+                    expandChangesetDescriptions,
+                }}
+                queryConnection={queryChangesetSpecsConnection}
+                hideSearch={true}
+                defaultFirst={15}
+                noun="changeset"
+                pluralNoun="changesets"
+                history={history}
+                location={location}
+                useURLQuery={true}
+                listComponent="div"
+                listClassName="changeset-spec-list__grid mb-3"
+                headComponent={ChangesetSpecListHeader}
+                cursorPaging={true}
+                noSummaryIfAllNodesVisible={true}
+                emptyElement={<EmptyChangesetSpecListElement />}
+            />
+        </>
     )
 }

@@ -37,11 +37,11 @@ export function testSingleFilePage({
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
             expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
             await Promise.all([
-                getDriver().page.waitForNavigation(),
+                getDriver().page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
                 getDriver().page.click('.code-view-toolbar .open-on-sourcegraph'),
             ])
             expect(getDriver().page.url()).toBe(
-                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
             )
         })
 

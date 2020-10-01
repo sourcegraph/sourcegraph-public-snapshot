@@ -274,7 +274,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		t.Run("ReconcilerState", func(t *testing.T) {
 			completed := campaigns.ReconcilerStateCompleted
-			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &completed})
+			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{completed}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -284,7 +284,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 
 			processing := campaigns.ReconcilerStateProcessing
-			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &processing})
+			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{processing}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -474,13 +474,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateQueued,
+					ReconcilerStates: []campaigns.ReconcilerState{stateQueued},
 				},
 				wantCount: 0,
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateCompleted,
+					ReconcilerStates: []campaigns.ReconcilerState{stateCompleted},
 				},
 				wantCount: 3,
 			},
@@ -950,6 +950,44 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			want.repo = repo.ID
 			want.ownedByCampaign = campaignID
 			reloadAndAssertChangeset(t, ctx, s, changeset, want)
+		}
+	})
+
+	t.Run("ListChangesetsAttachedOrOwnedByCampaign", func(t *testing.T) {
+		var campaignID int64 = 191918
+
+		baseOpts := testChangesetOpts{repo: repo.ID}
+
+		opts1 := baseOpts
+		opts1.campaign = campaignID
+		opts1.ownedByCampaign = campaignID
+		c1 := createChangeset(t, ctx, s, opts1)
+
+		opts2 := baseOpts
+		opts2.campaign = campaignID
+		opts2.ownedByCampaign = 0
+		c2 := createChangeset(t, ctx, s, opts2)
+
+		opts3 := baseOpts
+		opts3.campaign = campaignID + 999
+		opts3.ownedByCampaign = campaignID + 999
+		createChangeset(t, ctx, s, opts3)
+
+		opts4 := baseOpts
+		opts4.repo = deletedRepo.ID
+		opts4.campaign = campaignID
+		opts4.ownedByCampaign = 0
+		createChangeset(t, ctx, s, opts4)
+
+		cs, err := s.ListChangesetsAttachedOrOwnedByCampaign(ctx, campaignID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantIDs := []int64{c1.ID, c2.ID}
+		haveIDs := cs.IDs()
+		if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
+			t.Fatalf("wrong changesets returned. diff=%s", diff)
 		}
 	})
 }

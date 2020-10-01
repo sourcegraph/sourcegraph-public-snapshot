@@ -455,6 +455,12 @@ type Mutation {
     # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
+    Invalidates all sessions belonging to a user.
+
+    Only site admins may perform this mutation.
+    """
+    invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -628,7 +634,9 @@ type Mutation {
     """
     createChangesetSpec(
         """
-        The raw changeset spec (as JSON).
+        The raw changeset spec (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         changesetSpec: String!
     ): ChangesetSpec!
@@ -648,7 +656,9 @@ type Mutation {
         namespace: ID!
 
         """
-        The campaign spec as YAML (or the equivalent JSON).
+        The campaign spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         campaignSpec: String!
 
@@ -885,9 +895,24 @@ A description of a Git commit.
 """
 type GitCommitDescription {
     """
-    The Git commit message.
+    The full commit message.
     """
     message: String!
+
+    """
+    The first line of the commit message.
+    """
+    subject: String!
+
+    """
+    The contents of the commit message after the first line.
+    """
+    body: String
+
+    """
+    The Git commit author.
+    """
+    author: Person!
 
     """
     The commit diff (in unified diff format).
@@ -1108,9 +1133,9 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with the given reconciler state.
+        Only include changesets with any of the given reconciler states.
         """
-        reconcilerState: ChangesetReconcilerState
+        reconcilerState: [ChangesetReconcilerState!]
         """
         Only include changesets with the given publication state.
         """
@@ -2275,6 +2300,16 @@ type Query {
     namespace(id: ID!): Namespace
 
     """
+    Look up a namespace by name, which is a username or organization name.
+    """
+    namespaceByName(
+        """
+        The name of the namespace.
+        """
+        name: String!
+    ): Namespace
+
+    """
     The repositories a user is authorized to access with the given permission.
     This isn’t defined in the User type because we store permissions for users
     that don’t yet exist (i.e. late binding). Only one of "username" or "email"
@@ -2841,20 +2876,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     The matching portion of the diff, if any.
     """
     diffPreview: HighlightedString
-}
-
-"""
-A search result that is a diff between two diffable Git objects.
-"""
-type DiffSearchResult {
-    """
-    The diff that matched the search query.
-    """
-    diff: Diff!
-    """
-    The matching portion of the diff.
-    """
-    preview: HighlightedString!
 }
 
 """
@@ -3541,6 +3562,21 @@ type RepositoryTextSearchIndexStatus {
     The number of index shards.
     """
     indexShardsCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines appearing in the index.
+    """
+    newLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the default branch.
+    """
+    defaultBranchNewLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the other branches.
+    """
+    otherBranchesNewLinesCount: Int!
 }
 
 """
@@ -4527,9 +4563,9 @@ type Person {
     """
     displayName: String!
     """
-    The avatar URL.
+    The avatar URL, if known.
     """
-    avatarURL: String!
+    avatarURL: String
     """
     The corresponding user account for this person, if one exists.
     """
@@ -6509,20 +6545,6 @@ type SiteUsageStages {
     The number of users using automation stage features.
     """
     automate: Int!
-}
-
-"""
-A deployment configuration.
-"""
-type DeploymentConfiguration {
-    """
-    The email.
-    """
-    email: String
-    """
-    The site ID.
-    """
-    siteID: String
 }
 
 """

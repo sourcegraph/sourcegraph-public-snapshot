@@ -7,7 +7,9 @@ import { createMemoryHistory } from 'history'
 describe('SiteInitPage', () => {
     const origContext = window.context
     beforeAll(() => {
-        window.context = {} as any
+        window.context = {
+            authProviders: [],
+        } as any
     })
     afterAll(() => {
         window.context = origContext

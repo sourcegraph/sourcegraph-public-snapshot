@@ -181,14 +181,14 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		calledResolveRepoGroups := false
-		mockResolveRepoGroups = func() (map[string][]*types.Repo, error) {
+		mockResolveRepoGroups = func() (map[string][]RepoGroupValue, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
-			return map[string][]*types.Repo{
+			return map[string][]RepoGroupValue{
 				"baz": {
-					&types.Repo{Name: "foo-repo1"},
-					&types.Repo{Name: "repo3"},
+					RepoPath("foo-repo1"),
+					RepoPath("repo3"),
 				},
 			}, nil
 		}
@@ -244,8 +244,12 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", args.Repos, want)
+			repos, err := getRepos(context.Background(), args.RepoPromise)
+			if err != nil {
+				t.Error(err)
+			}
+			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/file"),
@@ -346,8 +350,12 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", args.Repos, want)
+			repos, err := getRepos(context.Background(), args.RepoPromise)
+			if err != nil {
+				t.Error(err)
+			}
+			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/bar-file"),

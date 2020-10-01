@@ -11,7 +11,7 @@ You'll learn how to:
 - Write the script to make changes to each repository
 - Publish and monitor the status of your proposed changes
 
-For more detailed information, see "[Campaigns](index.md)" in Sourcegraph documentation.
+For more detailed information, see "[Campaigns](index.md)" in Sourcegraph documentation and watch the [campaigns demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
 ## What is a campaign?
 
@@ -80,7 +80,9 @@ Publishing causes commits, branches, and changesets to be created on your code h
 
 You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?").
 
-On a real campaign, you would change the `published: false` in the `hello-world.campaign.yaml` to `published: true` and run the `src campaign preview` command again.
+On a real campaign, you would change the `published: false` in the `hello-world.campaign.yaml` to `published: true` and run the `src campaign preview` command again. The changesets will then be published when you create or update the campaign from the preview.
+
+> NOTE: You can also create or update a campaign by running `src campaign apply`! This skips the preview stage, and is especially useful when updating an existing campaign.
 
 ## Congratulations!
 

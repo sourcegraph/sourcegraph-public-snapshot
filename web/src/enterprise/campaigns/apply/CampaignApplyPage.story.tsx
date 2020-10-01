@@ -68,6 +68,18 @@ const queryChangesetSpecs = (): Observable<
         nodes,
     })
 
+const queryEmptyChangesetSpecs = (): Observable<
+    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+> =>
+    of({
+        pageInfo: {
+            endCursor: null,
+            hasNextPage: false,
+        },
+        totalCount: 0,
+        nodes: [],
+    })
+
 const queryEmptyFileDiffs = () =>
     of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
 
@@ -76,6 +88,7 @@ add('Create', () => (
         {props => (
             <CampaignApplyPage
                 {...props}
+                expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryChangesetSpecs}
@@ -90,9 +103,25 @@ add('Update', () => (
         {props => (
             <CampaignApplyPage
                 {...props}
+                expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
                 queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('No changesets', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignApplyPage
+                {...props}
+                expandChangesetDescriptions={true}
+                specID="123123"
+                fetchCampaignSpecById={fetchCampaignSpecCreate}
+                queryChangesetSpecs={queryEmptyChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             />
         )}

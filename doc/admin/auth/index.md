@@ -46,6 +46,8 @@ external identity provider.
 
 The [`builtin` auth provider](../config/site_config.md#builtin-password-authentication) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
 
+Password reset links expire after 4 hours.
+
 Site configuration example:
 
 ```json

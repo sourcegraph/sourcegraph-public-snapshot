@@ -21,16 +21,16 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
-import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
         TelemetryProps,
@@ -67,19 +67,15 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            <CompassOutlineIcon className="icon-inline" /> Explore
-                        </Link>
-                    </li>
-                )}
                 {!isErrorLike(this.props.settingsCascade.final) &&
                     this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
                         <li className="nav-item">
                             <InsightsNavItem />
                         </li>
                     )}
+                <li className="nav-item">
+                    <ExtensionsNavItem />
+                </li>
                 {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />

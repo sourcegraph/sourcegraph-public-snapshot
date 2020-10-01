@@ -1,0 +1,7 @@
+# See https://github.com/sourcegraph/codenotify for documentation.
+
+basestore/** @efritz
+dbconn/** @efritz
+dbtest/** @efritz
+dbtesting/** @efritz
+dbutil/** @efritz

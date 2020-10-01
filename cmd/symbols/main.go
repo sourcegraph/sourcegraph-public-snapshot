@@ -16,7 +16,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -53,7 +52,7 @@ func main() {
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
-		NewParser: ctags.New,
+		NewParser: symbols.NewParser,
 		Path:      cacheDir,
 	}
 	if mb, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {

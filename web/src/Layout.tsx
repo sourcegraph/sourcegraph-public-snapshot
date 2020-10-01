@@ -14,7 +14,6 @@ import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
-import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -61,9 +60,10 @@ import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
-import { AuthenticatedUser } from './auth'
+import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../shared/src/util/useObservable'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -83,7 +83,6 @@ export interface LayoutProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         EnterpriseHomePanelsProps {
-    exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -127,6 +126,7 @@ export interface LayoutProps
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
     globbing: boolean
+    showMultilineSearchConsole: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
@@ -146,10 +146,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
-    const isSignInOrUp = props.location.pathname === '/sign-in' || props.location.pathname === '/sign-up'
+    const isSignInOrUp =
+        props.location.pathname === '/sign-in' ||
+        props.location.pathname === '/sign-up' ||
+        props.location.pathname === '/password-reset'
+
+    const authRequired = useObservable(authRequiredObservable)
 
     const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
+        props.location.pathname === '/stats' ||
+        props.location.pathname === '/search/query-builder' ||
+        props.location.pathname === '/search/console'
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -182,6 +189,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
+                    authRequired={!!authRequired}
                     isSearchRelatedPage={isSearchRelatedPage}
                     variant={
                         hideGlobalSearchInput

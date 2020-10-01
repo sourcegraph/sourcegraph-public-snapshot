@@ -259,6 +259,23 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
+// ReopenChangeset reopens the given *Changeset on the code host.
+func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.client.ReopenPullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+
+	return nil
+}
+
 // GetRepo returns the Github repository with the given name and owner
 // ("org/repo-name")
 func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {

@@ -68,6 +68,14 @@ const config = {
         'to-string-loader',
         'css-loader',
         {
+          loader: 'postcss-loader',
+          options: {
+            config: {
+              path: path.resolve(__dirname, '..'),
+            },
+          },
+        },
+        {
           loader: 'sass-loader',
           options: {
             sassOptions: {
@@ -98,6 +106,10 @@ const config = {
       // Make sure Storybook styles get handled by the Storybook config
       exclude: [storybookDirectory],
       use: ['style-loader', 'css-loader'],
+    })
+    config.module.rules.unshift({
+      test: /\.ya?ml$/,
+      use: ['raw-loader'],
     })
 
     Object.assign(config.entry, {
