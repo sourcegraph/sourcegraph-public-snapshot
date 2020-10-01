@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
@@ -33,7 +34,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	var dumps []Dump
 	for rows.Next() {
@@ -75,7 +76,7 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 
 // GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
-	return scanFirstDump(s.query(ctx, sqlf.Sprintf(`
+	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			d.id,
 			d.commit,
@@ -112,7 +113,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
 	}
 
-	return scanDumps(s.query(
+	return scanDumps(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
 	 		SELECT
@@ -142,7 +143,7 @@ func scanFirstIntPair(rows *sql.Rows, queryErr error) (_ int, _ int, _ bool, err
 	if queryErr != nil {
 		return 0, 0, false, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
 		var value1 int
@@ -167,7 +168,7 @@ func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	id, repositoryID, deleted, err := scanFirstIntPair(tx.query(ctx, sqlf.Sprintf(`
+	id, repositoryID, deleted, err := scanFirstIntPair(tx.Store.Query(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'deleted'
 		WHERE id IN (
@@ -195,7 +196,7 @@ func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error)
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'deleted'
 		WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
