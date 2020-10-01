@@ -226,7 +226,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	repos, err := svc.ResolveRepositories(ctx, campaignSpec)
 	if err != nil {
 		if repoSet, ok := err.(campaigns.UnsupportedRepoSet); ok {
-			campaignsCompletePending(pending, "Resolved repositories.")
+			campaignsCompletePending(pending, "Resolved repositories")
 
 			block := out.Block(output.Line(" ", output.StyleWarning, "Some repositories are hosted on unsupported code hosts and will be skipped. Use the -allow-unsupported flag to avoid skipping them."))
 			for repo := range repoSet {
@@ -237,7 +237,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 			return "", "", errors.Wrap(err, "resolving repositories")
 		}
 	} else {
-		campaignsCompletePending(pending, "Resolved repositories.")
+		campaignsCompletePending(pending, "Resolved repositories")
 	}
 
 	execProgress, execProgressComplete := executeCampaignSpecProgress(out)
