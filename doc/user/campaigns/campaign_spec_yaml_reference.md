@@ -186,7 +186,7 @@ changesetTemplate:
   branch: campaigns/update-rxjs
   commit:
     message: Update rxjs to 6.6.2
-  published: false
+  published: true
 ```
 
 ```yaml
@@ -199,7 +199,10 @@ changesetTemplate:
     author:
       name: Anna Wizard
       email: anna@example.com
-  published: true
+  published:
+    # Do not meddle in the affairs of wizards, for they are subtle and quick to anger.
+    - git.istari.example/*: false
+    - git.istari.example/anna/*: true
 ```
 
 ## [`changesetTemplate.title`](#changesettemplate-title)
@@ -238,8 +241,72 @@ changesetTemplate:
 
 ## [`changesetTemplate.published`](#changesettemplate-published)
 
-Whether to publish the changeset.
+Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), or [an array to only publish some changesets within the campaign](#publishing-only-specific-changesets).
 
 An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host.
 
 A published changeset results in a commit, branch, and pull request being created on the code host.
+
+### [Publishing only specific changesets](#publishing-only-specific-changesets)
+
+To publish only specific changesets within a campaign, an array of single-element objects can be provided. For example:
+
+```yaml
+published:
+  - github.com/sourcegraph/sourcegraph: true
+  - github.com/sourcegraph/src-cli: false
+```
+
+Each key will be matched against the repository name using [glob](https://godoc.org/github.com/gobwas/glob#Compile) syntax. The [gobwas/glob library](https://godoc.org/github.com/gobwas/glob#Compile) is used for matching, with the key operators being:
+
+| Term | Meaning |
+|------|---------|
+| `*`  | Match any sequence of characters |
+| `?`  | Match any single character |
+| `[ab]` | Match either `a` or `b` |
+| `[a-z]` | Match any character between `a` and `z`, inclusive |
+| `{abc,def}` | Match either `abc` or `def` |
+
+If multiple entries match a repository, then the last entry will be used. For example, `github.com/a/b` will _not_ be published given this configuration:
+
+```yaml
+published:
+  - github.com/a/*: true
+  - github.com/*: false
+```
+
+If no entries match, then the repository will not be published. To make the default true, add a wildcard entry as the last item in the array:
+
+```yaml
+published:
+  - github.com/*: false
+  - "*": true
+```
+
+> NOTE: The standalone `"*"` is quoted in the key to avoid ambiguity in the YAML document.
+
+### Examples
+
+To publish all changesets created by a campaign:
+
+```yaml
+changesetTemplate:
+  published: true
+```
+
+To only publish changesets within the `sourcegraph` GitHub organization:
+
+```yaml
+changesetTemplate:
+  published:
+    - github.com/sourcegraph/*: true
+```
+
+To publish all changesets that are not on GitLab:
+
+```yaml
+changesetTemplate:
+  published:
+    - gitlab.com/*: false
+    - "*": true
+```
