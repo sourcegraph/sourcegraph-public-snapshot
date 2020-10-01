@@ -13,3 +13,11 @@ func GetUpdateInterval() time.Duration {
 	}
 	return time.Duration(v) * time.Minute
 }
+
+func GetConcurrentSyncers() int {
+	v := conf.Get().RepoConcurrentExternalServiceSyncers
+	if v <= 0 {
+		return 3
+	}
+	return v
+}

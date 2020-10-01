@@ -40,7 +40,7 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err err
 	const q = `
 -- source: internal/db/default_repos.go:defaultRepos.List
 SELECT
-	id,
+    id,
     name
 FROM
     repo r
