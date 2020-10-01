@@ -41,7 +41,7 @@ interface State {
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)
 
-const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStatus']> => {
+const fetchCurrentTabStatus = async (): Promise<{OptionsMenuProps['currentTabStatus']}> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
@@ -58,7 +58,7 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
 }
 
 // Make GraphQL requests from background page
-function requestGraphQL<T, V = object>(options: { request: string; variables: V }): Observable<GraphQLResult<T>> {
+function requestGraphQL<T, V = object>(options: { request: string; variables: V; sourcegraphURL?: string }): Observable<GraphQLResult<T>> {
     return from(background.requestGraphQL<T, V>(options))
 }
 

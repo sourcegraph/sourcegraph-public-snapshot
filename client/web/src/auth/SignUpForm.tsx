@@ -14,8 +14,12 @@ import { catchError, switchMap } from 'rxjs/operators'
 import { fromFetch } from 'rxjs/fetch'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { LoaderButton } from '../components/LoaderButton'
-import { LoaderInput } from '../components/LoaderInput'
-import { useInputValidation, InputValidationState, FieldValidators } from '../components/useInputValidation'
+import { LoaderInput } from '../../../shared/src/components/LoaderInput'
+import {
+    useInputValidation,
+    ValidationOptions,
+    deriveInputClassName,
+} from '../../../shared/src/util/useInputValidation'
 
 export interface SignUpArgs {
     email: string
@@ -34,6 +38,8 @@ interface SignUpFormProps {
     history: H.History
 }
 
+const preventDefault = (event: React.FormEvent): void => event.preventDefault()
+
 /**
  * The form for creating an account
  */
@@ -42,7 +48,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
-    const signUpFieldValidators: Record<'email' | 'username' | 'password', FieldValidators> = useMemo(
+    const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
         () => ({
             email: {
                 synchronousValidators: [],
@@ -59,18 +65,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         []
     )
 
-    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
-        'email',
-        signUpFieldValidators.email
-    )
+    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(signUpFieldValidators.email)
 
     const [usernameState, nextUsernameFieldChange, usernameInputReference] = useInputValidation(
-        'username',
         signUpFieldValidators.username
     )
 
     const [passwordState, nextPasswordFieldChange, passwordInputReference] = useInputValidation(
-        'password',
         signUpFieldValidators.password
     )
 
@@ -108,15 +109,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
 
     const onRequestTrialFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
         setRequestedTrial(event.target.checked)
-    }, [])
-
-    const preventDefault = useCallback((event: React.FormEvent) => event.preventDefault(), [])
-
-    const deriveInputClassName = useCallback((inputState: InputValidationState): string => {
-        if (inputState.loading || inputState.kind === 'NOT_VALIDATED') {
-            return ''
-        }
-        return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
     }, [])
 
     const externalAuthProviders = window.context.authProviders.filter(provider => !provider.isBuiltin)
@@ -189,7 +181,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     </LoaderInput>
                     {!usernameState.loading && usernameState.kind === 'INVALID' && (
                         <small className="invalid-feedback" role="alert">
-                            {usernameInputReference.current?.validationMessage}
+                            {usernameState.reason}
                         </small>
                     )}
                 </div>

@@ -1,14 +1,16 @@
 import { compact, head } from 'lodash'
-import { useMemo, useState, useCallback, useRef } from 'react'
-import { Observable, of, zip } from 'rxjs'
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import { concat, EMPTY, Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
-import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { typingDebounceTime } from '../search/input/QueryInput'
+import { useEventObservable } from './useObservable'
+import { asError } from './errors'
 
 /**
  * Configuration used by `useInputValidation`
  */
-export interface FieldValidators {
+export interface ValidationOptions {
+    initialValue?: string
+
     /**
      * Optional array of synchronous input validators.
      *
@@ -40,17 +42,16 @@ export type InputValidationState = { value: string; loading: boolean } & (
  * `useInputValidation` helps with coodinating the constraint validation API
  * and custom synchronous and asynchronous validators.
  *
- * @param name Name of input field, used for descriptive error messages.
- * @param fieldValidators Config object that declares sync + async validators
+ * @param options Config object that declares sync + async validators
+ * @param initialValue
  * @param onInputChange Higher order function to execute side-effects given the latest input value and loading state.
  * Typically used to set state in a React component.
  * The function provided to `onInputChange` should be called with the previous input value and loading state
  *
- * @returns Input state,
+ * @returns
  */
 export function useInputValidation(
-    name: string,
-    fieldValidators: FieldValidators,
+    options: ValidationOptions,
     onInputChange?: (inputStateCallback: (previousInputState: InputValidationState) => InputValidationState) => void
 ): [
     InputValidationState,
@@ -58,33 +59,35 @@ export function useInputValidation(
     React.MutableRefObject<HTMLInputElement | null>
 ] {
     const { synchronousValidators, asynchronousValidators } = useMemo(() => {
-        const { synchronousValidators = [], asynchronousValidators = [] } = fieldValidators
+        const { synchronousValidators = [], asynchronousValidators = [] } = options
 
         return {
             synchronousValidators,
             asynchronousValidators,
         }
-    }, [fieldValidators])
+    }, [options])
 
     const inputReference = useRef<HTMLInputElement | null>(null)
 
-    const [inputState, setInputState] = useState({ value: '', loading: false })
+    const [inputState, setInputState] = useState({ value: options.initialValue ?? '', loading: false })
 
     const validationPipeline = useCallback(
         (events: Observable<React.ChangeEvent<HTMLInputElement>>): Observable<ValidationResult> =>
-            events.pipe(
-                tap(event => {
-                    event.preventDefault()
-                    inputReference.current?.setCustomValidity('')
-                }),
-                map(event => event.target.value),
+            concat(
+                options.initialValue !== undefined ? of(options.initialValue) : EMPTY,
+                events.pipe(
+                    tap(event => event.preventDefault()),
+                    map(event => event.target.value)
+                )
+            ).pipe(
                 tap(value => {
+                    inputReference.current?.setCustomValidity('')
                     setInputState({ value, loading: asynchronousValidators.length > 0 })
                     onInputChange?.(() => ({ value, loading: asynchronousValidators.length > 0, kind: 'VALID' }))
                 }),
                 // Debounce everything.
                 // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
-                debounceTime(typingDebounceTime),
+                debounceTime(500),
                 switchMap(value => {
                     // check validity (synchronous)
                     const valid = inputReference.current?.checkValidity()
@@ -124,9 +127,9 @@ export function useInputValidation(
                     onInputChange?.(previousInputState => ({ ...previousInputState, loading: false }))
                     setInputState(previousInputState => ({ ...previousInputState, loading: false }))
                 }),
-                catchError(() => of({ kind: 'INVALID' as const, reason: `Unknown error validating ${name}` }))
+                catchError(error => of({ kind: 'INVALID' as const, reason: asError(error).message || 'Unknown error' }))
             ),
-        [synchronousValidators, asynchronousValidators, name, onInputChange]
+        [synchronousValidators, asynchronousValidators, onInputChange, options.initialValue]
     )
 
     const [nextInputChangeEvent, validationResult] = useEventObservable(validationPipeline)
@@ -136,4 +139,16 @@ export function useInputValidation(
         nextInputChangeEvent,
         inputReference,
     ]
+}
+
+/**
+ * Derives className based on validation state. Use with `useInputValidation`.
+ *
+ * @param inputState
+ */
+export function deriveInputClassName(inputState: InputValidationState): string {
+    if (inputState.loading || inputState.kind === 'NOT_VALIDATED') {
+        return ''
+    }
+    return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
 }

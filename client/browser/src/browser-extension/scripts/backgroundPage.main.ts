@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'
-import { noop, Observable, Subscription } from 'rxjs'
+import { noop, Observable, of, Subscription } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take, concatMap } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
@@ -54,11 +54,13 @@ const configureOmnibox = (serverUrl: string): void => {
 const requestGraphQL = <T, V = object>({
     request,
     variables,
+    sourcegraphURL,
 }: {
     request: string
     variables: V
+    sourcegraphURL?: string
 }): Observable<GraphQLResult<T>> =>
-    observeSourcegraphURL(IS_EXTENSION).pipe(
+    (sourcegraphURL ? of(sourcegraphURL) : observeSourcegraphURL(IS_EXTENSION)).pipe(
         take(1),
         switchMap(sourcegraphURL =>
             requestGraphQLCommon<T, V>({

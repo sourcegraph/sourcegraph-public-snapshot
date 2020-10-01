@@ -1,9 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React, { useCallback, useState } from 'react'
 import { LoaderInput } from './LoaderInput'
-import { WebStory } from './WebStory'
+import { WebStory } from '../../../web/src/components/WebStory'
 
-const { add } = storiesOf('web/LoaderInput', module).addDecorator(story => (
+const { add } = storiesOf('shared/LoaderInput', module).addDecorator(story => (
     <div className="container mt-3" style={{ width: 800 }}>
         {story()}
     </div>
