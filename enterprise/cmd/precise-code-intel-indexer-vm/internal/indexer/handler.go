@@ -8,12 +8,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
@@ -58,136 +56,74 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		_ = os.RemoveAll(repoDir)
 	}()
 
-	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
+	commandFormatter, err := h.makeCommandFormatter(repoDir)
 	if err != nil {
 		return err
+	}
+
+	if err := commandFormatter.Setup(ctx, h.commander); err != nil {
+		return err
+	}
+	defer func() {
+		if teardownErr := commandFormatter.Teardown(ctx, h.commander); teardownErr != nil {
+			err = multierror.Append(err, teardownErr)
+		}
+	}()
+
+	indexCmd, err := h.indexCommand(index)
+	if err != nil {
+		return err
+	}
+	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(indexCmd)...); err != nil {
+		return errors.Wrap(err, "failed to index repository")
+	}
+
+	uploadCmd, err := h.uploadCommand(index)
+	if err != nil {
+		return err
+	}
+	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCmd)...); err != nil {
+		return errors.Wrap(err, "failed to upload index")
+	}
+
+	return nil
+}
+
+func (h *Handler) makeCommandFormatter(repoDir string) (CommandFormatter, error) {
+	if !h.options.UseFirecracker {
+		return NewDockerCommandFormatter(repoDir, h.options), nil
 	}
 
 	name, err := h.uuidGenerator()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	mountPoint := repoDir
-	if h.options.UseFirecracker {
-		mountPoint = "/repo-dir"
+	return NewFirecrackerCommandFormatter(name.String(), repoDir, h.options), nil
+}
 
-		images := map[string]string{
-			"lsif-go": "sourcegraph/lsif-go:latest",
-			"src-cli": "sourcegraph/src-cli:latest",
-		}
-
-		copyfiles := []string{}
-		for _, key := range orderedKeys(images) {
-			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", h.tarfilePathOnHost(key), h.tarfilePathInVM(key)))
-		}
-
-		for _, key := range orderedKeys(images) {
-			if _, err := os.Stat(h.tarfilePathOnHost(key)); err == nil {
-				continue
-			} else if !os.IsNotExist(err) {
-				return err
-			}
-
-			if err := h.saveDockerImage(ctx, key, images[key]); err != nil {
-				return err
-			}
-		}
-
-		startCommand := flatten(
-			"ignite", "run",
-			"--runtime", "docker",
-			"--network-plugin", "docker-bridge",
-			"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
-			"--memory", h.options.FirecrackerMemory,
-			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
-			copyfiles,
-			"--ssh",
-			"--name", name.String(),
-			sanitizeImage(h.options.FirecrackerImage),
-		)
-		if err := h.commander.Run(ctx, startCommand...); err != nil {
-			return errors.Wrap(err, "failed to start firecracker vm")
-		}
-		defer func() {
-			stopCommand := flatten(
-				"ignite", "stop",
-				"--runtime", "docker",
-				"--network-plugin", "docker-bridge",
-				name.String(),
-			)
-			if err := h.commander.Run(ctx, stopCommand...); err != nil {
-				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
-			}
-
-			removeCommand := flatten(
-				"ignite", "rm", "-f",
-				"--runtime", "docker",
-				"--network-plugin", "docker-bridge",
-				name.String(),
-			)
-			if err := h.commander.Run(ctx, removeCommand...); err != nil {
-				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
-			}
-		}()
-
-		for _, key := range orderedKeys(images) {
-			loadCommand := flatten(
-				"ignite", "exec", name.String(), "--",
-				"docker", "load",
-				"-i", h.tarfilePathInVM(key),
-			)
-			if err := h.commander.Run(ctx, loadCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to load %s", images[key]))
-			}
-		}
-	}
-
-	indexCommand := flatten(
-		"docker", "run", "--rm",
-		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
-		"--memory", h.options.FirecrackerMemory,
-		"-v", fmt.Sprintf("%s:/data", mountPoint),
-		"-w", "/data",
-		"sourcegraph/lsif-go:latest",
+func (h *Handler) indexCommand(index store.Index) (*Cmd, error) {
+	args := flatten(
 		"lsif-go",
 		"--no-animation",
 	)
-	if h.options.UseFirecracker {
-		indexCommand = flatten(
-			"ignite", "exec", name.String(), "--",
-			indexCommand,
-		)
-	}
-	if err := h.commander.Run(ctx, indexCommand...); err != nil {
-		return errors.Wrap(err, "failed to index repository")
+	return NewCmd("sourcegraph/lsif-go:latest", args...), nil
+}
+
+func (h *Handler) uploadCommand(index store.Index) (*Cmd, error) {
+	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
+	if err != nil {
+		return nil, err
 	}
 
-	uploadCommand := flatten(
-		"docker", "run", "--rm",
-		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
-		"--memory", h.options.FirecrackerMemory,
-		"-v", fmt.Sprintf("%s:/data", mountPoint),
-		"-w", "/data",
-		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
-		"sourcegraph/src-cli:latest",
+	args := flatten(
 		"lsif", "upload",
 		"-no-progress",
 		"-repo", index.RepositoryName,
 		"-commit", index.Commit,
 		"-upload-route", "/.internal-code-intel/lsif/upload",
 	)
-	if h.options.UseFirecracker {
-		uploadCommand = flatten(
-			"ignite", "exec", name.String(), "--",
-			uploadCommand,
-		)
-	}
-	if err := h.commander.Run(ctx, uploadCommand...); err != nil {
-		return errors.Wrap(err, "failed to upload index")
-	}
-
-	return nil
+	return NewCmd("sourcegraph/src-cli:latest", args...).AddEnv("SRC_ENDPOINT", uploadURL.String()), nil
 }
 
 // makeTempDir is a wrapper around ioutil.TempDir that can be replaced during unit tests.
@@ -296,12 +232,4 @@ func flatten(values ...interface{}) (union []string) {
 	}
 
 	return union
-}
-
-func orderedKeys(m map[string]string) (keys []string) {
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
