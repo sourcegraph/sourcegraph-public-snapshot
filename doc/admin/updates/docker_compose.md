@@ -6,7 +6,9 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## 3.20.1 -> 3.21.0
 
-A new database instance `codeintel-db` has been introduced. If you have previously configured Sourcegraph to connect to an external database and would like to do the same for this new instance, then update the `CODEINTEL_PG*` environment variables as described in the [external database documentation](../external_database.md). Otherwise, no manual steps are necessary.
+Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.21.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database  as described in the [external database documentation](../external_database.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
 ## 3.19.2 -> 3.20.1
 

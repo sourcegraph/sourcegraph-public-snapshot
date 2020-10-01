@@ -30,7 +30,7 @@ To externalize the _code intelligence database_, use the following prefixed `COD
 - `CODEINTEL_PGDATABASE`
 - `CODEINTEL_PGSSLMODE`
 
-:warning: It is not recommended to configure both PostgreSQL instances to point to the same external database. They should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
+:warning: If you have configured both the frontend (pgsql) and code intelligence (codeintel-db) databases with the same values, the Sourcegraph instance will refuse to start. Each database should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
 
 ### sourcegraph/server
 
@@ -120,7 +120,9 @@ Add the following to your `docker run` command:
 
 ### Kubernetes
 
-Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external PostgreSQL instance. You are then free to remove the now unused `pgsql` and `codeintel-db` services and deployments from your cluster.
+Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external frontend (`pgsql`) and code intelligence (`codeintel-db`) PostgreSQL instances, respectively. Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+
+You are then free to remove the now unused `pgsql` and `codeintel-db` services and deployments from your cluster.
 
 ### Version requirements
 
