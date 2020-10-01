@@ -32,9 +32,9 @@ var categorizers = []func(labels []string, repository, body string, categories m
 	categorizeLabels,
 }
 
-// categorizeSecurityIssue adds a security emoji if the repository matches sourcegraph/security-prs.
+// categorizeSecurityIssue adds a security emoji if the repository matches sourcegraph/security-issues.
 func categorizeSecurityIssue(labels []string, repository, body string, categories map[string]string) {
-	if repository == "sourcegraph/security-prs" {
+	if repository == "sourcegraph/security-issues" {
 		categories["security"] = emojis["security"]
 	}
 }
