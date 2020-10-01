@@ -722,35 +722,6 @@ interface ChangesetSpec {
 A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
 create a changeset spec, use the createChangesetSpec mutation.
 """
-type HiddenChangesetSpec implements ChangesetSpec & Node {
-    """
-    The unique ID for a changeset spec.
-
-    The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
-    even though repository permissions also apply to viewers of changeset specs, because being
-    allowed to view a repository should not entitle a person to view all not-yet-published
-    changesets for that repository. Consider a campaign to fix a security vulnerability: the
-    campaign author may prefer to prepare all of the changesets in private so that the window
-    between revealing the problem and merging the fixes is as short as possible.
-    """
-    id: ID!
-
-    """
-    The type of changeset spec.
-    """
-    type: ChangesetSpecType!
-
-    """
-    The date, if any, when this changeset spec expires and is automatically purged. A changeset
-    spec never expires (and this field is null) if its campaign spec has been applied.
-    """
-    expiresAt: DateTime
-}
-
-"""
-A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
-create a changeset spec, use the createChangesetSpec mutation.
-"""
 type VisibleChangesetSpec implements ChangesetSpec & Node {
     """
     The unique ID for a changeset spec.
@@ -1376,68 +1347,6 @@ interface Changeset {
 
     """
     The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-
-    """
-    The date and time when the changeset was created.
-    """
-    createdAt: DateTime!
-
-    """
-    The date and time when the changeset was updated.
-    """
-    updatedAt: DateTime!
-
-    """
-    The date and time when the next changeset sync is scheduled, or null if none is scheduled.
-    """
-    nextSyncAt: DateTime
-}
-
-"""
-A changeset on a code host that the user does not have access to.
-"""
-type HiddenExternalChangeset implements Node & Changeset {
-    """
-    The unique ID for the changeset.
-    """
-    id: ID!
-
-    """
-    The campaigns that contain this changeset.
-    """
-    campaigns(
-        """
-        Returns the first n campaigns from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-        """
-        Only return campaigns in this state.
-        """
-        state: CampaignState
-        """
-        Only include campaigns that the viewer can administer.
-        """
-        viewerCanAdminister: Boolean
-    ): CampaignConnection!
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-
-    """
-    The external state of the changeset, or null when not yet opened.
     """
     externalState: ChangesetExternalState
 
@@ -2819,20 +2728,6 @@ type RepoGroup {
 }
 
 """
-A diff between two diffable Git objects.
-"""
-type Diff {
-    """
-    The diff's repository.
-    """
-    repository: Repository!
-    """
-    The revision range of the diff.
-    """
-    range: GitRevisionRange!
-}
-
-"""
 A search result that is a Git commit.
 """
 type CommitSearchResult implements GenericSearchResultInterface {
@@ -2876,20 +2771,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     The matching portion of the diff, if any.
     """
     diffPreview: HighlightedString
-}
-
-"""
-A search result that is a diff between two diffable Git objects.
-"""
-type DiffSearchResult {
-    """
-    The diff that matched the search query.
-    """
-    diff: Diff!
-    """
-    The matching portion of the diff.
-    """
-    preview: HighlightedString!
 }
 
 """
@@ -4889,68 +4770,6 @@ interface File2 {
 }
 
 """
-A virtual file is an arbitrary file that is generated in memory.
-"""
-type VirtualFile implements File2 {
-    """
-    The full path (relative to the root) of this file.
-    """
-    path: String!
-    """
-    The base name (i.e., file name only) of this file.
-    """
-    name: String!
-    """
-    False because this is a file, not a directory.
-    """
-    isDirectory: Boolean!
-    """
-    The content of this file.
-    """
-    content: String!
-    """
-    The file size in bytes.
-    """
-    byteSize: Int!
-    """
-    Whether or not it is binary.
-    """
-    binary: Boolean!
-    """
-    The file rendered as rich HTML, or an empty string if it is not a supported
-    rich file type.
-    This HTML string is already escaped and thus is always safe to render.
-    """
-    richHTML: String!
-    """
-    Not implemented.
-    """
-    url: String!
-    """
-    Not implemented.
-    """
-    canonicalURL: String!
-    """
-    Not implemented.
-    """
-    externalURLs: [ExternalLink!]!
-    """
-    Highlight the file.
-    """
-    highlight(
-        disableTimeout: Boolean!
-        isLightTheme: Boolean!
-        """
-        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
-        2000 bytes is enabled. This may produce a significant amount of HTML
-        which some browsers (such as Chrome, but not Firefox) may have trouble
-        rendering efficiently.
-        """
-        highlightLongLines: Boolean = false
-    ): HighlightedFile!
-}
-
-"""
 File is temporarily preserved for backcompat with browser extension search API client code.
 """
 type File {
@@ -5982,43 +5801,6 @@ enum RepositoryOrderBy {
 }
 
 """
-The default settings for the Sourcegraph instance. This is hardcoded in
-Sourcegraph, but may change from release to release.
-"""
-type DefaultSettings implements SettingsSubject {
-    """
-    The opaque GraphQL ID.
-    """
-    id: ID!
-    """
-    The latest default settings (this never changes).
-    """
-    latestSettings: Settings
-    """
-    The URL to the default settings. This URL does not exist because you
-    cannot edit or directly view default settings.
-    """
-    settingsURL: String
-    """
-    Whether the viewer can modify the subject's settings. Always false for
-    default settings.
-    """
-    viewerCanAdminister: Boolean!
-    """
-    The default settings, and the final merged settings.
-    All viewers can access this field.
-    """
-    settingsCascade: SettingsCascade!
-    """
-    DEPRECATED
-    """
-    configurationCascade: ConfigurationCascade!
-        @deprecated(
-            reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
-        )
-}
-
-"""
 A site is an installation of Sourcegraph that consists of one or more
 servers that share the same configuration and database.
 The site is a singleton; the API only ever returns the single global site.
@@ -6562,20 +6344,6 @@ type SiteUsageStages {
 }
 
 """
-A deployment configuration.
-"""
-type DeploymentConfiguration {
-    """
-    The email.
-    """
-    email: String
-    """
-    The site ID.
-    """
-    siteID: String
-}
-
-"""
 Monitoring overview.
 """
 type MonitoringStatistics {
@@ -6920,16 +6688,6 @@ The result of Mutation.extensionRegistry.updateExtension.
 type ExtensionRegistryUpdateExtensionResult {
     """
     The newly updated extension.
-    """
-    extension: RegistryExtension!
-}
-
-"""
-The result of Mutation.extensionRegistry.publishExtension.
-"""
-type ExtensionRegistryPublishExtensionResult {
-    """
-    The extension that was just published.
     """
     extension: RegistryExtension!
 }
