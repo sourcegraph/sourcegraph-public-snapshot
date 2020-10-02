@@ -105,7 +105,7 @@ func mustInitializeStore() store.Store {
 		log.Fatalf("failed to connect to frontend database: %s", err)
 	}
 
-	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
+	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}))
 }
 
 func mustInitializeCodeIntelDatabase() *sql.DB {
