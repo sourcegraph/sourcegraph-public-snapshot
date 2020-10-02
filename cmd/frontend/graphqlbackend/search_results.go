@@ -230,9 +230,13 @@ var commonFileFilters = []struct {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
+	tr, ctx := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
+	defer func() {
+		tr.Finish()
+	}()
 
 	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
-	// context.Context). However we might regres on that or call DynamicFilters
+	// context.Context). However we might regress on that or call DynamicFilters
 	// from other code paths.
 	if sr.userSettings == nil {
 		settings, err := decodedViewerFinalSettings(ctx)
@@ -242,19 +246,6 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			sr.userSettings = settings
 		}
 	}
-}
-
-func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, ctx := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
-	defer func() {
-		tr.Finish()
-	}()
-
-	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
-	// context.Context). However we might call DynamicFilters from other code paths
-	// as well, so we cannot be certain that user settings have been cached before
-	// and that sr.userSettings is not nil.
-	sr.cacheUserSettings(ctx)
 
 	globbing := false
 	// userSettings could still be nil if decodedViewerFinalSettings returned with err
