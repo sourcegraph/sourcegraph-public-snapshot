@@ -234,9 +234,15 @@ describe('Blob viewer', () => {
                     })
                 })
 
-                await driver.page.waitForSelector('.test-log-token', { visible: true })
-                // Click 'console' and 'log' 5 times combined
+                await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
+                await driver.page.click('.test-go-to-code-host')
+                assert(
+                    !(await driver.page.$('.test-install-extension-popover')),
+                    'Expected popover to not be displayed before user reaches hover threshold'
+                )
 
+                // Click 'console' and 'log' 5 times combined
+                await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
                     await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
                     await driver.page.waitForSelector('.hover-overlay', { visible: true })
@@ -244,10 +250,18 @@ describe('Blob viewer', () => {
 
                 await driver.page.click('.test-go-to-code-host', {})
                 await driver.page.waitForSelector('.test-install-extension-popover', { visible: true })
+                assert(
+                    !!(await driver.page.$('.test-install-extension-popover')),
+                    'Expected popover to be displayed after user reaches hover threshold'
+                )
                 const popoverHeader = await driver.page.evaluate(
                     () => document.querySelector('.test-install-extension-popover-header')?.textContent
                 )
-                assert.deepStrictEqual(popoverHeader, "Take Sourcegraph's code intelligence to GitHub!")
+                assert.deepStrictEqual(
+                    popoverHeader,
+                    "Take Sourcegraph's code intelligence to GitHub!",
+                    'Expected popover header text to reflect code host'
+                )
             })
 
             it.skip(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
