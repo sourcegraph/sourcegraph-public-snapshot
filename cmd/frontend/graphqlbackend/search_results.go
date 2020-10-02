@@ -241,7 +241,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	if sr.userSettings == nil {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
-			log15.Warn("cacheUserSettings: could not get user settings from db")
+			log15.Warn("DynamicFilters: could not get user settings from db")
 		} else {
 			sr.userSettings = settings
 		}
@@ -1054,7 +1054,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.Finish()
 	}()
 	defer func() {
-		// hand-over the cached user settings from the searchResolver to the
+		// hand over the cached user settings from the searchResolver to the
 		// SearchResultsResolver
 		srr.userSettings = r.userSettings
 	}()
