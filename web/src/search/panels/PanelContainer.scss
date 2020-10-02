@@ -12,6 +12,7 @@
         }
     }
 
+
     &__action-button-group {
         margin-bottom: 0.25rem;
     }
@@ -44,6 +45,10 @@
 
         .text-monospace .btn-link{
             font-size: 0.75rem !important;
+        }
+
+        .footer {
+            background: rgba($color-light-bg-2,.4);
         }
     }
 }

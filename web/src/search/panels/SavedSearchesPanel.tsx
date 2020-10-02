@@ -99,13 +99,17 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
             </dl>
             {authenticatedUser && (
-                <Link
-                    to={`/users/${authenticatedUser.username}/searches`}
-                    className="btn btn-secondary w-100 text-left"
-                    onClick={logEvent('SavedSearchesPanelViewAllClicked')}
-                >
-                    View saved searches
-                </Link>
+                <div className="footer p-1">
+                    <small>
+                        <Link
+                            to={`/users/${authenticatedUser.username}/searches`}
+                            className=" text-left"
+                            onClick={logEvent('SavedSearchesPanelViewAllClicked')}
+                        >
+                            View saved searches
+                        </Link>
+                    </small>
+                </div>
             )}
         </div>
     )
