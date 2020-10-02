@@ -215,7 +215,7 @@ export async function createChangesets(options: ChangesetsOptions): Promise<void
     }
 }
 
-export async function createBranchWithChanges({
+async function createBranchWithChanges({
     owner,
     repo,
     base: baseRevision,
@@ -267,7 +267,7 @@ export async function createBranchWithChanges({
     }
 }
 
-export async function createPR(options: {
+async function createPR(options: {
     owner: string
     repo: string
     head: string
