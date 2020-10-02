@@ -1055,7 +1055,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.Finish()
 	}()
 	defer func() {
-		// hand over cached user settings from searchResolver to SearchResultsResolver
+		// copy the user settings from searchResolver to SearchResultsResolver
 		srr.userSettings = r.userSettings
 	}()
 	switch q := r.query.(type) {
