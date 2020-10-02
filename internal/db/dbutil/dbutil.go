@@ -22,7 +22,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	migrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
+	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
+	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is
@@ -112,18 +113,60 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
-	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
+// databases configures the migrations we want based on a database name. This
+// configuration includes the name of the migration version table as well as
+// the raw migration assets to run to migrate the target schema to a new version.
+var databases = map[string]struct {
+	MigrationsTable string
+	Resource        *bindata.AssetSource
+}{
+	"frontend": {
+		MigrationsTable: "schema_migrations",
+		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
+	},
+	"codeintel": {
+		MigrationsTable: "codeintel_schema_migrations",
+		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+	},
 }
 
-func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
-	var cfg postgres.Config
-	driver, err := postgres.WithInstance(db, &cfg)
+// DatabaseNames returns the list of database names (configured via `dbutil.databases`)..
+var DatabaseNames = func() []string {
+	var names []string
+	for databaseName := range databases {
+		names = append(names, databaseName)
+	}
+
+	return names
+}()
+
+// MigrationTables returns the list of migration table names (configured via `dbutil.databases`).
+var MigrationTables = func() []string {
+	var migrationTables []string
+	for _, db := range databases {
+		migrationTables = append(migrationTables, db.MigrationsTable)
+	}
+
+	return migrationTables
+}()
+
+// NewMigrate returns a new configured migration object for the given database name. This database
+// name must be present in the `dbutil.databases` map. This migration can be subsequently run by
+// invoking `dbutil.DoMigrate`.
+func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
+	schemaData, ok := databases[databaseName]
+	if !ok {
+		return nil, fmt.Errorf("unknown database '%s'", databaseName)
+	}
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		MigrationsTable: schemaData.MigrationsTable,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(NewMigrationSourceLoader(dataSource))
+	d, err := bindata.WithInstance(schemaData.Resource)
 	if err != nil {
 		return nil, err
 	}

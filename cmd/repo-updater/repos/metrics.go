@@ -110,7 +110,7 @@ func MustRegisterMetrics(db dbutil.DB) {
 -- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_external_services_total
 SELECT COUNT(*) FROM external_services
 WHERE namespace_user_id IS NOT NULL
-AND deleted_at IS NOT NULL
+AND deleted_at IS NULL
 `)
 		if err != nil {
 			log15.Error("Failed to get total user external services", "err", err)
@@ -129,7 +129,7 @@ SELECT COUNT(DISTINCT(repo_id)) FROM external_service_repos
 WHERE external_service_id IN (
 		SELECT DISTINCT(id) FROM external_services
 		WHERE namespace_user_id IS NOT NULL
-        AND deleted_at IS NOT NULL
+        AND deleted_at IS NULL
 	)
 `)
 		if err != nil {
@@ -148,7 +148,7 @@ WHERE external_service_id IN (
 SELECT COUNT(DISTINCT(namespace_user_id)) AS total
 FROM external_services
 WHERE namespace_user_id IS NOT NULL
-AND deleted_at IS NOT NULL
+AND deleted_at IS NULL
 `)
 		if err != nil {
 			log15.Error("Failed to get total users with external services", "err", err)
