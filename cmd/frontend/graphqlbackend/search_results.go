@@ -1029,7 +1029,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 }
 
 func (r *searchResolver) Results(ctx context.Context) (_ *SearchResultsResolver, err error) {
-	tr, ctx := trace.New(ctx, "Results", "")
+	tr, ctx := trace.New(ctx, "Results", "", trace.Tag{Key: "resolver", Value: "searchResolver"})
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
