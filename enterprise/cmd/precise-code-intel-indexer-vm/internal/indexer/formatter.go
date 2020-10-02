@@ -13,7 +13,7 @@ import (
 )
 
 type CommandFormatter interface {
-	Setup(ctx context.Context, commander Commander) error
+	Setup(ctx context.Context, commander Commander, images []string) error
 	Teardown(ctx context.Context, commander Commander) error
 	FormatCommand(cmd *Cmd) []string
 }
@@ -64,7 +64,7 @@ func NewDockerCommandFormatter(
 	}
 }
 
-func (r *dockerCommandFormatter) Setup(ctx context.Context, commander Commander) error {
+func (r *dockerCommandFormatter) Setup(ctx context.Context, commander Commander, images []string) error {
 	return nil
 }
 
@@ -140,20 +140,20 @@ var commonFirecrackerFlags = []string{
 	"--network-plugin", "docker-bridge",
 }
 
-func (r *firecrackerCommandFormatter) Setup(ctx context.Context, commander Commander) error {
-	images := map[string]string{
-		"lsif-go": "sourcegraph/lsif-go:latest",
-		"src-cli": "sourcegraph/src-cli:latest",
+func (r *firecrackerCommandFormatter) Setup(ctx context.Context, commander Commander, images []string) error {
+	imageMap := map[string]string{}
+	for i, image := range images {
+		imageMap[fmt.Sprintf("image%d", i)] = image
 	}
 
-	for _, key := range orderedKeys(images) {
+	for _, key := range orderedKeys(imageMap) {
 		if _, err := os.Stat(r.tarfilePathOnHost(key)); err == nil {
 			continue
 		} else if !os.IsNotExist(err) {
 			return err
 		}
 
-		if err := r.saveDockerImage(ctx, commander, key, images[key]); err != nil {
+		if err := r.saveDockerImage(ctx, commander, key, imageMap[key]); err != nil {
 			return err
 		}
 	}
@@ -162,7 +162,7 @@ func (r *firecrackerCommandFormatter) Setup(ctx context.Context, commander Comma
 		"ignite", "run",
 		commonFirecrackerFlags,
 		r.resourceFlags(),
-		r.copyfileFlags(images),
+		r.copyfileFlags(imageMap),
 		"--ssh",
 		"--name", r.name,
 		sanitizeImage(r.options.FirecrackerImage),
@@ -171,14 +171,14 @@ func (r *firecrackerCommandFormatter) Setup(ctx context.Context, commander Comma
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
-	for _, key := range orderedKeys(images) {
+	for _, key := range orderedKeys(imageMap) {
 		loadCommand := flatten(
 			"ignite", "exec", r.name, "--",
 			"docker", "load",
 			"-i", r.tarfilePathInVM(key),
 		)
 		if err := commander.Run(ctx, loadCommand...); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to load %s", images[key]))
+			return errors.Wrap(err, fmt.Sprintf("failed to load %s", imageMap[key]))
 		}
 	}
 

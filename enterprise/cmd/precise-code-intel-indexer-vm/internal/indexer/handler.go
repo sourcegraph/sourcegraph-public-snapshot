@@ -18,6 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+const uploadImage = "sourcegraph/src-cli:latest"
+const uploadRoute = "/.internal-code-intel/lsif/upload"
+
 type Handler struct {
 	queueClient   queue.Client
 	indexManager  *indexmanager.Manager
@@ -60,7 +63,17 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		return err
 	}
 
-	if err := commandFormatter.Setup(ctx, h.commander); err != nil {
+	images := []string{
+		uploadImage,
+	}
+	for _, dockerStep := range index.DockerSteps {
+		images = append(images, dockerStep.Image)
+	}
+	if index.Indexer != "" {
+		images = append(images, index.Indexer)
+	}
+
+	if err := commandFormatter.Setup(ctx, h.commander, images); err != nil {
 		return err
 	}
 	defer func() {
@@ -100,11 +113,11 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		"-no-progress",
 		"-repo", index.RepositoryName,
 		"-commit", index.Commit,
-		"-upload-route", "/.internal-code-intel/lsif/upload",
+		"-upload-route", uploadRoute,
 		"-file", outfile,
 	)
 
-	uploadCommand := NewCmd("sourcegraph/src-cli:latest", args...).
+	uploadCommand := NewCmd(uploadImage, args...).
 		SetWd(index.Root).
 		AddEnv("SRC_ENDPOINT", uploadURL.String())
 
