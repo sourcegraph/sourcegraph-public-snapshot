@@ -74,7 +74,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         signUpFieldValidators.password
     )
 
-    const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
+    const canRegister =
+        emailState.kind === 'VALID' &&
+        !emailState.loading &&
+        usernameState.kind === 'VALID' &&
+        !usernameState.loading &&
+        passwordState.kind === 'VALID' &&
+        !passwordState.loading
 
     const disabled = loading || !canRegister
 
@@ -246,7 +252,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn btn-primary btn-block"
+                        className={classNames('btn btn-primary btn-block', {
+                            'test-signup-allowed': canRegister,
+                        })}
                     />
                 </div>
                 {window.context.sourcegraphDotComMode && (
