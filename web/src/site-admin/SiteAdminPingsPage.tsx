@@ -1,27 +1,29 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useMemo } from 'react'
+import { Link, RouteComponentProps } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, ErrorLike } from '../../../shared/src/util/errors'
-import { isEmpty } from 'lodash'
+import { isEmpty, noop } from 'lodash'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as Monaco from 'monaco-editor'
 import { MonacoEditor } from '../components/MonacoEditor'
+import { ThemeProps } from '../../../shared/src/theme'
+import { useObservable } from '../../../shared/src/util/useObservable'
+import { fromFetch } from 'rxjs/fetch'
+
+interface Props extends RouteComponentProps, ThemeProps {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<{}> = props => {
-    const [latestPing, setLatestPing] = useState<'loading' | {} | null | ErrorLike>('loading')
+export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
+    const latestPing = useObservable(
+        useMemo(
+            () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => response.json() }),
+            []
+        )
+    )
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminPings')
-        fetch('/site-admin/pings/latest')
-            .then(async response => {
-                if (response.status === 200) {
-                    setLatestPing(await response.json())
-                }
-            })
-            .catch(error => setLatestPing(asError(error)))
     }, [])
 
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
@@ -48,9 +50,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<{}> = props => {
         cursorStyle: 'line',
         cursorWidth: 1,
     }
-    const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
-    const [editorInstance, setEditorInstance] = useState<Monaco.editor.IStandaloneCodeEditor>()
-
     return (
         <div className="site-admin-pings-page">
             <PageTitle title="Pings - Admin" />
@@ -62,7 +61,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<{}> = props => {
             </p>
             <h3>Most recent ping</h3>
             <p>
-                {latestPing === 'loading' ? (
+                {latestPing === undefined ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isEmpty(latestPing) ? (
                     <p>No recent ping data to display.</p>
@@ -72,8 +71,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<{}> = props => {
                         language="json"
                         options={options}
                         height={300}
-                        editorWillMount={setMonacoInstance}
-                        onEditorCreated={setEditorInstance}
+                        editorWillMount={noop}
                         value={JSON.stringify(latestPing, undefined, 4)}
                     />
                 )}
