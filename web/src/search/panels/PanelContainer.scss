@@ -47,7 +47,11 @@
         }
 
         .footer {
-            background: rgba($color-light-bg-2, 0.4);
+            background: rgba($color-bg-2, 0.4);
+
+            .theme-light & {
+                background: rgba($color-light-bg-2, 0.4);
+            }
         }
     }
 }
