@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -173,35 +172,6 @@ func (h *Handler) fetchRepository(ctx context.Context, repositoryName, commit st
 	}
 
 	return tempDir, nil
-}
-
-func (h *Handler) saveDockerImage(ctx context.Context, key, image string) error {
-	pullCommand := flatten(
-		"docker", "pull",
-		image,
-	)
-	if err := h.commander.Run(ctx, pullCommand...); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to pull %s", image))
-	}
-
-	saveCommand := flatten(
-		"docker", "save",
-		"-o", h.tarfilePathOnHost(key),
-		image,
-	)
-	if err := h.commander.Run(ctx, saveCommand...); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to save %s", image))
-	}
-
-	return nil
-}
-
-func (h *Handler) tarfilePathOnHost(key string) string {
-	return filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", key))
-}
-
-func (h *Handler) tarfilePathInVM(key string) string {
-	return fmt.Sprintf("/%s.tar", key)
 }
 
 func makeCloneURL(baseURL, authToken, repositoryName string) (*url.URL, error) {
