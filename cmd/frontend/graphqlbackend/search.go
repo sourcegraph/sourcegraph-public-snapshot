@@ -336,7 +336,12 @@ func (r *searchResolver) maxResults() int32 {
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
-func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
+func decodedViewerFinalSettings(ctx context.Context) (_ *schema.Settings, err error) {
+	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	if mockDecodedViewerFinalSettings != nil {
 		return mockDecodedViewerFinalSettings, nil
 	}

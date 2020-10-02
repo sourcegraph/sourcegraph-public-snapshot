@@ -3,6 +3,7 @@ package campaigns
 import (
 	"time"
 
+	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,11 +52,12 @@ func (cs *CampaignSpec) ExpiresAt() time.Time {
 }
 
 type CampaignSpecFields struct {
-	Name              string             `json:"name"`
-	Description       string             `json:"description"`
-	On                []CampaignSpecOn   `json:"on"`
-	Steps             []CampaignSpecStep `json:"steps"`
-	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate"`
+	Name              string                    `json:"name"`
+	Description       string                    `json:"description"`
+	On                []CampaignSpecOn          `json:"on"`
+	Steps             []CampaignSpecStep        `json:"steps"`
+	ImportChangeset   []CampaignImportChangeset `json:"importChangesets,omitempty"`
+	ChangesetTemplate ChangesetTemplate         `json:"changesetTemplate"`
 }
 
 type CampaignSpecOn struct {
@@ -69,12 +71,17 @@ type CampaignSpecStep struct {
 	Env       map[string]string `json:"env"`
 }
 
+type CampaignImportChangeset struct {
+	Repository  string        `json:"repository"`
+	ExternalIDs []interface{} `json:"externalIDs"`
+}
+
 type ChangesetTemplate struct {
-	Title     string         `json:"title"`
-	Body      string         `json:"body"`
-	Branch    string         `json:"branch"`
-	Commit    CommitTemplate `json:"commit"`
-	Published bool           `json:"published"`
+	Title     string           `json:"title"`
+	Body      string           `json:"body"`
+	Branch    string           `json:"branch"`
+	Commit    CommitTemplate   `json:"commit"`
+	Published overridable.Bool `json:"published"`
 }
 
 type CommitTemplate struct {

@@ -117,6 +117,12 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 		if index.RepositoryID == 0 {
 			index.RepositoryID = 50
 		}
+		if index.DockerSteps == nil {
+			index.DockerSteps = []DockerStep{}
+		}
+		if index.IndexerArgs == nil {
+			index.IndexerArgs = []string{}
+		}
 
 		// Ensure we have a repo for the inner join in select queries
 		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
@@ -133,8 +139,13 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				process_after,
 				num_resets,
 				num_failures,
-				repository_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				repository_id,
+				docker_steps,
+				root,
+				indexer,
+				indexer_args,
+				outfile
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -147,6 +158,11 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.NumResets,
 			index.NumFailures,
 			index.RepositoryID,
+			pq.Array(index.DockerSteps),
+			index.Root,
+			index.Indexer,
+			pq.Array(index.IndexerArgs),
+			index.Outfile,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
