@@ -526,6 +526,10 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // relies on the invariant that query and pattern error checking has already
 // been performed.
 func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
+	tr, ctx := trace.New(ctx, "logSearchLatency", "")
+	defer func() {
+		tr.Finish()
+	}()
 	var types []string
 	resultTypes, _ := r.query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
@@ -602,7 +606,12 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsResolver, err error) {
+	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	start := time.Now()
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
 	if r.query.BoolValue("stable") {
@@ -1019,7 +1028,12 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	return result, nil
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) Results(ctx context.Context) (_ *SearchResultsResolver, err error) {
+	tr, ctx := trace.New(ctx, "Results", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	switch q := r.query.(type) {
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
