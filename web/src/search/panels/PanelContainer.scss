@@ -30,6 +30,10 @@
         }
     }
 
+    &__loading-container {
+        background: none !important;
+    }
+
     &__content {
         overflow-y: auto;
         overflow-x: hidden;
