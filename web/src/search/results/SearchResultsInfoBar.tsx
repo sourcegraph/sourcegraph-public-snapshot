@@ -49,9 +49,6 @@ interface SearchResultsInfoBarProps
 
     displayPerformanceWarning: boolean
 
-    // Whether the search query contains a repo: field.
-    hasRepoishField: boolean
-
     location: H.Location
 }
 
@@ -241,9 +238,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     </ul>
                 </small>
             )}
-            {!props.results.alert &&
-                props.showDotComMarketing &&
-                (props.hasRepoishField ? <ServerBanner /> : <ServerBannerNoRepo />)}
             {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
         </div>
     )
