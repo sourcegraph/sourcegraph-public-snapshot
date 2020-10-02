@@ -147,6 +147,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
             }
             return {
                 key: 'treePath',
+                className: 'flex-shrink-past-contents',
                 element: (
                     <FilePathBreadcrumbs
                         key="path"

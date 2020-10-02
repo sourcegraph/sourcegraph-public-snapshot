@@ -19,6 +19,9 @@ interface Props {
     disabled?: boolean
     tabIndex?: number
     className?: string
+
+    /** Data attribute for testing */
+    dataTest?: string
 }
 
 /** A toggle switch input component. */
@@ -30,6 +33,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     value,
     tabIndex,
     onToggle,
+    dataTest,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
@@ -49,6 +53,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             disabled={disabled}
             role="switch"
             aria-checked={value}
+            data-test={dataTest}
         >
             <span
                 className={classnames('toggle__bar', {

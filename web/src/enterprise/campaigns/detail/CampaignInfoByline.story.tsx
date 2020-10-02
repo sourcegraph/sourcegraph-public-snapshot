@@ -10,7 +10,7 @@ const { add } = storiesOf('web/campaigns/CampaignInfoByline', module).addDecorat
 
 const THREE_DAYS_AGO = subDays(new Date(), 3).toISOString()
 
-add('Created, never updated', () => (
+add('Never updated', () => (
     <EnterpriseWebStory>
         {props => (
             <CampaignInfoByline
@@ -24,7 +24,7 @@ add('Created, never updated', () => (
     </EnterpriseWebStory>
 ))
 
-add('Created then updated (same user)', () => (
+add('Updated (same user)', () => (
     <EnterpriseWebStory>
         {props => (
             <CampaignInfoByline
@@ -38,7 +38,7 @@ add('Created then updated (same user)', () => (
     </EnterpriseWebStory>
 ))
 
-add('Created then updated (different users)', () => (
+add('Updated (different users)', () => (
     <EnterpriseWebStory>
         {props => (
             <CampaignInfoByline

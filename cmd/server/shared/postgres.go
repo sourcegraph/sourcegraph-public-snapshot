@@ -63,12 +63,14 @@ func maybePostgresProcFile() (string, error) {
 		}
 	}
 
-	// Set PGHOST to default to 127.0.0.1, NOT localhost, as localhost does not correctly resolve in some environments
-	// (see https://github.com/sourcegraph/issues/issues/34 and https://github.com/sourcegraph/sourcegraph/issues/9129).
-	SetDefaultEnv("PGHOST", "127.0.0.1")
-	SetDefaultEnv("PGUSER", "postgres")
-	SetDefaultEnv("PGDATABASE", "sourcegraph")
-	SetDefaultEnv("PGSSLMODE", "disable")
+	for _, prefix := range []string{"", "CODEINTEL_"} {
+		// Set *PGHOST to default to 127.0.0.1, NOT localhost, as localhost does not correctly resolve in some environments
+		// (see https://github.com/sourcegraph/issues/issues/34 and https://github.com/sourcegraph/sourcegraph/issues/9129).
+		SetDefaultEnv(prefix+"PGHOST", "127.0.0.1")
+		SetDefaultEnv(prefix+"PGUSER", "postgres")
+		SetDefaultEnv(prefix+"PGDATABASE", "sourcegraph")
+		SetDefaultEnv(prefix+"PGSSLMODE", "disable")
+	}
 
 	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
 }

@@ -1,5 +1,6 @@
 import React from 'react'
 import { mount } from 'enzyme'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
 import { RepositoriesPanel } from './RepositoriesPanel'
 
@@ -30,6 +31,7 @@ describe('RepositoriesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentSearches: () => of(recentSearches),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
@@ -67,6 +69,7 @@ describe('RepositoriesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentSearches: () => of(recentSearches),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
@@ -104,6 +107,7 @@ describe('RepositoriesPanel', () => {
         const props = {
             authenticatedUser: null,
             fetchRecentSearches: () => of(recentSearches),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
@@ -189,6 +193,7 @@ describe('RepositoriesPanel', () => {
             authenticatedUser: null,
             fetchRecentSearches: (_userId: string, first: number) =>
                 first === 50 ? of(recentSearches1) : of(recentSearches2),
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
         const component = mount(<RepositoriesPanel {...props} />)

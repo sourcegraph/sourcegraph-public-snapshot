@@ -1,3 +1,6 @@
+$toggle-big-width: 6.625rem;
+$toggle-big-height: 2rem;
+
 .toggle-big {
     background: none;
     border: none;
@@ -5,7 +8,7 @@
     outline: none !important;
     padding: 0;
     position: relative;
-    width: 6.625rem;
+    width: $toggle-big-width;
 
     &:disabled {
         cursor: not-allowed;
@@ -20,7 +23,7 @@
     &__bar,
     &__bar-shadow {
         border-radius: 1rem;
-        height: 2rem;
+        height: $toggle-big-height;
         width: 100%;
         top: 2px;
         left: 0;

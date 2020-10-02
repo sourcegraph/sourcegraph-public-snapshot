@@ -39,7 +39,7 @@ abstract class BrowserExtensionToast extends React.Component<Props, State> {
                     !isInstalled &&
                     showDotComMarketing &&
                     localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
-                    daysActiveCount === 1
+                    daysActiveCount === 3
                 this.setState({ visible })
                 if (visible) {
                     eventLogger.log('BrowserExtReminderViewed')

@@ -32,6 +32,7 @@ var BillingPublishableKey string
 type authProviderInfo struct {
 	IsBuiltin         bool   `json:"isBuiltin"`
 	DisplayName       string `json:"displayName"`
+	ServiceType       string `json:"serviceType"`
 	AuthenticationURL string `json:"authenticationURL"`
 }
 
@@ -120,6 +121,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 			authProviders = append(authProviders, authProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
 				DisplayName:       info.DisplayName,
+				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
 			})
 		}
