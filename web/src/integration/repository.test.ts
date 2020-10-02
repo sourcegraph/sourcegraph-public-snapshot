@@ -365,7 +365,6 @@ describe('Repository', () => {
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
-            await new Promise(() => {})
             await percySnapshot(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
