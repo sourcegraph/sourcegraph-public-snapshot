@@ -71,6 +71,8 @@ interface Props
     hiddenQueryPrefix?: string
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
+    /** Don't show the query builder link. */
+    hideQueryBuilder?: boolean
     autoFocus?: boolean
 }
 
@@ -289,7 +291,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             />
                             <SearchButton />
                         </div>
-                        {!props.splitSearchModes && (
+                        {!props.hideQueryBuilder && !props.splitSearchModes && (
                             <div className="search-page__input-sub-container">
                                 <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
                                     Query builder
