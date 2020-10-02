@@ -3594,10 +3594,10 @@
     "@types/filesystem" "*"
     "@types/har-format" "*"
 
-"@types/chrome@0.0.122":
-  version "0.0.122"
-  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.122.tgz#65265d3854f511c2c1e779148e97982ee00b460f"
-  integrity sha512-xHmT1AlBwKAVpQmv+/5gUsB1FXLUiizIZI6bIM52DJDtEhv97FkryHkohjw2HZqAGLOxuJ3kae7YfgWIZ+hMrg==
+"@types/chrome@0.0.124":
+  version "0.0.124"
+  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.124.tgz#1cdb8e1c1ddb04b15844f5a71b9907f73bbb84a2"
+  integrity sha512-0UmDQ6A9gaahvztKryIonSTyUMEhuhKNyyJAnBB7ZJN/YXP7YRkL4onPFSTxnIbXcMnYsQFo8TxsGP8jY2mdEw==
   dependencies:
     "@types/filesystem" "*"
     "@types/har-format" "*"
