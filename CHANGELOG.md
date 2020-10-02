@@ -36,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where specifying any repogroups would effectively search all repositories for all repogroups. [#14190](https://github.com/sourcegraph/sourcegraph/pull/14190)
 - Changesets that were previously closed after being detached from a campaign are now reopened when being reattached. [#14099](https://github.com/sourcegraph/sourcegraph/pull/14099)
 - Previously large files that match the site configuration [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFiles) would not be indexed if they contained a large number of unique trigrams. We now index those files as well. Note: files matching the glob still need to be valid utf-8. [#12443](https://github.com/sourcegraph/sourcegraph/issues/12443)
+- Git tags without a `creatordate` value will no longer break tag search within a repository. [#5453](https://github.com/sourcegraph/sourcegraph/issues/5453)
 
 ### Removed
 
