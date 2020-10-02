@@ -766,8 +766,6 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-// If insertLimit is greater than zero, it will insert up to insertLimit repos. Once the limit is reached calling the
-// function again is a noop.
 func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
