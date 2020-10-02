@@ -229,9 +229,11 @@ var commonFileFilters = []struct {
 	},
 }
 
-// cacheUserSettings gets the user settings from the DB and caches them in
-// sr.userSettings.
-func (sr *SearchResultsResolver) cacheUserSettings(ctx context.Context) {
+func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
+
+	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
+	// context.Context). However we might regres on that or call DynamicFilters
+	// from other code paths.
 	if sr.userSettings == nil {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
@@ -255,6 +257,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	sr.cacheUserSettings(ctx)
 
 	globbing := false
+	// userSettings could still be nil if decodedViewerFinalSettings returned with err
 	if sr.userSettings != nil {
 		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
 	}
