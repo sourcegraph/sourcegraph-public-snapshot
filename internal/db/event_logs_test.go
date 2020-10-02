@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func TestEventLogs_ValidInfo(t *testing.T) {
@@ -509,6 +510,9 @@ func TestEventLogs_LatestPing(t *testing.T) {
 	})
 
 	t.Run("with existing pings in database", func(t *testing.T) {
+		timestamp := time.Now().UTC()
+		userID := int32(0)
+
 		ctx := context.Background()
 		events := []*Event{
 			{
@@ -517,7 +521,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				URL:             "test",
 				AnonymousUserID: "test",
 				Source:          "test",
-				Timestamp:       time.Now().UTC(),
+				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value1"}`),
 			}, {
 				UserID:          0,
@@ -525,7 +529,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				URL:             "test",
 				AnonymousUserID: "test",
 				Source:          "test",
-				Timestamp:       time.Now().UTC(),
+				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value2"}`),
 			},
 		}
@@ -535,11 +539,22 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			}
 		}
 
-		ping, err := EventLogs.LatestPing(ctx)
-		if err != nil || ping == nil {
+		gotPing, err := EventLogs.LatestPing(ctx)
+		if err != nil || gotPing == nil {
 			t.Fatal(err)
 		}
-		if diff := cmp.Diff(ping.Argument, string(events[1].Argument)); diff != "" {
+		expectedPing := &types.Event{
+			ID:              2,
+			Name:            events[1].Name,
+			URL:             events[1].URL,
+			UserID:          &userID,
+			AnonymousUserID: events[1].AnonymousUserID,
+			Version:         version.Version(),
+			Argument:        string(events[1].Argument),
+			Source:          events[1].Source,
+			Timestamp:       timestamp,
+		}
+		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
 			t.Fatal(diff)
 		}
 	})
