@@ -39,6 +39,9 @@ func TestHandleWithDocker(t *testing.T) {
 		ID:             42,
 		RepositoryName: "github.com/sourcegraph/sourcegraph",
 		Commit:         "e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
+		// TODO - add steps
+		Indexer:     "sourcegraph/lsif-go:latest",
+		IndexerArgs: []string{"lsif-go", "--no-animation"},
 	}
 
 	if err := handler.Handle(context.Background(), nil, index); err != nil {
@@ -94,6 +97,9 @@ func TestHandleWithFirecracker(t *testing.T) {
 		ID:             42,
 		RepositoryName: "github.com/sourcegraph/sourcegraph",
 		Commit:         "e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
+		// TODO - add steps
+		Indexer:     "sourcegraph/lsif-go:latest",
+		IndexerArgs: []string{"lsif-go", "--no-animation"},
 	}
 
 	if err := handler.Handle(context.Background(), nil, index); err != nil {

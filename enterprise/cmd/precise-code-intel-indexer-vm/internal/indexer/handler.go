@@ -70,19 +70,38 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		}
 	}()
 
-	indexCmd, err := h.indexCommand(index)
-	if err != nil {
-		return err
-	}
-	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(indexCmd)...); err != nil {
-		return errors.Wrap(err, "failed to index repository")
+	for _, dockerStep := range index.DockerSteps {
+		// TODO - use root
+		// TODO - commands vs args
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(NewCmd(dockerStep.Image, dockerStep.Commands...))...); err != nil {
+			return errors.Wrap(err, "failed to perform docker step")
+		}
 	}
 
-	uploadCmd, err := h.uploadCommand(index)
+	if index.Indexer != "" {
+		// TODO - use root
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(NewCmd(index.Indexer, index.IndexerArgs...))...); err != nil {
+			return errors.Wrap(err, "failed to index repository")
+		}
+	}
+
+	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
 	if err != nil {
 		return err
 	}
-	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCmd)...); err != nil {
+
+	args := flatten(
+		"lsif", "upload",
+		"-no-progress",
+		"-repo", index.RepositoryName,
+		"-commit", index.Commit,
+		"-upload-route", "/.internal-code-intel/lsif/upload",
+	)
+
+	// TODO - use root, outfile
+	uploadCommand := NewCmd("sourcegraph/src-cli:latest", args...).AddEnv("SRC_ENDPOINT", uploadURL.String())
+
+	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCommand)...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
 	}
 
@@ -100,30 +119,6 @@ func (h *Handler) makeCommandFormatter(repoDir string) (CommandFormatter, error)
 	}
 
 	return NewFirecrackerCommandFormatter(name.String(), repoDir, h.options), nil
-}
-
-func (h *Handler) indexCommand(index store.Index) (*Cmd, error) {
-	args := flatten(
-		"lsif-go",
-		"--no-animation",
-	)
-	return NewCmd("sourcegraph/lsif-go:latest", args...), nil
-}
-
-func (h *Handler) uploadCommand(index store.Index) (*Cmd, error) {
-	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
-	if err != nil {
-		return nil, err
-	}
-
-	args := flatten(
-		"lsif", "upload",
-		"-no-progress",
-		"-repo", index.RepositoryName,
-		"-commit", index.Commit,
-		"-upload-route", "/.internal-code-intel/lsif/upload",
-	)
-	return NewCmd("sourcegraph/src-cli:latest", args...).AddEnv("SRC_ENDPOINT", uploadURL.String()), nil
 }
 
 // makeTempDir is a wrapper around ioutil.TempDir that can be replaced during unit tests.
