@@ -34,6 +34,7 @@ type Store interface {
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	CountNotClonedRepos(ctx context.Context) (uint64, error)
+	CountUserAddedRepos(ctx context.Context) (uint64, error)
 
 	// EnqueueSyncJobs enqueues sync jobs per external service where their next_sync_at is due.
 	// If ignoreSiteAdmin is true then we only sync user added external services.
@@ -950,6 +951,26 @@ func (s DBStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 const CountNotClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
 SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
+`
+
+// CountUserAddedRepos counts the total number of repos that have been added
+// by user owned external services.
+func (s DBStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
+	q := sqlf.Sprintf(CountTotalUserAddedReposQueryFmtstr)
+
+	var count uint64
+	err := s.db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
+	return count, err
+}
+
+const CountTotalUserAddedReposQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.CountUserAddedRepos
+SELECT COUNT(DISTINCT(repo_id)) FROM external_service_repos
+WHERE external_service_id IN (
+		SELECT DISTINCT(id) FROM external_services
+		WHERE namespace_user_id IS NOT NULL
+        AND deleted_at IS NULL
+	)
 `
 
 // a paginatedQuery returns a query with the given pagination

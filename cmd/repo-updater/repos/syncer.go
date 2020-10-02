@@ -42,9 +42,13 @@ type Syncer struct {
 
 	Registerer prometheus.Registerer
 
-	// MaxReposPerUser can be used to override the value read from config.
+	// UserReposMaxPerUser can be used to override the value read from config.
 	// If zero, we'll read from config instead.
-	MaxReposPerUser int
+	UserReposMaxPerUser int
+
+	// UserReposMaxPerSite can be used to override the value read from config.
+	// If zero, we'll read from config instead.
+	UserReposMaxPerSite int
 
 	// syncErrors contains the last error returned by the Sourcer during each
 	// sync per external service. It's reset with each service sync and if the sync produced no error, it's
@@ -86,7 +90,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 		minSyncInterval: opts.MinSyncInterval,
 	}, SyncWorkerOptions{
 		WorkerInterval:       opts.DequeueInterval,
-		NumHandlers:          GetConcurrentSyncers(),
+		NumHandlers:          ConfRepoConcurrentExternalServiceSyncers(),
 		PrometheusRegisterer: s.Registerer,
 		CleanupOldJobs:       true,
 	})
@@ -187,18 +191,32 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	isUserOwned := svc.NamespaceUserID > 0
 
 	onSourced := func(*Repo) error { return nil } //noop
+
 	if isUserOwned {
+		// If we are over our limit for user added repos we abort the sync
+		totalAllowed := uint64(s.UserReposMaxPerSite)
+		if totalAllowed == 0 {
+			totalAllowed = uint64(ConfUserReposMaxPerSite())
+		}
+		userAdded, err := tx.CountUserAddedRepos(ctx)
+		if err != nil {
+			return errors.Wrap(err, "counting user added repos")
+		}
+		if userAdded >= totalAllowed {
+			return fmt.Errorf("reached maximum allowed user added repos: %d", userAdded)
+		}
+
 		// If this is a user owned external service we won't stream our inserts as we limit the number allowed.
 		// Instead, we'll track the number of sourced repos and if we exceed our limit we'll bail out.
 		var sourcedRepoCount int64
-		maxAllowed := s.MaxReposPerUser
+		maxAllowed := s.UserReposMaxPerUser
 		if maxAllowed == 0 {
-			maxAllowed = GetMaxReposPerUser()
+			maxAllowed = ConfUserReposMaxPerUser()
 		}
 		onSourced = func(r *Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
 			if newCount >= int64(maxAllowed) {
-				return fmt.Errorf("sync cancelled, repo count has exceeded allowed limit: %d", maxAllowed)
+				return fmt.Errorf("per user repo count has exceeded allowed limit: %d", maxAllowed)
 			}
 			return nil
 		}

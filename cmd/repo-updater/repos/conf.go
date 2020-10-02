@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
-func GetUpdateInterval() time.Duration {
+func ConfRepoListUpdateInterval() time.Duration {
 	v := conf.Get().RepoListUpdateInterval
 	if v == 0 { //  default to 1 minute
 		v = 1
@@ -14,7 +14,7 @@ func GetUpdateInterval() time.Duration {
 	return time.Duration(v) * time.Minute
 }
 
-func GetConcurrentSyncers() int {
+func ConfRepoConcurrentExternalServiceSyncers() int {
 	v := conf.Get().RepoConcurrentExternalServiceSyncers
 	if v <= 0 {
 		return 3
@@ -22,10 +22,18 @@ func GetConcurrentSyncers() int {
 	return v
 }
 
-func GetMaxReposPerUser() int {
+func ConfUserReposMaxPerUser() int {
 	v := conf.Get().UserReposMaxPerUser
 	if v == 0 {
 		return 2000
+	}
+	return v
+}
+
+func ConfUserReposMaxPerSite() int {
+	v := conf.Get().UserReposMaxPerSite
+	if v == 0 {
+		return 200000
 	}
 	return v
 }
