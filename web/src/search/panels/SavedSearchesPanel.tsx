@@ -99,7 +99,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
             </dl>
             {authenticatedUser && (
-                <div className="footer p-1">
+                <div className="panel-container__content__footer p-1">
                     <small>
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
