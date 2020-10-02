@@ -190,7 +190,7 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 
 	if conf.CanSendEmail() {
 		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
-			log15.Warn("Failed send email to inform user of password reset", "error", err, ctx)
+			log15.Warn("Failed to send email to inform user of password reset", "error", err)
 		}
 	}
 }

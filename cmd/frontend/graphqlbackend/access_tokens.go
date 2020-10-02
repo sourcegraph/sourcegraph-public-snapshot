@@ -76,7 +76,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 
 	if conf.CanSendEmail() {
 		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
-			log15.Warn("Failed send email to inform user of access token creation", "error", err, ctx)
+			log15.Warn("Failed to send email to inform user of access token creation", "error", err)
 		}
 	}
 
@@ -134,7 +134,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 	if conf.CanSendEmail() {
 		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, token.SubjectUserID, "deleted an access token"); err != nil {
-			log15.Warn("Failed send email to inform user of access token deletion", "error", err, ctx)
+			log15.Warn("Failed to send email to inform user of access token deletion", "error", err)
 		}
 	}
 
