@@ -106,6 +106,8 @@
 // 1528395735_drop_language_from_repo.up.sql (66B)
 // 1528395736_add_index_to_repo_created_at.down.sql (124B)
 // 1528395736_add_index_to_repo_created_at.up.sql (151B)
+// 1528395737_campaign_user_credentials.down.sql (65B)
+// 1528395737_campaign_user_credentials.up.sql (988B)
 
 package migrations
 
@@ -2294,6 +2296,46 @@ func _1528395736_add_index_to_repo_created_atUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395737_campaign_user_credentialsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\x2d\x4e\x2d\x8a\x4f\x2e\x4a\x4d\x49\xcd\x2b\xc9\x4c\xcc\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd4\x31\x5e\x16\x41\x00\x00\x00")
+
+func _1528395737_campaign_user_credentialsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395737_campaign_user_credentialsDownSql,
+		"1528395737_campaign_user_credentials.down.sql",
+	)
+}
+
+func _1528395737_campaign_user_credentialsDownSql() (*asset, error) {
+	bytes, err := _1528395737_campaign_user_credentialsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395737_campaign_user_credentials.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x69, 0x6d, 0x32, 0x29, 0x95, 0xcc, 0x54, 0x6, 0xee, 0x79, 0x13, 0xfb, 0xa9, 0x32, 0xcf, 0x4a, 0x5a, 0x38, 0x8b, 0x33, 0xc1, 0xe5, 0xcd, 0xd9, 0x36, 0x7d, 0xb8, 0x5b, 0xf2, 0x65, 0x6, 0xc1}}
+	return a, nil
+}
+
+var __1528395737_campaign_user_credentialsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x93\x41\x53\xdb\x30\x10\x85\xef\xfe\x15\xef\xd6\x30\x63\xf8\x01\xe5\x64\x82\x92\x7a\xea\x38\xd4\x16\x03\xf4\x92\xd9\xd8\x9b\xa0\x41\x91\x5c\x49\x4e\xf0\xbf\xef\xc8\x49\x5a\x4a\x39\x74\x7a\xb3\xb5\xef\x7d\xfb\xa4\x95\x6e\xc4\x3c\x2f\xaf\x93\x64\x5a\x89\x4c\x0a\xc8\xec\xa6\x10\xc8\x67\x28\x97\x12\xe2\x31\xaf\x65\x8d\x86\x76\x1d\xa9\xad\x59\xf5\x9e\xdd\xaa\x71\xdc\xb2\x09\x8a\xb4\xc7\x24\x01\x80\x71\x59\xb5\xc8\x4b\x29\xe6\xa2\x1a\xad\xe5\x7d\x51\xa4\x63\x95\x5f\x03\x3b\x43\x7a\xe5\xd9\xed\x55\xc3\x51\x79\x93\xcf\xf3\x52\xbe\x13\xfe\x06\x43\x8a\xc7\x0f\xaa\x14\xb8\x5d\x51\x80\xcc\x17\xa2\x96\xd9\xe2\x0e\x0f\xb9\xfc\x32\xfe\xe2\xfb\xb2\x14\xbf\x1c\xb8\x15\xb3\xec\xbe\x88\x88\x87\xc9\xc5\xd1\xdf\x77\xed\x7f\xfb\x47\xc0\xe5\x25\x5a\xd6\x7c\x62\x28\x0f\x65\x42\x8c\x6b\x0d\x69\x3d\x40\xf3\x26\xc0\xf6\xe1\x33\xb6\x6a\xcf\x06\xe1\x99\xe1\xb9\x71\x1c\x60\x28\xf4\x8e\x61\x37\x08\xf6\x85\x8d\x4f\xcf\xbc\x78\x70\x1e\x07\xa5\x35\xb4\x7a\x61\x3d\xe0\x40\x26\x20\x58\xac\x19\x0d\xbb\x40\x2a\x82\x28\x9c\x8c\x20\xc7\xe7\x10\x38\x3c\xb3\x39\x83\x1c\xef\xec\x9e\xdb\x14\x1c\x5b\x1f\x54\x78\x06\x9b\xc6\x0d\x5d\x8c\x07\x65\xd0\x69\x6a\xf8\x2a\x79\xdb\x38\xce\x41\x79\x6c\x94\xf3\x01\x6b\x6e\xa8\xf7\x8c\x03\x7f\xd2\x1a\x86\xb9\x3d\xa5\xa0\xb5\xe6\xf8\xf9\xa3\x67\x37\x80\xb4\x1e\x37\x76\x8c\x73\xa6\x6d\xac\x03\x8d\x4c\x58\x03\x82\xe3\x6d\xaf\xc9\x61\x4d\x5e\xf9\x14\x64\x5a\xdc\x59\x1f\xb6\x8e\xeb\x6f\x05\x1a\x32\x51\x3b\x72\x3a\xa7\x76\xe4\x06\xbc\xf0\x70\x86\x29\xd3\xf2\xeb\x88\x8c\x82\x63\xba\xc6\xea\x7e\x67\xe2\x01\x12\x1a\xbb\xeb\xac\x57\x81\xa3\x29\xaa\xd5\x5e\xb5\x7d\x1c\xc1\xd5\x88\xb8\xab\xf2\x45\x56\x3d\xe1\xab\x78\xc2\xe4\xb4\xcf\xf4\xa3\x4b\xf8\x66\xae\x35\x07\xf4\xdd\xb1\xa1\x75\xac\xb6\x26\xc2\xfd\x11\x38\x5b\x56\x22\x9f\x97\x7f\x00\x2f\x50\x89\x99\xa8\x44\x39\x15\xf5\x69\x8a\x93\xb8\xba\x2c\x71\x2b\x0a\x21\x05\xa6\x59\x3d\xcd\x6e\x45\xbc\x49\xa2\xaa\xe2\xa3\x4a\xff\xa6\x7d\x94\xea\x2d\xf9\x7d\xfd\x1f\xba\x24\x17\xf1\x2d\x2f\x17\x8b\x5c\x5e\x27\x3f\x03\x00\x00\xff\xff\x38\x3f\xd6\xdc\xdc\x03\x00\x00")
+
+func _1528395737_campaign_user_credentialsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395737_campaign_user_credentialsUpSql,
+		"1528395737_campaign_user_credentials.up.sql",
+	)
+}
+
+func _1528395737_campaign_user_credentialsUpSql() (*asset, error) {
+	bytes, err := _1528395737_campaign_user_credentialsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395737_campaign_user_credentials.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x61, 0xb0, 0xb3, 0xd6, 0xe0, 0x68, 0x6c, 0x26, 0x6d, 0x0, 0x11, 0x71, 0xac, 0xd, 0x34, 0x87, 0x23, 0x6e, 0xb7, 0x6a, 0x7c, 0x64, 0x35, 0xa8, 0xa4, 0xa3, 0xa0, 0xa7, 0xf6, 0xc2, 0xf0, 0xd6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2491,6 +2533,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395735_drop_language_from_repo.up.sql":                                    _1528395735_drop_language_from_repoUpSql,
 	"1528395736_add_index_to_repo_created_at.down.sql":                             _1528395736_add_index_to_repo_created_atDownSql,
 	"1528395736_add_index_to_repo_created_at.up.sql":                               _1528395736_add_index_to_repo_created_atUpSql,
+	"1528395737_campaign_user_credentials.down.sql":                                _1528395737_campaign_user_credentialsDownSql,
+	"1528395737_campaign_user_credentials.up.sql":                                  _1528395737_campaign_user_credentialsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2643,6 +2687,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395735_drop_language_from_repo.up.sql":                                    {_1528395735_drop_language_from_repoUpSql, map[string]*bintree{}},
 	"1528395736_add_index_to_repo_created_at.down.sql":                             {_1528395736_add_index_to_repo_created_atDownSql, map[string]*bintree{}},
 	"1528395736_add_index_to_repo_created_at.up.sql":                               {_1528395736_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
+	"1528395737_campaign_user_credentials.down.sql":                                {_1528395737_campaign_user_credentialsDownSql, map[string]*bintree{}},
+	"1528395737_campaign_user_credentials.up.sql":                                  {_1528395737_campaign_user_credentialsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

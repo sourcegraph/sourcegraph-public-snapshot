@@ -47,6 +47,23 @@ Referenced by:
 
 ```
 
+# Table "public.campaign_user_credentials"
+```
+       Column        |           Type           |       Modifiers        
+---------------------+--------------------------+------------------------
+ user_id             | integer                  | not null
+ external_service_id | bigint                   | not null
+ credential          | text                     | not null
+ created_at          | timestamp with time zone | not null default now()
+ updated_at          | timestamp with time zone | not null default now()
+Indexes:
+    "campaign_user_credentials_pkey" PRIMARY KEY, btree (user_id, external_service_id)
+Foreign-key constraints:
+    "campaign_user_credentials_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
+    "campaign_user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.campaigns"
 ```
        Column       |           Type           |                       Modifiers                        
@@ -473,6 +490,7 @@ Check constraints:
 Foreign-key constraints:
     "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
+    TABLE "campaign_user_credentials" CONSTRAINT "campaign_user_credentials_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 Triggers:
@@ -1229,6 +1247,7 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "campaign_specs" CONSTRAINT "campaign_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "campaign_user_credentials" CONSTRAINT "campaign_user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
