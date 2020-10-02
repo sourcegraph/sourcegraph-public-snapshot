@@ -8,7 +8,7 @@ export const cncf: RepogroupMetadata = {
     description: (
         <>
             Search the{' '}
-            <a href="https://landscape.cncf.io/project=hosted" target="_blank" rel="noopener noreferrer">
+            <a href="https://landscape.cncf.io/format=card-mode&project=hosted" target="_blank" rel="noopener noreferrer">
                 67 CNCF projects
             </a>
             .
