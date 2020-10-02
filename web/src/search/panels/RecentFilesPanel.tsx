@@ -1,22 +1,31 @@
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '../../../../shared/src/components/Link'
+import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
+import { ShowMoreButton } from './ShowMoreButton'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { Link } from '../../../../shared/src/components/Link'
 
-export const RecentFilesPanel: React.FunctionComponent<{
+interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
-}> = ({ className, authenticatedUser, fetchRecentFileViews }) => {
+}
+
+export const RecentFilesPanel: React.FunctionComponent<Props> = ({
+    className,
+    authenticatedUser,
+    fetchRecentFileViews,
+    telemetryService,
+}) => {
     const pageSize = 20
 
-    const [itemsToLoad, setItmesToLoad] = useState(pageSize)
+    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
     const recentFiles = useObservable(
         useMemo(() => fetchRecentFileViews(authenticatedUser?.id || '', itemsToLoad), [
             authenticatedUser?.id,
@@ -35,43 +44,46 @@ export const RecentFilesPanel: React.FunctionComponent<{
         }
     }, [recentFiles])
 
-    const loadingDisplay = (
-        <div className="d-flex justify-content-center align-items-center panel-container__empty-container">
-            <div className="icon-inline">
-                <LoadingSpinner />
-            </div>
-            Loading recent files
-        </div>
-    )
+    useEffect(() => {
+        // Only log the first load (when items to load is equal to the page size)
+        if (processedResults && itemsToLoad === pageSize) {
+            telemetryService.log('RecentFilesPanelLoaded', { empty: processedResults.length === 0 })
+        }
+    }, [processedResults, telemetryService, itemsToLoad])
+
+    const logFileClicked = useCallback(() => telemetryService.log('RecentFilesPanelFileClicked'), [telemetryService])
+
+    const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container align-items-center">
+        <div className="panel-container__empty-container align-items-center text-muted">
             <FileCodeIcon className="mb-2" size="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
         </div>
     )
 
+    function loadMoreItems(): void {
+        setItemsToLoad(current => current + pageSize)
+        telemetryService.log('RecentFilesPanelShowMoreClicked')
+    }
+
     const contentDisplay = (
         <div>
-            <small className="mb-1">File</small>
+            <div className="mb-1 mt-2">
+                <small>File</small>
+            </div>
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
                     <dd key={index} className="text-monospace test-recent-files-item">
-                        <Link to={recentFile.url}>
+                        <Link to={recentFile.url} onClick={logFileClicked}>
                             {recentFile.repoName} › {recentFile.filePath}
                         </Link>
                     </dd>
                 ))}
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
-                <div className="text-center">
-                    <button
-                        type="button"
-                        className="btn btn-secondary test-recent-files-panel-show-more"
-                        onClick={() => setItmesToLoad(current => current + pageSize)}
-                    >
-                        Show more
-                    </button>
+                <div className="test-recent-files-show-more-container">
+                    <ShowMoreButton onClick={loadMoreItems} className="test-recent-files-panel-show-more" />
                 </div>
             )}
         </div>

@@ -17,16 +17,35 @@ func TestMigrations(t *testing.T) {
 	// Setup a global test database
 	dbtesting.SetupGlobalTestDB(t)
 
-	m, err := dbutil.NewMigrate(dbconn.Global, "")
-	if err != nil {
-		t.Errorf("error constructing migrations: %s", err)
+	migrate := func() {
+		for _, databaseName := range dbutil.DatabaseNames {
+			if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+				t.Errorf("error running initial migrations: %s", err)
+			}
+		}
 	}
-	// Run all down migrations then up migrations again to ensure there are no SQL errors.
-	if err := m.Down(); err != nil {
-		t.Errorf("error running down migrations: %s", err)
-	}
-	if err := dbutil.DoMigrate(m); err != nil {
-		t.Errorf("error running up migrations: %s", err)
+
+	for _, databaseName := range dbutil.DatabaseNames {
+		t.Run(databaseName, func(t *testing.T) {
+			// Dropping a squash schema _all_ the way down just drops the entire public
+			// schema. Because we have a "combined" database that runs migrations for
+			// multiple disjoint schemas in development environments, migrating all the
+			// way down will drop all tables from all schemas. This loop runs such down
+			// migrations, so we prep our tests by re-migrating up on each iteration.
+			migrate()
+
+			m, err := dbutil.NewMigrate(dbconn.Global, databaseName)
+			if err != nil {
+				t.Errorf("error constructing migrations: %s", err)
+			}
+			// Run all down migrations then up migrations again to ensure there are no SQL errors.
+			if err := m.Down(); err != nil {
+				t.Errorf("error running down migrations: %s", err)
+			}
+			if err := dbutil.DoMigrate(m); err != nil {
+				t.Errorf("error running up migrations: %s", err)
+			}
+		})
 	}
 }
 

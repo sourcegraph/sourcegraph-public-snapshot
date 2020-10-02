@@ -74,6 +74,24 @@ func init() {
 	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
 }
 
+// For severity field, see https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+func LogEntryLevelString(l log15.Lvl) string {
+	switch l {
+	case log15.LvlDebug:
+		return "DEBUG"
+	case log15.LvlInfo:
+		return "INFO"
+	case log15.LvlWarn:
+		return "WARNING"
+	case log15.LvlError:
+		return "ERROR"
+	case log15.LvlCrit:
+		return "CRITICAL"
+	default:
+		return "INVALID"
+	}
+}
+
 func Init(options ...Option) {
 	opts := &Options{}
 	for _, setter := range options {
@@ -86,6 +104,13 @@ func Init(options ...Option) {
 	switch env.LogFormat {
 	case "condensed":
 		handler = log15.StreamHandler(os.Stderr, log15.FormatFunc(condensedFormat))
+	case "json":
+		// for these uses: https://cloud.google.com/run/docs/logging#log-resource
+		jsonFormatHandler := log15.StreamHandler(os.Stderr, log15.JsonFormat())
+		handler = log15.FuncHandler(func(r *log15.Record) error {
+			r.Ctx = append(r.Ctx, "severity", LogEntryLevelString(r.Lvl))
+			return jsonFormatHandler.Log(r)
+		})
 	case "logfmt":
 		fallthrough
 	default:

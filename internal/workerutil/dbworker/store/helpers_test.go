@@ -21,7 +21,7 @@ func (r TestWorkRecord) RecordID() int {
 }
 
 func testStore(options StoreOptions) *store {
-	return newStore(basestore.NewHandleWithDB(dbconn.Global), options)
+	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options)
 }
 
 type TestRecord struct {

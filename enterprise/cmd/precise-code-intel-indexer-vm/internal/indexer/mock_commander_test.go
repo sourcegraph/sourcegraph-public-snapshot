@@ -22,7 +22,7 @@ type MockCommander struct {
 func NewMockCommander() *MockCommander {
 	return &MockCommander{
 		RunFunc: &CommanderRunFunc{
-			defaultHook: func(context.Context, string, ...string) error {
+			defaultHook: func(context.Context, ...string) error {
 				return nil
 			},
 		},
@@ -42,23 +42,23 @@ func NewMockCommanderFrom(i Commander) *MockCommander {
 // CommanderRunFunc describes the behavior when the Run method of the parent
 // MockCommander instance is invoked.
 type CommanderRunFunc struct {
-	defaultHook func(context.Context, string, ...string) error
-	hooks       []func(context.Context, string, ...string) error
+	defaultHook func(context.Context, ...string) error
+	hooks       []func(context.Context, ...string) error
 	history     []CommanderRunFuncCall
 	mutex       sync.Mutex
 }
 
 // Run delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCommander) Run(v0 context.Context, v1 string, v2 ...string) error {
-	r0 := m.RunFunc.nextHook()(v0, v1, v2...)
-	m.RunFunc.appendCall(CommanderRunFuncCall{v0, v1, v2, r0})
+func (m *MockCommander) Run(v0 context.Context, v1 ...string) error {
+	r0 := m.RunFunc.nextHook()(v0, v1...)
+	m.RunFunc.appendCall(CommanderRunFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Run method of the
 // parent MockCommander instance is invoked and the hook queue is empty.
-func (f *CommanderRunFunc) SetDefaultHook(hook func(context.Context, string, ...string) error) {
+func (f *CommanderRunFunc) SetDefaultHook(hook func(context.Context, ...string) error) {
 	f.defaultHook = hook
 }
 
@@ -66,7 +66,7 @@ func (f *CommanderRunFunc) SetDefaultHook(hook func(context.Context, string, ...
 // Run method of the parent MockCommander instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *CommanderRunFunc) PushHook(hook func(context.Context, string, ...string) error) {
+func (f *CommanderRunFunc) PushHook(hook func(context.Context, ...string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -75,7 +75,7 @@ func (f *CommanderRunFunc) PushHook(hook func(context.Context, string, ...string
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CommanderRunFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, ...string) error {
+	f.SetDefaultHook(func(context.Context, ...string) error {
 		return r0
 	})
 }
@@ -83,12 +83,12 @@ func (f *CommanderRunFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CommanderRunFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, ...string) error {
+	f.PushHook(func(context.Context, ...string) error {
 		return r0
 	})
 }
 
-func (f *CommanderRunFunc) nextHook() func(context.Context, string, ...string) error {
+func (f *CommanderRunFunc) nextHook() func(context.Context, ...string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -124,12 +124,9 @@ type CommanderRunFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is a slice containing the values of the variadic arguments
+	// Arg1 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg2 []string
+	Arg1 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -141,11 +138,11 @@ type CommanderRunFuncCall struct {
 // a slice of four, not two.
 func (c CommanderRunFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
+	for _, val := range c.Arg1 {
 		trailing = append(trailing, val)
 	}
 
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+	return append([]interface{}{c.Arg0}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this

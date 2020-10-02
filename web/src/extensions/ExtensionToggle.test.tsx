@@ -22,7 +22,8 @@ describe('ExtensionToggle', () => {
             renderer
                 .create(
                     <ExtensionToggle
-                        extension={EXTENSION}
+                        extensionID={EXTENSION.id}
+                        enabled={false}
                         settingsCascade={{ final: { extensions: {} }, subjects: [SUBJECT] }}
                         platformContext={NOOP_PLATFORM_CONTEXT}
                     />
@@ -36,7 +37,8 @@ describe('ExtensionToggle', () => {
             renderer
                 .create(
                     <ExtensionToggle
-                        extension={EXTENSION}
+                        extensionID={EXTENSION.id}
+                        enabled={true}
                         settingsCascade={{ final: { extensions: { 'x/y': true } }, subjects: [SUBJECT] }}
                         platformContext={NOOP_PLATFORM_CONTEXT}
                     />
@@ -50,7 +52,8 @@ describe('ExtensionToggle', () => {
             renderer
                 .create(
                     <ExtensionToggle
-                        extension={EXTENSION}
+                        extensionID={EXTENSION.id}
+                        enabled={false}
                         settingsCascade={{ final: { extensions: { 'x/y': false } }, subjects: [SUBJECT] }}
                         platformContext={NOOP_PLATFORM_CONTEXT}
                     />

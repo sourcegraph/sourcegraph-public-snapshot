@@ -6,10 +6,6 @@ USER root
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-# For local development
-WORKDIR /
-COPY .ctags.d /.ctags.d
-
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d as libsqlite3-pcre
 # hadolint ignore=DL3002
 USER root
@@ -45,15 +41,6 @@ COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
 ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 # hadolint ignore=DL3018
 RUN apk --no-cache add pcre-dev
-
-# universal-ctags doesn't support some popular languages out of the box (Scala,
-# Swift, and Haskell, to name a few). However, you can add language support by
-# providing regexes on the command line or in a configuration file.
-# universal-ctags looks in the current working directory for config files during
-# initialization:
-# https://github.com/universal-ctags/ctags/blob/1b747b38589f7a1c98ac9fe0a0b8b174dd476050/docs/optlib.rst#preload-option-file
-WORKDIR /
-COPY .ctags.d /.ctags.d
 
 ENV CACHE_DIR=/mnt/cache/symbols
 RUN mkdir -p ${CACHE_DIR}

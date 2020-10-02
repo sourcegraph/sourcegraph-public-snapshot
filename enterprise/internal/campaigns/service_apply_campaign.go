@@ -297,7 +297,8 @@ func (r *changesetRewirer) Rewire() (err error) {
 			}
 		} else {
 			// But if we already have a changeset in the given repository with
-			// the given branch, we need to update it to have the new spec:
+			// the given branch, we need to update it to have the new spec
+			// and possibly re-attach it to the campaign:
 			if err = r.updateChangesetToNewSpec(c, spec); err != nil {
 				return err
 			}
@@ -378,6 +379,9 @@ func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
 
+	// Ensure that the changeset is attached to the campaign
+	c.CampaignIDs = append(c.CampaignIDs, r.campaign.ID)
+
 	// Copy over diff stat from the new spec.
 	diffStat := spec.DiffStat()
 	c.SetDiffStat(&diffStat)
@@ -399,10 +403,8 @@ func (r *changesetRewirer) loadAssociations() (err error) {
 		return err
 	}
 
-	// Load all Changesets attached to this Campaign.
-	r.changesets, _, err = r.tx.ListChangesets(r.ctx, ListChangesetsOpts{
-		CampaignID: r.campaign.ID,
-	})
+	// Load all Changesets attached to this campaign, or owned by this campaign but detached.
+	r.changesets, err = r.tx.ListChangesetsAttachedOrOwnedByCampaign(r.ctx, r.campaign.ID)
 	if err != nil {
 		return err
 	}
@@ -457,6 +459,7 @@ func (r *changesetRewirer) indexAssociations() (err error) {
 			r.changesetsByRepoHeadRef[k] = c
 		}
 	}
+
 	return nil
 }
 

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -13,19 +15,24 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID             int        `json:"id"`
-	Commit         string     `json:"commit"`
-	QueuedAt       time.Time  `json:"queuedAt"`
-	State          string     `json:"state"`
-	FailureMessage *string    `json:"failureMessage"`
-	StartedAt      *time.Time `json:"startedAt"`
-	FinishedAt     *time.Time `json:"finishedAt"`
-	ProcessAfter   *time.Time `json:"processAfter"`
-	NumResets      int        `json:"numResets"`
-	NumFailures    int        `json:"numFailures"`
-	RepositoryID   int        `json:"repositoryId"`
-	RepositoryName string     `json:"repositoryName"`
-	Rank           *int       `json:"placeInQueue"`
+	ID             int          `json:"id"`
+	Commit         string       `json:"commit"`
+	QueuedAt       time.Time    `json:"queuedAt"`
+	State          string       `json:"state"`
+	FailureMessage *string      `json:"failureMessage"`
+	StartedAt      *time.Time   `json:"startedAt"`
+	FinishedAt     *time.Time   `json:"finishedAt"`
+	ProcessAfter   *time.Time   `json:"processAfter"`
+	NumResets      int          `json:"numResets"`
+	NumFailures    int          `json:"numFailures"`
+	RepositoryID   int          `json:"repositoryId"`
+	RepositoryName string       `json:"repositoryName"`
+	DockerSteps    []DockerStep `json:"docker_steps"`
+	Root           string       `json:"root"`
+	Indexer        string       `json:"indexer"`
+	IndexerArgs    []string     `json:"indexer_args"`
+	Outfile        string       `json:"outfile"`
+	Rank           *int         `json:"placeInQueue"`
 }
 
 func (i Index) RecordID() int {
@@ -37,7 +44,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	var indexes []Index
 	for rows.Next() {
@@ -55,6 +62,11 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.NumFailures,
 			&index.RepositoryID,
 			&index.RepositoryName,
+			pq.Array(&index.DockerSteps),
+			&index.Root,
+			&index.Indexer,
+			pq.Array(&index.IndexerArgs),
+			&index.Outfile,
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -87,7 +99,7 @@ func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, e
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
-	return scanFirstIndex(s.query(ctx, sqlf.Sprintf(`
+	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			u.id,
 			u.commit,
@@ -101,6 +113,11 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.num_failures,
 			u.repository_id,
 			u.repository_name,
+			u.docker_steps,
+			u.root,
+			u.indexer,
+			u.indexer_args,
+			u.outfile,
 			s.rank
 		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
@@ -145,7 +162,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	count, _, err := scanFirstInt(tx.query(
+	count, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
@@ -153,7 +170,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		return nil, 0, err
 	}
 
-	indexes, err := scanIndexes(tx.query(
+	indexes, err := scanIndexes(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
 			SELECT
@@ -169,6 +186,11 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.num_failures,
 				u.repository_id,
 				u.repository_name,
+				u.docker_steps,
+				u.root,
+				u.indexer,
+				u.indexer_args,
+				u.outfile,
 				s.rank
 			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
@@ -206,7 +228,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 
 // IndexQueueSize returns the number of indexes in the queued state.
 func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
-	count, _, err := scanFirstInt(s.query(
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name WHERE state = 'queued'`),
 	))
@@ -216,9 +238,9 @@ func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
-	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) WHERE EXISTS (
-			SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s
+			SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
 			UNION
 			SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 		)
@@ -229,16 +251,30 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 
 // InsertIndex inserts a new index and returns its identifier.
 func (s *store) InsertIndex(ctx context.Context, index Index) (int, error) {
-	id, _, err := scanFirstInt(s.query(
+	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (
+				state,
 				commit,
 				repository_id,
-				state
-			) VALUES (%s, %s, %s)
+				docker_steps,
+				root,
+				indexer,
+				indexer_args,
+				outfile
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
-		`, index.Commit, index.RepositoryID, index.State),
+		`,
+			index.State,
+			index.Commit,
+			index.RepositoryID,
+			pq.Array(index.DockerSteps),
+			index.Root,
+			index.Indexer,
+			pq.Array(index.IndexerArgs),
+			index.Outfile,
+		),
 	))
 
 	return id, err
@@ -246,7 +282,7 @@ func (s *store) InsertIndex(ctx context.Context, index Index) (int, error) {
 
 // MarkIndexComplete updates the state of the index to complete.
 func (s *store) MarkIndexComplete(ctx context.Context, id int) (err error) {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
@@ -255,7 +291,7 @@ func (s *store) MarkIndexComplete(ctx context.Context, id int) (err error) {
 
 // MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
 func (s *store) MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error) {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
 		WHERE id = %s
@@ -275,6 +311,11 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
+	sqlf.Sprintf(`u.docker_steps`),
+	sqlf.Sprintf(`u.root`),
+	sqlf.Sprintf(`u.indexer`),
+	sqlf.Sprintf(`u.indexer_args`),
+	sqlf.Sprintf(`u.outfile`),
 	sqlf.Sprintf("NULL"),
 }
 
@@ -304,7 +345,7 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	_, exists, err := scanFirstInt(tx.query(
+	_, exists, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
 			DELETE FROM lsif_indexes
@@ -322,7 +363,7 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
-	return scanCounts(s.query(ctx, sqlf.Sprintf(`
+	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(`
 		WITH deleted_repos AS (
 			SELECT r.id AS id FROM repo r
 			WHERE

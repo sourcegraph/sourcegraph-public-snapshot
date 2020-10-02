@@ -5,7 +5,7 @@ import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
 import { readFile, mkdir } from 'mz/fs'
 import { Polly, PollyServer } from '@pollyjs/core'
-import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
+import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
 import { first, timeoutWith } from 'rxjs/operators'
@@ -15,7 +15,6 @@ import * as prettier from 'prettier'
 import { keyExistsIn } from '../../util/types'
 import { IGraphQLResponseError } from '../../graphql/schema'
 import { readEnvironmentBoolean } from '../utils'
-import { ResourceType } from 'puppeteer'
 import * as mime from 'mime-types'
 import { asError } from '../../util/errors'
 
@@ -23,7 +22,7 @@ import { asError } from '../../util/errors'
 util.inspect.defaultOptions.depth = 0
 util.inspect.defaultOptions.maxStringLength = 80
 
-Polly.register(PuppeteerAdapter as any)
+Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
 
 const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../ui/assets')
@@ -96,32 +95,21 @@ export const createSharedIntegrationTestContext = async <
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
-    await driver.page.setRequestInterception(true)
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
     }
-    const requestResourceTypes: ResourceType[] = [
-        'xhr',
-        'fetch',
-        'document',
-        'script',
-        'stylesheet',
-        'image',
-        'font',
-        'other', // Favicon
-    ]
+    const cdpAdapterOptions: CdpAdapterOptions = {
+        page: driver.page,
+    }
     const polly = new Polly(snakeCase(currentTest.title), {
-        adapters: ['puppeteer'],
+        adapters: [CdpAdapter.id],
         adapterOptions: {
-            puppeteer: {
-                page: driver.page,
-                requestResourceTypes,
-            },
+            [CdpAdapter.id]: cdpAdapterOptions,
         },
-        persister: 'fs',
+        persister: FSPersister.id,
         persisterOptions: {
-            fs: {
+            [FSPersister.id]: {
                 recordingsDir: recordingsDirectory,
             },
         },

@@ -64,12 +64,14 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
 
-	m, err := dbutil.NewMigrate(testDB, dsn)
-	if err != nil {
-		t.Fatalf("failed to construct migrations: %s", err)
-	}
-	if err = dbutil.DoMigrate(m); err != nil {
-		t.Fatalf("failed to apply migrations: %s", err)
+	for _, databaseName := range dbutil.DatabaseNames {
+		m, err := dbutil.NewMigrate(testDB, databaseName)
+		if err != nil {
+			t.Fatalf("failed to construct migrations: %s", err)
+		}
+		if err = dbutil.DoMigrate(m); err != nil {
+			t.Fatalf("failed to apply migrations: %s", err)
+		}
 	}
 
 	t.Cleanup(func() {

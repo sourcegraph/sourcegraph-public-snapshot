@@ -19,7 +19,6 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -45,7 +44,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	store := store.NewObserved(store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global)), observationContext)
+	store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	commitUpdater := commits.NewUpdater(store, codeintelgitserver.DefaultClient)
 	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient, commitUpdater), observationContext)

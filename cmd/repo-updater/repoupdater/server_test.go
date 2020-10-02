@@ -10,22 +10,21 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -37,14 +36,6 @@ import (
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
-	}
-	os.Exit(m.Run())
-}
 
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
@@ -808,8 +799,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 
 				clock := repos.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
-					Store: store,
-					Now:   clock.Now,
+					Now: clock.Now,
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
@@ -820,8 +810,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					syncer.Store = store
-					_ = syncer.Sync(ctx)
+					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
 				}
 
 				s := &Server{
@@ -1252,8 +1241,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 
 					clock := clock
 					syncer := &repos.Syncer{
-						Store: store,
-						Now:   clock.Now,
+						Now: clock.Now,
 					}
 					s := &Server{Syncer: syncer, Store: store}
 					if tc.githubDotComSource != nil {

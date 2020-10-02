@@ -4,12 +4,18 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
 <RepositoriesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -57,19 +63,14 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -78,9 +79,10 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -96,9 +98,10 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -122,18 +125,20 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -142,14 +147,16 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -165,14 +172,16 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -198,12 +207,18 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
 <RepositoriesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -251,19 +266,14 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -272,9 +282,10 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -290,9 +301,10 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -308,9 +320,10 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-two"
           >
             <span
@@ -325,17 +338,10 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </span>
           </AnchorLink>
         </dd>
-        <div
-          className="text-center"
-        >
-          <button
-            className="btn btn-secondary test-repositories-panel-show-more"
-            onClick={[Function]}
-            type="button"
-          >
-            Show more
-          </button>
-        </div>
+        <ShowMoreButton
+          className="test-repositories-panel-show-more"
+          onClick={[Function]}
+        />
       </div>
     }
     state="populated"
@@ -345,18 +351,20 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -365,14 +373,16 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -388,14 +398,16 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -411,14 +423,16 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-two-2"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-two"
             >
               <a
                 href="/search?q=repo:test-two"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -433,17 +447,22 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
               </a>
             </AnchorLink>
           </dd>
-          <div
-            className="text-center"
+          <ShowMoreButton
+            className="test-repositories-panel-show-more"
+            onClick={[Function]}
           >
-            <button
-              className="btn btn-secondary test-repositories-panel-show-more"
-              onClick={[Function]}
-              type="button"
+            <div
+              className="text-center py-3"
             >
-              Show more
-            </button>
-          </div>
+              <button
+                className="btn btn-link test-repositories-panel-show-more"
+                onClick={[Function]}
+                type="button"
+              >
+                Show more
+              </button>
+            </div>
+          </ShowMoreButton>
         </div>
       </div>
     </div>
@@ -456,12 +475,18 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
   authenticatedUser={null}
   className=""
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -509,19 +534,14 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -530,9 +550,10 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -548,9 +569,10 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -566,9 +588,10 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-two"
           >
             <span
@@ -584,9 +607,10 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-three"
           >
             <span
@@ -602,9 +626,10 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:r:test-four"
           >
             <span
@@ -620,9 +645,10 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test-five"
           >
             <span
@@ -646,18 +672,20 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -666,14 +694,16 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -689,14 +719,16 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -712,14 +744,16 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-two-2"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-two"
             >
               <a
                 href="/search?q=repo:test-two"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -735,14 +769,16 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-three-3"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-three"
             >
               <a
                 href="/search?q=repo:test-three"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -758,14 +794,16 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="r:test-four-4"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:r:test-four"
             >
               <a
                 href="/search?q=repo:r:test-four"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -781,14 +819,16 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-five-5"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test-five"
             >
               <a
                 href="/search?q=repo:test-five"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -814,12 +854,18 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
 <RepositoriesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="repositories-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -867,19 +913,14 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recently searched repositories
-      </div>
+      <LoadingPanelView
+        text="Loading recently searched repositories"
+      />
     }
     populatedContent={
-      <div>
+      <div
+        className="mt-2"
+      >
         <div
           className="d-flex mb-1"
         >
@@ -888,9 +929,10 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           </small>
         </div>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:test"
           >
             <span
@@ -906,9 +948,10 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
           </AnchorLink>
         </dd>
         <dd
-          className="text-monospace"
+          className="text-monospace text-break"
         >
           <AnchorLink
+            onClick={[Function]}
             to="/search?q=repo:sourcegraph"
           >
             <span
@@ -932,18 +975,20 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
       className="repositories-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Repositories
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
-        <div>
+        <div
+          className="mt-2"
+        >
           <div
             className="d-flex mb-1"
           >
@@ -952,14 +997,16 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             </small>
           </div>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="test-0"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:test"
             >
               <a
                 href="/search?q=repo:test"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"
@@ -975,14 +1022,16 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             </AnchorLink>
           </dd>
           <dd
-            className="text-monospace"
+            className="text-monospace text-break"
             key="sourcegraph-1"
           >
             <AnchorLink
+              onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
               <a
                 href="/search?q=repo:sourcegraph"
+                onClick={[Function]}
               >
                 <span
                   className="search-keyword"

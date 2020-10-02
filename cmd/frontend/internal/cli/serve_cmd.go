@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
-	"github.com/sourcegraph/sourcegraph/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -108,7 +108,7 @@ func InitDB() error {
 			return nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, ""); err != nil {
+		if err := dbconn.MigrateDB(dbconn.Global, "frontend"); err != nil {
 			return err
 		}
 
@@ -208,7 +208,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	err := secrets.Init()
+	err := secret.Init()
 	if err != nil {
 		return err
 	}
