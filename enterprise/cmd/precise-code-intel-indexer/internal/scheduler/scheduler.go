@@ -107,7 +107,7 @@ func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.In
 		DockerSteps:  []store.DockerStep{},
 		Root:         "",
 		Indexer:      "sourcegraph/lsif-go:latest",
-		IndexerArgs:  []string{},
+		IndexerArgs:  []string{"lsif-go", "--no-progress"},
 		Outfile:      "",
 	})
 	if err != nil {
