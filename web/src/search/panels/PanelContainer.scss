@@ -45,13 +45,13 @@
         .text-monospace .btn-link {
             font-size: 0.75rem !important;
         }
+    }
 
-        &__footer {
-            background: rgba($color-bg-2, 0.4);
+    &__footer {
+        background: rgba($color-bg-2, 0.4);
 
-            .theme-light & {
-                background: rgba($color-light-bg-2, 0.4);
-            }
+        .theme-light & {
+            background: rgba($color-light-bg-2, 0.4);
         }
     }
 }
