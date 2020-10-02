@@ -12,7 +12,6 @@
         }
     }
 
-
     &__action-button-group {
         margin-bottom: 0.25rem;
     }
@@ -39,16 +38,16 @@
         overflow-y: auto;
         overflow-x: hidden;
 
-        .text-monospace{
+        .text-monospace {
             font-size: 0.75rem !important;
         }
 
-        .text-monospace .btn-link{
+        .text-monospace .btn-link {
             font-size: 0.75rem !important;
         }
 
         .footer {
-            background: rgba($color-light-bg-2,.4);
+            background: rgba($color-light-bg-2, 0.4);
         }
     }
 }

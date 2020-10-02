@@ -9,4 +9,3 @@ export const LoadingPanelView: React.FunctionComponent<{ text: string }> = ({ te
         <span className="text-muted">{text}</span>
     </div>
 )
-
