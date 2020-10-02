@@ -215,7 +215,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/cncf',
-        render: props => <RepogroupPage {...props} repogroupMetadata={cncf} lowProfile={true} />,
+        render: props => <RepogroupPage {...props} repogroupMetadata={cncf} />,
         condition: props => window.context.sourcegraphDotComMode,
     },
     {

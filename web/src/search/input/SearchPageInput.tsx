@@ -68,7 +68,9 @@ interface Props
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     /** A query fragment to be appended to queries. This will not appear in the input until a search is submitted. */
-    hiddenQuerySuffix?: string
+    hiddenQueryPrefix?: string
+    /** Don't show the version contexts dropdown. */
+    hideVersionContexts?: boolean
     autoFocus?: boolean
 }
 
@@ -238,8 +240,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
             event?.preventDefault()
             submitSearch({
                 ...props,
-                query: props.hiddenQuerySuffix
-                    ? `${userQueryState.query} ${props.hiddenQuerySuffix}`
+                query: props.hiddenQueryPrefix
+                    ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                     : userQueryState.query,
                 source: 'home',
                 searchParameters: tourWasActive ? [{ key: 'onboardingTour', value: 'true' }] : undefined,
@@ -265,15 +267,17 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             {props.splitSearchModes && (
                                 <SearchModeToggle {...props} interactiveSearchMode={props.interactiveSearchMode} />
                             )}
-                            <VersionContextDropdown
-                                history={props.history}
-                                caseSensitive={props.caseSensitive}
-                                patternType={props.patternType}
-                                navbarSearchQuery={userQueryState.query}
-                                versionContext={props.versionContext}
-                                setVersionContext={props.setVersionContext}
-                                availableVersionContexts={props.availableVersionContexts}
-                            />
+                            {!props.hideVersionContexts && (
+                                <VersionContextDropdown
+                                    history={props.history}
+                                    caseSensitive={props.caseSensitive}
+                                    patternType={props.patternType}
+                                    navbarSearchQuery={userQueryState.query}
+                                    versionContext={props.versionContext}
+                                    setVersionContext={props.setVersionContext}
+                                    availableVersionContexts={props.availableVersionContexts}
+                                />
+                            )}
                             <LazyMonacoQueryInput
                                 {...props}
                                 hasGlobalQueryBehavior={true}

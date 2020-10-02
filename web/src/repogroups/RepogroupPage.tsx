@@ -58,7 +58,6 @@ export interface RepogroupPageProps
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    lowProfile?: boolean
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
@@ -97,7 +96,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 text={props.repogroupMetadata.title}
             />
             <div className="repogroup-page__subheading">
-                {props.lowProfile ? (
+                {props.repogroupMetadata.lowProfile ? (
                     <>{props.repogroupMetadata.description}</>
                 ) : (
                     <span className="text-monospace">
@@ -107,13 +106,18 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 )}
             </div>
             <div className="repogroup-page__container">
-                {props.lowProfile ? (
-                    <SearchPageInput {...props} hiddenQuerySuffix={repogroupQuery} source="repogroupPage" />
+                {props.repogroupMetadata.lowProfile ? (
+                    <SearchPageInput
+                        {...props}
+                        hiddenQueryPrefix={repogroupQuery}
+                        source="repogroupPage"
+                        hideVersionContexts={true}
+                    />
                 ) : (
                     <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
                 )}
             </div>
-            {!props.lowProfile && (
+            {!props.repogroupMetadata.lowProfile && (
                 <div className="row">
                     <div className="repogroup-page__column col-xs-12 col-lg-7">
                         <p className="repogroup-page__content-description h5 font-weight-normal mb-4">

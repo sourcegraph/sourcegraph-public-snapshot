@@ -8,8 +8,8 @@ export const cncf: RepogroupMetadata = {
     description: (
         <>
             Search the{' '}
-            <a href="https://landscape.cncf.io/format=card-mode&project=hosted" target="_blank" rel="noopener noreferrer">
-                67 CNCF projects
+            <a href="https://landscape.cncf.io/project=hosted" target="_blank" rel="noopener noreferrer">
+                CNCF projects
             </a>
             .
         </>
@@ -17,4 +17,5 @@ export const cncf: RepogroupMetadata = {
     examples: [],
     homepageDescription: 'Search CNCF projects',
     homepageIcon: 'https://github.com/cncf/artwork/blob/master/other/cncf/icon/color/cncf-icon-color.png?raw=true',
+    lowProfile: true,
 }
