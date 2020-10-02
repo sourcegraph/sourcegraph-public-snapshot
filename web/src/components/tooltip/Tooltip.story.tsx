@@ -3,7 +3,9 @@ import React, { useCallback } from 'react'
 import { WebStory } from '../WebStory'
 import { Tooltip } from './Tooltip'
 
-const { add } = storiesOf('web/Tooltip', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
+const { add } = storiesOf('web/Tooltip', module).addDecorator(story => (
+    <WebStory>{() => <div className="p-5">{story()}</div>}</WebStory>
+))
 
 add(
     'Hover',
