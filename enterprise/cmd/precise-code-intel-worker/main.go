@@ -91,7 +91,7 @@ func mustInitializeStore() store.Store {
 	})
 
 	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
-		log.Fatalf("failed to connect to database: %s", err)
+		log.Fatalf("failed to connect to frontend database: %s", err)
 	}
 
 	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
@@ -107,7 +107,7 @@ func mustInitializeCodeIntelDatabase() *sql.DB {
 
 	db, err := dbconn.New(postgresDSN, "_codeintel")
 	if err != nil {
-		log.Fatalf("failed to connect to database: %s", err)
+		log.Fatalf("failed to connect to codeintel database: %s", err)
 	}
 
 	return db
