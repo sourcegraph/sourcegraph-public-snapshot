@@ -15,7 +15,8 @@ import { search } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { parseSearchURL } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
+import { SearchPatternType } from '../graphql-operations'
 
 interface SearchConsolePageProps
     extends ThemeProps,
@@ -35,47 +36,49 @@ interface SearchConsolePageProps
     location: H.Location
 }
 
+const options: Monaco.editor.IEditorOptions = {
+    readOnly: false,
+    minimap: {
+        enabled: false,
+    },
+    lineNumbers: 'off',
+    fontSize: 14,
+    glyphMargin: false,
+    overviewRulerBorder: false,
+    rulers: [],
+    overviewRulerLanes: 0,
+    wordBasedSuggestions: false,
+    quickSuggestions: false,
+    fixedOverflowWidgets: true,
+    renderLineHighlight: 'none',
+    contextmenu: false,
+    links: false,
+    // Display the cursor as a 1px line.
+    cursorStyle: 'line',
+    cursorWidth: 1,
+}
+
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const searchQueries = useMemo(() => new BehaviorSubject<string>(parseSearchURL(location.search).query || ''), [])
+    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(location.search) || ''), [])
+    const patternType = useMemo(() => parseSearchURLPatternType(location.search) || SearchPatternType.structural, [])
     const [nextSearch, resultsOrError] = useEventObservable<'loading' | GQL.ISearchResults | ErrorLike>(
         useCallback(
             searchRequests =>
                 searchRequests.pipe(
-                    switchMapTo(searchQueries.pipe(first())),
+                    switchMapTo(searchQuery.pipe(first())),
                     tap(query => props.history.push('/search/console?q=' + encodeURI(query))),
                     switchMap(query =>
                         concat(
                             of('loading' as const),
-                            search(query, 'V2', props.patternType, undefined, props.extensionsController.extHostAPI)
+                            search(query, 'V2', patternType, undefined, props.extensionsController.extHostAPI)
                         )
                     )
                 ),
-            [searchQueries, props.patternType, props.extensionsController, props.history]
+            [searchQuery, patternType, props.extensionsController, props.history]
         )
     )
     const [allExpanded, setAllExpanded] = useState(false)
 
-    const options: Monaco.editor.IEditorOptions = {
-        readOnly: false,
-        minimap: {
-            enabled: false,
-        },
-        lineNumbers: 'off',
-        fontSize: 14,
-        glyphMargin: false,
-        overviewRulerBorder: false,
-        rulers: [],
-        overviewRulerLanes: 0,
-        wordBasedSuggestions: false,
-        quickSuggestions: false,
-        fixedOverflowWidgets: true,
-        renderLineHighlight: 'none',
-        contextmenu: false,
-        links: false,
-        // Display the cursor as a 1px line.
-        cursorStyle: 'line',
-        cursorWidth: 1,
-    }
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
     useEffect(() => {
         if (!monacoInstance) {
@@ -83,12 +86,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }
         const subscription = addSourcegraphSearchCodeIntelligence(
             monacoInstance,
-            searchQueries,
+            searchQuery,
             of(props.patternType),
             of(props.globbing)
         )
         return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQueries, props.patternType, props.globbing])
+    }, [monacoInstance, searchQuery, props.patternType, props.globbing])
     const [editorInstance, setEditorInstance] = useState<Monaco.editor.IStandaloneCodeEditor>()
     useEffect(() => {
         if (!editorInstance) {
@@ -96,22 +99,22 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }
         const disposable = editorInstance.onDidChangeModelContent(() => {
             const query = editorInstance.getValue()
-            searchQueries.next(query)
+            searchQuery.next(query)
         })
         return () => disposable.dispose()
-    }, [editorInstance, searchQueries, props.history])
+    }, [editorInstance, searchQuery, props.history])
 
     const calculateCount = useCallback((): number => {
         // This function can only get called if the results were successfully loaded,
         // so casting is the right thing to do here
         const results = resultsOrError as GQL.ISearchResults
 
-        const query = searchQueries.value
+        const query = searchQuery.value
         if (/count:(\d+)/.test(query)) {
             return Math.max(results.matchCount * 2, 1000)
         }
         return Math.max(results.matchCount * 2 || 0, 1000)
-    }, [resultsOrError, searchQueries])
+    }, [resultsOrError, searchQuery])
 
     const showMoreResults = useCallback((): void => {
         // Requery with an increased max result count.
@@ -126,9 +129,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         } else {
             query = `${query} count:${count}`
         }
-        searchQueries.next(query)
+        searchQuery.next(query)
         nextSearch()
-    }, [calculateCount, editorInstance, searchQueries, nextSearch])
+    }, [calculateCount, editorInstance, searchQuery, nextSearch])
 
     const onExpandAllResultsToggle = useCallback((): void => {
         setAllExpanded(allExpanded => {
@@ -157,7 +160,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         height={600}
                         editorWillMount={setMonacoInstance}
                         onEditorCreated={setEditorInstance}
-                        value={searchQueries.value}
+                        value={searchQuery.value}
                     />
                 </div>
                 <div className="flex-1 p-1 search-console-page__results">

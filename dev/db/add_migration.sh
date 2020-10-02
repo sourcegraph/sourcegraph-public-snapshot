@@ -1,12 +1,18 @@
 #!/bin/bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../migrations/frontend
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../migrations
 set -e
 
-if [ -z "$1" ]; then
-  echo "USAGE: $0 <name>"
+if [ -z "$2" ]; then
+  echo "USAGE: $0 <db_name> <name>"
   exit 1
 fi
+
+if [ ! -d "$1" ]; then
+  echo "Unknown database '$1'"
+  exit 1
+fi
+pushd "$1" >/dev/null || exit 1
 
 # This simulates what "migrate create -ext sql -digits 10 -seq" does.
 awkcmd=$(
@@ -37,5 +43,5 @@ BEGIN;
 COMMIT;
 EOF
 
-  echo "Created migrations/$f"
+  echo "Created migrations/$1/$f"
 done

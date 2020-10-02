@@ -16,7 +16,6 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
-import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { PatternTypeProps } from '..'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -48,9 +47,6 @@ interface SearchResultsInfoBarProps
     didSave: boolean
 
     displayPerformanceWarning: boolean
-
-    // Whether the search query contains a repo: field.
-    hasRepoishField: boolean
 
     location: H.Location
 }
@@ -241,9 +237,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     </ul>
                 </small>
             )}
-            {!props.results.alert &&
-                props.showDotComMarketing &&
-                (props.hasRepoishField ? <ServerBanner /> : <ServerBannerNoRepo />)}
             {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
         </div>
     )

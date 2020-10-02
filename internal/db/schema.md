@@ -251,6 +251,17 @@ Triggers:
 
 ```
 
+# Table "public.codeintel_schema_migrations"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ version | bigint  | not null
+ dirty   | boolean | not null
+Indexes:
+    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
+
+```
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -477,6 +488,57 @@ Indexes:
 
 ```
 
+# Table "public.lsif_data_definitions"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+
+```
+
+# Table "public.lsif_data_documents"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ path    | text    | not null
+ data    | bytea   | 
+
+```
+
+# Table "public.lsif_data_metadata"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ dump_id           | integer | not null
+ num_result_chunks | integer | 
+
+```
+
+# Table "public.lsif_data_references"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+
+```
+
+# Table "public.lsif_data_result_chunks"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ idx     | integer | not null
+ data    | bytea   | 
+
+```
+
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |  Type   | Modifiers 
@@ -521,6 +583,11 @@ Indexes:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
+ docker_steps    | jsonb[]                  | not null
+ root            | text                     | not null
+ indexer         | text                     | not null
+ indexer_args    | text[]                   | not null
+ outfile         | text                     | not null
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -979,6 +1046,7 @@ Indexes:
  author_user_id | integer                  | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
+    "settings_org_id_idx" btree (org_id)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
