@@ -14,13 +14,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -41,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/src-d/enry/v2"
 )
 
@@ -252,6 +252,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	if sr.userSettings != nil {
 		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
 	}
+	tr.LogFields(otlog.Bool("globbing", globbing))
 
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int32)
