@@ -12,6 +12,7 @@ import { reactHooks } from './repogroups/ReactHooks'
 import { android } from './repogroups/Android'
 import { stanford } from './repogroups/Stanford'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
+import { cncf } from './repogroups/cncf'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -210,6 +211,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/stanford',
         render: props => <RepogroupPage {...props} repogroupMetadata={stanford} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/cncf',
+        render: props => <RepogroupPage {...props} repogroupMetadata={cncf} />,
         condition: props => window.context.sourcegraphDotComMode,
     },
     {

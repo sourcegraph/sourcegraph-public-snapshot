@@ -279,6 +279,8 @@ body > #sidebar #theme div {
 body > #sidebar #theme button {
     border: 0;
     background-color: transparent;
+    font-family: var(--base-font-family);
+    font-size: 1rem;
 }
 body > #sidebar #theme button:not(.active) {
     color: var(--text-muted);

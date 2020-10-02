@@ -251,6 +251,17 @@ Triggers:
 
 ```
 
+# Table "public.codeintel_schema_migrations"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ version | bigint  | not null
+ dirty   | boolean | not null
+Indexes:
+    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
+
+```
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -452,7 +463,6 @@ Foreign-key constraints:
  namespace_user_id | integer                  | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
-    "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
 Foreign-key constraints:
@@ -475,6 +485,57 @@ Triggers:
  mgmt_password_bcrypt    | text    | not null default ''::text
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
+
+```
+
+# Table "public.lsif_data_definitions"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+
+```
+
+# Table "public.lsif_data_documents"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ path    | text    | not null
+ data    | bytea   | 
+
+```
+
+# Table "public.lsif_data_metadata"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ dump_id           | integer | not null
+ num_result_chunks | integer | 
+
+```
+
+# Table "public.lsif_data_references"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+
+```
+
+# Table "public.lsif_data_result_chunks"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ idx     | integer | not null
+ data    | bytea   | 
 
 ```
 
@@ -522,6 +583,11 @@ Indexes:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
+ docker_steps    | jsonb[]                  | not null
+ root            | text                     | not null
+ indexer         | text                     | not null
+ indexer_args    | text[]                   | not null
+ outfile         | text                     | not null
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:

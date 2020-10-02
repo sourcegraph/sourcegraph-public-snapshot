@@ -104,6 +104,11 @@ func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.In
 		Commit:       commit,
 		RepositoryID: indexableRepository.RepositoryID,
 		State:        "queued",
+		DockerSteps:  []store.DockerStep{},
+		Root:         "",
+		Indexer:      "sourcegraph/lsif-go:latest",
+		IndexerArgs:  []string{},
+		Outfile:      "",
 	})
 	if err != nil {
 		return errors.Wrap(err, "store.QueueIndex")

@@ -82,8 +82,12 @@
 // 1528395723_convert_secret_jsonb_to_text.up.sql (178B)
 // 1528395724_settings_org_id_idx.down.sql (59B)
 // 1528395724_settings_org_id_idx.up.sql (85B)
-// 1528395725_add_external_services_namespace_user_id_index.down.sql (124B)
-// 1528395725_add_external_services_namespace_user_id_index.up.sql (183B)
+// 1528395725_indexer_configuration_fields.down.sql (406B)
+// 1528395725_indexer_configuration_fields.up.sql (845B)
+// 1528395726_lsif_index_defaults.down.sql (164B)
+// 1528395726_lsif_index_defaults.up.sql (164B)
+// 1528395727_add_external_services_namespace_user_id_index.down.sql (124B)
+// 1528395727_add_external_services_namespace_user_id_index.up.sql (183B)
 
 package migrations
 
@@ -1792,42 +1796,122 @@ func _1528395724_settings_org_id_idxUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395725_add_external_services_namespace_user_id_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xcb\x31\x0e\xc2\x30\x0c\x05\xd0\x3d\xa7\xf8\x17\xe8\x05\x60\x6c\x3b\x20\xa1\x14\x45\x20\xc1\x14\x99\xc4\x83\x45\x71\x50\xec\xa2\x1e\x9f\x95\x03\xbc\x61\x40\x6c\xce\x07\x4c\x69\xb9\xe0\x14\xa7\xf9\x8e\x71\x89\xe3\x2d\xa5\x39\x5e\xcf\x0f\x14\x52\x6d\x8e\xbe\x29\x44\x4d\x2a\x83\xe0\x9d\xd4\xa8\xb8\x34\xc5\x73\x6d\xe5\x15\xc2\x1f\xe7\xdd\xb9\x2b\xad\xd9\xb8\x7f\xa5\xb0\x65\xa5\x37\xdb\x87\x0a\xe7\xcd\xb8\x67\xa9\x59\xea\x7e\x0c\xbf\x00\x00\x00\xff\xff\x20\x37\x7c\x3a\x7c\x00\x00\x00")
+var __1528395725_indexer_configuration_fieldsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\xc1\x4e\xc3\x30\x10\x44\xef\xfe\x8a\x39\xa3\x2a\x3f\x10\x71\x48\xc3\x02\x41\x4e\x8c\x1c\x97\x1e\xad\x08\xbb\x60\x11\xea\x6a\xed\x08\xf8\x7b\x54\x73\xa1\x14\x24\xae\x3b\x6f\x9e\x66\xd7\x74\xd3\x0d\xb5\x10\x57\x5a\xdd\xe3\xa1\xa3\x2d\xe6\x14\x76\x36\xec\x9d\x7f\xf7\xc9\xbe\x85\xfc\x6c\xd9\x1f\x62\x0a\x39\xf2\x87\xdd\x4f\xaf\xbe\x16\xa2\x91\x86\x34\x4c\xb3\x96\x74\xc2\x0b\x00\x28\xaa\x56\xc9\x4d\x3f\xc0\xc5\xc7\x17\xcf\x36\x65\x7f\x48\xab\xb3\x94\x63\xcc\xe7\xd7\x2f\x17\xff\x19\xd8\x89\x9f\x7e\x91\xc5\x25\xef\xc2\x7c\x5c\xd7\x6a\x6a\x0c\xfd\xf3\x1b\x34\x63\x51\x8d\x24\xa9\x35\x58\xaa\x8b\x15\xb8\x2a\xc9\x94\xf0\x13\xbe\xd6\xaa\x3f\x71\x62\x29\xed\x3b\xd5\x0d\x05\x06\x43\x0d\xe0\x2a\x38\x5c\x62\xa9\xbe\xf5\x83\x2b\xe4\xf6\x96\x34\x81\x2b\xe7\x67\x9f\xbd\xb3\x53\x46\x37\x62\xd8\x48\x79\x5c\xae\xfa\xbe\x33\xb5\xf8\x0c\x00\x00\xff\xff\x10\x4d\xb9\xf2\x96\x01\x00\x00")
 
-func _1528395725_add_external_services_namespace_user_id_indexDownSqlBytes() ([]byte, error) {
+func _1528395725_indexer_configuration_fieldsDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395725_add_external_services_namespace_user_id_indexDownSql,
-		"1528395725_add_external_services_namespace_user_id_index.down.sql",
+		__1528395725_indexer_configuration_fieldsDownSql,
+		"1528395725_indexer_configuration_fields.down.sql",
 	)
 }
 
-func _1528395725_add_external_services_namespace_user_id_indexDownSql() (*asset, error) {
-	bytes, err := _1528395725_add_external_services_namespace_user_id_indexDownSqlBytes()
+func _1528395725_indexer_configuration_fieldsDownSql() (*asset, error) {
+	bytes, err := _1528395725_indexer_configuration_fieldsDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395725_add_external_services_namespace_user_id_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395725_indexer_configuration_fields.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x97, 0xd3, 0xb1, 0x40, 0x95, 0x1e, 0x80, 0x20, 0x49, 0xb0, 0xe8, 0xf2, 0x9, 0x86, 0xdb, 0xc8, 0x8a, 0x78, 0xb0, 0x2, 0xd4, 0x8, 0x72, 0x37, 0x82, 0xe, 0x59, 0x52, 0x38, 0xdb, 0x2b, 0x40}}
+	return a, nil
+}
+
+var __1528395725_indexer_configuration_fieldsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x92\xcd\x8e\x9b\x30\x14\x85\xf7\x7e\x8a\xb3\x8b\x54\x11\xba\x0f\xca\x82\x09\x6e\x4b\xc5\xcf\x08\x9c\xce\x62\x34\x42\x6e\xf0\x30\x6e\x01\x47\xb6\x51\xa7\xaa\xfa\xee\x15\xa6\x54\x30\x91\x9a\x2c\xd1\xf9\xee\xe1\xf3\xb5\xef\xe8\xc7\x38\x0b\x08\x89\x8a\xfc\x1e\x5f\x62\xfa\x80\xd6\xc8\xe7\x4a\xf6\xb5\x78\x15\xa6\xfa\x21\xed\x4b\xa5\xc5\x59\x19\x69\x95\xfe\x59\xf5\xbc\x13\x01\x21\x61\xc2\x68\x01\x16\xde\x25\x74\xc5\x13\x00\x08\xa3\x08\x87\x3c\x39\xa6\x19\x6a\x75\xfa\x2e\x74\x65\xac\x38\x1b\x7c\x33\xaa\xff\xfa\xf8\xe4\x01\xdb\x2d\xb4\x52\xd6\x83\xec\x78\x23\x3c\x9c\x54\xd7\xf1\xbe\xbe\x18\x1f\x21\x58\xf1\x6a\xbd\xb7\xc9\xf4\x3f\xfd\xdf\xb0\xe2\xba\x31\x8e\x78\x7c\xba\x60\xd4\x60\x9f\x65\x2b\x5c\x1c\x10\x72\xbc\x8f\x42\xb6\x3e\x0b\x4a\xca\xdc\xd4\xea\x10\x7b\x6c\x7e\xfd\xde\x4c\x75\x4e\x6f\x8f\xcd\xdf\xcf\xd9\x69\x8f\x8d\x51\x83\x3e\x89\x46\xf3\xf3\xcb\xfb\xb1\x73\xdb\xa8\x5d\xcb\xad\x30\x76\xcd\x4e\x8a\x53\xe7\x6e\xb7\x54\x9d\xfd\xc6\xfa\xab\x0b\x77\xe1\x72\x67\x25\x65\xc8\x72\x86\xec\x98\x24\xde\x25\x33\x9b\xde\x86\x4d\x92\x57\xd8\xd9\xf7\x0a\xb6\xda\xe5\x92\x0d\x08\x39\x14\x74\xbc\x83\xdb\x1e\x21\xc2\xd2\xb5\x97\x34\xa1\x07\x86\xc1\x7f\xe7\x41\xfb\x2e\xe1\x06\x6f\xe1\x0f\x45\x9e\xae\x2f\x77\x70\xd3\x9f\xf3\x38\x73\x30\x34\xf2\x0c\xda\x97\x35\xf6\x18\xfc\xc5\xbc\xac\x1d\xf9\xf0\x89\x16\x14\xda\xaf\x45\x2b\xac\xa8\x2b\x6e\x11\x97\xff\xcc\xf3\x34\x8d\x59\x40\xfe\x04\x00\x00\xff\xff\x48\xef\x9f\x4f\x4d\x03\x00\x00")
+
+func _1528395725_indexer_configuration_fieldsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395725_indexer_configuration_fieldsUpSql,
+		"1528395725_indexer_configuration_fields.up.sql",
+	)
+}
+
+func _1528395725_indexer_configuration_fieldsUpSql() (*asset, error) {
+	bytes, err := _1528395725_indexer_configuration_fieldsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395725_indexer_configuration_fields.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x36, 0x56, 0xf2, 0xae, 0x49, 0x55, 0x4d, 0xcd, 0xb9, 0xd, 0x30, 0xec, 0x62, 0xbb, 0x84, 0x3d, 0x80, 0x63, 0xd2, 0x9b, 0x77, 0x94, 0x87, 0xa, 0x56, 0x1, 0xf4, 0x91, 0x33, 0x7d, 0x26, 0x3b}}
+	return a, nil
+}
+
+var __1528395726_lsif_index_defaultsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\xe6\x0a\x76\x0d\xe1\x52\x50\x50\x50\x80\xf0\x8b\xe2\x13\x8b\xd2\x8b\x15\x6c\x15\xd4\xab\x6b\xd5\xb9\xc2\x3d\x5c\x83\x5c\x91\x65\x41\x12\xc5\xf9\xa5\x45\xc9\xa9\xe9\x45\x89\x05\x19\xfa\x20\x93\x74\xd3\xf3\xad\x72\x12\x4b\x52\x8b\x4b\xd4\x15\x1c\xfd\x5c\xb0\x1b\x06\x55\xa8\xa3\xab\x9b\x97\xaf\x5b\x50\x94\x9f\x5e\x94\x5a\x5c\x5c\xab\x6e\xcd\xc5\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\xe6\xc3\x99\xb2\xa4\x00\x00\x00")
+
+func _1528395726_lsif_index_defaultsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395726_lsif_index_defaultsDownSql,
+		"1528395726_lsif_index_defaults.down.sql",
+	)
+}
+
+func _1528395726_lsif_index_defaultsDownSql() (*asset, error) {
+	bytes, err := _1528395726_lsif_index_defaultsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395726_lsif_index_defaults.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x53, 0x17, 0x8e, 0x55, 0x3d, 0xf9, 0xc8, 0x4f, 0xee, 0x7e, 0x35, 0xb0, 0xde, 0xe1, 0x24, 0x1, 0x19, 0xc6, 0x36, 0xd3, 0x9d, 0xc4, 0xe6, 0xc2, 0xc9, 0xe2, 0xd6, 0xc2, 0x2d, 0xcc, 0xee, 0xa9}}
+	return a, nil
+}
+
+var __1528395726_lsif_index_defaultsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\xe6\x0a\x76\x0d\xe1\x52\x50\x50\x50\x80\xf0\x8b\xe2\x13\x8b\xd2\x8b\x15\x6c\x15\xd4\xab\x41\xaa\x74\xd3\xf3\x75\x74\x75\xf3\xf2\x75\x0b\x8a\xf2\xd3\x8b\x52\x8b\x8b\x6b\xd5\xb9\xc2\x3d\x5c\x83\x5c\x91\xb5\x80\x54\x17\xe7\x97\x16\x25\xa7\xa6\x17\x25\x16\x64\xe8\x43\x35\x5a\xe5\x24\x96\xa4\x16\x97\xa8\x2b\x38\xfa\xb9\x60\xb7\xa1\x56\xdd\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x6d\x48\x3e\x62\xa4\x00\x00\x00")
+
+func _1528395726_lsif_index_defaultsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395726_lsif_index_defaultsUpSql,
+		"1528395726_lsif_index_defaults.up.sql",
+	)
+}
+
+func _1528395726_lsif_index_defaultsUpSql() (*asset, error) {
+	bytes, err := _1528395726_lsif_index_defaultsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395726_lsif_index_defaults.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfd, 0x17, 0x47, 0x6, 0xbf, 0xc0, 0x1d, 0x14, 0x9b, 0x2f, 0xe5, 0xd6, 0xfa, 0x2, 0x4a, 0x21, 0x60, 0xe, 0xf5, 0xb4, 0x1d, 0x90, 0x37, 0x26, 0x2d, 0xc4, 0x1, 0xdc, 0xfb, 0x3a, 0x9b, 0x6b}}
+	return a, nil
+}
+
+var __1528395727_add_external_services_namespace_user_id_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xcb\x31\x0e\xc2\x30\x0c\x05\xd0\x3d\xa7\xf8\x17\xe8\x05\x60\x6c\x3b\x20\xa1\x14\x45\x20\xc1\x14\x99\xc4\x83\x45\x71\x50\xec\xa2\x1e\x9f\x95\x03\xbc\x61\x40\x6c\xce\x07\x4c\x69\xb9\xe0\x14\xa7\xf9\x8e\x71\x89\xe3\x2d\xa5\x39\x5e\xcf\x0f\x14\x52\x6d\x8e\xbe\x29\x44\x4d\x2a\x83\xe0\x9d\xd4\xa8\xb8\x34\xc5\x73\x6d\xe5\x15\xc2\x1f\xe7\xdd\xb9\x2b\xad\xd9\xb8\x7f\xa5\xb0\x65\xa5\x37\xdb\x87\x0a\xe7\xcd\xb8\x67\xa9\x59\xea\x7e\x0c\xbf\x00\x00\x00\xff\xff\x20\x37\x7c\x3a\x7c\x00\x00\x00")
+
+func _1528395727_add_external_services_namespace_user_id_indexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395727_add_external_services_namespace_user_id_indexDownSql,
+		"1528395727_add_external_services_namespace_user_id_index.down.sql",
+	)
+}
+
+func _1528395727_add_external_services_namespace_user_id_indexDownSql() (*asset, error) {
+	bytes, err := _1528395727_add_external_services_namespace_user_id_indexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395727_add_external_services_namespace_user_id_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf4, 0x6a, 0xab, 0x1b, 0x83, 0xef, 0xd8, 0xa1, 0xd6, 0x8a, 0x1, 0x2b, 0x32, 0x2f, 0x2c, 0xfe, 0xcf, 0x5f, 0x83, 0x13, 0xf5, 0x24, 0x5c, 0xe, 0xbe, 0x36, 0xe6, 0xf0, 0x7a, 0x2, 0xa5, 0x82}}
 	return a, nil
 }
 
-var __1528395725_add_external_services_namespace_user_id_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\xb1\x0a\xc2\x30\x10\x06\xe0\x3d\x4f\xf1\x8f\x3a\xf4\x05\x74\x92\x9a\x41\x90\x14\x4a\x05\x9d\xc2\x99\xdc\x70\x58\x2f\x92\x4b\xa5\x8f\xef\x03\x14\xf7\x8f\xaf\xeb\x10\x4a\xe3\x03\xfa\xd1\x9f\x26\x8f\x4b\x38\xfb\x3b\xfa\x21\xf4\xb7\x71\xf4\x61\xba\x3e\x90\x48\xb5\x34\xd4\x45\x21\x6a\x92\x19\x84\x56\x49\x8d\x52\x93\xa2\x78\xce\x25\xbd\x9c\xfb\x1f\xf0\xda\xb8\x2a\xcd\xd1\xb8\x7e\x25\xb1\x45\xa5\x37\xdb\x87\x12\xc7\xc5\xb8\x46\xc9\x51\xf2\x8a\x21\x6c\x29\x76\x1b\xbb\x3f\x3a\xf7\x0b\x00\x00\xff\xff\x9e\xf2\x7e\x5b\xb7\x00\x00\x00")
+var __1528395727_add_external_services_namespace_user_id_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\xb1\x0a\xc2\x30\x10\x06\xe0\x3d\x4f\xf1\x8f\x3a\xf4\x05\x74\x92\x9a\x41\x90\x14\x4a\x05\x9d\xc2\x99\xdc\x70\x58\x2f\x92\x4b\xa5\x8f\xef\x03\x14\xf7\x8f\xaf\xeb\x10\x4a\xe3\x03\xfa\xd1\x9f\x26\x8f\x4b\x38\xfb\x3b\xfa\x21\xf4\xb7\x71\xf4\x61\xba\x3e\x90\x48\xb5\x34\xd4\x45\x21\x6a\x92\x19\x84\x56\x49\x8d\x52\x93\xa2\x78\xce\x25\xbd\x9c\xfb\x1f\xf0\xda\xb8\x2a\xcd\xd1\xb8\x7e\x25\xb1\x45\xa5\x37\xdb\x87\x12\xc7\xc5\xb8\x46\xc9\x51\xf2\x8a\x21\x6c\x29\x76\x1b\xbb\x3f\x3a\xf7\x0b\x00\x00\xff\xff\x9e\xf2\x7e\x5b\xb7\x00\x00\x00")
 
-func _1528395725_add_external_services_namespace_user_id_indexUpSqlBytes() ([]byte, error) {
+func _1528395727_add_external_services_namespace_user_id_indexUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395725_add_external_services_namespace_user_id_indexUpSql,
-		"1528395725_add_external_services_namespace_user_id_index.up.sql",
+		__1528395727_add_external_services_namespace_user_id_indexUpSql,
+		"1528395727_add_external_services_namespace_user_id_index.up.sql",
 	)
 }
 
-func _1528395725_add_external_services_namespace_user_id_indexUpSql() (*asset, error) {
-	bytes, err := _1528395725_add_external_services_namespace_user_id_indexUpSqlBytes()
+func _1528395727_add_external_services_namespace_user_id_indexUpSql() (*asset, error) {
+	bytes, err := _1528395727_add_external_services_namespace_user_id_indexUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395725_add_external_services_namespace_user_id_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395727_add_external_services_namespace_user_id_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5d, 0xb4, 0x26, 0x1f, 0x2f, 0xc9, 0xe2, 0x9f, 0x3b, 0xad, 0x33, 0xd4, 0xcb, 0xdc, 0x63, 0xda, 0x6e, 0x86, 0xb, 0x12, 0x4b, 0x9, 0x15, 0x3d, 0x1b, 0x60, 0x96, 0xb4, 0x4a, 0x4c, 0xef, 0xce}}
 	return a, nil
 }
@@ -2005,8 +2089,12 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395723_convert_secret_jsonb_to_text.up.sql":                               _1528395723_convert_secret_jsonb_to_textUpSql,
 	"1528395724_settings_org_id_idx.down.sql":                                      _1528395724_settings_org_id_idxDownSql,
 	"1528395724_settings_org_id_idx.up.sql":                                        _1528395724_settings_org_id_idxUpSql,
-	"1528395725_add_external_services_namespace_user_id_index.down.sql":            _1528395725_add_external_services_namespace_user_id_indexDownSql,
-	"1528395725_add_external_services_namespace_user_id_index.up.sql":              _1528395725_add_external_services_namespace_user_id_indexUpSql,
+	"1528395725_indexer_configuration_fields.down.sql":                             _1528395725_indexer_configuration_fieldsDownSql,
+	"1528395725_indexer_configuration_fields.up.sql":                               _1528395725_indexer_configuration_fieldsUpSql,
+	"1528395726_lsif_index_defaults.down.sql":                                      _1528395726_lsif_index_defaultsDownSql,
+	"1528395726_lsif_index_defaults.up.sql":                                        _1528395726_lsif_index_defaultsUpSql,
+	"1528395727_add_external_services_namespace_user_id_index.down.sql":            _1528395727_add_external_services_namespace_user_id_indexDownSql,
+	"1528395727_add_external_services_namespace_user_id_index.up.sql":              _1528395727_add_external_services_namespace_user_id_indexUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2135,8 +2223,12 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395723_convert_secret_jsonb_to_text.up.sql":                               {_1528395723_convert_secret_jsonb_to_textUpSql, map[string]*bintree{}},
 	"1528395724_settings_org_id_idx.down.sql":                                      {_1528395724_settings_org_id_idxDownSql, map[string]*bintree{}},
 	"1528395724_settings_org_id_idx.up.sql":                                        {_1528395724_settings_org_id_idxUpSql, map[string]*bintree{}},
-	"1528395725_add_external_services_namespace_user_id_index.down.sql":            {_1528395725_add_external_services_namespace_user_id_indexDownSql, map[string]*bintree{}},
-	"1528395725_add_external_services_namespace_user_id_index.up.sql":              {_1528395725_add_external_services_namespace_user_id_indexUpSql, map[string]*bintree{}},
+	"1528395725_indexer_configuration_fields.down.sql":                             {_1528395725_indexer_configuration_fieldsDownSql, map[string]*bintree{}},
+	"1528395725_indexer_configuration_fields.up.sql":                               {_1528395725_indexer_configuration_fieldsUpSql, map[string]*bintree{}},
+	"1528395726_lsif_index_defaults.down.sql":                                      {_1528395726_lsif_index_defaultsDownSql, map[string]*bintree{}},
+	"1528395726_lsif_index_defaults.up.sql":                                        {_1528395726_lsif_index_defaultsUpSql, map[string]*bintree{}},
+	"1528395727_add_external_services_namespace_user_id_index.down.sql":            {_1528395727_add_external_services_namespace_user_id_indexDownSql, map[string]*bintree{}},
+	"1528395727_add_external_services_namespace_user_id_index.up.sql":              {_1528395727_add_external_services_namespace_user_id_indexUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

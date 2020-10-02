@@ -30,7 +30,7 @@ export interface RepogroupMetadata {
     /**
      * A description of the repogroup to be displayed on the page.
      */
-    description: string
+    description: JSX.Element | string
     /**
      * Base64 data uri to an icon.
      */
@@ -39,4 +39,9 @@ export interface RepogroupMetadata {
      * A description when displayed on the search homepage.
      */
     homepageDescription: string
+
+    /**
+     * Whether to display this in a minimal repogroup page, without examples/repositories/descriptions below the search bar.
+     */
+    lowProfile?: boolean
 }
