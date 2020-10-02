@@ -9,6 +9,7 @@ import { MonacoEditor } from '../components/MonacoEditor'
 import { ThemeProps } from '../../../shared/src/theme'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { fromFetch } from 'rxjs/fetch'
+import { checkOk } from '../../../shared/src/backend/fetch'
 
 interface Props extends RouteComponentProps, ThemeProps {}
 
@@ -18,7 +19,7 @@ interface Props extends RouteComponentProps, ThemeProps {}
 export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
     const latestPing = useObservable(
         useMemo(
-            () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => response.json() }),
+            () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }),
             []
         )
     )
