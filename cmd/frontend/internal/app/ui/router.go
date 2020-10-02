@@ -62,6 +62,7 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeRepoGroups     = "repo-groups"
+	routeCncf           = "repo-groups.cncf"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -138,8 +139,9 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "cncf"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
 
 	// Legacy redirects
@@ -265,6 +267,7 @@ func initRouter() {
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
 		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
+		router.Get(routeCncf).Handler(handler(serveBrandedPageString("CNCF code search")))
 	}
 
 	// repo
