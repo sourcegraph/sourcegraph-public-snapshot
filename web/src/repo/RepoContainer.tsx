@@ -56,7 +56,6 @@ import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
-import { HoverThresholdProps, HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../components/shared'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -120,6 +119,16 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+}
+
+export const HOVER_COUNT_KEY = 'hover-count'
+export const HOVER_THRESHOLD = 5
+
+export interface HoverThresholdProps {
+    /**
+     * Called when a hover with content is shown.
+     */
+    onHoverShown?: () => void
 }
 
 /**
@@ -312,14 +321,23 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
             return true
         }
-
         return false
     })
 
     /** TODO description */
-    const onHoverThresholdReached = useCallback(() => {
-        setCanShowPopover(true)
-        // TODO(tj): Trigger "Install extension" alert here
+    const onHoverShown = useCallback(() => {
+        const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
+
+        if (count > HOVER_THRESHOLD) {
+            return
+        }
+
+        if (count === HOVER_THRESHOLD) {
+            setCanShowPopover(true)
+            // TODO(tj): Trigger "Install extension" alert here
+        }
+
+        localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
     }, [])
 
     const onPopoverDismissed = useCallback(() => {
@@ -353,7 +371,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         ...props,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
-        onHoverThresholdReached,
+        onHoverShown,
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
