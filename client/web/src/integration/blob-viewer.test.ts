@@ -16,6 +16,7 @@ import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import { Settings } from '../schema/settings.schema'
 import type * as sourcegraph from 'sourcegraph'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { Page } from 'puppeteer'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -221,21 +222,14 @@ describe('Blob viewer', () => {
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
-                // Don't open new pages when clicking `View on [code host]` button
-                await driver.page.evaluate(() => {
-                    document.body.addEventListener('click', event => {
-                        const path = event.composedPath()
-                        for (const element of path) {
-                            if (element instanceof HTMLAnchorElement) {
-                                event.preventDefault()
-                                break
-                            }
-                        }
-                    })
-                })
-
                 await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
-                await driver.page.click('.test-go-to-code-host')
+                // Close new tab after clicking link
+                const newPage = new Promise<Page>(resolve =>
+                    driver.browser.once('targetcreated', target => resolve(target.page()))
+                )
+                await driver.page.click('.test-go-to-code-host', { button: 'middle' })
+                await (await newPage).close()
+
                 assert(
                     !(await driver.page.$('.test-install-extension-popover')),
                     'Expected popover to not be displayed before user reaches hover threshold'
@@ -248,12 +242,13 @@ describe('Blob viewer', () => {
                     await driver.page.waitForSelector('.hover-overlay', { visible: true })
                 }
 
-                await driver.page.click('.test-go-to-code-host', {})
+                await driver.page.click('.test-go-to-code-host', { button: 'middle' })
                 await driver.page.waitForSelector('.test-install-extension-popover', { visible: true })
                 assert(
                     !!(await driver.page.$('.test-install-extension-popover')),
                     'Expected popover to be displayed after user reaches hover threshold'
                 )
+
                 const popoverHeader = await driver.page.evaluate(
                     () => document.querySelector('.test-install-extension-popover-header')?.textContent
                 )
