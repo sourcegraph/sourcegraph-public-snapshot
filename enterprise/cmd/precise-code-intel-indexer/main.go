@@ -119,7 +119,7 @@ func mustInitializeStore() store.Store {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 
