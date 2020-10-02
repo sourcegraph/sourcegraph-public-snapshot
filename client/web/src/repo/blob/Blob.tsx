@@ -32,10 +32,11 @@ import {
     toURIWithPath,
 } from '../../../../shared/src/util/url'
 import { getHover, getDocumentHighlights } from '../../backend/features'
-import { HoverThresholdProps, WebHoverOverlay } from '../../components/shared'
+import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { HoverThresholdProps } from '../RepoContainer'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
