@@ -125,7 +125,7 @@ AND deleted_at IS NOT NULL
 	}, func() float64 {
 		count, err := scanCount(`
 -- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_total
-SELECT COUNT(*) FROM external_service_repos
+SELECT COUNT(DISTINCT(repo_id)) FROM external_service_repos
 WHERE external_service_id IN (
 		SELECT DISTINCT(id) FROM external_services
 		WHERE namespace_user_id IS NOT NULL
