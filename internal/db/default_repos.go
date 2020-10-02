@@ -39,8 +39,7 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err err
 
 	const q = `
 -- source: internal/db/default_repos.go:defaultRepos.List
-SELECT
-    id,
+SELECT id,
     name
 FROM
     repo r
@@ -54,12 +53,13 @@ WHERE
             s.namespace_user_id IS NOT NULL
             AND r.id = sr.repo_id
             AND r.deleted_at IS NULL)
-    OR EXISTS (
-        SELECT
-        FROM
-            default_repos
-        WHERE
-            r.id = default_repos.repo_id)
+UNION
+    SELECT
+        repo.id,
+        repo.name
+    FROM
+        default_repos
+        JOIN repo ON default_repos.repo_id = repo.id;
 `
 	rows, err := dbconn.Global.QueryContext(ctx, q)
 	if err != nil {
