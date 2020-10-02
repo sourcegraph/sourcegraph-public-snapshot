@@ -1,17 +1,7 @@
 import React from 'react'
 
-export const SourcegraphIcon: React.FunctionComponent<React.SVGAttributes<SVGSVGElement> & { size?: number }> = ({
-    size,
-    ...props
-}) => (
-    <svg
-        width={size ?? '65'}
-        height={size ?? '64'}
-        viewBox="0 0 65 64"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        {...props}
-    >
+export const SourcegraphIcon: React.FunctionComponent<React.SVGAttributes<SVGSVGElement>> = props => (
+    <svg viewBox="0 0 65 64" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <path
             fillRule="evenodd"
             clipRule="evenodd"
