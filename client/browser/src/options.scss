@@ -29,3 +29,43 @@ body {
     // natural extension of the browser's UI than a webpage
     font-size: 14px;
 }
+
+.options-page {
+    width: 26rem;
+
+    &--full {
+        margin: 8rem auto;
+        box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    &__section {
+        padding: 1rem;
+        border-top: 1px solid var(--color-border-2);
+        &:first-child {
+            border-top: none;
+        }
+    }
+
+    &__split-section {
+        display: flex;
+    }
+
+    &__split-section__part {
+        border-top: 1px solid var(--color-border-2);
+        padding: 0.75rem 1rem;
+        flex: 50%;
+        border-left: 1px solid var(--color-border-2);
+        &:first-child {
+            border-left: none;
+        }
+    }
+
+    &__logo {
+        width: 10rem;
+    }
+
+    &__version {
+        margin-left: 2.1rem;
+        margin-top: 0.25rem;
+    }
+}

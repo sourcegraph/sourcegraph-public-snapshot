@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { OptionFlagWithValue } from '../../shared/util/optionFlags'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
 import { LoaderInput } from '../../../../shared/src/components/LoaderInput'
@@ -6,7 +6,6 @@ import EarthIcon from 'mdi-react/EarthIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
-import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
 import { fetchSite } from '../../shared/backend/server'
 import { asError } from '../../../../shared/src/util/errors'
 import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
@@ -14,8 +13,7 @@ import { catchError, mapTo } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { Toggle } from '../../../../shared/src/components/Toggle'
-import '../../../../shared/src/components/Toggle.scss'
-
+import { SourcegraphLogo } from './SourcegraphLogo'
 export interface OptionsContainerProps {
     sourcegraphURL: string
     isActivated: boolean
@@ -36,6 +34,7 @@ interface OptionsPageProps {
     isActivated: boolean
     onToggleActivated: (value: boolean) => void
     validateSourcegraphUrl: (url: string) => Observable<string | undefined>
+    isFullPage: boolean
     // requestGraphQL: <T, V = object>(options: {
     //     request: string
     //     variables: V
@@ -44,11 +43,14 @@ interface OptionsPageProps {
 }
 
 export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
+    version,
     sourcegraphUrl,
     validateSourcegraphUrl,
     isActivated,
     onToggleActivated,
+    isFullPage,
 }) => {
+    const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
     const [urlState, nextUrlFieldChange, urlInputReference] = useInputValidation(
         useMemo(
             () => ({
@@ -59,24 +61,30 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         )
     )
     return (
-        <div>
-            <section>
-                <SourcegraphIcon style={{ width: 100 }} />
-                <Toggle
-                    value={isActivated}
-                    onToggle={onToggleActivated}
-                    title={isActivated ? 'Toggle to disable extension' : 'Toggle to enable extension'}
-                />
+        <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
+            <section className="options-page__section">
+                <div style={{ display: 'flex', 'justify-content': 'space-between' }}>
+                    <SourcegraphLogo className="options-page__logo" />
+                    <div>
+                        <Toggle
+                            value={isActivated}
+                            onToggle={onToggleActivated}
+                            title={isActivated ? 'Toggle to disable extension' : 'Toggle to enable extension'}
+                        />
+                    </div>
+                </div>
+                <div className="options-page__version">v{version}</div>
             </section>
-            <section>
-                <p>Get code intelligence tootlips while browsing files and reading PRs on your code host.</p>
+            <section className="options-page__section">
+                <p>Get code intelligence tooltips while browsing files and reading PRs on your code host.</p>
                 {/* Code host icons, with current one highlighted */}
             </section>
-            <section>
+            <section className="options-page__section">
                 <form>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                     <LoaderInput loading={urlState.loading} className={classNames(deriveInputClassName(urlState))}>
                         <input
+                            className="form-control"
                             id="sourcegraph-url"
                             type="url"
                             pattern="^https://.*"
@@ -93,14 +101,28 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         <small className="valid-feedback">Looks good!</small>
                     )}
                 </form>
+                <p>Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
+                <p>
+                    <LinkOrButton>How do we keep your code private?</LinkOrButton>
+                </p>
+
+                <p>
+                    <LinkOrButton onSelect={() => setShowAdvancedSettings(!showAdvancedSettings)}>
+                        {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
+                    </LinkOrButton>
+                </p>
             </section>
-            <section>
-                <LinkOrButton to="https://sourcegraph.com">
-                    <EarthIcon className="icon-inline" /> Sourcegraph Cloud
-                </LinkOrButton>
-                <LinkOrButton to="https://sourcegraph.com">
-                    <BookOpenPageVariantIcon className="icon-inline" /> Documentation
-                </LinkOrButton>
+            <section className="options-page__split-section">
+                <div className="options-page__split-section__part">
+                    <LinkOrButton to="https://sourcegraph.com">
+                        <EarthIcon className="icon-inline" /> Sourcegraph Cloud
+                    </LinkOrButton>
+                </div>
+                <div className="options-page__split-section__part">
+                    <LinkOrButton to="https://sourcegraph.com">
+                        <BookOpenPageVariantIcon className="icon-inline" /> Documentation
+                    </LinkOrButton>
+                </div>
             </section>
         </div>
     )
