@@ -1,7 +1,10 @@
 package httpapi
 
 import (
+	"bytes"
+	"compress/gzip"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -28,6 +31,20 @@ func serveGraphQL(schema *graphql.Schema) func(w http.ResponseWriter, r *http.Re
 		r = r.WithContext(trace.WithGraphQLRequestName(r.Context(), requestName))
 
 		r = r.WithContext(trace.WithRequestSource(r.Context(), guessSource(r)))
+
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			reader, err := gzip.NewReader(r.Body)
+			if err != nil {
+				return err
+			}
+			defer reader.Close()
+
+			body, err := ioutil.ReadAll(reader)
+			if err != nil {
+				return err
+			}
+			r.Body = ioutil.NopCloser(bytes.NewReader(body))
+		}
 
 		relayHandler.ServeHTTP(w, r)
 		return nil
