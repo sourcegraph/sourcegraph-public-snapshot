@@ -13,25 +13,23 @@ import (
 )
 
 // runCommand invokes the given command on the host machine.
-func runCommand(ctx context.Context, command ...string) error {
-	if len(command) == 0 {
-		return fmt.Errorf("no command supplied")
-	}
-
-	switch command[0] {
+func runCommand(ctx context.Context, args ...string) error {
+	command, args := args[0], args[1:]
+	switch command {
 	case "git":
 	case "docker":
 	case "ignite":
+
 	default:
-		return fmt.Errorf("illegal command: %s", strings.Join(command, " "))
+		return fmt.Errorf("illegal command '%s'", command)
 	}
 
-	cmd, stdout, stderr, err := makeCommand(ctx, command...)
+	cmd, stdout, stderr, err := makeCommand(ctx, args...)
 	if err != nil {
 		return err
 	}
 
-	log15.Debug(fmt.Sprintf("Running command: %s", strings.Join(command, " ")))
+	log15.Debug(fmt.Sprintf("Running command: %s", strings.Join(args, " ")))
 
 	wg := parallel(
 		func() { processStream("stdout", stdout) },

@@ -32,6 +32,9 @@ type Client interface {
 	// or not the tag was attached directly to the commit. If no tags exist at or before this commit, the
 	// tag is an empty string.
 	Tags(ctx context.Context, store store.Store, repositoryID int, commit string) (string, bool, error)
+
+	// Text returns the contents of a file in a particular commit of a repository.
+	Text(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error)
 }
 
 type defaultClient struct{}
@@ -60,4 +63,8 @@ func (c *defaultClient) FileExists(ctx context.Context, store store.Store, repos
 
 func (c *defaultClient) Tags(ctx context.Context, store store.Store, repositoryID int, commit string) (string, bool, error) {
 	return Tags(ctx, store, repositoryID, commit)
+}
+
+func (c *defaultClient) Text(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error) {
+	return Text(ctx, store, repositoryID, commit, file)
 }

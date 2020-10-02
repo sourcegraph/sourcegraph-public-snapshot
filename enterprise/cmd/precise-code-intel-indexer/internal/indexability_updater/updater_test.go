@@ -54,8 +54,8 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockGitserverClient.FileExistsFunc.History()) != 4 {
-		t.Errorf("unexpected number of calls to FileExists. want=%d have=%d", 2, len(mockGitserverClient.FileExistsFunc.History()))
+	if len(mockGitserverClient.FileExistsFunc.History()) != 8 {
+		t.Errorf("unexpected number of calls to FileExists. want=%d have=%d", 8, len(mockGitserverClient.FileExistsFunc.History()))
 	} else {
 		var repositoryIDs []int
 		for _, call := range mockGitserverClient.FileExistsFunc.History() {
