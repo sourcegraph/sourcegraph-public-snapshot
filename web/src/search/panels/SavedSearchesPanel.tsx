@@ -71,13 +71,15 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     .map(search => (
                         <dd key={search.id} className="text-monospace test-saved-search-entry">
                             <div className="d-flex justify-content-between">
-                                <Link
-                                    to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
-                                    className="btn btn-link p-0"
-                                    onClick={logEvent('SavedSearchesPanelSearchClicked')}
-                                >
-                                    {search.description}
-                                </Link>
+                                <small>
+                                    <Link
+                                        to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
+                                        className=" p-0"
+                                        onClick={logEvent('SavedSearchesPanelSearchClicked')}
+                                    >
+                                        {search.description}
+                                    </Link>
+                                </small>
                                 {authenticatedUser &&
                                     (search.namespace.__typename === 'User' ? (
                                         <Link

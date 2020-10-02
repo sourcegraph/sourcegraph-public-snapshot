@@ -91,10 +91,12 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
             </div>
             {repoFilterValues?.map((repoFilterValue, index) => (
                 <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
-                    <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                        <span className="search-keyword">repo:</span>
-                        <span className="repositories-panel__search-value">{repoFilterValue}</span>
-                    </Link>
+                    <small>
+                        <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
+                            <span className="search-keyword">repo:</span>
+                            <span className="repositories-panel__search-value">{repoFilterValue}</span>
+                        </Link>
+                    </small>
                 </dd>
             ))}
             {searchEventLogs?.pageInfo.hasNextPage && (

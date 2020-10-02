@@ -37,14 +37,6 @@
     &__content {
         overflow-y: auto;
         overflow-x: hidden;
-
-        .text-monospace {
-            font-size: 0.75rem !important;
-        }
-
-        .text-monospace .btn-link {
-            font-size: 0.75rem !important;
-        }
     }
 
     &__footer {
