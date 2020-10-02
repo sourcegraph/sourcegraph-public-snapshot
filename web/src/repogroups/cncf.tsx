@@ -2,7 +2,7 @@ import { RepogroupMetadata } from './types'
 import * as React from 'react'
 
 export const cncf: RepogroupMetadata = {
-    title: 'CNCF',
+    title: 'Cloud Native Computing Foundation (CNCF)',
     name: 'cncf',
     url: '/cncf',
     description: (
@@ -15,6 +15,6 @@ export const cncf: RepogroupMetadata = {
         </>
     ),
     examples: [],
-    homepageDescription: 'Search the 67 CNCF projects.',
+    homepageDescription: 'Search CNCF projects',
     homepageIcon: 'https://github.com/cncf/artwork/blob/master/other/cncf/icon/color/cncf-icon-color.png?raw=true',
 }
