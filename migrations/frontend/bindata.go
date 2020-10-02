@@ -88,6 +88,8 @@
 // 1528395726_lsif_index_defaults.up.sql (164B)
 // 1528395727_frontend.down.sql (139B)
 // 1528395727_frontend.up.sql (139B)
+// 1528395728_campaign_user_tokens.down.sql (60B)
+// 1528395728_campaign_user_tokens.up.sql (978B)
 
 package migrations
 
@@ -1916,6 +1918,46 @@ func _1528395727_frontendUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395728_campaign_user_tokensDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\x2d\x4e\x2d\x8a\x2f\xc9\xcf\x4e\xcd\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x19\x15\xa9\x99\x3c\x00\x00\x00")
+
+func _1528395728_campaign_user_tokensDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395728_campaign_user_tokensDownSql,
+		"1528395728_campaign_user_tokens.down.sql",
+	)
+}
+
+func _1528395728_campaign_user_tokensDownSql() (*asset, error) {
+	bytes, err := _1528395728_campaign_user_tokensDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395728_campaign_user_tokens.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x42, 0x6, 0xf7, 0x55, 0xf8, 0xf0, 0xec, 0x8a, 0x5, 0x75, 0x4c, 0x1a, 0xc, 0xa8, 0xaa, 0x1b, 0x13, 0x28, 0x46, 0xe3, 0x13, 0xdd, 0x7, 0x2c, 0x9e, 0x7f, 0x23, 0xe9, 0x3c, 0x91, 0xa6, 0xc1}}
+	return a, nil
+}
+
+var __1528395728_campaign_user_tokensUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x93\xc1\x72\xda\x3c\x14\x85\xf7\x7e\x8a\xb3\xfb\xc9\x8c\x93\x07\xf8\xb3\x32\x20\xa8\xa7\xc6\x50\x5b\x99\x24\xdd\x30\xc2\xbe\x80\x06\x21\xb9\x92\x0c\xf1\xdb\x77\x64\x43\x87\xd2\x2c\x3a\xdd\xd9\xd2\x39\xdf\x3d\x57\x57\x1a\xb3\x79\x9a\x3f\x47\xd1\xa4\x60\x09\x67\xe0\xc9\x38\x63\x48\x67\xc8\x97\x1c\xec\x2d\x2d\x79\x89\x4a\x1c\x1b\x21\x77\x7a\xdd\x3a\xb2\x6b\x6f\x0e\xa4\x1d\x46\x11\x00\xf4\x2b\xb2\x46\x9a\x73\x36\x67\x45\xef\xca\x5f\xb2\x2c\xee\x77\xe9\xc3\x93\xd5\x42\xad\x1d\xd9\x93\xac\x28\x28\xc7\xe9\x3c\xcd\xf9\x9d\xb0\x67\x82\xb3\xb7\xfb\x8d\xca\x92\xf0\x54\xaf\x85\x07\x4f\x17\xac\xe4\xc9\x62\x85\xd7\x94\x7f\xe9\x7f\xf1\x7d\x99\xb3\x5f\x0e\x4c\xd9\x2c\x79\xc9\x02\xe2\x75\xf4\x30\xf8\xdb\xa6\xfe\x67\x7f\x0f\x78\x7c\x44\x4d\x8a\x2e\x0c\xe9\x20\xb5\x27\xed\xa5\xd1\x42\xa9\x0e\x8a\xb6\x1e\xa6\xf5\xff\x63\x27\x4f\xa4\xe1\xf7\x04\x47\x95\x25\x0f\x2d\x7c\x6b\x09\x66\x3b\x74\xe7\xe2\x2b\x2f\x9c\x99\xc3\x59\x2a\x05\x25\x0f\xa4\x3a\x9c\x85\xf6\xf0\x06\x1b\x42\x45\xd6\x0b\x19\x40\xc2\x5f\x8c\x10\x96\xae\x21\x70\xde\x93\xbe\x82\x2c\x1d\xcd\x89\xea\x18\x14\x4a\x9f\xa5\xdf\x83\x74\x65\xbb\x26\xc4\x83\xd4\x68\x94\xa8\xe8\x29\xba\x2d\x1c\x46\x20\x1d\xb6\xd2\x3a\x8f\x0d\x55\xa2\x75\x84\x33\xfd\xa7\x14\x34\x51\x7d\x49\x21\x36\x8a\xc2\xe7\x8f\x96\x6c\x07\xa1\x54\xdf\xd8\x10\xe7\x4a\xdb\x1a\x0b\xd1\x33\x61\x34\x04\x2c\xed\x5a\x25\x2c\x36\xc2\x49\x17\x43\xe8\x1a\x2b\xe3\xfc\xce\x52\xf9\x2d\x43\x25\x74\xd0\xf6\x9c\xc6\xca\xa3\xb0\x1d\x0e\xd4\x5d\x61\x52\xd7\xf4\xd1\x23\x83\x60\x48\x57\x19\xd5\x1e\x75\x38\x40\x81\xca\x1c\x1b\xe3\xa4\xa7\x60\x0a\x6a\x79\x92\x75\x1b\x46\xf0\xd4\x23\x56\x45\xba\x48\x8a\x77\x7c\x65\xef\x18\x5d\xfa\x8c\x3f\xbb\x7f\x37\x73\x2d\xc9\xa3\x6d\x86\x82\xc6\x92\xdc\xe9\x00\x77\x03\x70\xb6\x2c\x58\x3a\xcf\x7f\x03\x3e\xa0\x60\x33\x56\xb0\x7c\xc2\xca\xcb\x14\x47\x61\x75\x99\x63\xca\x32\xc6\x19\x26\x49\x39\x49\xa6\x2c\xdc\x24\x56\x14\xe1\x29\xc5\x7f\xd2\x3e\x4b\x75\x4b\xbe\xdf\xff\x8b\x2a\xd1\x43\x78\xc1\xcb\xc5\x22\xe5\xcf\xd1\xcf\x00\x00\x00\xff\xff\xcb\x2a\x54\x51\xd2\x03\x00\x00")
+
+func _1528395728_campaign_user_tokensUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395728_campaign_user_tokensUpSql,
+		"1528395728_campaign_user_tokens.up.sql",
+	)
+}
+
+func _1528395728_campaign_user_tokensUpSql() (*asset, error) {
+	bytes, err := _1528395728_campaign_user_tokensUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395728_campaign_user_tokens.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xef, 0xa1, 0xba, 0x80, 0xec, 0x88, 0x5b, 0xca, 0x9e, 0xa7, 0xa0, 0x5d, 0x81, 0xef, 0xc, 0x6f, 0xc5, 0xf1, 0xc, 0x60, 0x8b, 0xa0, 0x73, 0xd0, 0xf1, 0x1c, 0x83, 0x3, 0xfe, 0x2d, 0x55, 0x36}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2095,6 +2137,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395726_lsif_index_defaults.up.sql":                                        _1528395726_lsif_index_defaultsUpSql,
 	"1528395727_frontend.down.sql":                                                 _1528395727_frontendDownSql,
 	"1528395727_frontend.up.sql":                                                   _1528395727_frontendUpSql,
+	"1528395728_campaign_user_tokens.down.sql":                                     _1528395728_campaign_user_tokensDownSql,
+	"1528395728_campaign_user_tokens.up.sql":                                       _1528395728_campaign_user_tokensUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2229,6 +2273,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395726_lsif_index_defaults.up.sql":                                        {_1528395726_lsif_index_defaultsUpSql, map[string]*bintree{}},
 	"1528395727_frontend.down.sql":                                                 {_1528395727_frontendDownSql, map[string]*bintree{}},
 	"1528395727_frontend.up.sql":                                                   {_1528395727_frontendUpSql, map[string]*bintree{}},
+	"1528395728_campaign_user_tokens.down.sql":                                     {_1528395728_campaign_user_tokensDownSql, map[string]*bintree{}},
+	"1528395728_campaign_user_tokens.up.sql":                                       {_1528395728_campaign_user_tokensUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
