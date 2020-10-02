@@ -39,24 +39,38 @@ func TestHandleWithDocker(t *testing.T) {
 		ID:             42,
 		RepositoryName: "github.com/sourcegraph/sourcegraph",
 		Commit:         "e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
-		// TODO - add steps
+		DockerSteps: []store.DockerStep{
+			{
+				Root:     "r1",
+				Image:    "install1",
+				Commands: []string{"ls", "-liah"},
+			}, {
+				Root:     "r2",
+				Image:    "install2",
+				Commands: []string{"pwd"},
+			},
+		},
+		Root:        "r3",
 		Indexer:     "sourcegraph/lsif-go:latest",
 		IndexerArgs: []string{"lsif-go", "--no-animation"},
+		Outfile:     "nonstandard.lsif",
 	}
 
 	if err := handler.Handle(context.Background(), nil, index); err != nil {
 		t.Fatalf("unexpected error handling index: %s", err)
 	}
 
-	if callCount := len(commander.RunFunc.History()); callCount != 5 {
-		t.Errorf("unexpected run call count. want=%d have=%d", 5, callCount)
+	if callCount := len(commander.RunFunc.History()); callCount != 7 {
+		t.Errorf("unexpected run call count. want=%d have=%d", 7, callCount)
 	} else {
 		expectedCalls := []string{
 			"git -C /tmp/testing init",
 			"git -C /tmp/testing -c protocol.version=2 fetch https://indexer:hunter2@sourcegraph.test:1234/.internal-code-intel/git/github.com/sourcegraph/sourcegraph e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
 			"git -C /tmp/testing checkout e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
-			"docker run --rm --cpus 8 --memory 32G -v /tmp/testing:/data -w /data sourcegraph/lsif-go:latest lsif-go --no-animation",
-			"docker run --rm --cpus 8 --memory 32G -v /tmp/testing:/data -w /data -e SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 sourcegraph/src-cli:latest lsif upload -no-progress -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload",
+			"docker run --rm --cpus 8 --memory 32G -v /tmp/testing:/data -w /data/r1 install1 ls -liah",
+			"docker run --rm --cpus 8 --memory 32G -v /tmp/testing:/data -w /data/r2 install2 pwd",
+			"docker run --rm --cpus 8 --memory 32G -v /tmp/testing:/data -w /data/r3 sourcegraph/lsif-go:latest lsif-go --no-animation",
+			"docker run --rm --cpus 8 --memory 32G -v /tmp/testing:/data -w /data/r3 -e SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 sourcegraph/src-cli:latest lsif upload -no-progress -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload -file nonstandard.lsif",
 		}
 
 		calls := commander.RunFunc.History()
@@ -97,18 +111,34 @@ func TestHandleWithFirecracker(t *testing.T) {
 		ID:             42,
 		RepositoryName: "github.com/sourcegraph/sourcegraph",
 		Commit:         "e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
-		// TODO - add steps
+		DockerSteps: []store.DockerStep{
+			{
+				Root:     "r1",
+				Image:    "install1",
+				Commands: []string{"ls", "-liah"},
+			}, {
+				Root:     "r2",
+				Image:    "install2",
+				Commands: []string{"pwd"},
+			},
+		},
+		Root:        "r3",
 		Indexer:     "sourcegraph/lsif-go:latest",
 		IndexerArgs: []string{"lsif-go", "--no-animation"},
+		Outfile:     "nonstandard.lsif",
 	}
 
 	if err := handler.Handle(context.Background(), nil, index); err != nil {
 		t.Fatalf("unexpected error handling index: %s", err)
 	}
 
-	if callCount := len(commander.RunFunc.History()); callCount != 14 {
-		t.Errorf("unexpected run call count. want=%d have=%d", 14, callCount)
+	if callCount := len(commander.RunFunc.History()); callCount != 16 {
+		t.Errorf("unexpected run call count. want=%d have=%d", 16, callCount)
 	} else {
+		//
+		// TODO - update what images are pulled
+		//
+
 		expectedCalls := []string{
 			"git -C /tmp/testing init",
 			"git -C /tmp/testing -c protocol.version=2 fetch https://indexer:hunter2@sourcegraph.test:1234/.internal-code-intel/git/github.com/sourcegraph/sourcegraph e2249f2173e8ca0c8c2541644847e7bf01aaef4a",
@@ -120,8 +150,10 @@ func TestHandleWithFirecracker(t *testing.T) {
 			"ignite run --runtime docker --network-plugin docker-bridge --cpus 8 --memory 32G --copy-files /tmp/testing:/repo-dir --copy-files /images/lsif-go.tar:/lsif-go.tar --copy-files /images/src-cli.tar:/src-cli.tar --ssh --name 97b45daf-53d1-48ad-b992-547469d8e438 sourcegraph/ignite-ubuntu:latest",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /lsif-go.tar",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /src-cli.tar",
-			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data sourcegraph/lsif-go:latest lsif-go --no-animation",
-			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data -e SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 sourcegraph/src-cli:latest lsif upload -no-progress -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data/r1 install1 ls -liah",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data/r2 install2 pwd",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data/r3 sourcegraph/lsif-go:latest lsif-go --no-animation",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data/r3 -e SRC_ENDPOINT=https://indexer:hunter2@sourcegraph.test:5432 sourcegraph/src-cli:latest lsif upload -no-progress -repo github.com/sourcegraph/sourcegraph -commit e2249f2173e8ca0c8c2541644847e7bf01aaef4a -upload-route /.internal-code-intel/lsif/upload -file nonstandard.lsif",
 			"ignite stop --runtime docker --network-plugin docker-bridge 97b45daf-53d1-48ad-b992-547469d8e438",
 			"ignite rm -f --runtime docker --network-plugin docker-bridge 97b45daf-53d1-48ad-b992-547469d8e438",
 		}

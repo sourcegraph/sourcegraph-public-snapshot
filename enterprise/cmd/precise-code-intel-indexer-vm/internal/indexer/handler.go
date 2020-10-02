@@ -71,16 +71,17 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 	}()
 
 	for _, dockerStep := range index.DockerSteps {
-		// TODO - use root
-		// TODO - commands vs args
-		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(NewCmd(dockerStep.Image, dockerStep.Commands...))...); err != nil {
+		dockerStepCommand := NewCmd(dockerStep.Image, dockerStep.Commands...).SetWd(dockerStep.Root)
+
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(dockerStepCommand)...); err != nil {
 			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
 
 	if index.Indexer != "" {
-		// TODO - use root
-		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(NewCmd(index.Indexer, index.IndexerArgs...))...); err != nil {
+		indexCommand := NewCmd(index.Indexer, index.IndexerArgs...).SetWd(index.Root)
+
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(indexCommand)...); err != nil {
 			return errors.Wrap(err, "failed to index repository")
 		}
 	}
@@ -90,16 +91,23 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		return err
 	}
 
+	outfile := "dump.lsif"
+	if index.Outfile != "" {
+		outfile = index.Outfile
+	}
+
 	args := flatten(
 		"lsif", "upload",
 		"-no-progress",
 		"-repo", index.RepositoryName,
 		"-commit", index.Commit,
 		"-upload-route", "/.internal-code-intel/lsif/upload",
+		"-file", outfile,
 	)
 
-	// TODO - use root, outfile
-	uploadCommand := NewCmd("sourcegraph/src-cli:latest", args...).AddEnv("SRC_ENDPOINT", uploadURL.String())
+	uploadCommand := NewCmd("sourcegraph/src-cli:latest", args...).
+		SetWd(index.Root).
+		AddEnv("SRC_ENDPOINT", uploadURL.String())
 
 	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCommand)...); err != nil {
 		return errors.Wrap(err, "failed to upload index")

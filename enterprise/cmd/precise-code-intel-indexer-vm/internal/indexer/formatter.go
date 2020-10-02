@@ -19,8 +19,13 @@ type CommandFormatter interface {
 }
 
 type Cmd struct {
-	image   string
+	image string
+	// TODO(efritz) - currently treated as arguments and doesn't
+	// support the intended image/commands setup, where each command
+	// would be equivalent to a line in a bash script. Need to figure
+	// out the best way to supply it to the underlying shell.
 	command []string
+	wd      string
 	env     map[string]string
 }
 
@@ -30,6 +35,11 @@ func NewCmd(image string, command ...string) *Cmd {
 		command: command,
 		env:     map[string]string{},
 	}
+}
+
+func (cmd *Cmd) SetWd(wd string) *Cmd {
+	cmd.wd = wd
+	return cmd
 }
 
 func (cmd *Cmd) AddEnv(key, value string) *Cmd {
@@ -67,7 +77,7 @@ func (r *dockerCommandFormatter) FormatCommand(cmd *Cmd) []string {
 		"docker", "run", "--rm",
 		r.resourceFlags(),
 		r.volumeFlags(),
-		r.workingdirectoryFlags(),
+		r.workingdirectoryFlags(cmd.wd),
 		r.envFlags(cmd.env),
 		cmd.image,
 		cmd.command,
@@ -85,8 +95,8 @@ func (r *dockerCommandFormatter) volumeFlags() []string {
 	return []string{"-v", fmt.Sprintf("%s:/data", r.repoDir)}
 }
 
-func (r *dockerCommandFormatter) workingdirectoryFlags() []string {
-	return []string{"-w", "/data"}
+func (r *dockerCommandFormatter) workingdirectoryFlags(wd string) []string {
+	return []string{"-w", filepath.Join("/data", wd)}
 }
 
 func (r *dockerCommandFormatter) envFlags(env map[string]string) []string {
