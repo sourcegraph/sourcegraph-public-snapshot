@@ -526,7 +526,7 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // relies on the invariant that query and pattern error checking has already
 // been performed.
 func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
-	tr, ctx := trace.New(ctx, "logSearchLatency", "")
+	tr, ctx := trace.New(ctx, "logSearchLatency", "", trace.Tag{Key: "resolver", Value: "searchResolver"})
 	defer func() {
 		tr.Finish()
 	}()
@@ -607,7 +607,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
 func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsResolver, err error) {
-	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
+	tr, ctx := trace.New(ctx, "evaluateLeaf", "", trace.Tag{Key: "resolver", Value: "searchResolver"})
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
