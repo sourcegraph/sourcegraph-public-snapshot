@@ -67,7 +67,7 @@ interface Props
     globbing: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
-    /** A query fragment to be appended to queries. This will not appear in the input until a search is submitted. */
+    /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
