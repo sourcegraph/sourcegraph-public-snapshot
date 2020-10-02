@@ -112,6 +112,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                         hiddenQueryPrefix={repogroupQuery}
                         source="repogroupPage"
                         hideVersionContexts={true}
+                        hideQueryBuilder={true}
                     />
                 ) : (
                     <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
