@@ -78,15 +78,17 @@ export function useModality(
     useEffect(() => {
         function handleMouseDownOutside(event: MouseEvent): void {
             const modalBody = modalBodyReference.current
-            const targetElement = targetID ? document.querySelector(`#${targetID}`) : null
+            if (modalBody) {
+                const targetElement = targetID ? document.querySelector(`#${targetID}`) : null
 
-            const isNotModalBody =
-                !modalBody || (modalBody !== event.target && !modalBody.contains(event.target as Node))
-            const isNotTargetElement =
-                !targetElement || (targetElement !== event.target && !targetElement.contains(event.target as Node))
+                const isNotModalBody =
+                    !modalBody || (modalBody !== event.target && !modalBody.contains(event.target as Node))
+                const isNotTargetElement =
+                    !targetElement || (targetElement !== event.target && !targetElement.contains(event.target as Node))
 
-            if (onClose && isNotModalBody && isNotTargetElement) {
-                document.addEventListener('mouseup', handleMouseUp)
+                if (onClose && isNotModalBody && isNotTargetElement) {
+                    document.addEventListener('mouseup', handleMouseUp)
+                }
             }
         }
 
