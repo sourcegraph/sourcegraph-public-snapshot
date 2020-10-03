@@ -1,12 +1,12 @@
 import * as React from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { orgURL } from '../../org'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 import { UserAreaRouteContext } from './UserArea'
 
-interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
+interface Props extends UserAreaRouteContext {
     navItems: readonly UserAreaHeaderNavItem[]
     className?: string
 }

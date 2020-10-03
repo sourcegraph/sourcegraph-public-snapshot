@@ -55,7 +55,7 @@ type Mutation {
 
     Only the user and site admins may perform this mutation.
     """
-    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): EmptyResponse!
+    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
     Creates an organization. The caller is added as a member of the newly created organization.
 
