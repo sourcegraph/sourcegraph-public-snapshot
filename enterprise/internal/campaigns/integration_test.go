@@ -1,12 +1,15 @@
 package campaigns
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"strings"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
@@ -20,7 +23,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	userID := insertTestUser(t, db)
+	userID := insertTestUser(t, context.Background(), db, "bbs-admin")
 
 	t.Run("Store", func(t *testing.T) {
 		t.Run("Campaigns", storeTest(db, testStoreCampaigns))
@@ -29,6 +32,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
 		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
 		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
+		t.Run("UserToken", storeTest(db, testStoreUserTokens))
 	})
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
@@ -56,10 +60,15 @@ func insertTestOrg(t *testing.T, db *sql.DB) (orgID int32) {
 	return orgID
 }
 
-func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
+func insertTestUser(t *testing.T, ctx context.Context, db dbutil.DB, name string) (userID int32) {
 	t.Helper()
 
-	err := db.QueryRow("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id").Scan(&userID)
+	q := sqlf.Sprintf(
+		"INSERT INTO users (username) VALUES (%s) RETURNING id",
+		name,
+	)
+
+	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), name).Scan(&userID)
 	if err != nil {
 		t.Fatal(err)
 	}
