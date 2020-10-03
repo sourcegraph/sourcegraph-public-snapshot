@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -512,6 +511,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 
 	t.Run("with existing pings in database", func(t *testing.T) {
 		userID := int32(0)
+		timestamp := time.Now().UTC().Truncate(time.Microsecond)
 
 		ctx := context.Background()
 		events := []*Event{
@@ -521,7 +521,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				URL:             "test",
 				AnonymousUserID: "test",
 				Source:          "test",
-				Timestamp:       time.Now().UTC(),
+				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value1"}`),
 			}, {
 				UserID:          0,
@@ -529,7 +529,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				URL:             "test",
 				AnonymousUserID: "test",
 				Source:          "test",
-				Timestamp:       time.Now().UTC(),
+				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value2"}`),
 			},
 		}
@@ -552,8 +552,9 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			Version:         version.Version(),
 			Argument:        string(events[1].Argument),
 			Source:          events[1].Source,
+			Timestamp:       timestamp,
 		}
-		if diff := cmp.Diff(gotPing, expectedPing, cmpopts.IgnoreFields(types.Event{}, "Timestamp")); diff != "" {
+		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
 			t.Fatal(diff)
 		}
 	})
