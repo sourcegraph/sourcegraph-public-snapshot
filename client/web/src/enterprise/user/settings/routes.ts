@@ -19,6 +19,10 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         condition: () => authExp,
     },
     {
+        path: '/event-log',
+        render: lazyComponent(() => import('../../../user/UserEventLogsPage'), 'UserEventLogsPage'),
+    },
+    {
         path: '/subscriptions/new',
         exact: true,
         render: lazyComponent(
