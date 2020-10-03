@@ -66,7 +66,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             searchRequests =>
                 searchRequests.pipe(
                     switchMapTo(searchQuery.pipe(first())),
-                    tap(query => props.history.push('/search/console?q=' + encodeURI(query))),
+                    tap(query => props.history.push('/search/console?q=' + encodeURIComponent(query))),
                     switchMap(query =>
                         concat(
                             of('loading' as const),
