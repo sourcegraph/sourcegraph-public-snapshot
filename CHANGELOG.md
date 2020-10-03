@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Tokens and similar sensitive information included in the userinfo portion of remote repository URLs will no longer be visible on the Mirroring settings page. [#14153](https://github.com/sourcegraph/sourcegraph/pull/14153)
 - The sign in and sign up forms have been redesigned with better input validation.
 - Kubernetes admins mounting [configuration files](https://docs.sourcegraph.com/admin/config/advanced_config_file#kubernetes-configmap) are encouraged to change how the ConfigMap is mounted. See the new documentation. Previously our documentation suggested using subPath. However, this lead to Kubernetes not automatically updating the files on configuration change. [#14297](https://github.com/sourcegraph/sourcegraph/pull/14297)
+- The GraphQL `updateUser` mutation now returns the updated user (instead of an empty response).
 
 ### Fixed
 

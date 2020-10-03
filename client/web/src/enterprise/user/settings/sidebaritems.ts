@@ -29,7 +29,6 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
         {
             to: '/event-log',
             label: 'Event log',
-            icon: TimelineTextOutlineIcon,
             condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
         },
     ],

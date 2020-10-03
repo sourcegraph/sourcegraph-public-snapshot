@@ -242,36 +242,41 @@ func TestUpdateUser(t *testing.T) {
 		}
 	})
 
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
-		return nil
-	}
-	t.Cleanup(func() {
-		db.Mocks.Users = db.MockUsers{}
-	})
+	t.Run("success", func(t *testing.T) {
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id, Username: strconv.Itoa(int(id))}, nil
+		}
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{SiteAdmin: true}, nil
+		}
+		db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
+			return nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
-		{
-			Schema: mustParseGraphQLSchema(t),
-			Query: `
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: mustParseGraphQLSchema(t),
+				Query: `
 			mutation {
 				updateUser(
 					user: "VXNlcjox",
 					username: "alice.bob-chris-"
 				) {
-					alwaysNil
+					username
 				}
 			}
 		`,
-			ExpectedResult: `
+				ExpectedResult: `
 			{
 				"updateUser": {
-					"alwaysNil": null
+					"username": "1"
 				}
 			}
 		`,
-		},
+			},
+		})
 	})
 }
