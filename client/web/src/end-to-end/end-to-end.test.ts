@@ -169,28 +169,28 @@ describe('e2e test suite', () => {
 
         test('Check allowed usernames', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/profile')
-            await driver.page.waitForSelector('.test-user-settings-profile-page-username')
+            await driver.page.waitForSelector('.test-UserProfileFormFields-username')
 
             const name = 'alice.bob-chris-'
 
             await driver.replaceText({
-                selector: '.test-user-settings-profile-page-username',
+                selector: '.test-UserProfileFormFields-username',
                 newText: name,
                 selectMethod: 'selectall',
             })
 
-            await driver.page.click('.test-user-settings-profile-page-update-profile')
-            await driver.page.waitForSelector('.test-user-settings-profile-page-alert-success', { visible: true })
+            await driver.page.click('#test-EditUserProfileForm__save')
+            await driver.page.waitForSelector('.test-EditUserProfileForm__success', { visible: true })
 
             await driver.page.goto(sourcegraphBaseUrl + `/users/${name}/settings/profile`)
             await driver.replaceText({
-                selector: '.test-user-settings-profile-page-username',
+                selector: '.test-UserProfileFormFields-username',
                 newText: 'test',
                 selectMethod: 'selectall',
             })
 
-            await driver.page.click('.test-user-settings-profile-page-update-profile')
-            await driver.page.waitForSelector('.test-user-settings-profile-page-alert-success', { visible: true })
+            await driver.page.click('#test-EditUserProfileForm__save')
+            await driver.page.waitForSelector('.test-EditUserProfileForm__success', { visible: true })
         })
     })
 
