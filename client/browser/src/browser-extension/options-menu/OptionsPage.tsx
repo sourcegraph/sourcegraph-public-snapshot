@@ -63,7 +63,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
             <section className="options-page__section">
-                <div style={{ display: 'flex', 'justify-content': 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <SourcegraphLogo className="options-page__logo" />
                     <div>
                         <Toggle
@@ -119,7 +119,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     </LinkOrButton>
                 </div>
                 <div className="options-page__split-section__part">
-                    <LinkOrButton to="https://sourcegraph.com">
+                    <LinkOrButton to="https://docs.sourcegraph.com">
                         <BookOpenPageVariantIcon className="icon-inline" /> Documentation
                     </LinkOrButton>
                 </div>
