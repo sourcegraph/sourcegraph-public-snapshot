@@ -506,9 +506,10 @@ func TestUserDeleteCascades(t *testing.T) {
 		t.Skip()
 	}
 
+	ctx := context.Background()
 	db := dbtest.NewDB(t, *dsn)
 	orgID := insertTestOrg(t, db)
-	userID := insertTestUser(t, db)
+	userID := insertTestUser(t, ctx, db, "bbs-admin")
 
 	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
 		// Set up two campaigns and specs: one in the user's namespace (which
