@@ -1,5 +1,5 @@
 import React from 'react'
-import { Dialog } from '../components/Dialog'
+import { Dialog } from '@reach/dialog'
 import { splitExtensionID } from './extension/extension'
 
 /**
@@ -11,11 +11,16 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
     denyPermission: () => void
 }> = ({ extensionID, denyPermission, givePermission }) => {
     const { name } = splitExtensionID(extensionID)
+    const labelId = `label--permission-${extensionID}`
 
     return (
-        <Dialog onClose={denyPermission}>
-            <div className="extension-permission-modal p-4">
-                <h3>Add {name || extensionID} Sourcegraph extension?</h3>
+        <Dialog
+            className="extension-permission-modal extension-permission-modal__center p-4 rounded border"
+            onDismiss={denyPermission}
+            aria-labelledBy={labelId}
+        >
+            <div className="web-content">
+                <h3 id={labelId}>Add {name || extensionID} Sourcegraph extension?</h3>
                 <p className="mb-0 mt-3">It will be able to:</p>
                 <ul className="list-dashed">
                     <li className="m-0">read repositories and files you view using Sourcegraph</li>
