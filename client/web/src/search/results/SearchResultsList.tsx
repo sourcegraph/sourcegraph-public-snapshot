@@ -33,6 +33,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
+import Dialog from '@reach/dialog'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -330,16 +331,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 <div className="search-results-list" ref={this.setScrollableElementRef}>
                     {/* Saved Queries Form */}
                     {this.props.showSavedQueryModal && (
-                        <ModalContainer onClose={this.props.onSavedQueryModalClose}>
-                            {() => (
-                                <SavedSearchModal
-                                    {...this.props}
-                                    query={parsedQuery}
-                                    authenticatedUser={this.props.authenticatedUser}
-                                    onDidCancel={this.props.onSavedQueryModalClose}
-                                />
-                            )}
-                        </ModalContainer>
+                        <SavedSearchModal
+                            {...this.props}
+                            query={parsedQuery}
+                            authenticatedUser={this.props.authenticatedUser}
+                            onDidCancel={this.props.onSavedQueryModalClose}
+                        />
                     )}
 
                     {this.props.resultsOrError === undefined ? (

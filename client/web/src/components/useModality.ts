@@ -78,9 +78,9 @@ export function useModality(
     useEffect(() => {
         function handleMouseDownOutside(event: MouseEvent): void {
             const modalBody = modalBodyReference.current
-            if (modalBody) {
-                const targetElement = targetID ? document.querySelector(`#${targetID}`) : null
+            const targetElement = targetID ? document.querySelector(`#${targetID}`) : null
 
+            if (modalBody || targetElement) {
                 const isNotModalBody =
                     !modalBody || (modalBody !== event.target && !modalBody.contains(event.target as Node))
                 const isNotTargetElement =
