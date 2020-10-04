@@ -1,7 +1,7 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { WebStory } from '../../components/WebStory'
 import { InstallExtensionPopover } from './InstallExtensionPopover'
 
@@ -15,17 +15,32 @@ const { add } = storiesOf('web/repo/actions', module).addDecorator(story => (
 
 add('InstallExtensionPopover (GitHub)', () => (
     <WebStory>
-        {() => (
-            <InstallExtensionPopover
-                url=""
-                serviceType="github"
-                onClose={onClose}
-                onRejection={onRejection}
-                onClickInstall={onClickInstall}
-                targetID="noop"
-                isOpen={true}
-                toggle={noop}
-            />
-        )}
+        {() => {
+            const [open, setOpen] = useState(false)
+            useEffect(() => {
+                setTimeout(() => setOpen(true), 0)
+            }, [])
+            return (
+                <>
+                    <button
+                        className="btn btn-outline-primary"
+                        id="view-on-github"
+                        onClick={() => setOpen(isOpen => !isOpen)}
+                    >
+                        View on GitHub
+                    </button>
+                    <InstallExtensionPopover
+                        url=""
+                        serviceType="github"
+                        onClose={onClose}
+                        onRejection={onRejection}
+                        onClickInstall={onClickInstall}
+                        targetID="view-on-github"
+                        isOpen={open}
+                        toggle={noop}
+                    />
+                </>
+            )
+        }}
     </WebStory>
 ))

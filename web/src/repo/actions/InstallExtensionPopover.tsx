@@ -52,7 +52,7 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
             )}
         >
             {isOpen && (
-                <FocusLock>
+                <FocusLock returnFocus={true}>
                     <div className="modal-body p-4 web-content text-wrap  test-install-extension-popover">
                         <h3 className="mb-0 test-install-extension-popover-header">
                             Take Sourcegraph's code intelligence to {displayName}!
