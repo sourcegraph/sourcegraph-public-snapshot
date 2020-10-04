@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { merge, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, startWith, switchMap } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
-import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'

@@ -1,5 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
 import { InstallExtensionPopover } from './InstallExtensionPopover'
@@ -22,6 +23,8 @@ add('InstallExtensionPopover (GitHub)', () => (
                 onRejection={onRejection}
                 onClickInstall={onClickInstall}
                 targetID="noop"
+                isOpen={true}
+                toggle={noop}
             />
         )}
     </WebStory>
