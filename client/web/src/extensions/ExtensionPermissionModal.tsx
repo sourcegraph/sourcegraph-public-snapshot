@@ -15,7 +15,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
 
     return (
         <Dialog
-            className="extension-permission-modal extension-permission-modal__center p-4 rounded border"
+            className="modal-body modal-body__center p-4 rounded border"
             onDismiss={denyPermission}
             aria-labelledBy={labelId}
         >
