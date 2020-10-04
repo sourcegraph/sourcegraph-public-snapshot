@@ -116,7 +116,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         eventLogger.log('BrowserExtensionPopupClickedInstall')
     }, [onPopoverDismissed])
 
-    const onSelect = useCallback(() => {
+    const toggle = useCallback(() => {
         if (showPopover) {
             setShowPopover(false)
             return
@@ -126,6 +126,22 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
             setShowPopover(true)
         }
     }, [hijackLink, showPopover])
+
+    const onClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (showPopover) {
+                event.preventDefault()
+                setShowPopover(false)
+                return
+            }
+
+            if (hijackLink) {
+                event.preventDefault()
+                setShowPopover(true)
+            }
+        },
+        [hijackLink, showPopover]
+    )
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =
@@ -186,28 +202,29 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     return (
         <>
-            <ButtonLink
+            <a
                 className="nav-link test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                to={hijackLink ? '' : url}
+                href={hijackLink ? '' : url}
                 target="_self"
                 data-tooltip={`View on ${displayName}`}
-                onSelect={onSelect}
                 id={TARGET_ID}
+                onClick={onClick}
+                onAuxClick={onClick}
             >
                 <Icon className="icon-inline" />
-            </ButtonLink>
+            </a>
 
-            {showPopover && (
-                <InstallExtensionPopover
-                    url={url}
-                    serviceType={externalURL.serviceType}
-                    onClose={onClose}
-                    onRejection={onRejection}
-                    onClickInstall={onClickInstall}
-                    targetID={TARGET_ID}
-                />
-            )}
+            <InstallExtensionPopover
+                url={url}
+                toggle={toggle}
+                isOpen={showPopover}
+                serviceType={externalURL.serviceType}
+                onClose={onClose}
+                onRejection={onRejection}
+                onClickInstall={onClickInstall}
+                targetID={TARGET_ID}
+            />
         </>
     )
 }

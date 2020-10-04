@@ -1,9 +1,9 @@
 import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
 import React, { useMemo } from 'react'
+import { Popover } from 'reactstrap'
 import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { SourcegraphIcon } from '../../auth/icons'
-import { PopoverContainer } from '../../components/PopoverContainer'
 import { serviceTypeDisplayNameAndIcon } from './GoToCodeHostAction'
 
 interface CodeHostExtensionPopoverProps {
@@ -13,6 +13,8 @@ interface CodeHostExtensionPopoverProps {
     onRejection: () => void
     onClickInstall: () => void
     targetID: string
+    toggle: () => void
+    isOpen: boolean
 }
 
 export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionPopoverProps> = ({
@@ -22,35 +24,34 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
     onRejection,
     onClickInstall,
     targetID,
+    toggle,
+    isOpen,
 }) => {
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
     const Icon = icon || ExportIcon
 
+    // TODO: store type of original click (normal vs aux). If it was an aux click, open link in new tab
+
     return (
-        <PopoverContainer
-            onClose={onClose}
-            targetID={targetID}
-            popperOptions={useMemo(
+        <Popover
+            toggle={toggle}
+            target={targetID}
+            isOpen={isOpen}
+            popperClassName="shadow"
+            innerClassName="border"
+            placement="bottom"
+            modifiers={useMemo(
                 () => ({
-                    placement: 'bottom-start',
-                    modifiers: [
-                        {
-                            name: 'offset',
-                            options: {
-                                offset: [64, 4],
-                            },
-                        },
-                    ],
+                    offset: {
+                        offset: '0 4',
+                        enabled: true,
+                    },
                 }),
                 []
             )}
         >
-            {modalBodyReference => (
-                <div
-                    ref={modalBodyReference as React.MutableRefObject<HTMLDivElement>}
-                    // TODO: move .extension-permission-modal to .modal-body
-                    className="extension-permission-modal p-4 web-content text-wrap border shadow test-install-extension-popover"
-                >
+            {isOpen && (
+                <div className="modal-body p-4 web-content text-wrap  test-install-extension-popover">
                     <h3 className="mb-0 test-install-extension-popover-header">
                         Take Sourcegraph's code intelligence to {displayName}!
                     </h3>
@@ -84,6 +85,6 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
                     </div>
                 </div>
             )}
-        </PopoverContainer>
+        </Popover>
     )
 }
