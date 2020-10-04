@@ -22,7 +22,6 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, hasProperty } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -33,7 +32,6 @@ import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
-import Dialog from '@reach/dialog'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
