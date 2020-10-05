@@ -37,6 +37,7 @@ import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { GraphSelectionProps } from '../enterprise/graphs/selector/graphSelectionProps'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -56,6 +57,7 @@ export interface RepoRevisionContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        GraphSelectionProps,
         RevisionSpec,
         BreadcrumbSetters {
     repo: GQL.IRepository
@@ -84,6 +86,7 @@ interface RepoRevisionContainerProps
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        GraphSelectionProps,
         RevisionSpec,
         BreadcrumbSetters {
     routes: readonly RepoRevisionContainerRoute[]

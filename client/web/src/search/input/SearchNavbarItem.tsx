@@ -12,6 +12,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import Shepherd from 'shepherd.js'
 import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
 import { eventLogger } from '../../tracking/eventLogger'
+import { GraphSelectionProps } from '../../enterprise/graphs/selector/graphSelectionProps'
 
 interface Props
     extends ActivationProps,
@@ -21,6 +22,7 @@ interface Props
         ThemeProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<GraphSelectionProps, 'selectedGraph'>,
         OnboardingTourProps {
     location: H.Location
     history: H.History

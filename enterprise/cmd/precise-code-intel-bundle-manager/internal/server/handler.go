@@ -25,6 +25,7 @@ import (
 
 const DefaultMonikerResultPageSize = 100
 const DefaultDiagnosticResultPageSize = 100
+const DefaultPackageInformationResultPageSize = 100
 
 func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
@@ -44,6 +45,7 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/dbs/{id:[0-9]+}/monikersByPosition").Methods("GET").HandlerFunc(s.handleMonikersByPosition)
 	mux.Path("/dbs/{id:[0-9]+}/monikerResults").Methods("GET").HandlerFunc(s.handleMonikerResults)
 	mux.Path("/dbs/{id:[0-9]+}/packageInformation").Methods("GET").HandlerFunc(s.handlePackageInformation)
+	mux.Path("/dbs/{id:[0-9]+}/packageInformations").Methods("GET").HandlerFunc(s.handlePackageInformations)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -287,6 +289,28 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 		}
 
 		return packageInformationData, nil
+	})
+}
+
+// GET /dbs/{id:[0-9]+}/packageInformations
+func (s *Server) handlePackageInformations(w http.ResponseWriter, r *http.Request) {
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		skip := getQueryInt(r, "skip")
+		if skip < 0 {
+			return nil, errors.New("illegal skip supplied")
+		}
+
+		take := getQueryIntDefault(r, "take", DefaultPackageInformationResultPageSize)
+		if take <= 0 {
+			return nil, errors.New("illegal take supplied")
+		}
+
+		packageInformations, count, err := db.PackageInformations(ctx, getQuery(r, "prefix"), skip, take)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.PackageInformations")
+		}
+
+		return map[string]interface{}{"packageInformations": packageInformations, "count": count}, nil
 	})
 }
 

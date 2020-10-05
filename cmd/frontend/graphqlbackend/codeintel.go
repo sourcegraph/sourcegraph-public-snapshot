@@ -146,6 +146,7 @@ type LSIFIndexConnectionResolver interface {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+	Dependencies(ctx context.Context, args *LSIFDependenciesArgs) (DependencyConnectionResolver, error)
 }
 
 type GitBlobLSIFDataResolver interface {
@@ -187,6 +188,10 @@ type LSIFDiagnosticsArgs struct {
 	graphqlutil.ConnectionArgs
 }
 
+type LSIFDependenciesArgs struct {
+	graphqlutil.ConnectionArgs
+}
+
 type CodeIntelligenceRangeConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeIntelligenceRangeResolver, error)
 }
@@ -220,4 +225,16 @@ type DiagnosticResolver interface {
 	Source() (*string, error)
 	Message() (*string, error)
 	Location(ctx context.Context) (LocationResolver, error)
+}
+
+type DependencyConnectionResolver interface {
+	Nodes(ctx context.Context) ([]DependencyResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type DependencyResolver interface {
+	LSIFName() string
+	LSIFVersion() string
+	LSIFManager() string
 }

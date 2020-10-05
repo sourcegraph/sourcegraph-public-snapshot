@@ -2,7 +2,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, skip, startWith, switchMap, tap } from 'rxjs/operators'
 import {
     parseSearchURLQuery,
     parseSearchURLPatternType,
@@ -39,6 +39,7 @@ import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { GraphSelectionProps } from '../../enterprise/graphs/selector/graphSelectionProps'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -49,6 +50,7 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
+        GraphSelectionProps,
         VersionContextProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -61,6 +63,7 @@ export interface SearchResultsProps
         version: string,
         patternType: SearchPatternType,
         versionContext: string | undefined,
+        selectedGraph: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
@@ -144,6 +147,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             patternType: SearchPatternType
                             caseSensitive: boolean
                             versionContext: string | undefined
+                            selectedGraph: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
                     tap(({ query, caseSensitive }) => {
@@ -158,7 +162,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(({ query, patternType, caseSensitive, versionContext }) =>
+                    switchMap(({ query, patternType, caseSensitive, versionContext, selectedGraph }) =>
                         concat(
                             // Reset view state
                             [
@@ -175,6 +179,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),
+                                    selectedGraph,
                                     this.props.extensionsController.extHostAPI
                                 )
                                 .pipe(
@@ -253,6 +258,19 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 })
         )
 
+        // Re-run the search when the selected graph changes.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    distinctUntilChanged((a, b) => a.selectedGraph === b.selectedGraph),
+                    skip(1)
+                )
+                .subscribe(props => {
+                    const s = parseSearchURL(props.location.search)
+                    submitSearch({ ...props, query: s.query || '', source: 'filter' })
+                })
+        )
+
         this.subscriptions.add(
             this.props.extensionsController.services.contribution
                 .getContributions()
@@ -299,6 +317,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 <PageTitle key="page-title" title={query} />
                 {!this.props.interactiveSearchMode && (
                     <SearchResultsFilterBars
+                        {...this.props}
                         navbarSearchQuery={this.props.navbarSearchQueryState.query}
                         results={this.state.resultsOrError}
                         filters={filters}

@@ -23,7 +23,7 @@ import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
 import { enterpriseSiteAdminSidebarGroups } from './site-admin/sidebaritems'
-import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
+import { enterpriseUserAreaTabsNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
@@ -41,7 +41,7 @@ window.addEventListener('DOMContentLoaded', () => {
             siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
             siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
             siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
-            userAreaHeaderNavItems={enterpriseUserAreaHeaderNavItems}
+            userAreaHeaderNavItems={enterpriseUserAreaTabsNavItems}
             userAreaRoutes={enterpriseUserAreaRoutes}
             userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
             userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}

@@ -6,11 +6,22 @@ import { isEqual } from 'lodash'
 import { asError, ErrorLike } from '../../../util/errors'
 import { finallyReleaseProxy } from '../api/common'
 import { DeepReplace, isNot, isExactly, property, isTaggedUnionMember, allOf, isDefined } from '../../../util/types'
+import { Scalars } from '../../../graphql-operations'
+import { Namespace } from '../../../graphql/schema'
 
 /**
  * A view is a page or partial page.
  */
-export interface View extends ExtensionView {}
+export interface View extends Omit<ExtensionView, 'title' | 'content'> {
+    /** Allow empty titles. */
+    title: string | null
+
+    /** Optional link destination URL for the title. */
+    titleLink?: string
+
+    /** Allow React components. */
+    content: (ExtensionView['content'][0] | { reactComponent: React.FunctionComponent })[]
+}
 
 /**
  * A map from type of container names to the internal type of the context parameter provided by the container.
@@ -21,6 +32,7 @@ export interface ViewContexts {
     [ContributableViewContainer.InsightsPage]: {}
     [ContributableViewContainer.GlobalPage]: Record<string, string>
     [ContributableViewContainer.Directory]: DeepReplace<DirectoryViewContext, URL, string>
+    [ContributableViewContainer.Profile]: { type: Namespace['__typename']; id: Scalars['ID'] }
 }
 
 export type ViewProviderFunction<C> = (context: C) => Observable<View | null>

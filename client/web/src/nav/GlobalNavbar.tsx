@@ -32,6 +32,8 @@ import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
+import { GraphSelector } from '../enterprise/graphs/selector/GraphSelector'
+import { GraphSelectionProps } from '../enterprise/graphs/selector/graphSelectionProps'
 
 interface Props
     extends SettingsCascadeProps,
@@ -48,6 +50,7 @@ interface Props
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Omit<GraphSelectionProps, 'contributeContextualGraphs'>,
         OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -208,6 +211,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             {splitSearchModes && (
                                 <SearchModeToggle {...props} interactiveSearchMode={interactiveSearchMode} />
                             )}
+                            <GraphSelector {...props} />
                             <VersionContextDropdown
                                 history={history}
                                 navbarSearchQuery={navbarSearchQueryState.query}

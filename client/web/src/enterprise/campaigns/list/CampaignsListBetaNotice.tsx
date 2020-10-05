@@ -1,7 +1,7 @@
 import React from 'react'
 
 export const CampaignsListBetaNotice: React.FunctionComponent<{}> = () => (
-    <div className="row">
+    <div className="row d-none">
         <div className="col-12 col-md-8 offset-md-2">
             <div className="card bg-white mt-4 mb-4">
                 <div className="card-body p-3 d-flex">

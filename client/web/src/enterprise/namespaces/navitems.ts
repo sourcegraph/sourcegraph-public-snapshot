@@ -1,5 +1,6 @@
 import { NamespaceAreaNavItem } from '../../namespaces/NamespaceArea'
 import { CampaignsIcon } from '../campaigns/icons'
+import { graphOwnerNavItems } from '../graphs/graphOwner/routes'
 
 export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavItem[] = [
     {
@@ -9,4 +10,5 @@ export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavIte
         condition: ({ isSourcegraphDotCom }: { isSourcegraphDotCom: boolean }): boolean =>
             !isSourcegraphDotCom && window.context.campaignsEnabled,
     },
+    ...graphOwnerNavItems,
 ]

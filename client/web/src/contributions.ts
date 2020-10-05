@@ -5,7 +5,9 @@ import { ExtensionsControllerProps } from '../../shared/src/extensions/controlle
 import { registerHighlightContributions } from '../../shared/src/highlight/contributions'
 import { registerHoverContributions } from '../../shared/src/hover/actions'
 import { PlatformContextProps } from '../../shared/src/platform/context'
+import { registerProfileViews } from './enterprise/namespaces/profileViews/registerProfileViews'
 import { registerSearchStatsContributions } from './enterprise/search/stats/contributions'
+import { registerTreeViews } from './repo/tree/views/registerTreeViews'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     history: H.History
@@ -24,6 +26,8 @@ export class GlobalContributions extends React.Component<Props> {
             registerHoverContributions({ ...this.props, locationAssign: location.assign.bind(location) })
         )
         this.subscriptions.add(registerSearchStatsContributions(this.props))
+        this.subscriptions.add(registerTreeViews(this.props))
+        this.subscriptions.add(registerProfileViews(this.props))
     }
 
     public componentWillUnmount(): void {

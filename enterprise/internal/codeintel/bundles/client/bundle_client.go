@@ -38,6 +38,10 @@ type BundleClient interface {
 
 	// PackageInformation retrieves package information data by its identifier.
 	PackageInformation(ctx context.Context, path, packageInformationID string) (PackageInformationData, error)
+
+	// PackageInformations retrieves a list of all package information data for packages referenced
+	// in documents with the given path prefix.
+	PackageInformations(ctx context.Context, prefix string, skip, take int) ([]PackageInformationData, int, error)
 }
 
 type bundleClientImpl struct {
@@ -197,7 +201,33 @@ func (c *bundleClientImpl) PackageInformation(ctx context.Context, path, package
 	}
 
 	err = c.request(ctx, "packageInformation", args, &target)
+	target.DumpID = c.bundleID
 	return target, err
+}
+
+// PackageInformations retrieves a list of all package information data for packages referenced in
+// documents with the given path prefix.
+func (c *bundleClientImpl) PackageInformations(ctx context.Context, prefix string, skip, take int) (packageInformations []PackageInformationData, count int, err error) {
+	args := map[string]interface{}{
+		"prefix": prefix,
+	}
+	if skip != 0 {
+		args["skip"] = skip
+	}
+	if take != 0 {
+		args["take"] = take
+	}
+
+	target := struct {
+		PackageInformations []PackageInformationData `json:"packageInformations"`
+		Count               int                      `json:"count"`
+	}{}
+
+	err = c.request(ctx, "packageInformations", args, &target)
+	packageInformations = target.PackageInformations
+	count = target.Count
+	c.addBundleIDToPackageInformations(packageInformations)
+	return packageInformations, count, err
 }
 
 func (c *bundleClientImpl) request(ctx context.Context, path string, qs map[string]interface{}, target interface{}) error {
@@ -213,5 +243,11 @@ func (c *bundleClientImpl) addBundleIDToLocations(locations []Location) {
 func (c *bundleClientImpl) addBundleIDToDiagnostics(diagnostics []Diagnostic) {
 	for i := range diagnostics {
 		diagnostics[i].DumpID = c.bundleID
+	}
+}
+
+func (c *bundleClientImpl) addBundleIDToPackageInformations(packageInformations []PackageInformationData) {
+	for i := range packageInformations {
+		packageInformations[i].DumpID = c.bundleID
 	}
 }

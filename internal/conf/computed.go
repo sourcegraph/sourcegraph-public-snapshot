@@ -306,6 +306,12 @@ func AndOrQueryEnabled() bool {
 	return e.AndOrQuery == "enabled"
 }
 
+func GraphsEnabled() bool {
+	return true // TODO(sqs)
+	v := ExperimentalFeatures().Graphs
+	return v != nil && *v // default to disabled
+}
+
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {

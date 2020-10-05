@@ -84,6 +84,7 @@ type JSContext struct {
 	Branding *schema.Branding `json:"branding"`
 
 	CampaignsEnabled bool `json:"campaignsEnabled"`
+	GraphsEnabled    bool `json:"graphsEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
@@ -178,6 +179,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Branding: conf.Branding(),
 
 		CampaignsEnabled: conf.CampaignsEnabled(),
+		GraphsEnabled:    conf.GraphsEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}

@@ -1,0 +1,16 @@
+.user-area-sidebar {
+    flex: 0 0 10rem;
+    min-width: 12rem;
+
+    &__avatar {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        &--large {
+            max-height: 12rem;
+        }
+        &--small {
+            max-height: 2.5rem;
+        }
+    }
+}

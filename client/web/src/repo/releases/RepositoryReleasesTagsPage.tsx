@@ -7,7 +7,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
 import { Observable } from 'rxjs'
-import { GitRefType } from '../../graphql-operations'
+import { GitRefType, GitRefFields } from '../../graphql-operations'
 
 interface Props extends RepositoryReleasesAreaPageProps {
     history: H.History
@@ -41,13 +41,14 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
     return (
         <div className="repository-releases-page">
             <PageTitle title="Tags" />
-            <FilteredConnection<GQL.IGitRef>
+            <FilteredConnection<GitRefFields, Pick<React.ComponentProps<typeof GitReferenceNode>, 'className'>>
                 className="my-3"
                 listClassName="list-group list-group-flush"
                 noun="tag"
                 pluralNoun="tags"
                 queryConnection={queryTags}
                 nodeComponent={GitReferenceNode}
+                nodeComponentProps={{ className: 'list-group-item' }}
                 defaultFirst={20}
                 autoFocus={true}
                 history={history}

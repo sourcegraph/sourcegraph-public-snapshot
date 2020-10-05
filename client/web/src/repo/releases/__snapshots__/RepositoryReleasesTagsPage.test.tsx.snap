@@ -54,6 +54,11 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
       }
     }
     nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "className": "list-group-item",
+      }
+    }
     noun="tag"
     pluralNoun="tags"
     queryConnection={[Function]}

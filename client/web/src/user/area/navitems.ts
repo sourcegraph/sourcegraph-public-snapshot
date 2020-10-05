@@ -1,19 +1,14 @@
 import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
+import PersonCardDetailsIcon from 'mdi-react/PersonCardDetailsOutlineIcon'
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
-import { UserAreaHeaderNavItem } from './UserAreaHeader'
+import { UserAreaTabsNavItem } from './UserAreaTabs'
 
-export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
+export const userAreaHeaderNavItems: readonly UserAreaTabsNavItem[] = [
     {
         to: '',
         exact: true,
-        label: 'Profile',
-    },
-    {
-        to: '/settings',
-        label: 'Settings',
-        icon: SettingsIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        label: 'Overview',
+        icon: PersonCardDetailsIcon,
     },
     {
         to: '/searches',

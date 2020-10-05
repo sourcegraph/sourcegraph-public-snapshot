@@ -1,7 +1,6 @@
 @import './ChartViewContent';
 
 .view-content {
-    margin-top: 0.75rem;
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -15,5 +14,10 @@
         flex: 1 1 auto;
         // Prevent overflow of misbehaving extensions
         overflow-x: hidden;
+
+        // TODO(sqs): hack, otherwise headers in server-side generated markdown are cut off
+        h1 a.anchor {
+            padding-left: 0.5rem !important;
+        }
     }
 }

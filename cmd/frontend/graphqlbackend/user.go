@@ -340,3 +340,14 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 }
+
+func (r *UserResolver) Graph(ctx context.Context, args *GraphArgs) (GraphResolver, error) {
+	args.OwnerID = r.ID()
+	return EnterpriseResolvers.graphsResolver.Graph(ctx, *args)
+}
+
+func (r *UserResolver) Graphs(ctx context.Context, args *GraphConnectionArgs) (GraphConnectionResolver, error) {
+	id := r.ID()
+	args.Owner = &id
+	return EnterpriseResolvers.graphsResolver.Graphs(ctx, *args)
+}

@@ -265,6 +265,7 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 	var payload struct {
 		Name    string `json:"name"`
 		Version string `json:"version"`
+		Manager string `json:"manager"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
@@ -273,6 +274,7 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 	return PackageInformation{
 		Name:    payload.Name,
 		Version: payload.Version,
+		Manager: payload.Manager,
 	}, nil
 }
 

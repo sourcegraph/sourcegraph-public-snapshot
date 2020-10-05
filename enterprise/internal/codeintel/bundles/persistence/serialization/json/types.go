@@ -88,6 +88,7 @@ type SerializedMoniker struct {
 type SerializedPackageInformation struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
+	Manager string `json:"manager"`
 }
 
 type SerializedDocumentIDRangeID struct {

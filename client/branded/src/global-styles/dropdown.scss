@@ -4,13 +4,19 @@
     margin: 0.25rem 0;
 }
 
+.dropdown-menu,
+[data-reach-listbox-popover] {
+    border-radius: 4px;
+}
+
 .theme-dark {
     --dropdown-bg: #0e121b;
     --dropdown-border-color: #{$color-border};
-    --dropdown-link-hover-bg: #{$color-bg-2};
+    --dropdown-link-hover-color: white;
+    --dropdown-link-hover-bg: var(--primary); // #{$color-bg-2};
     --dropdown-header-color: #{$color-text-1};
-    .dropdown-menu {
-        border-radius: 4px;
+    .dropdown-menu,
+    [data-reach-listbox-popover] {
         box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
     }
 }
@@ -18,10 +24,24 @@
 .theme-light {
     --dropdown-bg: #ffffff;
     --dropdown-border-color: #{$color-light-border};
-    --dropdown-link-hover-bg: #{$color-light-bg-2};
+    --dropdown-link-hover-color: white;
+    --dropdown-link-hover-bg: var(--primary); // #{$color-light-bg-2};
     --dropdown-header-color: #{$color-light-text-2};
-    .dropdown-menu {
-        border-radius: 4px;
+    .dropdown-menu,
+    [data-reach-listbox-popover] {
         box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
+    }
+}
+
+// Reach listbox
+[data-reach-listbox-popover] {
+    background-color: var(--dropdown-bg);
+    outline: none !important;
+}
+[data-reach-listbox-option] {
+    color: var(--body-color);
+    &[aria-selected='true'] {
+        color: var(--dropdown-link-hover-color);
+        background-color: var(--dropdown-link-hover-bg);
     }
 }

@@ -37,6 +37,9 @@ type MockBundleClient struct {
 	// PackageInformationFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageInformation.
 	PackageInformationFunc *BundleClientPackageInformationFunc
+	// PackageInformationsFunc is an instance of a mock function object
+	// controlling the behavior of the method PackageInformations.
+	PackageInformationsFunc *BundleClientPackageInformationsFunc
 	// RangesFunc is an instance of a mock function object controlling the
 	// behavior of the method Ranges.
 	RangesFunc *BundleClientRangesFunc
@@ -89,6 +92,11 @@ func NewMockBundleClient() *MockBundleClient {
 				return client.PackageInformationData{}, nil
 			},
 		},
+		PackageInformationsFunc: &BundleClientPackageInformationsFunc{
+			defaultHook: func(context.Context, string, int, int) ([]client.PackageInformationData, int, error) {
+				return nil, 0, nil
+			},
+		},
 		RangesFunc: &BundleClientRangesFunc{
 			defaultHook: func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
 				return nil, nil
@@ -130,6 +138,9 @@ func NewMockBundleClientFrom(i client.BundleClient) *MockBundleClient {
 		},
 		PackageInformationFunc: &BundleClientPackageInformationFunc{
 			defaultHook: i.PackageInformation,
+		},
+		PackageInformationsFunc: &BundleClientPackageInformationsFunc{
+			defaultHook: i.PackageInformations,
 		},
 		RangesFunc: &BundleClientRangesFunc{
 			defaultHook: i.Ranges,
@@ -1053,6 +1064,127 @@ func (c BundleClientPackageInformationFuncCall) Args() []interface{} {
 // invocation.
 func (c BundleClientPackageInformationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// BundleClientPackageInformationsFunc describes the behavior when the
+// PackageInformations method of the parent MockBundleClient instance is
+// invoked.
+type BundleClientPackageInformationsFunc struct {
+	defaultHook func(context.Context, string, int, int) ([]client.PackageInformationData, int, error)
+	hooks       []func(context.Context, string, int, int) ([]client.PackageInformationData, int, error)
+	history     []BundleClientPackageInformationsFuncCall
+	mutex       sync.Mutex
+}
+
+// PackageInformations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBundleClient) PackageInformations(v0 context.Context, v1 string, v2 int, v3 int) ([]client.PackageInformationData, int, error) {
+	r0, r1, r2 := m.PackageInformationsFunc.nextHook()(v0, v1, v2, v3)
+	m.PackageInformationsFunc.appendCall(BundleClientPackageInformationsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the PackageInformations
+// method of the parent MockBundleClient instance is invoked and the hook
+// queue is empty.
+func (f *BundleClientPackageInformationsFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.PackageInformationData, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PackageInformations method of the parent MockBundleClient instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BundleClientPackageInformationsFunc) PushHook(hook func(context.Context, string, int, int) ([]client.PackageInformationData, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleClientPackageInformationsFunc) SetDefaultReturn(r0 []client.PackageInformationData, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.PackageInformationData, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleClientPackageInformationsFunc) PushReturn(r0 []client.PackageInformationData, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]client.PackageInformationData, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BundleClientPackageInformationsFunc) nextHook() func(context.Context, string, int, int) ([]client.PackageInformationData, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleClientPackageInformationsFunc) appendCall(r0 BundleClientPackageInformationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleClientPackageInformationsFuncCall
+// objects describing the invocations of this function.
+func (f *BundleClientPackageInformationsFunc) History() []BundleClientPackageInformationsFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleClientPackageInformationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleClientPackageInformationsFuncCall is an object that describes an
+// invocation of method PackageInformations on an instance of
+// MockBundleClient.
+type BundleClientPackageInformationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []client.PackageInformationData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleClientPackageInformationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleClientPackageInformationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // BundleClientRangesFunc describes the behavior when the Ranges method of

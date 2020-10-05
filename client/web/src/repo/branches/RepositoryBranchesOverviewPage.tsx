@@ -130,7 +130,10 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <div className="card repository-branches-page__card">
                                 <div className="card-header">Default branch</div>
                                 <ul className="list-group list-group-flush">
-                                    <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
+                                    <GitReferenceNode
+                                        node={this.state.dataOrError.defaultBranch}
+                                        className="list-group-item"
+                                    />
                                 </ul>
                             </div>
                         )}
@@ -139,7 +142,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                 <div className="card-header">Active branches</div>
                                 <div className="list-group list-group-flush">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (
-                                        <GitReferenceNode key={index} node={gitReference} />
+                                        <GitReferenceNode key={index} node={gitReference} className="list-group-item" />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
                                         <Link

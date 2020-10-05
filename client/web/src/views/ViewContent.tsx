@@ -4,23 +4,26 @@ import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import * as H from 'history'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
-import { View, MarkupContent } from 'sourcegraph'
+import { MarkupContent } from 'sourcegraph'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { hasProperty } from '../../../shared/src/util/types'
 import { isObject } from 'lodash'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { ChartViewContent } from './ChartViewContent'
+import { View } from '../../../shared/src/api/client/services/viewService'
+import { GraphSelectionProps } from '../enterprise/graphs/selector/graphSelectionProps'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 
 export interface ViewContentProps
     extends SettingsCascadeProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
+        Pick<PatternTypeProps, 'patternType'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<GraphSelectionProps, 'selectedGraph'> {
     viewContent: View['content']
     location: H.Location
     history: H.History
@@ -47,14 +50,20 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewCon
                 </React.Fragment>
             ) : 'chart' in content ? (
                 <ChartViewContent key={index} content={content} history={props.history} />
-            ) : content.component === 'QueryInput' ? (
-                <QueryInputInViewContent
-                    {...props}
-                    key={index}
-                    implicitQueryPrefix={
-                        typeof content.props.implicitQueryPrefix === 'string' ? content.props.implicitQueryPrefix : ''
-                    }
-                />
+            ) : 'component' in content ? (
+                content.component === 'QueryInput' ? (
+                    <QueryInputInViewContent
+                        {...props}
+                        key={index}
+                        implicitQueryPrefix={
+                            typeof content.props.implicitQueryPrefix === 'string'
+                                ? content.props.implicitQueryPrefix
+                                : ''
+                        }
+                    />
+                ) : null
+            ) : 'reactComponent' in content ? (
+                React.createElement(content.reactComponent, { key: index })
             ) : null
         )}
     </div>

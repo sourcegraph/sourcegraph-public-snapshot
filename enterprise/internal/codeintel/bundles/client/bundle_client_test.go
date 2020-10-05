@@ -429,6 +429,7 @@ func TestPackageInformation(t *testing.T) {
 	defer ts.Close()
 
 	expected := PackageInformationData{
+		DumpID:  42,
 		Name:    "leftpad",
 		Version: "0.1.0",
 	}

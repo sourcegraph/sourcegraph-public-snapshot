@@ -18,6 +18,7 @@ type ObservedCodeIntelAPI struct {
 	referencesOperation       *observation.Operation
 	hoverOperation            *observation.Operation
 	diagnosticsOperation      *observation.Operation
+	dependenciesOperation     *observation.Operation
 }
 
 var _ CodeIntelAPI = &ObservedCodeIntelAPI{}
@@ -63,6 +64,11 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 			MetricLabels: []string{"diagnostics"},
 			Metrics:      metrics,
 		}),
+		dependenciesOperation: observationContext.Operation(observation.Op{
+			Name:         "CodeIntelAPI.Dependencies",
+			MetricLabels: []string{"dependencies"},
+			Metrics:      metrics,
+		}),
 	}
 }
 
@@ -106,4 +112,11 @@ func (api *ObservedCodeIntelAPI) Diagnostics(ctx context.Context, prefix string,
 	ctx, endObservation := api.diagnosticsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(diagnostics)), observation.Args{}) }()
 	return api.codeIntelAPI.Diagnostics(ctx, prefix, uploadID, limit, offset)
+}
+
+// Dependencies calls into the inner CodeIntelAPI and registers the observed results.
+func (api *ObservedCodeIntelAPI) Dependencies(ctx context.Context, prefix string, uploadID, limit, offset int) (dependencies []ResolvedDependency, _ int, err error) {
+	ctx, endObservation := api.dependenciesOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(dependencies)), observation.Args{}) }()
+	return api.codeIntelAPI.Dependencies(ctx, prefix, uploadID, limit, offset)
 }

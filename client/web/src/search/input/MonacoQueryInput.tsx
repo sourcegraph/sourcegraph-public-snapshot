@@ -14,7 +14,6 @@ import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
 import Shepherd from 'shepherd.js'
 import {
@@ -258,7 +257,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             onEditorCreated={this.onEditorCreated}
                             options={options}
                             border={false}
-                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            keyboardShortcutForFocus={this.props.keyboardShortcutForFocus}
                             className="test-query-input"
                         />
                     </div>

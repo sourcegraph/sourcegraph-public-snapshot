@@ -43,7 +43,7 @@ import {
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { UserAreaRoute } from './user/area/UserArea'
-import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserAreaTabsNavItem } from './user/area/UserAreaSidebar'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
@@ -65,6 +65,7 @@ import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import { useGraphSelectionFromLocalStorage } from './enterprise/graphs/selector/graphSelectionProps'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -91,7 +92,7 @@ export interface LayoutProps
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaHeaderNavItems: readonly UserAreaTabsNavItem[]
     userAreaRoutes: readonly UserAreaRoute[]
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
@@ -121,6 +122,7 @@ export interface LayoutProps
         version: string,
         patternType: SearchPatternType,
         versionContext: string | undefined,
+        selectedGraph: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
@@ -150,7 +152,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         '/stanford',
         '/cncf',
     ]
-    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+    const isRepogroupPage =
+        repogroupPages.includes(props.location.pathname) || props.location.pathname.includes('/graphs/') // TODO(sqs)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
@@ -177,6 +180,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         startExtensionAlertAnimation()
     }, [startExtensionAlertAnimation])
 
+    const graphSelectionProps = useGraphSelectionFromLocalStorage()
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -187,6 +192,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...props,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
+        ...graphSelectionProps,
     }
 
     return (
@@ -207,6 +213,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
+                    {...graphSelectionProps}
                     authRequired={!!authRequired}
                     isSearchRelatedPage={isSearchRelatedPage}
                     variant={

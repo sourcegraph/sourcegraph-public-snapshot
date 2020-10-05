@@ -29,8 +29,10 @@ type MonikerData struct {
 
 // PackageInformationData describes a package within a package manager system.
 type PackageInformationData struct {
+	DumpID  int
 	Name    string `json:"name"`
 	Version string `json:"version"`
+	Manager string `json:"manager"`
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
@@ -55,3 +57,13 @@ type CodeIntelligenceRange struct {
 	References  []Location `json:"references"`
 	HoverText   string     `json:"hoverText"`
 }
+
+//  TODO(sqs): unused?
+//
+// // Dependency describes dependency information attached to a location within a
+// // particular dump.
+// type Dependency struct {
+// 	DumpID            int
+// 	DependentPackage  PackageInformationData
+// 	DependencyPackage PackageInformationData
+// }

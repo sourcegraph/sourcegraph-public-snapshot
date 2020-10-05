@@ -130,6 +130,9 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <Link to={props.authenticatedUser.settingsURL!} className="dropdown-item">
                     Settings
                 </Link>
+                <Link to={`/users/${props.authenticatedUser.username}/graphs`} className="dropdown-item">
+                    Graphs
+                </Link>
                 {props.showCampaigns && (
                     <Link to="/campaigns" className="dropdown-item">
                         Campaigns

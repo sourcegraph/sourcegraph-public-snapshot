@@ -272,6 +272,7 @@ func unmarshalWrappedPackageInformation(pairs []json.RawMessage) (map[types.ID]t
 		m[types.ID(id)] = types.PackageInformationData{
 			Name:    value.Name,
 			Version: value.Version,
+			Manager: value.Manager,
 		}
 	}
 

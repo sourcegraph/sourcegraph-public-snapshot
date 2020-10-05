@@ -325,11 +325,12 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, graphs GraphsResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
+		GraphsResolver:    defaultGraphsResolver{},
 	}
 	if campaigns != nil {
 		EnterpriseResolvers.campaignsResolver = campaigns
@@ -342,6 +343,10 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 	if authz != nil {
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
+	}
+	if graphs != nil {
+		EnterpriseResolvers.graphsResolver = graphs
+		resolver.GraphsResolver = graphs
 	}
 
 	return graphql.ParseSchema(
@@ -386,6 +391,19 @@ func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 		return nil, false
 	}
 	return n.ToExternalChangeset()
+}
+
+func (r *NodeResolver) ToGraph() (GraphResolver, bool) {
+	n, ok := r.Node.(GraphResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToGraphOwner() (*GraphOwnerResolver, bool) {
+	n, ok := r.Node.(GraphOwner)
+	if !ok {
+		return nil, false
+	}
+	return &GraphOwnerResolver{n}, true
 }
 
 func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool) {
@@ -506,6 +524,7 @@ type schemaResolver struct {
 	CampaignsResolver
 	AuthzResolver
 	CodeIntelResolver
+	GraphsResolver
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
@@ -514,10 +533,12 @@ var EnterpriseResolvers = struct {
 	codeIntelResolver CodeIntelResolver
 	authzResolver     AuthzResolver
 	campaignsResolver CampaignsResolver
+	graphsResolver    GraphsResolver
 }{
 	codeIntelResolver: defaultCodeIntelResolver{},
 	authzResolver:     defaultAuthzResolver{},
 	campaignsResolver: defaultCampaignsResolver{},
+	graphsResolver:    defaultGraphsResolver{},
 }
 
 // DEPRECATED
@@ -548,6 +569,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":
 		return r.ChangesetByID(ctx, id)
+	case "Graph":
+		return r.GraphByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

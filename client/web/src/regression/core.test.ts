@@ -171,7 +171,7 @@ describe('Core functionality regression test suite', () => {
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
-                const element = document.querySelector('.test-user-area-header__display-name')
+                const element = document.querySelector('.test-user-area-sidebar__display-name')
                 return element?.textContent && element.textContent.trim() === displayName
             },
             undefined,

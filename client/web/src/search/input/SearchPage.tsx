@@ -34,6 +34,8 @@ import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { HomePanels } from '../panels/HomePanels'
+import { EnterpriseHomePanels } from '../panels/EnterpriseHomePanels'
+import { GraphSelectionProps } from '../../enterprise/graphs/selector/graphSelectionProps'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -49,6 +51,7 @@ export interface SearchPageProps
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        GraphSelectionProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps {

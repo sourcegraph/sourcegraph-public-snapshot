@@ -38,5 +38,10 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
             return Boolean(settings.experimentalFeatures?.searchStats)
         },
     },
+    {
+        path: '/graphs',
+        render: lazyComponent(() => import('./graphs/list/GraphsPage'), 'GraphsPage'),
+        condition: () => window.context?.graphsEnabled,
+    },
     ...routes,
 ]

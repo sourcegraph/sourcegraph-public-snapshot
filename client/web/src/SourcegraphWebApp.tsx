@@ -43,7 +43,7 @@ import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
-import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserAreaTabsNavItem } from './user/area/UserAreaSidebar'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import {
@@ -78,7 +78,7 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaHeaderNavItems: readonly UserAreaTabsNavItem[]
     userAreaRoutes: readonly UserAreaRoute[]
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]

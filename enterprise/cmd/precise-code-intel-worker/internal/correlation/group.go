@@ -119,6 +119,7 @@ func serializeDocument(state *State, documentID int) types.DocumentData {
 				document.PackageInformation[toID(moniker.PackageInformationID)] = types.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
+					Manager: packageInformation.Manager,
 				}
 			}
 		})
@@ -318,6 +319,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
+			Manager: packageInfo.Manager,
 		}
 	})
 
@@ -334,6 +336,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 		Scheme      string
 		Name        string
 		Version     string
+		Manager     string
 		Identifiers []string
 	}
 
@@ -347,6 +350,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 			Scheme:      source.Scheme,
 			Name:        packageInfo.Name,
 			Version:     packageInfo.Version,
+			Manager:     packageInfo.Manager,
 			Identifiers: append(uniques[key].Identifiers, source.Identifier),
 		}
 	})
@@ -363,6 +367,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 			Scheme:  v.Scheme,
 			Name:    v.Name,
 			Version: v.Version,
+			Manager: v.Manager,
 			Filter:  filter,
 		})
 	}

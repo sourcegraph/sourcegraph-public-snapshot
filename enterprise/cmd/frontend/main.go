@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphs"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
@@ -33,6 +34,7 @@ var initFunctions = map[string]func(ctx context.Context, enterpriseServices *ent
 	"campaigns": campaigns.Init,
 	"codeintel": codeintel.Init,
 	"licensing": licensing.Init,
+	"graphs":    graphs.Init,
 }
 
 func enterpriseSetupHook() enterprise.Services {

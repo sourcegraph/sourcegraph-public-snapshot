@@ -52,6 +52,12 @@ export function parseSearchURLVersionContext(query: string): string | undefined 
     return context ?? undefined
 }
 
+/**
+ * Parse the selected graph out of the URL search params (the 'g' parameter).
+ */
+export const parseSearchURLSelectedGraph = (query: string): string | undefined =>
+    new URLSearchParams(query).get('g') ?? undefined
+
 export function searchURLIsCaseSensitive(query: string): boolean {
     const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
     if (queryCaseSensitivity) {
@@ -79,6 +85,7 @@ export function parseSearchURL(
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
     versionContext: string | undefined
+    selectedGraph: string | undefined
 } {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
@@ -108,6 +115,7 @@ export function parseSearchURL(
         patternType,
         caseSensitive,
         versionContext: parseSearchURLVersionContext(urlSearchQuery),
+        selectedGraph: parseSearchURLSelectedGraph(urlSearchQuery),
     }
 }
 

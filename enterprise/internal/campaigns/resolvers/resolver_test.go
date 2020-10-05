@@ -28,7 +28,7 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	sr := &Resolver{store: ee.NewStore(dbconn.Global)}
 
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -451,7 +451,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,7 +527,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

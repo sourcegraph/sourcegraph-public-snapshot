@@ -1,8 +1,8 @@
 import { userAreaHeaderNavItems } from '../../user/area/navitems'
-import { UserAreaHeaderNavItem } from '../../user/area/UserAreaHeader'
+import { UserAreaTabsNavItem } from '../../user/area/UserAreaTabs'
 import { enterpriseNamespaceAreaHeaderNavItems } from '../namespaces/navitems'
 
-export const enterpriseUserAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
+export const enterpriseUserAreaTabsNavItems: readonly UserAreaTabsNavItem[] = [
     ...userAreaHeaderNavItems,
     ...enterpriseNamespaceAreaHeaderNavItems,
 ]

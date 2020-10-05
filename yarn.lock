@@ -2543,6 +2543,13 @@
     tslib "^1.11.2"
     warning "^4.0.3"
 
+"@reach/visually-hidden@^0.11.1":
+  version "0.11.1"
+  resolved "https://registry.npmjs.org/@reach/visually-hidden/-/visually-hidden-0.11.1.tgz#3d7a5742acf18372f35b9e216680edd8073f35e3"
+  integrity sha512-TZZNSttor2jG6ZPGI35s/8G0FNSz49QrJIhAZbnUqHyPf3+jtNqAC0dOWW8Nuk+mApDDDVYd2KZ9P2vnzllNnQ==
+  dependencies:
+    tslib "^2.0.0"
+
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.0"
   resolved "https://registry.npmjs.org/@samverschueren/stream-to-observable/-/stream-to-observable-0.3.0.tgz#ecdf48d532c58ea477acfcab80348424f8d0662f"
@@ -4119,6 +4126,13 @@
   integrity sha512-Lna9cD38dN3deqJ6ThZgMKoAzW1LE3u+uUbPGdHUqquoM/fnZitSV1xfJxHjovu4SsNkpN9udkte3wEyrBPawQ==
   dependencies:
     "@types/history" "*"
+    "@types/react" "*"
+
+"@types/reach__visually-hidden@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.npmjs.org/@types/reach__visually-hidden/-/reach__visually-hidden-0.2.1.tgz#1d10e66b9b514f461d7d6440dfb0f2f5a5cfb6c8"
+  integrity sha512-dV4lLGUhw+SxDScglSmswicdNaMVqyVTUPAGG0f7xBObetOXELHRV9/z+CT6NZ7QTcobAaKSfEg3RKjkaF+YDg==
+  dependencies:
     "@types/react" "*"
 
 "@types/react-circular-progressbar@1.0.2":

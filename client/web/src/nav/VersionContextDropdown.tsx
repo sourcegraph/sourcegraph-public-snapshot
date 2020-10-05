@@ -71,6 +71,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                     activation,
                     filtersInQuery,
                     searchParameters,
+                    selectedGraph: null,
                 })
             }
         },

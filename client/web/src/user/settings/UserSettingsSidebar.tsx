@@ -64,6 +64,10 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 </SiteAdminAlert>
             )}
 
+            <h2>
+                <Link to={props.user.url}>{props.user.username}</Link>
+            </h2>
+
             <SidebarGroup>
                 <SidebarGroupHeader label="User account" />
                 <SidebarGroupItems>
@@ -78,7 +82,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 </SidebarGroupItems>
             </SidebarGroup>
 
-            {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
+            {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && false /* TODO(sqs) */ && (
                 <SidebarGroup>
                     <SidebarGroupHeader label="Organizations" />
                     <SidebarGroupItems>

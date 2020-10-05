@@ -94,6 +94,8 @@
 // 1528395729_add_external_services_namespace_user_id_index.up.sql (113B)
 // 1528395730_lsif_index_log_contents.down.sql (68B)
 // 1528395730_lsif_index_log_contents.up.sql (72B)
+// 1528395739_graphs.down.sql (46B)
+// 1528395739_graphs.up.sql (752B)
 
 package migrations
 
@@ -2042,6 +2044,46 @@ func _1528395730_lsif_index_log_contentsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395739_graphsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2f\x4a\x2c\xc8\x28\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x65\xad\xe6\x54\x2e\x00\x00\x00")
+
+func _1528395739_graphsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395739_graphsDownSql,
+		"1528395739_graphs.down.sql",
+	)
+}
+
+func _1528395739_graphsDownSql() (*asset, error) {
+	bytes, err := _1528395739_graphsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395739_graphs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x27, 0xfc, 0x86, 0x2e, 0xb5, 0x57, 0xfe, 0x83, 0x75, 0x55, 0x1e, 0x26, 0x8d, 0x47, 0xd3, 0xc7, 0x9b, 0x29, 0x73, 0x12, 0xc4, 0xaf, 0xda, 0x58, 0x73, 0x63, 0xa4, 0xc7, 0x7b, 0xe2, 0xc6, 0x47}}
+	return a, nil
+}
+
+var __1528395739_graphsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x92\x51\x6b\xdb\x30\x14\x85\xdf\xfd\x2b\xce\xc3\x20\xd2\x98\xc7\x36\xe8\xc3\xd6\xb4\x41\x75\xb4\xcd\xd4\x71\x86\xa3\x3e\x74\xa5\x13\xaa\x2d\x6c\x31\x5b\x36\x92\xba\x94\x32\xf6\xdb\x87\xdd\x06\x92\xb1\x96\xc1\x1e\x75\xce\xbd\xe7\x33\xe7\xfa\x8c\x7f\x4a\xf3\xe3\x28\x4a\x0a\xce\x04\x87\x60\x67\x19\x47\xed\xd4\xd0\x78\x90\x08\x00\x4c\x85\x1b\x53\x7b\xed\x8c\x6a\xf1\xa5\x48\x57\xac\xb8\xc4\x39\xbf\x7c\x35\xb9\xfd\xd6\x6a\x27\x6f\xbd\x76\xd2\x54\x30\x36\xe8\x5a\x3b\x14\xfc\x23\x2f\x78\x9e\xf0\x0d\x46\xcb\x13\x53\x51\xac\x73\x2c\x79\xc6\x05\x47\xc2\x36\x09\x5b\x72\x2c\xc7\xb1\x62\x44\xee\x87\xf5\xae\x7e\x22\xab\x77\xf5\xbf\x46\x59\xd5\x69\x04\x7d\x17\x90\xaf\x05\xf2\x8b\x2c\x7b\xd0\x2b\xed\x4b\x67\x86\x60\x7a\x3b\xd9\x0f\xaa\x1f\x74\xf9\xb7\xe9\xd2\x69\x15\x74\x25\x55\x40\x30\x9d\xf6\x41\x75\x03\xb6\x26\x34\xd3\x13\xf7\xbd\xd5\x23\x99\x5d\x64\x02\xb6\xdf\x12\xfa\xc7\xfe\xed\x50\xfd\xd7\x7e\xb2\xce\x37\xa2\x60\x69\x2e\x1e\x6f\x22\x1b\xe5\xe5\x5b\x39\x15\x85\xe4\x33\x4f\xce\x41\xc8\xe1\x0d\xd2\xcd\x14\x40\x31\x3f\x05\x39\x68\x74\xe7\xd0\xa7\xc2\xc7\xd2\xe4\x0f\xd5\x9a\x4a\x96\x8d\x72\x7e\x47\x98\xca\xfc\x85\xd9\xb7\x2b\x15\xdf\xb3\xf8\xeb\x9b\xf8\xfd\x35\x59\x7c\xd8\x7b\xfd\xbc\x8a\x5f\x5f\x93\xc5\xc9\x9e\x44\xe9\xcb\x78\xf1\x62\xf6\x3c\xac\x53\x77\xb2\xd5\xb6\x0e\xcd\x8e\x35\x82\x1f\xa5\x89\x4b\x31\x3f\xc1\xbb\xa3\xa3\xe7\x73\x6c\x1f\xe4\x4d\xab\xec\xf7\x83\x4f\x9e\x9f\x62\x36\xa3\x11\x1d\xff\xef\xf5\x6a\x95\x8a\xe3\xe8\x77\x00\x00\x00\xff\xff\xcf\x7b\xbd\x21\xf0\x02\x00\x00")
+
+func _1528395739_graphsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395739_graphsUpSql,
+		"1528395739_graphs.up.sql",
+	)
+}
+
+func _1528395739_graphsUpSql() (*asset, error) {
+	bytes, err := _1528395739_graphsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395739_graphs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb, 0x79, 0x40, 0x9c, 0x1, 0x9d, 0x35, 0xbf, 0xc8, 0xd6, 0xbd, 0x57, 0x5, 0x5e, 0x46, 0xd4, 0xf0, 0x5d, 0x56, 0x39, 0x2d, 0x76, 0xdf, 0x6f, 0xdb, 0xc8, 0x17, 0x39, 0x78, 0x85, 0xbe, 0x17}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2227,6 +2269,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              _1528395729_add_external_services_namespace_user_id_indexUpSql,
 	"1528395730_lsif_index_log_contents.down.sql":                                  _1528395730_lsif_index_log_contentsDownSql,
 	"1528395730_lsif_index_log_contents.up.sql":                                    _1528395730_lsif_index_log_contentsUpSql,
+	"1528395739_graphs.down.sql":                                                   _1528395739_graphsDownSql,
+	"1528395739_graphs.up.sql":                                                     _1528395739_graphsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2367,6 +2411,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              {_1528395729_add_external_services_namespace_user_id_indexUpSql, map[string]*bintree{}},
 	"1528395730_lsif_index_log_contents.down.sql":                                  {_1528395730_lsif_index_log_contentsDownSql, map[string]*bintree{}},
 	"1528395730_lsif_index_log_contents.up.sql":                                    {_1528395730_lsif_index_log_contentsUpSql, map[string]*bintree{}},
+	"1528395739_graphs.down.sql":                                                   {_1528395739_graphsDownSql, map[string]*bintree{}},
+	"1528395739_graphs.up.sql":                                                     {_1528395739_graphsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

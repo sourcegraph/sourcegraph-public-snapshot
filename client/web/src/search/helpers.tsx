@@ -11,12 +11,14 @@ import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { GraphSelectionProps } from '../enterprise/graphs/selector/graphSelectionProps'
 
 export interface SubmitSearchParams
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<GraphSelectionProps, 'selectedGraph'>,
         VersionContextProps {
     history: H.History
     query: string
@@ -34,6 +36,7 @@ export function submitSearch({
     patternType,
     caseSensitive,
     versionContext,
+    selectedGraph,
     activation,
     filtersInQuery,
     source,
@@ -45,7 +48,8 @@ export function submitSearch({
         caseSensitive,
         versionContext,
         filtersInQuery,
-        searchParameters
+        searchParameters,
+        selectedGraph
     )
 
     // Go to search results page

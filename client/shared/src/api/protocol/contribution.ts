@@ -326,6 +326,11 @@ export const ContributableViewContainer = {
      * A view contributed to the dashboard on the insights page.
      */
     InsightsPage: 'insightsPage',
+
+    /**
+     * A view contributed to a profile of a user or organization.
+     */
+    Profile: 'profile',
 } as const
 export type ContributableViewContainer = typeof ContributableViewContainer[keyof typeof ContributableViewContainer]
 

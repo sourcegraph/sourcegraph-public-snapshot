@@ -74,6 +74,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
+
+        if (window.context?.graphsEnabled) {
+            console.warn('Graphs are not supported when using interactive search mode.')
+        }
     }
 
     /**

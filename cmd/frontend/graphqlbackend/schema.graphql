@@ -678,6 +678,21 @@ type Mutation {
         """
         level: String!
     ): EmptyResponse!
+
+    """
+    Create a graph.
+    """
+    createGraph(input: CreateGraphInput!): Graph!
+
+    """
+    Update a graph.
+    """
+    updateGraph(input: UpdateGraphInput!): Graph!
+
+    """
+    Delete a graph.
+    """
+    deleteGraph(graph: ID!): EmptyResponse!
 }
 
 """
@@ -2211,6 +2226,11 @@ type Query {
         versionContext: String
 
         """
+        (experimental) The graph in which to search. If not specified, the search is scoped to all repositories visible to the user.
+        """
+        graph: ID
+
+        """
         (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         search requests when this field is specified. For details, see
         https://docs.sourcegraph.com/api/graphql/search
@@ -2410,6 +2430,31 @@ type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Look up a graph by owner and name.
+    """
+    graph(owner: String!, name: String!): Graph
+
+    """
+    A list of graphs.
+    """
+    graphs(
+        """
+        Returns the first n graphs from the list.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only return graphs that the viewer is affiliated with.
+        """
+        affiliated: Boolean = false
+    ): GraphConnection!
 }
 
 """
@@ -5070,6 +5115,35 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    dependencies(first: Int): DependencyConnection!
+}
+
+"""
+A list of dependencies.
+"""
+type DependencyConnection {
+    """
+    A list of dependencies.
+    """
+    nodes: [Dependency!]!
+
+    """
+    The total count of dependencies in the connection. This total count may be larger than the number of nodes
+    in this object when the result is paginated.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+type Dependency {
+    lsifName: String!
+    lsifVersion: String!
+    lsifManager: String!
 }
 
 """
@@ -5166,6 +5240,8 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    dependencies(first: Int): DependencyConnection!
 }
 
 """
@@ -5323,7 +5399,7 @@ type UserConnection {
 """
 A user.
 """
-type User implements Node & SettingsSubject & Namespace {
+type User implements Node & SettingsSubject & Namespace & GraphOwner {
     """
     The unique ID for the user.
     """
@@ -5509,6 +5585,26 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    Look up a graph (owned by this user) by name.
+    """
+    graph(name: String!): Graph
+
+    """
+    A list of graphs owned by this user.
+    """
+    graphs(
+        """
+        Returns the first n graphs from the list.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): GraphConnection!
 }
 
 """
@@ -5779,7 +5875,7 @@ type OrgConnection {
 """
 An organization, which is a group of users.
 """
-type Org implements Node & SettingsSubject & Namespace {
+type Org implements Node & SettingsSubject & Namespace & GraphOwner {
     """
     The unique ID for the organization.
     """
@@ -5866,6 +5962,26 @@ type Org implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    Look up a graph (owned by this organization) by name.
+    """
+    graph(name: String!): Graph
+
+    """
+    A list of graphs owned by this organization.
+    """
+    graphs(
+        """
+        Returns the first n graphs from the list.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): GraphConnection!
 }
 
 """
@@ -7941,4 +8057,131 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A graph owner is an entity that owns graphs, such as a user or organization.
+"""
+interface GraphOwner {
+    id: ID!
+
+    """
+    Look up a graph (owned by this graph owner) by name.
+    """
+    graph(name: String!): Graph
+
+    """
+    A list of graphs owned by this graph owner.
+    """
+    graphs(
+        """
+        Returns the first n graphs from the list.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): GraphConnection!
+
+    """
+    The URL to this graph owner.
+    """
+    url: String!
+}
+
+"""
+A list of graphs.
+"""
+type GraphConnection {
+    """
+    A list of graphs.
+    """
+    nodes: [Graph!]!
+    """
+    The total count of graphs in the connection. This total count may be larger
+    than the number of nodes in this object when the result is paginated.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A graph defines a set of code. Currently the only supported way to define a graph
+is to specify a set of repositories, each at a specific revision. In the future,
+more ways to define graphs will be supported.
+"""
+type Graph implements Node {
+    id: ID!
+
+    """
+    The owner of the graph.
+    """
+    owner: GraphOwner
+
+    """
+    The name of the graph.
+    """
+    name: String!
+
+    """
+    A description of the graph.
+    """
+    description: String
+
+    """
+    The specification of the graph. The format is undefined and is subject to change without notice.
+    """
+    spec: String!
+
+    """
+    The URL to the graph.
+    """
+    url: String!
+
+    """
+    The URL where the graph can be edited.
+    """
+    editURL: String!
+
+    """
+    Whether the viewer can update and delete this graph.
+    """
+    viewerCanAdminister: Boolean!
+
+    """
+    The date and time when the graph was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The date and time when the graph was updated.
+    """
+    updatedAt: DateTime!
+}
+
+input CreateGraphInput {
+    """
+    The owner of the graph.
+    """
+    owner: ID!
+
+    name: String!
+    description: String
+    spec: String!
+}
+
+input UpdateGraphInput {
+    """
+    The ID of the graph to update.
+    """
+    id: ID!
+
+    name: String!
+    description: String
+    spec: String!
 }

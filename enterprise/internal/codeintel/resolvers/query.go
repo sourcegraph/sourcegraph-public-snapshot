@@ -36,6 +36,13 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText   string
 }
 
+// AdjustedDependency is similar to a codeintelapi.ResolvedDependency, but with fields denoting the
+// commit and range adjusted for the target commit (when the requested commit is not indexed).
+type AdjustedDependency struct {
+	Dependency bundles.PackageInformationData
+	Dump       store.Dump
+}
+
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver consolidates the logic for bundle operations and is not itself concerned with GraphQL/API
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
@@ -46,6 +53,7 @@ type QueryResolver interface {
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, bundles.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
+	Dependencies(ctx context.Context, limit int) ([]AdjustedDependency, int, error)
 }
 
 type queryResolver struct {
@@ -321,6 +329,44 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) ([]AdjustedD
 	}
 
 	return adjustedDiagnostics, totalCount, nil
+}
+
+func (r *queryResolver) Dependencies(ctx context.Context, limit int) ([]AdjustedDependency, int, error) {
+	totalCount := 0
+	var allDependencies []codeintelapi.ResolvedDependency
+	for i := range r.uploads {
+		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.uploads[i].Commit, r.path, false)
+		if err != nil {
+			return nil, 0, err
+		}
+		if !ok {
+			continue
+		}
+
+		l := limit - len(allDependencies)
+		if l < 0 {
+			l = 0
+		}
+
+		dependencies, count, err := r.codeIntelAPI.Dependencies(ctx, adjustedPath, r.uploads[i].ID, l, 0)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		totalCount += count
+		allDependencies = append(allDependencies, dependencies...)
+	}
+
+	adjustedDependencies := make([]AdjustedDependency, 0, len(allDependencies))
+	for i := range allDependencies {
+		// TODO(sqs): adjust? see how it's done for diagnostics
+		adjustedDependencies = append(adjustedDependencies, AdjustedDependency{
+			Dependency: allDependencies[i].Dependency,
+			Dump:       allDependencies[i].Dump,
+		})
+	}
+
+	return adjustedDependencies, totalCount, nil
 }
 
 // adjustLocations translates a list of resolved locations (relative to the indexed commit) into a list of

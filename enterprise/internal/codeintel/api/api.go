@@ -34,6 +34,9 @@ type CodeIntelAPI interface {
 
 	// Diagnostics returns the diagnostics for documents with the given path prefix.
 	Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error)
+
+	// Dependencies returns the dependencies for documents with the given path prefix.
+	Dependencies(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDependency, int, error)
 }
 
 type codeIntelAPI struct {

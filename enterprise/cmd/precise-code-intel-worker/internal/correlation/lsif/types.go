@@ -114,6 +114,7 @@ func (d Moniker) SetPackageInformationID(id int) Moniker {
 type PackageInformation struct {
 	Name    string
 	Version string
+	Manager string
 }
 
 type Diagnostic struct {

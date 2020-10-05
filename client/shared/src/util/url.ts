@@ -578,7 +578,8 @@ export function buildSearchURLQuery(
     caseSensitive: boolean,
     versionContext?: string,
     filtersInQuery?: FiltersToTypeAndValue,
-    searchParametersList?: { key: string; value: string }[]
+    searchParametersList?: { key: string; value: string }[],
+    selectedGraph?: string | null
 ): string {
     const searchParameters = new URLSearchParams()
     let fullQuery = query
@@ -628,6 +629,10 @@ export function buildSearchURLQuery(
 
     if (versionContext) {
         searchParameters.set('c', versionContext)
+    }
+
+    if (selectedGraph) {
+        searchParameters.set('g', selectedGraph)
     }
 
     if (searchParametersList) {

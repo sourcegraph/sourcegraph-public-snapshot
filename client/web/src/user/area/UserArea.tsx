@@ -16,7 +16,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
-import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+import { UserAreaSidebar } from './UserAreaSidebar'
 import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
@@ -25,6 +25,10 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { requestGraphQL } from '../../backend/graphql'
 import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
+import { NamespaceAreaContext } from '../../namespaces/NamespaceArea'
+import { GraphSelectionProps } from '../../enterprise/graphs/selector/graphSelectionProps'
+import { UserAreaTabs, UserAreaTabsNavItem } from './UserAreaTabs'
+import H from 'history'
 
 /** GraphQL fragment for the User fields needed by UserArea. */
 export const UserAreaGQLFragment = gql`
@@ -83,7 +87,9 @@ const fetchUser = (args: UserAreaVariables): Observable<UserAreaUserFields> =>
         })
     )
 
-export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
+export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
+    hideNamespaceAreaSidebar?: boolean
+}
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
@@ -96,9 +102,10 @@ interface UserAreaProps
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        Pick<GraphSelectionProps, 'reloadGraphs'>,
         Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
-    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaHeaderNavItems: readonly UserAreaTabsNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
@@ -125,6 +132,7 @@ export interface UserAreaRouteContext
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        NamespaceAreaContext,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
@@ -148,6 +156,9 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
+
+    location: H.Location
+    history: H.History
 }
 
 /**
@@ -203,53 +214,72 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
         ...childBreadcrumbSetters,
     }
 
-    const routeMatch = userAreaRoutes.find(({ path, exact }) =>
+    const matchedRoute = userAreaRoutes.find(({ path, exact }) =>
         matchPath(props.location.pathname, { path: url + path, exact })
-    )?.path
+    )
 
-    // Hide header and use full-width container for campaigns pages.
-    const isCampaigns = routeMatch === '/campaigns'
-    const hideHeader = isCampaigns
+    const isSettingsArea = matchedRoute?.path === '/settings'
+    const isOverview = matchedRoute?.path === ''
+    const showSidebar = !isSettingsArea && !matchedRoute?.hideNamespaceAreaSidebar
+
+    const sidebar = showSidebar && (
+        <UserAreaSidebar {...context} size={isOverview ? 'large' : 'small'} className="mr-4 mb-3" />
+    )
+    const tabs = (
+        <UserAreaTabs
+            {...context}
+            navItems={props.userAreaHeaderNavItems}
+            size={isOverview ? 'large' : 'small'}
+            className="mb-3" // TODO(sqs)
+        />
+    )
+    const content = (
+        <ErrorBoundary location={props.location}>
+            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Switch>
+                    {userAreaRoutes.map(
+                        ({ path, exact, render, condition = () => true }) =>
+                            condition(context) && (
+                                <Route
+                                    // eslint-disable-next-line react/jsx-no-bind
+                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    path={url + path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={exact}
+                                />
+                            )
+                    )}
+                    <Route key="hardcoded-key">
+                        <HeroPage
+                            icon={MapSearchIcon}
+                            title="404: Not Found"
+                            subtitle="Sorry, the requested user page was not found."
+                        />
+                    </Route>
+                </Switch>
+            </React.Suspense>
+        </ErrorBoundary>
+    )
 
     return (
-        <div className="user-area w-100">
-            {!hideHeader && (
-                <UserAreaHeader
-                    {...props}
-                    {...context}
-                    navItems={props.userAreaHeaderNavItems}
-                    className="border-bottom mt-4"
-                />
+        <div className="container mt-4">
+            {isOverview ? (
+                <div className="d-flex flex-wrap">
+                    {sidebar}
+                    <div className="flex-1">
+                        {tabs}
+                        {content}
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <div className="d-flex w-100">
+                        {sidebar}
+                        {tabs}
+                    </div>
+                    {content}
+                </>
             )}
-            <div className="container mt-3">
-                <ErrorBoundary location={props.location}>
-                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                        <Switch>
-                            {userAreaRoutes.map(
-                                ({ path, exact, render, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            // eslint-disable-next-line react/jsx-no-bind
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                            path={url + path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            exact={exact}
-                                        />
-                                    )
-                            )}
-                            <Route key="hardcoded-key">
-                                <HeroPage
-                                    icon={MapSearchIcon}
-                                    title="404: Not Found"
-                                    subtitle="Sorry, the requested user page was not found."
-                                />
-                            </Route>
-                        </Switch>
-                    </React.Suspense>
-                </ErrorBoundary>
-            </div>
         </div>
     )
 }

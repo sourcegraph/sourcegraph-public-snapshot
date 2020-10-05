@@ -1,6 +1,8 @@
 import React from 'react'
 import { SearchFilters } from '../../../../shared/src/api/protocol'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { SearchResultsGraphFilterBar } from '../../enterprise/graphs/search/filters/SearchResultsGraphFilterBar'
+import { GraphSelectionProps } from '../../enterprise/graphs/selector/graphSelectionProps'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
 import { isSearchResults } from '../helpers'
@@ -11,16 +13,18 @@ export interface SearchScopeWithOptionalName {
     value: string
 }
 
-export const SearchResultsFilterBars: React.FunctionComponent<{
-    navbarSearchQuery: string
-    results?: GQL.ISearchResults
-    filters: SearchScopeWithOptionalName[]
-    extensionFilters: SearchFilters[] | undefined
-    quickLinks?: QuickLink[] | undefined
-    onFilterClick: (value: string) => void
-    onShowMoreResultsClick: (value: string) => void
-    calculateShowMoreResultsCount: () => number
-}> = ({
+export const SearchResultsFilterBars: React.FunctionComponent<
+    {
+        navbarSearchQuery: string
+        results?: GQL.ISearchResults
+        filters: SearchScopeWithOptionalName[]
+        extensionFilters: SearchFilters[] | undefined
+        quickLinks?: QuickLink[] | undefined
+        onFilterClick: (value: string) => void
+        onShowMoreResultsClick: (value: string) => void
+        calculateShowMoreResultsCount: () => number
+    } & GraphSelectionProps
+> = ({
     navbarSearchQuery,
     results,
     filters,
@@ -29,8 +33,17 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     onFilterClick,
     onShowMoreResultsClick,
     calculateShowMoreResultsCount,
+    ...props
 }) => (
     <div className="search-results-filter-bars">
+        {window.context?.graphsEnabled && (
+            <SearchResultsGraphFilterBar
+                {...props}
+                className="search-results-filter-bars__row"
+                listClassName="search-results-filter-bars__filters"
+                data-testid="graph-filters-bar"
+            />
+        )}
         {((isSearchResults(results) && filters.length > 0) || extensionFilters) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:

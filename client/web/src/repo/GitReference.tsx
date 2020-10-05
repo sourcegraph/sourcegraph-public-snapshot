@@ -9,16 +9,20 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { numberWithCommas } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
-import { GitRefType } from '../graphql-operations'
+import { GitRefFields, GitRefType } from '../graphql-operations'
 
 interface GitReferenceNodeProps {
-    node: GQL.IGitRef
+    node: GitRefFields
 
     /** Link URL; if undefined, node.url is used. */
     url?: string
 
     /** Whether any ancestor element higher up in the tree is an `<a>` element. */
     ancestorIsLink?: boolean
+
+    showBehindAhead?: boolean
+
+    className?: string
 
     children?: React.ReactNode
 }
@@ -27,6 +31,8 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     node,
     url,
     ancestorIsLink,
+    showBehindAhead = true,
+    className = '',
     children,
 }) => {
     const mostRecentSig =
@@ -38,7 +44,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={!ancestorIsLink ? url : undefined}>
+        <LinkOrSpan key={node.id} className={`git-ref-node ${className}`} to={!ancestorIsLink ? url : undefined}>
             <span>
                 <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
@@ -48,7 +54,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
                     </small>
                 )}
             </span>
-            {behindAhead && (
+            {showBehindAhead && behindAhead && (
                 <small className="text-muted">
                     {numberWithCommas(behindAhead.behind)} behind, {numberWithCommas(behindAhead.ahead)} ahead
                 </small>

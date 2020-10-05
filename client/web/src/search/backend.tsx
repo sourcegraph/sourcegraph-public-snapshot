@@ -18,6 +18,7 @@ export function search(
     version: string,
     patternType: SearchPatternType,
     versionContext: string | undefined,
+    graph: string | undefined,
     extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     const transformedQuery = from(extensionHostPromise).pipe(
@@ -33,12 +34,14 @@ export function search(
                         $version: SearchVersion!
                         $patternType: SearchPatternType!
                         $versionContext: String
+                        $graph: ID
                     ) {
                         search(
                             query: $query
                             version: $version
                             patternType: $patternType
                             versionContext: $versionContext
+                            graph: $graph
                         ) {
                             results {
                                 __typename
@@ -177,7 +180,7 @@ export function search(
                         }
                     }
                 `,
-                { query, version, patternType, versionContext }
+                { query, version, patternType, versionContext, graph }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {
@@ -196,6 +199,7 @@ export function searchStream(
     version: string,
     patternType: SearchPatternType,
     versionContext: string | undefined,
+    graph: string | undefined,
     extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     const transformedQuery = from(extensionHostPromise).pipe(
@@ -204,7 +208,7 @@ export function searchStream(
 
     return transformedQuery.pipe(
         switchMap(query =>
-            SearchStream.search(query, version, patternType, versionContext).pipe(
+            SearchStream.search(query, version, patternType, versionContext, graph).pipe(
                 SearchStream.switchToGQLISearchResults
             )
         )

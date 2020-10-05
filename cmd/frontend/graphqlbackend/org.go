@@ -276,3 +276,14 @@ func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
 	}
 	return &EmptyResponse{}, nil
 }
+
+func (o *OrgResolver) Graph(ctx context.Context, args *GraphArgs) (GraphResolver, error) {
+	args.OwnerID = o.ID()
+	return EnterpriseResolvers.graphsResolver.Graph(ctx, *args)
+}
+
+func (o *OrgResolver) Graphs(ctx context.Context, args *GraphConnectionArgs) (GraphConnectionResolver, error) {
+	id := o.ID()
+	args.Owner = &id
+	return EnterpriseResolvers.graphsResolver.Graphs(ctx, *args)
+}

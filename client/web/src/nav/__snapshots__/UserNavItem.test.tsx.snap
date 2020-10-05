@@ -196,6 +196,24 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
+                    to="/users/alice/graphs"
+                  >
+                    <LinkAnchor
+                      className="dropdown-item"
+                      href="/users/alice/graphs"
+                      navigate={[Function]}
+                    >
+                      <a
+                        className="dropdown-item"
+                        href="/users/alice/graphs"
+                        onClick={[Function]}
+                      >
+                        Graphs
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                  <Link
+                    className="dropdown-item"
                     to="/campaigns"
                   >
                     <LinkAnchor

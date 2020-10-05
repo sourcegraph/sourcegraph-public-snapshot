@@ -1,7 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
@@ -20,14 +19,7 @@ import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import {
-    searchQueryForRepoRevision,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    InteractiveSearchProps,
-    repoFilterForRepoRevision,
-    CopyQueryButtonProps,
-} from '../search'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -40,7 +32,6 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
-import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -59,6 +50,8 @@ import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { IS_CHROME } from '../marketing/util'
 import { useLocalStorage } from '../util/useLocalStorage'
+import { GraphSelectionProps, GraphWithName, SelectableGraph } from '../enterprise/graphs/selector/graphSelectionProps'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -76,6 +69,7 @@ export interface RepoContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        GraphSelectionProps,
         BreadcrumbSetters {
     repo: GQL.IRepository
     authenticatedUser: AuthenticatedUser | null
@@ -89,6 +83,11 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
+
+    /**
+     * The contextual graph that consists of this repository.
+     */
+    repositoryContextualGraph: SelectableGraph
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -112,6 +111,7 @@ interface RepoContainerProps
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        GraphSelectionProps,
         BreadcrumbSetters,
         BreadcrumbsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
@@ -210,17 +210,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         RepoHeaderContributionsLifecycleProps
     >()
 
-    const repositoryBreadcrumbSetters = props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'repositories',
-                element: <>Repositories</>,
-            }),
-            []
-        )
-    )
-
-    const childBreadcrumbSetters = repositoryBreadcrumbSetters.useBreadcrumb(
+    const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
             if (isErrorLike(repoOrError) || !repoOrError) {
                 return
@@ -230,6 +220,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
             return {
                 key: 'repository',
+                divider: null,
                 element: (
                     <>
                         <Link
@@ -238,8 +229,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     ? resolvedRevisionOrError.rootTreeURL
                                     : repoOrError.url
                             }
-                            className="repo-header__repo"
+                            className="h5 mb-0 d-inline-flex align-items-center"
+                            style={{ color: '#0366d6' }}
                         >
+                            <SourceRepositoryIcon className="icon-inline mr-1 text-muted" />
                             {repoDirectory ? `${repoDirectory}/` : ''}
                             <span className="font-weight-semibold">{repoBase}</span>
                         </Link>
@@ -283,49 +276,22 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         return () => props.extensionsController.services.workspace.roots.next([])
     }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
 
-    // Update the navbar query to reflect the current repo / revision
-    const { splitSearchModes, interactiveSearchMode, globbing, onFiltersInQueryChange, onNavbarQueryChange } = props
-    useEffect(() => {
-        if (splitSearchModes && interactiveSearchMode) {
-            const filters: FiltersToTypeAndValue = {
-                [uniqueId('repo')]: {
-                    type: FilterType.repo,
-                    value: repoFilterForRepoRevision(repoName, globbing, revision),
-                    editable: false,
-                },
-            }
-            if (filePath) {
-                filters[uniqueId('file')] = {
-                    type: FilterType.file,
-                    value: globbing ? filePath : `^${escapeRegExp(filePath)}`,
-                    editable: false,
-                }
-            }
-            onFiltersInQueryChange(filters)
-            onNavbarQueryChange({
-                query: '',
-                cursorPosition: 0,
-            })
-        } else {
-            let query = searchQueryForRepoRevision(repoName, globbing, revision)
-            if (filePath) {
-                query = `${query.trimEnd()} file:${globbing ? filePath : '^' + escapeRegExp(filePath)}`
-            }
-            onNavbarQueryChange({
-                query,
-                cursorPosition: query.length,
-            })
-        }
-    }, [
-        revision,
-        filePath,
-        repoName,
-        onFiltersInQueryChange,
-        onNavbarQueryChange,
-        splitSearchModes,
-        globbing,
-        interactiveSearchMode,
-    ])
+    // Contribute contextual graphs that search this repository and variants thereof.
+    const { contributeContextualGraphs } = props
+    const repositoryContextualGraph = useMemo<GraphWithName>(
+        () => ({ id: 'X0', name: 'This repository', description: null }),
+        []
+    )
+    useEffect(
+        () =>
+            repoOrError && !isErrorLike(repoOrError)
+                ? contributeContextualGraphs([
+                      repositoryContextualGraph,
+                      { id: 'X1', name: 'This repository + deps', description: null },
+                  ])
+                : undefined,
+        [contributeContextualGraphs, repoOrError, repositoryContextualGraph]
+    )
 
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
 
@@ -397,6 +363,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
         onDidUpdateRepository: nextRepoOrErrorUpdate,
+        repositoryContextualGraph,
     }
 
     return (

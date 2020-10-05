@@ -2,7 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -25,6 +25,8 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { requestGraphQL } from '../../backend/graphql'
+import { NamespaceAreaContext } from '../../namespaces/NamespaceArea'
+import { GraphSelectionProps } from '../../enterprise/graphs/selector/graphSelectionProps'
 
 function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
@@ -73,7 +75,9 @@ const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {}
+export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+    hideNamespaceAreaSidebar?: boolean
+}
 
 interface Props
     extends RouteComponentProps<{ name: string }>,
@@ -83,6 +87,7 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        Pick<GraphSelectionProps, 'reloadGraphs'>,
         ExtensionsControllerProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -115,6 +120,7 @@ export interface OrgAreaPageProps
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        NamespaceAreaContext,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The org that is the subject of the page. */
     org: OrgAreaOrganizationFields
@@ -230,6 +236,7 @@ export class OrgArea extends React.Component<Props> {
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
+            reloadGraphs: this.props.reloadGraphs,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
@@ -243,14 +250,20 @@ export class OrgArea extends React.Component<Props> {
             )
         }
 
+        const matchedRoute = this.props.orgAreaRoutes.find(({ path, exact }) =>
+            matchPath(this.props.location.pathname, { path: this.props.match.url + path, exact })
+        )
+
         return (
             <div className="org-area w-100">
-                <OrgHeader
-                    {...this.props}
-                    {...context}
-                    navItems={this.props.orgAreaHeaderNavItems}
-                    className="border-bottom mt-4"
-                />
+                {!matchedRoute.hideNamespaceAreaSidebar && (
+                    <OrgHeader
+                        {...this.props}
+                        {...context}
+                        navItems={this.props.orgAreaHeaderNavItems}
+                        className="border-bottom mt-4"
+                    />
+                )}
                 <div className="container mt-3">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

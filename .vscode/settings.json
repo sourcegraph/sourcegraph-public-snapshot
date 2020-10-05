@@ -47,22 +47,9 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true,
   },
-  "eslint.options": { "cache": true },
   "eslint.workingDirectories": [
     {
-      "directory": "dev/release",
-      "changeProcessCWD": true,
-    },
-    {
       "directory": "web",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "browser",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "shared",
       "changeProcessCWD": true,
     },
   ],

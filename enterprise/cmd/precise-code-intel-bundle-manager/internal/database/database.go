@@ -50,6 +50,11 @@ type Database interface {
 
 	// PackageInformation looks up package information data by identifier.
 	PackageInformation(ctx context.Context, path string, packageInformationID string) (bundles.PackageInformationData, bool, error)
+
+	// PackageInformations returns all package information data for the documents that have the
+	// given path prefix. This method also returns the size of the complete result set to aid in
+	// pagination (along with skip and take).
+	PackageInformations(ctx context.Context, prefix string, skip, take int) ([]bundles.PackageInformationData, int, error)
 }
 
 type databaseImpl struct {
@@ -380,10 +385,60 @@ func (db *databaseImpl) PackageInformation(ctx context.Context, path, packageInf
 		return bundles.PackageInformationData{
 			Name:    packageInformationData.Name,
 			Version: packageInformationData.Version,
+			Manager: packageInformationData.Manager,
 		}, true, nil
 	}
 
 	return bundles.PackageInformationData{}, false, nil
+}
+
+// PackageInformations returns all package information data for the documents that have the given
+// path prefix. This method also returns the size of the complete result set to aid in pagination
+// (along with skip and take).
+func (db *databaseImpl) PackageInformations(ctx context.Context, prefix string, skip, take int) ([]bundles.PackageInformationData, int, error) {
+	paths, err := db.getPathsWithPrefix(ctx, prefix)
+	if err != nil {
+		return nil, 0, pkgerrors.Wrap(err, "db.getPathsWithPrefix")
+	}
+
+	uniquePackageInformations := map[types.PackageInformationData]struct{}{}
+	for _, path := range paths {
+		documentData, exists, err := db.getDocumentData(ctx, path)
+		if err != nil {
+			return nil, 0, pkgerrors.Wrap(err, "db.getDocumentData")
+		}
+		if !exists {
+			return nil, 0, nil
+		}
+
+		for _, packageInformationData := range documentData.PackageInformation {
+			uniquePackageInformations[packageInformationData] = struct{}{}
+		}
+	}
+	uniquePackageInformationList := make([]types.PackageInformationData, 0, len(uniquePackageInformations))
+	for packageInformationData := range uniquePackageInformations {
+		uniquePackageInformationList = append(uniquePackageInformationList, packageInformationData)
+	}
+	sort.Slice(uniquePackageInformationList, func(i, j int) bool {
+		a := uniquePackageInformationList[i]
+		b := uniquePackageInformationList[j]
+		return a.Manager < b.Manager || (a.Manager == b.Manager && a.Name < b.Name) || (a.Manager == b.Manager && a.Name == b.Name && a.Version < b.Version)
+	})
+
+	totalCount := len(uniquePackageInformationList)
+	packageInformations := make([]bundles.PackageInformationData, 0, len(uniquePackageInformationList))
+	for _, packageInformationData := range uniquePackageInformationList {
+		skip--
+		if skip < 0 && len(packageInformations) < take {
+			packageInformations = append(packageInformations, bundles.PackageInformationData{
+				Name:    packageInformationData.Name,
+				Version: packageInformationData.Version,
+				Manager: packageInformationData.Manager,
+			})
+		}
+	}
+
+	return packageInformations, totalCount, nil
 }
 
 // hover returns the hover text locations for the given range.

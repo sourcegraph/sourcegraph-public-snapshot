@@ -13,6 +13,7 @@ import { PatternTypeProps } from '../search'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { GraphSelectionProps } from '../enterprise/graphs/selector/graphSelectionProps'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -31,6 +32,7 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        Pick<GraphSelectionProps, 'reloadGraphs'>,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]

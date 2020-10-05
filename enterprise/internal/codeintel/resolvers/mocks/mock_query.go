@@ -17,6 +17,9 @@ type MockQueryResolver struct {
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
 	DefinitionsFunc *QueryResolverDefinitionsFunc
+	// DependenciesFunc is an instance of a mock function object controlling
+	// the behavior of the method Dependencies.
+	DependenciesFunc *QueryResolverDependenciesFunc
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
 	DiagnosticsFunc *QueryResolverDiagnosticsFunc
@@ -38,6 +41,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 		DefinitionsFunc: &QueryResolverDefinitionsFunc{
 			defaultHook: func(context.Context, int, int) ([]resolvers.AdjustedLocation, error) {
 				return nil, nil
+			},
+		},
+		DependenciesFunc: &QueryResolverDependenciesFunc{
+			defaultHook: func(context.Context, int) ([]resolvers.AdjustedDependency, int, error) {
+				return nil, 0, nil
 			},
 		},
 		DiagnosticsFunc: &QueryResolverDiagnosticsFunc{
@@ -70,6 +78,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 	return &MockQueryResolver{
 		DefinitionsFunc: &QueryResolverDefinitionsFunc{
 			defaultHook: i.Definitions,
+		},
+		DependenciesFunc: &QueryResolverDependenciesFunc{
+			defaultHook: i.Dependencies,
 		},
 		DiagnosticsFunc: &QueryResolverDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
@@ -196,6 +207,118 @@ func (c QueryResolverDefinitionsFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverDefinitionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// QueryResolverDependenciesFunc describes the behavior when the
+// Dependencies method of the parent MockQueryResolver instance is invoked.
+type QueryResolverDependenciesFunc struct {
+	defaultHook func(context.Context, int) ([]resolvers.AdjustedDependency, int, error)
+	hooks       []func(context.Context, int) ([]resolvers.AdjustedDependency, int, error)
+	history     []QueryResolverDependenciesFuncCall
+	mutex       sync.Mutex
+}
+
+// Dependencies delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockQueryResolver) Dependencies(v0 context.Context, v1 int) ([]resolvers.AdjustedDependency, int, error) {
+	r0, r1, r2 := m.DependenciesFunc.nextHook()(v0, v1)
+	m.DependenciesFunc.appendCall(QueryResolverDependenciesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Dependencies method
+// of the parent MockQueryResolver instance is invoked and the hook queue is
+// empty.
+func (f *QueryResolverDependenciesFunc) SetDefaultHook(hook func(context.Context, int) ([]resolvers.AdjustedDependency, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Dependencies method of the parent MockQueryResolver instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *QueryResolverDependenciesFunc) PushHook(hook func(context.Context, int) ([]resolvers.AdjustedDependency, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverDependenciesFunc) SetDefaultReturn(r0 []resolvers.AdjustedDependency, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]resolvers.AdjustedDependency, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverDependenciesFunc) PushReturn(r0 []resolvers.AdjustedDependency, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int) ([]resolvers.AdjustedDependency, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *QueryResolverDependenciesFunc) nextHook() func(context.Context, int) ([]resolvers.AdjustedDependency, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverDependenciesFunc) appendCall(r0 QueryResolverDependenciesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverDependenciesFuncCall objects
+// describing the invocations of this function.
+func (f *QueryResolverDependenciesFunc) History() []QueryResolverDependenciesFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverDependenciesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverDependenciesFuncCall is an object that describes an
+// invocation of method Dependencies on an instance of MockQueryResolver.
+type QueryResolverDependenciesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.AdjustedDependency
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverDependenciesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverDependenciesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // QueryResolverDiagnosticsFunc describes the behavior when the Diagnostics

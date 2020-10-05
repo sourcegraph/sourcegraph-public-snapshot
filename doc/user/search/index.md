@@ -18,7 +18,8 @@ Sourcegraph provides fast, advanced code search across multiple repositories. Wi
 - Search any branch and commit, with no indexing required.
 - Search [commit diffs](#commit-diff-search) and [commit messages](#commit-message-search) to see how code has changed.
 - Narrow your search by repository and file pattern.
-- Define saved [search scopes](#search-scopes) for easier searching.
+- Scope your search using [graphs](../graphs/index.md).
+- Define [search scopes](#search-scopes) for quick filtering.
 - Curate [saved searches](#saved-searches) for yourself or your org.
 - Set up notifications for code changes that match a query.
 - View [language statistics](#statistics) for search results.
@@ -65,7 +66,15 @@ Saved searches let you save and describe search queries so you can easily monito
 
 See the [saved searches](saved_searches.md) documentation for instructions for setting up and configuring saved searches.
 
+### Graphs
+
+Graphs help make code search results more relevant to you, by excluding code you don't care about.
+
+See "[Graphs](../graphs/index.md)" for more information.
+
 ### Search scopes
+
+<!-- TODO(sqs): deprecate search scopes -->
 
 Every project and team has a different set of repositories they commonly work with and search over. Custom search scopes enable users and organizations to quickly filter their searches to predefined subsets of files and repositories. Instead of typing out the subset of repositories or files you want to search, you can save and select scopes using the search scope buttons whenever you need.
 

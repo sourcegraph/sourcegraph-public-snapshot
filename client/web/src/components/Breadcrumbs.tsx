@@ -100,14 +100,14 @@ interface BreadcrumbAtDepth {
  */
 export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
     const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbAtDepth[]>([
-        { depth: 0, breadcrumb: { key: 'home', element: <Link to="/search">Home</Link>, divider: null } },
+        // { depth: 0, breadcrumb: { key: 'home', element: <Link to="/search">Home</Link>, divider: null } },
     ])
 
     /**
      * @param depth The relative depth of the next breadcrumb to be added with the
      * returned breadcrumb setters. This should always be called with $CURRENT_DEPTH + 1.
      */
-    const createBreadcrumbSetters = useCallback((depth: number = 1): BreadcrumbSetters => {
+    const createBreadcrumbSetters = useCallback((depth: number = 0): BreadcrumbSetters => {
         /** Shared logic between plain function and hook */
         function internalSetBreadcrumb(breadcrumb: NullableBreadcrumb): () => void {
             const entry: BreadcrumbAtDepth = { depth, breadcrumb }

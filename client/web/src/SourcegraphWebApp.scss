@@ -152,3 +152,11 @@ body,
     --reach-menu-button: 1;
     --reach-accordion: 1;
 }
+
+// TODO(sqs): hack, copied from dropdown.scss
+[data-reach-listbox-popover]:focus-within {
+    border-radius: 4px;
+    box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
+    outline: none !important;
+    border: solid 1px var(--border-color);
+}

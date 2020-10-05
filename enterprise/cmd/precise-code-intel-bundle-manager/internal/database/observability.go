@@ -11,17 +11,18 @@ import (
 
 // An ObservedDatabase wraps another Database with error logging, Prometheus metrics, and tracing.
 type ObservedDatabase struct {
-	database                    Database
-	filename                    string
-	existsOperation             *observation.Operation
-	rangesOperation             *observation.Operation
-	definitionsOperation        *observation.Operation
-	referencesOperation         *observation.Operation
-	hoverOperation              *observation.Operation
-	diagnosticsOperation        *observation.Operation
-	monikersByPositionOperation *observation.Operation
-	monikerResultsOperation     *observation.Operation
-	packageInformationOperation *observation.Operation
+	database                     Database
+	filename                     string
+	existsOperation              *observation.Operation
+	rangesOperation              *observation.Operation
+	definitionsOperation         *observation.Operation
+	referencesOperation          *observation.Operation
+	hoverOperation               *observation.Operation
+	diagnosticsOperation         *observation.Operation
+	monikersByPositionOperation  *observation.Operation
+	monikerResultsOperation      *observation.Operation
+	packageInformationOperation  *observation.Operation
+	packageInformationsOperation *observation.Operation
 }
 
 var _ Database = &ObservedDatabase{}
@@ -88,6 +89,11 @@ func NewObserved(database Database, filename string, observationContext *observa
 		packageInformationOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.PackageInformation",
 			MetricLabels: []string{"package_information"},
+			Metrics:      metrics,
+		}),
+		packageInformationsOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.PackageInformations",
+			MetricLabels: []string{"package_informations"},
 			Metrics:      metrics,
 		}),
 	}
@@ -223,4 +229,16 @@ func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string,
 	})
 	defer endObservation(1, observation.Args{})
 	return db.database.PackageInformation(ctx, path, packageInformationID)
+}
+
+// PackageInformation calls into the inner Database and registers the observed results.
+func (db *ObservedDatabase) PackageInformations(ctx context.Context, prefix string, skip, take int) (_ []bundles.PackageInformationData, _ int, err error) {
+	ctx, endObservation := db.packageInformationOperation.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("filename", db.filename),
+			log.String("prefix", prefix),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+	return db.database.PackageInformations(ctx, prefix, skip, take)
 }

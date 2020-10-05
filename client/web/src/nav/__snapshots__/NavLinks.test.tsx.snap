@@ -176,6 +176,12 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         </a>
         <a
           class="dropdown-item"
+          href="/users/alice/graphs"
+        >
+          Graphs
+        </a>
+        <a
+          class="dropdown-item"
           href="/campaigns"
         >
           Campaigns
@@ -497,6 +503,12 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           href="/"
         >
           Settings
+        </a>
+        <a
+          class="dropdown-item"
+          href="/users/alice/graphs"
+        >
+          Graphs
         </a>
         <a
           class="dropdown-item"
@@ -834,6 +846,12 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         </a>
         <a
           class="dropdown-item"
+          href="/users/alice/graphs"
+        >
+          Graphs
+        </a>
+        <a
+          class="dropdown-item"
           href="/campaigns"
         >
           Campaigns
@@ -1136,6 +1154,12 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           href="/"
         >
           Settings
+        </a>
+        <a
+          class="dropdown-item"
+          href="/users/alice/graphs"
+        >
+          Graphs
         </a>
         <a
           class="dropdown-item"

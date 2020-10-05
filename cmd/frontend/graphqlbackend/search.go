@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -50,6 +51,7 @@ type SearchArgs struct {
 	After          *string
 	First          *int32
 	VersionContext *string
+	Graph          *graphql.ID
 }
 
 type SearchImplementer interface {
@@ -131,6 +133,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		query:          queryInfo,
 		originalQuery:  args.Query,
 		versionContext: args.VersionContext,
+		graph:          args.Graph,
 		userSettings:   settings,
 		pagination:     pagination,
 		patternType:    searchType,
@@ -285,6 +288,7 @@ type searchResolver struct {
 	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType    query.SearchType
 	versionContext *string
+	graph          *graphql.ID
 	userSettings   *schema.Settings
 
 	// Cached resolveRepositories results.
@@ -595,6 +599,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		minusRepoFilters:   minusRepoFilters,
 		repoGroupFilters:   repoGroupFilters,
 		versionContextName: versionContextName,
+		graph:              r.graph,
 		userSettings:       r.userSettings,
 		onlyForks:          fork == Only,
 		noForks:            fork == No,
@@ -712,6 +717,7 @@ type resolveRepoOp struct {
 	minusRepoFilters   []string
 	repoGroupFilters   []string
 	versionContextName string
+	graph              *graphql.ID
 	userSettings       *schema.Settings
 	noForks            bool
 	onlyForks          bool
@@ -743,6 +749,10 @@ func (op *resolveRepoOp) String() string {
 	}
 	if op.versionContextName != "" {
 		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.versionContextName)
+	}
+	if op.graph != nil {
+		// TODO(sqs)
+		_, _ = fmt.Fprintf(&b, " graph=%q", *op.graph)
 	}
 	if op.commitAfter != "" {
 		_, _ = fmt.Fprintf(&b, " commitAfter=%q", op.commitAfter)
@@ -857,6 +867,19 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		for _, revision := range versionContext.Revisions {
 			versionContextRepositories = append(versionContextRepositories, revision.Repo)
 		}
+	}
+
+	// If a graph is specified, scope the search to these repositories.
+	if op.graph != nil {
+		repos, err := EnterpriseResolvers.graphsResolver.RepositoriesForGraph(ctx, *op.graph)
+		if err != nil {
+			return resolvedRepositories{}, err
+		}
+		patterns := make([]string, len(repos))
+		for i, repo := range repos {
+			patterns[i] = regexp.QuoteMeta(repo)
+		}
+		includePatterns = append(includePatterns, "^("+strings.Join(patterns, "|")+")$")
 	}
 
 	var defaultRepos []*types.Repo

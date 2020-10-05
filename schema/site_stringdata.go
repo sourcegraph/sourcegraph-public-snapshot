@@ -172,6 +172,12 @@ const SiteSchemaJSON = `{
             }
           ]
         },
+        "graphs": {
+          "description": "An experimental feature where you can define graphs, which are subsets of code in which you can search and explore.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "versionContexts": {
           "description": "JSON array of version context configuration",
           "type": "array",
