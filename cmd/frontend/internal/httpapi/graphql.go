@@ -1,10 +1,8 @@
 package httpapi
 
 import (
-	"bytes"
 	"compress/gzip"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -37,13 +35,8 @@ func serveGraphQL(schema *graphql.Schema) func(w http.ResponseWriter, r *http.Re
 			if err != nil {
 				return err
 			}
-			defer reader.Close()
 
-			body, err := ioutil.ReadAll(reader)
-			if err != nil {
-				return err
-			}
-			r.Body = ioutil.NopCloser(bytes.NewReader(body))
+			r.Body = reader
 		}
 
 		relayHandler.ServeHTTP(w, r)
