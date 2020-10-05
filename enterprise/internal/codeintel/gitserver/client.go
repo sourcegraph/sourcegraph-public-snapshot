@@ -3,6 +3,7 @@ package gitserver
 import (
 	"context"
 	"io"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -35,6 +36,10 @@ type Client interface {
 
 	// Text returns the contents of a file in a particular commit of a repository.
 	Text(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error)
+
+	// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
+	// commit of a repository.
+	ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 }
 
 type defaultClient struct{}
@@ -67,4 +72,8 @@ func (c *defaultClient) Tags(ctx context.Context, store store.Store, repositoryI
 
 func (c *defaultClient) Text(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error) {
 	return Text(ctx, store, repositoryID, commit, file)
+}
+
+func (c *defaultClient) ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	return ListFiles(ctx, store, repositoryID, commit, pattern)
 }
