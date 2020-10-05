@@ -1,5 +1,7 @@
 package inference
 
+import "regexp"
+
 // IndexJobRecognizer infers index jobs from repository structure.
 type IndexJobRecognizer interface {
 	// CanIndex returns true if the given list of file paths describe a
@@ -14,7 +16,7 @@ type IndexJobRecognizer interface {
 
 	// Patterns returns a set of regular expressions that match file paths
 	// which are of interest to InferIndexJobs.
-	Patterns() []string
+	Patterns() []*regexp.Regexp
 }
 
 type IndexJob struct {
@@ -33,5 +35,5 @@ type DockerStep struct {
 
 // Recognizers is a list of registered index job recognizers.
 var Recognizers = []IndexJobRecognizer{
-	goRecognizer{},
+	lsifGoJobRecognizer{},
 }

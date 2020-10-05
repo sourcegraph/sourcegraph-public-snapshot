@@ -1,10 +1,15 @@
 package inference
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"regexp"
+)
 
-type goRecognizer struct{}
+type lsifGoJobRecognizer struct{}
 
-func (goRecognizer) CanIndex(paths []string) bool {
+var _ IndexJobRecognizer = lsifGoJobRecognizer{}
+
+func (lsifGoJobRecognizer) CanIndex(paths []string) bool {
 	for _, path := range paths {
 		if filepath.Base(path) == "go.mod" {
 			return true
@@ -14,7 +19,7 @@ func (goRecognizer) CanIndex(paths []string) bool {
 	return false
 }
 
-func (goRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
+func (lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 	for _, path := range paths {
 		if filepath.Base(path) == "go.mod" {
 			root := filepath.Dir(path)
@@ -23,7 +28,7 @@ func (goRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 			}
 
 			indexes = append(indexes, IndexJob{
-				DockerSteps: []DockerStep{},
+				DockerSteps: nil,
 				Root:        root,
 				Indexer:     "sourcegraph/lsif-go:latest",
 				IndexerArgs: []string{"lsif-go", "--no-animation"},
@@ -35,8 +40,8 @@ func (goRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 	return indexes
 }
 
-func (goRecognizer) Patterns() []string {
-	return []string{
-		`go\.mod$`,
+func (lsifGoJobRecognizer) Patterns() []*regexp.Regexp {
+	return []*regexp.Regexp{
+		suffixPattern("go.mod"),
 	}
 }

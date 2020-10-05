@@ -105,6 +105,7 @@ func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics store
 	for _, handler := range inference.Recognizers {
 		if handler.CanIndex(paths) {
 			matched = true
+			break
 		}
 	}
 	if !matched {
