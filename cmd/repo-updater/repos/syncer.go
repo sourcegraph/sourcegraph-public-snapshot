@@ -221,8 +221,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 			return nil
 		}
 	} else if s.SubsetSynced != nil {
-		// The streaming inserter should insert outside of our transaction so that repos
-		// are added to our database ASAP.
+		// This is a site admin owned external service so we should stream inserts ASAP.
+		// It should insert outside of our transaction so that repos are visible to the rest of our
+		// system immediately.
 		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
