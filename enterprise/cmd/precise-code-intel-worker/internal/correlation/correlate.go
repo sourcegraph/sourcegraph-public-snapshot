@@ -207,7 +207,7 @@ func correlateMetaData(state *wrappedState, element lsif.Element) error {
 		payload.ProjectRoot += "/"
 	}
 
-	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, state.dumpRoot) {
+	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, "/"+state.dumpRoot) {
 		payload.ProjectRoot += state.dumpRoot
 	}
 
