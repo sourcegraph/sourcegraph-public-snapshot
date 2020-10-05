@@ -965,12 +965,20 @@ func (s DBStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
 
 const CountTotalUserAddedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.CountUserAddedRepos
-SELECT COUNT(DISTINCT(repo_id)) FROM external_service_repos
-WHERE external_service_id IN (
-		SELECT DISTINCT(id) FROM external_services
-		WHERE namespace_user_id IS NOT NULL
-        AND deleted_at IS NULL
-	)
+SELECT COUNT(*)
+FROM
+    repo r
+WHERE
+    EXISTS (
+        SELECT
+        FROM
+            external_service_repos sr
+            INNER JOIN external_services s ON s.id = sr.external_service_id
+        WHERE
+            s.namespace_user_id IS NOT NULL
+            AND s.deleted_at IS NULL
+            AND r.id = sr.repo_id
+            AND r.deleted_at IS NULL)
 `
 
 // a paginatedQuery returns a query with the given pagination
