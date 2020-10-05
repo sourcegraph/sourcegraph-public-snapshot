@@ -23,3 +23,22 @@
        popd
        ./dev/ci/e2e.sh
        docker image rm -f "${IMAGE}"
+
+- name: sourcegraph-regression
+  box: google/gce
+  machine_type: "custom-16-20480"
+  project_id: sourcegraph-ci
+  external_ip: false
+  use_private_ip: true
+  network: default
+  username: buildkite
+  ssh_key_path: "~/.ssh/id_rsa"
+  shell_commands:
+    - |
+       curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+       chmod +x /usr/local/bin/src
+       
+       cd /sourcegraph
+       ./test/regression/test.sh
+
+
