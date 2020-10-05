@@ -9,38 +9,8 @@ import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
 import { Markdown } from '../../../shared/src/components/Markdown'
 
-/**
- * This is a subset of GQL.GenericSearchResultInterface and GQL.IGenericSearchResultInterface that we use to render a SearchResult.
- */
-interface GenericSearchResult {
-    /**
-     * URL to an icon that is displayed with every search result.
-     */
-    icon: string
-
-    /**
-     * A markdown string that is rendered prominently.
-     */
-    label: GQL.IMarkdown
-
-    /**
-     * The URL of the result.
-     */
-    url: string
-
-    /**
-     * A markdown string that is rendered less prominently.
-     */
-    detail: GQL.IMarkdown
-
-    /**
-     * A list of matches in this search result.
-     */
-    matches: GQL.ISearchResultMatch[]
-}
-
 interface Props extends ThemeProps {
-    result: GenericSearchResult
+    result: Omit<GQL.IGenericSearchResultInterface, '__typename'>
     history: H.History
 }
 
