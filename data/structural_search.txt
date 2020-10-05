@@ -1,0 +1,1 @@
+repogroup:go-gh-100 language:go -file:test -file:vendor -file:Godeps strings.Index(..., ...) > -1 or strings.Index(..., ...) >= 0 or strings.Index(..., ...) != -1
