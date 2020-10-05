@@ -44,7 +44,7 @@ func ListFiles(ctx context.Context, store store.Store, repositoryID int, commit 
 
 	var matching []string
 	for _, path := range strings.Split(out, "\n") {
-		if pattern.Match([]byte(path)) {
+		if pattern.MatchString(path) {
 			matching = append(matching, path)
 		}
 	}
