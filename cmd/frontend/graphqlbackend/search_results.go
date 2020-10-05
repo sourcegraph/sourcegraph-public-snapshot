@@ -1051,18 +1051,20 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	defer func() {
-		// copy the user settings from searchResolver to SearchResultsResolver
-		srr.userSettings = r.userSettings
-	}()
 	switch q := r.query.(type) {
 	case *query.OrdinaryQuery:
-		return r.evaluateLeaf(ctx)
+		srr, err = r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		return r.evaluate(ctx, q.Query)
+		srr, err = r.evaluate(ctx, q.Query)
+	default:
+		// Unreachable.
+		return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
 	}
-	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
+	// copy userSettings from searchResolver to SearchResultsResolver
+	if srr != nil {
+		srr.userSettings = r.userSettings
+	}
+	return srr, err
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
