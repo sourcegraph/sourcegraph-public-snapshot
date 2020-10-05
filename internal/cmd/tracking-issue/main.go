@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 
@@ -52,7 +53,7 @@ func run(token, org string, dry, verbose bool) (err error) {
 
 	trackingIssues, err := ListTrackingIssues(ctx, cli, org)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "ListTrackingIssues")
 	}
 
 	var openTrackingIssues []*Issue
@@ -69,7 +70,7 @@ func run(token, org string, dry, verbose bool) (err error) {
 
 	issues, pullRequests, err := LoadTrackingIssues(ctx, cli, org, openTrackingIssues)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "LoadTrackingIssues")
 	}
 
 	if err := Resolve(trackingIssues, issues, pullRequests); err != nil {
@@ -89,13 +90,13 @@ func run(token, org string, dry, verbose bool) (err error) {
 			log.Printf("%q %s not modified.", trackingIssue.Title, trackingIssue.URL)
 			continue
 		}
-		if dry {
-			log.Printf("%q %s modified, but not updated due to -dry=true.", trackingIssue.Title, trackingIssue.URL)
-			continue
-		}
 
-		log.Printf("%q %s modified", trackingIssue.Title, trackingIssue.URL)
-		updatedTrackingIssues = append(updatedTrackingIssues, trackingIssue)
+		if !dry {
+			log.Printf("%q %s modified", trackingIssue.Title, trackingIssue.URL)
+			updatedTrackingIssues = append(updatedTrackingIssues, trackingIssue)
+		} else {
+			log.Printf("%q %s modified, but not updated due to -dry=true.", trackingIssue.Title, trackingIssue.URL)
+		}
 
 		if verbose {
 			log.Printf("%q %s body\n%s\n\n", trackingIssue.Title, trackingIssue.URL, trackingIssue.Body)
