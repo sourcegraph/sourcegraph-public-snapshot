@@ -136,8 +136,8 @@ func TestHandleWithFirecracker(t *testing.T) {
 		t.Fatalf("unexpected error handling index: %s", err)
 	}
 
-	if callCount := len(commander.RunFunc.History()); callCount != 22 {
-		t.Errorf("unexpected run call count. want=%d have=%d", 22, callCount)
+	if callCount := len(commander.RunFunc.History()); callCount != 26 {
+		t.Errorf("unexpected run call count. want=%d have=%d", 26, callCount)
 	} else {
 		expectedCalls := []string{
 			// Git commands
@@ -155,11 +155,15 @@ func TestHandleWithFirecracker(t *testing.T) {
 			"docker save -o /images/image3.tar sourcegraph/lsif-go:latest",
 			// VM setup
 			"ignite run --runtime docker --network-plugin docker-bridge --cpus 8 --memory 32G --copy-files /tmp/testing:/repo-dir --copy-files /images/image0.tar:/image0.tar --copy-files /images/image1.tar:/image1.tar --copy-files /images/image2.tar:/image2.tar --copy-files /images/image3.tar:/image3.tar --ssh --name 97b45daf-53d1-48ad-b992-547469d8e438 sourcegraph/ignite-ubuntu:latest",
-			// Docker-inside-Vm` setup
+			// Docker-inside-VM setup
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /image0.tar",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /image1.tar",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /image2.tar",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /image3.tar",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- rm /image0.tar",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- rm /image1.tar",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- rm /image2.tar",
+			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- rm /image3.tar",
 			// Docker steps
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data/r1 install1 ls -liah",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker run --rm --cpus 8 --memory 32G -v /repo-dir:/data -w /data/r2 install2 pwd",
