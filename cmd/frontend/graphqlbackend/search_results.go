@@ -235,22 +235,19 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		tr.Finish()
 	}()
 
+	globbing := false
 	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
-	// context.Context). However we might regress on that or call DynamicFilters
-	// from other code paths.
-	if sr.userSettings == nil {
+	// context.Context). However we might regress on that or call DynamicFilters from
+	// other code paths. Hence we fallback to accessing the user settings directly.
+	if sr.userSettings != nil {
+		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
+	} else {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
 			log15.Warn("DynamicFilters: could not get user settings from db")
 		} else {
-			sr.userSettings = settings
+			globbing = getBoolPtr(settings.SearchGlobbing, false)
 		}
-	}
-
-	globbing := false
-	// userSettings could still be nil if decodedViewerFinalSettings returned with err
-	if sr.userSettings != nil {
-		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
 	}
 	tr.LogFields(otlog.Bool("globbing", globbing))
 
