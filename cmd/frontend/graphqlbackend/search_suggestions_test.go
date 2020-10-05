@@ -287,6 +287,10 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
+		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			return api.CommitID("deadbeef"), nil
+		}
+		defer git.ResetMocks()
 
 		calledReposGetInventory := false
 		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {

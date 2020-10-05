@@ -1,15 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React, { useCallback } from 'react'
+import { WebStory } from '../WebStory'
 import { Tooltip } from './Tooltip'
-import tooltipStyles from './Tooltip.scss'
-import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
 
 const { add } = storiesOf('web/Tooltip', module).addDecorator(story => (
-    <>
-        <style>{bootstrapStyles}</style>
-        <style>{tooltipStyles}</style>
-        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
-    </>
+    <WebStory>{() => <div className="p-5">{story()}</div>}</WebStory>
 ))
 
 add(
