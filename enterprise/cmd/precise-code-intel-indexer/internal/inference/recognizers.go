@@ -36,4 +36,5 @@ type DockerStep struct {
 // Recognizers is a list of registered index job recognizers.
 var Recognizers = []IndexJobRecognizer{
 	lsifGoJobRecognizer{},
+	lsifTscJobRecognizer{},
 }

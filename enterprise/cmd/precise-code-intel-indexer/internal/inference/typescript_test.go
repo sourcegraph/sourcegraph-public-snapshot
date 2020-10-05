@@ -8,17 +8,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
-	recognizer := lsifGoJobRecognizer{}
+func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
+	recognizer := lsifTscJobRecognizer{}
 	testCases := []struct {
 		paths    []string
 		expected bool
 	}{
-		{paths: []string{"go.mod"}, expected: true},
-		{paths: []string{"a/go.mod"}, expected: true},
+		{paths: []string{"tsconfig.json"}, expected: true},
+		{paths: []string{"a/tsconfig.json"}, expected: true},
 		{paths: []string{"package.json"}, expected: false},
-		{paths: []string{"vendor/foo/bar/package.json"}, expected: false},
-		{paths: []string{"foo/bar-go.mod"}, expected: false},
+		{paths: []string{"node_modules/foo/bar/package.json"}, expected: false},
+		{paths: []string{"foo/bar-tsconfig.json"}, expected: false},
 	}
 
 	for _, testCase := range testCases {
@@ -32,18 +32,18 @@ func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
 	}
 }
 
-func TestLsifGoJobRecognizerInferIndexJobsGoModRoot(t *testing.T) {
-	recognizer := lsifGoJobRecognizer{}
+func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
+	recognizer := lsifTscJobRecognizer{}
 	paths := []string{
-		"go.mod",
+		"tsconfig.json",
 	}
 
 	expectedIndexJobs := []IndexJob{
 		{
 			DockerSteps: nil,
 			Root:        "",
-			Indexer:     "sourcegraph/lsif-go:latest",
-			IndexerArgs: []string{"lsif-go", "--no-animation"},
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 	}
@@ -52,34 +52,34 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModRoot(t *testing.T) {
 	}
 }
 
-func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
-	recognizer := lsifGoJobRecognizer{}
+func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
+	recognizer := lsifTscJobRecognizer{}
 	paths := []string{
-		"a/go.mod",
-		"b/go.mod",
-		"c/go.mod",
+		"a/tsconfig.json",
+		"b/tsconfig.json",
+		"c/tsconfig.json",
 	}
 
 	expectedIndexJobs := []IndexJob{
 		{
 			DockerSteps: nil,
 			Root:        "a",
-			Indexer:     "sourcegraph/lsif-go:latest",
-			IndexerArgs: []string{"lsif-go", "--no-animation"},
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
 			DockerSteps: nil,
 			Root:        "b",
-			Indexer:     "sourcegraph/lsif-go:latest",
-			IndexerArgs: []string{"lsif-go", "--no-animation"},
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
 			DockerSteps: nil,
 			Root:        "c",
-			Indexer:     "sourcegraph/lsif-go:latest",
-			IndexerArgs: []string{"lsif-go", "--no-animation"},
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 	}
@@ -88,11 +88,11 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 	}
 }
 
-func TestLSIFGoJobRecognizerPatterns(t *testing.T) {
-	recognizer := lsifGoJobRecognizer{}
+func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
+	recognizer := lsifTscJobRecognizer{}
 	paths := []string{
-		"go.mod",
-		"subdir/go.mod",
+		"tsconfig.json",
+		"subdir/tsconfig.json",
 	}
 
 	for _, path := range paths {

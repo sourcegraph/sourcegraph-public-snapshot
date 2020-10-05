@@ -15,7 +15,8 @@ func (lsifGoJobRecognizer) CanIndex(paths []string) bool {
 			return true
 		}
 
-		// TODO(efritz) - check for vendored projects
+		// TODO(efritz) - support glide, dep, other historic package managers
+		// TODO(efritz) - support projects without go.mod but a vendor dir and go files
 	}
 
 	return false
