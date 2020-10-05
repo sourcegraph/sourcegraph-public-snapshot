@@ -236,6 +236,7 @@ func (r *firecrackerCommandFormatter) resourceFlags() []string {
 	return []string{
 		"--cpus", strconv.Itoa(r.options.FirecrackerNumCPUs),
 		"--memory", r.options.FirecrackerMemory,
+		"--size", r.options.FirecrackerDiskSpace,
 	}
 }
 
