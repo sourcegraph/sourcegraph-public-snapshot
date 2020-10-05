@@ -133,6 +133,7 @@ $code-bg: var(--body-bg);
 @import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
 @import '../../../shared/src/global-styles/icons';
+@import './background';
 @import './badge';
 @import './card';
 @import './dropdown';

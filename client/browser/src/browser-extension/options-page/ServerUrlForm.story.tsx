@@ -3,7 +3,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { ConnectionErrors, ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
 import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
-import optionsStyles from '../../options.scss'
+import brandedStyles from '../../branded.scss'
 
 class Container extends React.Component<{}, { value: string; status: ServerUrlFormProps['status'] }> {
     public state = { value: 'https://sourcegraph.com', status: 'connected' as ServerUrlFormProps['status'] }
@@ -34,7 +34,7 @@ class Container extends React.Component<{}, { value: string; status: ServerUrlFo
 }
 
 storiesOf('browser/Options/ServerUrlForm', module)
-    .addDecorator(story => <BrandedStory styles={optionsStyles}>{() => story()}</BrandedStory>)
+    .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
     .add('Interactive', () => <Container />)
     .add('Error Status', () => (
         <div style={{ maxWidth: 400, padding: '1rem' }}>
