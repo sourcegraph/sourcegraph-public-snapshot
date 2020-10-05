@@ -68,6 +68,9 @@ func NewHandler() http.Handler {
 	// Usage statistics ZIP download
 	r.Get(router.UsageStatsDownload).Handler(trace.TraceRoute(http.HandlerFunc(usageStatsArchiveHandler)))
 
+	// Ping retrieval
+	r.Get(router.LatestPing).Handler(trace.TraceRoute(http.HandlerFunc(latestPingHandler)))
+
 	r.Get(router.GDDORefs).Handler(trace.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(trace.TraceRoute(errorutil.Handler(serveEditor)))
 
