@@ -49,21 +49,33 @@ export function experimentalFeaturesFromSettings(
 ): {
     splitSearchModes: boolean
     copyQueryButton: boolean
+    searchStreaming: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
+    showMultilineSearchConsole: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
         {}
 
     const {
-        splitSearchModes = true,
+        splitSearchModes = false,
         copyQueryButton = false,
+        searchStreaming = false,
         showRepogroupHomepage = false,
         showOnboardingTour = false,
-        showEnterpriseHomePanels = false,
+        showEnterpriseHomePanels = true, // Default to true if not set
+        showMultilineSearchConsole = false,
     } = experimentalFeatures
 
-    return { splitSearchModes, copyQueryButton, showRepogroupHomepage, showOnboardingTour, showEnterpriseHomePanels }
+    return {
+        splitSearchModes,
+        copyQueryButton,
+        searchStreaming,
+        showRepogroupHomepage,
+        showOnboardingTour,
+        showEnterpriseHomePanels,
+        showMultilineSearchConsole,
+    }
 }

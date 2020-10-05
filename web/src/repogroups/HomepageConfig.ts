@@ -4,9 +4,11 @@ import { kubernetes } from './Kubernetes'
 import { golang } from './Golang'
 import { reactHooks } from './ReactHooks'
 import { stanford } from './Stanford'
+import { cncf } from './cncf'
 import { RepogroupMetadata } from './types'
 
 export const repogroupList: RepogroupMetadata[] = [
+    cncf,
     python2To3Metadata,
     android,
     kubernetes,

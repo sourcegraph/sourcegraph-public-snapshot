@@ -1,9 +1,10 @@
 import React from 'react'
-import { storiesOf } from '@storybook/react'
 import { _fetchRecentSearches } from './utils'
-import { WebStory } from '../../components/WebStory'
-import { RepositoriesPanel } from './RepositoriesPanel'
 import { NEVER, of } from 'rxjs'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { RepositoriesPanel } from './RepositoriesPanel'
+import { storiesOf } from '@storybook/react'
+import { WebStory } from '../../components/WebStory'
 
 const { add } = storiesOf('web/search/panels/RepositoriesPanel', module)
     .addParameters({
@@ -27,6 +28,7 @@ const emptyRecentSearches = {
 const props = {
     authenticatedUser: null,
     fetchRecentSearches: _fetchRecentSearches,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 add('Populated', () => <WebStory>{() => <RepositoriesPanel {...props} />}</WebStory>)

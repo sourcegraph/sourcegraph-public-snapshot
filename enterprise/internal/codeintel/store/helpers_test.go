@@ -13,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 type printableRank struct{ value *int }
@@ -116,6 +117,12 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 		if index.RepositoryID == 0 {
 			index.RepositoryID = 50
 		}
+		if index.DockerSteps == nil {
+			index.DockerSteps = []DockerStep{}
+		}
+		if index.IndexerArgs == nil {
+			index.IndexerArgs = []string{}
+		}
 
 		// Ensure we have a repo for the inner join in select queries
 		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
@@ -132,8 +139,13 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				process_after,
 				num_resets,
 				num_failures,
-				repository_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				repository_id,
+				docker_steps,
+				root,
+				indexer,
+				indexer_args,
+				outfile
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -146,6 +158,11 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.NumResets,
 			index.NumFailures,
 			index.RepositoryID,
+			pq.Array(index.DockerSteps),
+			index.Root,
+			index.Indexer,
+			pq.Array(index.IndexerArgs),
+			index.Outfile,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -234,7 +251,7 @@ func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMe
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	uploadMeta := map[string][]UploadMeta{}
 	for rows.Next() {
@@ -273,7 +290,7 @@ func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
 		repositoryID,
 	)
 
-	ids, err := scanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads visible at tip: %s", err)
 	}

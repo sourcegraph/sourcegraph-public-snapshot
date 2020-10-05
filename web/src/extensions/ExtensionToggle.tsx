@@ -1,127 +1,193 @@
-import { last } from 'lodash'
-import * as React from 'react'
-import { EMPTY, from, Subject, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import React, { useCallback, useMemo, useState } from 'react'
+import { Observable, of } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { Toggle } from '../../../shared/src/components/Toggle'
-import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
+import { ToggleBig } from '../../../shared/src/components/ToggleBig'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import {
+    SettingsCascadeProps,
+    SettingsCascadeOrError,
+    ConfiguredSubjectOrError,
+} from '../../../shared/src/settings/settings'
+import { useEventObservable } from '../../../shared/src/util/useObservable'
 import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
-import { property } from '../../../shared/src/util/types'
+import { ExtensionPermissionModal } from './ExtensionPermissionModal'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
-    /** The extension that this element is for. */
-    extension: Pick<ConfiguredRegistryExtension, 'id'>
-
+    /** The id of the extension that this element is for. */
+    extensionID: string
+    enabled: boolean
     className?: string
+    /** Render big toggle */
+    big?: boolean
+    userCannotToggle?: boolean
+    onHover?: (value: boolean) => void
+    /** Additional logic to run on toggle */
+    onToggleChange?: (enabled: boolean) => void
+    /** Additional logic to run on update error */
+    onToggleError?: (revertedValue: OptimisticUpdateFailure<boolean>) => void
+}
+
+export interface OptimisticUpdateFailure<T> {
+    previousValue: T
+    optimisticValue: T
+    error: Error
 }
 
 /**
- * Displays a toggle button for an extension.
+ * Creates a pipeline to use with our `useEventObservable` hook.
+ * Helps with error handling for optimistic updates.
+ *
+ * How it works:
+ * - Wraps the optimistic update request promise with another
+ * promise that only resolves if the inner promise is rejected.
+ * The resulting observable will then only emit on error.
+ * - Cancels subscriptions to old promises by way of `switchMap`; we
+ * only care about the latest optimistic update
+ *
+ * TODO: Make it work with observables as well.
+ *
+ * @param onError Function called with the previous value and the optimistic value, in case you
+ * want to display the optimistic value in an error message.
  */
-export class ExtensionToggle extends React.PureComponent<Props> {
-    private toggles = new Subject<boolean>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.toggles
-                .pipe(
-                    switchMap(enabled => {
-                        if (this.props.settingsCascade.subjects === null) {
-                            return EMPTY
-                        }
-
-                        // Only operate on the highest precedence settings, for simplicity.
-                        const subjects = this.props.settingsCascade.subjects
-                        if (subjects.length === 0) {
-                            return EMPTY
-                        }
-                        const highestPrecedenceSubject = subjects[subjects.length - 1]
-                        if (!highestPrecedenceSubject || !highestPrecedenceSubject.subject.viewerCanAdminister) {
-                            return EMPTY
-                        }
-
-                        if (
-                            !isExtensionAdded(this.props.settingsCascade.final, this.props.extension.id) &&
-                            !confirmAddExtension(this.props.extension.id)
-                        ) {
-                            return EMPTY
-                        }
-
-                        eventLogger.log('ExtensionToggled', { extension_id: this.props.extension.id })
-
-                        return from(
-                            this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
-                                path: ['extensions', this.props.extension.id],
-                                value: enabled,
-                            })
-                        )
+function createOptimisticRollbackPipeline<T>(
+    onError: (optimisticUpdateFailure: OptimisticUpdateFailure<T>) => void
+): (
+    optimisticUpdates: Observable<{ previousValue: T; optimisticValue: T; promise: Promise<void> }>
+) => Observable<void> {
+    return function optimisticRollbackPipeline(optimisticUpdates) {
+        return optimisticUpdates.pipe(
+            switchMap(
+                ({ promise, previousValue, optimisticValue }) =>
+                    new Promise<OptimisticUpdateFailure<T>>(resolve => {
+                        promise.catch((error: Error) => resolve({ error, previousValue, optimisticValue }))
                     })
-                )
-                .subscribe()
+            ),
+            map(optimisticUpdateFailure => {
+                onError(optimisticUpdateFailure)
+            }),
+            catchError<void, Observable<void>>(() => of())
         )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        const cascade = extractErrors(this.props.settingsCascade)
-        const highestPrecedenceSubjectWithExtensionAdded = isErrorLike(cascade)
-            ? undefined
-            : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
-
-        let title: string
-        if (highestPrecedenceSubjectWithExtensionAdded) {
-            // Describe highest-precedence subject where this extension is enabled.
-            title = `${
-                isExtensionEnabled(highestPrecedenceSubjectWithExtensionAdded.settings, this.props.extension.id)
-                    ? 'Enabled'
-                    : 'Disabled'
-            } in ${highestPrecedenceSubjectWithExtensionAdded.subject.__typename.toLowerCase()} settings`
-        } else {
-            title = 'Click to enable'
-        }
-
-        return (
-            <Toggle
-                value={isExtensionEnabled(this.props.settingsCascade.final, this.props.extension.id)}
-                onToggle={this.onToggle}
-                title={title}
-                className={this.props.className}
-            />
-        )
-    }
-
-    private onToggle = (enabled: boolean): void => {
-        this.toggles.next(enabled)
     }
 }
 
-/**
- * Shows a modal confirmation prompt to the user confirming whether to add an extension.
- */
-function confirmAddExtension(extensionID: string): boolean {
-    return confirm(
-        `Add Sourcegraph extension ${extensionID}?\n\nIt can:\n- Read repositories and files you view using Sourcegraph\n- Read and change your Sourcegraph settings`
+export const ExtensionToggle: React.FunctionComponent<Props> = ({
+    settingsCascade,
+    platformContext,
+    extensionID,
+    enabled,
+    className,
+    big,
+    userCannotToggle,
+    onHover,
+    onToggleChange,
+    onToggleError,
+}) => {
+    const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
+    const [askingForPermission, setAskingForPermission] = useState<boolean>(false)
+
+    const onOptimisticError = useCallback(
+        (optimisticUpdateFailure: OptimisticUpdateFailure<boolean>) => {
+            setOptimisticEnabled(optimisticUpdateFailure.previousValue)
+            onToggleError?.(optimisticUpdateFailure)
+        },
+        [onToggleError, setOptimisticEnabled]
+    )
+
+    const [nextOptimisticUpdate] = useEventObservable<
+        { previousValue: boolean; optimisticValue: boolean; promise: Promise<void> },
+        void
+    >(useMemo(() => createOptimisticRollbackPipeline(onOptimisticError), [onOptimisticError]))
+
+    const updateEnablement = useCallback(
+        (enabled: boolean) => {
+            const highestPrecedenceSubject = getHighestPrecedenceSubject(settingsCascade)
+
+            if (!highestPrecedenceSubject) {
+                return
+            }
+
+            eventLogger.log('ExtensionToggled', { extension_id: extensionID })
+
+            if (onToggleChange) {
+                onToggleChange(enabled)
+            }
+            setOptimisticEnabled(enabled)
+
+            nextOptimisticUpdate({
+                previousValue: !enabled,
+                optimisticValue: enabled,
+                promise: platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
+                    path: ['extensions', extensionID],
+                    value: enabled,
+                }),
+            })
+        },
+        [platformContext, extensionID, onToggleChange, nextOptimisticUpdate, settingsCascade]
+    )
+
+    const onToggle = useCallback(
+        (enabled: boolean) => {
+            if (!enabled) {
+                updateEnablement(false)
+            } else if (!isExtensionAdded(settingsCascade.final, extensionID)) {
+                setAskingForPermission(true)
+            } else {
+                updateEnablement(true)
+            }
+        },
+        [updateEnablement, extensionID, settingsCascade]
+    )
+
+    const denyPermission = useCallback(() => {
+        setAskingForPermission(false)
+    }, [])
+
+    const givePermission = useCallback(() => {
+        updateEnablement(true)
+        setAskingForPermission(false)
+    }, [updateEnablement])
+
+    const props: React.ComponentProps<typeof ToggleBig> = {
+        onToggle,
+        onHover,
+        className,
+        value: optimisticEnabled,
+        title: userCannotToggle ? undefined : optimisticEnabled ? 'Click to disable' : 'Click to enable',
+        dataTest: `extension-toggle-${extensionID}`,
+        disabled: userCannotToggle,
+    }
+
+    return (
+        <>
+            {big ? <ToggleBig {...props} /> : <Toggle {...props} />}
+            {askingForPermission && (
+                <ExtensionPermissionModal
+                    extensionID={extensionID}
+                    givePermission={givePermission}
+                    denyPermission={denyPermission}
+                />
+            )}
+        </>
     )
 }
 
-/** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
-function extractErrors(settingsCascade: SettingsCascadeOrError): SettingsCascade | ErrorLike {
+/** If this function returns undefined, do not update extension enablement */
+function getHighestPrecedenceSubject(settingsCascade: SettingsCascadeOrError): ConfiguredSubjectOrError | undefined {
     if (settingsCascade.subjects === null) {
-        return new Error('Subjects was null')
+        return
     }
-    if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
-        return new Error(`Merged was ${String(settingsCascade.final)}`)
+
+    // Only operate on the highest precedence settings, for simplicity.
+    const subjects = settingsCascade.subjects
+    if (subjects.length === 0) {
+        return
     }
-    const found = settingsCascade.subjects.find(property('settings', isErrorLike))
-    if (found) {
-        return new Error(`One of the subjects was ${found.settings.message}`)
+    const highestPrecedenceSubject = subjects[subjects.length - 1]
+    if (!highestPrecedenceSubject || !highestPrecedenceSubject.subject.viewerCanAdminister) {
+        return
     }
-    return settingsCascade as SettingsCascade
+
+    return highestPrecedenceSubject
 }

@@ -9,7 +9,7 @@ import (
 
 // GetPackage returns the dump that provides the package with the given scheme, name, and version and a flag indicating its existence.
 func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (Dump, bool, error) {
-	return scanFirstDump(s.query(ctx, sqlf.Sprintf(`
+	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			d.id,
 			d.commit,
@@ -45,5 +45,5 @@ func (s *store) UpdatePackages(ctx context.Context, packages []types.Package) (e
 		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", p.DumpID, p.Scheme, p.Name, p.Version))
 	}
 
-	return s.queryForEffect(ctx, sqlf.Sprintf(`INSERT INTO lsif_packages (dump_id, scheme, name, version) VALUES %s`, sqlf.Join(values, ",")))
+	return s.Store.Exec(ctx, sqlf.Sprintf(`INSERT INTO lsif_packages (dump_id, scheme, name, version) VALUES %s`, sqlf.Join(values, ",")))
 }

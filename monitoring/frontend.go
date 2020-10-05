@@ -101,6 +101,7 @@ func Frontend() *Container {
 							Description:     "90th percentile page load latency over all routes over 10m",
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
 							DataMayNotExist: true,
+							DataMayBeNaN:    true, // if all buckets are 0 (i.e. on low-traffic instances), histogram_quantile returns NaN
 							Critical:        Alert{GreaterOrEqual: 2},
 							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:           ObservableOwnerCloud,

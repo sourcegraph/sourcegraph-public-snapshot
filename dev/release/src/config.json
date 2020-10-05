@@ -5,11 +5,11 @@
   "captainGitHubUsername": "davejrt",
 
   "majorVersion": "3",
-  "minorVersion": "20",
-  "releaseDateTime": "20 September 2020 10:00 PST",
-  "oneWorkingDayBeforeRelease": "20 September 2020 10:00 PST",
-  "fourWorkingDaysBeforeRelease": "15 September 2020 10:00 PST",
-  "fiveWorkingDaysBeforeRelease": "14 September 2020 10:00 PST",
+  "minorVersion": "21",
+  "releaseDateTime": "20 October 2020 10:00 PST",
+  "oneWorkingDayBeforeRelease": "19 October 2020 10:00 PST",
+  "fourWorkingDaysBeforeRelease": "14 October 2020 10:00 PST",
+  "fiveWorkingDaysBeforeRelease": "13 October 2020 10:00 PST",
 
   "slackAnnounceChannel": "dev-announce"
 }

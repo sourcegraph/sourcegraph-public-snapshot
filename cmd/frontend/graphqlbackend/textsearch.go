@@ -293,7 +293,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return mockSearchFilesInRepos(args)
 	}
 
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s, numRepoRevs: %d", args.PatternInfo.Pattern, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -316,20 +316,24 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		indexedTyp = fileRequest
 	}
 
-	indexed, err := newIndexedSearchRequest(ctx, args, indexedTyp)
-	if err != nil {
-		return nil, nil, err
+	var indexed *indexedSearchRequest
+	if args.Mode == search.ZoektGlobalSearch {
+		indexed = &indexedSearchRequest{
+			args:  args,
+			typ:   indexedTyp,
+			repos: &indexedRepoRevs{},
+		}
+	} else {
+		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	// if there are no indexed repos and this is a structural search
 	// query, there will be no results. Raise a friendly alert.
 	if args.PatternInfo.IsStructuralPat && len(indexed.Repos()) == 0 {
 		return nil, nil, errors.New("no indexed repositories for structural search")
-	}
-
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
 	}
 
 	if args.PatternInfo.IsEmpty() {
@@ -499,79 +503,81 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return nil
 	} // ends callSearcherOverRepos
 
-	wg.Add(1)
-	go func() {
-		// TODO limitHit, handleRepoSearchResult
-		defer wg.Done()
-		matches, limitHit, reposLimitHit, err := indexed.Search(ctx)
-		mu.Lock()
-		defer mu.Unlock()
-		if ctx.Err() == nil {
-			for _, repo := range indexed.Repos() {
-				common.searched = append(common.searched, repo.Repo)
-				common.indexed = append(common.indexed, repo.Repo)
-			}
-			for repo := range reposLimitHit {
-				// Repos that aren't included in the result set due to exceeded limits are partially searched
-				// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
-				// returned in the original result set, because indexed search has `limitHit` for the
-				// entire search rather than per repo as in non-indexed search.
-				common.partial[api.RepoName(repo)] = struct{}{}
-			}
-		}
-		if limitHit {
-			common.limitHit = true
-		}
-		if err == errNoResultsInTimeout {
-			// Effectively, all repositories have timed out.
-			for _, repo := range indexed.Repos() {
-				common.timedout = append(common.timedout, repo.Repo)
-			}
-		}
-		tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-		if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
-			searchErr = err
-			tr.LazyPrintf("cancel indexed search due to error: %v", err)
-			cancel()
-		}
-
-		if args.PatternInfo.IsStructuralPat {
-			// A partition of {repo name => file list} that we will build from Zoekt matches
-			partition := make(map[string][]string)
-			var repos []*search.RepositoryRevisions
-
-			for _, m := range matches {
-				name := string(m.Repo.Name())
-				partition[name] = append(partition[name], m.JPath)
-			}
-
-			// Filter Zoekt repos that didn't contain matches
-			for _, repo := range indexed.Repos() {
-				for key := range partition {
-					if string(repo.Repo.Name) == key {
-						repos = append(repos, repo)
-					}
+	if args.Mode != search.SearcherOnly {
+		wg.Add(1)
+		go func() {
+			// TODO limitHit, handleRepoSearchResult
+			defer wg.Done()
+			matches, limitHit, reposLimitHit, err := indexed.Search(ctx)
+			mu.Lock()
+			defer mu.Unlock()
+			if ctx.Err() == nil {
+				for _, repo := range indexed.Repos() {
+					common.searched = append(common.searched, repo.Repo)
+					common.indexed = append(common.indexed, repo.Repo)
+				}
+				for repo := range reposLimitHit {
+					// Repos that aren't included in the result set due to exceeded limits are partially searched
+					// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
+					// returned in the original result set, because indexed search has `limitHit` for the
+					// entire search rather than per repo as in non-indexed search.
+					common.partial[api.RepoName(repo)] = struct{}{}
 				}
 			}
-
-			// For structural search, we run callSearcherOverRepos
-			// over the set of repos and files known to contain
-			// parts of the pattern as determined by Zoekt.
-			// callSearcherOverRepos must acquire the lock, so we
-			// must release the lock held by Zoekt at this point.
-			// The Zoekt part of the search is done here as far as
-			// structural search is concerned, so the lock can be
-			// freely released.
-			mu.Unlock()
-			err := callSearcherOverRepos(repos, partition)
-			mu.Lock()
-			if err != nil {
-				searchErr = err
+			if limitHit {
+				common.limitHit = true
 			}
-		} else {
-			addMatches(matches)
-		}
-	}()
+			if err == errNoResultsInTimeout {
+				// Effectively, all repositories have timed out.
+				for _, repo := range indexed.Repos() {
+					common.timedout = append(common.timedout, repo.Repo)
+				}
+			}
+			tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+			if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
+				searchErr = err
+				tr.LazyPrintf("cancel indexed search due to error: %v", err)
+				cancel()
+			}
+
+			if args.PatternInfo.IsStructuralPat {
+				// A partition of {repo name => file list} that we will build from Zoekt matches
+				partition := make(map[string][]string)
+				var repos []*search.RepositoryRevisions
+
+				for _, m := range matches {
+					name := string(m.Repo.Name())
+					partition[name] = append(partition[name], m.JPath)
+				}
+
+				// Filter Zoekt repos that didn't contain matches
+				for _, repo := range indexed.Repos() {
+					for key := range partition {
+						if string(repo.Repo.Name) == key {
+							repos = append(repos, repo)
+						}
+					}
+				}
+
+				// For structural search, we run callSearcherOverRepos
+				// over the set of repos and files known to contain
+				// parts of the pattern as determined by Zoekt.
+				// callSearcherOverRepos must acquire the lock, so we
+				// must release the lock held by Zoekt at this point.
+				// The Zoekt part of the search is done here as far as
+				// structural search is concerned, so the lock can be
+				// freely released.
+				mu.Unlock()
+				err := callSearcherOverRepos(repos, partition)
+				mu.Lock()
+				if err != nil {
+					searchErr = err
+				}
+			} else {
+				addMatches(matches)
+			}
+		}()
+	}
 
 	// This guard disables
 	// - unindexed structural search
@@ -587,6 +593,15 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	wg.Wait()
 	if searchErr != nil {
 		return nil, common, searchErr
+	}
+
+	repos, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return nil, common, err
+	}
+	common.repos = make([]*types.Repo, len(repos))
+	for i, repo := range repos {
+		common.repos[i] = repo.Repo
 	}
 
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))

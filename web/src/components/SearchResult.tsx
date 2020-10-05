@@ -9,23 +9,8 @@ import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
 import { Markdown } from '../../../shared/src/components/Markdown'
 
-export interface HighlightRange {
-    /**
-     * The 0-based line number that this highlight appears in
-     */
-    line: number
-    /**
-     * The 0-based character offset to start highlighting at
-     */
-    character: number
-    /**
-     * The number of characters to highlight
-     */
-    length: number
-}
-
 interface Props extends ThemeProps {
-    result: GQL.GenericSearchResultInterface
+    result: Omit<GQL.IGenericSearchResultInterface, '__typename'>
     history: H.History
 }
 
@@ -59,26 +44,15 @@ export class SearchResult extends React.Component<Props> {
 
     private renderBody = (): JSX.Element => (
         <>
-            {this.props.result.matches.map(match => {
-                const highlightRanges: HighlightRange[] = []
-                match.highlights.map(highlight =>
-                    highlightRanges.push({
-                        line: highlight.line,
-                        character: highlight.character,
-                        length: highlight.length,
-                    })
-                )
-
-                return (
-                    <SearchResultMatch
-                        key={match.url}
-                        item={match}
-                        highlightRanges={highlightRanges}
-                        isLightTheme={this.props.isLightTheme}
-                        history={this.props.history}
-                    />
-                )
-            })}
+            {this.props.result.matches.map(match => (
+                <SearchResultMatch
+                    key={match.url}
+                    item={match}
+                    highlightRanges={match.highlights}
+                    isLightTheme={this.props.isLightTheme}
+                    history={this.props.history}
+                />
+            ))}
         </>
     )
 

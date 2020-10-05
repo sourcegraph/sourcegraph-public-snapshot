@@ -1,10 +1,11 @@
 import React from 'react'
+import { _fetchSavedSearches, authUser } from './utils'
+import { NEVER, of } from 'rxjs'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { SavedSearchesPanel } from './SavedSearchesPanel'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
-import { authUser, _fetchSavedSearches } from './utils'
-import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { NEVER, of } from 'rxjs'
 
 const { add } = storiesOf('web/search/panels/SavedSearchesPanel', module).addParameters({
     design: {
@@ -17,6 +18,7 @@ const props = {
     authenticatedUser: authUser,
     patternType: SearchPatternType.literal,
     fetchSavedSearches: _fetchSavedSearches,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 add('Populated', () => (
