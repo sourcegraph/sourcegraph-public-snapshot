@@ -11,9 +11,11 @@ var _ IndexJobRecognizer = lsifGoJobRecognizer{}
 
 func (lsifGoJobRecognizer) CanIndex(paths []string) bool {
 	for _, path := range paths {
-		if filepath.Base(path) == "go.mod" {
+		if filepath.Base(path) == "go.mod" && !containsSegment(path, "vendor") {
 			return true
 		}
+
+		// TODO(efritz) - check for vendored projects
 	}
 
 	return false
@@ -21,7 +23,7 @@ func (lsifGoJobRecognizer) CanIndex(paths []string) bool {
 
 func (lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 	for _, path := range paths {
-		if filepath.Base(path) == "go.mod" {
+		if filepath.Base(path) == "go.mod" && !containsSegment(path, "vendor") {
 			root := filepath.Dir(path)
 			if root == "." {
 				root = ""
