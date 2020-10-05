@@ -29,7 +29,7 @@ var _ persistence.Store = &store{}
 
 func NewStore(db *sql.DB, dumpID int) persistence.Store {
 	return &store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db)),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		dumpID:     dumpID,
 		serializer: gobserializer.New(),
 	}
