@@ -125,12 +125,20 @@ AND deleted_at IS NULL
 	}, func() float64 {
 		count, err := scanCount(`
 -- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_total
-SELECT COUNT(DISTINCT(repo_id)) FROM external_service_repos
-WHERE external_service_id IN (
-		SELECT DISTINCT(id) FROM external_services
-		WHERE namespace_user_id IS NOT NULL
-        AND deleted_at IS NULL
-	)
+SELECT COUNT(*)
+FROM
+    repo r
+WHERE
+    EXISTS (
+        SELECT
+        FROM
+            external_service_repos sr
+            INNER JOIN external_services s ON s.id = sr.external_service_id
+        WHERE
+            s.namespace_user_id IS NOT NULL
+            AND s.deleted_at IS NULL
+            AND r.id = sr.repo_id
+            AND r.deleted_at IS NULL)
 `)
 		if err != nil {
 			log15.Error("Failed to get total user repositories", "err", err)
