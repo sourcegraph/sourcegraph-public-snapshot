@@ -39,6 +39,7 @@ type HandlerOptions struct {
 	UseFirecracker        bool
 	FirecrackerNumCPUs    int
 	FirecrackerMemory     string
+	FirecrackerDiskSpace  string
 	ImageArchivePath      string
 }
 
