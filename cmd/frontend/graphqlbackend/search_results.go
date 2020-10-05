@@ -19,6 +19,7 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -39,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/src-d/enry/v2"
 )
 
@@ -165,6 +167,10 @@ type SearchResultsResolver struct {
 	// cursor to return for paginated search requests, or nil if the request
 	// wasn't paginated.
 	cursor *searchCursor
+
+	// cache for user settings. Ideally this should be set just once in the code path
+	// by an upstream resolver
+	userSettings *schema.Settings
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -230,9 +236,20 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	}()
 
 	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
-		globbing = getBoolPtr(settings.SearchGlobbing, false)
+	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
+	// context.Context). However we might regress on that or call DynamicFilters from
+	// other code paths. Hence we fallback to accessing the user settings directly.
+	if sr.userSettings != nil {
+		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
+	} else {
+		settings, err := decodedViewerFinalSettings(ctx)
+		if err != nil {
+			log15.Warn("DynamicFilters: could not get user settings from db")
+		} else {
+			globbing = getBoolPtr(settings.SearchGlobbing, false)
+		}
 	}
+	tr.LogFields(otlog.Bool("globbing", globbing))
 
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int32)
@@ -526,6 +543,10 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // relies on the invariant that query and pattern error checking has already
 // been performed.
 func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
+	tr, ctx := trace.New(ctx, "logSearchLatency", "")
+	defer func() {
+		tr.Finish()
+	}()
 	var types []string
 	resultTypes, _ := r.query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
@@ -602,7 +623,12 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsResolver, err error) {
+	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	start := time.Now()
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
 	if r.query.BoolValue("stable") {
@@ -1019,15 +1045,26 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	return result, nil
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
+	tr, ctx := trace.New(ctx, "Results", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	switch q := r.query.(type) {
 	case *query.OrdinaryQuery:
-		return r.evaluateLeaf(ctx)
+		srr, err = r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		return r.evaluate(ctx, q.Query)
+		srr, err = r.evaluate(ctx, q.Query)
+	default:
+		// Unreachable.
+		return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
 	}
-	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
+	// copy userSettings from searchResolver to SearchResultsResolver
+	if srr != nil {
+		srr.userSettings = r.userSettings
+	}
+	return srr, err
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline

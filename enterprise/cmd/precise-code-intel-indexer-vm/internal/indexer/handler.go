@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -18,6 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
+
+const uploadImage = "sourcegraph/src-cli:latest"
+const uploadRoute = "/.internal-code-intel/lsif/upload"
 
 type Handler struct {
 	queueClient   queue.Client
@@ -61,7 +63,17 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		return err
 	}
 
-	if err := commandFormatter.Setup(ctx, h.commander); err != nil {
+	images := []string{
+		uploadImage,
+	}
+	for _, dockerStep := range index.DockerSteps {
+		images = append(images, dockerStep.Image)
+	}
+	if index.Indexer != "" {
+		images = append(images, index.Indexer)
+	}
+
+	if err := commandFormatter.Setup(ctx, h.commander, images); err != nil {
 		return err
 	}
 	defer func() {
@@ -70,19 +82,46 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		}
 	}()
 
-	indexCmd, err := h.indexCommand(index)
-	if err != nil {
-		return err
-	}
-	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(indexCmd)...); err != nil {
-		return errors.Wrap(err, "failed to index repository")
+	for _, dockerStep := range index.DockerSteps {
+		dockerStepCommand := NewCmd(dockerStep.Image, dockerStep.Commands...).SetWd(dockerStep.Root)
+
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(dockerStepCommand)...); err != nil {
+			return errors.Wrap(err, "failed to perform docker step")
+		}
 	}
 
-	uploadCmd, err := h.uploadCommand(index)
+	if index.Indexer != "" {
+		indexCommand := NewCmd(index.Indexer, index.IndexerArgs...).SetWd(index.Root)
+
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(indexCommand)...); err != nil {
+			return errors.Wrap(err, "failed to index repository")
+		}
+	}
+
+	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
 	if err != nil {
 		return err
 	}
-	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCmd)...); err != nil {
+
+	outfile := "dump.lsif"
+	if index.Outfile != "" {
+		outfile = index.Outfile
+	}
+
+	args := flatten(
+		"lsif", "upload",
+		"-no-progress",
+		"-repo", index.RepositoryName,
+		"-commit", index.Commit,
+		"-upload-route", uploadRoute,
+		"-file", outfile,
+	)
+
+	uploadCommand := NewCmd(uploadImage, args...).
+		SetWd(index.Root).
+		AddEnv("SRC_ENDPOINT", uploadURL.String())
+
+	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCommand)...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
 	}
 
@@ -100,30 +139,6 @@ func (h *Handler) makeCommandFormatter(repoDir string) (CommandFormatter, error)
 	}
 
 	return NewFirecrackerCommandFormatter(name.String(), repoDir, h.options), nil
-}
-
-func (h *Handler) indexCommand(index store.Index) (*Cmd, error) {
-	args := flatten(
-		"lsif-go",
-		"--no-animation",
-	)
-	return NewCmd("sourcegraph/lsif-go:latest", args...), nil
-}
-
-func (h *Handler) uploadCommand(index store.Index) (*Cmd, error) {
-	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
-	if err != nil {
-		return nil, err
-	}
-
-	args := flatten(
-		"lsif", "upload",
-		"-no-progress",
-		"-repo", index.RepositoryName,
-		"-commit", index.Commit,
-		"-upload-route", "/.internal-code-intel/lsif/upload",
-	)
-	return NewCmd("sourcegraph/src-cli:latest", args...).AddEnv("SRC_ENDPOINT", uploadURL.String()), nil
 }
 
 // makeTempDir is a wrapper around ioutil.TempDir that can be replaced during unit tests.
@@ -170,35 +185,6 @@ func (h *Handler) fetchRepository(ctx context.Context, repositoryName, commit st
 	}
 
 	return tempDir, nil
-}
-
-func (h *Handler) saveDockerImage(ctx context.Context, key, image string) error {
-	pullCommand := flatten(
-		"docker", "pull",
-		image,
-	)
-	if err := h.commander.Run(ctx, pullCommand...); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to pull %s", image))
-	}
-
-	saveCommand := flatten(
-		"docker", "save",
-		"-o", h.tarfilePathOnHost(key),
-		image,
-	)
-	if err := h.commander.Run(ctx, saveCommand...); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to save %s", image))
-	}
-
-	return nil
-}
-
-func (h *Handler) tarfilePathOnHost(key string) string {
-	return filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", key))
-}
-
-func (h *Handler) tarfilePathInVM(key string) string {
-	return fmt.Sprintf("/%s.tar", key)
 }
 
 func makeCloneURL(baseURL, authToken, repositoryName string) (*url.URL, error) {

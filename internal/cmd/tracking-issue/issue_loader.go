@@ -3,14 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 )
 
 const costPerSearch = 30
 const maxCostPerRequest = 1000
+const queriesPerLoadRequest = 10
 
 // IssueLoader efficiently fetches issues and pull request that match a given set
 // of queries.
@@ -20,6 +25,83 @@ type IssueLoader struct {
 	args      [][]string
 	cursors   []string
 	done      []bool
+}
+
+// LoadIssues will load all issues and pull requests matching the configured queries by making
+// multiple queries in parallel and merging and deduplicating the result. Tracking issues are
+// filtered out of the resulting issues list.
+func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (issues []*Issue, pullRequests []*PullRequest, err error) {
+	chunks := chunkQueries(queries)
+	ch := make(chan []string, len(chunks))
+	for _, chunk := range chunks {
+		ch <- chunk
+	}
+	close(ch)
+
+	var wg sync.WaitGroup
+	issuesCh := make(chan []*Issue, len(chunks))
+	pullRequestsCh := make(chan []*PullRequest, len(chunks))
+	errs := make(chan error, len(chunks))
+
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for chunk := range ch {
+				issues, pullRequests, err := loadIssues(ctx, cli, chunk)
+				if err != nil {
+					errs <- errors.Wrap(err, fmt.Sprintf("loadIssues(%s)", strings.Join(queries, ", ")))
+				} else {
+					issuesCh <- issues
+					pullRequestsCh <- pullRequests
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+	close(issuesCh)
+	close(pullRequestsCh)
+
+	for chunk := range issuesCh {
+		issues = append(issues, chunk...)
+	}
+	for chunk := range pullRequestsCh {
+		pullRequests = append(pullRequests, chunk...)
+	}
+
+	for e := range errs {
+		if err == nil {
+			err = e
+		} else {
+			err = multierror.Append(err, e)
+		}
+	}
+
+	return deduplicateIssues(issues), deduplicatePullRequests(pullRequests), err
+}
+
+// chunkQueries returns the given queries spread across a number of slices. Each
+// slice should contain at most queriesPerLoadRequest elements.
+func chunkQueries(queries []string) (chunks [][]string) {
+	for i := 0; i < len(queries); i += queriesPerLoadRequest {
+		if n := i + queriesPerLoadRequest; n < len(queries) {
+			chunks = append(chunks, queries[i:n])
+		} else {
+			chunks = append(chunks, queries[i:])
+		}
+	}
+
+	return chunks
+}
+
+// loadIssues will load all issues and pull requests matching the configured queries.
+// Tracking issues are filtered out of the resulting issues list.
+func loadIssues(ctx context.Context, cli *graphql.Client, queries []string) (issues []*Issue, pullRequests []*PullRequest, _ error) {
+	return NewIssueLoader(queries).Load(ctx, cli)
 }
 
 // NewIssueLoader creates a new IssueLoader with the given queries.
@@ -36,8 +118,7 @@ func NewIssueLoader(queries []string) *IssueLoader {
 }
 
 // Load will load all issues and pull requests matching the configured queries.
-// Returned objects are deduplicated and tracking issues are filtered out of the
-// issues list.
+// Tracking issues are filtered out of the resulting issues list.
 func (l *IssueLoader) Load(ctx context.Context, cli *graphql.Client) (issues []*Issue, pullRequests []*PullRequest, _ error) {
 	for {
 		r, ok := l.makeNextRequest()
@@ -54,7 +135,7 @@ func (l *IssueLoader) Load(ctx context.Context, cli *graphql.Client) (issues []*
 		pullRequests = append(pullRequests, pagePullRequests...)
 	}
 
-	return deduplicateIssues(issues), deduplicatePullRequests(pullRequests), nil
+	return issues, pullRequests, nil
 }
 
 // makeNextRequest will construct a new request based on the given cursor values.

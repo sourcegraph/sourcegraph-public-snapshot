@@ -12,7 +12,7 @@ import (
 // ListTrackingIssues returns all issues with the `tracking` label (and at least one other label)
 // in the given organization.
 func ListTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([]*Issue, error) {
-	issues, _, err := NewIssueLoader([]string{fmt.Sprintf("org:%q label:tracking", org)}).Load(ctx, cli)
+	issues, _, err := LoadIssues(ctx, cli, []string{fmt.Sprintf("org:%q label:tracking", org)})
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func ListTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([
 // of tracking issues in the given organization. The result of this function may be a superset
 // of objects that should be rendered for the tracking issue.
 func LoadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, trackingIssues []*Issue) ([]*Issue, []*PullRequest, error) {
-	issues, pullRequests, err := NewIssueLoader(makeQueries(org, trackingIssues)).Load(ctx, cli)
+	issues, pullRequests, err := LoadIssues(ctx, cli, makeQueries(org, trackingIssues))
 	if err != nil {
 		return nil, nil, err
 	}
