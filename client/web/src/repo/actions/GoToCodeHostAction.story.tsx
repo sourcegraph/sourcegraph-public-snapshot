@@ -17,6 +17,8 @@ add('InstallExtensionPopover (GitHub)', () => (
     <WebStory>
         {() => {
             const [open, setOpen] = useState(false)
+            // The popover cannot be open on initial render
+            // since the target element isn't in the DOM yet
             useEffect(() => {
                 setTimeout(() => setOpen(true), 0)
             }, [])
