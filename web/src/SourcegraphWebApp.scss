@@ -135,6 +135,7 @@ $code-bg: var(--body-bg);
 @import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
+@import 'bootstrap/scss/popover';
 @import 'bootstrap/scss/transitions';
 @import './global-styles/badge';
 @import './global-styles/card';
@@ -224,6 +225,10 @@ body,
 
 .cursor-pointer {
     cursor: pointer;
+}
+
+.popover {
+    font-size: inherit;
 }
 
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from

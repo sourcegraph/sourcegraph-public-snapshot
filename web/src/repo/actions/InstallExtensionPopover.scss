@@ -1,4 +1,7 @@
 .install-extension-popover {
+    width: 31rem;
+    max-width: 100vw;
+
     &__graphic-container {
         margin-bottom: 2rem;
         width: 11.25rem;
@@ -13,48 +16,5 @@
     &__logo {
         height: 3.5rem;
         width: 3.5rem;
-    }
-}
-
-.popover {
-    /* stylelint-disable-next-line selector-max-compound-selectors */
-    .arrow,
-    .arrow::before {
-        position: absolute;
-        width: 0.5rem;
-        height: 0.5rem;
-        z-index: -1;
-    }
-
-    /* stylelint-disable-next-line selector-max-compound-selectors */
-    .arrow::before {
-        content: '';
-        transform: rotate(45deg);
-        background-color: var(--border-color);
-    }
-
-    /* stylelint-disable-next-line selector-max-compound-selectors */
-    &[x-placement^='top'] > .arrow {
-        bottom: -4px;
-    }
-
-    /* stylelint-disable-next-line selector-max-compound-selectors */
-    &[x-placement^='bottom'] > .arrow {
-        top: -4px;
-
-        // TODO: make triangles here
-        // &::before {
-        //     background-color: red;
-        // }
-    }
-
-    /* stylelint-disable-next-line selector-max-compound-selectors */
-    &[x-placement^='left'] > .arrow {
-        right: -4px;
-    }
-
-    /* stylelint-disable-next-line selector-max-compound-selectors */
-    &[x-placement^='right'] > .arrow {
-        left: -4px;
     }
 }

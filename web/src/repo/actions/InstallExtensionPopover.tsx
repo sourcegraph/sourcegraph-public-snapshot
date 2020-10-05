@@ -38,13 +38,14 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
             toggle={toggle}
             target={targetID}
             isOpen={isOpen}
-            popperClassName="shadow"
-            innerClassName="border"
+            popperClassName="shadow border rounded install-extension-popover"
+            innerClassName="border-0"
             placement="bottom"
+            boundariesElement="window"
             modifiers={useMemo(
                 () => ({
                     offset: {
-                        offset: '0 4',
+                        offset: '0, 0',
                         enabled: true,
                     },
                 }),
@@ -53,7 +54,7 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
         >
             {isOpen && (
                 <FocusLock returnFocus={true}>
-                    <div className="modal-body p-4 web-content text-wrap  test-install-extension-popover">
+                    <div className=" p-3 web-content text-wrap  test-install-extension-popover">
                         <h3 className="mb-0 test-install-extension-popover-header">
                             Take Sourcegraph's code intelligence to {displayName}!
                         </h3>
