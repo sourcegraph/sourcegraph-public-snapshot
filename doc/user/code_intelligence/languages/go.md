@@ -44,6 +44,9 @@ Here's some examples in a couple popular frameworks, just substitute the indexer
 ### GitHub Actions
 
 ```yaml
+on:
+  - push
+
 jobs:
   lsif-go:
     # this line will prevent forks of this repo from uploading lsif indexes
@@ -57,7 +60,7 @@ jobs:
       - name: Upload LSIF data
         # this will upload to Sourcegraph.com, you may need to substitute a different command.
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
 ```
 
 The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
@@ -80,7 +83,7 @@ jobs:
       - run: lsif-go
         # this will upload to Sourcegraph.com, you may need to substitute a different command.
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failures
+      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failure
 
 workflows:
   lsif-node:
@@ -108,7 +111,7 @@ jobs:
       script:
       - |
         docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go:latest /bin/sh -c \
-          "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN -ignore-upload-failures"
+          "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN -ignore-upload-failure"
 ```
 
 The following projects have example Travis CI configurations to generate and upload LSIF indexes.
