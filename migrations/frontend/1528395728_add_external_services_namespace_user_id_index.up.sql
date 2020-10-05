@@ -1,4 +1,6 @@
--- Note: CREATE INDEX CONCURRENTLY cannot run inside a transaction block
+BEGIN;
 
-CREATE INDEX CONCURRENTLY external_services_namespace_user_id_idx ON external_services (namespace_user_id);
+CREATE INDEX external_services_namespace_user_id_idx ON external_services (namespace_user_id);
+
+COMMIT;
 

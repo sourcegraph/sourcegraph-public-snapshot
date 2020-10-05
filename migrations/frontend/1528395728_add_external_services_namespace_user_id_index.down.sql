@@ -1,3 +1,5 @@
--- Note: DROP INDEX CONCURRENTLY cannot run inside a transaction block
+BEGIN;
 
 DROP INDEX external_services_namespace_user_id_idx;
+
+COMMIT;

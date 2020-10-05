@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -67,6 +68,8 @@ func Test_defaultRepos_List(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			sort.Sort(types.Repos(repos))
+			sort.Sort(types.Repos(tc.repos))
 			if diff := cmp.Diff(repos, tc.repos, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
