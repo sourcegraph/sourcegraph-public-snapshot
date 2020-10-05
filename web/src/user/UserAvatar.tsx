@@ -7,12 +7,13 @@ interface Props {
     }
     className?: string
     ['data-tooltip']?: string
+    innerRef?: React.MutableRefObject<HTMLElement | null>
 }
 
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, className, ...otherProps }) => {
+export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, className, innerRef, ...otherProps }) => {
     if (user?.avatarURL) {
         let url = user.avatarURL
         try {
@@ -24,7 +25,14 @@ export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, classNa
         } catch {
             // noop
         }
-        return <img className={`user-avatar ${className || ''}`} src={url} {...otherProps} />
+        return (
+            <img
+                className={`user-avatar ${className || ''}`}
+                src={url}
+                ref={innerRef as React.MutableRefObject<HTMLImageElement>}
+                {...otherProps}
+            />
+        )
     }
     return null
 }

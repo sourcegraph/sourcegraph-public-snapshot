@@ -31,6 +31,7 @@ import { VersionContext } from '../schema/site.schema'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { ExtensionAlertAnimationProps } from './UserNavItem'
 
 interface Props
     extends SettingsCascadeProps,
@@ -40,6 +41,7 @@ interface Props
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
+        ExtensionAlertAnimationProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
@@ -95,6 +97,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     patternType,
     onNavbarQueryChange,
     onFiltersInQueryChange,
+    startUserNavExtensionAnimationReference,
     hideNavLinks,
     variant,
     isLightTheme,
@@ -149,6 +152,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
+            startUserNavExtensionAnimationReference={startUserNavExtensionAnimationReference}
             {...props}
         />
     )

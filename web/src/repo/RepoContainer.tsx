@@ -103,6 +103,7 @@ interface RepoContainerProps
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps,
+        ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
@@ -129,6 +130,10 @@ export interface HoverThresholdProps {
      * Called when a hover with content is shown.
      */
     onHoverShown?: () => void
+}
+
+export interface ExtensionAlertProps {
+    onAlertDismissed: () => void
 }
 
 /**
@@ -324,6 +329,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         return false
     })
 
+    const { onAlertDismissed } = props
+
     /** TODO description */
     const onHoverShown = useCallback(() => {
         const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
@@ -335,10 +342,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         if (count === HOVER_THRESHOLD) {
             setCanShowPopover(true)
             // TODO(tj): Trigger "Install extension" alert here
+            onAlertDismissed()
         }
 
         localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
-    }, [])
+    }, [onAlertDismissed])
 
     const onPopoverDismissed = useCallback(() => {
         setCanShowPopover(false)
@@ -348,6 +356,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         // Render nothing while loading
         return null
     }
+    console.log('repo container render')
 
     const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 

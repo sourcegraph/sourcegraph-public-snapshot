@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense } from 'react'
+import React, { Suspense, useCallback, useRef } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
@@ -160,6 +160,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const breadcrumbProps = useBreadcrumbs()
 
+    // TODO description
+    const startUserNavExtensionAnimationReference = useRef<null | (() => void)>(null)
+    const onAlertDismissed = useCallback(() => {
+        startUserNavExtensionAnimationReference.current?.()
+    }, [])
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -169,6 +175,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const context = {
         ...props,
         ...breadcrumbProps,
+        onAlertDismissed,
     }
 
     return (
@@ -201,6 +208,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             : 'default'
                     }
                     hideNavLinks={false}
+                    startUserNavExtensionAnimationReference={startUserNavExtensionAnimationReference}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

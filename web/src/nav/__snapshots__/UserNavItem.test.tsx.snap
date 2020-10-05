@@ -39,6 +39,11 @@ exports[`UserNavItem simple 1`] = `
       location="[Location path=/]"
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
+      startUserNavExtensionAnimationReference={
+        Object {
+          "current": [Function],
+        }
+      }
       themePreference="light"
     >
       <ButtonDropdown
