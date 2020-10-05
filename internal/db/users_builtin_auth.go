@@ -54,7 +54,8 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+// SetPassword sets the user's password given a new password and a password reset code
+func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -79,6 +80,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -115,6 +117,7 @@ func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPa
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return err
 	}
+
 	return nil
 }
 

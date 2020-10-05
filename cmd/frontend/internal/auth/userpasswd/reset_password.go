@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -185,6 +186,12 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 	if !success {
 		http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
 		return
+	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
+			log15.Warn("Failed to send email to inform user of password reset", "error", err)
+		}
 	}
 }
 

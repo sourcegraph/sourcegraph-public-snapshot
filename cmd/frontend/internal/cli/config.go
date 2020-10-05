@@ -339,8 +339,9 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:  gitServers(),
-			PostgresDSN: dbutil.PostgresDSN(username, os.Getenv),
+			GitServers:           gitServers(),
+			PostgresDSN:          dbutil.PostgresDSN("", username, os.Getenv),
+			CodeIntelPostgresDSN: dbutil.PostgresDSN("codeintel", username, os.Getenv),
 		}
 	})
 	return serviceConnectionsVal
