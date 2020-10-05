@@ -49,6 +49,11 @@ func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration,
 	return indexConfigurations[0], true, nil
 }
 
+// GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
+func (s *store) GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error) {
+	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(`SELECT c.repository_id FROM lsif_index_configuration c`)))
+}
+
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error) {
 	return scanFirstIndexConfiguration(s.Store.Query(ctx, sqlf.Sprintf(`

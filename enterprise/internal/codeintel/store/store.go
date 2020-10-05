@@ -211,6 +211,9 @@ type Store interface {
 	// RepoName returns the name for the repo with the given identifier.
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 
+	// GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
+	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
+
 	// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error)
 }
