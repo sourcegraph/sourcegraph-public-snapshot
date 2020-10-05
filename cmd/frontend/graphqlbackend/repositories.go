@@ -224,6 +224,9 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) >= r.opt.Limit), nil
 }
 
+// SetRepositoryEnabled is a deprecated in our API. However, as of Oct 2020 we
+// still have a customer integrating permissions via this mutation. Before
+// removing check with the distribution team.
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
 	Repository graphql.ID
 	Enabled    bool
