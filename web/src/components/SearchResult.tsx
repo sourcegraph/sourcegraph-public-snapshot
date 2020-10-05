@@ -9,23 +9,38 @@ import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
 import { Markdown } from '../../../shared/src/components/Markdown'
 
-export interface HighlightRange {
+/**
+ * This is a subset of GQL.GenericSearchResultInterface and GQL.IGenericSearchResultInterface that we use to render a SearchResult.
+ */
+interface GenericSearchResult {
     /**
-     * The 0-based line number that this highlight appears in
+     * URL to an icon that is displayed with every search result.
      */
-    line: number
+    icon: string
+
     /**
-     * The 0-based character offset to start highlighting at
+     * A markdown string that is rendered prominently.
      */
-    character: number
+    label: GQL.IMarkdown
+
     /**
-     * The number of characters to highlight
+     * The URL of the result.
      */
-    length: number
+    url: string
+
+    /**
+     * A markdown string that is rendered less prominently.
+     */
+    detail: GQL.IMarkdown
+
+    /**
+     * A list of matches in this search result.
+     */
+    matches: GQL.ISearchResultMatch[]
 }
 
 interface Props extends ThemeProps {
-    result: GQL.GenericSearchResultInterface
+    result: GenericSearchResult
     history: H.History
 }
 
@@ -59,26 +74,15 @@ export class SearchResult extends React.Component<Props> {
 
     private renderBody = (): JSX.Element => (
         <>
-            {this.props.result.matches.map(match => {
-                const highlightRanges: HighlightRange[] = []
-                match.highlights.map(highlight =>
-                    highlightRanges.push({
-                        line: highlight.line,
-                        character: highlight.character,
-                        length: highlight.length,
-                    })
-                )
-
-                return (
-                    <SearchResultMatch
-                        key={match.url}
-                        item={match}
-                        highlightRanges={highlightRanges}
-                        isLightTheme={this.props.isLightTheme}
-                        history={this.props.history}
-                    />
-                )
-            })}
+            {this.props.result.matches.map(match => (
+                <SearchResultMatch
+                    key={match.url}
+                    item={match}
+                    highlightRanges={match.highlights}
+                    isLightTheme={this.props.isLightTheme}
+                    history={this.props.history}
+                />
+            ))}
         </>
     )
 
