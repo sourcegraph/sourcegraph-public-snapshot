@@ -88,6 +88,8 @@
 // 1528395726_lsif_index_defaults.up.sql (164B)
 // 1528395727_frontend.down.sql (139B)
 // 1528395727_frontend.up.sql (139B)
+// 1528395728_lsif_index_configuration.down.sql (54B)
+// 1528395728_lsif_index_configuration.up.sql (204B)
 
 package migrations
 
@@ -1916,6 +1918,46 @@ func _1528395727_frontendUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395728_lsif_index_configurationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x88\x4f\xce\xcf\x4b\xcb\x4c\x2f\x2d\x4a\x2c\xc9\xcc\xcf\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb8\x04\xb7\xcd\x36\x00\x00\x00")
+
+func _1528395728_lsif_index_configurationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395728_lsif_index_configurationDownSql,
+		"1528395728_lsif_index_configuration.down.sql",
+	)
+}
+
+func _1528395728_lsif_index_configurationDownSql() (*asset, error) {
+	bytes, err := _1528395728_lsif_index_configurationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395728_lsif_index_configuration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc9, 0x28, 0x6e, 0x4b, 0x63, 0xda, 0x29, 0x47, 0xaf, 0x48, 0xb2, 0xae, 0x44, 0x62, 0x19, 0x2d, 0x9d, 0xe6, 0x28, 0x71, 0x6b, 0x31, 0x61, 0x23, 0xc3, 0x50, 0xc, 0xb7, 0x66, 0x5a, 0xd7, 0xcb}}
+	return a, nil
+}
+
+var __1528395728_lsif_index_configurationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x44\xce\xc1\x6a\xc4\x20\x14\x85\xe1\xbd\x4f\x71\x96\x33\xd0\x37\x98\x95\xe3\xdc\x16\xa9\x31\xad\x63\x16\xb3\x0a\x4e\x35\xe1\x42\xd0\x62\x2c\x34\x6f\x5f\x9a\x42\x67\x7f\xbe\xc3\x7f\xa6\x17\x6d\x4f\x42\x28\x47\xd2\x13\xbc\x3c\x1b\xc2\xb2\xf2\x34\x72\x8e\xe9\x7b\xfc\x28\x79\xe2\xf9\xab\x86\xc6\x25\xe3\x20\x00\x80\x23\xee\x3c\xaf\xa9\x72\x58\x60\x7b\x0f\x3b\x18\x83\x37\xa7\x3b\xe9\x6e\x78\xa5\xdb\xd3\x3e\xab\xe9\xb3\xac\xdc\x4a\xdd\x46\x8e\xe0\xdc\xd2\x9c\x2a\x06\xab\xdf\x07\x7a\x30\x47\xcf\xe4\xc8\x2a\xba\xee\xe0\xc0\xf1\x88\xde\xe2\x42\x86\x3c\x41\xc9\xab\x92\x17\xfa\x3b\x8c\xa1\x05\xdc\xb7\x96\xc2\x3f\x17\xc7\xdf\xf6\xbe\xeb\xb4\x3f\x89\x9f\x00\x00\x00\xff\xff\x69\xce\x75\x65\xcc\x00\x00\x00")
+
+func _1528395728_lsif_index_configurationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395728_lsif_index_configurationUpSql,
+		"1528395728_lsif_index_configuration.up.sql",
+	)
+}
+
+func _1528395728_lsif_index_configurationUpSql() (*asset, error) {
+	bytes, err := _1528395728_lsif_index_configurationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395728_lsif_index_configuration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd6, 0x41, 0x4a, 0x57, 0x98, 0xc9, 0x8e, 0xbc, 0x2b, 0xe3, 0x49, 0x1e, 0x8e, 0xf5, 0x94, 0xdc, 0x56, 0x4b, 0x98, 0xe8, 0xc3, 0xe3, 0x5f, 0x74, 0x86, 0x9e, 0x9f, 0xe7, 0xef, 0x80, 0xdb, 0x98}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2095,6 +2137,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395726_lsif_index_defaults.up.sql":                                        _1528395726_lsif_index_defaultsUpSql,
 	"1528395727_frontend.down.sql":                                                 _1528395727_frontendDownSql,
 	"1528395727_frontend.up.sql":                                                   _1528395727_frontendUpSql,
+	"1528395728_lsif_index_configuration.down.sql":                                 _1528395728_lsif_index_configurationDownSql,
+	"1528395728_lsif_index_configuration.up.sql":                                   _1528395728_lsif_index_configurationUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2229,6 +2273,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395726_lsif_index_defaults.up.sql":                                        {_1528395726_lsif_index_defaultsUpSql, map[string]*bintree{}},
 	"1528395727_frontend.down.sql":                                                 {_1528395727_frontendDownSql, map[string]*bintree{}},
 	"1528395727_frontend.up.sql":                                                   {_1528395727_frontendUpSql, map[string]*bintree{}},
+	"1528395728_lsif_index_configuration.down.sql":                                 {_1528395728_lsif_index_configurationDownSql, map[string]*bintree{}},
+	"1528395728_lsif_index_configuration.up.sql":                                   {_1528395728_lsif_index_configurationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
