@@ -3,7 +3,6 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
-import { HighlightRange } from './SearchResult'
 
 interface Props {
     /**
@@ -19,7 +18,7 @@ interface Props {
     /**
      * The highlights for the lines.
      */
-    highlights?: GQL.IHighlight[] | HighlightRange[]
+    highlights?: GQL.IHighlight[]
 
     /**
      * A list of classes to apply to 1-indexed line numbers.
@@ -34,7 +33,7 @@ interface Props {
 
 interface DecoratedLine {
     value: string
-    highlights?: (GQL.IHighlight | HighlightRange)[]
+    highlights?: GQL.IHighlight[]
     classNames?: string[]
     url?: string
 }
