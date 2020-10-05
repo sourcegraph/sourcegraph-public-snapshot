@@ -66,8 +66,6 @@ type TaskStatus struct {
 	Err           error
 }
 
-type ExecutorUpdateCallback func(*Task, TaskStatus)
-
 type executor struct {
 	ExecutorOpts
 
@@ -81,13 +79,11 @@ type executor struct {
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
 
-	update ExecutorUpdateCallback
-
 	specs   []*ChangesetSpec
 	specsMu sync.Mutex
 }
 
-func newExecutor(opts ExecutorOpts, client api.Client, update ExecutorUpdateCallback) *executor {
+func newExecutor(opts ExecutorOpts, client api.Client) *executor {
 	return &executor{
 		ExecutorOpts:  opts,
 		cache:         opts.Cache,
@@ -97,7 +93,6 @@ func newExecutor(opts ExecutorOpts, client api.Client, update ExecutorUpdateCall
 		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
 		tempDir:       opts.TempDir,
 		par:           parallel.NewRun(opts.Parallelism),
-		update:        update,
 	}
 }
 
@@ -272,9 +267,6 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 
 func (x *executor) updateTaskStatus(task *Task, status *TaskStatus) {
 	x.tasks.Store(task, status)
-	if x.update != nil {
-		x.update(task, *status)
-	}
 }
 
 type errTimeoutReached struct{ timeout time.Duration }

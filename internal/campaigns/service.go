@@ -150,8 +150,8 @@ type ExecutorOpts struct {
 	CacheDir      string
 }
 
-func (svc *Service) NewExecutor(opts ExecutorOpts, update ExecutorUpdateCallback) Executor {
-	return newExecutor(opts, svc.client, update)
+func (svc *Service) NewExecutor(opts ExecutorOpts) Executor {
+	return newExecutor(opts, svc.client)
 }
 
 func (svc *Service) NewWorkspaceCreator(dir string, cleanArchives bool) *WorkspaceCreator {

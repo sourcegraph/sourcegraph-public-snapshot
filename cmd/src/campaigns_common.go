@@ -186,7 +186,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	} else {
 		opts.Parallelism = flags.parallelism
 	}
-	executor := svc.NewExecutor(opts, nil)
+	executor := svc.NewExecutor(opts)
 
 	if errs != nil {
 		return "", "", errs
