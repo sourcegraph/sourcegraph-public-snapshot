@@ -23,7 +23,7 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 		notificationsSent    int
 		notificationsClicked int
 		uniqueUserPageViews  int
-		orgSavedSearches	 int
+		orgSavedSearches     int
 	)
 	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
 		&totalSavedSearches,
@@ -42,6 +42,6 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 		NotificationsSent:    int32(notificationsSent),
 		NotificationsClicked: int32(notificationsClicked),
 		UniqueUserPageViews:  int32(uniqueUserPageViews),
-		OrgSavedSearches:	  int32(orgSavedSearches),
+		OrgSavedSearches:     int32(orgSavedSearches),
 	}, nil
 }
