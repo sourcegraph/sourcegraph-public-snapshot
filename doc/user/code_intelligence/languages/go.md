@@ -44,6 +44,9 @@ Here's some examples in a couple popular frameworks, just substitute the indexer
 ### GitHub Actions
 
 ```yaml
+on:
+  - push
+
 jobs:
   lsif-go:
     # this line will prevent forks of this repo from uploading lsif indexes
