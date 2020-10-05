@@ -136,8 +136,8 @@ func TestHandleWithFirecracker(t *testing.T) {
 		t.Fatalf("unexpected error handling index: %s", err)
 	}
 
-	if callCount := len(commander.RunFunc.History()); callCount != 22 {
-		t.Errorf("unexpected run call count. want=%d have=%d", 22, callCount)
+	if callCount := len(commander.RunFunc.History()); callCount != 26 {
+		t.Errorf("unexpected run call count. want=%d have=%d", 26, callCount)
 	} else {
 		expectedCalls := []string{
 			// Git commands
