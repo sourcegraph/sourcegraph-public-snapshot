@@ -2,39 +2,6 @@
 
 This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible. The [LSIF quick start](../lsif_quickstart.md) and [CI configuration](../adding_lsif_to_workflows.md) guides provide more in depth descriptions of each step and a lot of helpful context that we haven't duplicated in each language guide.
 
-## Manual indexing
-
-1. Install [lsif-go](https://github.com/sourcegraph/lsif-go) with `go get github.com/sourcegraph/lsif-go/cmd/lsif-go` and ensure it's on your path.
-
-1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
-
-   ```
-   curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-   chmod +x /usr/local/bin/src
-   ```
-
-   - **macOS**: replace `linux` with `darwin` in the URL
-   - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
-
-1. `cd` into your Go project's root (where the go.mod file lives, if you have one) and run:
-
-   ```
-   lsif-go # generates a file named dump.lsif
-   ```
-
-1. Upload the data to a Sourcegraph instance with
-
-   ```
-   # for private instances
-   src -endpoint=<your sourcegraph endpoint> lsif upload
-   # for public instances
-   src lsif upload -github-token=<your github token>
-   ```
-
-   Visit the [LSIF quickstart](../lsif_quickstart.md) for more information about the upload command.
-
-The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](../lsif_quickstart.md) guide and check out the documentation for the `lsif-go` and `src-cli` tools.
-
 ## Automated indexing
 
 We provide the docker images `sourcegraph/lsif-go` and `sourcegraph/src-cli` to make automating this process in your favorite CI framework as easy as possible. Note that the `lsif-go` image bundles `src-cli` so the second image may not be necessary.
@@ -119,3 +86,36 @@ The following projects have example Travis CI configurations to generate and upl
 - [aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml)
 - [etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml)
 - [hugo/hugo](https://github.com/sourcegraph-codeintel-showcase/hugo/blob/6704b7c125d7b21ccf2048d7bff0f1ffe2b0867d/.travis.yml)
+
+## Manual indexing
+
+1. Install [lsif-go](https://github.com/sourcegraph/lsif-go) with `go get github.com/sourcegraph/lsif-go/cmd/lsif-go` and ensure it's on your path.
+
+1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
+
+   ```
+   curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+   chmod +x /usr/local/bin/src
+   ```
+
+   - **macOS**: replace `linux` with `darwin` in the URL
+   - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
+
+1. `cd` into your Go project's root (where the go.mod file lives, if you have one) and run:
+
+   ```
+   lsif-go # generates a file named dump.lsif
+   ```
+
+1. Upload the data to a Sourcegraph instance with
+
+   ```
+   # for private instances
+   src -endpoint=<your sourcegraph endpoint> lsif upload
+   # for public instances
+   src lsif upload -github-token=<your github token>
+   ```
+
+   Visit the [LSIF quickstart](../lsif_quickstart.md) for more information about the upload command.
+
+The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](../lsif_quickstart.md) guide and check out the documentation for the `lsif-go` and `src-cli` tools.
