@@ -11,14 +11,13 @@ import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
 import { highlightCode } from '../search/backend'
-import { HighlightRange } from './SearchResult'
 import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
-    highlightRanges: HighlightRange[]
+    highlightRanges: GQL.IHighlight[]
     history: H.History
 }
 

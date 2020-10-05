@@ -76,42 +76,48 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
 
             <ul className="recent-searches-panel__examples-list">
                 <li className="recent-searches-panel__examples-list-item">
-                    <Link
-                        to={
-                            '/search?' +
-                            buildSearchURLQuery(
-                                'lang:c if(:[eval_match]) { :[statement_match] }',
-                                SearchPatternType.structural,
-                                false
-                            )
-                        }
-                        className="text-monospace"
-                    >
-                        lang:c if(:[eval_match]) {'{'} :[statement_match] {'}'}
-                    </Link>
+                    <small>
+                        <Link
+                            to={
+                                '/search?' +
+                                buildSearchURLQuery(
+                                    'lang:c if(:[eval_match]) { :[statement_match] }',
+                                    SearchPatternType.structural,
+                                    false
+                                )
+                            }
+                            className="text-monospace"
+                        >
+                            lang:c if(:[eval_match]) {'{'} :[statement_match] {'}'}
+                        </Link>
+                    </small>
                 </li>
                 <li className="recent-searches-panel__examples-list-item">
-                    <Link
-                        to={
-                            '/search?' +
-                            buildSearchURLQuery(
-                                'lang:java type:diff after:"1 week ago"',
-                                SearchPatternType.literal,
-                                false
-                            )
-                        }
-                        className="text-monospace"
-                    >
-                        lang:java type:diff after:"1 week ago"
-                    </Link>
+                    <small>
+                        <Link
+                            to={
+                                '/search?' +
+                                buildSearchURLQuery(
+                                    'lang:java type:diff after:"1 week ago"',
+                                    SearchPatternType.literal,
+                                    false
+                                )
+                            }
+                            className="text-monospace"
+                        >
+                            lang:java type:diff after:"1 week ago"
+                        </Link>
+                    </small>
                 </li>
                 <li className="recent-searches-panel__examples-list-item">
-                    <Link
-                        to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
-                        className="text-monospace"
-                    >
-                        lang:java
-                    </Link>
+                    <small>
+                        <Link
+                            to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
+                            className="text-monospace"
+                        >
+                            lang:java
+                        </Link>
+                    </small>
                 </li>
             </ul>
         </div>
@@ -147,9 +153,11 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                                 </span>
                             </td>
                             <td>
-                                <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>
-                                    {recentSearch.searchText}
-                                </Link>
+                                <small>
+                                    <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>
+                                        {recentSearch.searchText}
+                                    </Link>
+                                </small>
                             </td>
                             <td className="recent-searches-panel__results-table-date-col">
                                 <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} strict={true} />
