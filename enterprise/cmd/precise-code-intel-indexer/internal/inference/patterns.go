@@ -22,3 +22,8 @@ var Patterns = func() *regexp.Regexp {
 func suffixPattern(s string) *regexp.Regexp {
 	return regexp.MustCompile(regexp.QuoteMeta(s) + "$")
 }
+
+// segmentPattern creates a regular expression that matches paths with the given segment.
+func segmentPattern(s string) *regexp.Regexp {
+	return regexp.MustCompile("(^|/)" + regexp.QuoteMeta(s) + "($|/)")
+}

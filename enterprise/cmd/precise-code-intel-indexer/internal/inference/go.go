@@ -25,14 +25,9 @@ func (lsifGoJobRecognizer) CanIndex(paths []string) bool {
 func (lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 	for _, path := range paths {
 		if filepath.Base(path) == "go.mod" && !containsSegment(path, "vendor") {
-			root := filepath.Dir(path)
-			if root == "." {
-				root = ""
-			}
-
 			indexes = append(indexes, IndexJob{
 				DockerSteps: nil,
-				Root:        root,
+				Root:        dirWithoutDot(path),
 				Indexer:     "sourcegraph/lsif-go:latest",
 				IndexerArgs: []string{"lsif-go", "--no-animation"},
 				Outfile:     "",
@@ -46,5 +41,6 @@ func (lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 func (lsifGoJobRecognizer) Patterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		suffixPattern("go.mod"),
+		segmentPattern("vendor"),
 	}
 }

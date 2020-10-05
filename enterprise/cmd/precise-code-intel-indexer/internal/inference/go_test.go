@@ -93,6 +93,9 @@ func TestLSIFGoJobRecognizerPatterns(t *testing.T) {
 	paths := []string{
 		"go.mod",
 		"subdir/go.mod",
+		"vendor/foo/go.mod",
+		"foo/vendor/go.mod",
+		"foo/go.mod/vendor",
 	}
 
 	for _, path := range paths {

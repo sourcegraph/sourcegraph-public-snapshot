@@ -88,6 +88,76 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
 	}
 }
 
+func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
+	recognizer := lsifTscJobRecognizer{}
+	paths := []string{
+		"tsconfig.json",
+		"package.json",
+		"foo/baz/tsconfig.json",
+		"foo/bar/baz/tsconfig.json",
+		"foo/bar/bonk/tsconfig.json",
+		"foo/bar/yarn.lock",
+	}
+
+	expectedIndexJobs := []IndexJob{
+		{
+			DockerSteps: []DockerStep{
+				{
+					Root:     "",
+					Image:    "node:alpine3.12",
+					Commands: []string{"npm", "install"},
+				},
+			},
+			Root:        "",
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Outfile:     "",
+		},
+		{
+			DockerSteps: []DockerStep{
+				{
+					Root:     "",
+					Image:    "node:alpine3.12",
+					Commands: []string{"npm", "install"},
+				},
+			},
+			Root:        "foo/baz",
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Outfile:     "",
+		},
+		{
+			DockerSteps: []DockerStep{
+				{
+					Root:     "foo/bar",
+					Image:    "node:alpine3.12",
+					Commands: []string{"yarn"},
+				},
+			},
+			Root:        "foo/bar/baz",
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Outfile:     "",
+		},
+		{
+			DockerSteps: []DockerStep{
+				{
+					Root:     "foo/bar",
+					Image:    "node:alpine3.12",
+					Commands: []string{"yarn"},
+				},
+			},
+			Root:        "foo/bar/bonk",
+			Indexer:     "sourcegraph/lsif-node:latest",
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Outfile:     "",
+		},
+	}
+	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths)); diff != "" {
+		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
+	}
+}
+
 func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
 	recognizer := lsifTscJobRecognizer{}
 	paths := []string{
