@@ -79,3 +79,4 @@
 /admin/monitoring_and_tracing /admin/observability 308
 /admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
 /admin/install/cluster.md /admin/install/index.md 308
+/integration/google_gsuite /integration/google_workspace 308
