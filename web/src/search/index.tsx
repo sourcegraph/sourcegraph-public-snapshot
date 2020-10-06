@@ -166,7 +166,7 @@ export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
 
-export interface EnterpriseHomePanelsProps {
+export interface HomePanelsProps {
     showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>

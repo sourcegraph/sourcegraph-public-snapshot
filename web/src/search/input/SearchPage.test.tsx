@@ -60,20 +60,20 @@ describe('SearchPage', () => {
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
     }
 
-    it('should not show enterprise home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
+    it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
-        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
-        expect(enterpriseHomePanels).toBeFalsy()
+        const homePanels = container.querySelector('.home-panels')
+        expect(homePanels).toBeFalsy()
     })
 
-    it('should show enterprise home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
+    it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />)
             .container
-        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
-        expect(enterpriseHomePanels).toBeTruthy()
+        const homePanels = container.querySelector('.home-panels')
+        expect(homePanels).toBeTruthy()
     })
 
-    it('should show enterprise home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
+    it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
         container = render(
             <SearchPage
                 {...defaultProps}
@@ -82,19 +82,19 @@ describe('SearchPage', () => {
                 authenticatedUser={null}
             />
         ).container
-        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
-        expect(enterpriseHomePanels).toBeFalsy()
+        const homePanels = container.querySelector('.home-panels')
+        expect(homePanels).toBeFalsy()
     })
 
-    it('should not show enterprise home panels if showEnterpriseHomePanels disabled', () => {
+    it('should not show home panels if showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} />).container
-        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
-        expect(enterpriseHomePanels).toBeFalsy()
+        const homePanels = container.querySelector('.home-panels')
+        expect(homePanels).toBeFalsy()
     })
 
-    it('should show enterprise home panels if showEnterpriseHomePanels enabled and not on Sourcegraph.com', () => {
+    it('should show home panels if showEnterpriseHomePanels enabled and not on Sourcegraph.com', () => {
         container = render(<SearchPage {...defaultProps} showEnterpriseHomePanels={true} />).container
-        const enterpriseHomePanels = container.querySelector('.enterprise-home-panels')
-        expect(enterpriseHomePanels).toBeTruthy()
+        const homePanels = container.querySelector('.home-panels')
+        expect(homePanels).toBeTruthy()
     })
 })
