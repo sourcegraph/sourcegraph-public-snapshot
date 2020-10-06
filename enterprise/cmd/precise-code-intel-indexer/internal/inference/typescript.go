@@ -5,6 +5,9 @@ import (
 	"regexp"
 )
 
+const lsifTscImage = "sourcegraph/lsif-node:latest"
+const nodeInstallImage = "node:alpine3.12"
+
 type lsifTscJobRecognizer struct{}
 
 var _ IndexJobRecognizer = lsifTscJobRecognizer{}
@@ -39,7 +42,7 @@ func (lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) 
 
 				dockerSteps = append(dockerSteps, DockerStep{
 					Root:     dir,
-					Image:    "node:alpine3.12",
+					Image:    nodeInstallImage,
 					Commands: commands,
 				})
 			}
@@ -52,7 +55,7 @@ func (lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) 
 			indexes = append(indexes, IndexJob{
 				DockerSteps: dockerSteps,
 				Root:        dirWithoutDot(path),
-				Indexer:     "sourcegraph/lsif-node:latest",
+				Indexer:     lsifTscImage,
 				IndexerArgs: []string{"lsif-tsc", "-p", "."},
 				Outfile:     "",
 			})
