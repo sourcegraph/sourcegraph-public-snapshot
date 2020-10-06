@@ -6,6 +6,7 @@ import { mkdtemp as original_mkdtemp } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import execa from 'execa'
+import commandExists from 'command-exists'
 const mkdtemp = promisify(original_mkdtemp)
 
 const formatDate = (date: Date): string => `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
@@ -177,41 +178,96 @@ export async function getIssueByTitle(octokit: Octokit, title: string): Promise<
     return matchingIssues[0].html_url
 }
 
+export type EditFunc = (d: string) => void
+
+export type Edit = string | EditFunc
+
 export interface CreateBranchWithChangesOptions {
     owner: string
     repo: string
     base: string
     head: string
     commitMessage: string
-    bashEditCommands: string[]
+    edits: Edit[]
+    dryRun?: boolean
 }
 
-export async function createBranchWithChanges({
+export interface ChangesetsOptions {
+    requiredCommands: string[]
+    changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions)[]
+    dryRun?: boolean
+}
+
+export async function createChangesets(options: ChangesetsOptions): Promise<void> {
+    for (const command of options.requiredCommands) {
+        try {
+            await commandExists(command)
+        } catch {
+            throw new Error(`Required command ${command} does not exist`)
+        }
+    }
+    for (const changeset of options.changes) {
+        await createBranchWithChanges({ ...changeset, dryRun: options.dryRun })
+        if (!options.dryRun) {
+            const prURL = await createPR(changeset)
+            console.log(`Pull request created: ${prURL}`)
+        }
+    }
+}
+
+async function createBranchWithChanges({
     owner,
     repo,
     base: baseRevision,
     head: headBranch,
     commitMessage,
-    bashEditCommands,
+    edits,
+    dryRun,
 }: CreateBranchWithChangesOptions): Promise<void> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
 
-    const bashScript = `set -ex
+    // Set up repository
+    const setupScript = `set -ex
 
-    cd ${tmpdir};
     git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
     cd ./${repo};
-    git checkout ${baseRevision};
-    ${bashEditCommands.join(';\n    ')};
-    git add :/;
-    git commit -a -m ${JSON.stringify(commitMessage)};
-    git push origin HEAD:${headBranch};
-    `
-    await execa('bash', ['-c', bashScript], { stdio: 'inherit' })
+    git checkout ${baseRevision};`
+    await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })
+    const workdir = path.join(tmpdir, repo)
+
+    // Apply edits
+    for (const edit of edits) {
+        switch (typeof edit) {
+            case 'function':
+                edit(workdir)
+                break
+            case 'string': {
+                const editScript = `set -ex
+
+                ${edit};`
+                await execa('bash', ['-c', editScript], { stdio: 'inherit', cwd: workdir })
+            }
+        }
+    }
+
+    if (dryRun) {
+        const showChangesScript = `set -ex
+
+        git --no-pager diff;`
+        await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
+    } else {
+        // Publish changes
+        const publishScript = `set -ex
+
+        git add :/;
+        git commit -a -m ${JSON.stringify(commitMessage)};
+        git push origin HEAD:${headBranch};`
+        await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
+    }
 }
 
-export async function createPR(options: {
+async function createPR(options: {
     owner: string
     repo: string
     head: string
