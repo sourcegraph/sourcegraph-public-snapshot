@@ -7,7 +7,7 @@ import { SourcegraphIcon } from '../../auth/icons'
 import { serviceTypeDisplayNameAndIcon } from './GoToCodeHostAction'
 import FocusLock from 'react-focus-lock'
 
-interface CodeHostExtensionPopoverProps {
+interface Props {
     url: string
     serviceType: string | null
     onClose: () => void
@@ -16,10 +16,9 @@ interface CodeHostExtensionPopoverProps {
     targetID: string
     toggle: () => void
     isOpen: boolean
-    wasAuxClick: boolean
 }
 
-export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionPopoverProps> = ({
+export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
     url,
     serviceType,
     onClose,
@@ -28,20 +27,19 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
     targetID,
     toggle,
     isOpen,
-    wasAuxClick,
 }) => {
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
     const Icon = icon || ExportIcon
 
-    // Store type of original click (normal vs aux). If it was an aux click, open code host link in new tab
-    const linkProps = wasAuxClick ? { rel: 'noopener noreferrer', target: '_blank' } : {}
+    // Open all external links in new tab
+    const linkProps = { rel: 'noopener noreferrer', target: '_blank' }
 
     return (
         <Popover
             toggle={toggle}
             target={targetID}
             isOpen={isOpen}
-            popperClassName="shadow border install-extension-popover web-content"
+            popperClassName="shadow border install-browser-extension-popover web-content"
             innerClassName="border-0"
             placement="bottom"
             boundariesElement="window"
@@ -57,8 +55,8 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
         >
             {isOpen && (
                 <FocusLock returnFocus={true}>
-                    <div className="p-3 text-wrap  test-install-extension-popover">
-                        <h3 className="mb-0 test-install-extension-popover-header">
+                    <div className="p-3 text-wrap  test-install-browser-extension-popover">
+                        <h3 className="mb-0 test-install-browser-extension-popover-header">
                             Take Sourcegraph's code intelligence to {displayName}!
                         </h3>
                         <p className="py-3">
@@ -66,10 +64,10 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
                             reading PRs on {displayName}.
                         </p>
 
-                        <div className="mx-auto install-extension-popover__graphic-container d-flex justify-content-between align-items-center">
-                            <SourcegraphIcon className="install-extension-popover__logo p-1" />
-                            <PlusThickIcon className="install-extension-popover__plus-icon" />
-                            <Icon className="install-extension-popover__logo" />
+                        <div className="mx-auto install-browser-extension-popover__graphic-container d-flex justify-content-between align-items-center">
+                            <SourcegraphIcon className="install-browser-extension-popover__logo p-1" />
+                            <PlusThickIcon className="install-browser-extension-popover__plus-icon" />
+                            <Icon className="install-browser-extension-popover__logo" />
                         </div>
 
                         <div className="d-flex justify-content-end">
@@ -95,8 +93,7 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
                                 className="btn btn-primary mr-2"
                                 onSelect={onClickInstall}
                                 to="/help/integration/browser_extension"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                {...linkProps}
                             >
                                 Install browser extension
                             </ButtonLink>
