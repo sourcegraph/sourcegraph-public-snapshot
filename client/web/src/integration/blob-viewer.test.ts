@@ -218,7 +218,7 @@ describe('Blob viewer', () => {
         })
 
         describe('browser extension discoverability', () => {
-            const HOVER_THRESHOLD = 5
+            const HOVER_THRESHOLD = 3
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 

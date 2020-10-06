@@ -122,7 +122,7 @@ interface RepoContainerProps
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
-export const HOVER_THRESHOLD = 5
+export const HOVER_THRESHOLD = 3
 
 export interface HoverThresholdProps {
     /**
