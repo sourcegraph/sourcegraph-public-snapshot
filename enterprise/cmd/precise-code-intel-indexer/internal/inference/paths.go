@@ -28,7 +28,7 @@ func ancestorDirs(path string) (ancestors []string) {
 // containsSegment returns true if the given path contains the given segment.
 func containsSegment(path, segment string) bool {
 	if path == "" {
-		return false
+		return segment == ""
 	}
 
 	dir, file := filepath.Split(filepath.Clean(path))
