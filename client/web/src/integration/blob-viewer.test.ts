@@ -231,7 +231,7 @@ describe('Blob viewer', () => {
                 await (await newPage).close()
 
                 assert(
-                    !(await driver.page.$('.test-install-extension-popover')),
+                    !(await driver.page.$('.test-install-browser-extension-popover')),
                     'Expected popover to not be displayed before user reaches hover threshold'
                 )
 
@@ -243,16 +243,16 @@ describe('Blob viewer', () => {
                 }
 
                 await driver.page.click('.test-go-to-code-host', { button: 'middle' })
-                await driver.page.waitForSelector('.test-install-extension-popover', { visible: true })
+                await driver.page.waitForSelector('.test-install-browser-extension-popover', { visible: true })
                 assert(
-                    !!(await driver.page.$('.test-install-extension-popover')),
+                    !!(await driver.page.$('.test-install-browser-extension-popover')),
                     'Expected popover to be displayed after user reaches hover threshold'
                 )
 
                 const popoverHeader = await driver.page.evaluate(
-                    () => document.querySelector('.test-install-extension-popover-header')?.textContent
+                    () => document.querySelector('.test-install-browser-extension-popover-header')?.textContent
                 )
-                assert.deepStrictEqual(
+                assert.strictEqual(
                     popoverHeader,
                     "Take Sourcegraph's code intelligence to GitHub!",
                     'Expected popover header text to reflect code host'
