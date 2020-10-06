@@ -170,22 +170,24 @@ func Main(enterpriseInit EnterpriseInit) {
 		}
 	}
 
-	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
-
 	syncer := &repos.Syncer{
-		Sourcer:    src,
-		Store:      store,
+		Sourcer: src,
+		Store:   store,
+		// We always want to listen on the Synced channel since external service syncing
+		// happens on both Cloud and non Cloud instances.
+		Synced:     make(chan repos.Diff),
 		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
-		syncer.Synced = make(chan repos.Diff)
+		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
 		syncer.SubsetSynced = make(chan repos.Diff)
-		go watchSyncer(ctx, syncer, scheduler, gps)
 	}
 
+	go watchSyncer(ctx, syncer, scheduler, gps)
 	go func() {
 		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -302,11 +304,15 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case diff := <-syncer.Synced:
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
-
+			if gps == nil {
+				continue
+			}
 			go func() {
 				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
