@@ -504,42 +504,48 @@ func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
 		}
 		return false
 	}
-	newNode := []Node{}
-	for _, node := range nodes {
-		switch v := node.(type) {
-		case Parameter, Pattern:
-			newNode = append(newNode, node)
-		case Operator:
-			if v.Kind == Concat {
-				// Merge consecutive patterns.
-				ps := []Pattern{}
-				previous := v.Operands[0]
-				if p, ok := previous.(Pattern); ok {
-					ps = append(ps, p)
-				}
-				for _, node := range v.Operands[1:] {
-					if isPattern(node) && isPattern(previous) {
-						p := node.(Pattern)
+
+	// define a recursive function to close over callback and isPattern.
+	var substituteNodes func(nodes []Node) []Node
+	substituteNodes = func(nodes []Node) []Node {
+		newNode := []Node{}
+		for _, node := range nodes {
+			switch v := node.(type) {
+			case Parameter, Pattern:
+				newNode = append(newNode, node)
+			case Operator:
+				if v.Kind == Concat {
+					// Merge consecutive patterns.
+					ps := []Pattern{}
+					previous := v.Operands[0]
+					if p, ok := previous.(Pattern); ok {
 						ps = append(ps, p)
-						previous = node
-						continue
+					}
+					for _, node := range v.Operands[1:] {
+						if isPattern(node) && isPattern(previous) {
+							p := node.(Pattern)
+							ps = append(ps, p)
+							previous = node
+							continue
+						}
+						if len(ps) > 0 {
+							newNode = append(newNode, callback(ps))
+							ps = []Pattern{}
+						}
+						newNode = append(newNode, substituteNodes([]Node{node})...)
 					}
 					if len(ps) > 0 {
 						newNode = append(newNode, callback(ps))
 						ps = []Pattern{}
 					}
-					newNode = append(newNode, substituteConcat([]Node{node}, callback)...)
+				} else {
+					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
 				}
-				if len(ps) > 0 {
-					newNode = append(newNode, callback(ps))
-					ps = []Pattern{}
-				}
-			} else {
-				newNode = append(newNode, newOperator(substituteConcat(v.Operands, callback), v.Kind)...)
 			}
 		}
+		return newNode
 	}
-	return newNode
+	return substituteNodes(nodes)
 }
 
 // escapeParens is a heuristic used in the context of regular expression search.
