@@ -3,6 +3,7 @@ package gitserver
 import (
 	"context"
 	"io"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -32,6 +33,10 @@ type Client interface {
 	// or not the tag was attached directly to the commit. If no tags exist at or before this commit, the
 	// tag is an empty string.
 	Tags(ctx context.Context, store store.Store, repositoryID int, commit string) (string, bool, error)
+
+	// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
+	// commit of a repository.
+	ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 
 	// RawContents returns the contents of a file in a particular commit of a repository.
 	RawContents(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error)
@@ -63,6 +68,10 @@ func (c *defaultClient) FileExists(ctx context.Context, store store.Store, repos
 
 func (c *defaultClient) Tags(ctx context.Context, store store.Store, repositoryID int, commit string) (string, bool, error) {
 	return Tags(ctx, store, repositoryID, commit)
+}
+
+func (c *defaultClient) ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	return ListFiles(ctx, store, repositoryID, commit, pattern)
 }
 
 func (c *defaultClient) RawContents(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error) {

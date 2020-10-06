@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/index"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -213,19 +214,17 @@ func (s *Scheduler) getIndexJobsFromConfigurationInRepository(ctx context.Contex
 	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
 }
 
-func (s *Scheduler) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
-	index := store.Index{
-		Commit:       commit,
-		RepositoryID: repositoryID,
-		State:        "queued",
-		DockerSteps:  []store.DockerStep{},
-		Root:         "",
-		Indexer:      "sourcegraph/lsif-go:latest",
-		IndexerArgs:  []string{"lsif-go", "--no-animation"},
-		Outfile:      "",
+func (s *Scheduler) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) (indexes []store.Index, _ bool, _ error) {
+	paths, err := s.gitserverClient.ListFiles(ctx, s.store, repositoryID, commit, inference.Patterns)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "gitserver.ListFiles")
 	}
 
-	return []store.Index{index}, true, nil
+	for _, recognizer := range inference.Recognizers {
+		indexes = append(indexes, convertInferredConfiguration(repositoryID, commit, recognizer.InferIndexJobs(paths))...)
+	}
+
+	return indexes, true, nil
 }
 
 func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
@@ -264,6 +263,32 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 		indexes = append(indexes, store.Index{
 			Commit:       commit,
 			RepositoryID: repositoryID,
+			State:        "queued",
+			DockerSteps:  dockerSteps,
+			Root:         indexJob.Root,
+			Indexer:      indexJob.Indexer,
+			IndexerArgs:  indexJob.IndexerArgs,
+			Outfile:      indexJob.Outfile,
+		})
+	}
+
+	return indexes
+}
+
+func convertInferredConfiguration(repositoryID int, commit string, indexJobs []inference.IndexJob) (indexes []store.Index) {
+	for _, indexJob := range indexJobs {
+		var dockerSteps []store.DockerStep
+		for _, dockerStep := range indexJob.DockerSteps {
+			dockerSteps = append(dockerSteps, store.DockerStep{
+				Root:     dockerStep.Root,
+				Image:    dockerStep.Image,
+				Commands: dockerStep.Commands,
+			})
+		}
+
+		indexes = append(indexes, store.Index{
+			RepositoryID: repositoryID,
+			Commit:       commit,
 			State:        "queued",
 			DockerSteps:  dockerSteps,
 			Root:         indexJob.Root,
