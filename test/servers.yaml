@@ -42,7 +42,6 @@
        ./test/regression/test.sh
 
        pushd web
-       yarn
        yarn run test:regression
        popd
 
