@@ -1,6 +1,7 @@
 import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import TimelineTextOutlineIcon from 'mdi-react/TimelineTextOutlineIcon'
+import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 import { UserAreaHeaderNavItem } from './UserAreaHeader'
 
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
@@ -21,6 +22,7 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         icon: FeatureSearchOutlineIcon,
         condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
+    ...namespaceAreaHeaderNavItems,
     {
         to: '/event-log',
         label: 'Event log',
