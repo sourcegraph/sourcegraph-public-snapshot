@@ -96,6 +96,8 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 		"foo/baz/tsconfig.json",
 		"foo/bar/baz/tsconfig.json",
 		"foo/bar/bonk/tsconfig.json",
+		"foo/bar/bonk/package.json",
+		"foo/bar/package.json",
 		"foo/bar/yarn.lock",
 	}
 
@@ -129,6 +131,11 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 		{
 			DockerSteps: []DockerStep{
 				{
+					Root:     "",
+					Image:    "node:alpine3.12",
+					Commands: []string{"npm", "install"},
+				},
+				{
 					Root:     "foo/bar",
 					Image:    "node:alpine3.12",
 					Commands: []string{"yarn"},
@@ -142,9 +149,19 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 		{
 			DockerSteps: []DockerStep{
 				{
+					Root:     "",
+					Image:    "node:alpine3.12",
+					Commands: []string{"npm", "install"},
+				},
+				{
 					Root:     "foo/bar",
 					Image:    "node:alpine3.12",
 					Commands: []string{"yarn"},
+				},
+				{
+					Root:     "foo/bar/bonk",
+					Image:    "node:alpine3.12",
+					Commands: []string{"npm", "install"},
 				},
 			},
 			Root:        "foo/bar/bonk",

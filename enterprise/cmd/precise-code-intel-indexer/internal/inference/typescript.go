@@ -26,25 +26,27 @@ func (lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) 
 		if filepath.Base(path) == "tsconfig.json" && !containsSegment(path, "node_modules") {
 			var dockerSteps []DockerStep
 			for _, dir := range ancestorDirs(path) {
+				if !contains(paths, filepath.Join(dir, "package.json")) {
+					continue
+				}
+
+				var commands []string
 				if contains(paths, filepath.Join(dir, "yarn.lock")) {
-					dockerSteps = append(dockerSteps, DockerStep{
-						Root:     dir,
-						Image:    "node:alpine3.12",
-						Commands: []string{"yarn"},
-					})
-
-					break
+					commands = append(commands, "yarn")
+				} else {
+					commands = append(commands, "npm", "install")
 				}
 
-				if contains(paths, filepath.Join(dir, "package.json")) {
-					dockerSteps = append(dockerSteps, DockerStep{
-						Root:     dir,
-						Image:    "node:alpine3.12",
-						Commands: []string{"npm", "install"},
-					})
+				dockerSteps = append(dockerSteps, DockerStep{
+					Root:     dir,
+					Image:    "node:alpine3.12",
+					Commands: commands,
+				})
+			}
 
-					break
-				}
+			n := len(dockerSteps)
+			for i := 0; i < n/2; i++ {
+				dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
 			}
 
 			indexes = append(indexes, IndexJob{
