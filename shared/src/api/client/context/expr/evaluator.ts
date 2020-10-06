@@ -1,3 +1,4 @@
+import { Context } from '../context'
 import { TokenType } from './lexer'
 import { ExpressionNode, Parser, TemplateParser } from './parser'
 
@@ -7,8 +8,8 @@ import { ExpressionNode, Parser, TemplateParser } from './parser'
 export class Expression<T> {
     constructor(private root: ExpressionNode) {}
 
-    public exec(context: ComputedContext): T {
-        return exec(this.root, context)
+    public exec<C>(context: Context<C>): T {
+        return exec<C>(this.root, context)
     }
 }
 
@@ -35,22 +36,12 @@ export function parseTemplate(template: string): TemplateExpression {
     return new TemplateExpression(new TemplateParser().parse(template))
 }
 
-/** A way to look up the value for an identifier. */
-export interface ComputedContext {
-    get(key: string): any
-}
-
-/** A computed context that returns undefined for every key. */
-export const EMPTY_COMPUTED_CONTEXT: ComputedContext = {
-    get: () => undefined,
-}
-
 const FUNCS: { [name: string]: (...args: any[]) => any } = {
     get: (object: any, key: string): any => object?.[key] ?? undefined,
     json: (object: any): string => JSON.stringify(object),
 }
 
-function exec(node: ExpressionNode, context: ComputedContext): any {
+function exec<C>(node: ExpressionNode, context: Context<C>): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
             case TokenType.String:
@@ -139,7 +130,7 @@ function exec(node: ExpressionNode, context: ComputedContext): any {
             case 'null':
                 return null
         }
-        return context.get(node.Identifier)
+        return context[node.Identifier]
     }
 
     if ('FunctionCall' in node) {

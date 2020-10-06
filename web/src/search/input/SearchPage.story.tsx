@@ -1,5 +1,5 @@
 import React from 'react'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches } from '../panels/utils'
+import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { parseISO } from 'date-fns'
@@ -26,7 +26,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
-    authenticatedUser: null,
+    authenticatedUser: authUser,
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     globbing: false,

@@ -21,10 +21,10 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
-import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -41,6 +41,7 @@ interface Props
     showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+    minimalNavLinks?: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -67,20 +68,19 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            <CompassOutlineIcon className="icon-inline" /> Explore
-                        </Link>
-                    </li>
-                )}
                 {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
+                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
+                    !this.props.minimalNavLinks && (
                         <li className="nav-item">
                             <InsightsNavItem />
                         </li>
                     )}
-                {this.props.showCampaigns && (
+                {!this.props.minimalNavLinks && (
+                    <li className="nav-item">
+                        <ExtensionsNavItem />
+                    </li>
+                )}
+                {!this.props.minimalNavLinks && this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>
@@ -121,14 +121,16 @@ export class NavLinks extends React.PureComponent<Props> {
                         />
                     </li>
                 )}
-                <li className="nav-item">
-                    <WebCommandListPopoverButton
-                        {...this.props}
-                        buttonClassName="nav-link btn btn-link"
-                        menu={ContributableMenu.CommandPalette}
-                        keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                    />
-                </li>
+                {!this.props.minimalNavLinks && (
+                    <li className="nav-item">
+                        <WebCommandListPopoverButton
+                            {...this.props}
+                            buttonClassName="nav-link btn btn-link"
+                            menu={ContributableMenu.CommandPalette}
+                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                        />
+                    </li>
+                )}
                 {this.props.authenticatedUser && (
                     <li className="nav-item">
                         <UserNavItem

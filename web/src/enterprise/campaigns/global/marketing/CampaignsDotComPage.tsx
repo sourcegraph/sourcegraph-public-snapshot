@@ -1,6 +1,6 @@
 import React from 'react'
 import { PrivateCodeCta } from '../../../../search/input/PrivateCodeCta'
-import { CampaignsIcon } from '../../icons'
+import { CampaignsFlushEdgesIcon } from '../../icons'
 import { PageHeader } from '../../../../components/PageHeader'
 
 export interface CampaignsDotComPageProps {
@@ -11,7 +11,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
     <div className="container web-content mt-3">
         <section className="mt-3 mb-5">
             <PageHeader
-                icon={CampaignsIcon}
+                icon={CampaignsFlushEdgesIcon}
                 title={
                     <>
                         Campaigns{' '}

@@ -27,10 +27,11 @@ func TestMigrations(t *testing.T) {
 
 	for _, databaseName := range dbutil.DatabaseNames {
 		t.Run(databaseName, func(t *testing.T) {
-			// Dropping squashed schemas all the way down just drop the entire
-			// database, so when we're testing with a "combined" database that
-			// contains multipleschemas we need to be a bit more careful about
-			// the state after down migrations.
+			// Dropping a squash schema _all_ the way down just drops the entire public
+			// schema. Because we have a "combined" database that runs migrations for
+			// multiple disjoint schemas in development environments, migrating all the
+			// way down will drop all tables from all schemas. This loop runs such down
+			// migrations, so we prep our tests by re-migrating up on each iteration.
 			migrate()
 
 			m, err := dbutil.NewMigrate(dbconn.Global, databaseName)

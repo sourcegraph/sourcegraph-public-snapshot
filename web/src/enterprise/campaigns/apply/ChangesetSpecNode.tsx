@@ -13,6 +13,8 @@ export interface ChangesetSpecNodeProps extends ThemeProps {
 
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
+    /** Expand changeset descriptions, for testing only. */
+    expandChangesetDescriptions?: boolean
 }
 
 export const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
@@ -21,6 +23,7 @@ export const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> 
     location,
     isLightTheme,
     queryChangesetSpecFileDiffs,
+    expandChangesetDescriptions,
 }) => {
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
@@ -39,6 +42,7 @@ export const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> 
                 location={location}
                 isLightTheme={isLightTheme}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                expandChangesetDescriptions={expandChangesetDescriptions}
             />
         </>
     )

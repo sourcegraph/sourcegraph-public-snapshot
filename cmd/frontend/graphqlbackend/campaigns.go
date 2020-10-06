@@ -181,6 +181,9 @@ type GitBranchChangesetDescriptionResolver interface {
 
 type GitCommitDescriptionResolver interface {
 	Message() string
+	Subject() string
+	Body() *string
+	Author() *PersonResolver
 	Diff() string
 }
 

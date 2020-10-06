@@ -219,7 +219,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
 			PatternInfo:  p,
-			Repos:        resolved.repoRevs,
+			RepoPromise:  (&search.Promise{}).Resolve(resolved.repoRevs),
 			Query:        r.query,
 			Zoekt:        r.zoekt,
 			SearcherURLs: r.searcherURLs,

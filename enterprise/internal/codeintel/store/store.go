@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // Store is the interface to Postgres for precise-code-intel features.
@@ -79,6 +80,9 @@ type Store interface {
 	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 	// that were removed for that repository.
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+
+	// HardDeleteUploadByID deletes the upload record with the given identifier.
+	HardDeleteUploadByID(ctx context.Context, id int) error
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
@@ -206,6 +210,12 @@ type Store interface {
 
 	// RepoName returns the name for the repo with the given identifier.
 	RepoName(ctx context.Context, repositoryID int) (string, error)
+
+	// GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
+	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
+
+	// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error)
 }
 
 type store struct {
@@ -216,12 +226,16 @@ var _ Store = &store{}
 
 // New creates a new instance of store connected to the given Postgres DSN.
 func New(postgresDSN string) (Store, error) {
-	base, err := basestore.New(postgresDSN, "codeintel")
+	base, err := basestore.New(postgresDSN, "codeintel", sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{Store: base}, nil
+}
+
+func NewWithDB(db dbutil.DB) Store {
+	return &store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func NewWithHandle(handle *basestore.TransactableHandle) Store {
@@ -239,46 +253,6 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 func (s *store) transact(ctx context.Context) (*store, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &store{Store: txBase}, err
-}
-
-// query performs QueryContext on the underlying connection.
-func (s *store) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	return s.Store.Query(ctx, query)
-}
-
-// queryForEffect performs a query and throws away the result.
-func (s *store) queryForEffect(ctx context.Context, query *sqlf.Query) error {
-	return s.Store.Exec(ctx, query)
-}
-
-// scanStrings scans a slice of strings from the return value of `*store.query`.
-func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
-	return basestore.ScanStrings(rows, queryErr)
-}
-
-// scanFirstString scans a slice of strings from the return value of `*store.query` and returns the first.
-func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
-	return basestore.ScanFirstString(rows, err)
-}
-
-// scanInts scans a slice of ints from the return value of `*store.query`.
-func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
-	return basestore.ScanInts(rows, queryErr)
-}
-
-// scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
-func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
-	return basestore.ScanFirstInt(rows, err)
-}
-
-// scanFirstBool scans a slice of bools from the return value of `*store.query` and returns the first.
-func scanFirstBool(rows *sql.Rows, err error) (bool, bool, error) {
-	return basestore.ScanFirstBool(rows, err)
-}
-
-// closeRows closes the rows object and checks its error value.
-func closeRows(rows *sql.Rows, err error) error {
-	return basestore.CloseRows(rows, err)
 }
 
 // intsToQueries converts a slice of ints into a slice of queries.

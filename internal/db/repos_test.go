@@ -94,13 +94,21 @@ func TestParseIncludePattern(t *testing.T) {
 				q := sqlf.Join(qs, "AND")
 				t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
 			}
+
 			if want.pattern != nil {
-				if !reflect.DeepEqual(want.pattern, qs) {
-					t.Errorf("got pattern %#v, want %#v for %s", qs[0], want.pattern[0], pattern)
+				want := queriesToString(want.pattern)
+				q := queriesToString(qs)
+				if want != q {
+					t.Errorf("got pattern %q, want %q for %s", q, want, pattern)
 				}
 			}
 		}
 	}
+}
+
+func queriesToString(qs []*sqlf.Query) string {
+	q := sqlf.Join(qs, "AND")
+	return fmt.Sprintf("%s %v", q.Query(sqlf.PostgresBindVar), q.Args())
 }
 
 func TestRepos_Count(t *testing.T) {

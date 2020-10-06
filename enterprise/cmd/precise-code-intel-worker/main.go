@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -52,7 +52,7 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	codeIntelDB := // TODO
+	codeIntelDB := mustInitializeCodeIntelDatabase()
 
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
@@ -86,13 +86,29 @@ func mustInitializeStore() store.Store {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 
 	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
-		log.Fatalf("failed to connect to database: %s", err)
+		log.Fatalf("failed to connect to frontend database: %s", err)
 	}
 
-	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
+	return store.NewWithDB(dbconn.Global)
+}
+
+func mustInitializeCodeIntelDatabase() *sql.DB {
+	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	conf.Watch(func() {
+		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+		}
+	})
+
+	db, err := dbconn.New(postgresDSN, "_codeintel")
+	if err != nil {
+		log.Fatalf("failed to connect to codeintel database: %s", err)
+	}
+
+	return db
 }

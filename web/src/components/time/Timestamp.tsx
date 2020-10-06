@@ -1,5 +1,6 @@
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
+import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import * as React from 'react'
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
 
     /** Function that returns the current time (for stability in visual tests). */
     now?: () => Date
+
+    /** Whether to use exact timestamps (i.e. omit "less than", "about", etc.) */
+    strict?: boolean
 }
 
 /**
@@ -35,9 +39,16 @@ export class Timestamp extends React.PureComponent<Props> {
     public render(): JSX.Element {
         let label = formatDistance(
             typeof this.props.date === 'string' ? parseISO(this.props.date) : this.props.date,
-            this.props.now ? this.props.now() : new Date(),
+            this.props.now ? this.props.now() : Date.now(),
             { addSuffix: true, includeSeconds: true }
         )
+        if (this.props.strict) {
+            label = formatDistanceStrict(
+                typeof this.props.date === 'string' ? parseISO(this.props.date) : this.props.date,
+                this.props.now ? this.props.now() : Date.now(),
+                { addSuffix: true }
+            )
+        }
         if (this.props.noAbout) {
             label = label.replace('about ', '')
         }

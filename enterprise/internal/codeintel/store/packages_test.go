@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -102,7 +103,7 @@ func TestUpdatePackages(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, _, err := scanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := basestore.ScanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
@@ -122,7 +123,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, _, err := scanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := basestore.ScanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
