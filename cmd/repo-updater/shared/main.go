@@ -188,7 +188,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go func() {
 		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
-			EnqueueInterval: repos.GetUpdateInterval,
+			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),
 		}))
 	}()

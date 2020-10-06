@@ -815,6 +815,18 @@ const SiteSchemaJSON = `{
       "default": "release",
       "examples": ["none"],
       "group": "Misc."
+    },
+    "userRepos.maxPerSite": {
+      "description": "The site wide maximum number of repos that can be added by non site admins",
+      "type": "integer",
+      "default": 200000,
+      "group": "Misc."
+    },
+    "userRepos.maxPerUser": {
+      "description": "The per user maximum number of repos that can be added by non site admins",
+      "type": "integer",
+      "default": 2000,
+      "group": "Misc."
     }
   },
   "definitions": {
