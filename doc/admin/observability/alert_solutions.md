@@ -4527,3 +4527,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## blackbox_exporter-https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/fmt/-/Printf
+
+**Descriptions:**
+- Critical alert 'https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/fmt/-/Printf http health check' is firing for service 'blackbox_exporter' 
+
+**Unique to Sourcegraph Cloud** 
+
+- This alert has been observed when the pod is unable to write to the local ssd cache directory
