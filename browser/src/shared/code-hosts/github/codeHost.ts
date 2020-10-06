@@ -290,8 +290,8 @@ export const githubCodeHost: CodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const repoHeaderHasPrivateMarker =
-            !!document.querySelector('.repohead .private') ||
-            !!document.querySelector('#js-repo-pjax-container h1 .octicon-lock')
+            !!document.querySelector('main h1 .octicon-lock') ||
+            !![...document.querySelectorAll('main h1 span')].find(span => span.textContent?.toLowerCase() === 'private')
         const parsedURL = parseURL()
         return {
             ...parsedURL,
