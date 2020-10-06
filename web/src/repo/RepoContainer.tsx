@@ -56,6 +56,8 @@ import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
+import { InstallExtensionAlert } from './actions/InstallExtensionAlert'
+import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -124,6 +126,7 @@ interface RepoContainerProps
 
 export const HOVER_COUNT_KEY = 'hover-count'
 export const HOVER_THRESHOLD = 5
+export const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
 
 export interface HoverThresholdProps {
     /**
@@ -133,7 +136,7 @@ export interface HoverThresholdProps {
 }
 
 export interface ExtensionAlertProps {
-    onAlertDismissed: () => void
+    onExtensionAlertDismissed: () => void
 }
 
 /**
@@ -322,14 +325,29 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
+    /**
+     * Browser extension discoverability
+     * TODO description
+     */
     const [canShowPopover, setCanShowPopover] = useState(() => {
         if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
             return true
         }
         return false
     })
+    const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
+        if (
+            localStorage.getItem(HAS_DISMISSED_ALERT_KEY) !== 'true' &&
+            parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD
+        ) {
+            return true
+        }
+        return false
+    })
 
-    const { onAlertDismissed } = props
+    const { onExtensionAlertDismissed } = props
+
+    const extensionAlertManager = useTimeoutManager()
 
     /** TODO description */
     const onHoverShown = useCallback(() => {
@@ -341,22 +359,33 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
         if (count === HOVER_THRESHOLD) {
             setCanShowPopover(true)
-            // TODO(tj): Trigger "Install extension" alert here
-            onAlertDismissed()
+            // Avoid immediate layout shift on the triggering hover
+            extensionAlertManager.setTimeout(() => setShowExtensionAlert(true), 800)
         }
 
         localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
-    }, [onAlertDismissed])
+    }, [extensionAlertManager])
+
+    // DEBUG
+    useEffect(() => {
+        // eslint-disable-next-line
+        ;(window as any).showExtensionAlert = () => setShowExtensionAlert(true)
+    }, [])
 
     const onPopoverDismissed = useCallback(() => {
         setCanShowPopover(false)
     }, [])
 
+    const onAlertDismissed = useCallback(() => {
+        onExtensionAlertDismissed()
+        localStorage.setItem(HAS_DISMISSED_ALERT_KEY, 'true')
+        setShowExtensionAlert(false)
+    }, [onExtensionAlertDismissed])
+
     if (!repoOrError) {
         // Render nothing while loading
         return null
     }
-    console.log('repo container render')
 
     const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
@@ -389,6 +418,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            {showExtensionAlert && (
+                <InstallExtensionAlert onAlertDismissed={onAlertDismissed} externalURLs={repoOrError.externalURLs} />
+            )}
             <RepoHeader
                 {...props}
                 actionButtons={props.repoHeaderActionButtons}
@@ -396,6 +428,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+                isAlertDisplayed={showExtensionAlert}
             />
             <RepoHeaderContributionPortal
                 position="right"

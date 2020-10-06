@@ -46,7 +46,7 @@ add(
                     themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
                     onThemePreferenceChange={onThemePreferenceChange}
                     showDotComMarketing={boolean('showDotComMarketing', true)}
-                    startUserNavExtensionAnimationReference={{ current: null }}
+                    isExtensionAlertAnimating={false}
                 />
             )}
         </WebStory>

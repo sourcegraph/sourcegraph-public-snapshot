@@ -10,6 +10,7 @@ import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { AuthenticatedUser } from '../auth'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
+import classNames from 'classnames'
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
     authenticatedUser: Pick<
@@ -22,7 +23,30 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
 }
 
 export interface ExtensionAlertAnimationProps {
-    startUserNavExtensionAnimationReference: React.MutableRefObject<null | (() => void)>
+    isExtensionAlertAnimating: boolean
+}
+
+/**
+ *
+ */
+export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
+    startExtensionAlertAnimation: () => void
+} {
+    const [isAnimating, setIsAnimating] = useState(false)
+
+    const animationManager = useTimeoutManager()
+
+    const startExtensionAlertAnimation = useCallback(() => {
+        if (!isAnimating) {
+            setIsAnimating(true)
+
+            animationManager.setTimeout(() => {
+                setIsAnimating(false)
+            }, 5100)
+        }
+    }, [isAnimating, animationManager])
+
+    return { isExtensionAlertAnimating: isAnimating, startExtensionAlertAnimation }
 }
 
 /**
@@ -30,13 +54,7 @@ export interface ExtensionAlertAnimationProps {
  * authenticated viewers.
  */
 export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
-    const {
-        location,
-        themePreference,
-        onThemePreferenceChange,
-        startUserNavExtensionAnimationReference,
-        testIsOpen,
-    } = props
+    const { location, themePreference, onThemePreferenceChange, isExtensionAlertAnimating, testIsOpen } = props
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -64,68 +82,8 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
     }, [onThemePreferenceChange, themePreference])
 
-    /**
-     * Animation.
-     */
-
-    // State variables for animation classes
-    const [isAnimating, setIsAnimating] = useState(false)
-    const [showTooltip, setShowTooltip] = useState(false)
-    const [, setShowBackground] = useState(false)
-
-    const delayManager = useTimeoutManager()
-
+    // needed for tooltip
     const userAvatarReference = useRef<HTMLElement | null>(null)
-
-    const startUserNavExtensionAnimation = useCallback(async () => {
-        if (!isAnimating) {
-            setIsAnimating(true)
-            // 100ms delay
-            await new Promise(resolve =>
-                delayManager.setTimeout(() => {
-                    // tooltip eases out (400ms [in CSS])
-                    setShowTooltip(true)
-                    console.log('show tooltip')
-
-                    resolve()
-                }, 100)
-            )
-            // 50ms delay
-            await new Promise(resolve =>
-                delayManager.setTimeout(() => {
-                    // background behind profile icon eases out (800ms [in CSS])
-                    setShowBackground(true)
-                    console.log('show background')
-
-                    resolve()
-                }, 50)
-            )
-
-            // 3s delay
-            await new Promise(resolve =>
-                delayManager.setTimeout(() => {
-                    // both tooltip and background ease out
-                    setShowTooltip(false)
-                    console.log('hide tooltip')
-                    setShowBackground(false)
-                    console.log('hide background')
-
-                    setIsAnimating(false)
-                    resolve()
-                }, 3000)
-            )
-        }
-    }, [isAnimating, delayManager])
-
-    useEffect(() => {
-        startUserNavExtensionAnimationReference.current = startUserNavExtensionAnimation
-        // temporary, for testing
-        // window.onAlertDismissed = onAlertDismissed
-
-        return () => {
-            startUserNavExtensionAnimationReference.current = null
-        }
-    }, [startUserNavExtensionAnimationReference, startUserNavExtensionAnimation])
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0">
@@ -138,13 +96,22 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                     <UserAvatar
                         user={props.authenticatedUser}
                         size={48}
-                        className="icon-inline"
+                        className={classNames('icon-inline', {
+                            'user-nav-item__avatar-background': isExtensionAlertAnimating,
+                        })}
                         innerRef={userAvatarReference}
                     />
                 ) : (
-                    <strong ref={userAvatarReference}>{props.authenticatedUser.username}</strong>
+                    <strong
+                        ref={userAvatarReference}
+                        className={classNames({
+                            'user-nav-item__avatar-background': isExtensionAlertAnimating,
+                        })}
+                    >
+                        {props.authenticatedUser.username}
+                    </strong>
                 )}
-                {showTooltip && (
+                {isExtensionAlertAnimating && (
                     <Tooltip
                         target={userAvatarReference}
                         placement="bottom"
@@ -154,6 +121,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 offset: '0 4',
                             },
                         }}
+                        className="user-nav-item__tooltip"
                     >
                         Install the browser extension from here later
                     </Tooltip>

@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense, useCallback, useRef } from 'react'
+import React, { Suspense, useCallback, useEffect } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
@@ -64,6 +64,7 @@ import { AuthenticatedUser, authRequired as authRequiredObservable } from './aut
 import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
+import { useExtensionAlertAnimation } from './nav/UserNavItem'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -161,10 +162,16 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const breadcrumbProps = useBreadcrumbs()
 
     // TODO description
-    const startUserNavExtensionAnimationReference = useRef<null | (() => void)>(null)
-    const onAlertDismissed = useCallback(() => {
-        startUserNavExtensionAnimationReference.current?.()
-    }, [])
+    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
+    const onExtensionAlertDismissed = useCallback(() => {
+        startExtensionAlertAnimation()
+    }, [startExtensionAlertAnimation])
+
+    // DEBUG
+    useEffect(() => {
+        // eslint-disable-next-line
+        ;(window as any).onExtensionAlertDismissed = onExtensionAlertDismissed
+    }, [onExtensionAlertDismissed])
 
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
@@ -175,7 +182,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const context = {
         ...props,
         ...breadcrumbProps,
-        onAlertDismissed,
+        onExtensionAlertDismissed,
     }
 
     return (
@@ -208,7 +215,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             : 'default'
                     }
                     hideNavLinks={false}
-                    startUserNavExtensionAnimationReference={startUserNavExtensionAnimationReference}
+                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
