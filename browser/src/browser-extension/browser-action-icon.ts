@@ -16,20 +16,20 @@ interface BrowserActionIconPaths {
     '128': string
 }
 
-const browserActionIconPaths: Record<BrowserActionIconState, Partial<BrowserActionIconPaths>> = {
+const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = {
     active: {
-        // '16': 'img/icon-active-16.png',
-        // '48': 'img/icon-active-48.png',
-        '128': 'img/icon-active-128.png',
+        '16': 'img/icon-16.png',
+        '48': 'img/icon-48.png',
+        '128': 'img/icon-128.png',
     },
     'active-with-alert': {
-        // '16': 'img/icon-active-with-alert-16.png',
-        // '48': 'img/icon-active-with-alert-48.png',
+        '16': 'img/icon-active-with-alert-16.png',
+        '48': 'img/icon-active-with-alert-48.png',
         '128': 'img/icon-active-with-alert-128.png',
     },
     inactive: {
-        // '16': 'img/icon-inactive-16.png',
-        // '48': 'img/icon-inactive-48.png',
+        '16': 'img/icon-inactive-16.png',
+        '48': 'img/icon-inactive-48.png',
         '128': 'img/icon-inactive-128.png',
     },
 }
@@ -39,6 +39,7 @@ const browserActionIconPaths: Record<BrowserActionIconState, Partial<BrowserActi
  */
 export function setBrowserActionIconState(iconState: BrowserActionIconState): void {
     const iconPaths = browserActionIconPaths[iconState]
+    console.log('Setting icons to', iconPaths)
     browser.browserAction.setIcon({ path: iconPaths }).catch(error => {
         console.error(error)
     })
