@@ -3,16 +3,16 @@ import { upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { merge, Observable, of } from 'rxjs'
-import { catchError, distinctUntilChanged, startWith, switchMap } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { ExternalLinkFields } from '../../graphql-operations'
-import { useEventObservable, useObservable } from '../../../../shared/src/util/useObservable'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallExtensionPopover } from './InstallExtensionPopover'
@@ -43,7 +43,7 @@ const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const [showPopover, setShowPopover] = useState(false)
 
-    const { onPopoverDismissed } = props
+    const { onPopoverDismissed, repo, revision, filePath } = props
 
     const isExtensionInstalled = useObservable(props.browserExtensionInstalled)
 
@@ -57,38 +57,19 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
      * The external links for the current file/dir, or undefined while loading, null while not
      * needed (because not viewing a file/dir), or an error.
      */
-    const [nextComponentUpdate, fileExternalLinksOrError] = useEventObservable<
-        Props,
-        ExternalLinkFields[] | null | undefined | ErrorLike
-    >(
-        useCallback(
-            componentUpdates =>
-                componentUpdates.pipe(
-                    startWith(props),
-                    distinctUntilChanged(
-                        (a, b) => a.repo === b.repo && a.revision === b.revision && a.filePath === b.filePath
-                    ),
-                    switchMap(({ repo, revision, filePath }) => {
-                        if (!repo || !filePath) {
-                            return of(null)
-                        }
-                        return merge(
-                            of(undefined),
-                            fetchFileExternalLinks({ repoName: repo.name, revision, filePath }).pipe(
-                                catchError(error => [asError(error)])
-                            )
-                        )
-                    })
-                ),
-            // Pass latest props in `useEffect`, don't want to create new subscriptions on each render
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            []
-        )
+    const fileExternalLinksOrError = useObservable<ExternalLinkFields[] | null | undefined | ErrorLike>(
+        useMemo(() => {
+            if (!repo || !filePath) {
+                return of(null)
+            }
+            return merge(
+                of(undefined),
+                fetchFileExternalLinks({ repoName: repo.name, revision, filePath }).pipe(
+                    catchError(error => [asError(error)])
+                )
+            )
+        }, [repo, revision, filePath])
     )
-
-    useEffect(() => {
-        nextComponentUpdate(props)
-    }, [props, nextComponentUpdate])
 
     /** This is a hard rejection. Never ask the user again. */
     const onRejection = useCallback(() => {
@@ -126,6 +107,9 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         }
     }, [hijackLink, showPopover])
 
+    // Keep track of latest click type for install extension popover
+    const [wasAuxClick, setWasAuxClick] = useState(false)
+
     const onClick = useCallback(
         (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
             if (showPopover) {
@@ -136,6 +120,24 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
             if (hijackLink) {
                 event.preventDefault()
+                setWasAuxClick(false)
+                setShowPopover(true)
+            }
+        },
+        [hijackLink, showPopover]
+    )
+
+    const onAuxClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (showPopover) {
+                event.preventDefault()
+                setShowPopover(false)
+                return
+            }
+
+            if (hijackLink) {
+                event.preventDefault()
+                setWasAuxClick(true)
                 setShowPopover(true)
             }
         },
@@ -209,7 +211,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 data-tooltip={`View on ${displayName}`}
                 id={TARGET_ID}
                 onClick={onClick}
-                onAuxClick={onClick}
+                onAuxClick={onAuxClick}
             >
                 <Icon className="icon-inline" />
             </a>
@@ -223,6 +225,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 onRejection={onRejection}
                 onClickInstall={onClickInstall}
                 targetID={TARGET_ID}
+                wasAuxClick={wasAuxClick}
             />
         </>
     )

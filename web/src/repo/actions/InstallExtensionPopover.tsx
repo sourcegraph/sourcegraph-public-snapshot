@@ -16,6 +16,7 @@ interface CodeHostExtensionPopoverProps {
     targetID: string
     toggle: () => void
     isOpen: boolean
+    wasAuxClick: boolean
 }
 
 export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionPopoverProps> = ({
@@ -27,24 +28,27 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
     targetID,
     toggle,
     isOpen,
+    wasAuxClick,
 }) => {
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
     const Icon = icon || ExportIcon
 
-    // TODO: store type of original click (normal vs aux). If it was an aux click, open link in new tab
+    // Store type of original click (normal vs aux). If it was an aux click, open code host link in new tab
+    const linkProps = wasAuxClick ? { rel: 'noopener noreferrer', target: '_blank' } : {}
 
     return (
         <Popover
             toggle={toggle}
             target={targetID}
             isOpen={isOpen}
-            popperClassName="shadow"
-            innerClassName="border"
+            popperClassName="shadow border install-extension-popover web-content"
+            innerClassName="border-0"
             placement="bottom"
+            boundariesElement="window"
             modifiers={useMemo(
                 () => ({
                     offset: {
-                        offset: '0 4',
+                        offset: '0, 0',
                         enabled: true,
                     },
                 }),
@@ -53,7 +57,7 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
         >
             {isOpen && (
                 <FocusLock returnFocus={true}>
-                    <div className="modal-body p-4 web-content text-wrap  test-install-extension-popover">
+                    <div className="p-3 text-wrap  test-install-extension-popover">
                         <h3 className="mb-0 test-install-extension-popover-header">
                             Take Sourcegraph's code intelligence to {displayName}!
                         </h3>
@@ -69,11 +73,21 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
                         </div>
 
                         <div className="d-flex justify-content-end">
-                            <ButtonLink className="btn btn-outline-secondary mr-2" onSelect={onRejection} to={url}>
+                            <ButtonLink
+                                className="btn btn-outline-secondary mr-2"
+                                onSelect={onRejection}
+                                to={url}
+                                {...linkProps}
+                            >
                                 No, thanks
                             </ButtonLink>
 
-                            <ButtonLink className="btn btn-outline-secondary mr-2" onSelect={onClose} to={url}>
+                            <ButtonLink
+                                className="btn btn-outline-secondary mr-2"
+                                onSelect={onClose}
+                                to={url}
+                                {...linkProps}
+                            >
                                 Remind me later
                             </ButtonLink>
 
@@ -81,6 +95,8 @@ export const InstallExtensionPopover: React.FunctionComponent<CodeHostExtensionP
                                 className="btn btn-primary mr-2"
                                 onSelect={onClickInstall}
                                 to="/help/integration/browser_extension"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 Install browser extension
                             </ButtonLink>
