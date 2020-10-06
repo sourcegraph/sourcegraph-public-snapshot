@@ -33,6 +33,7 @@ We generally try to avoid adding large binary files to our repository. Images to
 To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to this repository's `main` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `main`.
 
 - Documentation content lives in `doc/**/*.md`.
+- The sidebar lives in `doc/sidebar.md`. Only important pages belong in the sidebar; use section index page links for other documents.
 - Assets and templates live in `doc/_resources/{templates,assets}`.
 
 ## Advanced documentation site

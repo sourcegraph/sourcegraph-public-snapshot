@@ -7,6 +7,7 @@ type MockStores struct {
 	AccessTokens MockAccessTokens
 
 	Repos         MockRepos
+	Namespaces    MockNamespaces
 	Orgs          MockOrgs
 	OrgMembers    MockOrgMembers
 	SavedSearches MockSavedSearches
@@ -25,4 +26,6 @@ type MockStores struct {
 	Authz MockAuthz
 
 	Secrets MockSecrets
+
+	EventLogs MockEventLogs
 }

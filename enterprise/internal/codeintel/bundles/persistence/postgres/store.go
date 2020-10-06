@@ -29,7 +29,7 @@ var _ persistence.Store = &store{}
 
 func NewStore(db *sql.DB, dumpID int) persistence.Store {
 	return &store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db)),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		dumpID:     dumpID,
 		serializer: gobserializer.New(),
 	}
@@ -137,15 +137,28 @@ func (s *store) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkD
 }
 
 func (s *store) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	return s.defref(ctx, "lsif_data_definitions", scheme, identifier, skip, take)
+	return s.readDefinitionReferences(ctx, "lsif_data_definitions", scheme, identifier, skip, take)
 }
 
 func (s *store) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	return s.defref(ctx, "lsif_data_references", scheme, identifier, skip, take)
+	return s.readDefinitionReferences(ctx, "lsif_data_references", scheme, identifier, skip, take)
 }
 
-func (s *store) defref(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	locations, err := s.readDefinitionReferences(ctx, tableName, scheme, identifier)
+func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
+	data, ok, err := basestore.ScanFirstString(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(
+			`SELECT data FROM "`+tableName+`" WHERE dump_id = %s AND scheme = %s AND identifier = %s LIMIT 1`,
+			s.dumpID,
+			scheme,
+			identifier,
+		),
+	))
+	if err != nil || !ok {
+		return nil, 0, err
+	}
+
+	locations, err := s.serializer.UnmarshalLocations([]byte(data))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -169,40 +182,20 @@ func (s *store) defref(ctx context.Context, tableName, scheme, identifier string
 	return locations[lo:hi], len(locations), nil
 }
 
-func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string) (_ []types.Location, err error) {
-	data, ok, err := basestore.ScanFirstString(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			`SELECT data FROM "`+tableName+`" WHERE dump_id = %s AND scheme = %s AND identifier = %s LIMIT 1`,
-			s.dumpID,
-			scheme,
-			identifier,
-		),
-	))
-	if err != nil || !ok {
-		return nil, err
-	}
-
-	locations, err := s.serializer.UnmarshalLocations([]byte(data))
-	if err != nil {
-		return nil, err
-	}
-
-	return locations, nil
-}
-
 func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) error {
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, func(inserter *BatchInserter) error {
+	inserter := func(inserter *BatchInserter) error {
 		if err := inserter.Insert(ctx, s.dumpID, meta.NumResultChunks); err != nil {
 			return err
 		}
 
 		return nil
-	})
+	}
+
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, inserter)
 }
 
 func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data"}, func(inserter *BatchInserter) error {
+	inserter := func(inserter *BatchInserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
 			if err != nil {
@@ -215,11 +208,13 @@ func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.K
 		}
 
 		return nil
-	})
+	}
+
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data"}, inserter)
 }
 
 func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, func(inserter *BatchInserter) error {
+	inserter := func(inserter *BatchInserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
 			if err != nil {
@@ -232,28 +227,21 @@ func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persist
 		}
 
 		return nil
-	})
+	}
+
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter)
 }
 
 func (s *store) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_definitions", []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *BatchInserter) error {
-		for v := range monikerLocations {
-			data, err := s.serializer.MarshalLocations(v.Locations)
-			if err != nil {
-				return err
-			}
-
-			if err := inserter.Insert(ctx, s.dumpID, v.Scheme, v.Identifier, data); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
+	return s.writeDefinitionReferences(ctx, "lsif_data_definitions", monikerLocations)
 }
 
 func (s *store) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_references", []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *BatchInserter) error {
+	return s.writeDefinitionReferences(ctx, "lsif_data_references", monikerLocations)
+}
+
+func (s *store) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations chan types.MonikerLocations) error {
+	inserter := func(inserter *BatchInserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
@@ -266,7 +254,9 @@ func (s *store) WriteReferences(ctx context.Context, monikerLocations chan types
 		}
 
 		return nil
-	})
+	}
+
+	return withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data"}, inserter)
 }
 
 var numWriterRoutines = runtime.GOMAXPROCS(0)
@@ -274,6 +264,7 @@ var numWriterRoutines = runtime.GOMAXPROCS(0)
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *BatchInserter) error) error {
 	return util.InvokeN(numWriterRoutines, func() (err error) {
 		inserter := NewBatchInserter(ctx, db, tableName, columns...)
+
 		defer func() {
 			if flushErr := inserter.Flush(ctx); flushErr != nil {
 				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))

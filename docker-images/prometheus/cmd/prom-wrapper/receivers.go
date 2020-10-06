@@ -206,7 +206,9 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
 				continue
 			}
-			if notifier.Slack.Username != "" {
+
+			// set a default username if none is provided
+			if notifier.Slack.Username == "" {
 				notifier.Slack.Username = "Sourcegraph Alerts"
 			}
 

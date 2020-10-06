@@ -19,13 +19,13 @@ import { Contributions, Raw } from '../api/protocol/contribution'
  * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).
  */
 export const EXTENSION_CATEGORIES = array([
-    'Programming languages',
-    'Linters',
-    'Code analysis',
-    'External services',
     'Reports and stats',
+    'External services',
+    'Linters',
+    'Code editors',
+    'Code analysis',
+    'Programming languages',
     'Other',
-    'Demos',
 ])
 
 /**
@@ -50,6 +50,7 @@ export interface ExtensionManifest {
 
     tags?: string[]
     icon?: string
+    iconDark?: string
     activationEvents: string[]
     contributes?: Raw<Contributions> & { configuration?: { [key: string]: any } }
     publisher?: string

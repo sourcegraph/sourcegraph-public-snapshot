@@ -48,6 +48,7 @@ export const LANGUAGES: string[] = [
     'python',
     'r',
     'ruby',
+    'rust',
     'sass',
     'swift',
     'typescript',
@@ -63,7 +64,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.author]: {
-        description: 'The author of a commit',
+        negatable: true,
+        description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
         description: 'Commits made before a certain date',
@@ -72,6 +74,12 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Treat the search pattern as case-sensitive.',
         discreteValues: ['yes', 'no'],
         default: 'no',
+        singular: true,
+    },
+    [FilterType.committer]: {
+        description: (negated: boolean): string =>
+            `${negated ? 'Exclude' : 'Include only'} commits and diffs committed by a user.`,
+        negatable: true,
         singular: true,
     },
     [FilterType.content]: {
@@ -107,7 +115,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: LANGUAGES,
     },
     [FilterType.message]: {
-        description: 'Commits with messages matching a certain string',
+        negatable: true,
+        description: negated =>
+            `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
     },
     [FilterType.patterntype]: {
         discreteValues: ['regexp', 'literal', 'structural'],

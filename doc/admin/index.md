@@ -9,6 +9,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Install Sourcegraph with Kubernetes](install/kubernetes/index.md)
 - [Install Sourcegraph on a cluster](install/index.md)
 - [Set up a managed instance](install/managed.md)
+- [Back up or migrate to a new Sourcegraph instance](install/migrate-backup.md)
 
 ## Management, deployment, and configuration
 

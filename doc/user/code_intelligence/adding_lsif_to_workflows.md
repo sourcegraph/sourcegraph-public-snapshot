@@ -42,7 +42,7 @@ jobs:
       - name: Upload LSIF data
         # this will upload to Sourcegraph.com, you may need to substitute a different command
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
 ```
 
 ### Sub-projects
@@ -66,7 +66,7 @@ jobs:
         working-directory: backend/
         # this will upload to Sourcegraph.com, you may need to substitute a different command
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
 ```
 
 ### Custom build environments
@@ -98,7 +98,7 @@ jobs:
         with:
           # this will upload to Sourcegraph.com, you may need to substitute a different command
           # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-          args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
+          args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
 ```
 
 
@@ -143,7 +143,7 @@ jobs:
       - run: lsif-tsc -p .
         # this will upload to Sourcegraph.com, you may need to substitute a different command
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failures
+      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failure
 
 workflows:
   lsif-node:

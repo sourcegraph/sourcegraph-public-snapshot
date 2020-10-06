@@ -27,7 +27,7 @@ END {
 EOF
 )
 
-files=$(find . -type f -name '[0-9]*.sql' | sort | awk -v name="$1" "$awkcmd")
+files=$(find . -type f -name '[0-9]*.sql' | sort | awk -v name="$2" "$awkcmd")
 
 for f in $files; do
   cat >"$f" <<EOF

@@ -119,9 +119,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 className="btn btn-sm btn-secondary"
                                 onClick={this.invalidateSessions}
                                 disabled={this.state.loading}
-                                data-tooltip="Log out user"
+                                data-tooltip="Force the user to re-authenticate on their next request"
                             >
-                                Log out
+                                Force sign-out
                             </button>
                         )}{' '}
                         {window.context.resetPasswordEnabled && (
@@ -256,7 +256,11 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     private invalidateSessions = (): void => {
-        if (!window.confirm(`Log ${this.props.node.username} out of Sourcegraph?`)) {
+        if (
+            !window.confirm(
+                `Revoke all active sessions for ${this.props.node.username}? The user will need to re-authenticate on their next request or visit to Sourcegraph.`
+            )
+        ) {
             return
         }
 

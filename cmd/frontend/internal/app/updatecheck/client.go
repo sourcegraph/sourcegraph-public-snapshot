@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -106,7 +105,7 @@ func getTotalReposCount(ctx context.Context) (_ int, err error) {
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
+	return usagestats.GetUsersActiveTodayCount(ctx)
 }
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
@@ -292,7 +291,16 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		return nil, err
 	}
 
-	return bytes.NewReader(contents), nil
+	err = db.EventLogs.Insert(ctx, &db.Event{
+		UserID:          0,
+		Name:            "ping",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Source:          "BACKEND",
+		Argument:        json.RawMessage(contents),
+		Timestamp:       time.Now().UTC(),
+	})
+	return bytes.NewReader(contents), err
 }
 
 func authProviderTypes() []string {

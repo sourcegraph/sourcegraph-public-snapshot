@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func TestEventLogs_ValidInfo(t *testing.T) {
@@ -488,6 +490,74 @@ func TestEventLogs_ListAll(t *testing.T) {
 	if diff := cmp.Diff(want, len(have)); diff != "" {
 		t.Error(diff)
 	}
+}
+
+func TestEventLogs_LatestPing(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	t.Run("with no pings in database", func(t *testing.T) {
+		ctx := context.Background()
+		ping, err := EventLogs.LatestPing(ctx)
+		if ping != nil {
+			t.Fatalf("have ping %+v, expected nil", ping)
+		}
+		if err != sql.ErrNoRows {
+			t.Fatalf("have err %+v, expected no rows error", err)
+		}
+	})
+
+	t.Run("with existing pings in database", func(t *testing.T) {
+		userID := int32(0)
+		timestamp := time.Now().UTC().Truncate(time.Microsecond)
+
+		ctx := context.Background()
+		events := []*Event{
+			{
+				UserID:          0,
+				Name:            "ping",
+				URL:             "test",
+				AnonymousUserID: "test",
+				Source:          "test",
+				Timestamp:       timestamp,
+				Argument:        json.RawMessage(`{"key": "value1"}`),
+			}, {
+				UserID:          0,
+				Name:            "ping",
+				URL:             "test",
+				AnonymousUserID: "test",
+				Source:          "test",
+				Timestamp:       timestamp,
+				Argument:        json.RawMessage(`{"key": "value2"}`),
+			},
+		}
+		for _, event := range events {
+			if err := EventLogs.Insert(ctx, event); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		gotPing, err := EventLogs.LatestPing(ctx)
+		if err != nil || gotPing == nil {
+			t.Fatal(err)
+		}
+		expectedPing := &types.Event{
+			ID:              2,
+			Name:            events[1].Name,
+			URL:             events[1].URL,
+			UserID:          &userID,
+			AnonymousUserID: events[1].AnonymousUserID,
+			Version:         version.Version(),
+			Argument:        string(events[1].Argument),
+			Source:          events[1].Source,
+			Timestamp:       timestamp,
+		}
+		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }
 
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion
