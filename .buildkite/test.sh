@@ -17,7 +17,7 @@ for i in "${plugins[@]}"; do
 done
 
 vagrant up "$box" --provider=google || exit_code=$?
-vagrant destroy -f "$box"
+# vagrant destroy -f "$box"
 
 if [ "$exit_code" != 0 ]; then
   exit 1
