@@ -30,12 +30,12 @@ type MockClient struct {
 	// HeadFunc is an instance of a mock function object controlling the
 	// behavior of the method Head.
 	HeadFunc *ClientHeadFunc
+	// RawContentsFunc is an instance of a mock function object controlling
+	// the behavior of the method RawContents.
+	RawContentsFunc *ClientRawContentsFunc
 	// TagsFunc is an instance of a mock function object controlling the
 	// behavior of the method Tags.
 	TagsFunc *ClientTagsFunc
-	// TextFunc is an instance of a mock function object controlling the
-	// behavior of the method Text.
-	TextFunc *ClientTextFunc
 }
 
 // NewMockClient creates a new mock of the Client interface. All methods
@@ -67,14 +67,14 @@ func NewMockClient() *MockClient {
 				return "", nil
 			},
 		},
+		RawContentsFunc: &ClientRawContentsFunc{
+			defaultHook: func(context.Context, store.Store, int, string, string) ([]byte, error) {
+				return nil, nil
+			},
+		},
 		TagsFunc: &ClientTagsFunc{
 			defaultHook: func(context.Context, store.Store, int, string) (string, bool, error) {
 				return "", false, nil
-			},
-		},
-		TextFunc: &ClientTextFunc{
-			defaultHook: func(context.Context, store.Store, int, string, string) ([]byte, error) {
-				return nil, nil
 			},
 		},
 	}
@@ -99,11 +99,11 @@ func NewMockClientFrom(i gitserver.Client) *MockClient {
 		HeadFunc: &ClientHeadFunc{
 			defaultHook: i.Head,
 		},
+		RawContentsFunc: &ClientRawContentsFunc{
+			defaultHook: i.RawContents,
+		},
 		TagsFunc: &ClientTagsFunc{
 			defaultHook: i.Tags,
-		},
-		TextFunc: &ClientTextFunc{
-			defaultHook: i.Text,
 		},
 	}
 }
@@ -679,6 +679,123 @@ func (c ClientHeadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// ClientRawContentsFunc describes the behavior when the RawContents method
+// of the parent MockClient instance is invoked.
+type ClientRawContentsFunc struct {
+	defaultHook func(context.Context, store.Store, int, string, string) ([]byte, error)
+	hooks       []func(context.Context, store.Store, int, string, string) ([]byte, error)
+	history     []ClientRawContentsFuncCall
+	mutex       sync.Mutex
+}
+
+// RawContents delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) RawContents(v0 context.Context, v1 store.Store, v2 int, v3 string, v4 string) ([]byte, error) {
+	r0, r1 := m.RawContentsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.RawContentsFunc.appendCall(ClientRawContentsFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RawContents method
+// of the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientRawContentsFunc) SetDefaultHook(hook func(context.Context, store.Store, int, string, string) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RawContents method of the parent MockClient instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientRawContentsFunc) PushHook(hook func(context.Context, store.Store, int, string, string) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ClientRawContentsFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.Store, int, string, string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ClientRawContentsFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, store.Store, int, string, string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientRawContentsFunc) nextHook() func(context.Context, store.Store, int, string, string) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientRawContentsFunc) appendCall(r0 ClientRawContentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientRawContentsFuncCall objects
+// describing the invocations of this function.
+func (f *ClientRawContentsFunc) History() []ClientRawContentsFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientRawContentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientRawContentsFuncCall is an object that describes an invocation of
+// method RawContents on an instance of MockClient.
+type ClientRawContentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.Store
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientRawContentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientRawContentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // ClientTagsFunc describes the behavior when the Tags method of the parent
 // MockClient instance is invoked.
 type ClientTagsFunc struct {
@@ -794,121 +911,4 @@ func (c ClientTagsFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientTagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// ClientTextFunc describes the behavior when the Text method of the parent
-// MockClient instance is invoked.
-type ClientTextFunc struct {
-	defaultHook func(context.Context, store.Store, int, string, string) ([]byte, error)
-	hooks       []func(context.Context, store.Store, int, string, string) ([]byte, error)
-	history     []ClientTextFuncCall
-	mutex       sync.Mutex
-}
-
-// Text delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) Text(v0 context.Context, v1 store.Store, v2 int, v3 string, v4 string) ([]byte, error) {
-	r0, r1 := m.TextFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.TextFunc.appendCall(ClientTextFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Text method of the
-// parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientTextFunc) SetDefaultHook(hook func(context.Context, store.Store, int, string, string) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Text method of the parent MockClient instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientTextFunc) PushHook(hook func(context.Context, store.Store, int, string, string) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *ClientTextFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int, string, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *ClientTextFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int, string, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientTextFunc) nextHook() func(context.Context, store.Store, int, string, string) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientTextFunc) appendCall(r0 ClientTextFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientTextFuncCall objects describing the
-// invocations of this function.
-func (f *ClientTextFunc) History() []ClientTextFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientTextFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientTextFuncCall is an object that describes an invocation of method
-// Text on an instance of MockClient.
-type ClientTextFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 store.Store
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientTextFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientTextFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
