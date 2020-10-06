@@ -419,10 +419,13 @@ Key dates:
                 ],
                 dryRun: dryRun.changesets,
             })
-            await postMessage(
-                `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
-                slackAnnounceChannel
-            )
+
+            if (!dryRun.changesets) {
+                await postMessage(
+                    `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                    slackAnnounceChannel
+                )
+            }
         },
     },
 ]
