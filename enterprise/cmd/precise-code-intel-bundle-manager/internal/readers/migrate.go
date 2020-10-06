@@ -3,6 +3,7 @@ package readers
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,11 +25,11 @@ var NumMigrateRoutines = 1
 
 func Migrate(bundleDir string, storeCache cache.StoreCache, db *sql.DB) error {
 	if err := migrateVersions(bundleDir, storeCache); err != nil {
-		return err
+		return fmt.Errorf("failed to migrate SQLite bundle versions: %s", err.Error())
 	}
 
 	if err := migrateToPostgres(bundleDir, storeCache, db); err != nil {
-		return err
+		return fmt.Errorf("failed to migrate SQLite bundles to Postgres: %s", err.Error())
 	}
 
 	return nil
