@@ -4,12 +4,18 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
 <RecentSearchesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -22,55 +28,54 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-            >
-              lang:c if(:[eval_match]) 
-              {
-               :[statement_match] 
-              }
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
+              >
+                lang:c if(:[eval_match]) 
+                {
+                 :[statement_match] 
+                }
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-            >
-              lang:java type:diff after:"1 week ago"
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
+              >
+                lang:java type:diff after:"1 week ago"
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java&patternType=literal"
-            >
-              lang:java
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java&patternType=literal"
+              >
+                lang:java
+              </AnchorLink>
+            </small>
           </li>
         </ul>
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recent searches
-      </div>
+      <LoadingPanelView
+        text="Loading recent searches"
+      />
     }
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -109,12 +114,15 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -122,6 +130,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -138,12 +147,15 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -151,22 +163,16 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
           </tbody>
         </table>
-        <div
-          className="text-center"
-        >
-          <button
-            className="btn btn-secondary test-recent-searches-panel-show-more"
-            onClick={[Function]}
-            type="button"
-          >
-            Show more
-          </button>
-        </div>
+        <ShowMoreButton
+          className="test-recent-searches-panel-show-more"
+          onClick={[Function]}
+        />
       </React.Fragment>
     }
     state="populated"
@@ -176,19 +182,19 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
       className="recent-searches-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -228,17 +234,21 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -246,12 +256,13 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -270,17 +281,21 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -288,29 +303,35 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
             </tr>
           </tbody>
         </table>
-        <div
-          className="text-center"
+        <ShowMoreButton
+          className="test-recent-searches-panel-show-more"
+          onClick={[Function]}
         >
-          <button
-            className="btn btn-secondary test-recent-searches-panel-show-more"
-            onClick={[Function]}
-            type="button"
+          <div
+            className="text-center py-3"
           >
-            Show more
-          </button>
-        </div>
+            <button
+              className="btn btn-link test-recent-searches-panel-show-more"
+              onClick={[Function]}
+              type="button"
+            >
+              Show more
+            </button>
+          </div>
+        </ShowMoreButton>
       </div>
     </div>
   </PanelContainer>
@@ -322,12 +343,18 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
   authenticatedUser={null}
   className=""
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -340,55 +367,54 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-            >
-              lang:c if(:[eval_match]) 
-              {
-               :[statement_match] 
-              }
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
+              >
+                lang:c if(:[eval_match]) 
+                {
+                 :[statement_match] 
+                }
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-            >
-              lang:java type:diff after:"1 week ago"
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
+              >
+                lang:java type:diff after:"1 week ago"
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java&patternType=literal"
-            >
-              lang:java
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java&patternType=literal"
+              >
+                lang:java
+              </AnchorLink>
+            </small>
           </li>
         </ul>
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recent searches
-      </div>
+      <LoadingPanelView
+        text="Loading recent searches"
+      />
     }
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -427,12 +453,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -440,6 +469,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -456,12 +486,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -469,6 +502,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -485,12 +519,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -498,6 +535,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -514,12 +552,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -527,6 +568,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -541,19 +583,19 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
       className="recent-searches-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -593,17 +635,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -611,12 +657,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -635,17 +682,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -653,12 +704,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -677,17 +729,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -695,12 +751,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -719,17 +776,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -737,12 +798,13 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -759,12 +821,18 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
 <RecentSearchesPanel
   authenticatedUser={null}
   fetchRecentSearches={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
       <div
-        className="panel-container__empty-container"
+        className="panel-container__empty-container text-muted"
       >
         <small
           className="mb-2"
@@ -777,55 +845,54 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-            >
-              lang:c if(:[eval_match]) 
-              {
-               :[statement_match] 
-              }
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
+              >
+                lang:c if(:[eval_match]) 
+                {
+                 :[statement_match] 
+                }
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-            >
-              lang:java type:diff after:"1 week ago"
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
+              >
+                lang:java type:diff after:"1 week ago"
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java&patternType=literal"
-            >
-              lang:java
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java&patternType=literal"
+              >
+                lang:java
+              </AnchorLink>
+            </small>
           </li>
         </ul>
       </div>
     }
     loadingContent={
-      <div
-        className="d-flex justify-content-center align-items-center panel-container__empty-container"
-      >
-        <div
-          className="icon-inline"
-        >
-          <LoadingSpinner />
-        </div>
-        Loading recent searches
-      </div>
+      <LoadingPanelView
+        text="Loading recent searches"
+      />
     }
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -864,12 +931,15 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -877,6 +947,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -893,12 +964,15 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -906,6 +980,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 />
               </td>
             </tr>
@@ -920,19 +995,19 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
       className="recent-searches-panel panel-container d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom mb-2"
+        className="panel-container__header d-flex border-bottom"
       >
-        <h3
+        <h4
           className="panel-container__header-text"
         >
           Recent searches
-        </h3>
+        </h4>
       </div>
       <div
         className="panel-container__content h-100"
       >
         <table
-          className="recent-searches-panel__results-table"
+          className="recent-searches-panel__results-table mt-2"
         >
           <thead>
             <tr
@@ -972,17 +1047,21 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -990,12 +1069,13 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-08T17:36:52Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>
@@ -1014,17 +1094,21 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -1032,12 +1116,13 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
                   noAbout={true}
+                  strict={true}
                 >
                   <span
                     className="timestamp"
                     data-tooltip="2020-09-04T18:44:39Z"
                   >
-                    in over 14 years
+                    in 15 years
                   </span>
                 </Timestamp>
               </td>

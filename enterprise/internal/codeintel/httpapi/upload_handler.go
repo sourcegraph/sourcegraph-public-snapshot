@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -39,6 +40,8 @@ func NewUploadHandler(store store.Store, bundleManagerClient bundles.BundleManag
 	return http.HandlerFunc(handler.handleEnqueue)
 }
 
+var revhashPattern = regexp.MustCompile(`^[a-z0-9]{40}$`)
+
 // POST /upload
 func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -47,6 +50,11 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	if !hasQuery(r, "uploadId") {
 		repoName := getQuery(r, "repository")
 		commit := getQuery(r, "commit")
+
+		if !revhashPattern.Match([]byte(commit)) {
+			http.Error(w, "Commit must be a 40-character revhash", http.StatusBadRequest)
+			return
+		}
 
 		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
 		if !ok {

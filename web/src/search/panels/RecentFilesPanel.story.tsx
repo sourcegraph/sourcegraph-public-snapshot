@@ -1,9 +1,10 @@
 import React from 'react'
-import { of, NEVER } from 'rxjs'
+import { _fetchRecentFileViews } from './utils'
+import { NEVER, of } from 'rxjs'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { _fetchRecentFileViews } from './utils'
 
 const { add } = storiesOf('web/search/panels/RecentFilesPanel', module)
     .addParameters({
@@ -27,6 +28,7 @@ const emptyRecentFiles = {
 const props = {
     authenticatedUser: null,
     fetchRecentFileViews: _fetchRecentFileViews,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 add('Populated', () => <WebStory>{() => <RecentFilesPanel {...props} />}</WebStory>)

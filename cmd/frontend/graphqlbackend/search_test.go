@@ -930,3 +930,75 @@ func TestRevisionValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestRepoGroupValuesToRegexp(t *testing.T) {
+	groups := map[string][]RepoGroupValue{
+		"go": {
+			RepoPath("github.com/saucegraph/saucegraph"),
+			RepoRegexpPattern(`github\.com/golang/.*`),
+		},
+		"typescript": {
+			RepoPath("github.com/eslint/eslint"),
+		},
+	}
+
+	cases := []struct {
+		LookupGroupNames []string
+		Want             []string
+	}{
+		{
+			LookupGroupNames: []string{"go"},
+			Want: []string{
+				`^github\.com/saucegraph/saucegraph$`,
+				`github\.com/golang/.*`,
+			},
+		},
+		{
+			LookupGroupNames: []string{"go", "typescript"},
+			Want: []string{
+				`^github\.com/saucegraph/saucegraph$`,
+				`github\.com/golang/.*`,
+				`^github\.com/eslint/eslint$`,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run("repogroup values to regexp", func(t *testing.T) {
+			got := repoGroupValuesToRegexp(c.LookupGroupNames, groups)
+			if diff := cmp.Diff(c.Want, got); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func repoRev(revSpec string) *search.RepositoryRevisions {
+	return &search.RepositoryRevisions{
+		Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
+		Revs: []search.RevisionSpecifier{
+			{RevSpec: revSpec},
+		},
+	}
+}
+
+func TestGetRepos(t *testing.T) {
+	in := []*search.RepositoryRevisions{repoRev("HEAD")}
+	rp := (&search.Promise{}).Resolve(in)
+	out, err := getRepos(context.Background(), rp)
+	if err != nil {
+		t.Error(err)
+	}
+	if ok := reflect.DeepEqual(in, out); !ok {
+		t.Errorf("got %+v, expected %+v", out, in)
+	}
+}
+
+func TestGetReposWrongUnderlyingType(t *testing.T) {
+	in := "anything"
+	rp := (&search.Promise{}).Resolve(in)
+	_, err := getRepos(context.Background(), rp)
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+}

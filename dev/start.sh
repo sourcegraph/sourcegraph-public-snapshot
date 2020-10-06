@@ -51,6 +51,14 @@ fi
 
 export PGSSLMODE=disable
 
+# Target single database during development
+export CODEINTEL_PGPORT="${PGPORT}"
+export CODEINTEL_PGHOST="${PGHOST}"
+export CODEINTEL_PGUSER="${PGUSER}"
+export CODEINTEL_PGPASSWORD="${PGPASSWORD}"
+export CODEINTEL_PGDATABASE="${PGDATABASE}"
+export CODEINTEL_PGSSLMODE="${PGSSLMODE}"
+
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
 export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
@@ -166,8 +174,8 @@ build_ts_pid="$!"
 # Now launch the services in $PROCFILE
 export PROCFILE=${PROCFILE:-dev/Procfile}
 
-only=""
-except=""
+only="${SRC_DEV_ONLY:-}"
+except="${SRC_DEV_EXCEPT:-}"
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     -e | --except)

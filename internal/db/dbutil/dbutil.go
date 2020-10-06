@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	// Register driver
@@ -113,6 +114,9 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
+// databases configures the migrations we want based on a database name. This
+// configuration includes the name of the migration version table as well as
+// the raw migration assets to run to migrate the target schema to a new version.
 var databases = map[string]struct {
 	MigrationsTable string
 	Resource        *bindata.AssetSource
@@ -127,6 +131,7 @@ var databases = map[string]struct {
 	},
 }
 
+// DatabaseNames returns the list of database names (configured via `dbutil.databases`)..
 var DatabaseNames = func() []string {
 	var names []string
 	for databaseName := range databases {
@@ -136,6 +141,7 @@ var DatabaseNames = func() []string {
 	return names
 }()
 
+// MigrationTables returns the list of migration table names (configured via `dbutil.databases`).
 var MigrationTables = func() []string {
 	var migrationTables []string
 	for _, db := range databases {
@@ -145,6 +151,9 @@ var MigrationTables = func() []string {
 	return migrationTables
 }()
 
+// NewMigrate returns a new configured migration object for the given database name. This database
+// name must be present in the `dbutil.databases` map. This migration can be subsequently run by
+// invoking `dbutil.DoMigrate`.
 func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
 	schemaData, ok := databases[databaseName]
 	if !ok {
@@ -366,7 +375,10 @@ func (n *NullJSONRawMessage) Scan(value interface{}) error {
 	switch value := value.(type) {
 	case nil:
 	case []byte:
-		n.Raw = value
+		// We make a copy here because the given value could be reused by
+		// the SQL driver
+		n.Raw = make([]byte, len(value))
+		copy(n.Raw, value)
 	default:
 		return fmt.Errorf("value is not []byte: %T", value)
 	}
@@ -379,9 +391,17 @@ func (n *NullJSONRawMessage) Value() (driver.Value, error) {
 	return n.Raw, nil
 }
 
-func PostgresDSN(currentUser string, getenv func(string) string) string {
+func PostgresDSN(prefix, currentUser string, getenv func(string) string) string {
+	if prefix != "" {
+		prefix = fmt.Sprintf("%s_", strings.ToUpper(prefix))
+	}
+
+	env := func(name string) string {
+		return getenv(prefix + name)
+	}
+
 	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
-	if dsn := getenv("PGDATASOURCE"); dsn != "" {
+	if dsn := env("PGDATASOURCE"); dsn != "" {
 		return dsn
 	}
 
@@ -397,29 +417,29 @@ func PostgresDSN(currentUser string, getenv func(string) string) string {
 	if currentUser != "" {
 		username = currentUser
 	}
-	if user := getenv("PGUSER"); user != "" {
+	if user := env("PGUSER"); user != "" {
 		username = user
 	}
 
-	if password := getenv("PGPASSWORD"); password != "" {
+	if password := env("PGPASSWORD"); password != "" {
 		dsn.User = url.UserPassword(username, password)
 	} else {
 		dsn.User = url.User(username)
 	}
 
-	if host := getenv("PGHOST"); host != "" {
+	if host := env("PGHOST"); host != "" {
 		dsn.Host = host
 	}
 
-	if port := getenv("PGPORT"); port != "" {
+	if port := env("PGPORT"); port != "" {
 		dsn.Host += ":" + port
 	}
 
-	if db := getenv("PGDATABASE"); db != "" {
+	if db := env("PGDATABASE"); db != "" {
 		dsn.Path = db
 	}
 
-	if sslmode := getenv("PGSSLMODE"); sslmode != "" {
+	if sslmode := env("PGSSLMODE"); sslmode != "" {
 		qry := dsn.Query()
 		qry.Set("sslmode", sslmode)
 		dsn.RawQuery = qry.Encode()

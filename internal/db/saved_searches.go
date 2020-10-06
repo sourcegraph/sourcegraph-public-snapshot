@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 
-	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-
 	"github.com/keegancsmith/sqlf"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -68,7 +69,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		if err := rows.Scan(
 			&sq.Config.Key,
 			&sq.Config.Description,
-			&sq.Config.Query,
+			&secret.StringValue{S: &sq.Config.Query},
 			&sq.Config.Notify,
 			&sq.Config.NotifySlack,
 			&sq.Config.UserID,
@@ -82,6 +83,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		} else if sq.Config.OrgID != nil {
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
+
 		savedSearches = append(savedSearches, sq)
 	}
 	return savedSearches, nil
@@ -97,7 +99,6 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
 	var sq api.SavedQuerySpecAndConfig
-
 	err := dbconn.Global.QueryRowContext(ctx, `SELECT
 		id,
 		description,
@@ -110,7 +111,7 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 		FROM saved_searches WHERE id=$1`, id).Scan(
 		&sq.Config.Key,
 		&sq.Config.Description,
-		&sq.Config.Query,
+		&secret.StringValue{S: &sq.Config.Query},
 		&sq.Config.Notify,
 		&sq.Config.NotifySlack,
 		&sq.Config.UserID,
@@ -175,7 +176,7 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
-		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+		if err := rows.Scan(&ss.ID, &ss.Description, &secret.StringValue{S: &ss.Query}, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan(2)")
 		}
 		savedSearches = append(savedSearches, &ss)
@@ -210,9 +211,10 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 	}
 	for rows.Next() {
 		var ss types.SavedSearch
-		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+		if err := rows.Scan(&ss.ID, &ss.Description, &secret.StringValue{S: &ss.Query}, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
+
 		savedSearches = append(savedSearches, &ss)
 	}
 	return savedSearches, nil
@@ -257,7 +259,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 			org_id
 		) VALUES($1, $2, $3, $4, $5, $6) RETURNING id`,
 		newSavedSearch.Description,
-		newSavedSearch.Query,
+		secret.StringValue{S: &savedQuery.Query},
 		newSavedSearch.Notify,
 		newSavedSearch.NotifySlack,
 		newSavedSearch.UserID,
@@ -298,7 +300,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"),
 		sqlf.Sprintf("description=%s", savedSearch.Description),
-		sqlf.Sprintf("query=%s", savedSearch.Query),
+		sqlf.Sprintf("query=%s", secret.StringValue{S: &savedSearch.Query}),
 		sqlf.Sprintf("notify_owner=%t", savedSearch.Notify),
 		sqlf.Sprintf("notify_slack=%t", savedSearch.NotifySlack),
 		sqlf.Sprintf("user_id=%v", savedSearch.UserID),

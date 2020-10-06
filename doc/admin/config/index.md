@@ -14,6 +14,7 @@
 - [Set up HTTPS](../http_https_configuration.md)
 - [Use a custom domain](../url.md)
 - [Update Sourcegraph](../updates.md)
+- [Use an external PostgreSQL and Redis database](../external_database.md)
 
 ## Advanced tasks
 

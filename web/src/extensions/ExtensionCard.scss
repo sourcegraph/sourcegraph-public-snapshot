@@ -1,11 +1,6 @@
+@import '../../../shared/src/components/Toggle.scss';
+
 .extension-card {
-    flex: 1;
-    position: relative;
-
-    &__body-title {
-        color: var(--body-color) !important;
-    }
-
     &__icon {
         width: 3rem;
         height: 3rem;
@@ -16,20 +11,58 @@
         background: unset;
     }
 
-    &__toggle {
+    &--enabled {
+        background-color: rgba(36, 110, 51, 0.2);
+    }
+
+    &__shadow {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+
+        box-shadow: 0 0 0 6px rgba(36, 110, 51, 0.7);
+
+        opacity: 0;
+        transition: opacity 500ms;
+    }
+
+    &__shadow--show {
+        opacity: 1;
+    }
+
+    &__link {
+        color: var(--body-color);
+    }
+
+    &__logo {
+        margin-left: calc(0.5rem - 2px); /* stylelint-disable-line */
+        flex: 0 0 auto;
+    }
+
+    &__disabled-feedback {
+        position: absolute;
+        top: -1.625rem;
+        // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width
+        right: 0.5rem + ($toggle-width / 2);
+        transform: translateX(50%);
         z-index: 1;
     }
+}
 
-    &__body:hover {
-        text-decoration: none;
-    }
-    &__body:hover &__body-title,
-    &__body:focus &__body-title {
-        text-decoration: underline;
-        color: var(--link-hover-color);
-    }
+.theme-light {
+    .extension-card {
+        &--enabled {
+            background-color: rgba(199, 233, 205, 0.2);
+        }
 
-    .btn-link {
-        text-decoration: none !important;
+        &__shadow {
+            box-shadow: 0 0 0 6px rgba(199, 233, 205, 0.7);
+        }
+
+        &__link {
+            color: $gray-14;
+        }
     }
 }

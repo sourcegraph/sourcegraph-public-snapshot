@@ -2,11 +2,12 @@ import assert from 'assert'
 import expect from 'expect'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
-import { SearchResult } from '../graphql-operations'
+import { SearchResult, WebGraphQlOperations } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
+import { siteGQLID, siteID } from './jscontext'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -83,7 +84,38 @@ describe('Search', () => {
     afterEach(() => testContext?.dispose())
 
     describe('Interactive search mode', () => {
+        const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({ experimentalFeatures: { splitSearchModes: true } }),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({ experimentalFeatures: { splitSearchModes: true } }),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+        }
+
         test('Search mode component appears', async () => {
+            testContext.overrideGraphQL({ ...viewerSettingsWithSplitSearchModes })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-search-mode-toggle')
             expect(await driver.page.evaluate(() => document.querySelectorAll('.test-search-mode-toggle').length)).toBe(
@@ -94,6 +126,7 @@ describe('Search', () => {
         test('Filter buttons', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 SearchSuggestions: () => ({
                     search: {
                         suggestions: [
@@ -201,6 +234,7 @@ describe('Search', () => {
         test('Updates query when searching from directory page', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 RepositoryRedirect: () => ({
                     repositoryRedirect: {
                         __typename: 'Repository',
@@ -239,6 +273,7 @@ describe('Search', () => {
         test('Filter dropdown and finite-option filter inputs', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -289,6 +324,7 @@ describe('Search', () => {
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...viewerSettingsWithSplitSearchModes,
                 Search: () => searchResultsWithAlert,
             })
 

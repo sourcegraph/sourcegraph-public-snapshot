@@ -14,6 +14,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { WebStory } from '../components/WebStory'
 import { subtypeOf } from '../../../shared/src/util/types'
 import { action } from '@storybook/addon-actions'
+import { cncf } from './cncf'
 
 const { add } = storiesOf('web/RepogroupPage', module).addParameters({
     design: {
@@ -82,7 +83,7 @@ const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
     keyboardShortcuts: [],
     onFiltersInQueryChange: action('onFiltersInQueryChange'),
     setCaseSensitivity: action('setCaseSensitivity'),
-    splitSearchModes: true,
+    splitSearchModes: false,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     toggleSearchMode: action('toggleSearchMode'),
     versionContext: undefined,
@@ -104,6 +105,19 @@ add('Refactor Python 2 to 3', () => (
             <RepogroupPage
                 {...webProps}
                 {...commonProps}
+                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
+            />
+        )}
+    </WebStory>
+))
+
+add('CNCF', () => (
+    <WebStory>
+        {webProps => (
+            <RepogroupPage
+                {...webProps}
+                {...commonProps}
+                repogroupMetadata={cncf}
                 themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
             />
         )}

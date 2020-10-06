@@ -90,6 +90,10 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	repos, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return nil, err
+	}
 
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
@@ -108,7 +112,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.Repos,
+			Unindexed:        repos,
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -119,14 +123,14 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
 		}
 		return &indexedSearchRequest{
-			Unindexed: args.Repos,
+			Unindexed: repos,
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if indexParam == No {
 		return &indexedSearchRequest{
-			Unindexed: args.Repos,
+			Unindexed: repos,
 		}, nil
 	}
 
@@ -153,7 +157,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.Repos,
+			Unindexed:        repos,
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -161,7 +165,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -195,7 +199,10 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(s.Repos()) == 0 {
+	if s.args == nil {
+		return nil, false, nil, nil
+	}
+	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
 		return nil, false, nil, nil
 	}
 
@@ -291,7 +298,10 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
 func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos.repoRevs) == 0 {
+	if args == nil {
+		return nil, false, nil, nil
+	}
+	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
 		return nil, false, nil, nil
 	}
 
@@ -299,7 +309,16 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	// Performance optimization: For queries without repo: filters, it is not
+	// necessary to send the list of all repoBranches to zoekt. Zoekt can simply
+	// search all its shards and we filter the results later against the list of
+	// repos we resolve concurrently.
+	var finalQuery zoektquery.Q
+	if args.Mode == search.ZoektGlobalSearch {
+		finalQuery = zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
+	} else {
+		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	}
 
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
@@ -368,6 +387,38 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit = true
 	}
 
+	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)
+
+	if args.Mode == search.ZoektGlobalSearch {
+		m := map[string]*search.RepositoryRevisions{}
+		for _, file := range resp.Files {
+			m[file.Repository] = nil
+		}
+		repos, err := getRepos(ctx, args.RepoPromise)
+		if err != nil {
+			return nil, false, nil, err
+		}
+
+		for _, repo := range repos {
+			if _, ok := m[string(repo.Repo.Name)]; !ok {
+				continue
+			}
+			m[string(repo.Repo.Name)] = repo
+		}
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+			repoRev := m[file.Repository]
+			if repoRev == nil {
+				return nil, nil, false
+			}
+			return repoRev.Repo, repoRev.RevSpecs(), true
+		}
+	} else {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+			repo, inputRevs := repos.GetRepoInputRev(file)
+			return repo, inputRevs, true
+		}
+	}
+
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
 	for _, file := range resp.Files {
@@ -377,8 +428,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-
-		repo, inputRevs := repos.GetRepoInputRev(&file)
+		repo, inputRevs, ok := getRepoInputRev(&file)
+		if !ok {
+			continue
+		}
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
 			repoResolver = &RepositoryResolver{repo: repo}

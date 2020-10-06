@@ -31,7 +31,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
         }
 
         return (
-            <div className="signin-signup-page sign-up-page">
+            <div className="signin-signup-page sign-up-page web-content">
                 <PageTitle title="Sign up" />
                 <HeroPage
                     icon={SourcegraphIcon}
@@ -42,15 +42,18 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                             ? 'Sign up for Sourcegraph Cloud'
                             : 'Sign up for Sourcegraph Server'
                     }
+                    lessPadding={true}
                     body={
-                        <>
-                            <p>
-                                <Link to={`/sign-in${this.props.location.search}`}>
-                                    Already have an account? Sign in.
-                                </Link>
-                            </p>
+                        <div className="signup-page__container pb-5">
+                            {window.context.sourcegraphDotComMode && (
+                                <p className="pt-1 pb-2">Start searching public code now</p>
+                            )}
                             <SignUpForm {...this.props} doSignUp={this.doSignUp} />
-                        </>
+                            <p className="mt-3">
+                                Already have an account?{' '}
+                                <Link to={`/sign-in${this.props.location.search}`}>Sign in</Link>
+                            </p>
+                        </div>
                     }
                 />
             </div>
