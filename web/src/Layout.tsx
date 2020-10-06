@@ -161,7 +161,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const breadcrumbProps = useBreadcrumbs()
 
-    // TODO description
+    // Control browser extension discoverability animation here.
+    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
     const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
     const onExtensionAlertDismissed = useCallback(() => {
         startExtensionAlertAnimation()

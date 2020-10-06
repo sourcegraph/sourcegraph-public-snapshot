@@ -27,7 +27,11 @@ export interface ExtensionAlertAnimationProps {
 }
 
 /**
+ * React hook to manage the animation that occurs after the user dismisses
+ * `InstallBrowserExtensionAlert`.
  *
+ * This hook is called from the the LCA of `UserNavItem` and the component that triggers
+ * the animation.
  */
 export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
     startExtensionAlertAnimation: () => void

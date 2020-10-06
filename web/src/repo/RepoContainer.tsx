@@ -325,10 +325,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
-    /**
-     * Browser extension discoverability
-     * TODO description
-     */
+    // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
     const [canShowPopover, setCanShowPopover] = useState(() => {
         if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
             return true
