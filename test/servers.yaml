@@ -41,4 +41,10 @@
        cd /sourcegraph
        ./test/regression/test.sh
 
+       pushd web
+       sleep 10
+       yarn run test:regression
+       popd
+
+
 
