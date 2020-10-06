@@ -472,11 +472,11 @@ func substituteConcat(nodes []Node, separator string) []Node {
 		}
 		return false
 	}
-	new := []Node{}
+	newNode := []Node{}
 	for _, node := range nodes {
 		switch v := node.(type) {
 		case Parameter, Pattern:
-			new = append(new, node)
+			newNode = append(newNode, node)
 		case Operator:
 			if v.Kind == Concat {
 				// Merge consecutive patterns.
@@ -502,21 +502,21 @@ func substituteConcat(nodes []Node, separator string) []Node {
 						continue
 					}
 					if merged.Value != "" {
-						new = append(new, merged)
+						newNode = append(newNode, merged)
 						merged = Pattern{}
 					}
-					new = append(new, substituteConcat([]Node{node}, separator)...)
+					newNode = append(newNode, substituteConcat([]Node{node}, separator)...)
 				}
 				if merged.Value != "" {
-					new = append(new, merged)
+					newNode = append(newNode, merged)
 					merged = Pattern{}
 				}
 			} else {
-				new = append(new, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
+				newNode = append(newNode, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
 			}
 		}
 	}
-	return new
+	return newNode
 }
 
 // escapeParens is a heuristic used in the context of regular expression search.
