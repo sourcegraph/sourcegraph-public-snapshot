@@ -75,6 +75,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const onRejection = useCallback(() => {
         localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
         setHasDismissedPopup(true)
+        setShowPopover(false)
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupRejected')
@@ -91,6 +92,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     const onClickInstall = useCallback(() => {
         localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
         setHasDismissedPopup(true)
+        setShowPopover(false)
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupClickedInstall')
