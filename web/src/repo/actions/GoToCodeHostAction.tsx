@@ -107,6 +107,9 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         }
     }, [hijackLink, showPopover])
 
+    // Keep track of latest click type for install extension popover
+    const [wasAuxClick, setWasAuxClick] = useState(false)
+
     const onClick = useCallback(
         (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
             if (showPopover) {
@@ -117,6 +120,24 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
             if (hijackLink) {
                 event.preventDefault()
+                setWasAuxClick(false)
+                setShowPopover(true)
+            }
+        },
+        [hijackLink, showPopover]
+    )
+
+    const onAuxClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (showPopover) {
+                event.preventDefault()
+                setShowPopover(false)
+                return
+            }
+
+            if (hijackLink) {
+                event.preventDefault()
+                setWasAuxClick(true)
                 setShowPopover(true)
             }
         },
@@ -190,7 +211,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 data-tooltip={`View on ${displayName}`}
                 id={TARGET_ID}
                 onClick={onClick}
-                onAuxClick={onClick}
+                onAuxClick={onAuxClick}
             >
                 <Icon className="icon-inline" />
             </a>
@@ -204,6 +225,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 onRejection={onRejection}
                 onClickInstall={onClickInstall}
                 targetID={TARGET_ID}
+                wasAuxClick={wasAuxClick}
             />
         </>
     )
