@@ -164,4 +164,19 @@ AND deleted_at IS NULL
 		}
 		return count
 	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_queued_sync_jobs_total",
+		Help: "The total number of queued sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_queued_sync_jobs_total
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
+`)
+		if err != nil {
+			log15.Error("Failed to get total queued sync jobs", "err", err)
+			return 0
+		}
+		return count
+	})
 }
