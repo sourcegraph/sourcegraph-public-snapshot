@@ -24,6 +24,9 @@ const props = {
     now: () => parseISO('2020-09-16T23:15:01Z'),
     telemetryService: NOOP_TELEMETRY_SERVICE,
     showEnterpriseHomePanels: true,
+    isSourcegraphDotCom: false,
 }
 
-add('Panels', () => <WebStory>{() => <HomePanels {...props} />}</WebStory>)
+add('Panels on Server', () => <WebStory>{() => <HomePanels {...props} />}</WebStory>)
+
+add('Panels on Cloud', () => <WebStory>{() => <HomePanels {...props} isSourcegraphDotCom={true} />}</WebStory>)
