@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
-// IndexableRepository marks a repository for eligibility to be index automatically.
+// IndexableRepository marks a repository for eligibility to be indexed automatically.
 type IndexableRepository struct {
 	RepositoryID        int
 	SearchCount         int

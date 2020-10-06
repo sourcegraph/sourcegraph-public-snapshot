@@ -9,6 +9,8 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
+<!-- START CHANGELOG -->
+
 ## Unreleased
 
 ### Added

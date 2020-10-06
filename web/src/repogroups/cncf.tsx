@@ -11,11 +11,10 @@ export const cncf: RepogroupMetadata = {
             <a href="https://landscape.cncf.io/project=hosted" target="_blank" rel="noopener noreferrer">
                 CNCF projects
             </a>
-            .
         </>
     ),
     examples: [],
-    homepageDescription: 'Search CNCF projects',
+    homepageDescription: 'Search CNCF projects.',
     homepageIcon: 'https://github.com/cncf/artwork/blob/master/other/cncf/icon/color/cncf-icon-color.png?raw=true',
     lowProfile: true,
 }

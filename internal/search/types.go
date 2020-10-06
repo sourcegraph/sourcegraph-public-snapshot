@@ -75,6 +75,7 @@ type GlobalSearchMode int
 const (
 	ZoektGlobalSearch GlobalSearchMode = iota + 1
 	SearcherOnly
+	NoFilePath
 )
 
 type Promise struct {

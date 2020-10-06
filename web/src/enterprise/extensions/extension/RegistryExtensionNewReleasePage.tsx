@@ -27,7 +27,7 @@ import { AuthenticatedUser } from '../../../auth'
 
 const publishExtension = (
     args: Pick<GQL.IPublishExtensionOnExtensionRegistryMutationArguments, 'extensionID' | 'manifest' | 'bundle'>
-): Promise<GQL.IExtensionRegistryCreateExtensionResult> =>
+): Promise<GQL.IExtensionRegistryPublishExtensionResult> =>
     mutateGraphQL(
         gql`
             mutation PublishRegistryExtension($extensionID: String!, $manifest: String!, $bundle: String!) {

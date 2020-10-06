@@ -223,26 +223,33 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	}
 }
 
-func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
-	// If we're only searching a small number of repositories, return more comprehensive results. This is
-	// arbitrary.
-	k := 1
-	switch {
-	case numRepos <= 5:
-		k = 100
-	case numRepos <= 10:
-		k = 10
-	case numRepos <= 25:
-		k = 8
-	case numRepos <= 50:
-		k = 5
-	case numRepos <= 100:
-		k = 3
-	case numRepos <= 500:
-		k = 2
+func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
+	if globalSearch {
+		// for globalSearch, numRepos = 0, but effectively we are searching over all
+		// indexed repos, hence k should be 1
+		k = 1
+	} else {
+		// If we're only searching a small number of repositories, return more
+		// comprehensive results. This is arbitrary.
+		switch {
+		case numRepos <= 5:
+			k = 100
+		case numRepos <= 10:
+			k = 10
+		case numRepos <= 25:
+			k = 8
+		case numRepos <= 50:
+			k = 5
+		case numRepos <= 100:
+			k = 3
+		case numRepos <= 500:
+			k = 2
+		default:
+			k = 1
+		}
 	}
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	if fileMatchLimit > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 	return k
 }
@@ -320,7 +327,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
+	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if deadline, ok := ctx.Deadline(); ok {

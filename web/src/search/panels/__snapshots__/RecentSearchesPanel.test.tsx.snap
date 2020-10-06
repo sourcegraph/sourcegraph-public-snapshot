@@ -28,35 +28,41 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-            >
-              lang:c if(:[eval_match]) 
-              {
-               :[statement_match] 
-              }
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
+              >
+                lang:c if(:[eval_match]) 
+                {
+                 :[statement_match] 
+                }
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-            >
-              lang:java type:diff after:"1 week ago"
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
+              >
+                lang:java type:diff after:"1 week ago"
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java&patternType=literal"
-            >
-              lang:java
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java&patternType=literal"
+              >
+                lang:java
+              </AnchorLink>
+            </small>
           </li>
         </ul>
       </div>
@@ -108,13 +114,15 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -139,13 +147,15 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -224,19 +234,21 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -269,19 +281,21 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -353,35 +367,41 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-            >
-              lang:c if(:[eval_match]) 
-              {
-               :[statement_match] 
-              }
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
+              >
+                lang:c if(:[eval_match]) 
+                {
+                 :[statement_match] 
+                }
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-            >
-              lang:java type:diff after:"1 week ago"
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
+              >
+                lang:java type:diff after:"1 week ago"
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java&patternType=literal"
-            >
-              lang:java
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java&patternType=literal"
+              >
+                lang:java
+              </AnchorLink>
+            </small>
           </li>
         </ul>
       </div>
@@ -433,13 +453,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -464,13 +486,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -495,13 +519,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -526,13 +552,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -607,19 +635,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -652,19 +682,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -697,19 +729,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -742,19 +776,21 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -809,35 +845,41 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
-            >
-              lang:c if(:[eval_match]) 
-              {
-               :[statement_match] 
-              }
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
+              >
+                lang:c if(:[eval_match]) 
+                {
+                 :[statement_match] 
+                }
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
-            >
-              lang:java type:diff after:"1 week ago"
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
+              >
+                lang:java type:diff after:"1 week ago"
+              </AnchorLink>
+            </small>
           </li>
           <li
             className="recent-searches-panel__examples-list-item"
           >
-            <AnchorLink
-              className="text-monospace"
-              to="/search?q=lang:java&patternType=literal"
-            >
-              lang:java
-            </AnchorLink>
+            <small>
+              <AnchorLink
+                className="text-monospace"
+                to="/search?q=lang:java&patternType=literal"
+              >
+                lang:java
+              </AnchorLink>
+            </small>
           </li>
         </ul>
       </div>
@@ -889,13 +931,15 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  test
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
+                  >
+                    test
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -920,13 +964,15 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  r:sourcegraph
-                </AnchorLink>
+                <small>
+                  <AnchorLink
+                    className="text-monospace"
+                    onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
+                  >
+                    r:sourcegraph
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -1001,19 +1047,21 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=test&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=test&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=test&patternType=literal"
                   >
-                    test
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=test&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      test
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"
@@ -1046,19 +1094,21 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </span>
               </td>
               <td>
-                <AnchorLink
-                  className="text-monospace"
-                  onClick={[Function]}
-                  to="/search?q=r:sourcegraph&patternType=literal"
-                >
-                  <a
+                <small>
+                  <AnchorLink
                     className="text-monospace"
-                    href="/search?q=r:sourcegraph&patternType=literal"
                     onClick={[Function]}
+                    to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
-                  </a>
-                </AnchorLink>
+                    <a
+                      className="text-monospace"
+                      href="/search?q=r:sourcegraph&patternType=literal"
+                      onClick={[Function]}
+                    >
+                      r:sourcegraph
+                    </a>
+                  </AnchorLink>
+                </small>
               </td>
               <td
                 className="recent-searches-panel__results-table-date-col"

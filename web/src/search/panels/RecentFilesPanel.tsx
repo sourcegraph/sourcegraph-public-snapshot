@@ -75,9 +75,11 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
                     <dd key={index} className="text-monospace test-recent-files-item">
-                        <Link to={recentFile.url} onClick={logFileClicked}>
-                            {recentFile.repoName} › {recentFile.filePath}
-                        </Link>
+                        <small>
+                            <Link to={recentFile.url} onClick={logFileClicked}>
+                                {recentFile.repoName} › {recentFile.filePath}
+                            </Link>
+                        </small>
                     </dd>
                 ))}
             </dl>

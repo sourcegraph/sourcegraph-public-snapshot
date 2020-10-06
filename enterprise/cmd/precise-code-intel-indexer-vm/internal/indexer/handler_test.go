@@ -31,6 +31,7 @@ func TestHandleWithDocker(t *testing.T) {
 			AuthToken:             "hunter2",
 			FirecrackerNumCPUs:    8,
 			FirecrackerMemory:     "32G",
+			FirecrackerDiskSpace:  "50G",
 		},
 		uuidGenerator: uuid.NewRandom,
 	}
@@ -104,6 +105,7 @@ func TestHandleWithFirecracker(t *testing.T) {
 			FirecrackerImage:      "sourcegraph/ignite-ubuntu:latest",
 			FirecrackerNumCPUs:    8,
 			FirecrackerMemory:     "32G",
+			FirecrackerDiskSpace:  "50G",
 			ImageArchivePath:      "/images",
 		},
 		uuidGenerator: func() (uuid.UUID, error) {
@@ -154,7 +156,7 @@ func TestHandleWithFirecracker(t *testing.T) {
 			"docker pull sourcegraph/lsif-go:latest",
 			"docker save -o /images/image3.tar sourcegraph/lsif-go:latest",
 			// VM setup
-			"ignite run --runtime docker --network-plugin docker-bridge --cpus 8 --memory 32G --copy-files /tmp/testing:/repo-dir --copy-files /images/image0.tar:/image0.tar --copy-files /images/image1.tar:/image1.tar --copy-files /images/image2.tar:/image2.tar --copy-files /images/image3.tar:/image3.tar --ssh --name 97b45daf-53d1-48ad-b992-547469d8e438 sourcegraph/ignite-ubuntu:latest",
+			"ignite run --runtime docker --network-plugin docker-bridge --cpus 8 --memory 32G --size 50G --copy-files /tmp/testing:/repo-dir --copy-files /images/image0.tar:/image0.tar --copy-files /images/image1.tar:/image1.tar --copy-files /images/image2.tar:/image2.tar --copy-files /images/image3.tar:/image3.tar --ssh --name 97b45daf-53d1-48ad-b992-547469d8e438 sourcegraph/ignite-ubuntu:latest",
 			// Docker-inside-VM setup
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /image0.tar",
 			"ignite exec 97b45daf-53d1-48ad-b992-547469d8e438 -- docker load -i /image1.tar",
