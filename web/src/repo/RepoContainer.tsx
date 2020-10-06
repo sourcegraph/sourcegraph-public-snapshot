@@ -350,7 +350,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     const extensionAlertManager = useTimeoutManager()
 
-    /** TODO description */
+    // Increment hovers that the user has seen. Enable browser extension discoverability
+    // features after hover count threshold is reached (e.g. alerts, popovers)
     const onHoverShown = useCallback(() => {
         const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
 

@@ -135,12 +135,12 @@ $code-bg: var(--body-bg);
 @import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
-@import 'bootstrap/scss/popover';
 @import 'bootstrap/scss/transitions';
 @import './global-styles/badge';
 @import './global-styles/card';
 @import './global-styles/dropdown';
 @import './global-styles/modal';
+@import './global-styles/popover';
 @import './global-styles/nav';
 @import './global-styles/type';
 @import '../../shared/src/global-styles/icons';
@@ -227,10 +227,6 @@ body,
     cursor: pointer;
 }
 
-.popover {
-    font-size: inherit;
-}
-
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from
 // Bootstrap's popover CSS.
 .popover-inner {
@@ -285,7 +281,7 @@ body,
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
-@import './repo/actions/InstallExtensionPopover.scss';
+@import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallExtensionAlert.scss';
 @import './components/LoaderInput';
 @import './components/CodeSnippet';

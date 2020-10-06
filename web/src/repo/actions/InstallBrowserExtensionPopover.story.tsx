@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { WebStory } from '../../components/WebStory'
-import { InstallExtensionPopover } from './InstallExtensionPopover'
+import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 
 const onClose = action('onClose')
 const onRejection = action('onRejection')
@@ -13,7 +13,7 @@ const { add } = storiesOf('web/repo/actions', module).addDecorator(story => (
     <div className="container mt-3">{story()}</div>
 ))
 
-add('InstallExtensionPopover (GitHub)', () => (
+add('InstallBrowserExtensionPopover (GitHub)', () => (
     <WebStory>
         {() => {
             const [open, setOpen] = useState(false)
@@ -31,7 +31,7 @@ add('InstallExtensionPopover (GitHub)', () => (
                     >
                         View on GitHub
                     </button>
-                    <InstallExtensionPopover
+                    <InstallBrowserExtensionPopover
                         url=""
                         serviceType="github"
                         onClose={onClose}
