@@ -194,7 +194,7 @@ func TestUpdateIndexConfigurationInRepository(t *testing.T) {
 	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int, commit, file string) (bool, error) {
 		return file == "sourcegraph.yaml", nil
 	})
-	mockGitserverClient.TextFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
+	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
 
 	scheduler := &Scheduler{
 		store:           mockStore,

@@ -316,6 +316,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		indexedTyp = fileRequest
 	}
 
+	// performance: for global searches, we avoid calling newIndexedSearchRequest
+	// because zoekt will anyway have to search all its shards.
 	var indexed *indexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
 		indexed = &indexedSearchRequest{

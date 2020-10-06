@@ -7,16 +7,15 @@ import {
     getIssueByTitle,
     trackingIssueTitle,
     ensurePatchReleaseIssue,
-    createBranchWithChanges,
-    createPR,
-    CreateBranchWithChangesOptions,
+    createChangesets,
 } from './github'
+import * as changelog from './changelog'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
-import commandExists from 'command-exists'
-import { PullsCreateParams } from '@octokit/rest'
 import execa from 'execa'
+import { readFileSync, writeFileSync } from 'fs'
+import * as path from 'path'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -45,6 +44,10 @@ interface Config {
     fiveWorkingDaysBeforeRelease: string
 
     slackAnnounceChannel: string
+
+    dryRun: {
+        changesets: boolean
+    }
 }
 
 type StepID =
@@ -52,6 +55,7 @@ type StepID =
     | 'help'
     | 'tracking-issue:announce'
     | 'tracking-issue:create'
+    | 'changelog:cut'
     | 'release-candidate:create'
     | 'release-candidate:dev-announce'
     | 'qa-start:dev-announce'
@@ -212,6 +216,52 @@ Key dates:
         },
     },
     {
+        id: 'changelog:cut',
+        argNames: ['version', 'changelogFile'],
+        run: async ({ dryRun }, version, changelogFile = 'CHANGELOG.md') => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+
+            await createChangesets({
+                requiredCommands: [],
+                changes: [
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        base: 'main',
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
+                                const changelogPath = path.join(directory, changelogFile)
+                                let changelogContents = readFileSync(changelogPath).toString()
+
+                                // Convert 'unreleased' to a release
+                                const releaseHeader = `## ${parsedVersion.format()}`
+                                const unreleasedHeader = '## Unreleased'
+                                changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
+
+                                // Add a blank changelog template for the next release
+                                changelogContents = changelogContents.replace(
+                                    changelog.divider,
+                                    changelog.releaseTemplate
+                                )
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ], // Changes already done
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                ],
+                dryRun: dryRun.changesets,
+            })
+        },
+    },
+    {
         id: 'release-candidate:create',
         argNames: ['version'],
         run: async (_config, version) => {
@@ -292,7 +342,7 @@ Key dates:
     },
     {
         id: 'release:publish',
-        run: async ({ slackAnnounceChannel }, version) => {
+        run: async ({ slackAnnounceChannel, dryRun }, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
@@ -300,72 +350,62 @@ Key dates:
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
-            const requiredCommands = ['comby', sed, 'find']
-            for (const command of requiredCommands) {
-                try {
-                    await commandExists(command)
-                } catch {
-                    throw new Error(`Required command ${command} does not exist`)
-                }
-            }
-
-            const changes: (PullsCreateParams & CreateBranchWithChangesOptions)[] = [
-                {
-                    owner: 'sourcegraph',
-                    repo: 'sourcegraph',
-                    base: 'main',
-                    head: `publish-${parsedVersion.version}`,
-                    commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
-                        `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
-                        `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${parsedVersion.version}\`/g' doc/index.md`,
-                        parsedVersion.patch === 0
-                            ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${parsedVersion.version}"}} {{$currentReleaseVersion := "${parsedVersion.major}.${parsedVersion.minor}"}}' doc/_resources/templates/document.html`
-                            : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${parsedVersion.version}"' doc/_resources/templates/document.html`,
-                        `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                        `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                    ],
-                    title: `Update latest release to ${parsedVersion.version}`,
-                },
-                {
-                    owner: 'sourcegraph',
-                    repo: 'deploy-sourcegraph-aws',
-                    base: 'master',
-                    head: `publish-${parsedVersion.version}`,
-                    commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
-                        `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
-                    ],
-                    title: `Update latest release to ${parsedVersion.version}`,
-                },
-                {
-                    owner: 'sourcegraph',
-                    repo: 'deploy-sourcegraph-digitalocean',
-                    base: 'master',
-                    head: `publish-${parsedVersion.version}`,
-                    commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
-                        `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
-                    ],
-                    title: `Update latest release to ${parsedVersion.version}`,
-                },
-                {
-                    owner: 'sourcegraph',
-                    repo: 'deploy-sourcegraph-dot-com',
-                    base: 'release',
-                    head: `publish-${parsedVersion.version}`,
-                    commitMessage: `Update latest release to ${parsedVersion.version}`,
-                    bashEditCommands: [
-                        `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
-                    ],
-                    title: `Update latest release to ${parsedVersion.version}`,
-                },
-            ]
-            for (const changeset of changes) {
-                await createBranchWithChanges(changeset)
-                const prURL = await createPR(changeset)
-                console.log(`Pull request created: ${prURL}`)
-            }
+            await createChangesets({
+                requiredCommands: ['comby', sed, 'find'],
+                changes: [
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        base: 'main',
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
+                            `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${parsedVersion.version}\`/g' doc/index.md`,
+                            parsedVersion.patch === 0
+                                ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${parsedVersion.version}"}} {{$currentReleaseVersion := "${parsedVersion.major}.${parsedVersion.minor}"}}' doc/_resources/templates/document.html`
+                                : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${parsedVersion.version}"' doc/_resources/templates/document.html`,
+                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                        ],
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-aws',
+                        base: 'master',
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
+                        ],
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-digitalocean',
+                        base: 'master',
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                        ],
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-dot-com',
+                        base: 'release',
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
+                        ],
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                ],
+                dryRun: dryRun.changesets,
+            })
             await postMessage(
                 `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
                 slackAnnounceChannel

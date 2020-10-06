@@ -34,12 +34,12 @@ type Client interface {
 	// tag is an empty string.
 	Tags(ctx context.Context, store store.Store, repositoryID int, commit string) (string, bool, error)
 
-	// Text returns the contents of a file in a particular commit of a repository.
-	Text(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error)
-
 	// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
 	// commit of a repository.
 	ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+
+	// RawContents returns the contents of a file in a particular commit of a repository.
+	RawContents(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error)
 }
 
 type defaultClient struct{}
@@ -70,10 +70,10 @@ func (c *defaultClient) Tags(ctx context.Context, store store.Store, repositoryI
 	return Tags(ctx, store, repositoryID, commit)
 }
 
-func (c *defaultClient) Text(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error) {
-	return Text(ctx, store, repositoryID, commit, file)
-}
-
 func (c *defaultClient) ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 	return ListFiles(ctx, store, repositoryID, commit, pattern)
+}
+
+func (c *defaultClient) RawContents(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error) {
+	return RawContents(ctx, store, repositoryID, commit, file)
 }

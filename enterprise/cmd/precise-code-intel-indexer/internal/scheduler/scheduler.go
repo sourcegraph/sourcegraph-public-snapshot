@@ -197,9 +197,9 @@ func (s *Scheduler) getIndexJobsFromConfigurationInRepository(ctx context.Contex
 		return nil, false, nil
 	}
 
-	content, err := s.gitserverClient.Text(ctx, s.store, repositoryID, commit, "sourcegraph.yaml")
+	content, err := s.gitserverClient.RawContents(ctx, s.store, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.Text")
+		return nil, false, errors.Wrap(err, "gitserver.RawContents")
 	}
 
 	indexConfiguration, err := index.UnmarshalYAML(content)
