@@ -40,9 +40,15 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModRoot(t *testing.T) {
 
 	expectedIndexJobs := []IndexJob{
 		{
-			DockerSteps: nil,
+			DockerSteps: []DockerStep{
+				{
+					Root:     "",
+					Image:    lsifGoImage,
+					Commands: []string{"go", "mod", "download"},
+				},
+			},
 			Root:        "",
-			Indexer:     "sourcegraph/lsif-go:latest",
+			Indexer:     lsifGoImage,
 			IndexerArgs: []string{"lsif-go", "--no-animation"},
 			Outfile:     "",
 		},
@@ -62,23 +68,41 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 
 	expectedIndexJobs := []IndexJob{
 		{
-			DockerSteps: nil,
+			DockerSteps: []DockerStep{
+				{
+					Root:     "a",
+					Image:    lsifGoImage,
+					Commands: []string{"go", "mod", "download"},
+				},
+			},
 			Root:        "a",
-			Indexer:     "sourcegraph/lsif-go:latest",
+			Indexer:     lsifGoImage,
 			IndexerArgs: []string{"lsif-go", "--no-animation"},
 			Outfile:     "",
 		},
 		{
-			DockerSteps: nil,
+			DockerSteps: []DockerStep{
+				{
+					Root:     "b",
+					Image:    lsifGoImage,
+					Commands: []string{"go", "mod", "download"},
+				},
+			},
 			Root:        "b",
-			Indexer:     "sourcegraph/lsif-go:latest",
+			Indexer:     lsifGoImage,
 			IndexerArgs: []string{"lsif-go", "--no-animation"},
 			Outfile:     "",
 		},
 		{
-			DockerSteps: nil,
+			DockerSteps: []DockerStep{
+				{
+					Root:     "c",
+					Image:    lsifGoImage,
+					Commands: []string{"go", "mod", "download"},
+				},
+			},
 			Root:        "c",
-			Indexer:     "sourcegraph/lsif-go:latest",
+			Indexer:     lsifGoImage,
 			IndexerArgs: []string{"lsif-go", "--no-animation"},
 			Outfile:     "",
 		},
