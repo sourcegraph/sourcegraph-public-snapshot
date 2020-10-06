@@ -302,6 +302,8 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	return u.String(), nil
 }
 
+var _ ChangesetSource = &GitLabSource{}
+
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
@@ -389,6 +391,30 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 		}
 	}
 
+	return nil
+}
+
+// ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
+func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// Title and TargetBranch are required, even though we're not actually
+	// changing them.
+	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+		Title:        mr.Title,
+		TargetBranch: mr.TargetBranch,
+		StateEvent:   gitlab.UpdateMergeRequestStateEventReopen,
+	})
+	if err != nil {
+		return errors.Wrap(err, "reopening GitLab merge request")
+	}
+
+	if err := c.SetMetadata(updated); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
+	}
 	return nil
 }
 

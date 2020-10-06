@@ -65,6 +65,7 @@ export interface SearchResultsListProps
     onExpandAllResultsToggle: () => void
 
     // Saved queries
+    showSavedQueryButton?: boolean
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
     onDidCreateSavedQuery: () => void
@@ -366,13 +367,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         results={results}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
-                                        // This isn't always correct, but the penalty for a false-positive is
-                                        // low.
-                                        hasRepoishField={
-                                            parsedQuery
-                                                ? parsedQuery.includes('repo:') || parsedQuery.includes('repogroup:')
-                                                : false
-                                        }
                                     />
 
                                     {/* Server-provided help message */}

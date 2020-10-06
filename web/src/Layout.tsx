@@ -126,6 +126,7 @@ export interface LayoutProps
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
     globbing: boolean
+    showMultilineSearchConsole: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
@@ -135,10 +136,19 @@ export interface LayoutProps
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
+    const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android', '/stanford']
+    const repogroupPages = [
+        '/refactor-python2-to-3',
+        '/kubernetes',
+        '/golang',
+        '/react-hooks',
+        '/android',
+        '/stanford',
+        '/cncf',
+    ]
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
@@ -153,7 +163,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const authRequired = useObservable(authRequiredObservable)
 
     const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
+        props.location.pathname === '/stats' ||
+        props.location.pathname === '/search/query-builder' ||
+        props.location.pathname === '/search/console'
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -198,6 +210,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             : 'default'
                     }
                     hideNavLinks={false}
+                    minimalNavLinks={minimalNavLinks}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

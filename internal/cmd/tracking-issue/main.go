@@ -8,15 +8,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 
 const (
 	beginWorkMarker        = "<!-- BEGIN WORK -->"
 	endWorkMarker          = "<!-- END WORK -->"
-	labelMarkerRegexp      = "<!-- LABEL: (.*) -->"
 	beginAssigneeMarkerFmt = "<!-- BEGIN ASSIGNEE: %s -->"
 	endAssigneeMarker      = "<!-- END ASSIGNEE -->"
 )
@@ -50,42 +51,60 @@ func run(token, org string, dry, verbose bool) (err error) {
 		))),
 	)
 
-	tracking, err := listTrackingIssues(ctx, cli, fmt.Sprintf("org:%q label:tracking is:open", org))
+	trackingIssues, err := ListTrackingIssues(ctx, cli, org)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "ListTrackingIssues")
 	}
 
-	if len(tracking) == 0 {
-		log.Printf("No tracking issues found. Exiting.")
+	var openTrackingIssues []*Issue
+	for _, trackingIssue := range trackingIssues {
+		if strings.EqualFold(trackingIssue.State, "open") {
+			openTrackingIssues = append(openTrackingIssues, trackingIssue)
+		}
+	}
+
+	if len(openTrackingIssues) == 0 {
+		log.Printf("No open tracking issues found. Exiting.")
 		return nil
 	}
 
-	err = loadTrackingIssues(ctx, cli, org, tracking)
+	issues, pullRequests, err := LoadTrackingIssues(ctx, cli, org, openTrackingIssues)
 	if err != nil {
+		return errors.Wrap(err, "LoadTrackingIssues")
+	}
+
+	if err := Resolve(trackingIssues, issues, pullRequests); err != nil {
 		return err
 	}
 
-	var toUpdate []*Issue
-	for _, issue := range tracking {
-		work := issue.Workloads().Markdown(issue.LabelAllowlist)
-		if updated, err := issue.UpdateWork(work); err != nil {
-			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
-		} else if !updated {
-			log.Printf("%q %s not modified.", issue.Title, issue.URL)
-		} else if !dry {
-			log.Printf("%q %s modified", issue.Title, issue.URL)
-			toUpdate = append(toUpdate, issue.Issue)
+	var updatedTrackingIssues []*Issue
+	for _, trackingIssue := range openTrackingIssues {
+		context := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
+
+		updated, ok := trackingIssue.UpdateBody(RenderTrackingIssue(context))
+		if !ok {
+			log.Printf("failed to patch work section in %q %s", trackingIssue.Title, trackingIssue.URL)
+			continue
+		}
+		if !updated {
+			log.Printf("%q %s not modified.", trackingIssue.Title, trackingIssue.URL)
+			continue
+		}
+
+		if !dry {
+			log.Printf("%q %s modified", trackingIssue.Title, trackingIssue.URL)
+			updatedTrackingIssues = append(updatedTrackingIssues, trackingIssue)
 		} else {
-			log.Printf("%q %s modified, but not updated due to -dry=true.", issue.Title, issue.URL)
+			log.Printf("%q %s modified, but not updated due to -dry=true.", trackingIssue.Title, trackingIssue.URL)
 		}
 
 		if verbose {
-			log.Printf("%q %s body\n%s\n\n", issue.Title, issue.URL, issue.Body)
+			log.Printf("%q %s body\n%s\n\n", trackingIssue.Title, trackingIssue.URL, trackingIssue.Body)
 		}
 	}
 
-	if len(toUpdate) > 0 {
-		return updateIssues(ctx, cli, toUpdate)
+	if err := updateIssues(ctx, cli, updatedTrackingIssues); err != nil {
+		return err
 	}
 
 	return nil

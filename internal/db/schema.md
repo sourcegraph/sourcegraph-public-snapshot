@@ -176,7 +176,6 @@ Referenced by:
  external_state        | text                     | 
  external_review_state | text                     | 
  external_check_state  | text                     | 
- created_by_campaign   | boolean                  | not null default false
  added_to_campaign     | boolean                  | not null default false
  diff_stat_added       | integer                  | 
  diff_stat_changed     | integer                  | 
@@ -249,6 +248,17 @@ Triggers:
  finished_at           | timestamp with time zone | 
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | 
+
+```
+
+# Table "public.codeintel_schema_migrations"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ version | bigint  | not null
+ dirty   | boolean | not null
+Indexes:
+    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
 
 ```
 
@@ -453,6 +463,7 @@ Foreign-key constraints:
  namespace_user_id | integer                  | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
+    "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
 Foreign-key constraints:
@@ -478,6 +489,57 @@ Indexes:
 
 ```
 
+# Table "public.lsif_data_definitions"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+
+```
+
+# Table "public.lsif_data_documents"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ path    | text    | not null
+ data    | bytea   | 
+
+```
+
+# Table "public.lsif_data_metadata"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ dump_id           | integer | not null
+ num_result_chunks | integer | 
+
+```
+
+# Table "public.lsif_data_references"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+
+```
+
+# Table "public.lsif_data_result_chunks"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ idx     | integer | not null
+ data    | bytea   | 
+
+```
+
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |  Type   | Modifiers 
@@ -487,6 +549,21 @@ Indexes:
  update_token  | integer | not null
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+# Table "public.lsif_index_configuration"
+```
+    Column     |  Type   |                               Modifiers                               
+---------------+---------+-----------------------------------------------------------------------
+ id            | bigint  | not null default nextval('lsif_index_configuration_id_seq'::regclass)
+ repository_id | integer | not null
+ data          | bytea   | not null
+Indexes:
+    "lsif_index_configuration_pkey" PRIMARY KEY, btree (id)
+    "lsif_index_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+Foreign-key constraints:
+    "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -522,6 +599,11 @@ Indexes:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
+ docker_steps    | jsonb[]                  | not null
+ root            | text                     | not null
+ indexer         | text                     | not null
+ indexer_args    | text[]                   | not null
+ outfile         | text                     | not null
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -883,6 +965,7 @@ Referenced by:
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()
 
@@ -980,6 +1063,7 @@ Indexes:
  author_user_id | integer                  | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
+    "settings_org_id_idx" btree (org_id)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -1046,8 +1130,8 @@ Foreign-key constraints:
  service_type | text                     | not null
  service_id   | text                     | not null
  account_id   | text                     | not null
- auth_data    | jsonb                    | 
- account_data | jsonb                    | 
+ auth_data    | text                     | 
+ account_data | text                     | 
  created_at   | timestamp with time zone | not null default now()
  updated_at   | timestamp with time zone | not null default now()
  deleted_at   | timestamp with time zone | 

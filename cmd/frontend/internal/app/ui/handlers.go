@@ -204,17 +204,20 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 type handlerFunc func(w http.ResponseWriter, r *http.Request) error
 
-func serveBrandedPageString(titles ...string) handlerFunc {
+func serveBrandedPageString(titles string, description *string) handlerFunc {
 	return serveBasicPage(func(c *Common, r *http.Request) string {
-		return brandNameSubtitle(titles...)
-	})
+		return brandNameSubtitle(titles)
+	}, description)
 }
 
-func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
+func serveBasicPage(title func(c *Common, r *http.Request) string, description *string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)
 		if err != nil {
 			return err
+		}
+		if description != nil {
+			common.Metadata.Description = *description
 		}
 		if common == nil {
 			return nil // request was handled
@@ -233,9 +236,10 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	if envvar.SourcegraphDotComMode() && !actor.FromContext(r.Context()).IsAuthenticated() {
+	if envvar.SourcegraphDotComMode() && !actor.FromContext(r.Context()).IsAuthenticated() && !strings.Contains(r.UserAgent(), "Cookiebot") {
 		// The user is not signed in and tried to access Sourcegraph.com.  Redirect to
 		// about.sourcegraph.com so they see general info page.
+		// Don't redirect Cookiebot so it can scan the website without authentication.
 		http.Redirect(w, r, (&url.URL{Scheme: aboutRedirectScheme, Host: aboutRedirectHost}).String(), http.StatusTemporaryRedirect)
 		return nil
 	}

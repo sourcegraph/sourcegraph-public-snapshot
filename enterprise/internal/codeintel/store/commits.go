@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 // scanUploadMeta scans upload metadata grouped by commit from the return value of `*store.query`.
@@ -12,7 +13,7 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	uploadMeta := map[string][]UploadMeta{}
 	for rows.Next() {
@@ -36,7 +37,7 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 
 // HasRepository determines if there is LSIF data for the given repository.
 func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, error) {
-	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_uploads
 		WHERE state != 'deleted' AND repository_id = %s
@@ -48,7 +49,7 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, erro
 
 // HasCommit determines if the given commit is known for the given repository.
 func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
-	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
 		WHERE repository_id = %s and commit = %s
@@ -60,7 +61,7 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 
 // MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
 func (s *store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error {
-	return s.queryForEffect(
+	return s.Store.Exec(
 		ctx,
 		sqlf.Sprintf(`
 			INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
@@ -74,7 +75,7 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	values := map[int]int{}
 	for rows.Next() {
@@ -93,7 +94,7 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 // DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
 func (s *store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
-	return scanIntPairs(s.query(ctx, sqlf.Sprintf(`SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token`)))
+	return scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(`SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token`)))
 }
 
 // CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the set
@@ -112,7 +113,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
-	uploadMeta, err := scanUploadMeta(tx.query(ctx, sqlf.Sprintf(`
+	uploadMeta, err := scanUploadMeta(tx.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT id, commit, root, indexer
 		FROM lsif_uploads
 		WHERE state = 'completed' AND repository_id = %s
@@ -132,7 +133,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		`DELETE FROM lsif_nearest_uploads WHERE repository_id = %s`,
 		`DELETE FROM lsif_uploads_visible_at_tip WHERE repository_id = %s`,
 	} {
-		if err := tx.queryForEffect(ctx, sqlf.Sprintf(query, repositoryID)); err != nil {
+		if err := tx.Store.Exec(ctx, sqlf.Sprintf(query, repositoryID)); err != nil {
 			return err
 		}
 	}
@@ -159,7 +160,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	// number of placeholders per query so we need to break it into several queries below this
 	// size.
 	for _, batch := range batchQueries(nearestUploadsRows, MaxPostgresNumParameters/4) {
-		if err := tx.queryForEffect(ctx, sqlf.Sprintf(
+		if err := tx.Store.Exec(ctx, sqlf.Sprintf(
 			`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance) VALUES %s`,
 			sqlf.Join(batch, ","),
 		)); err != nil {
@@ -177,7 +178,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	// find references query.
 	if len(visibleAtTipRows) > 0 {
 		for _, batch := range batchQueries(visibleAtTipRows, MaxPostgresNumParameters/2) {
-			if err := tx.queryForEffect(ctx, sqlf.Sprintf(
+			if err := tx.Store.Exec(ctx, sqlf.Sprintf(
 				`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id) VALUES %s`,
 				sqlf.Join(batch, ","),
 			)); err != nil {
@@ -191,7 +192,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		// the dirty token if it wouldn't decrease the value. Dirty repositories are determined
 		// by having a non-equal dirty and update token, and we want the most recent upload
 		// token to win this write.
-		if err := tx.queryForEffect(ctx, sqlf.Sprintf(
+		if err := tx.Store.Exec(ctx, sqlf.Sprintf(
 			`UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s) WHERE repository_id = %s`,
 			dirtyToken,
 			repositoryID,

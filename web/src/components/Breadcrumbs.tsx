@@ -153,7 +153,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
     breadcrumbs,
     location,
 }) => (
-    <nav className="d-flex p-2 flex-shrink-past-contents" aria-label="Breadcrumbs">
+    <nav className="d-flex py-2 container-fluid flex-shrink-past-contents" aria-label="Breadcrumbs">
         {sortBy(breadcrumbs, 'depth')
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)

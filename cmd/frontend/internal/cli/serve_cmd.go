@@ -88,7 +88,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // version of the frontend in our versions table.
 func InitDB() error {
 	if err := dbconn.SetupGlobalConnection(""); err != nil {
-		return err
+		return fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -108,7 +108,7 @@ func InitDB() error {
 			return nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, ""); err != nil {
+		if err := dbconn.MigrateDB(dbconn.Global, "frontend"); err != nil {
 			return err
 		}
 

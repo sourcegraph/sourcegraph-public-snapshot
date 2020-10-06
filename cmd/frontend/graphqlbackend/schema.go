@@ -895,9 +895,24 @@ A description of a Git commit.
 """
 type GitCommitDescription {
     """
-    The Git commit message.
+    The full commit message.
     """
     message: String!
+
+    """
+    The first line of the commit message.
+    """
+    subject: String!
+
+    """
+    The contents of the commit message after the first line.
+    """
+    body: String
+
+    """
+    The Git commit author.
+    """
+    author: Person!
 
     """
     The commit diff (in unified diff format).
@@ -2864,20 +2879,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
 }
 
 """
-A search result that is a diff between two diffable Git objects.
-"""
-type DiffSearchResult {
-    """
-    The diff that matched the search query.
-    """
-    diff: Diff!
-    """
-    The matching portion of the diff.
-    """
-    preview: HighlightedString!
-}
-
-"""
 A string that has highlights (e.g, query matches).
 """
 type HighlightedString {
@@ -3502,12 +3503,7 @@ type ExternalRepository {
 (experimental) A version context. Used to change the set of default repository and revisions searched.
 Note: We do not expose the list of repositories and revisions in the version context. This is intentional. However, if a need arises we can add it in.
 """
-type VersionContext implements Node {
-    """
-    The version context ID is its name.
-    """
-    id: ID!
-
+type VersionContext {
     """
     The name of the version context.
     """
@@ -4562,9 +4558,9 @@ type Person {
     """
     displayName: String!
     """
-    The avatar URL.
+    The avatar URL, if known.
     """
-    avatarURL: String!
+    avatarURL: String
     """
     The corresponding user account for this person, if one exists.
     """
@@ -6547,20 +6543,6 @@ type SiteUsageStages {
 }
 
 """
-A deployment configuration.
-"""
-type DeploymentConfiguration {
-    """
-    The email.
-    """
-    email: String
-    """
-    The site ID.
-    """
-    siteID: String
-}
-
-"""
 Monitoring overview.
 """
 type MonitoringStatistics {
@@ -6886,7 +6868,7 @@ type ExtensionRegistryMutation {
         Force publish even if there are warnings (such as invalid JSON warnings).
         """
         force: Boolean = false
-    ): ExtensionRegistryCreateExtensionResult!
+    ): ExtensionRegistryPublishExtensionResult!
 }
 
 """

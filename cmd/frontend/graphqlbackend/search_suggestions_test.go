@@ -244,8 +244,12 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", args.Repos, want)
+			repos, err := getRepos(context.Background(), args.RepoPromise)
+			if err != nil {
+				t.Error(err)
+			}
+			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/file"),
@@ -283,6 +287,10 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
+		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			return api.CommitID("deadbeef"), nil
+		}
+		defer git.ResetMocks()
 
 		calledReposGetInventory := false
 		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
@@ -346,8 +354,12 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
-			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
-				t.Errorf("got %q, want %q", args.Repos, want)
+			repos, err := getRepos(context.Background(), args.RepoPromise)
+			if err != nil {
+				t.Error(err)
+			}
+			if want := "foo-repo"; len(repos) != 1 || string(repos[0].Repo.Name) != want {
+				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/bar-file"),

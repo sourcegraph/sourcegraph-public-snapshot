@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -149,6 +150,48 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		}{
 			Email: "a@example.com",
 			URL:   "http://example.com/-/verify-email?code=c&email=a%40example.com",
+		},
+	}); !reflect.DeepEqual(*sent, want) {
+		t.Errorf("got %+v, want %+v", *sent, want)
+	}
+}
+
+func TestSendUserEmailOnFieldUpdate(t *testing.T) {
+	var sent *txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sent = &message
+		return nil
+	}
+	db.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (emailCanonicalCase string, verified bool, err error) {
+		return "a@example.com", true, nil
+	}
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{Username: "Foo"}, nil
+	}
+	defer func() {
+		txemail.MockSend = nil
+		db.Mocks.UserEmails.GetPrimaryEmail = nil
+		db.Mocks.Users.GetByID = nil
+	}()
+
+	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), 123, "updated password"); err != nil {
+		t.Fatal(err)
+	}
+	if sent == nil {
+		t.Fatal("want sent != nil")
+	}
+	if want := (txemail.Message{
+		FromName: "",
+		To:       []string{"a@example.com"},
+		Template: updateAccountEmailTemplate,
+		Data: struct {
+			Email    string
+			Change   string
+			Username string
+		}{
+			Email:    "a@example.com",
+			Change:   "updated password",
+			Username: "Foo",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)

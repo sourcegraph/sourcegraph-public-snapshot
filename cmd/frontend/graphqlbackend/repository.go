@@ -32,9 +32,8 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
-	repo    *types.Repo
-	icon    string
-	matches []*searchResultMatchResolver
+	repo *types.Repo
+	icon string
 
 	defaultBranchOnce sync.Once
 	defaultBranch     *GitRefResolver
@@ -258,6 +257,10 @@ func (r *RepositoryResolver) Icon() string {
 	return r.icon
 }
 
+func (r *RepositoryResolver) Rev() string {
+	return r.rev
+}
+
 func (r *RepositoryResolver) Label() (*markdownResolver, error) {
 	var label string
 	if r.rev != "" {
@@ -274,7 +277,7 @@ func (r *RepositoryResolver) Detail() *markdownResolver {
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
-	return r.matches
+	return nil
 }
 
 func (r *RepositoryResolver) ToRepository() (*RepositoryResolver, bool) { return r, true }

@@ -7,19 +7,19 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
+
+const uploadImage = "sourcegraph/src-cli:latest"
+const uploadRoute = "/.internal-code-intel/lsif/upload"
 
 type Handler struct {
 	queueClient   queue.Client
@@ -39,6 +39,7 @@ type HandlerOptions struct {
 	UseFirecracker        bool
 	FirecrackerNumCPUs    int
 	FirecrackerMemory     string
+	FirecrackerDiskSpace  string
 	ImageArchivePath      string
 }
 
@@ -58,136 +59,87 @@ func (h *Handler) Handle(ctx context.Context, _ workerutil.Store, record workeru
 		_ = os.RemoveAll(repoDir)
 	}()
 
+	commandFormatter, err := h.makeCommandFormatter(repoDir)
+	if err != nil {
+		return err
+	}
+
+	images := []string{
+		uploadImage,
+	}
+	for _, dockerStep := range index.DockerSteps {
+		images = append(images, dockerStep.Image)
+	}
+	if index.Indexer != "" {
+		images = append(images, index.Indexer)
+	}
+
+	if err := commandFormatter.Setup(ctx, h.commander, images); err != nil {
+		return err
+	}
+	defer func() {
+		if teardownErr := commandFormatter.Teardown(ctx, h.commander); teardownErr != nil {
+			err = multierror.Append(err, teardownErr)
+		}
+	}()
+
+	for _, dockerStep := range index.DockerSteps {
+		dockerStepCommand := NewCmd(dockerStep.Image, dockerStep.Commands...).SetWd(dockerStep.Root)
+
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(dockerStepCommand)...); err != nil {
+			return errors.Wrap(err, "failed to perform docker step")
+		}
+	}
+
+	if index.Indexer != "" {
+		indexCommand := NewCmd(index.Indexer, index.IndexerArgs...).SetWd(index.Root)
+
+		if err := h.commander.Run(ctx, commandFormatter.FormatCommand(indexCommand)...); err != nil {
+			return errors.Wrap(err, "failed to index repository")
+		}
+	}
+
 	uploadURL, err := makeUploadURL(h.options.FrontendURLFromDocker, h.options.AuthToken)
 	if err != nil {
 		return err
 	}
 
-	name, err := h.uuidGenerator()
-	if err != nil {
-		return err
+	outfile := "dump.lsif"
+	if index.Outfile != "" {
+		outfile = index.Outfile
 	}
 
-	mountPoint := repoDir
-	if h.options.UseFirecracker {
-		mountPoint = "/repo-dir"
-
-		images := map[string]string{
-			"lsif-go": "sourcegraph/lsif-go:latest",
-			"src-cli": "sourcegraph/src-cli:latest",
-		}
-
-		copyfiles := []string{}
-		for _, key := range orderedKeys(images) {
-			copyfiles = append(copyfiles, "--copy-files", fmt.Sprintf("%s:%s", h.tarfilePathOnHost(key), h.tarfilePathInVM(key)))
-		}
-
-		for _, key := range orderedKeys(images) {
-			if _, err := os.Stat(h.tarfilePathOnHost(key)); err == nil {
-				continue
-			} else if !os.IsNotExist(err) {
-				return err
-			}
-
-			if err := h.saveDockerImage(ctx, key, images[key]); err != nil {
-				return err
-			}
-		}
-
-		startCommand := flatten(
-			"ignite", "run",
-			"--runtime", "docker",
-			"--network-plugin", "docker-bridge",
-			"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
-			"--memory", h.options.FirecrackerMemory,
-			"--copy-files", fmt.Sprintf("%s:%s", repoDir, mountPoint),
-			copyfiles,
-			"--ssh",
-			"--name", name.String(),
-			sanitizeImage(h.options.FirecrackerImage),
-		)
-		if err := h.commander.Run(ctx, startCommand...); err != nil {
-			return errors.Wrap(err, "failed to start firecracker vm")
-		}
-		defer func() {
-			stopCommand := flatten(
-				"ignite", "stop",
-				"--runtime", "docker",
-				"--network-plugin", "docker-bridge",
-				name.String(),
-			)
-			if err := h.commander.Run(ctx, stopCommand...); err != nil {
-				log15.Warn("failed to stop firecracker vm", "name", name.String(), "err", err)
-			}
-
-			removeCommand := flatten(
-				"ignite", "rm", "-f",
-				"--runtime", "docker",
-				"--network-plugin", "docker-bridge",
-				name.String(),
-			)
-			if err := h.commander.Run(ctx, removeCommand...); err != nil {
-				log15.Warn("failed to remove firecracker vm", "name", name.String(), "err", err)
-			}
-		}()
-
-		for _, key := range orderedKeys(images) {
-			loadCommand := flatten(
-				"ignite", "exec", name.String(), "--",
-				"docker", "load",
-				"-i", h.tarfilePathInVM(key),
-			)
-			if err := h.commander.Run(ctx, loadCommand...); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to load %s", images[key]))
-			}
-		}
-	}
-
-	indexCommand := flatten(
-		"docker", "run", "--rm",
-		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
-		"--memory", h.options.FirecrackerMemory,
-		"-v", fmt.Sprintf("%s:/data", mountPoint),
-		"-w", "/data",
-		"sourcegraph/lsif-go:latest",
-		"lsif-go",
-		"--no-animation",
-	)
-	if h.options.UseFirecracker {
-		indexCommand = flatten(
-			"ignite", "exec", name.String(), "--",
-			indexCommand,
-		)
-	}
-	if err := h.commander.Run(ctx, indexCommand...); err != nil {
-		return errors.Wrap(err, "failed to index repository")
-	}
-
-	uploadCommand := flatten(
-		"docker", "run", "--rm",
-		"--cpus", strconv.Itoa(h.options.FirecrackerNumCPUs),
-		"--memory", h.options.FirecrackerMemory,
-		"-v", fmt.Sprintf("%s:/data", mountPoint),
-		"-w", "/data",
-		"-e", fmt.Sprintf("SRC_ENDPOINT=%s", uploadURL.String()),
-		"sourcegraph/src-cli:latest",
+	args := flatten(
 		"lsif", "upload",
 		"-no-progress",
 		"-repo", index.RepositoryName,
 		"-commit", index.Commit,
-		"-upload-route", "/.internal-code-intel/lsif/upload",
+		"-upload-route", uploadRoute,
+		"-file", outfile,
 	)
-	if h.options.UseFirecracker {
-		uploadCommand = flatten(
-			"ignite", "exec", name.String(), "--",
-			uploadCommand,
-		)
-	}
-	if err := h.commander.Run(ctx, uploadCommand...); err != nil {
+
+	uploadCommand := NewCmd(uploadImage, args...).
+		SetWd(index.Root).
+		AddEnv("SRC_ENDPOINT", uploadURL.String())
+
+	if err := h.commander.Run(ctx, commandFormatter.FormatCommand(uploadCommand)...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
 	}
 
 	return nil
+}
+
+func (h *Handler) makeCommandFormatter(repoDir string) (CommandFormatter, error) {
+	if !h.options.UseFirecracker {
+		return NewDockerCommandFormatter(repoDir, h.options), nil
+	}
+
+	name, err := h.uuidGenerator()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFirecrackerCommandFormatter(name.String(), repoDir, h.options), nil
 }
 
 // makeTempDir is a wrapper around ioutil.TempDir that can be replaced during unit tests.
@@ -236,35 +188,6 @@ func (h *Handler) fetchRepository(ctx context.Context, repositoryName, commit st
 	return tempDir, nil
 }
 
-func (h *Handler) saveDockerImage(ctx context.Context, key, image string) error {
-	pullCommand := flatten(
-		"docker", "pull",
-		image,
-	)
-	if err := h.commander.Run(ctx, pullCommand...); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to pull %s", image))
-	}
-
-	saveCommand := flatten(
-		"docker", "save",
-		"-o", h.tarfilePathOnHost(key),
-		image,
-	)
-	if err := h.commander.Run(ctx, saveCommand...); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to save %s", image))
-	}
-
-	return nil
-}
-
-func (h *Handler) tarfilePathOnHost(key string) string {
-	return filepath.Join(h.options.ImageArchivePath, fmt.Sprintf("%s.tar", key))
-}
-
-func (h *Handler) tarfilePathInVM(key string) string {
-	return fmt.Sprintf("/%s.tar", key)
-}
-
 func makeCloneURL(baseURL, authToken, repositoryName string) (*url.URL, error) {
 	base, err := url.Parse(baseURL)
 	if err != nil {
@@ -296,12 +219,4 @@ func flatten(values ...interface{}) (union []string) {
 	}
 
 	return union
-}
-
-func orderedKeys(m map[string]string) (keys []string) {
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }

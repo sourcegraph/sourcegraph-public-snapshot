@@ -76,6 +76,7 @@ interface Props
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
+    minimalNavLinks?: boolean
     branding?: typeof window.context.branding
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
@@ -101,6 +102,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     branding,
     location,
     history,
+    minimalNavLinks,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -146,6 +148,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const navLinks = !authRequired && !hideNavLinks && (
         <NavLinks
             showDotComMarketing={showDotComMarketing}
+            minimalNavLinks={minimalNavLinks}
             location={location}
             history={history}
             isLightTheme={isLightTheme}

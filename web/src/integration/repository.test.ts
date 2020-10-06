@@ -352,12 +352,19 @@ describe('Repository', () => {
                 }),
             })
 
+            // Mock `Date.now` to stabilize timestamps
+            await driver.page.evaluateOnNewDocument(() => {
+                // Number of ms between Unix epoch and July 1, 2020 (arbitrary)
+                const mockMs = new Date('July 1, 2020 00:00:00 UTC').getTime()
+                Date.now = () => mockMs
+            })
+
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
             await driver.page.waitForSelector('h2.tree-page__title')
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
-
             await percySnapshot(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(

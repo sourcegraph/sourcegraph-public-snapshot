@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
-// IndexableRepository marks a repository for eligibility to be index automatically.
+// IndexableRepository marks a repository for eligibility to be indexed automatically.
 type IndexableRepository struct {
 	RepositoryID        int
 	SearchCount         int
@@ -42,7 +43,7 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	var indexableRepositories []IndexableRepository
 	for rows.Next() {
@@ -103,7 +104,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf("true"))
 	}
 
-	return scanIndexableRepositories(s.query(ctx, sqlf.Sprintf(`
+	return scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			repository_id,
 			search_count,
@@ -120,7 +121,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 // already marked as indexable, a new record will be created.
 func (s *store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error {
 	// Ensure that record exists before we attempt to update it
-	err := s.queryForEffect(ctx, sqlf.Sprintf(`
+	err := s.Store.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
 		VALUES (%s)
 		ON CONFLICT DO NOTHING
@@ -148,7 +149,7 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 		return nil
 	}
 
-	return s.queryForEffect(ctx, sqlf.Sprintf(`
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexable_repositories
 		SET %s, last_updated_at = %s
 		WHERE repository_id = %s
@@ -158,7 +159,7 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 // ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
 // since lastUpdatedBefore.
 func (s *store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error {
-	return s.queryForEffect(ctx, sqlf.Sprintf(
+	return s.Store.Exec(ctx, sqlf.Sprintf(
 		`
 		UPDATE lsif_indexable_repositories
 		SET search_count = 0, precise_count = 0

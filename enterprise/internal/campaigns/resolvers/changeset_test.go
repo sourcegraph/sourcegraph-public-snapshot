@@ -66,7 +66,6 @@ func TestChangesetResolver(t *testing.T) {
 		externalServiceType: "github",
 		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		reconcilerState:     campaigns.ReconcilerStateCompleted,
-		createdByCampaign:   false,
 	})
 	erroredSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
 		user:          userID,
@@ -86,7 +85,6 @@ func TestChangesetResolver(t *testing.T) {
 		externalServiceType: "github",
 		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		reconcilerState:     campaigns.ReconcilerStateErrored,
-		createdByCampaign:   false,
 		failureMessage:      "very bad error",
 	})
 
@@ -102,7 +100,6 @@ func TestChangesetResolver(t *testing.T) {
 		externalReviewState: campaigns.ChangesetReviewStateChangesRequested,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
 		reconcilerState:     campaigns.ReconcilerStateCompleted,
-		createdByCampaign:   false,
 		metadata: &github.PullRequest{
 			ID:          "12345",
 			Title:       "GitHub PR Title",

@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../migrations/frontend"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../migrations"
 
 hash migrate 2>/dev/null || {
   if [[ $(uname) == "Darwin" ]]; then
@@ -13,8 +13,8 @@ hash migrate 2>/dev/null || {
   fi
 }
 
-if [ -z "$1" ]; then
-  echo "USAGE: $0 <tag>"
+if [ -z "$2" ]; then
+  echo "USAGE: $0 <db_name> <tag>"
   echo ""
   echo "This tool will squash all migrations up to and including the last migration defined"
   echo "in the given tag branch. The input to this tool should be three minor releases before"
@@ -24,8 +24,24 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+if [ ! -d "$1" ]; then
+  echo "Unknown database '$1'"
+  exit 1
+fi
+pushd "$1" >/dev/null || exit 1
+
+migrations_table='schema_migrations'
+if [ "$1" != "frontend" ]; then
+  migrations_table="$1_${migrations_table}"
+fi
+
 target='./'
-if [ -z "$(git ls-tree -r --name-only "$1" "./")" ]; then
+if [ -z "$(git ls-tree -r --name-only "$2" "./")" ]; then
+  if [ "$1" != "frontend" ]; then
+    echo "database does not exist at this version - nothing to squash"
+    exit 0
+  fi
+
   # If we're squashing migrations no a tagged version where the
   # migrations/frontend directory does not exist, scan the files
   # in the parent directory where they were located previously.
@@ -33,12 +49,14 @@ if [ -z "$(git ls-tree -r --name-only "$1" "./")" ]; then
 fi
 
 # Find the last migration defined in the given tag
-VERSION=$(git ls-tree -r --name-only "$1" "${target}" |
-  cut -d'_' -f1 |    # Keep only prefix
-  cut -d'/' -f2 |    # Remove any leading ../
-  grep -v "[^0-9]" | # Remove non-numeric remainders
-  sort |             # Sort by id prefix
-  tail -n1)          # Get latest migration
+VERSION=$(
+  git ls-tree -r --name-only "$2" "${target}" |
+    cut -d'_' -f1 |    # Keep only prefix
+    cut -d'/' -f2 |    # Remove any leading ../
+    grep -v "[^0-9]" | # Remove non-numeric remainders
+    sort |             # Sort by id prefix
+    tail -n1           # Get latest migration
+)
 
 if [ -z "${VERSION}" ]; then
   echo "failed to retrieve migration version"
@@ -68,16 +86,16 @@ if [ "${SERVER_VERSION}" != 9.6 ]; then
 fi
 
 # First, apply migrations up to the version we want to squash
-migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable" -path . goto "${VERSION}"
+migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable&x-migrations-table=${migrations_table}" -path . goto "${VERSION}"
 
 # Dump the database into a temporary file that we need to post-process
-pg_dump -s --no-owner --no-comments --clean --if-exists -f tmp_squashed.sql
+pg_dump --schema-only --no-owner --no-comments --exclude-table='*schema_migrations' -f tmp_squashed.sql
 
 # Remove settings header from pg_dump output
 sed -i '' -e 's/^SET .*$//g' tmp_squashed.sql
 sed -i '' -e 's/^SELECT pg_catalog.set_config.*$//g' tmp_squashed.sql
 
-# Do not drop extensions if they already exists. This causes some
+# Do not drop extensions if they already exist. This causes some
 # weird problems with the back-compat tests as the extensions are
 # not dropped in the correct order to honor dependencies.
 sed -i '' -e 's/^DROP EXTENSION .*$//g' tmp_squashed.sql
@@ -113,15 +131,11 @@ cat tmp_squashed.sql >>"./${VERSION}_squashed_migrations.up.sql"
 printf "\nCOMMIT;\n" >>"./${VERSION}_squashed_migrations.up.sql"
 rm tmp_squashed.sql
 
-# Create down migration. This needs to drop everything, so we just drop the
-# schema and recreate it. This happens to also drop the schema_migrations
-# table, which blows up the migrate tool if we don't put it back.
-
 cat >"./${VERSION}_squashed_migrations.down.sql" <<EOL
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 
-CREATE TABLE IF NOT EXISTS schema_migrations (
+CREATE TABLE IF NOT EXISTS ${migrations_table} (
     version bigint NOT NULL PRIMARY KEY,
     dirty boolean NOT NULL
 );

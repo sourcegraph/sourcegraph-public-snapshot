@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -139,6 +140,8 @@ type StoreMetrics struct {
 	ListExternalServices   *metrics.OperationMetrics
 	SetClonedRepos         *metrics.OperationMetrics
 	CountNotClonedRepos    *metrics.OperationMetrics
+	CountUserAddedRepos    *metrics.OperationMetrics
+	EnqueueSyncJobs        *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -335,6 +338,20 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when counting not-cloned repos",
 			}, []string{}),
 		},
+		CountUserAddedRepos: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_count_user_added_repos",
+				Help: "Time spent counting the number of user added repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_count_user_added_repos_total",
+				Help: "Total number of count user added repo calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_count_user_added_repos_errors_total",
+				Help: "Total number of errors when counting user added repos",
+			}, []string{}),
+		},
 	}
 }
 
@@ -367,6 +384,17 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 		txtrace: tr,
 		txctx:   ctx,
 	}, nil
+}
+
+// With calls the With method of the underlying store if it exists,
+// otherwise it returns the store unchanged.
+// It implements the WithStore interface.
+func (o *ObservedStore) With(db dbutil.DB) Store {
+	if ws, ok := o.store.(WithStore); ok {
+		return ws.With(db)
+	}
+
+	return o.store
 }
 
 // Done calls into the inner Store Done method.
@@ -611,6 +639,36 @@ func (o *ObservedStore) CountNotClonedRepos(ctx context.Context) (count uint64, 
 	}(time.Now())
 
 	return o.store.CountNotClonedRepos(ctx)
+}
+
+// CountUserAddedRepos calls into the inner Store and registers the observed results.
+func (o *ObservedStore) CountUserAddedRepos(ctx context.Context) (count uint64, err error) {
+	tr, ctx := o.trace(ctx, "Store.CountUserAddedRepos")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		o.metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
+		logging.Log(o.log, "store.count-user-added-repos", &err, "count", count)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.CountUserAddedRepos(ctx)
+}
+
+func (o *ObservedStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
+	tr, ctx := o.trace(ctx, "Store.EnqueueSyncJobs")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		o.metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.EnqueueSyncJobs(ctx, ignoreSiteAdmin)
 }
 
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {

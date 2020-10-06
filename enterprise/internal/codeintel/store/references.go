@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 // scanPackageReferences scans a slice of package references from the return value of `*store.query`.
@@ -13,7 +14,7 @@ func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []types.PackageRef
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	var references []types.PackageReference
 	for rows.Next() {
@@ -49,7 +50,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		sqlf.Sprintf("r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit = %s)", repositoryID, commit),
 	}
 
-	totalCount, _, err := scanFirstInt(tx.query(
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_references r WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
@@ -58,7 +59,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 	}
 
 	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
-		return scanPackageReferences(tx.query(
+		return scanPackageReferences(tx.Store.Query(
 			ctx,
 			sqlf.Sprintf(`
 				SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
@@ -88,7 +89,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)"),
 	}
 
-	totalCount, _, err := scanFirstInt(tx.query(
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
 			SELECT COUNT(*) FROM lsif_references r
@@ -101,7 +102,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 	}
 
 	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
-		return scanPackageReferences(tx.query(ctx, sqlf.Sprintf(`
+		return scanPackageReferences(tx.Store.Query(ctx, sqlf.Sprintf(`
 			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
 			LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
 			WHERE %s ORDER BY d.repository_id, d.root LIMIT %d OFFSET %d
@@ -122,7 +123,7 @@ func (s *store) UpdatePackageReferences(ctx context.Context, references []types.
 		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s, %s)", r.DumpID, r.Scheme, r.Name, r.Version, r.Filter))
 	}
 
-	return s.queryForEffect(ctx, sqlf.Sprintf(`
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
 		VALUES %s
 	`, sqlf.Join(values, ",")))

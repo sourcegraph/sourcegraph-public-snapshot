@@ -75,6 +75,13 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	if err := backend.UserEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
+			log15.Warn("Failed to send email to inform user of email addition", "error", err)
+		}
+	}
+
 	return &EmptyResponse{}, nil
 }
 
@@ -99,6 +106,12 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset tokens that may have been sent to that email.
 	if err := db.Users.DeletePasswordResetCode(ctx, userID); err != nil {
 		return nil, err
+	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
+			log15.Warn("Failed to send email to inform user of email removal", "error", err)
+		}
 	}
 
 	return &EmptyResponse{}, nil

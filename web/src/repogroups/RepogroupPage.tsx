@@ -96,80 +96,98 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 text={props.repogroupMetadata.title}
             />
             <div className="repogroup-page__subheading">
-                <span className="text-monospace">
-                    <span className="search-keyword">repogroup:</span>
-                    {props.repogroupMetadata.name}
-                </span>
+                {props.repogroupMetadata.lowProfile ? (
+                    <>{props.repogroupMetadata.description}</>
+                ) : (
+                    <span className="text-monospace">
+                        <span className="search-keyword">repogroup:</span>
+                        {props.repogroupMetadata.name}
+                    </span>
+                )}
             </div>
             <div className="repogroup-page__container">
-                <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
+                {props.repogroupMetadata.lowProfile ? (
+                    <SearchPageInput
+                        {...props}
+                        hiddenQueryPrefix={repogroupQuery}
+                        source="repogroupPage"
+                        hideVersionContexts={true}
+                        hideQueryBuilder={true}
+                    />
+                ) : (
+                    <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
+                )}
             </div>
-            <div className="row">
-                <div className="repogroup-page__column col-xs-12 col-lg-7">
-                    <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
-                        {props.repogroupMetadata.description}
-                    </p>
+            {!props.repogroupMetadata.lowProfile && (
+                <div className="row">
+                    <div className="repogroup-page__column col-xs-12 col-lg-7">
+                        <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
+                            {props.repogroupMetadata.description}
+                        </p>
 
-                    <h2>Search examples</h2>
-                    {props.repogroupMetadata.examples.map(example => (
-                        <div className="mt-3" key={example.title}>
-                            <h3 className="mb-3">{example.title}</h3>
-                            <p>{example.description}</p>
-                            <div className="d-flex mb-4">
-                                <small className="repogroup-page__example-bar form-control text-monospace ">
-                                    <span className="search-keyword">repogroup:</span>
-                                    {props.repogroupMetadata.name} {example.exampleQuery}
-                                </small>
-                                <div className="d-flex">
-                                    <button
-                                        className="btn btn-primary btn-sm search-button__btn test-search-button btn-secondary"
-                                        type="button"
-                                        aria-label="Search"
-                                        onClick={onSubmitExample(
-                                            `${repogroupQuery} ${example.rawQuery}`,
-                                            example.patternType
-                                        )}
-                                    >
-                                        Search
-                                    </button>
+                        <h2>Search examples</h2>
+                        {props.repogroupMetadata.examples.map(example => (
+                            <div className="mt-3" key={example.title}>
+                                <h3 className="mb-3">{example.title}</h3>
+                                <p>{example.description}</p>
+                                <div className="d-flex mb-4">
+                                    <small className="repogroup-page__example-bar form-control text-monospace ">
+                                        <span className="search-keyword">repogroup:</span>
+                                        {props.repogroupMetadata.name} {example.exampleQuery}
+                                    </small>
+                                    <div className="d-flex">
+                                        <button
+                                            className="btn btn-primary btn-sm search-button__btn test-search-button btn-secondary"
+                                            type="button"
+                                            aria-label="Search"
+                                            onClick={onSubmitExample(
+                                                `${repogroupQuery} ${example.rawQuery}`,
+                                                example.patternType
+                                            )}
+                                        >
+                                            Search
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="repogroup-page__column col-xs-12 col-lg-5">
-                    <div className="order-2-lg order-1-xs">
-                        <div className="repogroup-page__repo-card card">
-                            <h2 className="web-content__title">
-                                <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
-                                Repositories
-                            </h2>
-                            <p>
-                                Using the syntax{' '}
-                                <code>
-                                    <span className="search-keyword ">repogroup:</span>
-                                    {props.repogroupMetadata.name}
-                                </code>{' '}
-                                in a query will search these repositories:
-                            </p>
-                            <div className="repogroup-page__repo-list row">
-                                <div className="col-lg-6">
-                                    {repogroupRepoList?.slice(0, Math.ceil(repogroupRepoList.length / 2)).map(repo => (
-                                        <RepoLink key={repo} repo={repo} />
-                                    ))}
-                                </div>
-                                <div className="col-lg-6">
-                                    {repogroupRepoList
-                                        ?.slice(Math.ceil(repogroupRepoList.length / 2), repogroupRepoList.length)
-                                        .map(repo => (
-                                            <RepoLink key={repo} repo={repo} />
-                                        ))}
+                        ))}
+                    </div>
+                    <div className="repogroup-page__column col-xs-12 col-lg-5">
+                        <div className="order-2-lg order-1-xs">
+                            <div className="repogroup-page__repo-card card">
+                                <h2 className="web-content__title">
+                                    <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
+                                    Repositories
+                                </h2>
+                                <p>
+                                    Using the syntax{' '}
+                                    <code>
+                                        <span className="search-keyword ">repogroup:</span>
+                                        {props.repogroupMetadata.name}
+                                    </code>{' '}
+                                    in a query will search these repositories:
+                                </p>
+                                <div className="repogroup-page__repo-list row">
+                                    <div className="col-lg-6">
+                                        {repogroupRepoList
+                                            ?.slice(0, Math.ceil(repogroupRepoList.length / 2))
+                                            .map(repo => (
+                                                <RepoLink key={repo} repo={repo} />
+                                            ))}
+                                    </div>
+                                    <div className="col-lg-6">
+                                        {repogroupRepoList
+                                            ?.slice(Math.ceil(repogroupRepoList.length / 2), repogroupRepoList.length)
+                                            .map(repo => (
+                                                <RepoLink key={repo} repo={repo} />
+                                            ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

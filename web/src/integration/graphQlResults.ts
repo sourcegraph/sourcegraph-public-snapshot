@@ -113,6 +113,21 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             },
         },
     }),
+    EventLogsData: () => ({
+        node: {
+            eventLogs: {
+                nodes: [],
+                totalCount: 0,
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: null,
+                },
+            },
+        },
+    }),
+    savedSearches: () => ({
+        savedSearches: [],
+    }),
     logEvent: () => ({
         logEvent: {
             alwaysNil: null,
