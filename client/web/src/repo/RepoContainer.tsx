@@ -324,7 +324,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         return false
     })
 
-    /** TODO description */
+    // Increment hovers that the user has seen. Enable browser extension discoverability
+    // features after hover count threshold is reached (e.g. alerts, popovers)
     const onHoverShown = useCallback(() => {
         const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
 
@@ -334,7 +335,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
         if (count === HOVER_THRESHOLD) {
             setCanShowPopover(true)
-            // TODO(tj): Trigger "Install extension" alert here
         }
 
         localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
