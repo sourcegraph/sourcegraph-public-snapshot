@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 )
 
 // updateIssues will update the body of each of the given issues. Each issue update is performed
@@ -30,7 +32,7 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 
 			for issue := range ch {
 				if err := updateIssue(ctx, cli, issue); err != nil {
-					errs <- err
+					errs <- errors.Wrap(err, fmt.Sprintf("updateIssue(%q)", issue.Title))
 				}
 			}
 		}()

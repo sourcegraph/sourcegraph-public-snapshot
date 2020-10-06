@@ -30,8 +30,20 @@
         }
     }
 
+    &__loading-container {
+        background: none !important;
+    }
+
     &__content {
         overflow-y: auto;
         overflow-x: hidden;
+    }
+
+    &__footer {
+        background: rgba($color-bg-2, 0.4);
+
+        .theme-light & {
+            background: rgba($color-light-bg-2, 0.4);
+        }
     }
 }

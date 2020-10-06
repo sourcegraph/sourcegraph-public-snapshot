@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -99,6 +100,22 @@ func (l *eventLogs) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*t
 		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+}
+
+// LatestPing returns the most recently recorded ping event.
+func (l *eventLogs) LatestPing(ctx context.Context) (*types.Event, error) {
+	if Mocks.EventLogs.LatestPing != nil {
+		return Mocks.EventLogs.LatestPing(ctx)
+	}
+
+	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE name='ping' ORDER BY id DESC LIMIT 1`))
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, sql.ErrNoRows
+	}
+	return rows[0], err
 }
 
 // CountByUserID gets a count of events logged by a given user.

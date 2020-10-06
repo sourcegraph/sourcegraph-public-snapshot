@@ -1,6 +1,6 @@
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { RouteDescriptor } from '../util/contributions'
+import { NavItemWithIconDescriptor, RouteDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
 import { ThemeProps } from '../../../shared/src/theme'
 import { AuthenticatedUser } from '../auth'
@@ -18,3 +18,8 @@ export interface NamespaceAreaContext
 }
 
 export interface NamespaceAreaRoute extends RouteDescriptor<NamespaceAreaContext> {}
+
+export interface NamespaceAreaNavItem
+    extends NavItemWithIconDescriptor<{
+        isSourcegraphDotCom: boolean
+    }> {}
