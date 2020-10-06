@@ -6868,7 +6868,7 @@ type ExtensionRegistryMutation {
         Force publish even if there are warnings (such as invalid JSON warnings).
         """
         force: Boolean = false
-    ): ExtensionRegistryCreateExtensionResult!
+    ): ExtensionRegistryPublishExtensionResult!
 }
 
 """
