@@ -1,6 +1,6 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } from 'reactstrap'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
@@ -82,8 +82,8 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
     }, [onThemePreferenceChange, themePreference])
 
-    // needed for tooltip
-    const userAvatarReference = useRef<HTMLElement | null>(null)
+    // Target ID for tooltip
+    const targetID = 'target-user-avatar'
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0">
@@ -92,33 +92,22 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
                 nav={true}
             >
-                {props.authenticatedUser.avatarURL ? (
-                    <UserAvatar
-                        user={props.authenticatedUser}
-                        size={48}
-                        className={classNames('icon-inline', {
-                            'user-nav-item__avatar-background': isExtensionAlertAnimating,
-                        })}
-                        innerRef={userAvatarReference}
-                    />
-                ) : (
-                    <strong
-                        ref={userAvatarReference}
+                <div className="position-relative">
+                    <div
                         className={classNames({
                             'user-nav-item__avatar-background': isExtensionAlertAnimating,
                         })}
-                    >
-                        {props.authenticatedUser.username}
-                    </strong>
-                )}
+                    />
+                    <UserAvatar user={props.authenticatedUser} size={48} className="icon-inline" targetID={targetID} />
+                </div>
                 {isExtensionAlertAnimating && (
                     <Tooltip
-                        target={userAvatarReference}
+                        target={targetID}
                         placement="bottom"
                         isOpen={true}
                         modifiers={{
                             offset: {
-                                offset: '0 4',
+                                offset: '0, 10px',
                             },
                         }}
                         className="user-nav-item__tooltip"

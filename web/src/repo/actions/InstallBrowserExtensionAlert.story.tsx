@@ -2,7 +2,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
-import { InstallExtensionAlert } from './InstallExtensionAlert'
+import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 
 const onAlertDismissed = action('onAlertDismissed')
 
@@ -10,10 +10,10 @@ const { add } = storiesOf('web/repo/actions', module).addDecorator(story => (
     <div className="container mt-3">{story()}</div>
 ))
 
-add('InstallExtensionAlert (GitHub)', () => (
+add('InstallBrowserExtensionAlert (GitHub)', () => (
     <WebStory>
         {() => (
-            <InstallExtensionAlert
+            <InstallBrowserExtensionAlert
                 onAlertDismissed={onAlertDismissed}
                 externalURLs={[
                     {

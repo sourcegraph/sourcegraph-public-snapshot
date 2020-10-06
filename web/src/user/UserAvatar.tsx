@@ -1,4 +1,6 @@
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import React from 'react'
+import classNames from 'classnames'
 
 interface Props {
     size?: number
@@ -7,13 +9,21 @@ interface Props {
     }
     className?: string
     ['data-tooltip']?: string
-    innerRef?: React.MutableRefObject<HTMLElement | null>
+    targetID?: string
 }
 
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, className, innerRef, ...otherProps }) => {
+export const UserAvatar: React.FunctionComponent<Props> = ({
+    size,
+    user,
+    className,
+    targetID,
+    // Exclude children since neither <img /> nor mdi-react icons receive them
+    children,
+    ...otherProps
+}) => {
     if (user?.avatarURL) {
         let url = user.avatarURL
         try {
@@ -25,14 +35,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, classNa
         } catch {
             // noop
         }
-        return (
-            <img
-                className={`user-avatar ${className || ''}`}
-                src={url}
-                ref={innerRef as React.MutableRefObject<HTMLImageElement>}
-                {...otherProps}
-            />
-        )
+        return <img className={classNames('user-avatar', className)} src={url} id={targetID} {...otherProps} />
     }
-    return null
+    return <AccountCircleIcon className={classNames('user-avatar', className)} id={targetID} {...otherProps} />
 }

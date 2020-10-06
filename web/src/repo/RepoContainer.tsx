@@ -56,8 +56,7 @@ import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
-import { InstallExtensionAlert } from './actions/InstallExtensionAlert'
-import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
+import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -348,8 +347,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     const { onExtensionAlertDismissed } = props
 
-    const extensionAlertManager = useTimeoutManager()
-
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
     const onHoverShown = useCallback(() => {
@@ -361,12 +358,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
         if (count === HOVER_THRESHOLD) {
             setCanShowPopover(true)
-            // Avoid immediate layout shift on the triggering hover
-            extensionAlertManager.setTimeout(() => setShowExtensionAlert(true), 800)
+            // Only show alert on first render to avoid layout shift on the triggering hover
         }
 
         localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
-    }, [extensionAlertManager])
+    }, [])
 
     // DEBUG
     useEffect(() => {
@@ -421,7 +417,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
             {showExtensionAlert && (
-                <InstallExtensionAlert onAlertDismissed={onAlertDismissed} externalURLs={repoOrError.externalURLs} />
+                <InstallBrowserExtensionAlert
+                    onAlertDismissed={onAlertDismissed}
+                    externalURLs={repoOrError.externalURLs}
+                />
             )}
             <RepoHeader
                 {...props}

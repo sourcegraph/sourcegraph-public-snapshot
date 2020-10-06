@@ -191,6 +191,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 data-tooltip={`View on ${displayName}`}
                 id={TARGET_ID}
                 onClick={onClick}
+                onAuxClick={onClick}
             >
                 <Icon className="icon-inline" />
             </a>

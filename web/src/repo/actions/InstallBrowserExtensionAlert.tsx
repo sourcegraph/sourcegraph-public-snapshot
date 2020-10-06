@@ -4,15 +4,12 @@ import ExportIcon from 'mdi-react/ExportIcon'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { serviceTypeDisplayNameAndIcon } from './GoToCodeHostAction'
 
-interface InstallExtensionAlertProps {
+interface Props {
     onAlertDismissed: () => void
     externalURLs: GQL.IExternalLink[]
 }
 
-export const InstallExtensionAlert: React.FunctionComponent<InstallExtensionAlertProps> = ({
-    onAlertDismissed,
-    externalURLs,
-}) => {
+export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({ onAlertDismissed, externalURLs }) => {
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURLs[0]?.serviceType)
 
     const Icon = icon || ExportIcon
@@ -21,10 +18,10 @@ export const InstallExtensionAlert: React.FunctionComponent<InstallExtensionAler
         <div className="alert alert-info m-2 d-flex justify-content-between">
             <div className="d-flex align-items-center">
                 <div className="position-relative">
-                    <div className="install-extension-alert__icon-flash" />
-                    <Icon className="install-extension-alert__icon" />
+                    <div className="install-browser-extension-alert__icon-flash" />
+                    <Icon className="install-browser-extension-alert__icon" />
                 </div>
-                <p className="install-extension-alert__text my-0 mr-3">
+                <p className="install-browser-extension-alert__text my-0 mr-3">
                     <a href="/help/integration/browser_extension" className="alert-link">
                         Install the Sourcegraph browser extension
                     </a>{' '}
