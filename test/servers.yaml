@@ -37,12 +37,12 @@
     - |
        curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
        chmod +x /usr/local/bin/src
-       
+
        cd /sourcegraph
        ./test/regression/test.sh
 
        pushd web
-       sleep 10
+       yarn
        yarn run test:regression
        popd
 
