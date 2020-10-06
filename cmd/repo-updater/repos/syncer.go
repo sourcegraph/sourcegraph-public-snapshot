@@ -31,7 +31,7 @@ type Syncer struct {
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
 
-	// SubsetSynced is sent a collection of Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
+	// SubsetSynced is sent the result of a single repo sync that were synced by SyncRepo (only if SubsetSynced is non-nil)
 	SubsetSynced chan Diff
 
 	// Logger if non-nil is logged to.
