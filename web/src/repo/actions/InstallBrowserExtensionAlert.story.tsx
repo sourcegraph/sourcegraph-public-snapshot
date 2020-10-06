@@ -26,3 +26,20 @@ add('InstallBrowserExtensionAlert (GitHub)', () => (
         )}
     </WebStory>
 ))
+
+add('InstallBrowserExtensionAlert (GitLab)', () => (
+    <WebStory>
+        {() => (
+            <InstallBrowserExtensionAlert
+                onAlertDismissed={onAlertDismissed}
+                externalURLs={[
+                    {
+                        __typename: 'ExternalLink',
+                        url: 'https://gitlab.com/rluna-open-source/code-management/sourcegraph/sourcegraph',
+                        serviceType: 'gitlab',
+                    },
+                ]}
+            />
+        )}
+    </WebStory>
+))
