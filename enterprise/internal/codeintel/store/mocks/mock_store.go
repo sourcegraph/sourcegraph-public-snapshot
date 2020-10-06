@@ -63,12 +63,20 @@ type MockStore struct {
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *StoreGetIndexByIDFunc
+	// GetIndexConfigurationByRepositoryIDFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetIndexConfigurationByRepositoryID.
+	GetIndexConfigurationByRepositoryIDFunc *StoreGetIndexConfigurationByRepositoryIDFunc
 	// GetIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexes.
 	GetIndexesFunc *StoreGetIndexesFunc
 	// GetPackageFunc is an instance of a mock function object controlling
 	// the behavior of the method GetPackage.
 	GetPackageFunc *StoreGetPackageFunc
+	// GetRepositoriesWithIndexConfigurationFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetRepositoriesWithIndexConfiguration.
+	GetRepositoriesWithIndexConfigurationFunc *StoreGetRepositoriesWithIndexConfigurationFunc
 	// GetStatesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStates.
 	GetStatesFunc *StoreGetStatesFunc
@@ -254,6 +262,11 @@ func NewMockStore() *MockStore {
 				return store.Index{}, false, nil
 			},
 		},
+		GetIndexConfigurationByRepositoryIDFunc: &StoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (store.IndexConfiguration, bool, error) {
+				return store.IndexConfiguration{}, false, nil
+			},
+		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
 			defaultHook: func(context.Context, store.GetIndexesOptions) ([]store.Index, int, error) {
 				return nil, 0, nil
@@ -262,6 +275,11 @@ func NewMockStore() *MockStore {
 		GetPackageFunc: &StoreGetPackageFunc{
 			defaultHook: func(context.Context, string, string, string) (store.Dump, bool, error) {
 				return store.Dump{}, false, nil
+			},
+		},
+		GetRepositoriesWithIndexConfigurationFunc: &StoreGetRepositoriesWithIndexConfigurationFunc{
+			defaultHook: func(context.Context) ([]int, error) {
+				return nil, nil
 			},
 		},
 		GetStatesFunc: &StoreGetStatesFunc{
@@ -486,11 +504,17 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetIndexByIDFunc: &StoreGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
 		},
+		GetIndexConfigurationByRepositoryIDFunc: &StoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: i.GetIndexConfigurationByRepositoryID,
+		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
 			defaultHook: i.GetIndexes,
 		},
 		GetPackageFunc: &StoreGetPackageFunc{
 			defaultHook: i.GetPackage,
+		},
+		GetRepositoriesWithIndexConfigurationFunc: &StoreGetRepositoriesWithIndexConfigurationFunc{
+			defaultHook: i.GetRepositoriesWithIndexConfiguration,
 		},
 		GetStatesFunc: &StoreGetStatesFunc{
 			defaultHook: i.GetStates,
@@ -2264,6 +2288,123 @@ func (c StoreGetIndexByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// StoreGetIndexConfigurationByRepositoryIDFunc describes the behavior when
+// the GetIndexConfigurationByRepositoryID method of the parent MockStore
+// instance is invoked.
+type StoreGetIndexConfigurationByRepositoryIDFunc struct {
+	defaultHook func(context.Context, int) (store.IndexConfiguration, bool, error)
+	hooks       []func(context.Context, int) (store.IndexConfiguration, bool, error)
+	history     []StoreGetIndexConfigurationByRepositoryIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexConfigurationByRepositoryID delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockStore) GetIndexConfigurationByRepositoryID(v0 context.Context, v1 int) (store.IndexConfiguration, bool, error) {
+	r0, r1, r2 := m.GetIndexConfigurationByRepositoryIDFunc.nextHook()(v0, v1)
+	m.GetIndexConfigurationByRepositoryIDFunc.appendCall(StoreGetIndexConfigurationByRepositoryIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetIndexConfigurationByRepositoryID method of the parent MockStore
+// instance is invoked and the hook queue is empty.
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) SetDefaultHook(hook func(context.Context, int) (store.IndexConfiguration, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexConfigurationByRepositoryID method of the parent MockStore
+// instance inovkes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) PushHook(hook func(context.Context, int) (store.IndexConfiguration, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) SetDefaultReturn(r0 store.IndexConfiguration, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (store.IndexConfiguration, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) PushReturn(r0 store.IndexConfiguration, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (store.IndexConfiguration, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) nextHook() func(context.Context, int) (store.IndexConfiguration, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) appendCall(r0 StoreGetIndexConfigurationByRepositoryIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// StoreGetIndexConfigurationByRepositoryIDFuncCall objects describing the
+// invocations of this function.
+func (f *StoreGetIndexConfigurationByRepositoryIDFunc) History() []StoreGetIndexConfigurationByRepositoryIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetIndexConfigurationByRepositoryIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetIndexConfigurationByRepositoryIDFuncCall is an object that
+// describes an invocation of method GetIndexConfigurationByRepositoryID on
+// an instance of MockStore.
+type StoreGetIndexConfigurationByRepositoryIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store.IndexConfiguration
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetIndexConfigurationByRepositoryIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetIndexConfigurationByRepositoryIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // StoreGetIndexesFunc describes the behavior when the GetIndexes method of
 // the parent MockStore instance is invoked.
 type StoreGetIndexesFunc struct {
@@ -2490,6 +2631,117 @@ func (c StoreGetPackageFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetPackageFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreGetRepositoriesWithIndexConfigurationFunc describes the behavior
+// when the GetRepositoriesWithIndexConfiguration method of the parent
+// MockStore instance is invoked.
+type StoreGetRepositoriesWithIndexConfigurationFunc struct {
+	defaultHook func(context.Context) ([]int, error)
+	hooks       []func(context.Context) ([]int, error)
+	history     []StoreGetRepositoriesWithIndexConfigurationFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepositoriesWithIndexConfiguration delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockStore) GetRepositoriesWithIndexConfiguration(v0 context.Context) ([]int, error) {
+	r0, r1 := m.GetRepositoriesWithIndexConfigurationFunc.nextHook()(v0)
+	m.GetRepositoriesWithIndexConfigurationFunc.appendCall(StoreGetRepositoriesWithIndexConfigurationFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepositoriesWithIndexConfiguration method of the parent MockStore
+// instance is invoked and the hook queue is empty.
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepositoriesWithIndexConfiguration method of the parent MockStore
+// instance inovkes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) PushHook(hook func(context.Context) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) nextHook() func(context.Context) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) appendCall(r0 StoreGetRepositoriesWithIndexConfigurationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// StoreGetRepositoriesWithIndexConfigurationFuncCall objects describing the
+// invocations of this function.
+func (f *StoreGetRepositoriesWithIndexConfigurationFunc) History() []StoreGetRepositoriesWithIndexConfigurationFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetRepositoriesWithIndexConfigurationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetRepositoriesWithIndexConfigurationFuncCall is an object that
+// describes an invocation of method GetRepositoriesWithIndexConfiguration
+// on an instance of MockStore.
+type StoreGetRepositoriesWithIndexConfigurationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetRepositoriesWithIndexConfigurationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetRepositoriesWithIndexConfigurationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreGetStatesFunc describes the behavior when the GetStates method of

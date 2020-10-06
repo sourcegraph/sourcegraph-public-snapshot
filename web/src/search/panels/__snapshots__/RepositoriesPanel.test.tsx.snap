@@ -81,40 +81,44 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:sourcegraph"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:sourcegraph"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              sourcegraph
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                sourcegraph
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
       </div>
     }
@@ -150,51 +154,55 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             className="text-monospace text-break"
             key="sourcegraph-0"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:sourcegraph"
-            >
-              <a
-                href="/search?q=repo:sourcegraph"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:sourcegraph"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:sourcegraph"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  sourcegraph
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    sourcegraph
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="test-1"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test"
-            >
-              <a
-                href="/search?q=repo:test"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
         </div>
       </div>
@@ -284,59 +292,65 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:sourcegraph"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:sourcegraph"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              sourcegraph
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                sourcegraph
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test-two"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test-two"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test-two
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test-two
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <ShowMoreButton
           className="test-repositories-panel-show-more"
@@ -376,76 +390,82 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             className="text-monospace text-break"
             key="test-0"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test"
-            >
-              <a
-                href="/search?q=repo:test"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="sourcegraph-1"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:sourcegraph"
-            >
-              <a
-                href="/search?q=repo:sourcegraph"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:sourcegraph"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:sourcegraph"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  sourcegraph
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    sourcegraph
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="test-two-2"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test-two"
-            >
-              <a
-                href="/search?q=repo:test-two"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test-two"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test-two"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test-two
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test-two
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <ShowMoreButton
             className="test-repositories-panel-show-more"
@@ -552,116 +572,128 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:sourcegraph"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:sourcegraph"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              sourcegraph
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                sourcegraph
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test-two"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test-two"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test-two
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test-two
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test-three"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test-three"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test-three
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test-three
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:r:test-four"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:r:test-four"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              r:test-four
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                r:test-four
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test-five"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test-five"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test-five
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test-five
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
       </div>
     }
@@ -697,151 +729,163 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             className="text-monospace text-break"
             key="test-0"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test"
-            >
-              <a
-                href="/search?q=repo:test"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="sourcegraph-1"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:sourcegraph"
-            >
-              <a
-                href="/search?q=repo:sourcegraph"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:sourcegraph"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:sourcegraph"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  sourcegraph
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    sourcegraph
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="test-two-2"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test-two"
-            >
-              <a
-                href="/search?q=repo:test-two"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test-two"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test-two"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test-two
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test-two
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="test-three-3"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test-three"
-            >
-              <a
-                href="/search?q=repo:test-three"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test-three"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test-three"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test-three
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test-three
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="r:test-four-4"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:r:test-four"
-            >
-              <a
-                href="/search?q=repo:r:test-four"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:r:test-four"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:r:test-four"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  r:test-four
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    r:test-four
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="test-five-5"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test-five"
-            >
-              <a
-                href="/search?q=repo:test-five"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test-five"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test-five"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test-five
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test-five
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
         </div>
       </div>
@@ -931,40 +975,44 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:test"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:test"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              test
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                test
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
         <dd
           className="text-monospace text-break"
         >
-          <AnchorLink
-            onClick={[Function]}
-            to="/search?q=repo:sourcegraph"
-          >
-            <span
-              className="search-keyword"
+          <small>
+            <AnchorLink
+              onClick={[Function]}
+              to="/search?q=repo:sourcegraph"
             >
-              repo:
-            </span>
-            <span
-              className="repositories-panel__search-value"
-            >
-              sourcegraph
-            </span>
-          </AnchorLink>
+              <span
+                className="search-keyword"
+              >
+                repo:
+              </span>
+              <span
+                className="repositories-panel__search-value"
+              >
+                sourcegraph
+              </span>
+            </AnchorLink>
+          </small>
         </dd>
       </div>
     }
@@ -1000,51 +1048,55 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             className="text-monospace text-break"
             key="test-0"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:test"
-            >
-              <a
-                href="/search?q=repo:test"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:test"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:test"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  test
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    test
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
           <dd
             className="text-monospace text-break"
             key="sourcegraph-1"
           >
-            <AnchorLink
-              onClick={[Function]}
-              to="/search?q=repo:sourcegraph"
-            >
-              <a
-                href="/search?q=repo:sourcegraph"
+            <small>
+              <AnchorLink
                 onClick={[Function]}
+                to="/search?q=repo:sourcegraph"
               >
-                <span
-                  className="search-keyword"
+                <a
+                  href="/search?q=repo:sourcegraph"
+                  onClick={[Function]}
                 >
-                  repo:
-                </span>
-                <span
-                  className="repositories-panel__search-value"
-                >
-                  sourcegraph
-                </span>
-              </a>
-            </AnchorLink>
+                  <span
+                    className="search-keyword"
+                  >
+                    repo:
+                  </span>
+                  <span
+                    className="repositories-panel__search-value"
+                  >
+                    sourcegraph
+                  </span>
+                </a>
+              </AnchorLink>
+            </small>
           </dd>
         </div>
       </div>

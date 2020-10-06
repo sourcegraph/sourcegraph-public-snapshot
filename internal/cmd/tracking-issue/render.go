@@ -180,6 +180,10 @@ func SortByIntegerKeyPair(parts []MarkdownByIntegerKeyPair) (markdown []string) 
 // along with that tracking issue's URL for later reordering of the resulting list.
 func (ar *AssigneeRenderer) renderPendingTrackingIssues() (parts []MarkdownByStringKey) {
 	for _, issue := range ar.context.trackingIssues {
+		if issue == ar.context.trackingIssue {
+			continue
+		}
+
 		if !issue.Closed() {
 			var pendingParts []MarkdownByIntegerKeyPair
 

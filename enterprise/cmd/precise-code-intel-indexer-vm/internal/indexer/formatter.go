@@ -182,6 +182,17 @@ func (r *firecrackerCommandFormatter) Setup(ctx context.Context, commander Comma
 		}
 	}
 
+	// Remove tar files inside of vm to clear scratch space
+	for _, key := range orderedKeys(imageMap) {
+		rmCommand := flatten(
+			"ignite", "exec", r.name, "--",
+			"rm", r.tarfilePathInVM(key),
+		)
+		if err := commander.Run(ctx, rmCommand...); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to remove tarfile for %s", imageMap[key]))
+		}
+	}
+
 	return nil
 }
 
@@ -236,6 +247,7 @@ func (r *firecrackerCommandFormatter) resourceFlags() []string {
 	return []string{
 		"--cpus", strconv.Itoa(r.options.FirecrackerNumCPUs),
 		"--memory", r.options.FirecrackerMemory,
+		"--size", r.options.FirecrackerDiskSpace,
 	}
 }
 

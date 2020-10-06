@@ -34,6 +34,8 @@ const (
 
 	UsageStatsDownload = "usage-stats.download"
 
+	LatestPing = "pings.latest"
+
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 
@@ -90,6 +92,8 @@ func newRouter() *mux.Router {
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
 	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
+
+	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
 	if envvar.SourcegraphDotComMode() {
 		base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
