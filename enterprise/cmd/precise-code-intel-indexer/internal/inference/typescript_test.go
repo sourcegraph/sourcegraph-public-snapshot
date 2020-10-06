@@ -138,7 +138,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "foo/bar",
 					Image:    "node:alpine3.12",
-					Commands: []string{"yarn"},
+					Commands: []string{"yarn", "--ignore-engines"},
 				},
 			},
 			Root:        "foo/bar/baz",
@@ -156,7 +156,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "foo/bar",
 					Image:    "node:alpine3.12",
-					Commands: []string{"yarn"},
+					Commands: []string{"yarn", "--ignore-engines"},
 				},
 				{
 					Root:     "foo/bar/bonk",
