@@ -54,7 +54,6 @@ var DefaultEnv = map[string]string{
 	"SRC_PROF_HTTP": "",
 
 	"LOGO":          "t",
-	"SRC_LOG_LEVEL": "warn",
 
 	// TODO other bits
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
