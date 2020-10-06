@@ -1,9 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback } from 'react'
 import { AuthenticatedUser } from '../../auth'
-import { EventLogResult } from '../backend'
 import { Link } from '../../../../shared/src/components/Link'
-import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -11,7 +9,6 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
 }
 
 export const RepogroupPanel: React.FunctionComponent<Props> = ({ className, telemetryService }) => {
@@ -20,19 +17,19 @@ export const RepogroupPanel: React.FunctionComponent<Props> = ({ className, tele
     ])
 
     const populatedContent = (
-        <>
+        <div className="mt-2">
             {repogroupList.map(repogroup => (
-                <div className="d-flex mt-2" key={repogroup.name}>
-                    <img className="repogroup-panel__repogroup-icon mr-2" src={repogroup.homepageIcon} />
+                <div className="d-flex mb-4" key={repogroup.name}>
+                    <img className="repogroup-panel__repogroup-icon mr-4" src={repogroup.homepageIcon} />
                     <div className="d-flex flex-column">
-                        <Link to={repogroup.url} onClick={logRepogroupClicked} className="mb-1 font-weight-bold">
+                        <Link to={repogroup.url} onClick={logRepogroupClicked} className="mb-1">
                             {repogroup.title}
                         </Link>
-                        <p>{repogroup.homepageDescription}</p>
+                        <small>{repogroup.homepageDescription}</small>
                     </div>
                 </div>
             ))}
-        </>
+        </div>
     )
 
     return (
