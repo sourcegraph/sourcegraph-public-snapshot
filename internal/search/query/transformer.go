@@ -464,8 +464,40 @@ func substituteOrForRegexp(nodes []Node) []Node {
 	return new
 }
 
-// substituteConcat reduces a concatenation of patterns to a separator-separated string.
-func substituteConcat(nodes []Node, separator string) []Node {
+func fuzzyRegexp(patterns []Pattern) Pattern {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	var values []string
+	for _, p := range patterns {
+		if p.Annotation.Labels.isSet(Literal) {
+			values = append(values, regexp.QuoteMeta(p.Value))
+		} else {
+			values = append(values, p.Value)
+		}
+	}
+	return Pattern{
+		Value: "(" + strings.Join(values, ").*(") + ")",
+	}
+}
+
+func space(patterns []Pattern) Pattern {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	var values []string
+	for _, p := range patterns {
+		values = append(values, p.Value)
+	}
+	return Pattern{
+		Value: strings.Join(values, " "),
+	}
+}
+
+// substituteConcat calls the callback function for all contiguous patterns in
+// the tree, rooted by a concat operator. The return value of callback is
+// substituted in-place in the tree.
+func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
@@ -480,39 +512,30 @@ func substituteConcat(nodes []Node, separator string) []Node {
 		case Operator:
 			if v.Kind == Concat {
 				// Merge consecutive patterns.
+				ps := []Pattern{}
 				previous := v.Operands[0]
-				merged := Pattern{}
 				if p, ok := previous.(Pattern); ok {
-					merged = p
+					ps = append(ps, p)
 				}
 				for _, node := range v.Operands[1:] {
 					if isPattern(node) && isPattern(previous) {
 						p := node.(Pattern)
-						if merged.Value != "" {
-							merged.Annotation.Labels |= p.Annotation.Labels
-							merged = Pattern{
-								Value:      merged.Value + separator + p.Value,
-								Annotation: merged.Annotation,
-							}
-						} else {
-							// Base case.
-							merged = Pattern{Value: p.Value}
-						}
+						ps = append(ps, p)
 						previous = node
 						continue
 					}
-					if merged.Value != "" {
-						newNode = append(newNode, merged)
-						merged = Pattern{}
+					if len(ps) > 0 {
+						newNode = append(newNode, callback(ps))
+						ps = []Pattern{}
 					}
-					newNode = append(newNode, substituteConcat([]Node{node}, separator)...)
+					newNode = append(newNode, substituteConcat([]Node{node}, callback)...)
 				}
-				if merged.Value != "" {
-					newNode = append(newNode, merged)
-					merged = Pattern{}
+				if len(ps) > 0 {
+					newNode = append(newNode, callback(ps))
+					ps = []Pattern{}
 				}
 			} else {
-				newNode = append(newNode, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
+				newNode = append(newNode, newOperator(substituteConcat(v.Operands, callback), v.Kind)...)
 			}
 		}
 	}
