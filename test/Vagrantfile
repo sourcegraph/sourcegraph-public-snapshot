@@ -22,12 +22,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       case ENV['VAGRANT_RUN_ENV']
       when 'CI'
         project_id = server['project_id']
-        external_ip = nil
+        external_ip = server['external_ip']
         use_private_ip = server['use_private_ip']
         username = server['username']
         ssh_key_path = server['ssh_key_path']
       else
-        project_id = ENV['VAGRANT_GCP_PROJECT_ID'] || 'sourcegraph-ci'
+        project_id = ENV['VAGRANT_GCP_PROJECT_ID'] || 'sourcegraph-server'
         external_ip = nil
         use_private_ip = false
         username = ENV['VAGRANT_SSH_USER'] || ENV['USER']
