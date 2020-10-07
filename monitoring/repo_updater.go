@@ -20,7 +20,6 @@ func RepoUpdater() *Container {
 			},
 			{
 				Title: "Repositories",
-				// Hidden: true,
 				Rows: []Row{
 					{
 						Observable{
@@ -125,7 +124,7 @@ func RepoUpdater() *Container {
 					{
 						Observable{
 							Name:              "sched_known_repos",
-							Description:       "repositories are managed by the scheduler",
+							Description:       "repositories managed by the scheduler",
 							Query:             `src_repoupdater_sched_known_repos`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning

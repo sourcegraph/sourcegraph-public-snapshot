@@ -3026,7 +3026,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories are managed by the scheduler for 5m0s_
+- _repo-updater: 1000+ repositories managed by the scheduler for 5m0s_
 
 **Possible solutions:**
 
