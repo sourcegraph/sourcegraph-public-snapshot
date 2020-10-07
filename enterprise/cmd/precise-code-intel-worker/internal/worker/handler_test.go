@@ -25,11 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
-// func init() {
-// 	sqliteutil.SetLocalLibpath()
-// 	sqliteutil.MustRegisterSqlite3WithPcre()
-// }
-
 func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
