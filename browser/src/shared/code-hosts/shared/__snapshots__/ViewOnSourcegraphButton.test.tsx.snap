@@ -6,6 +6,8 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
   className="open-on-sourcegraph test"
   href="https://test.com/sign-in?close=true&utm_source=chrome-extension"
   onClick={[Function]}
+  rel="noopener noreferrer"
+  target="_blank"
   title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
 >
   <svg
@@ -40,6 +42,8 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
   className="open-on-sourcegraph test"
   href="https://test.com/sign-in?close=true&utm_source=chrome-extension"
   onClick={[Function]}
+  rel="noopener noreferrer"
+  target="_blank"
   title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
 >
   <svg

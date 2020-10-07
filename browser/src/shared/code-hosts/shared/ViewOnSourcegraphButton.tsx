@@ -47,8 +47,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     const commonProps: Partial<SourcegraphIconButtonProps> = {
         className,
         iconClassName,
-        target: '_blank',
-        rel: 'noopener noreferrer',
     }
 
     // Show nothing while loading
@@ -74,7 +72,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
 
         const commonErrorCaseProps: Partial<SourcegraphIconButtonProps> = {
             ...commonProps,
-            iconClassName: mutedIconClassName,
             // If we are not running in the browser extension where we can open the options menu,
             // open the documentation for how to configure the code host we are on.
             href: new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href,
@@ -105,6 +102,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return (
             <SourcegraphIconButton
                 {...commonErrorCaseProps}
+                iconClassName={mutedIconClassName}
                 href={url}
                 label="Error"
                 title={repoExistsOrError.message}

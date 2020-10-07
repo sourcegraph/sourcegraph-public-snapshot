@@ -25,8 +25,8 @@ export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButto
     <a
         href={href}
         className={className}
-        target={target}
-        rel={rel}
+        target={target ?? '_blank'}
+        rel={rel ?? 'noopener noreferrer'}
         title={title}
         aria-label={ariaLabel}
         onClick={onClick}
