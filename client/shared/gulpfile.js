@@ -86,7 +86,7 @@ async function graphQlOperations() {
  */
 const draftV7resolver = {
   order: 1,
-  read: () => readFile(path.join(__dirname, '../schema/json-schema-draft-07.schema.json')),
+  read: () => readFile(path.join(__dirname, '../../schema/json-schema-draft-07.schema.json')),
   canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
 }
 

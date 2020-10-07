@@ -94,8 +94,8 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     // Copy to the ui/assets directory so that these files can be served by
     // the webapp.
-    shelljs.mkdir('-p', '../ui/assets/extension')
-    shelljs.cp('-r', 'build/integration/*', '../ui/assets/extension')
+    shelljs.mkdir('-p', '../../ui/assets/extension')
+    shelljs.cp('-r', 'build/integration/*', '../../ui/assets/extension')
 }
 
 const BROWSER_TITLES = {

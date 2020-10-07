@@ -1,4 +1,4 @@
-import settingsSchemaJSON from '../../../schema/settings.schema.json'
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
 import { isErrorLike } from '../../../shared/src/util/errors'
 

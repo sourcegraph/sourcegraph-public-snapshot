@@ -19,8 +19,8 @@ if (shouldAnalyze) {
   logger.info('Running bundle analyzer')
 }
 
-const rootDirectory = path.resolve(__dirname, '..')
-const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
+const rootDirectory = path.resolve(__dirname, '..', '..')
+const nodeModulesPath = path.resolve(rootDirectory, 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE

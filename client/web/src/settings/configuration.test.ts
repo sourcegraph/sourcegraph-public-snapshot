@@ -1,4 +1,4 @@
-import settingsSchemaJSON from '../../../schema/settings.schema.json'
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { mergeSettingsSchemas } from './configuration'
 
 describe('mergeSettingsSchemas', () => {

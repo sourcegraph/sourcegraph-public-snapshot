@@ -25,7 +25,7 @@ util.inspect.defaultOptions.maxStringLength = 80
 Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
 
-const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../ui/assets')
+const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
 const record = readEnvironmentBoolean({ variable: 'RECORD', defaultValue: false })
 

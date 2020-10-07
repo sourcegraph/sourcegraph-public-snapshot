@@ -23,6 +23,7 @@
   "exclude": [
     "out",
     "node_modules",
+    "code-intel-extensions",
     "../../node_modules",
     "./build/**/*",
     "coverage",
