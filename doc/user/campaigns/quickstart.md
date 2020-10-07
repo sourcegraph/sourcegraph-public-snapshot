@@ -90,18 +90,34 @@ You created your first campaign! The campaign's changesets are still unpublished
 
 ## Publish the changes (optional)
 
-Publishing causes commits, branches, and changesets to be created on your code host.
+So far, nothing has been created on the code hosts yet. For that to happen, we need to publish the changesets in our campaign.
 
-You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?").
+Publishing causes commits, branches, and pull requests/merge requests to be created on your code host.
 
-On a real campaign, you would change the `published: false` in the `hello-world.campaign.yaml` to `published: true` and run the `src campaign preview` command again. The changesets will then be published when you create or update the campaign from the preview. You can also [publish only some of the changesets by setting `published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets).
+_You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?")._
 
-> NOTE: You can also create or update a campaign by running `src campaign apply`! This skips the preview stage, and is especially useful when updating an existing campaign.
+On a real campaign, you would do the following:
+
+1. Change the `published: false` in the `hello-world.campaign.yaml` to `published: true`
+    <img src="./campaign_publish_true.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+1. Run the `src campaign preview` command again and open the URL
+    <img src="./src_rerun_preview.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+1. Apply the campaign spec by clicking the **Apply spec** button
+    <img src="./browser_campaign_preview_publish.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+
+    > NOTE: You can also create or update a campaign by running `src campaign apply`! This skips the preview stage, and is especially useful when updating an existing campaign.
+1. The changesets will now be published asynchronously
+    <img src="./browser_campaign_async.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+
+You can also [publish only some of the changesets by setting `published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets).
+
 
 ## Congratulations!
 
 You've created your first campaign! 🎉🎉
 
-You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign preview` again. (As before, you'll see a preview before any changes are applied.)
+You can customize your campaign spec and experiment with making other types of changes.
+
+To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign preview` again. (As before, you'll see a preview before any changes are applied.)
 
 To learn what else you can do with campaigns, see "[Campaigns](index.md)" in Sourcegraph documentation.
