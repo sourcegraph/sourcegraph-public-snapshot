@@ -6,22 +6,46 @@ import (
 	"path/filepath"
 )
 
-func maybePostgresProcFile() (string, error) {
-	return maybePostgresProcFileWithPrefix("")
+var databases = map[string]string{
+	"":           "sourcegraph",
+	"CODEINTEL_": "sourcegraph-codeintel",
 }
 
-func maybePostgresProcFileWithPrefix(prefix string) (string, error) {
-	// PG is already configured
-	if os.Getenv(prefix+"PGHOST") != "" || os.Getenv(prefix+"PGDATASOURCE") != "" {
+func maybePostgresProcFile() (string, error) {
+	missingExternalConfig := false
+	for prefix := range databases {
+		if !isPostgresConfigured(prefix) {
+			missingExternalConfig = true
+		}
+	}
+	if !missingExternalConfig {
+		// All target databases are configured to hit an external server.
+		// Do not start the postgres instance inside the container as no
+		// service will connect to it.
 		return "", nil
 	}
 
+	// If we get here, _some_ service will use in the in-container postgres
+	// instance. Ensure that everything is in place and generate a line for
+	// the procfile to start it.
 	procfile, err := postgresProcfile()
 	if err != nil {
 		return "", err
 	}
 
-	setPostgresDefaultEnv(prefix, "sourcegraph")
+	// Each un-configured service will point to the database instance that
+	// we configured above.
+	for prefix, database := range databases {
+		if !isPostgresConfigured(prefix) {
+			// Set *PGHOST to default to 127.0.0.1, NOT localhost, as localhost does not correctly resolve in some environments
+			// (see https://github.com/sourcegraph/issues/issues/34 and https://github.com/sourcegraph/sourcegraph/issues/9129).
+			SetDefaultEnv(prefix+"PGHOST", "127.0.0.1")
+			SetDefaultEnv(prefix+"PGUSER", "postgres")
+			SetDefaultEnv(prefix+"PGDATABASE", database)
+			SetDefaultEnv(prefix+"PGSSLMODE", "disable")
+		}
+	}
+
 	return procfile, nil
 }
 
@@ -56,7 +80,9 @@ func postgresProcfile() (string, error) {
 		// DB, the OS should have had time to fsync.
 		e.Command("su-exec", "postgres", "initdb", "-D", path, "--nosync")
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
-		e.Command("su-exec", "postgres", "createdb", "sourcegraph")
+		for _, database := range databases {
+			e.Command("su-exec", "postgres", "createdb", database)
+		}
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
 		if err := e.Error(); err != nil {
 			l("Setting up postgres failed:\n%s", output.String())
@@ -78,11 +104,6 @@ func postgresProcfile() (string, error) {
 	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
 }
 
-func setPostgresDefaultEnv(prefix, database string) {
-	// Set *PGHOST to default to 127.0.0.1, NOT localhost, as localhost does not correctly resolve in some environments
-	// (see https://github.com/sourcegraph/issues/issues/34 and https://github.com/sourcegraph/sourcegraph/issues/9129).
-	SetDefaultEnv(prefix+"PGHOST", "127.0.0.1")
-	SetDefaultEnv(prefix+"PGUSER", "postgres")
-	SetDefaultEnv(prefix+"PGDATABASE", database)
-	SetDefaultEnv(prefix+"PGSSLMODE", "disable")
+func isPostgresConfigured(prefix string) bool {
+	return os.Getenv(prefix+"PGHOST") != "" || os.Getenv(prefix+"PGDATASOURCE") != ""
 }
