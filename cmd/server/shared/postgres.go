@@ -2,6 +2,7 @@ package shared
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -60,7 +61,8 @@ func postgresProcfile() (string, error) {
 		return "", err
 	}
 
-	path := filepath.Join(os.Getenv("DATA_DIR"), "postgresql")
+	dataDir := os.Getenv("DATA_DIR")
+	path := filepath.Join(dataDir, "postgresql")
 
 	if _, err := os.Stat(path); err != nil {
 		if !os.IsNotExist(err) {
@@ -106,4 +108,27 @@ func postgresProcfile() (string, error) {
 
 func isPostgresConfigured(prefix string) bool {
 	return os.Getenv(prefix+"PGHOST") != "" || os.Getenv(prefix+"PGDATASOURCE") != ""
+}
+
+func l(format string, args ...interface{}) {
+	_, _ = fmt.Fprintf(os.Stderr, "✱ "+format+"\n", args...)
+}
+
+var logLevelConverter = map[string]string{
+	"dbug":  "debug",
+	"info":  "info",
+	"warn":  "warn",
+	"error": "error",
+	"crit":  "fatal",
+}
+
+// convertLogLevel converts a sourcegraph log level (dbug, info, warn, error, crit) into
+// values postgres exporter accepts (debug, info, warn, error, fatal)
+// If value cannot be converted returns "warn" which seems like a good middle-ground.
+func convertLogLevel(level string) string {
+	lvl, ok := logLevelConverter[level]
+	if ok {
+		return lvl
+	}
+	return "warn"
 }
