@@ -8,7 +8,6 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	commitmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits/mocks"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -20,7 +19,6 @@ func TestFindClosestDumps(t *testing.T) {
 	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 	mockBundleClient3 := bundlemocks.NewMockBundleClient()
 	mockBundleClient4 := bundlemocks.NewMockBundleClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
 	mockCommitUpdater := commitmocks.NewMockUpdater()
 
 	setMockStoreHasRepository(t, mockStore, 42, true)
@@ -41,7 +39,7 @@ func TestFindClosestDumps(t *testing.T) {
 	setMockBundleClientExists(t, mockBundleClient3, "main.go", true)
 	setMockBundleClientExists(t, mockBundleClient4, "s1/main.go", false)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockCommitUpdater)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)
@@ -66,7 +64,6 @@ func TestFindClosestSkipsCommitGraphUpdateIfCommitIsKnown(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
 	mockCommitUpdater := commitmocks.NewMockUpdater()
 
 	setMockStoreHasCommit(t, mockStore, 42, testCommit, true)
@@ -78,7 +75,7 @@ func TestFindClosestSkipsCommitGraphUpdateIfCommitIsKnown(t *testing.T) {
 	})
 	setMockBundleClientExists(t, mockBundleClient, "main.go", true)
 
-	api := New(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := New(mockStore, mockBundleManagerClient, mockCommitUpdater)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)
@@ -97,12 +94,11 @@ func TestFindClosestSkipsCommitGraphUpdateIfCommitIsKnown(t *testing.T) {
 func TestFindClosestSkipsCommitGraphUpdateIfRepositoryIsUnknown(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
 	mockCommitUpdater := commitmocks.NewMockUpdater()
 
 	setMockStoreHasRepository(t, mockStore, 42, false)
 
-	api := New(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := New(mockStore, mockBundleManagerClient, mockCommitUpdater)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)

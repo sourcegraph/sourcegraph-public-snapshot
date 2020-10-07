@@ -2,12 +2,12 @@ package scheduler
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/index"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -16,7 +16,7 @@ import (
 
 type Scheduler struct {
 	store                       store.Store
-	gitserverClient             gitserver.Client
+	gitserverClient             gitserverClient
 	batchSize                   int
 	minimumTimeSinceLastEnqueue time.Duration
 	minimumSearchCount          int
@@ -25,11 +25,18 @@ type Scheduler struct {
 	metrics                     SchedulerMetrics
 }
 
+type gitserverClient interface {
+	Head(ctx context.Context, store store.Store, repositoryID int) (string, error)
+	FileExists(ctx context.Context, store store.Store, repositoryID int, commit, file string) (bool, error)
+	ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+	RawContents(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error)
+}
+
 var _ goroutine.Handler = &Scheduler{}
 
 func NewScheduler(
 	store store.Store,
-	gitserverClient gitserver.Client,
+	gitserverClient gitserverClient,
 	interval time.Duration,
 	batchSize int,
 	minimumTimeSinceLastEnqueue time.Duration,
