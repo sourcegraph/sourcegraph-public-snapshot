@@ -680,7 +680,7 @@ export function handleCodeHost({
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
             event.preventDefault()
-            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+            await browser.runtime.sendMessage({ type: 'openPopup' })
         }
 
         subscriptions.add(
