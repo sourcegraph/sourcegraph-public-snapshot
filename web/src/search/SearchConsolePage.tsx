@@ -66,7 +66,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         [props.location.search]
     )
     const triggerSearch = useCallback(() => {
-        props.history.push('/search/console?q=' + encodeURI(searchQuery.value))
+        props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [props.history, searchQuery])
     // Fetch search results when the `q` URL query parameter changes
     const resultsOrError = useObservable<'loading' | GQL.ISearchResults | ErrorLike>(
