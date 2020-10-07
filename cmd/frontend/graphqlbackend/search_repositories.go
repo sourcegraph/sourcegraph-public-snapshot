@@ -4,9 +4,11 @@ import (
 	"context"
 	"math"
 	"regexp"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/BurntSushi/rure-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -52,7 +54,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	if !args.Query.IsCaseSensitive() {
 		patternRe = "(?i)" + patternRe
 	}
-
+	//pattern, err := rure.Compile(patternRe)
 	pattern, err := regexp.Compile(patternRe)
 	if err != nil {
 		return nil, nil, err
@@ -68,10 +70,126 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	var repos []*search.RepositoryRevisions
 	for i, r := range resolved {
 		common.repos[i] = r.Repo
+		//if pattern.IsMatch(string(r.Repo.Name)) {
 		if pattern.MatchString(string(r.Repo.Name)) {
 			repos = append(repos, r)
 		}
 	}
+
+	// Filter the repos if there is a repohasfile: or -repohasfile field.
+	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
+		repos, err = reposToAdd(ctx, args, repos)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// Convert the repos to RepositoryResolvers.
+	results := make([]SearchResultResolver, 0, len(repos))
+	for _, r := range repos {
+		if len(results) == int(limit) {
+			common.limitHit = true
+			break
+		}
+
+		var revs []string
+		revs, err = r.ExpandedRevSpecs(ctx)
+		if err != nil { // fallback to just return revspecs
+			revs = r.RevSpecs()
+		}
+		for _, rev := range revs {
+			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+		}
+	}
+
+	return results, common, nil
+}
+
+// Benchmark implementation
+func searchRepositoriesConcurrent(ctx context.Context, args *search.TextParameters, limit int32, concurrency int) (res []SearchResultResolver, common *searchResultsCommon, err error) {
+	if mockSearchRepositories != nil {
+		return mockSearchRepositories(args)
+	}
+
+	fieldAllowlist := map[string]struct{}{
+		query.FieldRepo:               {},
+		query.FieldRepoGroup:          {},
+		query.FieldType:               {},
+		query.FieldDefault:            {},
+		query.FieldIndex:              {},
+		query.FieldCount:              {},
+		query.FieldMax:                {},
+		query.FieldTimeout:            {},
+		query.FieldFork:               {},
+		query.FieldArchived:           {},
+		query.FieldVisibility:         {},
+		query.FieldCase:               {},
+		query.FieldRepoHasFile:        {},
+		query.FieldRepoHasCommitAfter: {},
+	}
+	// Don't return repo results if the search contains fields that aren't on the allowlist.
+	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
+	for field := range args.Query.Fields() {
+		if _, ok := fieldAllowlist[field]; !ok {
+			return nil, nil, nil
+		}
+	}
+
+	patternRe := args.PatternInfo.Pattern
+	if !args.Query.IsCaseSensitive() {
+		patternRe = "(?i)" + patternRe
+	}
+	//pattern, err := rure.Compile(patternRe)
+	pattern, err := regexp.Compile(patternRe)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Filter args.Repos by matching their names against the query pattern.
+	common = &searchResultsCommon{}
+	resolved, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	muCommon := sync.Mutex{}
+	common.repos = make([]*types.Repo, len(resolved))
+
+	muRepos := sync.Mutex{}
+	var repos []*search.RepositoryRevisions
+
+	muCursor := sync.Mutex{}
+	cursor := 0
+
+	wg := sync.WaitGroup{}
+	worker := func() {
+		defer wg.Done()
+		for {
+			muCursor.Lock()
+			j := cursor
+			cursor += 1
+			muCursor.Unlock()
+
+			if j >= len(resolved) {
+				return
+			}
+			muCommon.Lock()
+			common.repos[j] = resolved[j].Repo
+			muCommon.Unlock()
+			//if pattern.IsMatch(string(resolved[j].Repo.Name)) {
+			if pattern.MatchString(string(resolved[j].Repo.Name)) {
+				muRepos.Lock()
+				repos = append(repos, resolved[j])
+				muRepos.Unlock()
+			}
+		}
+	}
+
+	for k := 0; k < concurrency; k++ {
+		wg.Add(1)
+		go worker()
+	}
+	wg.Wait()
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
@@ -167,4 +285,203 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 	}
 
 	return rsta, nil
+}
+
+// Benchmark implementation using Cgo bindings for Rust
+func searchRepositoriesRuRe(ctx context.Context, args *search.TextParameters, limit int32) (res []SearchResultResolver, common *searchResultsCommon, err error) {
+	if mockSearchRepositories != nil {
+		return mockSearchRepositories(args)
+	}
+
+	fieldAllowlist := map[string]struct{}{
+		query.FieldRepo:               {},
+		query.FieldRepoGroup:          {},
+		query.FieldType:               {},
+		query.FieldDefault:            {},
+		query.FieldIndex:              {},
+		query.FieldCount:              {},
+		query.FieldMax:                {},
+		query.FieldTimeout:            {},
+		query.FieldFork:               {},
+		query.FieldArchived:           {},
+		query.FieldVisibility:         {},
+		query.FieldCase:               {},
+		query.FieldRepoHasFile:        {},
+		query.FieldRepoHasCommitAfter: {},
+	}
+	// Don't return repo results if the search contains fields that aren't on the allowlist.
+	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
+	for field := range args.Query.Fields() {
+		if _, ok := fieldAllowlist[field]; !ok {
+			return nil, nil, nil
+		}
+	}
+
+	patternRe := args.PatternInfo.Pattern
+	if !args.Query.IsCaseSensitive() {
+		patternRe = "(?i)" + patternRe
+	}
+
+	pattern, err := rure.Compile(patternRe)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Filter args.Repos by matching their names against the query pattern.
+	common = &searchResultsCommon{}
+	resolved, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return nil, nil, err
+	}
+	common.repos = make([]*types.Repo, len(resolved))
+	var repos []*search.RepositoryRevisions
+	for i, r := range resolved {
+		common.repos[i] = r.Repo
+		if pattern.IsMatch(string(r.Repo.Name)) {
+			repos = append(repos, r)
+		}
+	}
+
+	// Filter the repos if there is a repohasfile: or -repohasfile field.
+	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
+		repos, err = reposToAdd(ctx, args, repos)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// Convert the repos to RepositoryResolvers.
+	results := make([]SearchResultResolver, 0, len(repos))
+	for _, r := range repos {
+		if len(results) == int(limit) {
+			common.limitHit = true
+			break
+		}
+
+		var revs []string
+		revs, err = r.ExpandedRevSpecs(ctx)
+		if err != nil { // fallback to just return revspecs
+			revs = r.RevSpecs()
+		}
+		for _, rev := range revs {
+			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+		}
+	}
+
+	return results, common, nil
+}
+
+// Benchmark implementation
+func searchRepositoriesConcurrentWithRuRe(ctx context.Context, args *search.TextParameters, limit int32, concurrency int) (res []SearchResultResolver, common *searchResultsCommon, err error) {
+	if mockSearchRepositories != nil {
+		return mockSearchRepositories(args)
+	}
+
+	fieldAllowlist := map[string]struct{}{
+		query.FieldRepo:               {},
+		query.FieldRepoGroup:          {},
+		query.FieldType:               {},
+		query.FieldDefault:            {},
+		query.FieldIndex:              {},
+		query.FieldCount:              {},
+		query.FieldMax:                {},
+		query.FieldTimeout:            {},
+		query.FieldFork:               {},
+		query.FieldArchived:           {},
+		query.FieldVisibility:         {},
+		query.FieldCase:               {},
+		query.FieldRepoHasFile:        {},
+		query.FieldRepoHasCommitAfter: {},
+	}
+	// Don't return repo results if the search contains fields that aren't on the allowlist.
+	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
+	for field := range args.Query.Fields() {
+		if _, ok := fieldAllowlist[field]; !ok {
+			return nil, nil, nil
+		}
+	}
+
+	patternRe := args.PatternInfo.Pattern
+	if !args.Query.IsCaseSensitive() {
+		patternRe = "(?i)" + patternRe
+	}
+
+	pattern, err := rure.Compile(patternRe)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Filter args.Repos by matching their names against the query pattern.
+	common = &searchResultsCommon{}
+	resolved, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	muCommon := sync.Mutex{}
+	common.repos = make([]*types.Repo, len(resolved))
+
+	muRepos := sync.Mutex{}
+	var repos []*search.RepositoryRevisions
+
+	muCursor := sync.Mutex{}
+	cursor := 0
+
+	wg := sync.WaitGroup{}
+	worker := func() {
+		defer wg.Done()
+		for {
+			muCursor.Lock()
+			j := cursor
+			cursor += 1
+			muCursor.Unlock()
+
+			if j >= len(resolved) {
+				return
+			}
+			muCommon.Lock()
+			common.repos[j] = resolved[j].Repo
+			muCommon.Unlock()
+
+			if pattern.IsMatch(string(resolved[j].Repo.Name)) {
+				muRepos.Lock()
+				repos = append(repos, resolved[j])
+				muRepos.Unlock()
+			}
+		}
+	}
+
+	for k := 0; k < concurrency; k++ {
+		wg.Add(1)
+		go worker()
+	}
+	wg.Wait()
+
+	// Filter the repos if there is a repohasfile: or -repohasfile field.
+	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
+		repos, err = reposToAdd(ctx, args, repos)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// Convert the repos to RepositoryResolvers.
+	results := make([]SearchResultResolver, 0, len(repos))
+	for _, r := range repos {
+		if len(results) == int(limit) {
+			common.limitHit = true
+			break
+		}
+
+		var revs []string
+		revs, err = r.ExpandedRevSpecs(ctx)
+		if err != nil { // fallback to just return revspecs
+			revs = r.RevSpecs()
+		}
+		for _, rev := range revs {
+			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+		}
+	}
+
+	return results, common, nil
 }

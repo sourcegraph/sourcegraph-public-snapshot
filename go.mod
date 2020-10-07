@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
+	github.com/BurntSushi/rure-go v0.0.0-20200220204551-0338b655c065
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -184,6 +185,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/perf v0.0.0-20200918155509-d949658356f9 // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/sys v0.0.0-20200915084602-288bc346aa39
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e

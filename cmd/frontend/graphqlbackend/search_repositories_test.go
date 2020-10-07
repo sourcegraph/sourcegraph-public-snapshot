@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strconv"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -93,7 +96,7 @@ func TestSearchRepositories(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			results, _, err := searchRepositories(context.Background(), &search.TextParameters{
+			results, _, err := searchRepositoriesRuRe(context.Background(), &search.TextParameters{
 				PatternInfo: pattern,
 				RepoPromise: (&search.Promise{}).Resolve(repositories),
 				Query:       q,
@@ -229,3 +232,451 @@ func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *se
 	}
 	return len(rsta) == 1, nil
 }
+
+func BenchmarkSearchRepositories(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositories(context.Background(), &tp, options.fileMatchLimit)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_2(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 2)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_3(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 3)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_4(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 4)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_5(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 5)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_6(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 6)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_7(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 7)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_8(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 8)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_9(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 9)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSearchRepositoriesConcurrency_10(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+
+	// create realistic regex search pattern
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositoriesConcurrent(context.Background(), &tp, options.fileMatchLimit, 10)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+//func BenchmarkSearchRepositoriesRuRe(b *testing.B) {
+//	n := 200 * 1000
+//	repos := make([]*search.RepositoryRevisions, n)
+//	for i := 0; i < n; i++ {
+//		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+//		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+//	}
+//
+//	// create realistic regex search pattern
+//	q := "context.WithValue"
+//	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	options := &getPatternInfoOptions{}
+//	textPatternInfo, err := getPatternInfo(queryInfo, options)
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	tp := search.TextParameters{
+//		PatternInfo: textPatternInfo,
+//		RepoPromise: (&search.Promise{}).Resolve(repos),
+//		Query:       queryInfo,
+//	}
+//	for i := 0; i < b.N; i++ {
+//		_, _, err = searchRepositoriesRuRe(context.Background(), &tp, options.fileMatchLimit)
+//		if err != nil {
+//			b.Fatal(err)
+//		}
+//	}
+//}
+
+//func BenchmarkSearchRepositoriesRuRe_2(b *testing.B) {
+//	n := 200 * 1000
+//	repos := make([]*search.RepositoryRevisions, n)
+//	for i := 0; i < n; i++ {
+//		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+//		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+//	}
+//
+//	// create realistic regex search pattern
+//	q := "context.WithValue"
+//	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	options := &getPatternInfoOptions{}
+//	textPatternInfo, err := getPatternInfo(queryInfo, options)
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	tp := search.TextParameters{
+//		PatternInfo: textPatternInfo,
+//		RepoPromise: (&search.Promise{}).Resolve(repos),
+//		Query:       queryInfo,
+//	}
+//	for i := 0; i < b.N; i++ {
+//		_, _, err = searchRepositoriesConcurrentWithRuRe(context.Background(), &tp, options.fileMatchLimit, 2)
+//		if err != nil {
+//			b.Fatal(err)
+//		}
+//	}
+//}
+//
+//func BenchmarkSearchRepositoriesRuRe_5(b *testing.B) {
+//	n := 200 * 1000
+//	repos := make([]*search.RepositoryRevisions, n)
+//	for i := 0; i < n; i++ {
+//		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+//		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+//	}
+//
+//	// create realistic regex search pattern
+//	q := "context.WithValue"
+//	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	options := &getPatternInfoOptions{}
+//	textPatternInfo, err := getPatternInfo(queryInfo, options)
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	tp := search.TextParameters{
+//		PatternInfo: textPatternInfo,
+//		RepoPromise: (&search.Promise{}).Resolve(repos),
+//		Query:       queryInfo,
+//	}
+//	for i := 0; i < b.N; i++ {
+//		_, _, err = searchRepositoriesConcurrentWithRuRe(context.Background(), &tp, options.fileMatchLimit, 5)
+//		if err != nil {
+//			b.Fatal(err)
+//		}
+//	}
+//}
+//
+//func BenchmarkSearchRepositoriesRuRe_10(b *testing.B) {
+//	n := 200 * 1000
+//	repos := make([]*search.RepositoryRevisions, n)
+//	for i := 0; i < n; i++ {
+//		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+//		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+//	}
+//
+//	// create realistic regex search pattern
+//	q := "context.WithValue"
+//	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	options := &getPatternInfoOptions{}
+//	textPatternInfo, err := getPatternInfo(queryInfo, options)
+//	if err != nil {
+//		b.Fatal(err)
+//	}
+//	tp := search.TextParameters{
+//		PatternInfo: textPatternInfo,
+//		RepoPromise: (&search.Promise{}).Resolve(repos),
+//		Query:       queryInfo,
+//	}
+//	for i := 0; i < b.N; i++ {
+//		_, _, err = searchRepositoriesConcurrentWithRuRe(context.Background(), &tp, options.fileMatchLimit, 10)
+//		if err != nil {
+//			b.Fatal(err)
+//		}
+//	}
+//}
