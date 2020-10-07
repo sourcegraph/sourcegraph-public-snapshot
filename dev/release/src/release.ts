@@ -372,6 +372,19 @@ Key dates:
                     },
                     {
                         owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph',
+                        base: `${parsedVersion.major}.${parsedVersion.minor}`,
+                        head: `publish-${parsedVersion.version}`,
+                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        edits: [
+                            // installs version pinned by deploy-sourcegraph
+                            'go install github.com/slimsag/update-docker-tags',
+                            `.github/workflows/scripts/update-docker-tags.sh ${parsedVersion.version}`,
+                        ],
+                        title: `Update latest release to ${parsedVersion.version}`,
+                    },
+                    {
+                        owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
                         head: `publish-${parsedVersion.version}`,
@@ -406,10 +419,13 @@ Key dates:
                 ],
                 dryRun: dryRun.changesets,
             })
-            await postMessage(
-                `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
-                slackAnnounceChannel
-            )
+
+            if (!dryRun.changesets) {
+                await postMessage(
+                    `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                    slackAnnounceChannel
+                )
+            }
         },
     },
 ]

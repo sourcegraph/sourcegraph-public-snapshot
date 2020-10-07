@@ -198,7 +198,13 @@ export interface ChangesetsOptions {
     dryRun?: boolean
 }
 
-export async function createChangesets(options: ChangesetsOptions): Promise<void> {
+export interface CreatedChangeset {
+    repository: string
+    branch: string
+    pullRequestURL: string
+}
+
+export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
     for (const command of options.requiredCommands) {
         try {
             await commandExists(command)
@@ -206,33 +212,64 @@ export async function createChangesets(options: ChangesetsOptions): Promise<void
             throw new Error(`Required command ${command} does not exist`)
         }
     }
-    for (const changeset of options.changes) {
-        await createBranchWithChanges({ ...changeset, dryRun: options.dryRun })
+    const octokit = await getAuthenticatedGitHubClient()
+
+    // Generate changes
+    const results: CreatedChangeset[] = []
+    for (const change of options.changes) {
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+        let prURL = ''
         if (!options.dryRun) {
-            const prURL = await createPR(changeset)
-            console.log(`Pull request created: ${prURL}`)
+            prURL = await createPR(octokit, change)
         }
+        results.push({
+            repository: `${change.owner}/${change.repo}`,
+            branch: change.base,
+            pullRequestURL: prURL,
+        })
     }
+
+    // Log results
+    for (const result of results) {
+        console.log(`${result.repository} (${result.branch}): created pull request ${result.pullRequestURL}`)
+    }
+
+    return results
 }
 
-async function createBranchWithChanges({
-    owner,
-    repo,
-    base: baseRevision,
-    head: headBranch,
-    commitMessage,
-    edits,
-    dryRun,
-}: CreateBranchWithChangesOptions): Promise<void> {
+async function createBranchWithChanges(
+    octokit: Octokit,
+    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
+): Promise<void> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
+    const depthFlag = '--depth 10'
+
+    // Determine whether or not to create the base branch, or use the existing one
+    let baseExists = true
+    try {
+        await octokit.repos.getBranch({ branch: baseRevision, owner, repo })
+    } catch (error) {
+        if (error.status === 404) {
+            console.log(`Base ${baseRevision} does not exist`)
+            baseExists = false
+        } else {
+            throw error
+        }
+    }
+    const checkoutCommand =
+        baseExists === true
+            ? // check out the existing branch - fetch fails if we are already checked out, in which case just check out
+              `git fetch ${depthFlag} origin ${baseRevision}:${baseRevision} || git checkout ${baseRevision}`
+            : // create and publish base branch if it does not yet exist
+              `git checkout -b ${baseRevision}`
 
     // Set up repository
     const setupScript = `set -ex
 
-    git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
+    git clone ${depthFlag} git@github.com:${owner}/${repo} || git clone ${depthFlag} https://github.com/${owner}/${repo};
     cd ./${repo};
-    git checkout ${baseRevision};`
+    ${checkoutCommand};`
     await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })
     const workdir = path.join(tmpdir, repo)
 
@@ -252,6 +289,7 @@ async function createBranchWithChanges({
     }
 
     if (dryRun) {
+        console.warn('Dry run enabled - printing diff instead of publishing')
         const showChangesScript = `set -ex
 
         git --no-pager diff;`
@@ -267,15 +305,17 @@ async function createBranchWithChanges({
     }
 }
 
-async function createPR(options: {
-    owner: string
-    repo: string
-    head: string
-    base: string
-    title: string
-    body?: string
-}): Promise<string> {
-    const octokit = await getAuthenticatedGitHubClient()
+async function createPR(
+    octokit: Octokit,
+    options: {
+        owner: string
+        repo: string
+        head: string
+        base: string
+        title: string
+        body?: string
+    }
+): Promise<string> {
     const response = await octokit.pulls.create(options)
     return response.data.html_url
 }
