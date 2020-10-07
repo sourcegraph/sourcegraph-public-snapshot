@@ -1,0 +1,127 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`InstallBrowserExtensionAlert GitHub 1`] = `
+<InstallBrowserExtensionAlert
+  externalURLs={
+    Array [
+      Object {
+        "__typename": "ExternalLink",
+        "serviceType": "github",
+        "url": "https://github.com/sourcegraph/sourcegraph",
+      },
+    ]
+  }
+  onAlertDismissed={[Function]}
+>
+  <div
+    className="alert alert-info m-2 d-flex justify-content-between install-browser-extension-alert"
+  >
+    <div
+      className="d-flex align-items-center"
+    >
+      <div
+        className="position-relative"
+      >
+        <div
+          className="install-browser-extension-alert__icon-flash"
+        />
+        <Memo(GithubIcon)
+          className="install-browser-extension-alert__icon"
+        />
+      </div>
+      <p
+        className="install-browser-extension-alert__text my-0 mr-3"
+      >
+        Get code intelligence while browsing files and reading
+         
+        PR
+        s on 
+        GitHub
+         or any other connected code host.
+         
+        <a
+          className="alert-link"
+          href="/help/integration/browser_extension"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Learn more about Sourcegraph Chrome and Firefox extensions
+        </a>
+      </p>
+    </div>
+    <button
+      aria-label="Close alert"
+      className="btn btn-icon test-close-alert"
+      onClick={[Function]}
+      type="button"
+    >
+      <Memo(CloseIcon)
+        className="icon-inline"
+      />
+    </button>
+  </div>
+</InstallBrowserExtensionAlert>
+`;
+
+exports[`InstallBrowserExtensionAlert GitLab 1`] = `
+<InstallBrowserExtensionAlert
+  externalURLs={
+    Array [
+      Object {
+        "__typename": "ExternalLink",
+        "serviceType": "gitlab",
+        "url": "https://gitlab.com/rluna-open-source/code-management/sourcegraph/sourcegraph",
+      },
+    ]
+  }
+  onAlertDismissed={[Function]}
+>
+  <div
+    className="alert alert-info m-2 d-flex justify-content-between install-browser-extension-alert"
+  >
+    <div
+      className="d-flex align-items-center"
+    >
+      <div
+        className="position-relative"
+      >
+        <div
+          className="install-browser-extension-alert__icon-flash"
+        />
+        <Memo(GitlabIcon)
+          className="install-browser-extension-alert__icon"
+        />
+      </div>
+      <p
+        className="install-browser-extension-alert__text my-0 mr-3"
+      >
+        Get code intelligence while browsing files and reading
+         
+        MR
+        s on 
+        GitLab
+         or any other connected code host.
+         
+        <a
+          className="alert-link"
+          href="/help/integration/browser_extension"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Learn more about Sourcegraph Chrome and Firefox extensions
+        </a>
+      </p>
+    </div>
+    <button
+      aria-label="Close alert"
+      className="btn btn-icon test-close-alert"
+      onClick={[Function]}
+      type="button"
+    >
+      <Memo(CloseIcon)
+        className="icon-inline"
+      />
+    </button>
+  </div>
+</InstallBrowserExtensionAlert>
+`;
