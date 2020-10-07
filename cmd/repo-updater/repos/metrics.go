@@ -30,7 +30,7 @@ var (
 	}, []string{tagExternalServiceID, tagFamily})
 
 	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_syncer_start",
+		Name: "src_repoupdater_syncer_start_sync",
 		Help: "A sync was started",
 	}, []string{tagExternalServiceID, tagFamily})
 

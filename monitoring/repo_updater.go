@@ -37,7 +37,7 @@ func RepoUpdater() *Container {
 						Observable{
 							Name:              "syncer_sync_start",
 							Description:       "sync was started",
-							Query:             `src_repoupdater_syncer_start`,
+							Query:             `src_repoupdater_syncer_start_sync`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{family}}-{{external_service_id}}").Unit(Number),
