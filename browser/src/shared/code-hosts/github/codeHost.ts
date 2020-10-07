@@ -291,7 +291,13 @@ export const githubCodeHost: CodeHost = {
     getContext: () => {
         const repoHeaderHasPrivateMarker =
             !!document.querySelector('.repohead .private') ||
-            !!document.querySelector('#js-repo-pjax-container h1 .octicon-lock')
+            !!document.querySelector('h1 .octicon-lock ~ [itemprop="author"] ~ [itemprop="name"]') ||
+            !!(
+                document
+                    .querySelector('h1 [itemprop="author"] ~ [itemprop="name"] ~ .Label')
+                    ?.textContent?.trim()
+                    .toLowerCase() === 'private'
+            )
         const parsedURL = parseURL()
         return {
             ...parsedURL,
