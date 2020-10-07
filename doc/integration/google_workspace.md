@@ -1,14 +1,14 @@
-# G Suite and Chrome Enterprise integration
+# Google Workspace and Chrome Enterprise integration
 
-> NOTE: Company-wide deployment via G Suite is a [paid upgrade](https://about.sourcegraph.com/pricing)
+> NOTE: Company-wide deployment via Google Workspace is a [paid upgrade](https://about.sourcegraph.com/pricing)
 
-You can install and preconfigure the Sourcegraph Chrome extension for all members of a G Suite organization or organizational unit, so that they can get code intelligence on files and diffs.
+You can install and preconfigure the Sourcegraph Chrome extension for all members of a Google Workspace organization or organizational unit, so that they can get code intelligence on files and diffs.
 
 By default, the browser extension only has access to github.com. Access to additional sites is granted by the user, on a site-by-site basis.
 
 The Sourcegraph browser extension is open source and never sends any logs, pings, usage statistics or telemetry to Sourcegraph.com. Read more about browser extension privacy [here](browser_extension.md#privacy).
 
-## Automatically install with G Suite
+## Automatically install with Google Workspace
 
 Using the Google Admin Console, you can [automatically install](https://support.google.com/chrome/a/answer/6306504?hl=en) the Sourcegraph browser extension for all users in your organization. To do so:
 

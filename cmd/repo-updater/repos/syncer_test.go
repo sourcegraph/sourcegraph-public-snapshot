@@ -1564,7 +1564,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 	}
 }
 
-func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
@@ -1599,6 +1599,16 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 				Metadata: &github.Repository{},
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "foo-external-user",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}
+
+			publicRepo2 := &repos.Repo{
+				Name:     "github.com/org/user2",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-user2",
 					ServiceID:   "https://github.com/",
 					ServiceType: extsvc.TypeGitHub,
 				},
@@ -1642,7 +1652,7 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 				t.Fatal(err)
 			}
 
-			// Confirm that there are two relationships
+			// Confirm that there are zero relationships
 			assertSourceCount(ctx, t, db, 0)
 
 			// User service can only sync public code, even if they have access to private code
@@ -1657,8 +1667,34 @@ func testUserCannotAddPrivateCode(db *sql.DB, userID int32) func(t *testing.T, s
 				t.Fatal(err)
 			}
 
-			// Confirm that there are two relationships
+			// Confirm that there is one relationship
 			assertSourceCount(ctx, t, db, 1)
+
+			// Attempt to add some repos with a per user limit set
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
+					return repos.Sources{s}, nil
+				},
+				Now:                 time.Now,
+				UserReposMaxPerUser: 1,
+			}
+			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
+				t.Fatal("Expected an error, got none")
+			}
+
+			// Attempt to add some repos with a total limit set
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
+					return repos.Sources{s}, nil
+				},
+				Now:                 time.Now,
+				UserReposMaxPerSite: 1,
+			}
+			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
+				t.Fatal("Expected an error, got none")
+			}
 		}
 	}
 }
