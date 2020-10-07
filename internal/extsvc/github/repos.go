@@ -105,31 +105,6 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 	}, false)
 }
 
-// GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
-func (c *Client) GetRepositoryByNodeID(ctx context.Context, id string) (*Repository, error) {
-	return c.getRepositoryByNodeID(ctx, id, false)
-}
-
-// HACK: allows us to bypass the GitHub client cache (used for fetching repositories to determine
-// permissions). TODO(beyang): merge this into a unified GetRepositoryByNodeID with a clean
-// interface.
-func (c *Client) GetRepositoryByNodeIDNoCache(ctx context.Context, id string) (*Repository, error) {
-	return c.getRepositoryByNodeID(ctx, id, true)
-}
-
-func (c *Client) getRepositoryByNodeID(ctx context.Context, id string, nocache bool) (*Repository, error) {
-	key := nodeIDCacheKey(id)
-
-	return c.cachedGetRepository(ctx, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
-		keys = append(keys, key)
-		repo, err = c.getRepositoryByNodeIDFromAPI(ctx, id)
-		if repo != nil {
-			keys = append(keys, nameWithOwnerCacheKey(repo.NameWithOwner)) // also cache under "owner/name"
-		}
-		return repo, keys, err
-	}, nocache)
-}
-
 // cachedGetRepository caches the getRepositoryFromAPI call.
 func (c *Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
 	if !nocache {
@@ -290,82 +265,6 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
 	return c.listRepositories(ctx, path)
-}
-
-// getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
-// API without use of the redis cache.
-func (c *Client) getRepositoryByNodeIDFromAPI(ctx context.Context, id string) (*Repository, error) {
-	var result struct {
-		Node *Repository `json:"node"`
-	}
-	if err := c.requestGraphQL(ctx, `
-query Repository($id: ID!) {
-	node(id: $id) {
-		... on Repository {
-			...RepositoryFields
-		}
-	}
-}`+c.repositoryFieldsGraphQLFragment(),
-		map[string]interface{}{"id": id},
-		&result,
-	); err != nil {
-		if gqlErrs, ok := err.(graphqlErrors); ok {
-			for _, err2 := range gqlErrs {
-				if err2.Type == graphqlErrTypeNotFound {
-					return nil, ErrNotFound
-				}
-			}
-		}
-		return nil, err
-	}
-	if result.Node == nil {
-		return nil, ErrNotFound
-	}
-	return result.Node, nil
-}
-
-// MaxNodeIDs is the maximum number of repository nodes that can be queried in one call to the
-// GitHub GraphQL API.
-var MaxNodeIDs = 100
-
-// GetRepositoriesByNodeIDFromAPI fetches the specified repositories (nodeIDs) and returns a map
-// from node ID to repository metadata. If a repository is not found, it will not be present in the
-// return map. The caller should respect the max nodeID count limit of the GitHub API, which at the
-// time of writing, is 100 (if the caller does not respect this match, this method will return an
-// error). This method does not cache.
-func (c *Client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, nodeIDs []string) (map[string]*Repository, error) {
-	var result struct {
-		Nodes []*Repository
-	}
-	err := c.requestGraphQL(ctx, `
-query Repositories($ids: [ID!]!) {
-	nodes(ids: $ids) {
-		... on Repository {
-			...RepositoryFields
-		}
-	}
-}
-`+c.repositoryFieldsGraphQLFragment(), map[string]interface{}{"ids": nodeIDs}, &result)
-	if err != nil {
-		if gqlErrs, ok := err.(graphqlErrors); ok {
-			for _, err2 := range gqlErrs {
-				if err2.Type == graphqlErrTypeNotFound {
-					continue
-				}
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-
-	repos := make(map[string]*Repository)
-	for _, r := range result.Nodes {
-		if r != nil {
-			repos[r.ID] = r
-		}
-	}
-	return repos, nil
 }
 
 // ErrBatchTooLarge is when the requested batch of GitHub repositories to fetch
