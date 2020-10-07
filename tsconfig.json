@@ -9,10 +9,10 @@
     { "path": "client/web/src/integration" },
     { "path": "client/browser" },
     { "path": "client/browser/src/end-to-end" },
-    { "path": "client/schema" },
     { "path": "client/packages/sourcegraph-extension-api" },
     { "path": "client/packages/@sourcegraph/extension-api-types" },
     { "path": "dev/release" },
+    { "path": "schema" },
   ],
   "compilerOptions": {
     "target": "es2019",
