@@ -12,8 +12,8 @@ export function afterEachSaveScreenshotIfFailed(getPage: () => puppeteer.Page): 
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({
                 page: getPage(),
-                repoRootDir: path.resolve(__dirname, '..', '..', '..'),
-                screenshotDir: path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
+                repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
+                screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
                 testName: this.currentTest.fullTitle(),
             })
         }
