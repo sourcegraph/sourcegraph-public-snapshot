@@ -133,6 +133,16 @@ func RepoUpdater() *Container {
 							PossibleSolutions: "none",
 						},
 						Observable{
+							Name:              "sched_update_queue_length",
+							Description:       "repositories queued for update",
+							Query:             `src_repoupdater_sched_update_queue_length`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
 							Name:              "sched_loops",
 							Description:       "scheduler loops",
 							Query:             `rate(src_repoupdater_sched_loops[1m])`,

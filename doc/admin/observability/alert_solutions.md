@@ -3038,6 +3038,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## repo-updater: sched_update_queue_length
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories queued for update for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sched_update_queue_length"
+]
+```
+
 ## repo-updater: sched_loops
 
 **Descriptions:**

@@ -83,6 +83,11 @@ var (
 		Name: "src_repoupdater_sched_known_repos",
 		Help: "The number of repositories that are managed by the scheduler.",
 	})
+
+	schedUpdateQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_repoupdater_sched_update_queue_length",
+		Help: "The number of repositories that are currently queued for update",
+	})
 )
 
 func MustRegisterMetrics(db dbutil.DB) {

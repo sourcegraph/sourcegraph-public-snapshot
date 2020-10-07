@@ -451,6 +451,8 @@ func (q *updateQueue) reset() {
 	q.index = map[api.RepoID]*repoUpdate{}
 	q.seq = 0
 	q.notifyEnqueue = make(chan struct{}, notifyChanBuffer)
+
+	schedUpdateQueueLength.Set(0)
 }
 
 // enqueue adds the repo to the queue with the given priority.
@@ -576,6 +578,7 @@ func (q *updateQueue) Push(x interface{}) {
 	item.Seq = q.nextSeq()
 	q.heap = append(q.heap, item)
 	q.index[item.Repo.ID] = item
+	schedUpdateQueueLength.Inc()
 }
 
 func (q *updateQueue) Pop() interface{} {
@@ -584,6 +587,7 @@ func (q *updateQueue) Pop() interface{} {
 	item.Index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
 	delete(q.index, item.Repo.ID)
+	schedUpdateQueueLength.Dec()
 	return item
 }
 
