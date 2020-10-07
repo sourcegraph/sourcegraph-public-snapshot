@@ -23,11 +23,11 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "upload_queue_growth_rate",
-							Description:       "upload queue growth rate every 5m",
-							Query:             `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_upload_queue_processor_total[30m]))`,
-							DataMayNotExist:   true,
-							DataMayBeNaN:      true, // numerator and denominator could both be 0
+							Name:            "upload_queue_growth_rate",
+							Description:     "upload queue growth rate every 5m",
+							Query:           `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_upload_queue_processor_total[30m]))`,
+							DataMayNotExist: true,
+
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("upload queue growth rate"),
 							Owner:             ObservableOwnerCodeIntel,
@@ -50,9 +50,9 @@ func PreciseCodeIntelWorker() *Container {
 							Name:        "99th_percentile_store_duration",
 							Description: "99th percentile successful database query duration over 5m",
 							// TODO(efritz) - ensure these exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_store_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
-							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
+							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_store_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
+							DataMayNotExist: true,
+
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
@@ -119,7 +119,6 @@ func PreciseCodeIntelWorker() *Container {
 							Description:       "99th percentile successful bundle manager data transfer duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="precise-code-intel-worker",category="transfer"}[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
@@ -142,18 +141,17 @@ func PreciseCodeIntelWorker() *Container {
 							Description:       "99th percentile successful gitserver query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "gitserver_error_responses",
-							Description:       "gitserver error responses every 5m",
-							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker"}[5m])) * 100`,
-							DataMayNotExist:   true,
-							DataMayBeNaN:      true, // ratio denominator could be 0
+							Name:            "gitserver_error_responses",
+							Description:     "gitserver error responses every 5m",
+							Query:           `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker"}[5m])) * 100`,
+							DataMayNotExist: true,
+
 							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,

@@ -16,7 +16,6 @@ func PreciseCodeIntelBundleManager() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_bundle_database_duration_seconds_bucket[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("database operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
@@ -40,7 +39,6 @@ func PreciseCodeIntelBundleManager() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_bundle_reader_duration_seconds_bucket[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("reader operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
