@@ -103,6 +103,22 @@ func MustRegisterMetrics(db dbutil.DB) {
 	}
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_external_services_total",
+		Help: "The total number of external services added",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_external_services_total
+SELECT COUNT(*) FROM external_services
+WHERE deleted_at IS NULL
+`)
+		if err != nil {
+			log15.Error("Failed to get total external services", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_user_external_services_total",
 		Help: "The total number of external services added by users",
 	}, func() float64 {
@@ -175,6 +191,36 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
 `)
 		if err != nil {
 			log15.Error("Failed to get total queued sync jobs", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_completed_sync_jobs_total",
+		Help: "The total number of completed sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_completed_sync_jobs_total
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
+`)
+		if err != nil {
+			log15.Error("Failed to get total completed sync jobs", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_errored_sync_jobs_total",
+		Help: "The total number of errored sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
+`)
+		if err != nil {
+			log15.Error("Failed to get total errored sync jobs", "err", err)
 			return 0
 		}
 		return count

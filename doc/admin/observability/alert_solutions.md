@@ -3192,6 +3192,40 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## repo-updater: src_repoupdater_external_services_total
+
+**Descriptions:**
+
+- _repo-updater: 20000+ the total number of external services for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_external_services_total"
+]
+```
+
+## repo-updater: src_repoupdater_user_external_services_total
+
+**Descriptions:**
+
+- _repo-updater: 20000+ the total number of user added external services for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_user_external_services_total"
+]
+```
+
 ## repo-updater: repoupdater_queued_sync_jobs_total
 
 **Descriptions:**
@@ -3207,6 +3241,40 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_repo-updater_repoupdater_queued_sync_jobs_total"
+]
+```
+
+## repo-updater: repoupdater_completed_sync_jobs_total
+
+**Descriptions:**
+
+- _repo-updater: 100+ the total number of completed sync jobs for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_repoupdater_completed_sync_jobs_total"
+]
+```
+
+## repo-updater: repoupdater_errored_sync_jobs_total
+
+**Descriptions:**
+
+- _repo-updater: 100+ the total number of errored sync jobs for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_repoupdater_errored_sync_jobs_total"
 ]
 ```
 

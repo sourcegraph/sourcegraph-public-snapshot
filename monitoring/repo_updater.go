@@ -249,9 +249,31 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
-				Title:  "External service synchronization",
+				Title:  "External services",
 				Hidden: true,
 				Rows: []Row{
+					{
+						Observable{
+							Name:              "src_repoupdater_external_services_total",
+							Description:       "the total number of external services",
+							Query:             `src_repoupdater_external_services_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20000, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+						Observable{
+							Name:              "src_repoupdater_user_external_services_total",
+							Description:       "the total number of user added external services",
+							Query:             `src_repoupdater_user_external_services_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20000, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+					},
 					{
 						Observable{
 							Name:            "repoupdater_queued_sync_jobs_total",
@@ -265,6 +287,26 @@ func RepoUpdater() *Container {
 								- **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = 'errored'";
 								- **Increase the number of workers** using the 'repoConcurrentExternalServiceSyncers' site config.
 							`,
+						},
+						Observable{
+							Name:              "repoupdater_completed_sync_jobs_total",
+							Description:       "the total number of completed sync jobs",
+							Query:             `src_repoupdater_completed_sync_jobs_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+						Observable{
+							Name:              "repoupdater_errored_sync_jobs_total",
+							Description:       "the total number of errored sync jobs",
+							Query:             `src_repoupdater_errored_sync_jobs_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
 						},
 					},
 				},
