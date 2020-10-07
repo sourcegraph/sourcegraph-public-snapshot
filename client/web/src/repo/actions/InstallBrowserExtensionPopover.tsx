@@ -60,8 +60,11 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                             Take Sourcegraph's code intelligence to {displayName}!
                         </h3>
                         <p className="py-3">
-                            Install Sourcegraph browser extension to get code intelligence while browsing files and
-                            reading PRs on {displayName}.
+                            Install Sourcegraph browser extension to add code intelligence{' '}
+                            {serviceType === 'phabricator'
+                                ? 'while browsing and reviewing code'
+                                : `to ${serviceType === 'gitlab' ? 'MR' : 'PR'}s and file views`}{' '}
+                            on {displayName} or any other connected code host.
                         </p>
 
                         <div className="mx-auto install-browser-extension-popover__graphic-container d-flex justify-content-between align-items-center">
