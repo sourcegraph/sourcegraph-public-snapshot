@@ -41,7 +41,7 @@ const config = {
     // monaco-editor uses the "module" field in package.json, which isn't supported by Jest
     // https://github.com/facebook/jest/issues/2702
     // https://github.com/Microsoft/monaco-editor/issues/996
-    '^monaco-editor': path.resolve(__dirname, '/node_modules/monaco-editor/esm/vs/editor/editor.main.js'),
+    '^monaco-editor': 'monaco-editor/esm/vs/editor/editor.main.js',
   },
 
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
