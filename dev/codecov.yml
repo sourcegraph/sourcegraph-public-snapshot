@@ -17,7 +17,7 @@ coverage:
           - enterprise/cmd/frontend/internal/campaigns
           - internal/campaigns
           - enterprise/internal/campaigns
-          - web/src/enterprise/campaigns
+          - client/web/src/enterprise/campaigns
       typescript:
         informational: true
         flags:
@@ -42,4 +42,4 @@ flags:
     carryforward: true
 
 github_checks:
-    annotations: false
+  annotations: false

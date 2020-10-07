@@ -6,7 +6,7 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco-editor')]
 
 const config = {
-  stories: ['../**/*.story.tsx'],
+  stories: ['../client/**/*.story.tsx'],
   addons: ['@storybook/addon-knobs', '@storybook/addon-actions', '@storybook/addon-options', 'storybook-addon-designs'],
   /**
    * @param config {import('webpack').Configuration}

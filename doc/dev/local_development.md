@@ -487,9 +487,7 @@ running this command to clear the local package cache.
 
 ```bash
 yarn cache clean
-rm -rf node_modules web/node_modules
-yarn
-cd web
+rm -rf node_modules
 yarn
 ```
 
