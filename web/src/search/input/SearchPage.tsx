@@ -7,7 +7,7 @@ import {
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
-    EnterpriseHomePanelsProps,
+    HomePanelsProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -33,7 +33,7 @@ import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcut
 import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { EnterpriseHomePanels } from '../panels/EnterpriseHomePanels'
+import { HomePanels } from '../panels/HomePanels'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -51,7 +51,7 @@ export interface SearchPageProps
         VersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
-        EnterpriseHomePanelsProps {
+        HomePanelsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -324,7 +324,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     </>
                 )}
 
-            {props.showEnterpriseHomePanels && props.authenticatedUser && <EnterpriseHomePanels {...props} />}
+            {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
         </div>
     )
 }

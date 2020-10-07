@@ -38,7 +38,7 @@ import {
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
-    EnterpriseHomePanelsProps,
+    HomePanelsProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -82,7 +82,7 @@ export interface LayoutProps
         VersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
-        EnterpriseHomePanelsProps {
+        HomePanelsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]

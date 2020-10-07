@@ -61,7 +61,15 @@ const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
     chromatic: { viewports: [769, 993, 1200] },
 })
 
-add('Cloud without repogroups', () => (
+add('Cloud with panels', () => (
+    <WebStory>
+        {webProps => (
+            <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />
+        )}
+    </WebStory>
+))
+
+add('Cloud without repogroups or panels', () => (
     <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
 ))
 
