@@ -151,6 +151,15 @@ async function main(): Promise<void> {
             await browser.runtime.openOptionsPage()
         },
 
+        /** Tries to open popup, falls back to opening options page on error */
+        async openPopup(): Promise<void> {
+            try {
+                await browser.browserAction.openPopup()
+            } catch {
+                await this.openOptionsPage()
+            }
+        },
+
         async createBlobURL(bundleUrl: string): Promise<string> {
             return createBlobURLForBundle(bundleUrl)
         },
