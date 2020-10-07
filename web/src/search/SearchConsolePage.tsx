@@ -106,35 +106,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         return () => disposable.dispose()
     }, [editorInstance, searchQuery, props.history])
 
-    const calculateCount = useCallback((): number => {
-        // This function can only get called if the results were successfully loaded,
-        // so casting is the right thing to do here
-        const results = resultsOrError as GQL.ISearchResults
-
-        const query = searchQuery.value
-        if (/count:(\d+)/.test(query)) {
-            return Math.max(results.matchCount * 2, 1000)
-        }
-        return Math.max(results.matchCount * 2 || 0, 1000)
-    }, [resultsOrError, searchQuery])
-
-    const showMoreResults = useCallback((): void => {
-        // Requery with an increased max result count.
-        if (!editorInstance) {
-            return
-        }
-        let query = editorInstance.getValue()
-
-        const count = calculateCount()
-        if (/count:(\d+)/.test(query)) {
-            query = query.replace(/count:\d+/g, '').trim() + ` count:${count}`
-        } else {
-            query = `${query} count:${count}`
-        }
-        searchQuery.next(query)
-        triggerSearch()
-    }, [calculateCount, editorInstance, searchQuery, triggerSearch])
-
     const onExpandAllResultsToggle = useCallback((): void => {
         setAllExpanded(allExpanded => {
             props.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
@@ -178,7 +149,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                                 showSavedQueryButton={false}
                                 onDidCreateSavedQuery={voidCallback}
                                 onSavedQueryModalClose={voidCallback}
-                                onShowMoreResultsClick={showMoreResults}
                                 onSaveQueryClick={voidCallback}
                             />
                         ))}

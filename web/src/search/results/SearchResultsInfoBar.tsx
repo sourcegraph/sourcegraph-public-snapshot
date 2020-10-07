@@ -33,7 +33,7 @@ interface SearchResultsInfoBarProps
     /** The loaded search results and metadata */
     query?: string
     results: GQL.ISearchResults
-    onShowMoreResultsClick: () => void
+    onShowMoreResultsClick?: () => void
 
     // Expand all feature
     allExpanded: boolean
@@ -108,7 +108,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 {props.results.limitHit && String.fromCharCode(160)}
                             </span>
 
-                            {props.results.limitHit && (
+                            {props.results.limitHit && props.onShowMoreResultsClick && (
                                 <button
                                     type="button"
                                     className="btn btn-link btn-sm p-0"
