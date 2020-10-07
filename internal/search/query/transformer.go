@@ -477,7 +477,8 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 		}
 	}
 	return Pattern{
-		Value: "(" + strings.Join(values, ").*(") + ")",
+		Annotation: Annotation{Labels: Regexp},
+		Value:      "(" + strings.Join(values, ").*?(") + ")",
 	}
 }
 
