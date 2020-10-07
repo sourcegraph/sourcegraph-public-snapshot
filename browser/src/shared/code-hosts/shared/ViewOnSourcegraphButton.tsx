@@ -47,8 +47,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     const commonProps: Partial<SourcegraphIconButtonProps> = {
         className,
         iconClassName,
-        target: '_blank',
-        rel: 'noopener noreferrer',
     }
 
     // Show nothing while loading
