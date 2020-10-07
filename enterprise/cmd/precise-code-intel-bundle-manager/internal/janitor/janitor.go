@@ -70,17 +70,24 @@ func (j *Janitor) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "janitor.removeRecordsForDeletedRepositories")
 	}
 
-	if err := j.removeCompletedRecordsWithoutBundleFile(ctx); err != nil {
-		return errors.Wrap(err, "janitor.removeCompletedRecordsWithoutBundleFile")
-	}
+	// Note: We should no longer delete records without a bundle file as we may
+	// have written the same data directly to Postgres. This pass was here only
+	// to clean up my bloody first stab at the bundle manager that would litter
+	// things all over my dev environment.
+	// if err := j.removeCompletedRecordsWithoutBundleFile(ctx); err != nil {
+	// 	return errors.Wrap(err, "janitor.removeCompletedRecordsWithoutBundleFile")
+	// }
 
 	if err := j.removeOldUploadingRecords(ctx); err != nil {
 		return errors.Wrap(err, "janitor.removeOldUploadingRecords")
 	}
 
-	if err := j.freeSpace(ctx); err != nil {
-		return errors.Wrap(err, "janitor.freeSpace")
-	}
+	// Note: We are disabling freeing space on disk as we are no longer writing to
+	// disk as our primary store (so it shouldn't grow). We'll need to figure out
+	// a data retention policy that works better using postgres.
+	// if err := j.freeSpace(ctx); err != nil {
+	// 	return errors.Wrap(err, "janitor.freeSpace")
+	// }
 
 	if err := j.hardDeleteDeletedRecords(ctx); err != nil {
 		return errors.Wrap(err, "janitor.hardDeleteDeletedRecords")
