@@ -401,12 +401,18 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
-	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
 				return
 			}
 			_, err = regexp.Compile(value)
+		}
+		if annotation.Labels.isSet(Structural) && negated {
+			if err != nil {
+				return
+			}
+			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
 	if err != nil {
