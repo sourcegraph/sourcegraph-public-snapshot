@@ -164,7 +164,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, PublicationState: &publishedState}
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, PublicationState: &publishedState, ReconcilerStates: []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err
