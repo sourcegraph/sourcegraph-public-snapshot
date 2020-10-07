@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -96,9 +97,19 @@ func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics store
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	exists, err := u.gitserverClient.FileExists(ctx, u.store, repoUsageStatistics.RepositoryID, commit, "go.mod")
-	if err != nil || !exists {
-		return errors.Wrap(err, "gitserver.FileExists")
+	paths, err := u.gitserverClient.ListFiles(ctx, u.store, repoUsageStatistics.RepositoryID, commit, inference.Patterns)
+	if err != nil {
+		return errors.Wrap(err, "gitserver.ListFiles")
+	}
+	matched := false
+	for _, handler := range inference.Recognizers {
+		if handler.CanIndex(paths) {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return nil
 	}
 
 	// TODO(efritz) - also check repo size

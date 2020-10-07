@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -613,10 +614,12 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 		if actor.IsAuthenticated() {
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
-			if err != nil {
-				log15.Warn("Could not log search latency", "err", err)
-			}
+			go func() {
+				err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
+				if err != nil {
+					log15.Warn("Could not log search latency", "err", err)
+				}
+			}()
 		}
 	}
 }
@@ -1874,7 +1877,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			defer wg.Done()
 			agg.doFilePathSearch(ctx, &argsIndexed)
 		})
-		args.Mode = search.SearcherOnly
+		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
+		// of indexed default repositories. No need to call searcher, because
+		// len(searcherRepos) will always be 0.
+		if envvar.SourcegraphDotComMode() {
+			args.Mode = search.NoFilePath
+		} else {
+			args.Mode = search.SearcherOnly
+		}
 	}
 
 	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
@@ -1918,7 +1928,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
 			})
 		case "file", "path":
-			if searchedFileContentsOrPaths {
+			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
 				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
 				continue
 			}

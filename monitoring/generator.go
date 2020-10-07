@@ -169,12 +169,16 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this would be set to true.
 	DataMayNotExist bool
 
-	// DataMayBeNaN indicates whether or not the query may return NaN regularly. Most often,
-	// this should be false as NaN often indicates a mistaken divide by zero. However, for
-	// some queries NaN values may be expected, in which case you should set this to true.
+	// DataMayNotBeNaN indicates whether or not the query may return NaN regularly.
+	// In other words, when true, alerts will fire if the query returns NaN.
 	//
-	// When false, alerts will fire if the query returns NaN.
-	DataMayBeNaN bool
+	// NaN often indicates a mistaken divide by zero - for many types of alert queries,
+	// this is a common problem on low-traffic deployments where the values of many
+	// metrics frequently end up being 0, so the default is to allow it.
+	//
+	// However, for some queries NaN values may be unexpected, in which case you should
+	// set this to true.
+	DataMayNotBeNaN bool
 
 	// Warning and Critical alert definitions. At least a Warning alert must be present.
 	//
@@ -693,6 +697,13 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					// The alertQuery must contribute a query that returns a value < 1 when it is not
 					// firing, or a value of >= 1 when it is firing.
 					var alertQuery string
+
+					// Replace NaN values with zero (not firing) or one (firing) if they are present.
+					fireOnNan := "0"
+					if o.DataMayNotBeNaN {
+						fireOnNan = "1"
+					}
+
 					if alert.GreaterOrEqual != 0 {
 						// By dividing the query value and the greaterOrEqual value, we produce a
 						// value of 1 when the query reaches the greaterOrEqual value and < 1
@@ -709,11 +720,6 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
 
-						// Replace NaN values with zero (not firing) or one (firing) if they are present.
-						fireOnNan := "1"
-						if o.DataMayBeNaN {
-							fireOnNan = "0"
-						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 
 						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
@@ -737,11 +743,6 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
 
-						// Replace NaN values with zero (not firing) or one (firing) if they are present.
-						fireOnNan := "1"
-						if o.DataMayBeNaN {
-							fireOnNan = "0"
-						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 
 						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they

@@ -77,19 +77,19 @@ func addLint(pipeline *bk.Pipeline) {
 func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians:",
-		bk.Cmd("dev/ci/yarn-build.sh web"),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "0"))
 
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
-		bk.Cmd("dev/ci/yarn-build.sh web"),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
-		bk.Cmd("dev/ci/yarn-test.sh web"),
+		bk.Cmd("dev/ci/yarn-test.sh client/web"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
@@ -97,11 +97,11 @@ func addWebApp(pipeline *bk.Pipeline) {
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension build
 	pipeline.AddStep(":webpack::chrome:",
-		bk.Cmd("dev/ci/yarn-build.sh browser"))
+		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
-		bk.Cmd("dev/ci/yarn-test.sh browser"),
+		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
@@ -140,7 +140,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 		// Shared tests
 		pipeline.AddStep(":jest:",
-			bk.Cmd("dev/ci/yarn-test.sh shared"),
+			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 	}
 }
@@ -199,7 +199,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 		bk.Env("LOG_BROWSER_CONSOLE", "true"),
 		bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
+		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
 		bk.Cmd("popd"),
@@ -215,7 +215,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
+		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:chrome"),
 		bk.Cmd("popd"))
@@ -224,14 +224,14 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Build and self sign the FF extension and upload it to ...
 	// pipeline.AddStep(":rocket::firefox:",
 	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("pushd client/browser"),
 	// 	bk.Cmd("yarn release:ff"),
 	// 	bk.Cmd("popd"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm:",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
+		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:npm"),
 		bk.Cmd("popd"))

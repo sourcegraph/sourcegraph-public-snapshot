@@ -24,12 +24,12 @@ Code host integrations work by first [identifying all code views on a given page
 
 ## Relationship to the web UI
 
-Sourcegraph code host integrations share some functionality and source code with the Sourcegraph web UI. Both support [Sourcegraph extensions](../extensions/index.md), which is how Sourcegraph provides code intelligence hovers, code decorations, action buttons, and other features. 
+Sourcegraph code host integrations share some functionality and source code with the Sourcegraph web UI. Both support [Sourcegraph extensions](../extensions/index.md), which is how Sourcegraph provides code intelligence hovers, code decorations, action buttons, and other features.
 
 The browser extensions, native integrations, and the web UI are collectively labeled as the [web clients](./web/index.md).
 
 ## Contributing to code host integrations
 
-The source code for code host integrations is located in the [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/tree/master/browser) directory of the Sourcegraph repository.
+The source code for code host integrations is located in the [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/tree/main/client/browser) directory of the Sourcegraph repository.
 
-For build steps and details of the directory layout, see [`browser/README.md`](https://github.com/sourcegraph/sourcegraph/tree/master/browser/README.md)
+For build steps and details of the directory layout, see [`browser/README.md`](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser/README.md)

@@ -27,7 +27,6 @@ func PreciseCodeIntelIndexer() *Container {
 							Description:       "index queue growth rate every 5m",
 							Query:             `sum(increase(src_index_queue_indexes_total[30m])) / sum(increase(src_index_queue_processor_total[30m]))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true, // numerator and denominator could both be 0
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("index queue growth rate"),
 							Owner:             ObservableOwnerCodeIntel,
@@ -52,7 +51,6 @@ func PreciseCodeIntelIndexer() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_store_duration_seconds_bucket{job="precise-code-intel-indexer"}[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
@@ -175,7 +173,6 @@ func PreciseCodeIntelIndexer() *Container {
 							Description:       "99th percentile successful gitserver query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="precise-code-intel-indexer"}[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
@@ -186,7 +183,6 @@ func PreciseCodeIntelIndexer() *Container {
 							Description:       "gitserver error responses every 5m",
 							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-indexer",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-indexer"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true, // ratio denominator could be 0
 							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
