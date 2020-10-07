@@ -110,6 +110,7 @@ import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/c
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 
 registerHighlightContributions()
 
@@ -680,7 +681,7 @@ export function handleCodeHost({
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
             event.preventDefault()
-            await browser.runtime.sendMessage({ type: 'openPopup' })
+            await background.openPopup()
         }
 
         subscriptions.add(

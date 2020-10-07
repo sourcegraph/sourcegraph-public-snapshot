@@ -18,6 +18,7 @@ const messageSender = <T extends keyof BackgroundMessageHandlers>(type: T): Back
  */
 export const background: BackgroundMessageHandlers = {
     createBlobURL: messageSender('createBlobURL'),
+    openPopup: messageSender('openPopup'),
     openOptionsPage: messageSender('openOptionsPage'),
     requestGraphQL: messageSender('requestGraphQL'),
 }
