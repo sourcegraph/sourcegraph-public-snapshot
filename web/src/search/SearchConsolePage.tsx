@@ -8,9 +8,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
-import { BehaviorSubject, concat, of } from 'rxjs'
-import { useEventObservable } from '../../../shared/src/util/useObservable'
-import { first, switchMap, switchMapTo, tap } from 'rxjs/operators'
+import { BehaviorSubject, concat, NEVER, of } from 'rxjs'
+import { useObservable } from '../../../shared/src/util/useObservable'
 import { search } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
@@ -59,26 +58,29 @@ const options: Monaco.editor.IEditorOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(location.search) || ''), [])
-    const patternType = useMemo(() => parseSearchURLPatternType(location.search) || SearchPatternType.structural, [])
-    const [nextSearch, resultsOrError] = useEventObservable<'loading' | GQL.ISearchResults | ErrorLike>(
-        useCallback(
-            searchRequests =>
-                searchRequests.pipe(
-                    switchMapTo(searchQuery.pipe(first())),
-                    tap(query => props.history.push('/search/console?q=' + encodeURI(query))),
-                    switchMap(query =>
-                        concat(
-                            of('loading' as const),
-                            search(query, 'V2', patternType, undefined, props.extensionsController.extHostAPI)
-                        )
-                    )
-                ),
-            [searchQuery, patternType, props.extensionsController, props.history]
-        )
+    const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
+        props.location.search,
+    ])
+    const patternType = useMemo(
+        () => parseSearchURLPatternType(props.location.search) || SearchPatternType.structural,
+        [props.location.search]
+    )
+    const triggerSearch = useCallback(() => {
+        props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
+    }, [props.history, searchQuery])
+    // Fetch search results when the `q` URL query parameter changes
+    const resultsOrError = useObservable<'loading' | GQL.ISearchResults | ErrorLike>(
+        useMemo(() => {
+            const query = parseSearchURLQuery(props.location.search)
+            return query
+                ? concat(
+                      of('loading' as const),
+                      search(query, 'V2', patternType, undefined, props.extensionsController.extHostAPI)
+                  )
+                : NEVER
+        }, [patternType, props.extensionsController, props.location.search])
     )
     const [allExpanded, setAllExpanded] = useState(false)
-
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
     useEffect(() => {
         if (!monacoInstance) {
@@ -130,8 +132,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             query = `${query} count:${count}`
         }
         searchQuery.next(query)
-        nextSearch()
-    }, [calculateCount, editorInstance, searchQuery, nextSearch])
+        triggerSearch()
+    }, [calculateCount, editorInstance, searchQuery, triggerSearch])
 
     const onExpandAllResultsToggle = useCallback((): void => {
         setAllExpanded(allExpanded => {
@@ -149,7 +151,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 <div className="flex-1 p-1">
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
-                        <button className="btn btn-lg btn-primary" type="button" onClick={nextSearch}>
+                        <button className="btn btn-lg btn-primary" type="button" onClick={triggerSearch}>
                             Search
                         </button>
                     </div>
