@@ -109,5 +109,9 @@ func mustInitializeCodeIntelDatabase() *sql.DB {
 		log.Fatalf("failed to connect to codeintel database: %s", err)
 	}
 
+	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+		log.Fatalf("failed to perform codeintel database migration: %s", err)
+	}
+
 	return db
 }
