@@ -119,8 +119,8 @@ const config = {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
       'react-visibility-sensor': path.resolve(
-        __dirname,
-        '../node_modules/react-visibility-sensor/visibility-sensor.js'
+        rootDirectory,
+        'node_modules/react-visibility-sensor/visibility-sensor.js'
       ),
     },
   },
