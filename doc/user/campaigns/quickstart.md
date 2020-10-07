@@ -82,7 +82,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 1. Make sure the changes look right.
     <img src="./browser_campaign_preview.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
 
-    >NOTE: If you want to run the campaign on fewer repositories, change the roots query in `hello-world.campaign.yaml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
+    >NOTE: If you want to run the campaign on fewer repositories, change the `repositoriesMatchingQuery` in `hello-world.campaign.yaml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
 1. Click the **Apply spec** button to create the campaign.
     <img src="./browser_campaign_created.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
 
