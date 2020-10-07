@@ -464,59 +464,89 @@ func substituteOrForRegexp(nodes []Node) []Node {
 	return new
 }
 
-// substituteConcat reduces a concatenation of patterns to a separator-separated string.
-func substituteConcat(nodes []Node, separator string) []Node {
+func fuzzyRegexp(patterns []Pattern) Pattern {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	var values []string
+	for _, p := range patterns {
+		if p.Annotation.Labels.isSet(Literal) {
+			values = append(values, regexp.QuoteMeta(p.Value))
+		} else {
+			values = append(values, p.Value)
+		}
+	}
+	return Pattern{
+		Annotation: Annotation{Labels: Regexp},
+		Value:      "(" + strings.Join(values, ").*?(") + ")",
+	}
+}
+
+func space(patterns []Pattern) Pattern {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	var values []string
+	for _, p := range patterns {
+		values = append(values, p.Value)
+	}
+	return Pattern{
+		Value: strings.Join(values, " "),
+	}
+}
+
+// substituteConcat calls the callback function for all contiguous patterns in
+// the tree, rooted by a concat operator. The return value of callback is
+// substituted in-place in the tree.
+func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
 		}
 		return false
 	}
-	new := []Node{}
-	for _, node := range nodes {
-		switch v := node.(type) {
-		case Parameter, Pattern:
-			new = append(new, node)
-		case Operator:
-			if v.Kind == Concat {
-				// Merge consecutive patterns.
-				previous := v.Operands[0]
-				merged := Pattern{}
-				if p, ok := previous.(Pattern); ok {
-					merged = p
-				}
-				for _, node := range v.Operands[1:] {
-					if isPattern(node) && isPattern(previous) {
-						p := node.(Pattern)
-						if merged.Value != "" {
-							merged.Annotation.Labels |= p.Annotation.Labels
-							merged = Pattern{
-								Value:      merged.Value + separator + p.Value,
-								Annotation: merged.Annotation,
-							}
-						} else {
-							// Base case.
-							merged = Pattern{Value: p.Value}
+
+	// define a recursive function to close over callback and isPattern.
+	var substituteNodes func(nodes []Node) []Node
+	substituteNodes = func(nodes []Node) []Node {
+		newNode := []Node{}
+		for _, node := range nodes {
+			switch v := node.(type) {
+			case Parameter, Pattern:
+				newNode = append(newNode, node)
+			case Operator:
+				if v.Kind == Concat {
+					// Merge consecutive patterns.
+					ps := []Pattern{}
+					previous := v.Operands[0]
+					if p, ok := previous.(Pattern); ok {
+						ps = append(ps, p)
+					}
+					for _, node := range v.Operands[1:] {
+						if isPattern(node) && isPattern(previous) {
+							p := node.(Pattern)
+							ps = append(ps, p)
+							previous = node
+							continue
 						}
-						previous = node
-						continue
+						if len(ps) > 0 {
+							newNode = append(newNode, callback(ps))
+							ps = []Pattern{}
+						}
+						newNode = append(newNode, substituteNodes([]Node{node})...)
 					}
-					if merged.Value != "" {
-						new = append(new, merged)
-						merged = Pattern{}
+					if len(ps) > 0 {
+						newNode = append(newNode, callback(ps))
+						ps = []Pattern{}
 					}
-					new = append(new, substituteConcat([]Node{node}, separator)...)
+				} else {
+					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
 				}
-				if merged.Value != "" {
-					new = append(new, merged)
-					merged = Pattern{}
-				}
-			} else {
-				new = append(new, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
 			}
 		}
+		return newNode
 	}
-	return new
+	return substituteNodes(nodes)
 }
 
 // escapeParens is a heuristic used in the context of regular expression search.
