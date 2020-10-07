@@ -4,7 +4,7 @@
 
 Campaigns let you make large-scale code changes across many repositories.
 
-> **New to campaigns?** See [Quickstart](quickstart.md) for step-by-step instructions on how to get started.
+> New to campaigns? See the [**🏃 quickstart guide**](quickstart.md).
 
 ## About campaigns
 
