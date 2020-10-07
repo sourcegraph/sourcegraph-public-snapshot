@@ -197,7 +197,7 @@ Install dependencies with `yarn` (install it globally with `npm i -g yarn` if ne
 
 ```sh
 yarn
-cd browser
+cd client/browser
 yarn build
 ```
 

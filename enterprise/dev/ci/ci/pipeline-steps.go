@@ -224,7 +224,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Build and self sign the FF extension and upload it to ...
 	// pipeline.AddStep(":rocket::firefox:",
 	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("pushd client/browser"),
 	// 	bk.Cmd("yarn release:ff"),
 	// 	bk.Cmd("popd"))
 
