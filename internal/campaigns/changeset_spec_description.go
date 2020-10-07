@@ -24,6 +24,7 @@ type ChangesetSpecDescription struct {
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
 	Published bool `json:"published,omitempty"`
+	Draft     bool `json:"draft,omitempty"`
 }
 
 // Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.

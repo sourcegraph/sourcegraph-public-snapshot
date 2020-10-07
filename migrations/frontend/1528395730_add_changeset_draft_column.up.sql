@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE changesets ADD COLUMN IF NOT EXISTS draft bool DEFAULT false NOT NULL;
+
+COMMIT;

@@ -164,6 +164,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 		Body:         c.Body,
 		HeadRefName:  git.AbbreviateRef(c.HeadRef),
 		BaseRefName:  git.AbbreviateRef(c.BaseRef),
+		Draft:        c.Draft,
 	})
 
 	if err != nil {
@@ -255,6 +256,19 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	}
 
 	c.Changeset.Metadata = updated
+
+	// If the PR is in draft mode, but the spec says it should not be a draft, mark the PR as ready for review.
+	if pr.IsDraft && !c.Draft {
+		updated, err := s.client.MarkPullRequestReadyForReview(ctx, &github.MarkPullRequestReadyForReviewInput{
+			PullRequestID: pr.ID,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		c.Changeset.Metadata = updated
+	}
 
 	return nil
 }

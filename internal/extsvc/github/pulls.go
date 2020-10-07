@@ -151,6 +151,7 @@ type PullRequest struct {
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
 	Commits       struct{ Nodes []CommitWithChecks }
+	IsDraft       bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -478,6 +479,8 @@ type CreatePullRequestInput struct {
 	Title string `json:"title"`
 	// The body of the pull request (optional).
 	Body string `json:"body"`
+	// Whether the PR will be in draft mode.
+	Draft bool `json:"draft,omitempty"`
 }
 
 // CreatePullRequest creates a PullRequest on Github.
@@ -585,6 +588,45 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	}
 	pr.TimelineItems = append(pr.TimelineItems, items...)
 
+	return pr, nil
+}
+
+type MarkPullRequestReadyForReviewInput struct {
+	// The Node ID of the pull request.
+	PullRequestID string `json:"pullRequestId"`
+}
+
+// MarkPullRequestReadyForReview marks a PullRequest as "ready for review" on Github.
+func (c *Client) MarkPullRequestReadyForReview(ctx context.Context, in *MarkPullRequestReadyForReviewInput) (*PullRequest, error) {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
+  markPullRequestReadyForReview(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		MarkPullRequestReadyForReview struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"markPullRequestReadyForReview"`
+	}
+
+	input := map[string]interface{}{"input": in}
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	pr := &result.MarkPullRequestReadyForReview.PullRequest.PullRequest
+	pr.TimelineItems = result.MarkPullRequestReadyForReview.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.MarkPullRequestReadyForReview.PullRequest.Participants.Nodes
 	return pr, nil
 }
 
