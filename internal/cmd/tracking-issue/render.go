@@ -364,7 +364,7 @@ func (ar *AssigneeRenderer) renderIssue(issue *Issue) string {
 		}
 	}
 
-	return renderIssue(issue, ar.context.trackingIssue.Milestone)
+	return ar.doRenderIssue(issue, ar.context.trackingIssue.Milestone)
 }
 
 // renderPullRequest returns the given pull request rendered as markdown. This will also
@@ -435,8 +435,8 @@ func (ar *AssigneeRenderer) resetDisplayFlags() {
 	}
 }
 
-// renderIssue returns the given issue rendered in markdown.
-func renderIssue(issue *Issue, milestone string) string {
+// doRenderIssue returns the given issue rendered in markdown.
+func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string {
 	title := issue.SafeTitle()
 	if issue.Milestone != milestone && contains(issue.Labels, fmt.Sprintf("planned/%s", milestone)) {
 		// deprioritized
@@ -466,7 +466,9 @@ func renderIssue(issue *Issue, milestone string) string {
 	if estimate == 0 {
 		var labels [][]string
 		for _, child := range issue.TrackedIssues {
-			labels = append(labels, child.Labels)
+			if _, ok := ar.findIssue(child); ok {
+				labels = append(labels, child.Labels)
+			}
 		}
 
 		estimate = estimateFromLabelSets(labels)

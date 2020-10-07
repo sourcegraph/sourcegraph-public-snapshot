@@ -251,8 +251,10 @@ func group(srcs []Source) map[string]Sources {
 
 // listAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *Repo and a single error
-func listAll(ctx context.Context, src Source, observe ...func(*Repo)) ([]*Repo, error) {
+func listAll(ctx context.Context, src Source, onSourced ...func(*Repo) error) ([]*Repo, error) {
 	results := make(chan SourceResult)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	go func() {
 		src.ListRepos(ctx, results)
@@ -271,8 +273,16 @@ func listAll(ctx context.Context, src Source, observe ...func(*Repo)) ([]*Repo, 
 			}
 			continue
 		}
-		for _, o := range observe {
-			o(res.Repo)
+		for _, o := range onSourced {
+			err := o(res.Repo)
+			if err != nil {
+				// onSourced has returned an error indicating we should stop sourcing.
+				// We're being defensive here in case one of the Source implementations doesn't handle
+				// cancellation correctly. We'll continue to drain the results to ensure we don't
+				// have a goroutine leak.
+				cancel()
+				errs = multierror.Append(errs, err)
+			}
 		}
 		repos = append(repos, res.Repo)
 	}

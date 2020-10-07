@@ -1121,7 +1121,7 @@ type SiteConfiguration struct {
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
 	// AuthMinPasswordLength description: The minimum number of Unicode code points that a password must contain.
 	AuthMinPasswordLength int `json:"auth.minPasswordLength,omitempty"`
-	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
+	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
 	AuthProviders []AuthProviders `json:"auth.providers,omitempty"`
 	// AuthPublic description: WARNING: This option has been removed as of 3.8.
 	AuthPublic bool `json:"auth.public,omitempty"`
@@ -1233,6 +1233,10 @@ type SiteConfiguration struct {
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
+	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins
+	UserReposMaxPerSite int `json:"userRepos.maxPerSite,omitempty"`
+	// UserReposMaxPerUser description: The per user maximum number of repos that can be added by non site admins
+	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 }
 
 // Step description: A command to run (as part of a sequence) in a repository branch to produce the campaign's changes.

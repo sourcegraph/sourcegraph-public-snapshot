@@ -462,10 +462,11 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 
 func TestZoektResultCountFactor(t *testing.T) {
 	cases := []struct {
-		name     string
-		numRepos int
-		pattern  *search.TextPatternInfo
-		want     int
+		name         string
+		numRepos     int
+		globalSearch bool
+		pattern      *search.TextPatternInfo
+		want         int
 	}{
 		{
 			name:     "One repo implies max scaling factor",
@@ -491,10 +492,24 @@ func TestZoektResultCountFactor(t *testing.T) {
 			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
 			want:     10,
 		},
+		{
+			name:         "for global searches, k should be 1",
+			numRepos:     0,
+			globalSearch: true,
+			pattern:      &search.TextPatternInfo{},
+			want:         1,
+		},
+		{
+			name:         "for global searches, k should be 1, adjusted by the FileMatchLimit",
+			numRepos:     0,
+			globalSearch: true,
+			pattern:      &search.TextPatternInfo{FileMatchLimit: 100},
+			want:         10,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := zoektResultCountFactor(tt.numRepos, tt.pattern)
+			got := zoektResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
