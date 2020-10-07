@@ -4,7 +4,7 @@ import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
 import { withKnobs } from '@storybook/addon-knobs'
 import { addDecorator } from '@storybook/react'
-import { setLinkComponent, AnchorLink } from '../shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '../client/shared/src/components/Link'
 import { withDesign } from 'storybook-addon-designs'
 import isChromatic from 'chromatic/isChromatic'
 

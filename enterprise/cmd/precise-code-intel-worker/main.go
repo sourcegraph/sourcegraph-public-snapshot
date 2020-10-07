@@ -52,7 +52,7 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	_ = mustInitializeCodeIntelDatabase()
+	codeIntelDB := mustInitializeCodeIntelDatabase()
 
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
@@ -69,6 +69,7 @@ func main() {
 	)
 	worker := worker.NewWorker(
 		store,
+		codeIntelDB,
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
@@ -107,6 +108,10 @@ func mustInitializeCodeIntelDatabase() *sql.DB {
 	db, err := dbconn.New(postgresDSN, "_codeintel")
 	if err != nil {
 		log.Fatalf("failed to connect to codeintel database: %s", err)
+	}
+
+	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+		log.Fatalf("failed to perform codeintel database migration: %s", err)
 	}
 
 	return db

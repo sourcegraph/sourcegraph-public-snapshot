@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- Syntax highlighting for GraphQL, INI, TOML, and Perforce files has been removed [due to incompatible/absent licenses](https://github.com/sourcegraph/sourcegraph/issues/13933). We plan to [add it back in the future](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+is%3Aopen+add+syntax+highlighting+for+develop+a+).
 - Search scope pages (`/search/scope/:id`) were removed.
 - User-defined search scopes are no longer shown below the search bar on the homepage. Use the [`quicklinks`](https://docs.sourcegraph.com/user/quick_links) setting instead to display links there.
 - The explore page (`/explore`) was removed.

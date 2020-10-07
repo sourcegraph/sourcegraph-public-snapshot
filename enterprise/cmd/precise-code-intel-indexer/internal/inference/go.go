@@ -5,6 +5,8 @@ import (
 	"regexp"
 )
 
+const lsifGoImage = "sourcegraph/lsif-go:latest"
+
 type lsifGoJobRecognizer struct{}
 
 var _ IndexJobRecognizer = lsifGoJobRecognizer{}
@@ -25,10 +27,20 @@ func (lsifGoJobRecognizer) CanIndex(paths []string) bool {
 func (lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 	for _, path := range paths {
 		if filepath.Base(path) == "go.mod" && !containsSegment(path, "vendor") {
+			root := dirWithoutDot(path)
+
+			dockerSteps := []DockerStep{
+				{
+					Root:     root,
+					Image:    lsifGoImage,
+					Commands: []string{"go", "mod", "download"},
+				},
+			}
+
 			indexes = append(indexes, IndexJob{
-				DockerSteps: nil,
-				Root:        dirWithoutDot(path),
-				Indexer:     "sourcegraph/lsif-go:latest",
+				DockerSteps: dockerSteps,
+				Root:        root,
+				Indexer:     lsifGoImage,
 				IndexerArgs: []string{"lsif-go", "--no-animation"},
 				Outfile:     "",
 			})

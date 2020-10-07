@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	postgresreader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	sqlitereader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -376,6 +377,26 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		}
 		span.Finish()
 	}()
+
+	store := postgresreader.NewStore(s.codeIntelDB, int(idFromRequest(r)))
+	if _, err := store.ReadMeta(ctx); err != nil {
+		if err != postgresreader.ErrNoMetadata {
+			return err
+		}
+	} else {
+		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(store, s.observationContext))
+		if err != nil {
+			return pkgerrors.Wrap(err, "database.OpenDatabase")
+		}
+
+		payload, err := handler(ctx, db)
+		if err != nil {
+			return err
+		}
+
+		writeJSON(w, payload)
+		return nil
+	}
 
 	return s.storeCache.WithStore(ctx, filename, func(store persistence.Store) error {
 		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(store, s.observationContext))
