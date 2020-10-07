@@ -64,7 +64,7 @@ func main() {
 
 	go func() {
 		if err := readers.Migrate(bundleDir, storeCache, codeIntelDB); err != nil {
-			log.Error("failed to migrate readers: %s", err)
+			log15.Error("failed to migrate readers", "err", err)
 		}
 	}()
 
