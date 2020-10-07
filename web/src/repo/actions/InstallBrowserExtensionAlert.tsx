@@ -20,7 +20,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({ o
     const Icon = icon || ExportIcon
 
     return (
-        <div className="alert alert-info m-2 d-flex justify-content-between">
+        <div className="alert alert-info m-2 d-flex justify-content-between install-browser-extension-alert">
             <div className="d-flex align-items-center">
                 <div className="position-relative">
                     <div className="install-browser-extension-alert__icon-flash" />
@@ -56,7 +56,12 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({ o
                     )}
                 </p>
             </div>
-            <button type="button" onClick={onAlertDismissed} aria-label="Close alert" className="btn btn-icon">
+            <button
+                type="button"
+                onClick={onAlertDismissed}
+                aria-label="Close alert"
+                className="btn btn-icon test-close-alert"
+            >
                 <CloseIcon className="icon-inline" />
             </button>
         </div>
