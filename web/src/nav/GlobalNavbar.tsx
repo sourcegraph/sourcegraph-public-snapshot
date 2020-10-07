@@ -97,7 +97,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     patternType,
     onNavbarQueryChange,
     onFiltersInQueryChange,
-    startUserNavExtensionAnimationReference,
     hideNavLinks,
     variant,
     isLightTheme,
@@ -152,7 +151,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
-            startUserNavExtensionAnimationReference={startUserNavExtensionAnimationReference}
             {...props}
         />
     )
