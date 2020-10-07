@@ -140,7 +140,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 		// Shared tests
 		pipeline.AddStep(":jest:",
-			bk.Cmd("dev/ci/yarn-test.sh shared"),
+			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 	}
 }
