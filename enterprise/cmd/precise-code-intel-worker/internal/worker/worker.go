@@ -2,10 +2,13 @@ package worker
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -15,6 +18,7 @@ import (
 
 func NewWorker(
 	s store.Store,
+	codeIntelDB *sql.DB,
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
@@ -31,6 +35,9 @@ func NewWorker(
 		metrics:             metrics,
 		enableBudget:        budgetMax > 0,
 		budgetRemaining:     budgetMax,
+		createStore: func(id int) persistence.Store {
+			return postgres.NewStore(codeIntelDB, id)
+		},
 	}
 
 	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(s), dbworker.WorkerOptions{
