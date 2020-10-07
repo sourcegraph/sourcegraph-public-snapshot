@@ -23,6 +23,7 @@ storiesOf('browser/Options/OptionsPage', module)
             isActivated={true}
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
+            showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
         />
     ))
     .add('Interactive', () => {
@@ -53,3 +54,15 @@ storiesOf('browser/Options/OptionsPage', module)
             />
         )
     })
+    .add('With permission alert', () => (
+        <OptionsPage
+            version={text('version', '0.0.0')}
+            isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
+            validateSourcegraphUrl={validateSourcegraphUrl}
+            onToggleActivated={action('onToggleActivated')}
+            isActivated={true}
+            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+            isFullPage={true}
+            permissionAlert={{ name: 'GitLab.com' }}
+        />
+    ))

@@ -3,6 +3,10 @@ import { OptionFlagWithValue } from '../../shared/util/optionFlags'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
 import { LoaderInput } from '../../../../shared/src/components/LoaderInput'
 import EarthIcon from 'mdi-react/EarthIcon'
+import LockIcon from 'mdi-react/LockIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import GithubIcon from 'mdi-react/MicrosoftGithubIcon'
+
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
@@ -14,6 +18,8 @@ import { Observable } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { Toggle } from '../../../../shared/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
+import { noop } from 'lodash'
+
 export interface OptionsContainerProps {
     sourcegraphURL: string
     isActivated: boolean
@@ -35,6 +41,8 @@ interface OptionsPageProps {
     onToggleActivated: (value: boolean) => void
     validateSourcegraphUrl: (url: string) => Observable<string | undefined>
     isFullPage: boolean
+    showPrivateRepositoryAlert?: boolean
+    permissionAlert?: { name: string }
     // requestGraphQL: <T, V = object>(options: {
     //     request: string
     //     variables: V
@@ -49,6 +57,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     isActivated,
     onToggleActivated,
     isFullPage,
+    showPrivateRepositoryAlert,
+    permissionAlert,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
     const [urlState, nextUrlFieldChange, urlInputReference] = useInputValidation(
@@ -105,7 +115,12 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 <p>
                     <LinkOrButton>How do we keep your code private?</LinkOrButton>
                 </p>
+            </section>
 
+            {permissionAlert && <PermissionAlert {...permissionAlert} onClickGrantPermissions={noop} />}
+
+            {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
+            <section className="options-page__section">
                 <p>
                     <LinkOrButton onSelect={() => setShowAdvancedSettings(!showAdvancedSettings)}>
                         {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
@@ -127,3 +142,48 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         </div>
     )
 }
+
+interface PermissionAlertProps {
+    icon?: React.ElementType
+    name: string
+    onClickGrantPermissions: () => void
+}
+
+const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, onClickGrantPermissions }) => (
+    <section className="options-page__section options-page__alert">
+        <h4>
+            <GitlabIcon className="icon-inline" /> {name}
+        </h4>
+        <p>
+            <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.
+        </p>
+        <button onClick={onClickGrantPermissions} className="btn btn-primary">
+            Grant permissions
+        </button>
+    </section>
+)
+
+const PrivateRepositoryAlert: React.FunctionComponent = props => (
+    <section className="options-page__section options-page__alert">
+        <h3>
+            <LockIcon className="icon-inline" />
+            Private repository
+        </h3>
+        <p>
+            To use the browser extension with your private repositories, you need to set up a{' '}
+            <strong>private Sourcegraph instance</strong> and connect it to the extension.
+        </p>
+        <ol>
+            <li>
+                <a href="#">Install and configure Sourcegraph</a>. Skip this step if you already have a private
+                Sourcegraph instance.
+            </li>
+            <li>Click the Sourcegraph extension icon in the browser toolbar to open the settings page</li>
+            <li>
+                Enter the URL (including the protocol) of your Sourcegraph instance (such as
+                https://sourcegraph.example.com above).
+            </li>
+            <li>Make sure that the status shows 'connected'.</li>
+        </ol>
+    </section>
+)
