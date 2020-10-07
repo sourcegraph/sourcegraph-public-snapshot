@@ -46,6 +46,9 @@ export interface MonacoQueryInputProps
 
     // Whether globbing is enabled for filters.
     globbing: boolean
+
+    // Whether comments are parsed and highlighted
+    interpretComments?: boolean
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -66,6 +69,7 @@ export function addSourcegraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
+    interpretComments: Observable<boolean>,
     globbing: Observable<boolean>
 ): Subscription {
     const subscriptions = new Subscription()
@@ -74,7 +78,7 @@ export function addSourcegraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions, globbing)
+    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions, globbing, interpretComments)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -163,6 +167,11 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private globbing = this.componentUpdates.pipe(
         map(({ globbing }) => globbing),
+        distinctUntilChanged()
+    )
+
+    private interpretComments = this.componentUpdates.pipe(
+        map(({ interpretComments }) => interpretComments ?? false),
         distinctUntilChanged()
     )
     private containerRefs = new Subject<HTMLElement | null>()
@@ -287,7 +296,13 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
         this.subscriptions.add(
-            addSourcegraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
+            addSourcegraphSearchCodeIntelligence(
+                monaco,
+                this.searchQueries,
+                this.patternTypes,
+                this.globbing,
+                this.interpretComments
+            )
         )
     }
 

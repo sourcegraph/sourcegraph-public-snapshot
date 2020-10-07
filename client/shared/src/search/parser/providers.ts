@@ -35,11 +35,12 @@ export function getProviders(
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
     fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
+    interpretComments: Observable<boolean>,
     globbing: Observable<boolean>
 ): SearchFieldProviders {
-    const parsedQueries = searchQueries.pipe(
-        map(rawQuery => {
-            const parsed = parseSearchQuery(rawQuery)
+    const parsedQueries = combineLatest([searchQueries, interpretComments]).pipe(
+        map(([rawQuery, interpretComments]) => {
+            const parsed = parseSearchQuery(rawQuery, interpretComments)
             return { rawQuery, parsed }
         }),
         publishReplay(1),

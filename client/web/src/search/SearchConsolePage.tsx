@@ -16,6 +16,7 @@ import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
 import { SearchPatternType } from '../graphql-operations'
+import { replace } from 'lodash'
 
 interface SearchConsolePageProps
     extends ThemeProps,
@@ -51,7 +52,7 @@ const options: Monaco.editor.IEditorOptions = {
     fixedOverflowWidgets: true,
     renderLineHighlight: 'none',
     contextmenu: false,
-    links: false,
+    links: true,
     // Display the cursor as a 1px line.
     cursorStyle: 'line',
     cursorWidth: 1,
@@ -75,7 +76,13 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             return query
                 ? concat(
                       of('loading' as const),
-                      search(query, 'V2', patternType, undefined, props.extensionsController.extHostAPI)
+                      search(
+                          query.replace(/\/\/.*/g, ''),
+                          'V2',
+                          patternType,
+                          undefined,
+                          props.extensionsController.extHostAPI
+                      )
                   )
                 : NEVER
         }, [patternType, props.extensionsController, props.location.search])
@@ -90,6 +97,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             monacoInstance,
             searchQuery,
             of(props.patternType),
+            of(true),
             of(props.globbing)
         )
         return () => subscription.unsubscribe()
