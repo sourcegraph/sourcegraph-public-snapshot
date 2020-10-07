@@ -30,8 +30,9 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		ClientSecret: p.ClientSecret,
 		Scopes:       requestedScopes(p),
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
-			TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
+			AuthURL:   codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
+			TokenURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
+			AuthStyle: oauth2.AuthStyleInParams,
 		},
 	}
 	return oauth.NewProvider(oauth.ProviderOp{
