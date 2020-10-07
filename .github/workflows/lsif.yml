@@ -26,10 +26,10 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
-        working-directory: web/
+        working-directory: client/web/
         run: lsif-tsc -p .
       - name: Upload LSIF data
-        working-directory: web/
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-tsc-shared:
@@ -45,10 +45,10 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
-        working-directory: shared/
+        working-directory: client/shared/
         run: lsif-tsc -p .
       - name: Upload LSIF data
-        working-directory: shared/
+        working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-tsc-browser:
@@ -64,10 +64,10 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
-        working-directory: browser/
+        working-directory: client/browser/
         run: lsif-tsc -p .
       - name: Upload LSIF data
-        working-directory: browser/
+        working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-eslint-web:
@@ -85,10 +85,10 @@ jobs:
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
-        working-directory: web/
+        working-directory: client/web/
         run: yarn eslint -f lsif -o dump.lsif
       - name: Upload LSIF data
-        working-directory: web/
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-eslint-shared:
@@ -106,10 +106,10 @@ jobs:
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
-        working-directory: shared/
+        working-directory: client/shared/
         run: yarn eslint -f lsif -o dump.lsif
       - name: Upload LSIF data
-        working-directory: shared/
+        working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-eslint-browser:
@@ -127,8 +127,8 @@ jobs:
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
-        working-directory: browser/
+        working-directory: client/browser/
         run: yarn eslint -f lsif -o dump.lsif
       - name: Upload LSIF data
-        working-directory: browser/
+        working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
