@@ -29,6 +29,11 @@ var (
 		Help: "The last time a sync finished",
 	}, []string{tagExternalServiceID, tagFamily})
 
+	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repoupdater_syncer_start",
+		Help: "A sync was started",
+	}, []string{tagExternalServiceID, tagFamily})
+
 	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_synced_repos_total",
 		Help: "Total number of synced repositories",

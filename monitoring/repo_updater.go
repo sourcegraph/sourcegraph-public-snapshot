@@ -35,6 +35,16 @@ func RepoUpdater() *Container {
 					},
 					{
 						Observable{
+							Name:              "syncer_sync_start",
+							Description:       "sync was started",
+							Query:             `src_repoupdater_syncer_start`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{family}}-{{external_service_id}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+						Observable{
 							Name:              "syncer_sync_duration",
 							Description:       "95th repositories sync duration",
 							Query:             `histogram_quantile(0.95, rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m]))`,

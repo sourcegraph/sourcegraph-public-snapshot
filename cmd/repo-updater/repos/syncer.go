@@ -867,6 +867,7 @@ func (s *Syncer) observe(ctx context.Context, extsvcID int64, family, title stri
 		tr.LogFields(fields...)
 
 		lastSync.WithLabelValues(serviceIDString, family).Set(float64(now.Unix()))
+		syncStarted.WithLabelValues(serviceIDString, family).Inc()
 
 		success := err == nil || *err == nil
 		syncDuration.WithLabelValues(strconv.FormatBool(success), serviceIDString, family).Observe(took)
