@@ -16,7 +16,6 @@ import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
 import { SearchPatternType } from '../graphql-operations'
-import { replace } from 'lodash'
 
 interface SearchConsolePageProps
     extends ThemeProps,
@@ -89,19 +88,18 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
     )
     const [allExpanded, setAllExpanded] = useState(false)
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
+    const { globbing } = props
     useEffect(() => {
         if (!monacoInstance) {
             return
         }
-        const subscription = addSourcegraphSearchCodeIntelligence(
-            monacoInstance,
-            searchQuery,
-            of(props.patternType),
-            of(true),
-            of(props.globbing)
-        )
+        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, {
+            patternType,
+            globbing,
+            interpretComments: true,
+        })
         return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQuery, props.patternType, props.globbing])
+    }, [monacoInstance, searchQuery, patternType, globbing])
     const [editorInstance, setEditorInstance] = useState<Monaco.editor.IStandaloneCodeEditor>()
     useEffect(() => {
         if (!editorInstance) {

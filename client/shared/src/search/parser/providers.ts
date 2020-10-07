@@ -33,14 +33,16 @@ const specialCharacters = ':-*]'
  */
 export function getProviders(
     searchQueries: Observable<string>,
-    patternTypes: Observable<SearchPatternType>,
     fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
-    interpretComments: Observable<boolean>,
-    globbing: Observable<boolean>
+    options: {
+        patternType: SearchPatternType
+        globbing: boolean
+        interpretComments?: boolean
+    }
 ): SearchFieldProviders {
-    const parsedQueries = combineLatest([searchQueries, interpretComments]).pipe(
-        map(([rawQuery, interpretComments]) => {
-            const parsed = parseSearchQuery(rawQuery, interpretComments)
+    const parsedQueries = searchQueries.pipe(
+        map(rawQuery => {
+            const parsed = parseSearchQuery(rawQuery, options.interpretComments ?? false)
             return { rawQuery, parsed }
         }),
         publishReplay(1),
@@ -77,27 +79,25 @@ export function getProviders(
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...specialCharacters, ...alphabet, ...alphabet.toUpperCase()],
             provideCompletionItems: (textModel, position, context, token) =>
-                combineLatest([parsedQueries, globbing])
+                parsedQueries
                     .pipe(
                         first(),
-                        switchMap(([parsedQueries, globbing]) =>
-                            parsedQueries.parsed.type === 'error'
+                        switchMap(parsedQuery =>
+                            parsedQuery.parsed.type === 'error'
                                 ? of(null)
                                 : getCompletionItems(
-                                      parsedQueries.parsed.token,
+                                      parsedQuery.parsed.token,
                                       position,
                                       debouncedDynamicSuggestions,
-                                      globbing
+                                      options.globbing
                                   )
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
                     .toPromise(),
         },
-        diagnostics: combineLatest([parsedQueries, patternTypes]).pipe(
-            map(([{ parsed }, patternType]) =>
-                parsed.type === 'success' ? getDiagnostics(parsed.token, patternType) : []
-            )
+        diagnostics: parsedQueries.pipe(
+            map(({ parsed }) => (parsed.type === 'success' ? getDiagnostics(parsed.token, options.patternType) : []))
         ),
     }
 }
