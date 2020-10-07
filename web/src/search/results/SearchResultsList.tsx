@@ -58,7 +58,7 @@ export interface SearchResultsListProps
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
-    onShowMoreResultsClick: () => void
+    onShowMoreResultsClick?: () => void
 
     // Expand all feature
     allExpanded: boolean
@@ -451,16 +451,18 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         results.length == 30 && resultsShown == 40 so we use >=
                                         comparison below.
                                     */}
-                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary btn-block"
-                                            data-testid="search-show-more-button"
-                                            onClick={this.props.onShowMoreResultsClick}
-                                        >
-                                            Show more
-                                        </button>
-                                    )}
+                                    {results.limitHit &&
+                                        this.state.resultsShown >= results.results.length &&
+                                        this.props.onShowMoreResultsClick && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary btn-block"
+                                                data-testid="search-show-more-button"
+                                                onClick={this.props.onShowMoreResultsClick}
+                                            >
+                                                Show more
+                                            </button>
+                                        )}
 
                                     {results.matchCount === 0 && !results.alert && (
                                         <div className="alert alert-info d-flex m-2">
