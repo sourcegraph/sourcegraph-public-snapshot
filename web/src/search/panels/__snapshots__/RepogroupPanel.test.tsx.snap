@@ -16,10 +16,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
     loadingContent={<React.Fragment />}
     populatedContent={
       <div
-        className="mt-2"
+        className="mt-2 row"
       >
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -35,13 +35,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               Cloud Native Computing Foundation (CNCF)
             </AnchorLink>
-            <small>
-              Search CNCF projects.
-            </small>
           </div>
         </div>
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -57,13 +54,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               Refactor Python 2 to 3
             </AnchorLink>
-            <small>
-              Searches and suggestions to help migrate your code to Python 3.
-            </small>
           </div>
         </div>
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -79,13 +73,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               Android
             </AnchorLink>
-            <small>
-              Explore popular Android repositories.
-            </small>
           </div>
         </div>
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -101,13 +92,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               Kubernetes
             </AnchorLink>
-            <small>
-              Search within the Kubernetes community.
-            </small>
           </div>
         </div>
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -123,13 +111,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               Go
             </AnchorLink>
-            <small>
-              Find code examples in top Go repositories.
-            </small>
           </div>
         </div>
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -145,13 +130,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               React Hooks
             </AnchorLink>
-            <small>
-              Learn how to use React Hooks with search examples.
-            </small>
           </div>
         </div>
         <div
-          className="d-flex mb-4"
+          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
@@ -167,9 +149,6 @@ exports[`RepogroupPanel renders correctly 1`] = `
             >
               Stanford University
             </AnchorLink>
-            <small>
-              Explore Stanford open-source code.
-            </small>
           </div>
         </div>
       </div>
@@ -193,10 +172,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
         className="panel-container__content h-100"
       >
         <div
-          className="mt-2"
+          className="mt-2 row"
         >
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="cncf"
           >
             <img
@@ -219,13 +198,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   Cloud Native Computing Foundation (CNCF)
                 </a>
               </AnchorLink>
-              <small>
-                Search CNCF projects.
-              </small>
             </div>
           </div>
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="python"
           >
             <img
@@ -248,13 +224,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   Refactor Python 2 to 3
                 </a>
               </AnchorLink>
-              <small>
-                Searches and suggestions to help migrate your code to Python 3.
-              </small>
             </div>
           </div>
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="android"
           >
             <img
@@ -277,13 +250,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   Android
                 </a>
               </AnchorLink>
-              <small>
-                Explore popular Android repositories.
-              </small>
             </div>
           </div>
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="kubernetes"
           >
             <img
@@ -306,13 +276,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   Kubernetes
                 </a>
               </AnchorLink>
-              <small>
-                Search within the Kubernetes community.
-              </small>
             </div>
           </div>
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="golang"
           >
             <img
@@ -335,13 +302,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   Go
                 </a>
               </AnchorLink>
-              <small>
-                Find code examples in top Go repositories.
-              </small>
             </div>
           </div>
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="react-hooks"
           >
             <img
@@ -364,13 +328,10 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   React Hooks
                 </a>
               </AnchorLink>
-              <small>
-                Learn how to use React Hooks with search examples.
-              </small>
             </div>
           </div>
           <div
-            className="d-flex mb-4"
+            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
             key="stanford"
           >
             <img
@@ -393,9 +354,6 @@ exports[`RepogroupPanel renders correctly 1`] = `
                   Stanford University
                 </a>
               </AnchorLink>
-              <small>
-                Explore Stanford open-source code.
-              </small>
             </div>
           </div>
         </div>
