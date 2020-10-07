@@ -30,7 +30,7 @@ export function handleNativeTooltips(
     { nativeTooltipResolvers, name }: Pick<CodeHost, 'nativeTooltipResolvers' | 'name'>
 ): { nativeTooltipsAlert: Observable<HoverAlert>; subscription: Unsubscribable } {
     const nativeTooltips = mutations.pipe(trackViews(nativeTooltipResolvers || []))
-    const nativeTooltipsAlert = mutations.pipe(
+    const nativeTooltipsAlert = nativeTooltips.pipe(
         first(),
         mapTo({
             type: NATIVE_TOOLTIP_TYPE,

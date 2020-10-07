@@ -110,6 +110,7 @@ import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/c
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 registerHighlightContributions()
 
@@ -390,12 +391,31 @@ function initCodeIntelligence({
                             )
                         )
                     ),
-                    getActiveHoverAlerts(hoverAlerts),
+                    getActiveHoverAlerts([
+                        ...hoverAlerts,
+                        ...(codeHost.getContext?.().privateRepository
+                            ? [
+                                  of({
+                                      type: 'private-code',
+                                      summary: {
+                                          type: MarkupKind.Markdown,
+                                          value:
+                                              '### Sourcegraph for private code\n\n' +
+                                              'To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect it to the extension.' +
+                                              '\n' +
+                                              `<a href="https://docs.sourcegraph.com/integration/browser_extension" class="${
+                                                  codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
+                                              }" target="_blank" rel="noopener norefferer">Show more info</a>`,
+                                      },
+                                  }),
+                              ]
+                            : []),
+                    ]),
                 ]).pipe(
                     map(
                         ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverMerged | null> => ({
                             isLoading,
-                            result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                            result: hoverMerged || alerts?.length ? { contents: [], ...hoverMerged, alerts } : null,
                         })
                     )
                 )
