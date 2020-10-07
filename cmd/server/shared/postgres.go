@@ -16,6 +16,16 @@ func maybePostgresProcFileWithPrefix(prefix string) (string, error) {
 		return "", nil
 	}
 
+	procfile, err := postgresProcfile()
+	if err != nil {
+		return "", err
+	}
+
+	setPostgresDefaultEnv(prefix, "sourcegraph")
+	return procfile, nil
+}
+
+func postgresProcfile() (string, error) {
 	// Postgres needs to be able to write to run
 	var output bytes.Buffer
 	e := execer{Out: &output}
@@ -65,12 +75,14 @@ func maybePostgresProcFileWithPrefix(prefix string) (string, error) {
 		}
 	}
 
+	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
+}
+
+func setPostgresDefaultEnv(prefix, database string) {
 	// Set *PGHOST to default to 127.0.0.1, NOT localhost, as localhost does not correctly resolve in some environments
 	// (see https://github.com/sourcegraph/issues/issues/34 and https://github.com/sourcegraph/sourcegraph/issues/9129).
 	SetDefaultEnv(prefix+"PGHOST", "127.0.0.1")
 	SetDefaultEnv(prefix+"PGUSER", "postgres")
-	SetDefaultEnv(prefix+"PGDATABASE", "sourcegraph")
+	SetDefaultEnv(prefix+"PGDATABASE", database)
 	SetDefaultEnv(prefix+"PGSSLMODE", "disable")
-
-	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
 }
