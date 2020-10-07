@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -57,8 +55,6 @@ func main() {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-
-	_ = mustInitializeCodeIntelDatabase()
 
 	s := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, s)
@@ -132,20 +128,4 @@ func mustInitializeStore() store.Store {
 	}
 
 	return store
-}
-
-func mustInitializeCodeIntelDatabase() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
-		}
-	})
-
-	db, err := dbconn.New(postgresDSN, "_codeintel")
-	if err != nil {
-		log.Fatalf("failed to connect to codeintel database: %s", err)
-	}
-
-	return db
 }
