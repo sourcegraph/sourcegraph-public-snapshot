@@ -62,7 +62,7 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	if err := readers.Migrate(bundleDir, storeCache); err != nil {
+	if err := readers.Migrate(bundleDir, storeCache, codeIntelDB); err != nil {
 		log.Fatalf("failed to migrate readers: %s", err)
 	}
 
