@@ -12,8 +12,6 @@ exports[`RepogroupPanel renders correctly 1`] = `
 >
   <PanelContainer
     className="repogroup-panel"
-    emptyContent={<React.Fragment />}
-    loadingContent={<React.Fragment />}
     populatedContent={
       <div
         className="mt-2 row"

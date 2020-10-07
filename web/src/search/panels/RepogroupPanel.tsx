@@ -36,9 +36,7 @@ export const RepogroupPanel: React.FunctionComponent<Props> = ({ className, tele
             className={classNames(className, 'repogroup-panel')}
             title="Repository groups"
             state="populated"
-            loadingContent={<></>}
             populatedContent={populatedContent}
-            emptyContent={<></>}
         />
     )
 }
