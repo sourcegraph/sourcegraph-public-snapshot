@@ -62,9 +62,11 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	if err := readers.Migrate(bundleDir, storeCache, codeIntelDB); err != nil {
-		log.Fatalf("failed to migrate readers: %s", err)
-	}
+	go func() {
+		if err := readers.Migrate(bundleDir, storeCache, codeIntelDB); err != nil {
+			log15.Error("failed to migrate readers", "err", err)
+		}
+	}()
 
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
