@@ -3248,7 +3248,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 100+ the total number of completed sync jobs for 1h0m0s_
+- _repo-updater: 100000+ the total number of completed sync jobs for 1h0m0s_
 
 **Possible solutions:**
 

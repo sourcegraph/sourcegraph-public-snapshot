@@ -293,7 +293,7 @@ func RepoUpdater() *Container {
 							Description:       "the total number of completed sync jobs",
 							Query:             `src_repoupdater_completed_sync_jobs_total`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 100, For: 1 * time.Hour},
+							Warning:           Alert{GreaterOrEqual: 100000, For: 1 * time.Hour},
 							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "None",
