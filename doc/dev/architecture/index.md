@@ -10,8 +10,8 @@ You can click on each component to jump to its respective code repository or sub
 
 We maintain multiple Sourcegraph clients:
 
-- [Web application](https://github.com/sourcegraph/sourcegraph/tree/master/web)
-- [Browser extensions](https://github.com/sourcegraph/sourcegraph/tree/master/browser)
+- [Web application](https://github.com/sourcegraph/sourcegraph/tree/main/client/web)
+- [Browser extensions](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser)
 - [src-cli](https://github.com/sourcegraph/src-cli)
 - [Editor integrations](https://docs.sourcegraph.com/integration/editor)
   - [Visual Studio Code](https://github.com/sourcegraph/sourcegraph-vscode)

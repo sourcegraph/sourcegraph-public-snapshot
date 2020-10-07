@@ -30,6 +30,6 @@ The browser extensions, native integrations, and the web UI are collectively lab
 
 ## Contributing to code host integrations
 
-The source code for code host integrations is located in the [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/tree/master/browser) directory of the Sourcegraph repository.
+The source code for code host integrations is located in the [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/tree/main/client/browser) directory of the Sourcegraph repository.
 
 For build steps and details of the directory layout, see [`browser/README.md`](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser/README.md)
