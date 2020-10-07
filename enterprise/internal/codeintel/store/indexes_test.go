@@ -392,7 +392,7 @@ func TestSetIndexLogContents(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
-	// Add dequeueable index
+	// Add index for updating
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
 	if err := store.SetIndexLogContents(context.Background(), 1, "test payload"); err != nil {
