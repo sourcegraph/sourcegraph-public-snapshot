@@ -20,6 +20,7 @@ import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { isDefined } from '../../../../shared/src/util/types'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
 import { EndpointPair } from '../../../../shared/src/platform/context'
+import { setBrowserActionIconState } from '../browser-action-icon'
 
 const IS_EXTENSION = true
 
@@ -88,6 +89,17 @@ async function main(): Promise<void> {
     subscriptions.add(
         observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
             configureOmnibox(sourcegraphURL)
+        })
+    )
+
+    // Update the browserAction icon based on the state of the extension
+    subscriptions.add(
+        observeStorageKey('sync', 'disableExtension').subscribe(isDisabled => {
+            if (isDisabled) {
+                setBrowserActionIconState('inactive')
+            } else {
+                setBrowserActionIconState('active')
+            }
         })
     )
 
