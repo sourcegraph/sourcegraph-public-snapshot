@@ -82,10 +82,10 @@ export interface Comment {
 
 export type Token =
     | { type: 'whitespace' }
-    | { type: 'comment' }
     | { type: 'openingParen' }
     | { type: 'closingParen' }
     | { type: 'operator' }
+    | Comment
     | Literal
     | Filter
     | Sequence
@@ -338,13 +338,10 @@ const filter: Parser<Filter> = (input, start) => {
     }
 }
 
-/**
- * A {@link Parser} for a Sourcegraph search query.
- */
-const searchQuery = (input: string, start: number, interpretComments: boolean): ParserResult<Sequence> => {
-    const baseTerms = [comment, operator, filter, quoted, literal]
-    const terms = interpretComments ? baseTerms : [comment, ...baseTerms]
-    return zeroOrMore(
+const baseTerms = [operator, filter, quoted, literal]
+
+const createParser = (terms: Parser<Exclude<Token, Sequence>>[]): Parser<Sequence> =>
+    zeroOrMore(
         oneOf<Token>(
             whitespace,
             openingParen,
@@ -353,11 +350,20 @@ const searchQuery = (input: string, start: number, interpretComments: boolean): 
                 followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
             )
         )
-    )(input, start)
-}
+    )
+
+/**
+ * A {@link Parser} for a Sourcegraph search query.
+ */
+const searchQuery = createParser(baseTerms)
+
+/**
+ * A {@link Parser} for a Sourcegraph search query containing comments.
+ */
+const searchQueryWithComments = createParser([comment, ...baseTerms])
 
 /**
  * Parses a search query string.
  */
 export const parseSearchQuery = (query: string, interpretComments?: boolean): ParserResult<Sequence> =>
-    searchQuery(query, 0, interpretComments ?? false)
+    interpretComments ? searchQueryWithComments(query, 0) : searchQuery(query, 0)
