@@ -350,7 +350,7 @@ func (s *updateScheduler) DebugDump() interface{} {
 	}
 	for i, update := range s.schedule.heap {
 		// Copy the scheduledRepoUpdate as a value so that
-		// poping off the heap here won't update the index value of the real heap, and
+		// popping off the heap here won't update the index value of the real heap, and
 		// we don't do a racy read on the repo pointer which may change concurrently in the real heap.
 		updateCopy := *update
 		schedule.heap[i] = &updateCopy
@@ -743,6 +743,7 @@ func (s *schedule) reset() {
 		s.timer.Stop()
 		s.timer = nil
 	}
+	schedHeapCount.Set(0)
 }
 
 // The following methods implement heap.Interface based on the priority queue example:
@@ -768,6 +769,7 @@ func (s *schedule) Push(x interface{}) {
 	item.Index = n
 	s.heap = append(s.heap, item)
 	s.index[item.Repo.ID] = item
+	schedHeapCount.Inc()
 }
 
 func (s *schedule) Pop() interface{} {
@@ -776,6 +778,7 @@ func (s *schedule) Pop() interface{} {
 	item.Index = -1 // for safety
 	s.heap = s.heap[0 : n-1]
 	delete(s.index, item.Repo.ID)
+	schedHeapCount.Dec()
 	return item
 }
 

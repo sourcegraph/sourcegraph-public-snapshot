@@ -71,13 +71,15 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     .map(search => (
                         <dd key={search.id} className="text-monospace test-saved-search-entry">
                             <div className="d-flex justify-content-between">
-                                <Link
-                                    to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
-                                    className="btn btn-link p-0"
-                                    onClick={logEvent('SavedSearchesPanelSearchClicked')}
-                                >
-                                    {search.description}
-                                </Link>
+                                <small>
+                                    <Link
+                                        to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
+                                        className=" p-0"
+                                        onClick={logEvent('SavedSearchesPanelSearchClicked')}
+                                    >
+                                        {search.description}
+                                    </Link>
+                                </small>
                                 {authenticatedUser &&
                                     (search.namespace.__typename === 'User' ? (
                                         <Link
@@ -99,13 +101,17 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
             </dl>
             {authenticatedUser && (
-                <Link
-                    to={`/users/${authenticatedUser.username}/searches`}
-                    className="btn btn-secondary w-100 text-left"
-                    onClick={logEvent('SavedSearchesPanelViewAllClicked')}
-                >
-                    View saved searches
-                </Link>
+                <div className="panel-container__footer p-1">
+                    <small>
+                        <Link
+                            to={`/users/${authenticatedUser.username}/searches`}
+                            className=" text-left"
+                            onClick={logEvent('SavedSearchesPanelViewAllClicked')}
+                        >
+                            View saved searches
+                        </Link>
+                    </small>
+                </div>
             )}
         </div>
     )

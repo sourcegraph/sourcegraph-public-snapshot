@@ -41,6 +41,7 @@ interface Props
     showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+    minimalNavLinks?: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -68,15 +69,18 @@ export class NavLinks extends React.PureComponent<Props> {
                     </li>
                 )}
                 {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
+                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
+                    !this.props.minimalNavLinks && (
                         <li className="nav-item">
                             <InsightsNavItem />
                         </li>
                     )}
-                <li className="nav-item">
-                    <ExtensionsNavItem />
-                </li>
-                {this.props.showCampaigns && (
+                {!this.props.minimalNavLinks && (
+                    <li className="nav-item">
+                        <ExtensionsNavItem />
+                    </li>
+                )}
+                {!this.props.minimalNavLinks && this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>
@@ -117,14 +121,16 @@ export class NavLinks extends React.PureComponent<Props> {
                         />
                     </li>
                 )}
-                <li className="nav-item">
-                    <WebCommandListPopoverButton
-                        {...this.props}
-                        buttonClassName="nav-link btn btn-link"
-                        menu={ContributableMenu.CommandPalette}
-                        keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                    />
-                </li>
+                {!this.props.minimalNavLinks && (
+                    <li className="nav-item">
+                        <WebCommandListPopoverButton
+                            {...this.props}
+                            buttonClassName="nav-link btn btn-link"
+                            menu={ContributableMenu.CommandPalette}
+                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                        />
+                    </li>
+                )}
                 {this.props.authenticatedUser && (
                     <li className="nav-item">
                         <UserNavItem

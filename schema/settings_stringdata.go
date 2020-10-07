@@ -68,7 +68,7 @@ const SettingsSchemaJSON = `{
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": { "pointer": true }
         },
         "showMultilineSearchConsole": {

@@ -2,7 +2,7 @@
 
 exports[`ErrorBoundary passes through if non-error 1`] = `
 <div
-  className="hero-page "
+  className="hero-page hero-page__default-padding"
 >
   <div
     className="hero-page__icon"
@@ -43,7 +43,7 @@ exports[`ErrorBoundary renders error page if error 1`] = `
 
 exports[`ErrorBoundary renders reload page if chunk error 1`] = `
 <div
-  className="hero-page "
+  className="hero-page hero-page__default-padding"
 >
   <div
     className="hero-page__icon"

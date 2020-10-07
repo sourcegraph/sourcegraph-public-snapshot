@@ -90,7 +90,7 @@ export function handleQueryEvents(url: string): void {
 /**
  * Strip provided URL parameters and update window history
  */
-function stripURLParameters(url: string, parametersToRemove: string[] = []): void {
+export function stripURLParameters(url: string, parametersToRemove: string[] = []): void {
     const parsedUrl = new URL(url)
     for (const key of parametersToRemove) {
         if (parsedUrl.searchParams.has(key)) {

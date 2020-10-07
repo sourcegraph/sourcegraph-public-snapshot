@@ -72,8 +72,8 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 	return db, nil
 }
 
-func MigrateDB(db *sql.DB, dataSource string) error {
-	m, err := dbutil.NewMigrate(db, dataSource)
+func MigrateDB(db *sql.DB, databaseName string) error {
+	m, err := dbutil.NewMigrate(db, databaseName)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (c
 	)
 	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
 		for i, arg := range args {
-			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%q", arg))
+			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%v", arg))
 		}
 	}))
 

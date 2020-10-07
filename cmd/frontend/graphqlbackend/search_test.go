@@ -972,3 +972,33 @@ func TestRepoGroupValuesToRegexp(t *testing.T) {
 		})
 	}
 }
+
+func repoRev(revSpec string) *search.RepositoryRevisions {
+	return &search.RepositoryRevisions{
+		Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
+		Revs: []search.RevisionSpecifier{
+			{RevSpec: revSpec},
+		},
+	}
+}
+
+func TestGetRepos(t *testing.T) {
+	in := []*search.RepositoryRevisions{repoRev("HEAD")}
+	rp := (&search.Promise{}).Resolve(in)
+	out, err := getRepos(context.Background(), rp)
+	if err != nil {
+		t.Error(err)
+	}
+	if ok := reflect.DeepEqual(in, out); !ok {
+		t.Errorf("got %+v, expected %+v", out, in)
+	}
+}
+
+func TestGetReposWrongUnderlyingType(t *testing.T) {
+	in := "anything"
+	rp := (&search.Promise{}).Resolve(in)
+	_, err := getRepos(context.Background(), rp)
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+}

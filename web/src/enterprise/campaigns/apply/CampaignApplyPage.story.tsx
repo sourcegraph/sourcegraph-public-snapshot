@@ -88,6 +88,7 @@ add('Create', () => (
         {props => (
             <CampaignApplyPage
                 {...props}
+                expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryChangesetSpecs}
@@ -102,6 +103,7 @@ add('Update', () => (
         {props => (
             <CampaignApplyPage
                 {...props}
+                expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
                 queryChangesetSpecs={queryChangesetSpecs}
@@ -116,6 +118,7 @@ add('No changesets', () => (
         {props => (
             <CampaignApplyPage
                 {...props}
+                expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryEmptyChangesetSpecs}

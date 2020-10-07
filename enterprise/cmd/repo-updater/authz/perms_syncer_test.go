@@ -120,6 +120,14 @@ func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error
 	return 0, nil
 }
 
+func (s *mockReposStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
+	return 0, nil
+}
+
+func (s *mockReposStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
+	return nil
+}
+
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		serviceType: extsvc.TypeGitLab,

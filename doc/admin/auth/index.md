@@ -5,7 +5,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [Builtin](#builtin-password-authentication)
 - [GitHub OAuth](#github)
 - [GitLab OAuth](#gitlab)
-- [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
+- [OpenID Connect](#openid-connect) (including [Google accounts on Google Workspace](#google-workspace-google-accounts))
 - [SAML](saml/index.md)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
@@ -138,9 +138,9 @@ to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
 ## OpenID Connect
 
-The [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-g-suite) authenticates users via OpenID Connect, which is supported by many external services, including:
+The [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-google-workspace) authenticates users via OpenID Connect, which is supported by many external services, including:
 
-- [G Suite (Google accounts)](#g-suite-google-accounts)
+- [Google Workspace (Google accounts)](#google-workspace-google-accounts)
 - [Okta](https://developer.okta.com/docs/api/resources/oidc.html)
 - [Ping Identity](https://www.pingidentity.com/en/resources/client-library/articles/openid-connect.html)
 - [Auth0](https://auth0.com/docs/protocols/oidc)
@@ -156,7 +156,7 @@ To configure Sourcegraph to authenticate users via OpenID Connect:
 1. Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph site configuration shown below.
 1. (Optional) Require users to have a specific email domain name to authenticate (e.g., to limit users to only those from your organization).
 
-Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-g-suite) configuration:
+Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-google-workspace) configuration:
 
 ```json
 {
@@ -176,11 +176,11 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
 
 Sourcegraph supports the OpenID Connect Discovery standard for configuring the auth provider (using the document at, e.g., `https://oidc.example.com/.well-known/openid-configuration`).
 
-See the [`openid` auth provider documentation](../config/site_config.md#openid-connect-including-g-suite) for the full set of configuration options.
+See the [`openid` auth provider documentation](../config/site_config.md#openid-connect-including-google-workspace) for the full set of configuration options.
 
-### G Suite (Google accounts)
+### Google Workspace (Google accounts)
 
-Google's G Suite supports OpenID Connect, which is the best way to enable Sourcegraph authentication using Google accounts. To set it up:
+Google's Workspace (formerly known as G Suite) supports OpenID Connect, which is the best way to enable Sourcegraph authentication using Google accounts. To set it up:
 
 1. Create an **OAuth client ID** and client secret in the [Google API credentials console](https://console.developers.google.com/apis/credentials). [Google's interactive OpenID Connect documentation page](https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials):
     - **Application type:** Web application
@@ -188,9 +188,9 @@ Google's G Suite supports OpenID Connect, which is the best way to enable Source
     - **Authorized JavaScript origins:** (leave blank)
     - **Authorized redirect URIs:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
 1. Use the **client ID** and **client secret** values in Sourcegraph site configuration (as shown in the example below).
-1. Set your G Suite domain in `requireEmailDomain` to prevent users outside your organization from signing in.
+1. Set your Google Workspace domain in `requireEmailDomain` to prevent users outside your organization from signing in.
 
-Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-g-suite) configuration for G Suite:
+Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-google-workspace) configuration for Google Workspace:
 
 ```json
 {
@@ -199,7 +199,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
   "auth.providers": [
     {
       "type": "openidconnect",
-      "issuer": "https://accounts.google.com", // All G Suite domains use this issuer URI.
+      "issuer": "https://accounts.google.com", // All Google Workspace domains use this issuer URI.
       "clientID": "my-client-id",
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
