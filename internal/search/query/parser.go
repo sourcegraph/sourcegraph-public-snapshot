@@ -1218,13 +1218,11 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 
 	switch options.SearchType {
 	case SearchTypeLiteral:
-		query = substituteConcat(query, space)
+		query = Map(query, substituteConcat(space))
 	case SearchTypeStructural:
-		query = Map(query, labelStructural, ellipsesForHoles)
-		query = substituteConcat(query, space)
+		query = Map(query, labelStructural, ellipsesForHoles, substituteConcat(space))
 	case SearchTypeRegex:
-		query = escapeParensHeuristic(query)
-		query = substituteConcat(query, fuzzyRegexp)
+		query = Map(query, escapeParensHeuristic, substituteConcat(fuzzyRegexp))
 	}
 
 	if options.Globbing {

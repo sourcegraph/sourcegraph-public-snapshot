@@ -495,10 +495,11 @@ func space(patterns []Pattern) Pattern {
 	}
 }
 
-// substituteConcat calls the callback function for all contiguous patterns in
-// the tree, rooted by a concat operator. The return value of callback is
+// substituteConcat returns a function that concatenates all contiguous patterns
+// in the tree, rooted by a concat operator. The callback parameter defines how
+// the function concatenates patterns. The return value of callback is
 // substituted in-place in the tree.
-func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
+func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
@@ -546,7 +547,7 @@ func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
 		}
 		return newNode
 	}
-	return substituteNodes(nodes)
+	return substituteNodes
 }
 
 // escapeParens is a heuristic used in the context of regular expression search.
