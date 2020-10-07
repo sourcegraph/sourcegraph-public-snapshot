@@ -17,5 +17,6 @@ IMAGE=sourcegraph/server:3.20.1 ./dev/run-server-image.sh
 
 pushd web
 sleep 10
+yarn generate
 yarn run test:regression
 popd
