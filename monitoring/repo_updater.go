@@ -110,6 +110,27 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
+				Title:  "External service synchronization",
+				Hidden: true,
+				Rows: []Row{
+					{
+						Observable{
+							Name:            "repoupdater_queued_sync_jobs_total",
+							Description:     "the total number of queued sync jobs",
+							Query:           `src_repoupdater_queued_sync_jobs_total`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 100, For: 1 * time.Hour},
+							PanelOptions:    PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:           ObservableOwnerCloud,
+							PossibleSolutions: `
+								- **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = 'errored'";
+								- **Increase the number of workers** using the 'repoConcurrentExternalServiceSyncers' site config.
+							`,
+						},
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{

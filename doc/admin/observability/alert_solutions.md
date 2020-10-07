@@ -2997,6 +2997,24 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## repo-updater: repoupdater_queued_sync_jobs_total
+
+**Descriptions:**
+
+- _repo-updater: 100+ the total number of queued sync jobs for 1h0m0s_
+
+**Possible solutions:**
+
+- **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = `errored`";
+- **Increase the number of workers** using the `repoConcurrentExternalServiceSyncers` site config.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_repoupdater_queued_sync_jobs_total"
+]
+```
+
 ## repo-updater: container_cpu_usage
 
 **Descriptions:**

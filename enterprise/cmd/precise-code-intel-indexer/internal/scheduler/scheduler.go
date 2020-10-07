@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/index"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -103,7 +104,7 @@ func (s *Scheduler) queueIndex(ctx context.Context, repositoryID int) (err error
 		return nil
 	}
 
-	indexes, err := s.inferIndexes(ctx, repositoryID, commit)
+	indexes, err := s.getIndexJobs(ctx, repositoryID, commit)
 	if err != nil {
 		return err
 	}
@@ -148,63 +149,82 @@ func (s *Scheduler) queueIndex(ctx context.Context, repositoryID int) (err error
 	return nil
 }
 
-func (s *Scheduler) inferIndexes(ctx context.Context, repositoryID int, commit string) ([]store.Index, error) {
+func (s *Scheduler) getIndexJobs(ctx context.Context, repositoryID int, commit string) ([]store.Index, error) {
+	fns := []func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error){
+		s.getIndexJobsFromConfigurationInDatabase,
+		s.getIndexJobsFromConfigurationInRepository,
+		s.inferIndexJobsFromRepositoryStructure,
+	}
+
+	for _, fn := range fns {
+		if indexJobs, ok, err := fn(ctx, repositoryID, commit); err != nil {
+			return nil, err
+		} else if ok {
+			return indexJobs, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *Scheduler) getIndexJobsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.GetIndexConfigurationByRepositoryID")
+		return nil, false, errors.Wrap(err, "store.GetIndexConfigurationByRepositoryID")
 	}
-	if ok {
-		indexConfiguration, err := index.UnmarshalJSON(indexConfigurationRecord.Data)
-		if err != nil {
-			log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID)
-			return nil, nil
-		}
-
-		var indexes []store.Index
-		for _, indexJob := range indexConfiguration.IndexJobs {
-			var dockerSteps []store.DockerStep
-			for _, dockerStep := range indexConfiguration.SharedSteps {
-				dockerSteps = append(dockerSteps, store.DockerStep{
-					Root:     dockerStep.Root,
-					Image:    dockerStep.Image,
-					Commands: dockerStep.Commands,
-				})
-			}
-			for _, dockerStep := range indexJob.Steps {
-				dockerSteps = append(dockerSteps, store.DockerStep{
-					Root:     dockerStep.Root,
-					Image:    dockerStep.Image,
-					Commands: dockerStep.Commands,
-				})
-			}
-
-			indexes = append(indexes, store.Index{
-				Commit:       commit,
-				RepositoryID: repositoryID,
-				State:        "queued",
-				DockerSteps:  dockerSteps,
-				Root:         indexJob.Root,
-				Indexer:      indexJob.Indexer,
-				IndexerArgs:  indexJob.IndexerArgs,
-				Outfile:      indexJob.Outfile,
-			})
-		}
-
-		return indexes, nil
+	if !ok {
+		return nil, false, nil
 	}
 
-	index := store.Index{
-		Commit:       commit,
-		RepositoryID: repositoryID,
-		State:        "queued",
-		DockerSteps:  []store.DockerStep{},
-		Root:         "",
-		Indexer:      "sourcegraph/lsif-go:latest",
-		IndexerArgs:  []string{"lsif-go", "--no-animation"},
-		Outfile:      "",
+	indexConfiguration, err := index.UnmarshalJSON(indexConfigurationRecord.Data)
+	if err != nil {
+		// We failed here, but do not try to fall back on another method as having
+		// an explicit config in the database should always take precedence, even
+		// if it's broken.
+		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID)
+		return nil, true, nil
 	}
 
-	return []store.Index{index}, nil
+	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
+}
+
+func (s *Scheduler) getIndexJobsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
+	isConfigured, err := s.gitserverClient.FileExists(ctx, s.store, repositoryID, commit, "sourcegraph.yaml")
+	if err != nil {
+		return nil, false, errors.Wrap(err, "gitserver.FileExists")
+	}
+	if !isConfigured {
+		return nil, false, nil
+	}
+
+	content, err := s.gitserverClient.RawContents(ctx, s.store, repositoryID, commit, "sourcegraph.yaml")
+	if err != nil {
+		return nil, false, errors.Wrap(err, "gitserver.RawContents")
+	}
+
+	indexConfiguration, err := index.UnmarshalYAML(content)
+	if err != nil {
+		// We failed here, but do not try to fall back on another method as having
+		// an explicit config in the repository should always take precedence over
+		// an auto-inferred configuration, even if it's broken.
+		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID)
+		return nil, true, nil
+	}
+
+	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
+}
+
+func (s *Scheduler) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) (indexes []store.Index, _ bool, _ error) {
+	paths, err := s.gitserverClient.ListFiles(ctx, s.store, repositoryID, commit, inference.Patterns)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "gitserver.ListFiles")
+	}
+
+	for _, recognizer := range inference.Recognizers {
+		indexes = append(indexes, convertInferredConfiguration(repositoryID, commit, recognizer.InferIndexJobs(paths))...)
+	}
+
+	return indexes, true, nil
 }
 
 func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
@@ -220,6 +240,65 @@ func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
 	}
 
 	return repositoryIDs
+}
+
+func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration index.IndexConfiguration) (indexes []store.Index) {
+	for _, indexJob := range indexConfiguration.IndexJobs {
+		var dockerSteps []store.DockerStep
+		for _, dockerStep := range indexConfiguration.SharedSteps {
+			dockerSteps = append(dockerSteps, store.DockerStep{
+				Root:     dockerStep.Root,
+				Image:    dockerStep.Image,
+				Commands: dockerStep.Commands,
+			})
+		}
+		for _, dockerStep := range indexJob.Steps {
+			dockerSteps = append(dockerSteps, store.DockerStep{
+				Root:     dockerStep.Root,
+				Image:    dockerStep.Image,
+				Commands: dockerStep.Commands,
+			})
+		}
+
+		indexes = append(indexes, store.Index{
+			Commit:       commit,
+			RepositoryID: repositoryID,
+			State:        "queued",
+			DockerSteps:  dockerSteps,
+			Root:         indexJob.Root,
+			Indexer:      indexJob.Indexer,
+			IndexerArgs:  indexJob.IndexerArgs,
+			Outfile:      indexJob.Outfile,
+		})
+	}
+
+	return indexes
+}
+
+func convertInferredConfiguration(repositoryID int, commit string, indexJobs []inference.IndexJob) (indexes []store.Index) {
+	for _, indexJob := range indexJobs {
+		var dockerSteps []store.DockerStep
+		for _, dockerStep := range indexJob.DockerSteps {
+			dockerSteps = append(dockerSteps, store.DockerStep{
+				Root:     dockerStep.Root,
+				Image:    dockerStep.Image,
+				Commands: dockerStep.Commands,
+			})
+		}
+
+		indexes = append(indexes, store.Index{
+			RepositoryID: repositoryID,
+			Commit:       commit,
+			State:        "queued",
+			DockerSteps:  dockerSteps,
+			Root:         indexJob.Root,
+			Indexer:      indexJob.Indexer,
+			IndexerArgs:  indexJob.IndexerArgs,
+			Outfile:      indexJob.Outfile,
+		})
+	}
+
+	return indexes
 }
 
 func isRepoNotExist(err error) bool {

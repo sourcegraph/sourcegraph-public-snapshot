@@ -463,6 +463,7 @@ Foreign-key constraints:
  namespace_user_id | integer                  | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
+    "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
 Foreign-key constraints:
