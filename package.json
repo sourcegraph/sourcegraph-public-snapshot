@@ -126,7 +126,7 @@
     "@types/he": "1.1.1",
     "@types/highlight.js": "9.12.4",
     "@types/is-absolute-url": "3.0.0",
-    "@types/jest": "26.0.9",
+    "@types/jest": "26.0.14",
     "@types/jsdom": "12.2.4",
     "@types/lodash": "4.14.159",
     "@types/marked": "1.1.0",
