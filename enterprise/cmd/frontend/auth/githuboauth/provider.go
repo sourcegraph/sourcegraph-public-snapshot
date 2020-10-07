@@ -3,6 +3,8 @@ package githuboauth
 import (
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -11,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
+
+var useAuthStyleParams, _ = strconv.ParseBool(os.Getenv("SOURCEGRAPH_AUTH_STYLE_PARAMS"))
 
 const sessionKey = "githuboauth@0"
 
@@ -25,6 +29,10 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		return nil, messages
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitHub)
+	authStyle := oauth2.AuthStyleAutoDetect
+	if useAuthStyleParams {
+		authStyle = oauth2.AuthStyleInParams
+	}
 	oauth2Cfg := oauth2.Config{
 		ClientID:     p.ClientID,
 		ClientSecret: p.ClientSecret,
@@ -32,7 +40,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		Endpoint: oauth2.Endpoint{
 			AuthURL:   codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
 			TokenURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
-			AuthStyle: oauth2.AuthStyleInParams,
+			AuthStyle: authStyle,
 		},
 	}
 	return oauth.NewProvider(oauth.ProviderOp{
