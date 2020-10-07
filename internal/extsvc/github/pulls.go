@@ -13,6 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// Redux paging information.
+type PageInfo struct {
+	HasNextPage bool
+	EndCursor   string
+}
+
 // An Actor represents an object which can take actions on GitHub. Typically a User or Bot.
 type Actor struct {
 	AvatarURL string
@@ -386,6 +392,11 @@ func (e LabelEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
 }
 
+type TimelineItemConnection struct {
+	PageInfo PageInfo
+	Nodes    []TimelineItem
+}
+
 // TimelineItem is a union type of all supported pull request timeline items.
 type TimelineItem struct {
 	Type string
@@ -483,7 +494,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"createPullRequest"`
 	}
@@ -500,9 +511,17 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 		return nil, err
 	}
 
+	ti := result.CreatePullRequest.PullRequest.TimelineItems
 	pr := &result.CreatePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.CreatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
+
+	if ti.PageInfo.HasNextPage {
+		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
+			return nil, err
+		}
+	}
+
 	return pr, nil
 }
 
@@ -535,7 +554,7 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"updatePullRequest"`
 	}
@@ -552,9 +571,17 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 		return nil, err
 	}
 
+	ti := result.UpdatePullRequest.PullRequest.TimelineItems
 	pr := &result.UpdatePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.UpdatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
+
+	if ti.PageInfo.HasNextPage {
+		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
+			return nil, err
+		}
+	}
+
 	return pr, nil
 }
 
@@ -575,7 +602,7 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"closePullRequest"`
 	}
@@ -588,9 +615,16 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 		return err
 	}
 
+	ti := result.ClosePullRequest.PullRequest.TimelineItems
 	*pr = result.ClosePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.ClosePullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
+
+	if ti.PageInfo.HasNextPage {
+		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -612,7 +646,7 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"reopenPullRequest"`
 	}
@@ -625,9 +659,16 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 		return err
 	}
 
+	ti := result.ReopenPullRequest.PullRequest.TimelineItems
 	*pr = result.ReopenPullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.ReopenPullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ReopenPullRequest.PullRequest.Participants.Nodes
+
+	if ti.PageInfo.HasNextPage {
+		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -699,7 +740,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	var results map[string]map[string]*struct {
 		PullRequest
 		Participants  struct{ Nodes []Actor }
-		TimelineItems struct{ Nodes []TimelineItem }
+		TimelineItems TimelineItemConnection
 	}
 
 	err := c.requestGraphQL(ctx, q.String(), nil, &results)
@@ -711,6 +752,11 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 		for prLabel, pr := range prs {
 			pr.PullRequest.Participants = pr.Participants.Nodes
 			pr.PullRequest.TimelineItems = pr.TimelineItems.Nodes
+			if pr.TimelineItems.PageInfo.HasNextPage {
+				if err := c.loadRemainingTimelineItems(ctx, &pr.PullRequest, pr.TimelineItems.PageInfo.EndCursor); err != nil {
+					return err
+				}
+			}
 			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
 		}
 	}
@@ -738,7 +784,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 				Nodes []*struct {
 					PullRequest
 					Participants  struct{ Nodes []Actor }
-					TimelineItems struct{ Nodes []TimelineItem }
+					TimelineItems TimelineItemConnection
 				}
 			}
 		}
@@ -752,16 +798,72 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 		return nil, fmt.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
 	}
 
-	pr := results.Repository.PullRequests.Nodes[0].PullRequest
-	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
-	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
+	node := results.Repository.PullRequests.Nodes[0]
+	pr := node.PullRequest
+	pr.Participants = node.Participants.Nodes
+	pr.TimelineItems = node.TimelineItems.Nodes
+
+	if node.TimelineItems.PageInfo.HasNextPage {
+		if err := c.loadRemainingTimelineItems(ctx, &pr, node.TimelineItems.PageInfo.EndCursor); err != nil {
+			return nil, err
+		}
+	}
 
 	return &pr, nil
 }
 
+func (c *Client) loadRemainingTimelineItems(ctx context.Context, pr *PullRequest, afterCursor string) error {
+	for {
+		var q strings.Builder
+		q.WriteString(prCommonFragments)
+		q.WriteString(timelineItemsFragment)
+		q.WriteString(fmt.Sprintf(`query {
+  node(id: %q) {
+    ... on PullRequest {
+      __typename
+      timelineItems(first: 250, after: %q, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          __typename
+          ...timelineItems
+        }
+      }
+    }
+  }
+}
+`, pr.ID, afterCursor))
+
+		var results struct {
+			Node struct {
+				TypeName      string `json:"__typename"`
+				TimelineItems TimelineItemConnection
+			}
+		}
+
+		err := c.requestGraphQL(ctx, q.String(), nil, &results)
+		if err != nil {
+			return err
+		}
+
+		if results.Node.TypeName != "PullRequest" {
+			return fmt.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
+		}
+
+		pr.TimelineItems = append(pr.TimelineItems, results.Node.TimelineItems.Nodes...)
+		if !results.Node.TimelineItems.PageInfo.HasNextPage {
+			break
+		}
+		afterCursor = results.Node.TimelineItems.PageInfo.EndCursor
+	}
+	return nil
+}
+
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const pullRequestFragments = `
+const prCommonFragments = `
 fragment actor on Actor {
   avatarUrl
   login
@@ -774,7 +876,11 @@ fragment label on Label {
   description
   id
 }
+`
 
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
+const timelineItemsFragment = `
 fragment commit on Commit {
   oid
   message
@@ -789,40 +895,6 @@ fragment commit on Commit {
     user {
       ...actor
     }
-  }
-}
-
-fragment commitWithChecks on Commit {
-  oid
-  status {
-    state
-    contexts {
-      id
-      context
-      state
-      description
-    }
-  }
-  checkSuites(last: 20){
-    nodes {
-      id
-      status
-      conclusion
-      checkRuns(last: 20){
-        nodes{
-          id
-          status
-          conclusion
-        }
-      }
-    }
-  }
-  committedDate
-}
-
-fragment prCommit on PullRequestCommit {
-  commit {
-    ...commitWithChecks
   }
 }
 
@@ -841,6 +913,204 @@ fragment review on PullRequestReview {
     ...commit
   }
   includesCreatedEdit
+}
+
+fragment timelineItems on PullRequestTimelineItems {
+  ... on AssignedEvent {
+    actor {
+      ...actor
+    }
+    assignee {
+      ...actor
+    }
+    createdAt
+  }
+  ... on ClosedEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+    url
+  }
+  ... on IssueComment {
+    databaseId
+    author {
+      ...actor
+    }
+    authorAssociation
+    body
+    createdAt
+    editor {
+      ...actor
+    }
+    url
+    updatedAt
+    includesCreatedEdit
+    publishedAt
+  }
+  ... on RenamedTitleEvent {
+    actor {
+      ...actor
+    }
+    previousTitle
+    currentTitle
+    createdAt
+  }
+  ... on MergedEvent {
+    actor {
+      ...actor
+    }
+    mergeRefName
+    url
+    commit {
+      ...commit
+    }
+    createdAt
+  }
+  ... on PullRequestReview {
+    ...review
+  }
+  ... on PullRequestReviewThread {
+    comments(last: 100) {
+      nodes {
+        databaseId
+        author {
+          ...actor
+        }
+        authorAssociation
+        editor {
+          ...actor
+        }
+        commit {
+          ...commit
+        }
+        body
+        state
+        url
+        createdAt
+        updatedAt
+        includesCreatedEdit
+      }
+    }
+  }
+  ... on ReopenedEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+  }
+  ... on ReviewDismissedEvent {
+    actor {
+      ...actor
+    }
+    review {
+      ...review
+    }
+    dismissalMessage
+    createdAt
+  }
+  ... on ReviewRequestRemovedEvent {
+    actor {
+      ...actor
+    }
+    requestedReviewer {
+      ...actor
+    }
+    requestedTeam: requestedReviewer {
+      ... on Team {
+        name
+        url
+        avatarUrl
+      }
+    }
+    createdAt
+  }
+  ... on ReviewRequestedEvent {
+    actor {
+      ...actor
+    }
+    requestedReviewer {
+      ...actor
+    }
+    requestedTeam: requestedReviewer {
+      ... on Team {
+        name
+        url
+        avatarUrl
+      }
+    }
+    createdAt
+  }
+  ... on UnassignedEvent {
+    actor {
+      ...actor
+    }
+    assignee {
+      ...actor
+    }
+    createdAt
+  }
+  ... on LabeledEvent {
+    actor {
+      ...actor
+    }
+    label {
+      ...label
+    }
+    createdAt
+  }
+  ... on UnlabeledEvent {
+    actor {
+      ...actor
+    }
+    label {
+      ...label
+    }
+    createdAt
+  }
+  ... on PullRequestCommit {
+    commit {
+      ...commit
+    }
+  }
+}
+`
+
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
+const pullRequestFragments = prCommonFragments + timelineItemsFragment + `
+fragment commitWithChecks on Commit {
+  oid
+  status {
+    state
+    contexts {
+      id
+      context
+      state
+      description
+    }
+  }
+  checkSuites(last: 20) {
+    nodes {
+      id
+      status
+      conclusion
+      checkRuns(last: 20) {
+        nodes {
+          id
+          status
+          conclusion
+        }
+      }
+    }
+  }
+  committedDate
+}
+
+fragment prCommit on PullRequestCommit {
+  commit {
+    ...commitWithChecks
+  }
 }
 
 fragment pr on PullRequest {
@@ -875,165 +1145,13 @@ fragment pr on PullRequest {
     }
   }
   timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
     nodes {
       __typename
-      ... on AssignedEvent {
-        actor {
-          ...actor
-        }
-        assignee {
-          ...actor
-        }
-        createdAt
-      }
-      ... on ClosedEvent {
-        actor {
-          ...actor
-        }
-        createdAt
-        url
-      }
-      ... on IssueComment {
-        databaseId
-        author {
-          ...actor
-        }
-        authorAssociation
-        body
-        createdAt
-        editor {
-          ...actor
-        }
-        url
-        updatedAt
-        includesCreatedEdit
-        publishedAt
-      }
-      ... on RenamedTitleEvent {
-        actor {
-          ...actor
-        }
-        previousTitle
-        currentTitle
-        createdAt
-      }
-      ... on MergedEvent {
-        actor {
-          ...actor
-        }
-        mergeRefName
-        url
-        commit {
-          ...commit
-        }
-        createdAt
-      }
-      ... on PullRequestReview {
-        ...review
-      }
-      ... on PullRequestReviewThread {
-        comments(last: 100) {
-          nodes {
-            databaseId
-            author {
-              ...actor
-            }
-            authorAssociation
-            editor {
-              ...actor
-            }
-            commit {
-              ...commit
-            }
-            body
-            state
-            url
-            createdAt
-            updatedAt
-            includesCreatedEdit
-          }
-        }
-      }
-      ... on ReopenedEvent {
-        actor {
-          ...actor
-        }
-        createdAt
-      }
-      ... on ReviewDismissedEvent {
-        actor {
-          ...actor
-        }
-        review {
-          ...review
-        }
-        dismissalMessage
-        createdAt
-      }
-      ... on ReviewRequestRemovedEvent {
-        actor {
-          ...actor
-        }
-        requestedReviewer {
-          ...actor
-        }
-        requestedTeam: requestedReviewer {
-          ... on Team {
-            name
-            url
-            avatarUrl
-          }
-        }
-        createdAt
-      }
-      ... on ReviewRequestedEvent {
-        actor {
-          ...actor
-        }
-        requestedReviewer {
-          ...actor
-        }
-        requestedTeam: requestedReviewer {
-          ... on Team {
-            name
-            url
-            avatarUrl
-          }
-        }
-        createdAt
-      }
-      ... on UnassignedEvent {
-        actor {
-          ...actor
-        }
-        assignee {
-          ...actor
-        }
-        createdAt
-      }
-      ... on LabeledEvent {
-        actor {
-          ...actor
-        }
-        label {
-          ...label
-        }
-        createdAt
-      }
-      ... on UnlabeledEvent {
-        actor {
-          ...actor
-        }
-        label {
-          ...label
-        }
-        createdAt
-      }
-      ... on PullRequestCommit {
-        commit {
-          ...commit
-        }
-      }
+      ...timelineItems
     }
   }
 }
