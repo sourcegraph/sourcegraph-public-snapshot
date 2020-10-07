@@ -57,6 +57,17 @@ func (h *Handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// run in a clean VM.
 	logger := NewJobLogger(h.options.AuthToken)
 
+	defer func() {
+		type SetLogContents interface {
+			SetLogContents(ctx context.Context, id int, contents string) error
+		}
+		if setLogContents, ok := s.(SetLogContents); ok {
+			if err := setLogContents.SetLogContents(ctx, index.ID, logger.String()); err != nil {
+				log15.Warn("Failed to upload log for index job", "id", index.ID, "err", err)
+			}
+		}
+	}()
+
 	commander := h.newCommander(logger)
 
 	h.indexManager.AddID(index.ID)
@@ -135,15 +146,6 @@ func (h *Handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	if err := commander.Run(ctx, commandFormatter.FormatCommand(uploadCommand)...); err != nil {
 		return errors.Wrap(err, "failed to upload index")
-	}
-
-	type SetLogContents interface {
-		SetLogContents(ctx context.Context, id int, contents string) error
-	}
-	if setLogContents, ok := s.(SetLogContents); ok {
-		if err := setLogContents.SetLogContents(ctx, index.ID, logger.String()); err != nil {
-			log15.Warn("Failed to upload log for index job", "id", index.ID, "err", err)
-		}
 	}
 
 	return nil
