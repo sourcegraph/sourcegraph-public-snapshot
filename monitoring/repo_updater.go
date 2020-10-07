@@ -67,7 +67,7 @@ func RepoUpdater() *Container {
 							PossibleSolutions: "none",
 						},
 						Observable{
-							Name:              "source_repos",
+							Name:              "sourced_repos",
 							Description:       "repositories sourced",
 							Query:             `rate(src_repoupdater_source_repos_total[1m])`,
 							DataMayNotExist:   true,

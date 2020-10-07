@@ -2942,7 +2942,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## repo-updater: source_repos
+## repo-updater: sourced_repos
 
 **Descriptions:**
 
@@ -2954,7 +2954,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_source_repos"
+  "warning_repo-updater_sourced_repos"
 ]
 ```
 
