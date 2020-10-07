@@ -92,6 +92,8 @@
 // 1528395728_lsif_index_configuration.up.sql (204B)
 // 1528395729_add_external_services_namespace_user_id_index.down.sql (69B)
 // 1528395729_add_external_services_namespace_user_id_index.up.sql (113B)
+// 1528395730_lsif_index_log_contents.down.sql (68B)
+// 1528395730_lsif_index_log_contents.up.sql (72B)
 
 package migrations
 
@@ -2000,6 +2002,46 @@ func _1528395729_add_external_services_namespace_user_id_indexUpSql() (*asset, e
 	return a, nil
 }
 
+var __1528395730_lsif_index_log_contentsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xc9\x4f\x8f\x4f\xce\xcf\x2b\x49\xcd\x2b\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xda\x03\x04\xf8\x44\x00\x00\x00")
+
+func _1528395730_lsif_index_log_contentsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395730_lsif_index_log_contentsDownSql,
+		"1528395730_lsif_index_log_contents.down.sql",
+	)
+}
+
+func _1528395730_lsif_index_log_contentsDownSql() (*asset, error) {
+	bytes, err := _1528395730_lsif_index_log_contentsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395730_lsif_index_log_contents.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x60, 0xd4, 0xc3, 0x4b, 0x12, 0x36, 0x50, 0xba, 0x76, 0x31, 0x40, 0x90, 0xe1, 0x83, 0x6c, 0xb4, 0x89, 0x34, 0x4d, 0x2f, 0x1f, 0x4c, 0x79, 0x3a, 0xc4, 0x5f, 0x95, 0x3f, 0x37, 0xfa, 0xbd, 0xb6}}
+	return a, nil
+}
+
+var __1528395730_lsif_index_log_contentsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xc9\x4f\x8f\x4f\xce\xcf\x2b\x49\xcd\x2b\x29\x56\x08\x71\x8d\x08\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x9f\x08\x1a\xc1\x48\x00\x00\x00")
+
+func _1528395730_lsif_index_log_contentsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395730_lsif_index_log_contentsUpSql,
+		"1528395730_lsif_index_log_contents.up.sql",
+	)
+}
+
+func _1528395730_lsif_index_log_contentsUpSql() (*asset, error) {
+	bytes, err := _1528395730_lsif_index_log_contentsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395730_lsif_index_log_contents.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5b, 0x6c, 0xdd, 0x99, 0x66, 0xd4, 0x72, 0x24, 0x53, 0x6e, 0x7, 0xdf, 0x74, 0x3a, 0x7e, 0x1d, 0x21, 0xec, 0xde, 0x9d, 0xc, 0x90, 0xf8, 0xa4, 0x28, 0xbf, 0xc2, 0x53, 0x21, 0x4a, 0x80, 0xdc}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2183,6 +2225,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395728_lsif_index_configuration.up.sql":                                   _1528395728_lsif_index_configurationUpSql,
 	"1528395729_add_external_services_namespace_user_id_index.down.sql":            _1528395729_add_external_services_namespace_user_id_indexDownSql,
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              _1528395729_add_external_services_namespace_user_id_indexUpSql,
+	"1528395730_lsif_index_log_contents.down.sql":                                  _1528395730_lsif_index_log_contentsDownSql,
+	"1528395730_lsif_index_log_contents.up.sql":                                    _1528395730_lsif_index_log_contentsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2321,6 +2365,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395728_lsif_index_configuration.up.sql":                                   {_1528395728_lsif_index_configurationUpSql, map[string]*bintree{}},
 	"1528395729_add_external_services_namespace_user_id_index.down.sql":            {_1528395729_add_external_services_namespace_user_id_indexDownSql, map[string]*bintree{}},
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              {_1528395729_add_external_services_namespace_user_id_indexUpSql, map[string]*bintree{}},
+	"1528395730_lsif_index_log_contents.down.sql":                                  {_1528395730_lsif_index_log_contentsDownSql, map[string]*bintree{}},
+	"1528395730_lsif_index_log_contents.up.sql":                                    {_1528395730_lsif_index_log_contentsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
