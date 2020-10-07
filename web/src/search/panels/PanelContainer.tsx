@@ -5,11 +5,11 @@ interface Props {
     title: string
     state: 'loading' | 'populated' | 'empty'
     // the content displayed when state is 'loading'
-    loadingContent: JSX.Element
+    loadingContent?: JSX.Element
+    // the content displayed when state is 'empty'
+    emptyContent?: JSX.Element
     // the content displayed when state is 'populated'
     populatedContent: JSX.Element
-    // the content displayed when state is 'empty'
-    emptyContent: JSX.Element
     actionButtons?: JSX.Element
     className?: string
 }
@@ -17,9 +17,9 @@ interface Props {
 export const PanelContainer: React.FunctionComponent<Props> = ({
     title,
     state,
-    loadingContent: loadingDisplay,
-    populatedContent: contentDisplay,
-    emptyContent: emptyDisplay,
+    loadingContent = <></>,
+    emptyContent = <></>,
+    populatedContent,
     actionButtons,
     className,
 }) => (
@@ -30,9 +30,9 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
         </div>
 
         <div className="panel-container__content h-100">
-            {state === 'loading' && loadingDisplay}
-            {state === 'populated' && contentDisplay}
-            {state === 'empty' && emptyDisplay}
+            {state === 'loading' && loadingContent}
+            {state === 'populated' && populatedContent}
+            {state === 'empty' && emptyContent}
         </div>
     </div>
 )
