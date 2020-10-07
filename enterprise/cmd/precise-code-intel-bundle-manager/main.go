@@ -47,7 +47,7 @@ func main() {
 		disableJanitor      = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
-	_ = mustInitializeCodeIntelDatabase()
+	codeIntelDB := mustInitializeCodeIntelDatabase()
 
 	storeCache, err := sqlitereader.NewStoreCache(readerDataCacheSize)
 	if err != nil {
@@ -75,7 +75,7 @@ func main() {
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
-	server := server.New(bundleDir, storeCache, observationContext)
+	server := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
