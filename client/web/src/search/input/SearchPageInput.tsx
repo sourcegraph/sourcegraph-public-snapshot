@@ -40,6 +40,7 @@ import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { daysActiveCount } from '../../marketing/util'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -102,7 +103,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         [props.location.pathname, props.location.search]
     )
 
-    const showOnboardingTour = props.showOnboardingTour && isHomepage && !hasSeenTour && !hasCancelledTour
+    const showOnboardingTour =
+        props.showOnboardingTour && isHomepage && daysActiveCount === 1 && !hasSeenTour && !hasCancelledTour
 
     const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
 
