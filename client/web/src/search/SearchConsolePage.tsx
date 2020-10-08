@@ -51,7 +51,7 @@ const options: Monaco.editor.IEditorOptions = {
     fixedOverflowWidgets: true,
     renderLineHighlight: 'none',
     contextmenu: false,
-    links: false,
+    links: true,
     // Display the cursor as a 1px line.
     cursorStyle: 'line',
     cursorWidth: 1,
@@ -75,25 +75,31 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
             return query
                 ? concat(
                       of('loading' as const),
-                      search(query, 'V2', patternType, undefined, props.extensionsController.extHostAPI)
+                      search(
+                          query.replace(/\/\/.*/g, ''),
+                          'V2',
+                          patternType,
+                          undefined,
+                          props.extensionsController.extHostAPI
+                      )
                   )
                 : NEVER
         }, [patternType, props.extensionsController, props.location.search])
     )
     const [allExpanded, setAllExpanded] = useState(false)
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
+    const { globbing } = props
     useEffect(() => {
         if (!monacoInstance) {
             return
         }
-        const subscription = addSourcegraphSearchCodeIntelligence(
-            monacoInstance,
-            searchQuery,
-            of(props.patternType),
-            of(props.globbing)
-        )
+        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, {
+            patternType,
+            globbing,
+            interpretComments: true,
+        })
         return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQuery, props.patternType, props.globbing])
+    }, [monacoInstance, searchQuery, patternType, globbing])
     const [editorInstance, setEditorInstance] = useState<Monaco.editor.IStandaloneCodeEditor>()
     useEffect(() => {
         if (!editorInstance) {

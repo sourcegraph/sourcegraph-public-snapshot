@@ -34,6 +34,12 @@ export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.
                     scopes: 'operator',
                 })
                 break
+            case 'comment':
+                tokens.push({
+                    startIndex: range.start,
+                    scopes: 'comment',
+                })
+                break
             default:
                 tokens.push({
                     startIndex: range.start,
