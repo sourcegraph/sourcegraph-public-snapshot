@@ -6,9 +6,9 @@ set -euxo pipefail
 box=$1
 exit_code=0
 
-cd test/
+pushd test/
 
-plugins=(vagrant-google vagrant-env)
+plugins=(vagrant-google vagrant-env vagrant-scp)
 
 for i in "${plugins[@]}"; do
   if ! vagrant plugin list --no-tty | grep "$i"; then
@@ -17,6 +17,9 @@ for i in "${plugins[@]}"; do
 done
 
 vagrant up "$box" --provider=google || exit_code=$?
+vagrant scp "$box":/sourcegraph/puppeteer/*.png ../
+vagrant scp "$box":/sourcegraph/e2e.mp4 ../
+vagrant scp "$box":/sourcegraph/ffmpeg.log ../
 vagrant destroy -f "$box"
 
 if [ "$exit_code" != 0 ]; then
