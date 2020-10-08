@@ -2896,7 +2896,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 28800s+ time since oldest sync for 5m0s_
+- _repo-updater: 28800s+ time since oldest sync for 10m0s_
 
 **Possible solutions:**
 
@@ -2905,7 +2905,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_src_repoupdater_max_sync_backoff"
+  "critical_repo-updater_src_repoupdater_max_sync_backoff"
 ]
 ```
 
@@ -2989,6 +2989,22 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_repo-updater_sourced_repos"
+]
+```
+
+## repo-updater: user_added_repos
+
+**Descriptions:**
+
+- _repo-updater: 180000+ total number of user added repos for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_user_added_repos"
 ]
 ```
 
@@ -3255,7 +3271,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_src_repoupdater_external_services_total"
+  "critical_repo-updater_src_repoupdater_external_services_total"
 ]
 ```
 
