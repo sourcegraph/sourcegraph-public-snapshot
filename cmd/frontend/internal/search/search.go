@@ -72,6 +72,18 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	const commitmatchesChunk = 1000
+	commitmatchesBuf := make([]eventCommitMatch, 0, commitmatchesChunk)
+	flushCommitMatchesBuf := func() {
+		if len(commitmatchesBuf) > 0 {
+			if err := eventWriter.Event("commitmatches", commitmatchesBuf); err != nil {
+				// EOF
+				return
+			}
+			commitmatchesBuf = commitmatchesBuf[:0]
+		}
+	}
+
 	for _, result := range resultsResolver.Results() {
 		if fm, ok := result.ToFileMatch(); ok {
 			filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
@@ -85,10 +97,17 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 				flushRepoMatchesBuf()
 			}
 		}
+		if commit, ok := result.ToCommitSearchResult(); ok {
+			commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
+			if len(commitmatchesBuf) == cap(commitmatchesBuf) {
+				flushCommitMatchesBuf()
+			}
+		}
 	}
 
 	flushFileMatchesBuf()
 	flushRepoMatchesBuf()
+	flushCommitMatchesBuf()
 
 	// Send dynamic filters once. When this is true streaming we may want to
 	// send updated filters as we find more results.
@@ -187,6 +206,28 @@ func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
 	}
 }
 
+func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMatch {
+	var content string
+	var ranges [][3]int32
+	if matches := commit.Matches(); len(matches) == 1 {
+		match := matches[0]
+		content = match.Body().Text()
+		highlights := match.Highlights()
+		ranges = make([][3]int32, len(highlights))
+		for i, h := range highlights {
+			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
+		}
+	}
+	return eventCommitMatch{
+		Icon:    commit.Icon(),
+		Label:   commit.Label().Text(),
+		URL:     commit.URL(),
+		Detail:  commit.Detail().Text(),
+		Content: content,
+		Ranges:  ranges,
+	}
+}
+
 type eventStreamWriter struct {
 	w     io.Writer
 	enc   *json.Encoder
@@ -262,6 +303,20 @@ type eventLineMatch struct {
 type eventRepoMatch struct {
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
+}
+
+// eventCommitMatch is the generic results interface from GQL. There is a lot
+// of potential data that may be useful here, and some thought needs to be put
+// into what is actually useful in a commit result / or if we should have a
+// "type" for that.
+type eventCommitMatch struct {
+	Icon    string `json:"icon"`
+	Label   string `json:"label"`
+	URL     string `json:"url"`
+	Detail  string `json:"detail"`
+	Content string `json:"content"`
+	// [line, character, length]
+	Ranges [][3]int32 `json:"ranges"`
 }
 
 // eventFilter is a suggestion for a search filter. Currently has a 1-1
