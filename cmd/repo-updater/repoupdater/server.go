@@ -461,7 +461,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
 				}
 
-				// Since we don't support private repositories on user-added external services on Cloud,
+				// Since we don't support private repositories on Cloud,
 				// we can safely assume that when a repository stored in the database is not accessible anymore,
 				// no other external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
@@ -476,7 +476,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 						r.DeletedAt = s.Now()
 					}))
 					if err != nil {
-						log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
 					}
 				}
 			}()
