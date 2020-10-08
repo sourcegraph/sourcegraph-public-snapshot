@@ -1,9 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
 import { LoaderInput } from '../../../../shared/src/components/LoaderInput'
-import EarthIcon from 'mdi-react/EarthIcon'
-import LockIcon from 'mdi-react/LockIcon'
-
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import classNames from 'classnames'
 import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
@@ -12,6 +9,13 @@ import { Toggle } from '../../../../shared/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
 import { noop } from 'lodash'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
+import EarthIcon from 'mdi-react/EarthIcon'
+import LockIcon from 'mdi-react/LockIcon'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
+import { PhabricatorIcon } from '../../../../shared/src/components/icons'
+
 interface OptionsPageProps {
     version: string
     sourcegraphUrl: string
@@ -23,6 +27,7 @@ interface OptionsPageProps {
     permissionAlert?: { name: string; icon?: JSX.Element }
     optionFlags: { key: string; label: string; value: boolean }[]
     onChangeOptionFlag: (key: string, value: boolean) => void
+    currentHost?: string
 }
 
 export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
@@ -36,6 +41,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     permissionAlert,
     optionFlags,
     onChangeOptionFlag,
+    currentHost,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
     const [urlState, nextUrlFieldChange, urlInputReference] = useInputValidation(
@@ -47,6 +53,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             [sourcegraphUrl, validateSourcegraphUrl]
         )
     )
+
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
             <section className="options-page__section">
@@ -62,10 +69,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 </div>
                 <div className="options-page__version">v{version}</div>
             </section>
-            <section className="options-page__section">
-                <p>Get code intelligence tooltips while browsing files and reading PRs on your code host.</p>
-                {/* Code host icons, with current one highlighted */}
-            </section>
+            <CodeHostsSection currentHost={currentHost} />
             <section className="options-page__section">
                 <form>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
@@ -99,7 +103,11 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className="options-page__section">
                 <p>
-                    <LinkOrButton onSelect={() => setShowAdvancedSettings(!showAdvancedSettings)}>
+                    <LinkOrButton
+                        onSelect={useCallback(() => setShowAdvancedSettings(!showAdvancedSettings), [
+                            showAdvancedSettings,
+                        ])}
+                    >
                         {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
                     </LinkOrButton>
                 </p>
@@ -165,5 +173,43 @@ const PrivateRepositoryAlert: React.FunctionComponent = props => (
             </li>
             <li>Make sure that the status shows 'connected'.</li>
         </ol>
+    </section>
+)
+
+const codeHosts = [
+    {
+        host: 'github.com',
+        icon: MicrosoftGithubIcon,
+    },
+    {
+        host: 'gitlab.com',
+        icon: GitlabIcon,
+    },
+    {
+        host: 'bitbucket.org',
+        icon: BitbucketIcon,
+    },
+    {
+        host: 'phabricator.com',
+        icon: PhabricatorIcon,
+    },
+]
+
+const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ currentHost }) => (
+    <section className="options-page__section options-page__alert">
+        <p>Get code intelligence tooltips while browsing files and reading PRs on your code host. ({currentHost})</p>
+        <div>
+            {codeHosts.map(({ host, icon: Icon }) => (
+                <span
+                    key={host}
+                    className={classNames('code-hosts-section__icon', {
+                        // Use `endsWith` in order to match subdomains.
+                        'code-hosts-section__icon--highlighted': currentHost?.endsWith(host),
+                    })}
+                >
+                    <Icon />
+                </span>
+            ))}
+        </div>
     </section>
 )

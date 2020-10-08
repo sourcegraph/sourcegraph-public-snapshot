@@ -65,7 +65,6 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     const hasPermissions = await browser.permissions.contains({
         origins: [`${protocol}//${host}/*`],
     })
-    console.log('!', url, host, protocol)
     return { host, protocol, hasPermissions }
 }
 
@@ -154,11 +153,12 @@ const Options: React.FunctionComponent = () => {
             version={version}
             validateSourcegraphUrl={validateSourcegraphUrl}
             isActivated={!!isActivated}
-            onToggleActivated={handleToggleActivated} // TODO
+            onToggleActivated={handleToggleActivated}
             optionFlags={optionFlagsWithValues}
             onChangeOptionFlag={handleChangeOptionFlag}
             showPrivateRepositoryAlert={false}
             permissionAlert={permissionAlert}
+            currentHost={currentTabStatus?.host}
         />
     )
 }

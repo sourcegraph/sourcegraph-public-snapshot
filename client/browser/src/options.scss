@@ -78,3 +78,13 @@ body {
         margin-top: 0.25rem;
     }
 }
+
+.code-hosts-section__icon {
+    display: inline-block;
+    padding: 0.4rem;
+    border-radius: 100%;
+}
+
+.code-hosts-section__icon--highlighted {
+    background-color: rgba(0, 0, 0, 0.15);
+}
