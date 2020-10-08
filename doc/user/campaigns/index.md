@@ -4,6 +4,8 @@
 
 Campaigns let you make large-scale code changes across many repositories.
 
+> New to campaigns? See the [**🏃 quickstart guide**](quickstart.md).
+
 ## About campaigns
 
 A campaign streamlines the creation and tracking of pull requests across many repositories and code hosts. After you create a campaign, you tell it what changes to make by providing a list of repositories and a script to run in each. The campaign lets you create pull requests on all affected repositories, and it tracks their progress until they're all merged. You can preview the changes and update them at any time.
@@ -53,8 +55,6 @@ For more information, see:
 - [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
 
 ## Creating a campaign
-
-> **Creating your first campaign?** See [Hello World Campaign](hello_world_campaign.md) in Sourcegraph Guides for step-by-step instructions.
 
 You can create a campaign from a campaign spec, which is a YAML file that describes your campaign.
 
