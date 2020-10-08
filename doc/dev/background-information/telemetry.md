@@ -2,11 +2,11 @@
 
 > NOTE: This document is a work-in-progress.
 
-Telemetry describes the logging of user events, such as a page view or search. Telemetry data is collected by each Sourcegraph instance and is not sent to Sourcegraph.com (except in aggregate form as documented in "[Pings](../admin/pings.md)").
+Telemetry describes the logging of user events, such as a page view or search. Telemetry data is collected by each Sourcegraph instance and is not sent to Sourcegraph.com (except in aggregate form as documented in "[Pings](../../admin/pings.md)").
 
 ## Action telemetry
 
-An [action](../extensions/authoring/contributions.md#actions) consists of an action ID (such as `linecounter.displayLineCountAction`), a command to invoke, and other presentation information. An action is executed when the user clicks on a button or command palette menu item for the action. Actions may be defined either by extensions or by the main application (these are called "builtin actions"). For telemetry purposes, the two types of actions are treated identically.
+An [action](../../extensions/authoring/contributions.md#actions) consists of an action ID (such as `linecounter.displayLineCountAction`), a command to invoke, and other presentation information. An action is executed when the user clicks on a button or command palette menu item for the action. Actions may be defined either by extensions or by the main application (these are called "builtin actions"). For telemetry purposes, the two types of actions are treated identically.
 
 A telemetry event is logged for every action that is executed by the user. By default, only the action ID is logged (not the arguments). To include the arguments for an action in the telemetry event data, the caller will need to explicitly opt-in (for privacy/security). Action telemetry is implemented in the `ActionItem` React component.
 

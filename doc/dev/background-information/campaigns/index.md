@@ -5,7 +5,7 @@
 Before diving into the technical part of campaigns, make sure to read up on what campaigns are, what they're not and what we want them to be.
 
 1. Start by looking at the [campaigns description on about.sourcegraph.com](https://about.sourcegraph.com).
-1. Read through the [campaigns documentation](https://docs.sourcegraph.com/user/campaigns).
+1. Read through the [campaigns documentation](../../../user/campaigns/index.md).
 
 ## [Campaigns design doc](campaigns_design.md)
 
@@ -14,7 +14,7 @@ See "[Campaigns design doc](campaigns_design.md)".
 ## Starting up your environment
 
 1. Run `./enterprise/dev/start.sh` and wait until all repositories are cloned.
-1. Create [your first campaign](../user/campaigns/hello_world_campaign.md). **Remember:** If you create a campaign, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large campaign, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
+1. Create [your first campaign](../../../user/campaigns/hello_world_campaign.md). **Remember:** If you create a campaign, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large campaign, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
 
 ## Glossary
 
