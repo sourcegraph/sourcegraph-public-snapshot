@@ -1258,6 +1258,10 @@ github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/sourcegraph/zoekt v0.0.0-20200929094455-d0d95b84fe01 h1:VTFPthjlbk4Rql+rhbM/omTWQADnz+QrTXJkEJlJNow=
 github.com/sourcegraph/zoekt v0.0.0-20200929094455-d0d95b84fe01/go.mod h1:yTwy+EEnG1R+5aoAJ9ZpqEYZWRITHtG6TTEZQ7oyVsU=
+github.com/sourcegraph/zoekt v0.0.0-20201009102516-82be173ea725 h1:KgqhInMxGkcVXhzr/ZLudF0ygWR6ZQoYq6lZXBTlwMg=
+github.com/sourcegraph/zoekt v0.0.0-20201009102516-82be173ea725/go.mod h1:yTwy+EEnG1R+5aoAJ9ZpqEYZWRITHtG6TTEZQ7oyVsU=
+github.com/sourcegraph/zoekt v0.0.0-20201009114607-dae494155990 h1:7ZDxlUJpYVm1cCfCt+z449b9NXiHZadJ9Am6kC/bRGc=
+github.com/sourcegraph/zoekt v0.0.0-20201009114607-dae494155990/go.mod h1:yTwy+EEnG1R+5aoAJ9ZpqEYZWRITHtG6TTEZQ7oyVsU=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
