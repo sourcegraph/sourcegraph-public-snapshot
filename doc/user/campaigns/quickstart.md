@@ -51,7 +51,9 @@ Once `src login` reports that you're authenticated, we're ready for the next ste
 
 ## Write a campaign spec
 
-A **campaign spec** is a YAML file that defines a campaign. See the ["Campaign spec YAML reference"](campaign_spec_yaml_reference.md) for details.
+A **campaign spec** is a YAML file that defines a campaign. It specifies which changes should be made in which repositories and how those should be published on the code host.
+
+See the ["Campaign spec YAML reference"](campaign_spec_yaml_reference.md) for details.
 
 Save the following campaign spec as `hello-world.campaign.yaml`:
 
