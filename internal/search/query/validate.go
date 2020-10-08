@@ -64,18 +64,6 @@ func containsAndOrExpression(nodes []Node) bool {
 	})
 }
 
-// containsNegatedPattern returns true if any search pattern is negated in nodes.
-func containsNegatedPattern(nodes []Node) bool {
-	return exists(nodes, func(node Node) bool {
-		if p, ok := node.(Pattern); ok {
-			if p.Negated {
-				return true
-			}
-		}
-		return false
-	})
-}
-
 // ContainsAndOrKeyword returns true if this query contains or- or and-
 // keywords. It is a temporary signal to determine whether we can fallback to
 // the older existing search functionality.
@@ -401,12 +389,18 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
-	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
 				return
 			}
 			_, err = regexp.Compile(value)
+		}
+		if annotation.Labels.isSet(Structural) && negated {
+			if err != nil {
+				return
+			}
+			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
 	if err != nil {
