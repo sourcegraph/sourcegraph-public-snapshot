@@ -97,6 +97,7 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 		}
 		count++
 	}
+	err = errs
 }
 
 // NewObservedStore wraps the given Store with error logging,
