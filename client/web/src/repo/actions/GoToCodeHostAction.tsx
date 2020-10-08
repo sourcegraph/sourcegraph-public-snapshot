@@ -119,7 +119,6 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
             if (hijackLink) {
                 event.preventDefault()
-
                 setShowPopover(true)
             }
         },
@@ -190,6 +189,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_self"
+                rel="noopener noreferrer"
                 data-tooltip={`View on ${displayName}`}
                 id={TARGET_ID}
                 onClick={onClick}

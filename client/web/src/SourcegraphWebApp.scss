@@ -109,6 +109,8 @@ body,
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
+@import './repo/actions//InstallBrowserExtensionPopover.scss';
+@import './repo/actions/InstallBrowserExtensionAlert.scss';
 @import './components/LoaderInput';
 @import '../../branded/src/components/CodeSnippet';
 @import './components/PageHeader';
