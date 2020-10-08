@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 	"regexp"
-	"runtime"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -102,23 +101,23 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 		5 workers seems to be a good trade-off for now. We might want to revisit this
 		benchmark over time.
 
-		go test -cpu 1,2,3,4,5,6,7,8,9,10 -bench=SearchRepo .
+		go test -cpu 1,2,3,4,5,6,7,8,9,10 -count=5 -bench=SearchRepo .
 
 		   goos: darwin
 		   goarch: amd64
 		   pkg: github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-		   BenchmarkSearchRepositories       	      13	 130537504 ns/op
-		   BenchmarkSearchRepositories-2     	      15	  73870755 ns/op
-		   BenchmarkSearchRepositories-3     	      22	  51347690 ns/op
-		   BenchmarkSearchRepositories-4     	      26	  43330084 ns/op
-		   BenchmarkSearchRepositories-5     	      31	  34350443 ns/op
-		   BenchmarkSearchRepositories-6     	      34	  30747184 ns/op
-		   BenchmarkSearchRepositories-7     	      38	  31297447 ns/op
-		   BenchmarkSearchRepositories-8     	      36	  32711526 ns/op
-		   BenchmarkSearchRepositories-9     	      30	  38050861 ns/op
-		   BenchmarkSearchRepositories-10    	      27	  38638799 ns/op
+		   BenchmarkSearchRepositories       	      13	 132088878 ns/op
+		   BenchmarkSearchRepositories-2     	      16	  69968357 ns/op
+		   BenchmarkSearchRepositories-3     	      24	  48294832 ns/op
+		   BenchmarkSearchRepositories-4     	      28	  42497674 ns/op
+		   BenchmarkSearchRepositories-5     	      27	  42851670 ns/op
+		   BenchmarkSearchRepositories-6     	      28	  39327860 ns/op
+		   BenchmarkSearchRepositories-7     	      27	  38198665 ns/op
+		   BenchmarkSearchRepositories-8     	      28	  38877182 ns/op
+		   BenchmarkSearchRepositories-9     	      26	  42457771 ns/op
+		   BenchmarkSearchRepositories-10    	      26	  40519692 ns/op
 	*/
-	step := len(resolved) / runtime.GOMAXPROCS(0) // for benchmarking, replace 5 with runtime.GOMAXPROCS(0)
+	step := len(resolved) / 5 // for benchmarking, replace 5 with runtime.GOMAXPROCS(0)
 	if step == 0 {
 		step = len(resolved)
 	} else {
