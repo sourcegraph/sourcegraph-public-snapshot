@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"regexp"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -59,19 +60,12 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	}
 
 	// Filter args.Repos by matching their names against the query pattern.
-	common = &searchResultsCommon{}
 	resolved, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, err
 	}
-	common.repos = make([]*types.Repo, len(resolved))
-	var repos []*search.RepositoryRevisions
-	for i, r := range resolved {
-		common.repos[i] = r.Repo
-		if pattern.MatchString(string(r.Repo.Name)) {
-			repos = append(repos, r)
-		}
-	}
+
+	common, repos := matchRepos(pattern, resolved)
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
@@ -100,6 +94,48 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	}
 
 	return results, common, nil
+}
+
+func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) (*searchResultsCommon, []*search.RepositoryRevisions) {
+	var (
+		muCommon = sync.Mutex{}
+		common   = &searchResultsCommon{}
+
+		muRepos = sync.Mutex{}
+		repos   []*search.RepositoryRevisions
+
+		muCursor = sync.Mutex{}
+		cursor   = 0
+	)
+	common.repos = make([]*types.Repo, len(resolved))
+	wg := sync.WaitGroup{}
+	worker := func() {
+		defer wg.Done()
+		for {
+			muCursor.Lock()
+			j := cursor
+			cursor += 1
+			muCursor.Unlock()
+			if j >= len(resolved) {
+				return
+			}
+			muCommon.Lock()
+			common.repos[j] = resolved[j].Repo
+			muCommon.Unlock()
+			if pattern.MatchString(string(resolved[j].Repo.Name)) {
+				muRepos.Lock()
+				repos = append(repos, resolved[j])
+				muRepos.Unlock()
+			}
+		}
+	}
+	workers := 5
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go worker()
+	}
+	wg.Wait()
+	return common, repos
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset

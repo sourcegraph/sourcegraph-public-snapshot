@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"reflect"
+	"regexp"
 	"sort"
 	"testing"
 
@@ -228,4 +230,28 @@ func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *se
 		return false, err
 	}
 	return len(rsta) == 1, nil
+}
+
+func TestMatchRepos(t *testing.T) {
+	want := makeRepositoryRevisions("foo/bar", "abc/foo")
+	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
+	pattern := regexp.MustCompile("foo")
+
+	common, repos := matchRepos(pattern, in)
+
+	if !(len(common.repos) == len(in)) {
+		t.Fatalf("expected %d, got %d", len(in), len(common.repos))
+	}
+	// because of the concurrency we cannot rely on the order of "repos" to be the
+	// same as "want". Hence we create map of repo names and compare those.
+	toMap := func(reporevs []*search.RepositoryRevisions) map[string]struct{} {
+		out := map[string]struct{}{}
+		for _, r := range reporevs {
+			out[string(r.Repo.Name)] = struct{}{}
+		}
+		return out
+	}
+	if !reflect.DeepEqual(toMap(repos), toMap(want)) {
+		t.Fatalf("expected %v, got %v", want, repos)
+	}
 }
