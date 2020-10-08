@@ -19,6 +19,175 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
+				Title: "Repositories",
+				Rows: []Row{
+					{
+						Observable{
+							Name:              "syncer_sync_last_time",
+							Description:       "time since last sync",
+							Query:             `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: time.Hour.Seconds(), For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Make sure there are external services added with valid tokens",
+						},
+						Observable{
+							Name:              "src_repoupdater_max_sync_backoff",
+							Description:       "time since oldest sync",
+							Query:             `src_repoupdater_max_sync_backoff`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 8 * time.Hour.Seconds(), For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Make sure there are external services added with valid tokens",
+						},
+					},
+					{
+						Observable{
+							Name:              "syncer_sync_start",
+							Description:       "sync was started",
+							Query:             `src_repoupdater_syncer_start_sync`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{family}}-{{external_service_id}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+						Observable{
+							Name:              "syncer_sync_duration",
+							Description:       "95th repositories sync duration",
+							Query:             `histogram_quantile(0.95, rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 30, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
+						},
+						Observable{
+							Name:              "source_duration",
+							Description:       "95th repositories source duration",
+							Query:             `histogram_quantile(0.95, rate(src_repoupdater_source_duration_seconds_bucket[1m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 30, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
+						},
+					},
+					{
+						Observable{
+							Name:              "syncer_synced_repos",
+							Description:       "repositories synced",
+							Query:             `rate(src_repoupdater_syncer_synced_repos_total[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().LegendFormat("{{state}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "sourced_repos",
+							Description:       "repositories sourced",
+							Query:             `rate(src_repoupdater_source_repos_total[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "purge_failed",
+							Description:       "repositories purge failed",
+							Query:             `rate(src_repoupdater_purge_failed[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "purge_success",
+							Description:       "repositories purge succeeded",
+							Query:             `rate(src_repoupdater_purge_success[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 10, For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "sched_auto_fetch",
+							Description:       "repositories scheduled due to hitting a deadline",
+							Query:             `rate(src_repoupdater_sched_auto_fetch[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "sched_manual_fetch",
+							Description:       "repositories scheduled due to user traffic",
+							Query:             `rate(src_repoupdater_sched_manual_fetch[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "sched_known_repos",
+							Description:       "repositories managed by the scheduler",
+							Query:             `src_repoupdater_sched_known_repos`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "sched_update_queue_length",
+							Description:       "repositories queued for update",
+							Query:             `src_repoupdater_sched_update_queue_length`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+						Observable{
+							Name:              "sched_loops",
+							Description:       "scheduler loops",
+							Query:             `rate(src_repoupdater_sched_loops[1m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 10, For: 5 * time.Minute}, // NOTE: There is really no point to have such warning
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						Observable{
+							Name:              "sched_error",
+							Description:       "repositories schedule error rate",
+							Query:             `rate(src_repoupdater_sched_error[1m])`,
+							DataMayNotExist:   true,
+							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
+							PanelOptions:      PanelOptions().Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Permissions",
 				Hidden: true,
 				Rows: []Row{
@@ -110,9 +279,31 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
-				Title:  "External service synchronization",
+				Title:  "External services",
 				Hidden: true,
 				Rows: []Row{
+					{
+						Observable{
+							Name:              "src_repoupdater_external_services_total",
+							Description:       "the total number of external services",
+							Query:             `src_repoupdater_external_services_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20000, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+						Observable{
+							Name:              "src_repoupdater_user_external_services_total",
+							Description:       "the total number of user added external services",
+							Query:             `src_repoupdater_user_external_services_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20000, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+					},
 					{
 						Observable{
 							Name:            "repoupdater_queued_sync_jobs_total",
@@ -126,6 +317,26 @@ func RepoUpdater() *Container {
 								- **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = 'errored'";
 								- **Increase the number of workers** using the 'repoConcurrentExternalServiceSyncers' site config.
 							`,
+						},
+						Observable{
+							Name:              "repoupdater_completed_sync_jobs_total",
+							Description:       "the total number of completed sync jobs",
+							Query:             `src_repoupdater_completed_sync_jobs_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100000, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
+						},
+						Observable{
+							Name:              "repoupdater_errored_sync_jobs_total",
+							Description:       "the total number of errored sync jobs",
+							Query:             `src_repoupdater_errored_sync_jobs_total`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 100, For: 1 * time.Hour},
+							PanelOptions:      PanelOptions().LegendFormat("{{type}}").Unit(Number),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "None",
 						},
 					},
 				},

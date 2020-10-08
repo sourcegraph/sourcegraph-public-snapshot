@@ -174,7 +174,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		s.Logger.Debug("Syncing external service", "serviceID", externalServiceID)
 	}
 
-	ctx, save := s.observe(ctx, externalServiceID, "Syncer.SyncExternalService", "")
+	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
@@ -326,9 +326,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	if s.Logger != nil {
 		s.Logger.Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	}
-	syncBackoffDuration.With(prometheus.Labels{
-		"external_service_id": strconv.FormatInt(svc.ID, 10),
-	}).Set(interval.Seconds())
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
@@ -428,7 +425,7 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, 0, "Syncer.SyncRepo", sourcedRepo.Name)
+	ctx, save := s.observe(ctx, "Syncer.SyncRepo", sourcedRepo.Name)
 	defer save(&diff, &err)
 
 	if tr, ok := store.(Transactor); ok {
@@ -449,7 +446,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (
 func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, sourcedRepo *Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, 0, "Syncer.InsertIfNew", sourcedRepo.Name)
+	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", sourcedRepo.Name)
 	defer save(&diff, &err)
 
 	diff, err = s.syncRepo(ctx, store, true, publicOnly, sourcedRepo)
@@ -834,11 +831,9 @@ func (s *Syncer) SyncErrors() []error {
 	return sorted
 }
 
-func (s *Syncer) observe(ctx context.Context, extsvcID int64, family, title string) (context.Context, func(*Diff, *error)) {
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
-
-	serviceIDString := strconv.FormatInt(extsvcID, 10)
 
 	return ctx, func(d *Diff, err *error) {
 		now := s.Now()
@@ -861,19 +856,20 @@ func (s *Syncer) observe(ctx context.Context, extsvcID int64, family, title stri
 					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 				}
 			}
-			syncedTotal.WithLabelValues(state, serviceIDString, family).Add(float64(len(repos)))
+			syncedTotal.WithLabelValues(state, family).Add(float64(len(repos)))
 		}
 
 		tr.LogFields(fields...)
 
-		lastSync.WithLabelValues(serviceIDString, family).Set(float64(now.Unix()))
+		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
+		syncStarted.WithLabelValues(family).Inc()
 
 		success := err == nil || *err == nil
-		syncDuration.WithLabelValues(strconv.FormatBool(success), serviceIDString, family).Observe(took)
+		syncDuration.WithLabelValues(strconv.FormatBool(success), family).Observe(took)
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.WithLabelValues(tagExternalServiceID, family).Add(1)
+			syncErrors.WithLabelValues(family).Add(1)
 		}
 
 		tr.Finish()
