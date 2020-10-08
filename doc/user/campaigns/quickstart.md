@@ -1,5 +1,18 @@
 # Quickstart for Campaigns
 
+<style>
+
+img.screenshot {
+    max-width: 600px;
+    margin: 1em;
+    margin-bottom: 0.5em;
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+}
+
+</style>
+
+
 Get started and create your first [Sourcegraph campaign](index.md) in 10 minutes or less.
 
 ## Introduction
@@ -44,7 +57,7 @@ In order to create campaigns we need to [install the Sourcegraph CLI](https://gi
     ```
     src login https://YOUR-SOURCEGRAPH-INSTANCE
     ```
-    <img src="./src_login_success.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_login_success.png" class="screenshot">
 
 
 Once `src login` reports that you're authenticated, we're ready for the next step.
@@ -90,19 +103,20 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
     > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
 1. Wait for it to run and compute the changes for each repository.
-    <img src="./src_campaign_preview_waiting.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_waiting.png" class="screenshot">
 1. When it's done, click the displayed link to see all of the changes that will be made.
-    <img src="./src_campaign_preview_link.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_link.png" class="screenshot">
 1. Make sure the changes look right.
-    <img src="./browser_campaign_preview.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_preview.png" class="screenshot">
+1. If you want to modify which changes are made, edit the `hello-world.campaign.yaml` file, rerun the `src campaign preview` command and open the newly generated preview URL.
 
     >NOTE: If you want to run the campaign on fewer repositories, change the `repositoriesMatchingQuery` in `hello-world.campaign.yaml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
 1. Click the **Apply spec** button to create the campaign. You should see something like this:
-    <img src="./browser_campaign_created.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_created.png" class="screenshot">
 
 You created your first campaign! The campaign's changesets are still unpublished, which means they exist only on Sourcegraph and haven't been pushed to your code host yet.
 
-## Publish the changes (optional)
+## Publish the changes
 
 So far, nothing has been created on the code hosts yet. For that to happen, we need to publish the changesets in our campaign.
 
@@ -112,19 +126,18 @@ _You probably don't want to publish these toy "Hello World" changesets to active
 
 On a real campaign, you would do the following:
 
-1. Change the `published: false` in the `hello-world.campaign.yaml` to `published: true`
-    <img src="./campaign_publish_true.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
-1. Run the `src campaign preview` command again and open the URL
-    <img src="./src_rerun_preview.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
-1. Apply the campaign spec by clicking the **Apply spec** button
-    <img src="./browser_campaign_preview_publish.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
 
-    > NOTE: You can also create or update a campaign by running `src campaign apply`! This skips the preview stage, and is especially useful when updating an existing campaign.
-1. The changesets will now be published asynchronously
-    <img src="./browser_campaign_async.png" width="600px" style="margin: 1em; margin-bottom: 0.5em; border: 1px solid lightgrey;">
+    > NOTE: Change [`published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets)  to publish only some of the changesets.
+1. Run the `src campaign preview` command again and open the URL.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_rerun_preview.png" class="screenshot">
+1. On the preview page you can confirm that changesets will be published when the spec is applied.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_preview_publish.png" class="screenshot">
+1. Click the **Apply spec** button and those changesets will be published on the code host.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_async.png" class="screenshot">
 
-You can also [publish only some of the changesets by setting `published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets).
-
+    > NOTE: You can also create or update a campaign by running `src campaign apply`. This skips the preview stage, and is especially useful when updating an existing campaign.
 
 ## Congratulations!
 
