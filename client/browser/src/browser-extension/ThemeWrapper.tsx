@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { ThemeProps } from '../../../shared/src/theme'
 
 /**
@@ -9,7 +9,7 @@ export function ThemeWrapper({
 }: {
     children: (props: ThemeProps) => JSX.Element | null
 }): JSX.Element | null {
-    const darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
+    const darkThemeMediaList = useMemo(() => window.matchMedia('(prefers-color-scheme: dark)'), [])
     const [isLightTheme, setIsLightTheme] = useState(!darkThemeMediaList.matches)
 
     useEffect(() => {
