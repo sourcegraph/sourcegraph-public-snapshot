@@ -362,12 +362,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
     }, [])
 
-    // DEBUG
-    useEffect(() => {
-        // eslint-disable-next-line
-        ;(window as any).showExtensionAlert = () => setShowExtensionAlert(true)
-    }, [])
-
     const onPopoverDismissed = useCallback(() => {
         setCanShowPopover(false)
     }, [])

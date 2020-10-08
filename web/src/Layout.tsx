@@ -168,12 +168,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         startExtensionAlertAnimation()
     }, [startExtensionAlertAnimation])
 
-    // DEBUG
-    useEffect(() => {
-        // eslint-disable-next-line
-        ;(window as any).onExtensionAlertDismissed = onExtensionAlertDismissed
-    }, [onExtensionAlertDismissed])
-
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
