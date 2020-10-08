@@ -105,13 +105,24 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         if (!editorInstance) {
             return
         }
-        editorInstance.addCommand(Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter, triggerSearch)
         const disposable = editorInstance.onDidChangeModelContent(() => {
             const query = editorInstance.getValue()
             searchQuery.next(query)
         })
         return () => disposable.dispose()
-    }, [editorInstance, searchQuery, props.history, triggerSearch])
+    }, [editorInstance, searchQuery, props.history])
+    useEffect(() => {
+        if (!editorInstance) {
+            return
+        }
+        const disposable = editorInstance.addAction({
+            id: 'submit-on-cmd-enter',
+            label: 'Submit search',
+            keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter],
+            run: () => triggerSearch(),
+        })
+        return () => disposable.dispose()
+    }, [editorInstance, triggerSearch])
 
     const onExpandAllResultsToggle = useCallback((): void => {
         setAllExpanded(allExpanded => {
