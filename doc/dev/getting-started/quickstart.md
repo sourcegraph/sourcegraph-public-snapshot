@@ -295,7 +295,6 @@ asdf plugin add yarn
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-
 ## Step 2: Initialize your database
 
 ### Without Docker
@@ -397,8 +396,7 @@ You may also want to run Postgres within a docker container instead of as a syst
 
 ### More info
 
-For more information about data storage, [read our full PostgreSQL Guide
-page](postgresql.md).
+For more information about data storage, [read our full PostgreSQL page](postgresql.md).
 
 Migrations are applied automatically.
 

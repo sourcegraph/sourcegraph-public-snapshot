@@ -1,17 +1,31 @@
-# Sourcegraph development documentation
+# Developing Sourcegraph
 
-This documentation is for developers contributing to Sourcegraph itself.
+This documentation is for developers contributing to the Sourcegraph code base.
 
-Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
+Sourcegraph development is open source at:
 
-### Project links
-
-- [Repository](https://github.com/sourcegraph/sourcegraph)
+- [GitHub repository](https://github.com/sourcegraph/sourcegraph)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+
+## [Getting started](getting-started/index.md)
+
+- [Quickstart](quickstart.md)
+
+## [How-to guides](how-to/index.md)
+
+-
+
+## Concepts
+
+
+
+## Reference
+
+
 
 ### Technical
 
-- [Quickstart](local_development.md)
+
 - [Documentation guidelines](documentation.md)
 - [Tech stack](tech_stack.md)
 - [Architecture](architecture/index.md)
