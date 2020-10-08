@@ -1,6 +1,6 @@
 import { Unsubscribable } from 'rxjs'
-import { parseContributionExpressions } from '../../api/client/services/contribution'
-import { ExtensionsControllerProps } from '../../extensions/controller'
+import { parseContributionExpressions } from '../../../../../shared/src/api/client/services/contribution'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 
 export function registerPanelToolbarContributions({
     extensionsController,

@@ -12,7 +12,7 @@ import extensionSchemaJSON from '../../../../../shared/src/schema/extension.sche
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { Form } from '../../../components/Form'
+import { Form } from '../../../../../branded/src/components/Form'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'

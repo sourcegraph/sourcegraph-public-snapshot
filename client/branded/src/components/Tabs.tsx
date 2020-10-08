@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
-import { parseHash } from '../util/url'
-import { Link } from './Link'
+import { parseHash } from '../../../shared/src/util/url'
+import { Link } from '../../../shared/src/components/Link'
 import classNames from 'classnames'
 
 /**

@@ -3,7 +3,7 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import * as React from 'react'
 import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
 import { RenderMode } from '../../../../../shared/src/util/url'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
+import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 
 interface Props {
     location: H.Location
