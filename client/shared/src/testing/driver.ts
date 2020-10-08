@@ -171,13 +171,13 @@ export class Driver {
             await this.page.type('input[name=password]', password)
             await this.page.waitForSelector('button[type=submit]:not(:disabled)')
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 100 * 1000 })
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 100 * 1000 })
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         }
     }
 
