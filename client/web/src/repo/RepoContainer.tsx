@@ -31,7 +31,7 @@ import {
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchRepository, resolveRevision } from './backend'
+import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
@@ -55,6 +55,9 @@ import { displayRepoName, splitPath } from '../../../shared/src/components/RepoF
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
+import { browserExtensionInstalled } from '../tracking/analyticsUtils'
+import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { IS_CHROME } from '../marketing/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -65,6 +68,7 @@ export interface RepoContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
+        HoverThresholdProps,
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
@@ -101,6 +105,7 @@ interface RepoContainerProps
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps,
+        ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
@@ -117,6 +122,22 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+}
+
+export const HOVER_COUNT_KEY = 'hover-count'
+export const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+
+export const HOVER_THRESHOLD = 3
+
+export interface HoverThresholdProps {
+    /**
+     * Called when a hover with content is shown.
+     */
+    onHoverShown?: () => void
+}
+
+export interface ExtensionAlertProps {
+    onExtensionAlertDismissed: () => void
 }
 
 /**
@@ -305,6 +326,52 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
+    // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
+    const [canShowPopover, setCanShowPopover] = useState(() => {
+        if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
+            return true
+        }
+        return false
+    })
+    const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
+        if (
+            localStorage.getItem(HAS_DISMISSED_ALERT_KEY) !== 'true' &&
+            parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD
+        ) {
+            return true
+        }
+        return false
+    })
+
+    const { onExtensionAlertDismissed } = props
+
+    // Increment hovers that the user has seen. Enable browser extension discoverability
+    // features after hover count threshold is reached (e.g. alerts, popovers)
+    const onHoverShown = useCallback(() => {
+        const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
+
+        if (count > HOVER_THRESHOLD) {
+            return
+        }
+
+        if (count === HOVER_THRESHOLD) {
+            setCanShowPopover(true)
+            // Only show alert on first render to avoid layout shift on the triggering hover
+        }
+
+        localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
+    }, [])
+
+    const onPopoverDismissed = useCallback(() => {
+        setCanShowPopover(false)
+    }, [])
+
+    const onAlertDismissed = useCallback(() => {
+        onExtensionAlertDismissed()
+        localStorage.setItem(HAS_DISMISSED_ALERT_KEY, 'true')
+        setShowExtensionAlert(false)
+    }, [onExtensionAlertDismissed])
+
     if (!repoOrError) {
         // Render nothing while loading
         return null
@@ -332,6 +399,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         ...props,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
+        onHoverShown,
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
@@ -340,6 +408,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            {showExtensionAlert && (
+                <InstallBrowserExtensionAlert
+                    isChrome={IS_CHROME}
+                    onAlertDismissed={onAlertDismissed}
+                    externalURLs={repoOrError.externalURLs}
+                />
+            )}
             <RepoHeader
                 {...props}
                 actionButtons={props.repoHeaderActionButtons}
@@ -347,6 +422,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+                isAlertDisplayed={showExtensionAlert}
             />
             <RepoHeaderContributionPortal
                 position="right"
@@ -363,6 +439,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         position={position}
                         range={range}
                         externalLinks={externalLinks}
+                        browserExtensionInstalled={browserExtensionInstalled}
+                        fetchFileExternalLinks={fetchFileExternalLinks}
+                        canShowPopover={canShowPopover}
+                        onPopoverDismissed={onPopoverDismissed}
                     />
                 }
             />

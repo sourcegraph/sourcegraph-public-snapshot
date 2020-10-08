@@ -55,6 +55,7 @@ const defaultProps = (
     isLightTheme: props.isLightTheme,
     navbarSearchQueryState: { cursorPosition: 0, query: '' },
     onNavbarQueryChange: () => {},
+    isExtensionAlertAnimating: false,
     showCampaigns: true,
     activation: undefined,
     hideNavLinks: false,

@@ -22,7 +22,6 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, hasProperty } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -330,16 +329,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 <div className="search-results-list" ref={this.setScrollableElementRef}>
                     {/* Saved Queries Form */}
                     {this.props.showSavedQueryModal && (
-                        <ModalContainer onClose={this.props.onSavedQueryModalClose}>
-                            {() => (
-                                <SavedSearchModal
-                                    {...this.props}
-                                    query={parsedQuery}
-                                    authenticatedUser={this.props.authenticatedUser}
-                                    onDidCancel={this.props.onSavedQueryModalClose}
-                                />
-                            )}
-                        </ModalContainer>
+                        <SavedSearchModal
+                            {...this.props}
+                            query={parsedQuery}
+                            authenticatedUser={this.props.authenticatedUser}
+                            onDidCancel={this.props.onSavedQueryModalClose}
+                        />
                     )}
 
                     {this.props.resultsOrError === undefined ? (

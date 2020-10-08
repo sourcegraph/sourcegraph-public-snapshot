@@ -3,7 +3,7 @@ import HistoryIcon from 'mdi-react/HistoryIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
+import { ButtonLink } from '../../../../../shared/src/components/LinkOrButton'
 import {
     lprToRange,
     parseHash,
@@ -73,9 +73,9 @@ export class ToggleHistoryPanel extends React.PureComponent<{
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
         return (
-            <LinkOrButton onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
+            <ButtonLink onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
                 <HistoryIcon className="icon-inline" />
-            </LinkOrButton>
+            </ButtonLink>
         )
     }
 

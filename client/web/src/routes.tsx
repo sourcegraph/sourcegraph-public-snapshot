@@ -13,6 +13,7 @@ import { android } from './repogroups/Android'
 import { stanford } from './repogroups/Stanford'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
+import { ExtensionAlertProps } from './repo/RepoContainer'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -24,7 +25,8 @@ interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: strin
     extends RouteComponentProps<Params>,
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
-        BreadcrumbSetters {}
+        BreadcrumbSetters,
+        ExtensionAlertProps {}
 
 export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string

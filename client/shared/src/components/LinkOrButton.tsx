@@ -34,16 +34,17 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     className?: string
 
     disabled?: boolean
+
+    id?: string
 }
 
 /**
  * A component that is displayed in the same way, regardless of whether it's a link (with a
  * destination URL) or a button (with a click handler).
  *
- * It is keyboard accessible: unlike <Link> or <a>, pressing the enter key triggers it. Unlike
- * <button>, it shows a focus ring.
+ * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const LinkOrButton: React.FunctionComponent<Props> = ({
+export const ButtonLink: React.FunctionComponent<Props> = ({
     className = 'nav-link',
     to,
     target,
@@ -53,6 +54,7 @@ export const LinkOrButton: React.FunctionComponent<Props> = ({
     'data-tooltip': tooltip,
     onSelect = noop,
     children,
+    id,
 }) => {
     // We need to set up a keypress listener because <a onclick> doesn't get
     // triggered by enter.
@@ -76,6 +78,7 @@ export const LinkOrButton: React.FunctionComponent<Props> = ({
         tabIndex: 0,
         onClick: onSelect,
         onKeyPress: onAnchorKeyPress,
+        id,
     }
 
     const onClickPreventDefault: React.MouseEventHandler<HTMLAnchorElement> = useCallback(

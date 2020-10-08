@@ -36,6 +36,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { HoverThresholdProps } from '../RepoContainer'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
@@ -48,6 +49,7 @@ interface BlobProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */
