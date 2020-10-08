@@ -10,7 +10,7 @@ import {
     toPositionOrRangeHash,
     toViewStateHashComponent,
 } from '../../../../../shared/src/util/url'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
+import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 

@@ -21,7 +21,7 @@ import {
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { pluralize } from '../../../shared/src/util/strings'
-import { Form } from './Form'
+import { Form } from '../../../branded/src/components/Form'
 import { RadioButtons } from './RadioButtons'
 import { ErrorMessage } from './alerts'
 import { hasProperty } from '../../../shared/src/util/types'

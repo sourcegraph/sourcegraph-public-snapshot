@@ -10,11 +10,14 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { concat, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
-import { createContextService } from '../../api/client/context/contextService'
-import { parseTemplate } from '../../api/client/context/expr/evaluator'
-import { ContributionsEntry, ContributionUnsubscribable } from '../../api/client/services/contribution'
-import { Controller } from '../../extensions/controller'
-import { SettingsCascadeOrError } from '../../settings/settings'
+import { createContextService } from '../../../../../shared/src/api/client/context/contextService'
+import { parseTemplate } from '../../../../../shared/src/api/client/context/expr/evaluator'
+import {
+    ContributionsEntry,
+    ContributionUnsubscribable,
+} from '../../../../../shared/src/api/client/services/contribution'
+import { Controller } from '../../../../../shared/src/extensions/controller'
+import { SettingsCascadeOrError } from '../../../../../shared/src/settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 

@@ -4,7 +4,7 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { WrapDisabledIcon } from '../../../../../shared/src/components/icons'
 import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
-import { Tooltip } from '../../../components/tooltip/Tooltip'
+import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 /**

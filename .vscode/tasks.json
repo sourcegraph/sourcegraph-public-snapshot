@@ -14,7 +14,7 @@
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "command": ["node_modules/.bin/tsc"],
-      "args": ["--build", ".", "--watch", "--incremental"],
+      "args": ["--build", "tsconfig.all.json", "--watch", "--incremental"],
       "runOptions": {
         "runOn": "folderOpen",
       },

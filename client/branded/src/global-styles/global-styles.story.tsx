@@ -13,7 +13,7 @@ import { Form } from '../components/Form'
 import openColor from 'open-color'
 import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
 import 'storybook-addon-designs'
-import { WebStory } from '../components/WebStory'
+import { BrandedStory } from '../components/BrandedStory'
 import { CodeSnippet } from '../components/CodeSnippet'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
@@ -24,7 +24,7 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
 }
 
 const { add } = storiesOf('web/Global styles', module).addDecorator(story => (
-    <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
+    <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
 ))
 
 const TextStory: React.FunctionComponent = () => (
