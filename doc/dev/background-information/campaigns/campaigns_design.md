@@ -1,6 +1,6 @@
 # Campaigns design doc
 
-Why are [campaigns](../user/campaigns/index.md) designed the way they are?
+Why are [campaigns](../../../user/campaigns/index.md) designed the way they are?
 
 ## Principles
 
@@ -8,7 +8,7 @@ Why are [campaigns](../user/campaigns/index.md) designed the way they are?
 - **Define a campaign in a file** (not some online API). The source of truth of a campaign's definition is a file that can be stored in version control, reviewed in code review, and re-applied by CI. This is in the same spirit as IaaC (infrastructure as code; e.g., storing your Terraform/Kubernetes/etc. files in Git). We prefer this approach over a (worse) alternative where you define a campaign in a UI with a bunch of text fields, checkboxes, buttons, etc., and need to write a custom API client to import/export the campaign definition.
 - **Shareable and portable.** You can share your campaign specs, and it's easy for other people to use them. A campaign spec expresses an intent that's high-level enough to (usually) not be specific to your own particular repositories. You declare and inject configuration and secrets to customize it instead of hard-coding those values.
 - **Large-scale.** You can run campaigns across 10,000s of repositories. It might take a while to compute and push everything, and the current implementation might cap out lower than that, but the fundamental design scales well.
-- **Accommodates a variety of code hosts and review/merge processes.** Specifically, we don't to limit campaigns to only working for GitHub pull requests. (See [current support list](../user/campaigns/index.md#supported-code-hosts-and-changeset-types).)
+- **Accommodates a variety of code hosts and review/merge processes.** Specifically, we don't to limit campaigns to only working for GitHub pull requests. (See [current support list](../../../user/campaigns/index.md#supported-code-hosts-and-changeset-types).)
 
 ## Comparison to other distributed systems
 
@@ -106,7 +106,7 @@ changesetTemplate:
     <td>The deployment controller (part of the Kubernetes cluster) consults the DeploymentSpec and continuously computes the desired state.</td>
     <td>
       <p>The <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> (running on your local machine, not on the Sourcegraph server) consults the campaign spec and computes the desired state when you invoke <code>src campaign apply</code>.</p>
-      <p><strong>Difference vs. Kubernetes:</strong> A campaign's desired state is computed locally, not on the server. It requires executing arbitrary commands, which is not yet supported by the Sourcegraph server. See campaigns known issue "<a href="../user/campaigns#server-execution">Campaign steps are run locally...</a>".</p>
+      <p><strong>Difference vs. Kubernetes:</strong> A campaign's desired state is computed locally, not on the server. It requires executing arbitrary commands, which is not yet supported by the Sourcegraph server. See campaigns known issue "<a href="../../../user/campaigns#server-execution">Campaign steps are run locally...</a>".</p>
     </td>
   </tr>
   <tr>

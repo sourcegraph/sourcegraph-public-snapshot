@@ -7,15 +7,15 @@
 
 ## [Troubleshooting](troubleshooting_local_development.md)
 
-- [Problems with node_modules or Javascript packages](troubleshooting.md#problems-with-nodemodules-or-javascript-packages)
-- [dial tcp 127.0.0.1:3090: connect: connection refused](troubleshooting.md#dial-tcp-1270013090-connect-connection-refused)
-- [Database migration failures](troubleshooting.md#database-migration-failures)
-- [Internal Server Error](troubleshooting.md#internal-server-error)
-- [Increase maximum available file descriptors.](troubleshooting.md#increase-maximum-available-file-descriptors)
-- [Caddy 2 certificate problems](troubleshooting.md#caddy-2-certificate-problems)
-- [Running out of disk space](troubleshooting.md#running-out-of-disk-space)
-- [Certificate expiry](troubleshooting.md#certificate-expiry)
-- [CPU/RAM/bandwidth/battery usage](troubleshooting.md#cpurambandwidthbattery-usage)
+- [Problems with node_modules or Javascript packages](troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
+- [dial tcp 127.0.0.1:3090: connect: connection refused](troubleshooting_local_development.md#dial-tcp-1270013090-connect-connection-refused)
+- [Database migration failures](troubleshooting_local_development.md#database-migration-failures)
+- [Internal Server Error](troubleshooting_local_development.md#internal-server-error)
+- [Increase maximum available file descriptors.](troubleshooting_local_development.md#increase-maximum-available-file-descriptors)
+- [Caddy 2 certificate problems](troubleshooting_local_development.md#caddy-2-certificate-problems)
+- [Running out of disk space](troubleshooting_local_development.md#running-out-of-disk-space)
+- [Certificate expiry](troubleshooting_local_development.md#certificate-expiry)
+- [CPU/RAM/bandwidth/battery usage](troubleshooting_local_development.md#cpurambandwidthbattery-usage)
 
 ## Implementing Sourcegraph
 
@@ -23,7 +23,7 @@
 
 ## Testing Sourcegraph
 
-- [How to run tests](../concepts/testing.md)
+- [How to run tests](../background-information/testing.md)
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
 

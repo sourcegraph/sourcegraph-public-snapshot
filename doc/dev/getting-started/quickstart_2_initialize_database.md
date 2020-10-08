@@ -99,7 +99,7 @@ You may also want to run Postgres within a docker container instead of as a syst
 
 ## More info
 
-For more information about data storage, [read our full PostgreSQL page](postgresql.md).
+For more information about data storage, [read our full PostgreSQL page](../background-information/postgresql.md).
 
 Migrations are applied automatically.
 
