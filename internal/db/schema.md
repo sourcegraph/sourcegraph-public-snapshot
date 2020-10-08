@@ -497,6 +497,8 @@ Indexes:
  scheme     | text    | not null
  identifier | text    | not null
  data       | bytea   | 
+Indexes:
+    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
 
 ```
 
@@ -507,6 +509,8 @@ Indexes:
  dump_id | integer | not null
  path    | text    | not null
  data    | bytea   | 
+Indexes:
+    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
 
 ```
 
@@ -516,6 +520,8 @@ Indexes:
 -------------------+---------+-----------
  dump_id           | integer | not null
  num_result_chunks | integer | 
+Indexes:
+    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
 
 ```
 
@@ -527,6 +533,8 @@ Indexes:
  scheme     | text    | not null
  identifier | text    | not null
  data       | bytea   | 
+Indexes:
+    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
 
 ```
 
@@ -537,6 +545,8 @@ Indexes:
  dump_id | integer | not null
  idx     | integer | not null
  data    | bytea   | 
+Indexes:
+    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
 
 ```
 
