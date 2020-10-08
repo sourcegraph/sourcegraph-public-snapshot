@@ -1,7 +1,7 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import * as React from 'react'
+import React, { useEffect, useState } from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable, Subscription, combineLatest } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
@@ -20,14 +20,21 @@ import {
     optionFlagDefinitions,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { observeSourcegraphURL, isFirefox } from '../../shared/util/context'
+import { observeSourcegraphURL, isFirefox, getExtensionVersion } from '../../shared/util/context'
 import { catchError, map, mapTo, tap } from 'rxjs/operators'
 import { isExtension } from '../../shared/context'
 import { OptionsPage } from '../options-menu/OptionsPage'
 import { asError } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AnchorLink, setLinkComponent } from '../../../../shared/src/components/Link'
-import { useMemo } from 'react'
+import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+
+interface TabStatus {
+    host: string
+    protocol: string
+    hasPermissions: boolean
+}
 
 assertEnvironment('OPTIONS')
 
@@ -35,18 +42,17 @@ initSentry('options')
 
 const IS_EXTENSION = true
 
-setLinkComponent(AnchorLink)
+/**
+ * A list of protocols where we should *not* show the permissions notification.
+ */
+const PERMISSIONS_PROTOCOL_BLOCKLIST = new Set(['chrome:', 'about:'])
 
-interface State {
-    sourcegraphURL: string | null
-    isActivated: boolean
-    optionFlags: OptionFlagWithValue[]
-}
+setLinkComponent(AnchorLink)
 
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)
 
-const fetchCurrentTabStatus = async (): Promise<{ host: string; protocol: string; hasPermissions: boolean }> => {
+const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
@@ -59,6 +65,7 @@ const fetchCurrentTabStatus = async (): Promise<{ host: string; protocol: string
     const hasPermissions = await browser.permissions.contains({
         origins: [`${protocol}//${host}/*`],
     })
+    console.log('!', url, host, protocol)
     return { host, protocol, hasPermissions }
 }
 
@@ -71,7 +78,8 @@ function requestGraphQL<T, V = object>(options: {
     return from(background.requestGraphQL<T, V>(options))
 }
 
-const isFullPage = (): boolean => !new URLSearchParams(window.location.search).get('popup')
+const version = getExtensionVersion()
+const isFullPage = !new URLSearchParams(window.location.search).get('popup')
 
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
@@ -98,30 +106,66 @@ const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
 
 const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 
+const observingIsActivated = observeStorageKey('sync', 'disableExtension').pipe(map(isDisabled => !isDisabled))
+const observingSourcegraphUrl = observeSourcegraphURL(true)
+const observingOptionFlagsWithValues = observeOptionFlagsWithValues()
+
+function handleToggleActivated(isActivated: boolean): void {
+    storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
+}
+
+function handleChangeOptionFlag(key: string, value: boolean): void {
+    if (isOptionFlagKey(key)) {
+        featureFlags.set(key, value).then(noop, noop)
+    }
+}
+
+const knownCodeHosts: Record<string, { name: string; icon: JSX.Element }> = {
+    'github.com': { name: 'GitHub', icon: <MicrosoftGithubIcon className="icon-inline" /> },
+    'gitlab.com': { name: 'GitLab', icon: <GitlabIcon className="icon-inline" /> },
+}
+
 const Options: React.FunctionComponent = () => {
-    const sourcegraphUrl = useObservable(useMemo(() => observeSourcegraphURL(true), [])) || ''
+    const sourcegraphUrl = useObservable(observingSourcegraphUrl) || ''
+    const isActivated = useObservable(observingIsActivated)
+    const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues) || []
+    const [currentTabStatus, setCurrentTabStatus] = useState<TabStatus | undefined>()
+
+    useEffect(() => {
+        fetchCurrentTabStatus().then(tabStatus => {
+            setCurrentTabStatus(tabStatus)
+        }, noop)
+    }, [])
+
+    let permissionAlert
+    if (currentTabStatus && !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.protocol)) {
+        const knownCodeHost = knownCodeHosts[currentTabStatus.host]
+        if (knownCodeHosts) {
+            permissionAlert = knownCodeHost
+        } else {
+            permissionAlert = { name: currentTabStatus.host }
+        }
+    }
 
     return (
         <OptionsPage
-            isFullPage={isFullPage()}
-            isCurrentRepositoryPrivate={false} // TODO
+            isFullPage={isFullPage}
             sourcegraphUrl={sourcegraphUrl}
-            version="dev"
-            isActivated={true}
+            version={version}
             validateSourcegraphUrl={validateSourcegraphUrl}
-            onToggleActivated={noop} // TODO
+            isActivated={!!isActivated}
+            onToggleActivated={handleToggleActivated} // TODO
+            optionFlags={optionFlagsWithValues}
+            onChangeOptionFlag={handleChangeOptionFlag}
+            showPrivateRepositoryAlert={false}
+            permissionAlert={permissionAlert}
         />
     )
 }
 
 const inject = (): void => {
-    const injectDOM = document.createElement('div')
-    injectDOM.className = 'sourcegraph-options-menu options'
-    document.body.append(injectDOM)
-    // For shared CSS that would otherwise be dark by default
     document.body.classList.add('theme-light')
-
-    render(<Options />, injectDOM)
+    render(<Options />, document.body)
 }
 
 document.addEventListener('DOMContentLoaded', inject)

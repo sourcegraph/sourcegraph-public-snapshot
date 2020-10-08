@@ -38,9 +38,14 @@ body {
         box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.15);
     }
 
+    &__header {
+        display: flex;
+        justify-content: space-between;
+    }
+
     &__section {
         padding: 1rem;
-        border-top: 1px solid var(--color-border-2);
+        /* border-top: 1px solid var(--color-border-2); */
         &:first-child {
             border-top: none;
         }

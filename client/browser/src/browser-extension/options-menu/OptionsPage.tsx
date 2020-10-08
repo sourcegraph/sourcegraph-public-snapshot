@@ -1,53 +1,28 @@
 import React, { useMemo, useState } from 'react'
-import { OptionFlagWithValue } from '../../shared/util/optionFlags'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
 import { LoaderInput } from '../../../../shared/src/components/LoaderInput'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import GithubIcon from 'mdi-react/MicrosoftGithubIcon'
 
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
-import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
-import { fetchSite } from '../../shared/backend/server'
-import { asError } from '../../../../shared/src/util/errors'
 import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
-import { catchError, mapTo } from 'rxjs/operators'
 import { Observable } from 'rxjs'
-import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { Toggle } from '../../../../shared/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
 import { noop } from 'lodash'
-
-export interface OptionsContainerProps {
-    sourcegraphURL: string
-    isActivated: boolean
-    ensureValidSite: (url: string) => Observable<any>
-    fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
-    hasPermissions: (url: string) => Promise<boolean>
-    requestPermissions: (url: string) => void
-    setSourcegraphURL: (url: string) => Promise<void>
-    toggleExtensionDisabled: (isActivated: boolean) => Promise<void>
-    onChangeOptionFlag: (key: string, value: boolean) => void
-    optionFlags: OptionFlagWithValue[]
-}
-
+import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 interface OptionsPageProps {
     version: string
     sourcegraphUrl: string
-    isCurrentRepositoryPrivate: boolean
     isActivated: boolean
     onToggleActivated: (value: boolean) => void
     validateSourcegraphUrl: (url: string) => Observable<string | undefined>
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
-    permissionAlert?: { name: string }
-    // requestGraphQL: <T, V = object>(options: {
-    //     request: string
-    //     variables: V
-    //     sourcegraphURL?: string
-    // }) => Observable<GraphQLResult<T>>
+    permissionAlert?: { name: string; icon?: JSX.Element }
+    optionFlags: { key: string; label: string; value: boolean }[]
+    onChangeOptionFlag: (key: string, value: boolean) => void
 }
 
 export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
@@ -59,6 +34,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     isFullPage,
     showPrivateRepositoryAlert,
     permissionAlert,
+    optionFlags,
+    onChangeOptionFlag,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
     const [urlState, nextUrlFieldChange, urlInputReference] = useInputValidation(
@@ -73,13 +50,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
             <section className="options-page__section">
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div className="options-page__header">
                     <SourcegraphLogo className="options-page__logo" />
                     <div>
                         <Toggle
                             value={isActivated}
                             onToggle={onToggleActivated}
-                            title={isActivated ? 'Toggle to disable extension' : 'Toggle to enable extension'}
+                            title={`Toggle to ${isActivated ? 'disable' : 'enable'} extension`}
                         />
                     </div>
                 </div>
@@ -127,6 +104,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     </LinkOrButton>
                 </p>
             </section>
+            {showAdvancedSettings && (
+                <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
+            )}
             <section className="options-page__split-section">
                 <div className="options-page__split-section__part">
                     <LinkOrButton to="https://sourcegraph.com">
@@ -144,15 +124,15 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 }
 
 interface PermissionAlertProps {
-    icon?: React.ElementType
+    icon?: JSX.Element
     name: string
     onClickGrantPermissions: () => void
 }
 
-const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, onClickGrantPermissions }) => (
+const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, icon, onClickGrantPermissions }) => (
     <section className="options-page__section options-page__alert">
         <h4>
-            <GitlabIcon className="icon-inline" /> {name}
+            {icon} {name}
         </h4>
         <p>
             <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.

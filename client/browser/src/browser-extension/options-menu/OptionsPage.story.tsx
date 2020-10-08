@@ -7,6 +7,12 @@ import { boolean, text } from '@storybook/addon-knobs'
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (url: string): Observable<string | undefined> => of('Arbitrary error string')
 
+const optionFlags = [
+    { key: 'one', label: 'Flag One', value: true },
+    { key: 'two', label: 'Flag Two', value: false },
+    { key: 'three', label: 'Flag Three', value: false },
+]
+
 storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => (
         <>
@@ -64,5 +70,7 @@ storiesOf('browser/Options/OptionsPage', module)
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
             permissionAlert={{ name: 'GitLab.com' }}
+            optionFlags={optionFlags}
+            onChangeOptionFlag={noop}
         />
     ))
