@@ -244,7 +244,7 @@ func wait(pipeline *bk.Pipeline) {
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// Run e2e tests on release, patch and main branches
-	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" || c.branch == "dt/e2e"
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
 
 	var async bool
 	if c.branch == "main" {
