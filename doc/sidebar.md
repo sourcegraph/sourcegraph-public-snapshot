@@ -26,6 +26,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Getting started](admin/getting-started/index.md)
   - [How-to guides](admin/how-to/index.md)
   - [Background information](admin/background-information/index.md)
+  - [Reference](admin/reference/index.md)
 - [Integrations](integration/index.md)
 - [Extensions](extensions/index.md)
 - [GraphQL API](api/graphql/index.md)
