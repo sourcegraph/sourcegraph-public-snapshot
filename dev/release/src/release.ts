@@ -334,11 +334,11 @@ Key dates:
                     ? `There is 1 release-blocking issue: ${issuesURL}`
                     : `There are ${issues.length} release-blocking issues: ${issuesURL}`
 
-            const message = `:captain: ${version} release update:
+            const message = `:captain: ${version} release status update:
 
 - ${releaseBlockerMessage}`
             await postMessage(message, config.slackAnnounceChannel)
-        }
+        },
     },
     {
         id: 'release:publish',
