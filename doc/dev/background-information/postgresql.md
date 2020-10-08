@@ -1,4 +1,4 @@
-# PostgreSQL storage tips
+# PostgreSQL
 
 Sourcegraph stores most data in a
 [PostgreSQL database](http://www.postgresql.org). Git repositories,
@@ -12,66 +12,14 @@ Our minimum supported version is `9.6` which means you must use that for develop
 For Ubuntu 18.04, you will need to add a repository source. Use the
 [PostgreSQL.org official repo and instructions.](https://www.postgresql.org/download/linux/ubuntu/)
 
-## Initializing PostgreSQL
+## Local setup
 
 Sourcegraph assumes it has a dedicated PostgreSQL server, or at least that you
 can make global configuration changes, such as changing the timezone. If you
 need to use other settings for other databases, use a separate PostgreSQL
 instance.
 
-After installing PostgreSQL, set up up a `sourcegraph` user and database:
-
-```
-sudo su - postgres # this line only needed for Linux
-createdb
-createuser --superuser sourcegraph
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
-createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-```
-
-Then update your `postgresql.conf` default timezone to UTC. Determine the location
-of your `postgresql.conf` by running `psql -c 'show config_file;'`. Update the line beginning
-with `timezone =` to the following:
-
-```
-timezone = 'UTC'
-```
-
-Finally, restart your database server (mac: `brew services restart postgresql`, recent linux
-probably `service postgresql restart`)
-
-## Configuring PostgreSQL
-
-The Sourcegraph server reads PostgreSQL connection configuration from
-the
-[`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html);
-for example, in your `~/.bashrc`:
-
-```
-export PGPORT=5432
-export PGHOST=localhost
-export PGUSER=sourcegraph
-export PGPASSWORD=sourcegraph
-export PGDATABASE=sourcegraph
-export PGSSLMODE=disable
-```
-
-You can also use a tool like [`envdir`][s] or [a `.dotenv` file][dotenv] to
-source these env vars on demand when you start the server.
-
-[envdir]: https://cr.yp.to/daemontools/envdir.html
-[dotenv]: https://github.com/joho/godotenv
-
-To test the environment's credentials, run `psql` (the PostgreSQL CLI
-client) with the `PG*` environment variables set. If you see a
-database prompt, then the environment's credentials are valid.
-
-If you get an error message about "peer authentication", you are
-probably connecting over the Unix domain socket, rather than over TCP.
-Make sure you've set `PGHOST`. (Postgres can do peer authentication
-on local sockets, which provides reliable identification but must
-be specially configured to authenticate you as a user with a name
-different from your account name.)
+See the [setting up PostgreSQL guide](../getting-started/configure_postgresql.md) or [quickstart step 2: initialize the database](../getting-started/quickstart_2_initialize_database.md)
 
 ## Migrations
 

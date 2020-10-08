@@ -1,4 +1,4 @@
-# Sourcegraph Architecture Overview
+# Sourcegraph architecture overview
 
 This is a high level overview of Sourcegraph's architecture so you can understand how our systems fit together.
 You can click on each component to jump to its respective code repository or subtree.
@@ -36,9 +36,9 @@ Our backend is composed of multiple services:
 - [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) contains a pure-Docker cluster deployment reference that some one-off customers use to deploy Sourcegraph to a non-Kubernetes cluster.
   - [sourcegraph/deploy-sourcegraph-dot-com](https://github.com/sourcegraph/deploy-sourcegraph-dot-com) is a fork of the above that is used to deploy to the Kubernetes cluster that serves https://sourcegraph.com.
 
-## Guides
+## References
 
-Here are some guides to help you understand how multiple systems fit together:
+Here are some references to help you understand how multiple systems fit together:
 
 - [Life of a search query](life-of-a-search-query.md)
 - [Life of a repository](life-of-a-repository.md)

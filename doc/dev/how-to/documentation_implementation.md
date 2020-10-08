@@ -1,21 +1,27 @@
-# Product documentation guidelines
+# Product documentation implementation
 
 The [documentation guidelines](https://about.sourcegraph.com/handbook/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
 
 ## Documentation directory structure
 
-The documentation is organized into the following top-level directories:
+The documentation is broken down into 3 different areas:
 
-- [`user/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/user) for users
-- [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/admin) for site admins
-  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/admin/external_service) for documentation for connecting Sourcegraph to code hosts and Phabricator (*for site admins*).
-- [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/extensions) for Sourcegraph extensions
-- [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
-- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/api) for the Sourcegraph GraphQL API
+1. User
+1. Admin
+1. Development
+
+Each of these areas has the docs organized by the 4 different types:
+
+1. Tutorials
+1. How-to guides
+1. Explanation or background information
+1. Reference
+
+This structure is inspired by the [Divio documentation system](https://documentation.divio.com/).
 
 ## Previewing changes locally
 
-You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](local_development.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
+You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../getting-started/index.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
 ## Linking to documentation in-product
 

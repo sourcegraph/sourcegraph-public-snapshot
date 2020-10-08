@@ -19,7 +19,7 @@ replace (
 
 This isn't hot reloaded so you might have to restart Sourcegraph on every Zoekt change. It may make sense to ensure your changes in Zoekt are working first before trying them out in Sourcegraph.
 
-# Notes
+## Notes
 
 Here are some commands you can run against Zoekt.
 
