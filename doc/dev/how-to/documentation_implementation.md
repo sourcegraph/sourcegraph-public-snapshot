@@ -1,8 +1,10 @@
-# Product documentation guidelines
+# Product documentation implementation
 
 The [documentation guidelines](https://about.sourcegraph.com/handbook/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
 
 ## Documentation directory structure
+
+DOCS-TODO: Describe 4 categories of documentation and references
 
 The documentation is organized into the following top-level directories:
 

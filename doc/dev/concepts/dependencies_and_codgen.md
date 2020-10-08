@@ -1,4 +1,4 @@
-# Development with Go
+# Dependencies and generated code
 
 ## Go dependency management
 
