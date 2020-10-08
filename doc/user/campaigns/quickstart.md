@@ -10,6 +10,18 @@ The only requirement is a Sourcegraph instance with a some repositories in it. S
 
 For more information about campaigns see the ["Campaigns"](index.md) documentation and watch the [campaigns demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
+## Configure code host connections
+
+Campaigns need write permissions for the repositories in which you want to make changes.
+
+Configure your code host connections to have the right permissions for campaigns:
+
+- [GitHub](../../admin/external_service/github.md#github-api-token-and-access)
+- [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
+- [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
+
+See ["Code host interactions in campaigns"](managing_access.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
+
 ## Install the Sourcegraph CLI
 
 In order to create campaigns we need to [install the Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (`src`).
