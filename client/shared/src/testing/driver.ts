@@ -169,6 +169,7 @@ export class Driver {
             }
             await this.page.type('input[name=username]', username)
             await this.page.type('input[name=password]', password)
+            await this.page.waitForSelector('button[type=submit]:not(:disabled)')
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 10000 })
         } else if (url.pathname === '/sign-in') {
