@@ -867,4 +867,154 @@ describe('parseSearchQuery()', () => {
             type: 'success',
         })
     })
+
+    test('interpret C-style comments', () => {
+        const query = `// saucegraph is best graph
+repo:sourcegraph
+// search for thing
+thing`
+        expect(parseSearchQuery(query, true)).toMatchObject({
+            range: {
+                end: 70,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            start: 0,
+                            end: 27,
+                        },
+                        token: {
+                            type: 'comment',
+                            value: '// saucegraph is best graph',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 27,
+                            end: 28,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 28,
+                            end: 44,
+                        },
+                        token: {
+                            filterType: {
+                                range: {
+                                    start: 28,
+                                    end: 32,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'repo',
+                                },
+                            },
+                            filterValue: {
+                                range: {
+                                    start: 33,
+                                    end: 44,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'sourcegraph',
+                                },
+                                type: 'success',
+                            },
+                            type: 'filter',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 44,
+                            end: 45,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 45,
+                            end: 64,
+                        },
+                        token: {
+                            type: 'comment',
+                            value: '// search for thing',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 64,
+                            end: 65,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 65,
+                            end: 70,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'thing',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
+    test('do not interpret C-style comments', () => {
+        expect(parseSearchQuery('// thing')).toMatchObject({
+            range: {
+                end: 8,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            start: 0,
+                            end: 2,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: '//',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 2,
+                            end: 3,
+                        },
+                        token: {
+                            type: 'whitespace',
+                        },
+                    },
+                    {
+                        range: {
+                            start: 3,
+                            end: 8,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: 'thing',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
 })
