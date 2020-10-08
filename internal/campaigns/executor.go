@@ -60,10 +60,19 @@ type TaskStatus struct {
 	FinishedAt time.Time
 
 	// TODO: add current step and progress fields.
+	CurrentlyExecuting string
 
 	// Result fields.
 	ChangesetSpec *ChangesetSpec
 	Err           error
+}
+
+func (ts *TaskStatus) IsRunning() bool {
+	return !ts.StartedAt.IsZero() && ts.FinishedAt.IsZero()
+}
+
+func (ts *TaskStatus) IsCompleted() bool {
+	return !ts.StartedAt.IsZero() && !ts.FinishedAt.IsZero()
 }
 
 type executor struct {
@@ -156,6 +165,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	// Ensure that the status is updated when we're done.
 	defer func() {
 		status.FinishedAt = time.Now()
+		status.CurrentlyExecuting = ""
 		status.Err = err
 		x.updateTaskStatus(task, status)
 	}()
@@ -231,7 +241,10 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	defer cancel()
 
 	// Actually execute the steps.
-	diff, err := runSteps(runCtx, x.creator, task.Repository, task.Steps, log, x.tempDir)
+	diff, err := runSteps(runCtx, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
+		status.CurrentlyExecuting = currentlyExecuting
+		x.updateTaskStatus(task, status)
+	})
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
 			err = &errTimeoutReached{timeout: x.Timeout}

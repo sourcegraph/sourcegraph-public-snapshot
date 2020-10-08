@@ -240,12 +240,12 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		campaignsCompletePending(pending, "Resolved repositories")
 	}
 
-	execProgress, execProgressComplete := executeCampaignSpecProgress(out)
-	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, execProgress)
+	p := newCampaignProgressPrinter(out, opts.Parallelism)
+	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, p.PrintStatuses)
 	if err != nil {
 		return "", "", err
 	}
-	execProgressComplete()
+	p.Complete()
 
 	if logFiles := executor.LogFiles(); len(logFiles) > 0 && flags.keepLogs {
 		func() {
@@ -372,9 +372,10 @@ func diffStatDiagram(stat diff.Stat) string {
 		added *= x
 		deleted *= x
 	}
-	return fmt.Sprintf("%s%s%s%s",
+	return fmt.Sprintf("%s%s%s%s%s",
 		output.StyleLinesAdded, strings.Repeat("+", int(added)),
 		output.StyleLinesDeleted, strings.Repeat("-", int(deleted)),
+		output.StyleReset,
 	)
 }
 
@@ -408,79 +409,4 @@ func contextCancelOnInterrupt(parent context.Context) (context.Context, func()) 
 		signal.Stop(c)
 		ctxCancel()
 	}
-}
-
-// executeCampaignSpecProgress returns a function that can be passed to
-// (*Service).ExecuteCampaignSpec as the "progress" function.
-//
-// It prints a progress bar and, if verbose mode is activated, diff stats of
-// the produced diffs.
-//
-// The second return value is the "complete" function that completes the
-// progress bar and should be called after ExecuteCampaignSpec returns
-// successfully.
-func executeCampaignSpecProgress(out *output.Output) (func(statuses []*campaigns.TaskStatus), func()) {
-	var (
-		progress       output.Progress
-		maxRepoName    int
-		completedTasks = map[string]bool{}
-	)
-
-	complete := func() {
-		if progress != nil {
-			progress.Complete()
-		}
-	}
-
-	progressFunc := func(statuses []*campaigns.TaskStatus) {
-		if progress == nil {
-			progress = out.Progress([]output.ProgressBar{{
-				Label: fmt.Sprintf("Executing steps in %d repositories", len(statuses)),
-				Max:   float64(len(statuses)),
-			}}, nil)
-		}
-
-		unloggedCompleted := []*campaigns.TaskStatus{}
-
-		for _, ts := range statuses {
-			if len(ts.RepoName) > maxRepoName {
-				maxRepoName = len(ts.RepoName)
-			}
-
-			if ts.FinishedAt.IsZero() {
-				continue
-			}
-
-			if !completedTasks[ts.RepoName] {
-				completedTasks[ts.RepoName] = true
-				unloggedCompleted = append(unloggedCompleted, ts)
-			}
-
-		}
-
-		progress.SetValue(0, float64(len(completedTasks)))
-
-		for _, ts := range unloggedCompleted {
-			var statusText string
-
-			if ts.ChangesetSpec == nil {
-				statusText = "No changes"
-			} else {
-				fileDiffs, err := diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
-				if err != nil {
-					panic(err)
-				}
-
-				statusText = diffStatDescription(fileDiffs) + " " + diffStatDiagram(sumDiffStats(fileDiffs))
-			}
-
-			if ts.Cached {
-				statusText += " (cached)"
-			}
-
-			progress.Verbosef("%-*s %s", maxRepoName, ts.RepoName, statusText)
-		}
-	}
-
-	return progressFunc, complete
 }

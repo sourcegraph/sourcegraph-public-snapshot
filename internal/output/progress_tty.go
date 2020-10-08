@@ -9,8 +9,15 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+var defaultProgressTTYOpts = ProgressOpts{
+	SuccessEmoji: "\u2705",
+	SuccessStyle: StyleSuccess,
+	PendingStyle: StylePending,
+}
+
 type progressTTY struct {
 	bars []*ProgressBar
+
 	o    *Output
 	opts ProgressOpts
 
@@ -127,28 +134,11 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 	if opts != nil {
 		p.opts = *opts
 	} else {
-		p.opts = ProgressOpts{
-			SuccessEmoji: "\u2705",
-			SuccessStyle: StyleSuccess,
-			PendingStyle: StylePending,
-		}
+		p.opts = defaultProgressTTYOpts
 	}
 
-	if w := runewidth.StringWidth(p.opts.SuccessEmoji); w > p.emojiWidth {
-		p.emojiWidth = w + 1
-	}
-
-	p.labelWidth = 0
-	for _, bar := range bars {
-		bar.labelWidth = runewidth.StringWidth(bar.Label)
-		if bar.labelWidth > p.labelWidth {
-			p.labelWidth = bar.labelWidth
-		}
-	}
-
-	if maxWidth := p.o.caps.Width/2 - p.emojiWidth; (p.labelWidth + 2) > maxWidth {
-		p.labelWidth = maxWidth - 2
-	}
+	p.determineEmojiWidth()
+	p.determineLabelWidth()
 
 	p.o.lock.Lock()
 	defer p.o.lock.Unlock()
@@ -172,9 +162,29 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 	return p
 }
 
+func (p *progressTTY) determineEmojiWidth() {
+	if w := runewidth.StringWidth(p.opts.SuccessEmoji); w > p.emojiWidth {
+		p.emojiWidth = w + 1
+	}
+}
+
+func (p *progressTTY) determineLabelWidth() {
+	p.labelWidth = 0
+	for _, bar := range p.bars {
+		bar.labelWidth = runewidth.StringWidth(bar.Label)
+		if bar.labelWidth > p.labelWidth {
+			p.labelWidth = bar.labelWidth
+		}
+	}
+
+	if maxWidth := p.o.caps.Width/2 - p.emojiWidth; (p.labelWidth + 2) > maxWidth {
+		p.labelWidth = maxWidth - 2
+	}
+}
+
 func (p *progressTTY) draw() {
 	for _, bar := range p.bars {
-		p.writeLine(bar)
+		p.writeBar(bar)
 	}
 }
 
@@ -187,7 +197,7 @@ func (p *progressTTY) moveToOrigin() {
 	p.o.moveUp(len(p.bars))
 }
 
-func (p *progressTTY) writeLine(bar *ProgressBar) {
+func (p *progressTTY) writeBar(bar *ProgressBar) {
 	p.o.clearCurrentLine()
 
 	value := bar.Value

@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string) ([]byte, error) {
+func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string, reportProgress func(string)) ([]byte, error) {
+	reportProgress("Downloading archive")
+
 	volumeDir, err := wc.Create(ctx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating workspace")
@@ -34,6 +36,7 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 		return out, nil
 	}
 
+	reportProgress("Initializing workspace")
 	if _, err := runGitCmd("init"); err != nil {
 		return nil, errors.Wrap(err, "git init failed")
 	}
@@ -59,6 +62,7 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 
 	for i, step := range steps {
 		logger.Logf("[Step %d] docker run %s %q", i+1, step.Container, step.Run)
+		reportProgress(step.Run)
 
 		cidFile, err := ioutil.TempFile(tempDir, repo.Slug()+"-container-id")
 		if err != nil {
@@ -143,6 +147,7 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 		return nil, errors.Wrap(err, "git add failed")
 	}
 
+	reportProgress("Calculating diff")
 	// As of Sourcegraph 3.14 we only support unified diff format.
 	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
 	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329
