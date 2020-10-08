@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 	"regexp"
-	"sync"
+	"runtime"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -97,38 +97,6 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 }
 
 func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) (*searchResultsCommon, []*search.RepositoryRevisions) {
-	var (
-		muCommon = sync.Mutex{}
-		common   = &searchResultsCommon{}
-
-		muRepos = sync.Mutex{}
-		repos   []*search.RepositoryRevisions
-
-		muCursor = sync.Mutex{}
-		cursor   = 0
-	)
-	common.repos = make([]*types.Repo, len(resolved))
-	wg := sync.WaitGroup{}
-	worker := func() {
-		defer wg.Done()
-		for {
-			muCursor.Lock()
-			j := cursor
-			cursor += 1
-			muCursor.Unlock()
-			if j >= len(resolved) {
-				return
-			}
-			muCommon.Lock()
-			common.repos[j] = resolved[j].Repo
-			muCommon.Unlock()
-			if pattern.MatchString(string(resolved[j].Repo.Name)) {
-				muRepos.Lock()
-				repos = append(repos, resolved[j])
-				muRepos.Unlock()
-			}
-		}
-	}
 	/*
 		Local benchmarks showed diminishing returns for higher levels of concurrency.
 		5 workers seems to be a good trade-off for now. We might want to revisit this
@@ -150,12 +118,45 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 		   BenchmarkSearchRepositories-9     	      30	  38050861 ns/op
 		   BenchmarkSearchRepositories-10    	      27	  38638799 ns/op
 	*/
-	for w := 0; w < 5; w++ { // for benchmarking, replace 5 with runtime.GOMAXPROCS(0)
-		wg.Add(1)
-		go worker()
+	step := len(resolved) / runtime.GOMAXPROCS(0) // for benchmarking, replace 5 with runtime.GOMAXPROCS(0)
+	if step == 0 {
+		step = len(resolved)
+	} else {
+		step += 1
 	}
-	wg.Wait()
-	return common, repos
+
+	results := make(chan []*search.RepositoryRevisions)
+	workers := 0
+	offset := 0
+	for offset < len(resolved) {
+		next := offset + step
+		if next > len(resolved) {
+			next = len(resolved)
+		}
+		workers++
+		go func(repos []*search.RepositoryRevisions) {
+			var matched []*search.RepositoryRevisions
+			for _, r := range repos {
+				if pattern.MatchString(string(r.Repo.Name)) {
+					matched = append(matched, r)
+				}
+			}
+			results <- matched
+		}(resolved[offset:next])
+		offset = next
+	}
+
+	repos := make([]*types.Repo, len(resolved))
+	for i := range resolved {
+		repos[i] = resolved[i].Repo
+	}
+
+	var matched []*search.RepositoryRevisions
+	for w := 0; w < workers; w++ {
+		matched = append(matched, <-results...)
+	}
+
+	return &searchResultsCommon{repos: repos}, matched
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
