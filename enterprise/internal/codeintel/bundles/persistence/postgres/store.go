@@ -181,16 +181,16 @@ func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme,
 	return locations[lo:hi], len(locations), nil
 }
 
-func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) error {
-	inserter := func(inserter *BatchInserter) error {
-		if err := inserter.Insert(ctx, s.dumpID, meta.NumResultChunks); err != nil {
-			return err
+func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
+	inserter := NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
+
+	defer func() {
+		if flushErr := inserter.Flush(ctx); flushErr != nil {
+			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
 		}
+	}()
 
-		return nil
-	}
-
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, inserter)
+	return inserter.Insert(ctx, s.dumpID, meta.NumResultChunks)
 }
 
 func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
