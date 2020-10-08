@@ -4,16 +4,20 @@ The [documentation guidelines](https://about.sourcegraph.com/handbook/engineerin
 
 ## Documentation directory structure
 
-DOCS-TODO: Describe 4 categories of documentation and references
+The documentation is broken down into 3 different areas:
 
-The documentation is organized into the following top-level directories:
+1. User
+1. Admin
+1. Development
 
-- [`user/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/user) for users
-- [`admin/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/admin) for site admins
-  - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/admin/external_service) for documentation for connecting Sourcegraph to code hosts and Phabricator (*for site admins*).
-- [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/extensions) for Sourcegraph extensions
-- [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
-- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/main/doc/api) for the Sourcegraph GraphQL API
+Each of these areas has the docs organized by the 4 different types:
+
+1. Tutorials
+1. How-to guides
+1. Explanation or background information
+1. Reference
+
+This structure is inspired by the [Divio documentation system](https://documentation.divio.com/).
 
 ## Previewing changes locally
 
