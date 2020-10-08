@@ -18,12 +18,4 @@
         height: 3.5rem;
         width: 3.5rem;
     }
-
-    & .arrow::before {
-        border-bottom-color: var(--border-color) !important;
-    }
-
-    & .arrow::after {
-        border-bottom-color: var(--body-bg) !important;
-    }
 }
