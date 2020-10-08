@@ -11,7 +11,7 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { ThemeProps } from '../../../shared/src/theme'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { UserNavItem } from './UserNavItem'
+import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 import { ThemePreferenceProps } from '../theme'
 import {
@@ -33,6 +33,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
+        ExtensionAlertAnimationProps,
         TelemetryProps,
         ActivationProps {
     location: H.Location

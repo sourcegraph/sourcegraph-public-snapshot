@@ -45,6 +45,7 @@ describe('UserNavItem', () => {
                         location={history.location}
                         authenticatedUser={USER}
                         showDotComMarketing={true}
+                        isExtensionAlertAnimating={false}
                     />
                 </MemoryRouter>
             )

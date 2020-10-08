@@ -35,6 +35,7 @@ exports[`UserNavItem simple 1`] = `
           "username": "alice",
         }
       }
+      isExtensionAlertAnimating={false}
       isLightTheme={true}
       location="[Location path=/]"
       onThemePreferenceChange={[Function]}
@@ -82,9 +83,52 @@ exports[`UserNavItem simple 1`] = `
                       href="#"
                       onClick={[Function]}
                     >
-                      <strong>
-                        alice
-                      </strong>
+                      <div
+                        className="position-relative"
+                      >
+                        <div
+                          className=""
+                        />
+                        <UserAvatar
+                          className="icon-inline"
+                          size={48}
+                          targetID="target-user-avatar"
+                          user={
+                            Object {
+                              "avatarURL": null,
+                              "organizations": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "displayName": "Acme Corp",
+                                    "id": "0",
+                                    "name": "acme",
+                                    "settingsURL": "/organizations/acme/settings",
+                                    "url": "/organizations/acme",
+                                  },
+                                  Object {
+                                    "displayName": "Beta Inc",
+                                    "id": "1",
+                                    "name": "beta",
+                                    "settingsURL": "/organizations/beta/settings",
+                                    "url": "/organizations/beta",
+                                  },
+                                ],
+                              },
+                              "session": Object {
+                                "canSignOut": true,
+                              },
+                              "settingsURL": "#",
+                              "siteAdmin": true,
+                              "username": "alice",
+                            }
+                          }
+                        >
+                          <Memo(AccountCircleIcon)
+                            className="user-avatar icon-inline"
+                            id="target-user-avatar"
+                          />
+                        </UserAvatar>
+                      </div>
                     </a>
                   </InnerReference>
                 </Reference>

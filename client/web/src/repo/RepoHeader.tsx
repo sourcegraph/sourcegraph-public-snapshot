@@ -15,6 +15,8 @@ import { onlyDefaultExtensionsAdded } from '../../../shared/src/extensions/exten
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
+import classNames from 'classnames'
+
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -162,6 +164,9 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, Telemet
 
     location: H.Location
     history: H.History
+
+    /** Whether or not an alert is displayed directly above RepoHeader */
+    isAlertDisplayed: boolean
 }
 
 /**
@@ -169,7 +174,13 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, Telemet
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsChange, resolvedRev, repo, ...props }) => {
+export const RepoHeader: React.FunctionComponent<Props> = ({
+    onLifecyclePropsChange,
+    resolvedRev,
+    repo,
+    isAlertDisplayed,
+    ...props
+}) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -186,7 +197,11 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
     const leftActions = repoHeaderContributions.filter(({ position }) => position === 'left')
     const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
     return (
-        <nav className="repo-header navbar navbar-expand">
+        <nav
+            className={classNames('repo-header navbar navbar-expand', {
+                'repo-header--alert': isAlertDisplayed,
+            })}
+        >
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />

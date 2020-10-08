@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense } from 'react'
+import React, { Suspense, useCallback } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
@@ -64,6 +64,7 @@ import { AuthenticatedUser, authRequired as authRequiredObservable } from './aut
 import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
+import { useExtensionAlertAnimation } from './nav/UserNavItem'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -169,6 +170,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const breadcrumbProps = useBreadcrumbs()
 
+    // Control browser extension discoverability animation here.
+    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
+    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
+    const onExtensionAlertDismissed = useCallback(() => {
+        startExtensionAlertAnimation()
+    }, [startExtensionAlertAnimation])
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -178,6 +186,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const context = {
         ...props,
         ...breadcrumbProps,
+        onExtensionAlertDismissed,
     }
 
     return (
@@ -211,6 +220,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
+                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

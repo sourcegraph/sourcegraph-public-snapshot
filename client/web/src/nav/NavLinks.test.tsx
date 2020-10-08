@@ -92,6 +92,7 @@ describe('NavLinks', () => {
                                     authenticatedUser={authenticatedUser}
                                     showDotComMarketing={showDotComMarketing}
                                     location={H.createLocation(path, history.location)}
+                                    isExtensionAlertAnimating={false}
                                 />
                             </MemoryRouter>
                         )
