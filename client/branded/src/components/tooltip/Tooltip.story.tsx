@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 import { BrandedStory } from '../BrandedStory'
 import { Tooltip } from './Tooltip'
 
-const { add } = storiesOf('web/Tooltip', module).addDecorator(story => (
+const { add } = storiesOf('branded/Tooltip', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
 ))
 

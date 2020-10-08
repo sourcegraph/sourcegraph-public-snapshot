@@ -7,7 +7,7 @@ import { radios } from '@storybook/addon-knobs'
 
 const onToggle = action('onToggle')
 
-const { add } = storiesOf('shared/Toggle', module).addDecorator(story => {
+const { add } = storiesOf('branded/Toggle', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
     document.body.classList.toggle('theme-light', theme === 'light')
     document.body.classList.toggle('theme-dark', theme === 'dark')

@@ -23,7 +23,7 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
     return event
 }
 
-const { add } = storiesOf('web/Global styles', module).addDecorator(story => (
+const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
 ))
 
