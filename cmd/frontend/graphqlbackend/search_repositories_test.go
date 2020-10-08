@@ -3,12 +3,16 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"reflect"
+	"regexp"
 	"sort"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -228,4 +232,58 @@ func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *se
 		return false, err
 	}
 	return len(rsta) == 1, nil
+}
+
+func TestMatchRepos(t *testing.T) {
+	want := makeRepositoryRevisions("foo/bar", "abc/foo")
+	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
+	pattern := regexp.MustCompile("foo")
+
+	common, repos := matchRepos(pattern, in)
+
+	if !(len(common.repos) == len(in)) {
+		t.Fatalf("expected %d, got %d", len(in), len(common.repos))
+	}
+	// because of the concurrency we cannot rely on the order of "repos" to be the
+	// same as "want". Hence we create map of repo names and compare those.
+	toMap := func(reporevs []*search.RepositoryRevisions) map[string]struct{} {
+		out := map[string]struct{}{}
+		for _, r := range reporevs {
+			out[string(r.Repo.Name)] = struct{}{}
+		}
+		return out
+	}
+	if !reflect.DeepEqual(toMap(repos), toMap(want)) {
+		t.Fatalf("expected %v, got %v", want, repos)
+	}
+}
+
+func BenchmarkSearchRepositories(b *testing.B) {
+	n := 200 * 1000
+	repos := make([]*search.RepositoryRevisions, n)
+	for i := 0; i < n; i++ {
+		repo := &types.Repo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+	}
+	q := "context.WithValue"
+	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	if err != nil {
+		b.Fatal(err)
+	}
+	options := &getPatternInfoOptions{}
+	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	if err != nil {
+		b.Fatal(err)
+	}
+	tp := search.TextParameters{
+		PatternInfo: textPatternInfo,
+		RepoPromise: (&search.Promise{}).Resolve(repos),
+		Query:       queryInfo,
+	}
+	for i := 0; i < b.N; i++ {
+		_, _, err = searchRepositories(context.Background(), &tp, options.fileMatchLimit)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
