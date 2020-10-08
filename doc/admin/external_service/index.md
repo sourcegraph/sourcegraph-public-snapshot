@@ -21,8 +21,4 @@ Sourcegraph can sync repositories from code hosts and other similar services.
 - [GitLab](gitlab.md)
 - [Bitbucket Cloud](bitbucket_cloud.md)
 
-The feature is currently in beta and can be enabled by adding the `AllowUserExternalServicePublic` tag to the user in the Sourcegraph database. An example query to enable this for the user with username `bob` is:
-
-```sql
-UPDATE users SET tags = array_append(tags, 'AllowUserExternalServicePublic') where username='bob';
-```
+The feature is currently in private beta.

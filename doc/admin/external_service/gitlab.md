@@ -11,7 +11,7 @@ To connect GitLab to Sourcegraph:
 1. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
-**NOTE** That adding code hosts as a user is currently in beta, see instructions [here](index.md) to enable.
+**NOTE** That adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
