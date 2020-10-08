@@ -80,3 +80,10 @@
 /admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
 /admin/install/cluster.md /admin/install/index.md 308
 /integration/google_gsuite /integration/google_workspace 308
+
+/dev/architecture/life-of-a-search-query /dev/background-information/architecture/life-of-a-search-query 308
+/dev/architecture/architecture.dot       /dev/background-information/architecture/architecture.dot 308
+/dev/architecture/life-of-a-ping         /dev/background-information/architecture/life-of-a-ping 308
+/dev/architecture/life-of-a-repository   /dev/background-information/architecture/life-of-a-repository 308
+/dev/architecture/search-pagination      /dev/background-information/architecture/search-pagination 308
+
