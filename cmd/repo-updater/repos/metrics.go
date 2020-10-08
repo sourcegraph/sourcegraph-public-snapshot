@@ -97,8 +97,17 @@ func MustRegisterMetrics(db dbutil.DB) {
 		if err != nil {
 			return 0, err
 		}
-
 		return float64(count), nil
+	}
+
+	scanFloat := func(sql string) (float64, error) {
+		row := db.QueryRowContext(context.Background(), sql)
+		var v float64
+		err := row.Scan(&v)
+		if err != nil {
+			return 0, err
+		}
+		return v, nil
 	}
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
@@ -224,4 +233,22 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
 		}
 		return count
 	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_max_sync_backoff",
+		Help: "The maximum number of seconds since any external service synced",
+	}, func() float64 {
+		seconds, err := scanFloat(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
+WHERE deleted_at IS NULL
+AND last_sync_at IS NOT NULL
+`)
+		if err != nil {
+			log15.Error("Failed to get max sync backoff", "err", err)
+			return 0
+		}
+		return seconds
+	})
+
 }

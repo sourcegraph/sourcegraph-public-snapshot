@@ -24,13 +24,23 @@ func RepoUpdater() *Container {
 					{
 						Observable{
 							Name:              "syncer_sync_last_time",
-							Description:       "time gap since last sync",
+							Description:       "time since last sync",
 							Query:             `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: time.Hour.Seconds(), For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Make sure there are external serviced added with valid tokens",
+							PossibleSolutions: "Make sure there are external services added with valid tokens",
+						},
+						Observable{
+							Name:              "src_repoupdater_max_sync_backoff",
+							Description:       "time since oldest sync",
+							Query:             `src_repoupdater_max_sync_backoff`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 8 * time.Hour.Seconds(), For: 5 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("seconds").Unit(Seconds),
+							Owner:             ObservableOwnerCloud,
+							PossibleSolutions: "Make sure there are external services added with valid tokens",
 						},
 					},
 					{
