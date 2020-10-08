@@ -1,6 +1,6 @@
 # Sourcegraph documentation
 
-## [Introduction - start here](introduction/index.md)
+## [Getting started](getting-started/index.md)
 
 For the new Sourcegraph user
 
@@ -12,7 +12,7 @@ From running your first search, to deploying your own Sourcegraph instance.
 
 Practical step-by-step guides for the experienced Sourcegraph user, covering several important topics.
 
-## [Concepts](concepts/index.md)
+## [Background information](background-information/index.md)
 
 Explanation and analysis of some key concepts in Sourcegraph
 

@@ -1,4 +1,4 @@
-# Introduction
+# Getting started
 
 Commonly asked questions by new Sourcegraph users.
 
