@@ -1,3 +1,5 @@
+# Sourcegraph Search Query Language
+
 <style>
 
 ul.r {
@@ -167,7 +169,6 @@ img.r {
 
 </style>
 
-# Sourcegraph Search Query Language
 
 This page provides a visual breakdown of our Search Query Language and a handful
 of examples to get you started. It is complementary to our [syntax
