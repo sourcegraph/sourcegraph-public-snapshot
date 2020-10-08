@@ -498,7 +498,7 @@ Indexes:
  identifier | text    | not null
  data       | bytea   | 
 Indexes:
-    "lsif_data_definitions_temp" btree (dump_id, scheme, identifier)
+    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
 
 ```
 
@@ -510,7 +510,7 @@ Indexes:
  path    | text    | not null
  data    | bytea   | 
 Indexes:
-    "lsif_data_documents_temp" btree (dump_id, path)
+    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
 
 ```
 
@@ -521,7 +521,7 @@ Indexes:
  dump_id           | integer | not null
  num_result_chunks | integer | 
 Indexes:
-    "lsif_data_metadata_temp" btree (dump_id)
+    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
 
 ```
 
@@ -534,7 +534,7 @@ Indexes:
  identifier | text    | not null
  data       | bytea   | 
 Indexes:
-    "lsif_data_references_temp" btree (dump_id, scheme, identifier)
+    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
 
 ```
 
@@ -546,7 +546,7 @@ Indexes:
  idx     | integer | not null
  data    | bytea   | 
 Indexes:
-    "lsif_data_result_chunks_temp" btree (dump_id, idx)
+    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
 
 ```
 

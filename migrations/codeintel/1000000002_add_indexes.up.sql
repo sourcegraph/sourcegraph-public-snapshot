@@ -1,9 +1,9 @@
 BEGIN;
 
-CREATE INDEX IF NOT EXISTS lsif_data_metadata_temp ON lsif_data_metadata (dump_id);
-CREATE INDEX IF NOT EXISTS lsif_data_documents_temp ON lsif_data_documents (dump_id, path);
-CREATE INDEX IF NOT EXISTS lsif_data_result_chunks_temp ON lsif_data_result_chunks (dump_id, idx);
-CREATE INDEX IF NOT EXISTS lsif_data_definitions_temp ON lsif_data_definitions (dump_id, scheme, identifier);
-CREATE INDEX IF NOT EXISTS lsif_data_references_temp ON lsif_data_references (dump_id, scheme, identifier);
+ALTER TABLE lsif_data_metadata ADD PRIMARY KEY (dump_id);
+ALTER TABLE lsif_data_documents ADD PRIMARY KEY (dump_id, path);
+ALTER TABLE lsif_data_result_chunks ADD PRIMARY KEY (dump_id, idx);
+ALTER TABLE lsif_data_definitions ADD PRIMARY KEY (dump_id, scheme, identifier);
+ALTER TABLE lsif_data_references ADD PRIMARY KEY (dump_id, scheme, identifier);
 
 COMMIT;
