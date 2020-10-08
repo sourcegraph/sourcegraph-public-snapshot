@@ -4,37 +4,27 @@ import { mount } from 'enzyme'
 import { noop } from 'lodash'
 
 describe('InstallBrowserExtensionAlert', () => {
-    test('GitHub', () => {
-        expect(
-            mount(
-                <InstallBrowserExtensionAlert
-                    onAlertDismissed={noop}
-                    externalURLs={[
-                        {
-                            __typename: 'ExternalLink',
-                            url: 'https://github.com/sourcegraph/sourcegraph',
-                            serviceType: 'github',
-                        },
-                    ]}
-                />
-            )
-        ).toMatchSnapshot()
-    })
-
-    test('GitLab', () => {
-        expect(
-            mount(
-                <InstallBrowserExtensionAlert
-                    onAlertDismissed={noop}
-                    externalURLs={[
-                        {
-                            __typename: 'ExternalLink',
-                            url: 'https://gitlab.com/rluna-open-source/code-management/sourcegraph/sourcegraph',
-                            serviceType: 'gitlab',
-                        },
-                    ]}
-                />
-            )
-        ).toMatchSnapshot()
-    })
+    const serviceTypes = ['github', 'gitlab', 'phabricator', 'bitbucketServer'] as const
+    const browsers = ['Chrome', 'non-Chrome'] as const
+    for (const serviceType of serviceTypes) {
+        for (const browser of browsers) {
+            test(`${serviceType} (${browser})`, () => {
+                expect(
+                    mount(
+                        <InstallBrowserExtensionAlert
+                            isChrome={browser === 'Chrome'}
+                            onAlertDismissed={noop}
+                            externalURLs={[
+                                {
+                                    __typename: 'ExternalLink',
+                                    url: '',
+                                    serviceType,
+                                },
+                            ]}
+                        />
+                    )
+                ).toMatchSnapshot()
+            })
+        }
+    }
 })
