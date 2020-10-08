@@ -104,10 +104,7 @@ func MustRegisterMetrics(db dbutil.DB) {
 		row := db.QueryRowContext(context.Background(), sql)
 		var v float64
 		err := row.Scan(&v)
-		if err != nil {
-			return 0, err
-		}
-		return v, nil
+		return v, err
 	}
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
