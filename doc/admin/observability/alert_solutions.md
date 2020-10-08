@@ -2875,6 +2875,251 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## repo-updater: syncer_sync_last_time
+
+**Descriptions:**
+
+- _repo-updater: 3600s+ time since last sync for 5m0s_
+
+**Possible solutions:**
+
+- Make sure there are external services added with valid tokens
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_syncer_sync_last_time"
+]
+```
+
+## repo-updater: src_repoupdater_max_sync_backoff
+
+**Descriptions:**
+
+- _repo-updater: 28800s+ time since oldest sync for 5m0s_
+
+**Possible solutions:**
+
+- Make sure there are external services added with valid tokens
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_max_sync_backoff"
+]
+```
+
+## repo-updater: syncer_sync_start
+
+**Descriptions:**
+
+- _repo-updater: 100+ sync was started for 5m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_syncer_sync_start"
+]
+```
+
+## repo-updater: syncer_sync_duration
+
+**Descriptions:**
+
+- _repo-updater: 30s+ 95th repositories sync duration for 5m0s_
+
+**Possible solutions:**
+
+- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_syncer_sync_duration"
+]
+```
+
+## repo-updater: source_duration
+
+**Descriptions:**
+
+- _repo-updater: 30s+ 95th repositories source duration for 5m0s_
+
+**Possible solutions:**
+
+- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_source_duration"
+]
+```
+
+## repo-updater: syncer_synced_repos
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories synced for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_syncer_synced_repos"
+]
+```
+
+## repo-updater: sourced_repos
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories sourced for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sourced_repos"
+]
+```
+
+## repo-updater: purge_failed
+
+**Descriptions:**
+
+- _repo-updater: 1+ repositories purge failed for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_purge_failed"
+]
+```
+
+## repo-updater: purge_success
+
+**Descriptions:**
+
+- _repo-updater: 10+ repositories purge succeeded for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_purge_success"
+]
+```
+
+## repo-updater: sched_auto_fetch
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories scheduled due to hitting a deadline for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sched_auto_fetch"
+]
+```
+
+## repo-updater: sched_manual_fetch
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories scheduled due to user traffic for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sched_manual_fetch"
+]
+```
+
+## repo-updater: sched_known_repos
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories managed by the scheduler for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sched_known_repos"
+]
+```
+
+## repo-updater: sched_update_queue_length
+
+**Descriptions:**
+
+- _repo-updater: 1000+ repositories queued for update for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sched_update_queue_length"
+]
+```
+
+## repo-updater: sched_loops
+
+**Descriptions:**
+
+- _repo-updater: 10+ scheduler loops for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_sched_loops"
+]
+```
+
+## repo-updater: sched_error
+
+**Descriptions:**
+
+- _repo-updater: 1+ repositories schedule error rate for 1m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_sched_error"
+]
+```
+
 ## repo-updater: perms_syncer_perms
 
 **Descriptions:**
@@ -2997,6 +3242,40 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
+## repo-updater: src_repoupdater_external_services_total
+
+**Descriptions:**
+
+- _repo-updater: 20000+ the total number of external services for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_external_services_total"
+]
+```
+
+## repo-updater: src_repoupdater_user_external_services_total
+
+**Descriptions:**
+
+- _repo-updater: 20000+ the total number of user added external services for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_user_external_services_total"
+]
+```
+
 ## repo-updater: repoupdater_queued_sync_jobs_total
 
 **Descriptions:**
@@ -3012,6 +3291,40 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_repo-updater_repoupdater_queued_sync_jobs_total"
+]
+```
+
+## repo-updater: repoupdater_completed_sync_jobs_total
+
+**Descriptions:**
+
+- _repo-updater: 100000+ the total number of completed sync jobs for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_repoupdater_completed_sync_jobs_total"
+]
+```
+
+## repo-updater: repoupdater_errored_sync_jobs_total
+
+**Descriptions:**
+
+- _repo-updater: 100+ the total number of errored sync jobs for 1h0m0s_
+
+**Possible solutions:**
+
+- None
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_repoupdater_errored_sync_jobs_total"
 ]
 ```
 

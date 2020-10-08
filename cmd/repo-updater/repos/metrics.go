@@ -11,11 +11,10 @@ import (
 )
 
 const (
-	tagExternalServiceID = "external_service_id"
-	tagFamily            = "family"
-	tagID                = "id"
-	tagState             = "state"
-	tagSuccess           = "success"
+	tagFamily  = "family"
+	tagID      = "id"
+	tagState   = "state"
+	tagSuccess = "success"
 )
 
 var (
@@ -27,27 +26,27 @@ var (
 	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_syncer_sync_last_time",
 		Help: "The last time a sync finished",
-	}, []string{tagExternalServiceID, tagFamily})
+	}, []string{tagFamily})
+
+	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repoupdater_syncer_start_sync",
+		Help: "A sync was started",
+	}, []string{tagFamily})
 
 	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_synced_repos_total",
 		Help: "Total number of synced repositories",
-	}, []string{tagState, tagExternalServiceID, tagFamily})
+	}, []string{tagState, tagFamily})
 
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_sync_errors_total",
 		Help: "Total number of sync errors",
-	}, []string{tagExternalServiceID, tagFamily})
+	}, []string{tagFamily})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
 		Help: "Time spent syncing",
-	}, []string{tagSuccess, tagExternalServiceID, tagFamily})
-
-	syncBackoffDuration = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_syncer_sync_backoff_duration_seconds",
-		Help: "Backoff duration after a sync",
-	}, []string{tagExternalServiceID})
+	}, []string{tagSuccess, tagFamily})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_purge_success",
@@ -84,9 +83,9 @@ var (
 		Help: "The number of repositories that are managed by the scheduler.",
 	})
 
-	schedHeapCount = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_repoupdater_sched_heap_count",
-		Help: "The number of repositories currently in the scheduler heap.",
+	schedUpdateQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_repoupdater_sched_update_queue_length",
+		Help: "The number of repositories that are currently queued for update",
 	})
 )
 
@@ -98,9 +97,31 @@ func MustRegisterMetrics(db dbutil.DB) {
 		if err != nil {
 			return 0, err
 		}
-
 		return float64(count), nil
 	}
+
+	scanFloat := func(sql string) (float64, error) {
+		row := db.QueryRowContext(context.Background(), sql)
+		var v float64
+		err := row.Scan(&v)
+		return v, err
+	}
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_external_services_total",
+		Help: "The total number of external services added",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_external_services_total
+SELECT COUNT(*) FROM external_services
+WHERE deleted_at IS NULL
+`)
+		if err != nil {
+			log15.Error("Failed to get total external services", "err", err)
+			return 0
+		}
+		return count
+	})
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_user_external_services_total",
@@ -179,4 +200,52 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
 		}
 		return count
 	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_completed_sync_jobs_total",
+		Help: "The total number of completed sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_completed_sync_jobs_total
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
+`)
+		if err != nil {
+			log15.Error("Failed to get total completed sync jobs", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_errored_sync_jobs_total",
+		Help: "The total number of errored sync jobs",
+	}, func() float64 {
+		count, err := scanCount(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
+`)
+		if err != nil {
+			log15.Error("Failed to get total errored sync jobs", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_max_sync_backoff",
+		Help: "The maximum number of seconds since any external service synced",
+	}, func() float64 {
+		seconds, err := scanFloat(`
+-- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
+WHERE deleted_at IS NULL
+AND last_sync_at IS NOT NULL
+`)
+		if err != nil {
+			log15.Error("Failed to get max sync backoff", "err", err)
+			return 0
+		}
+		return seconds
+	})
+
 }
