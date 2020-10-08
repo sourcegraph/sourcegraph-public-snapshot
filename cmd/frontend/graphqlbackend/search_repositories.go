@@ -129,8 +129,28 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 			}
 		}
 	}
-	workers := 5
-	for w := 0; w < workers; w++ {
+	/*
+		Local benchmarks showed diminishing returns for higher levels of concurrency.
+		5 workers seems to be a good trade-off for now. We might want to revisit this
+		benchmark over time.
+
+		go test -cpu 1,2,3,4,5,6,7,8,9,10 -bench=SearchRepo .
+
+		   goos: darwin
+		   goarch: amd64
+		   pkg: github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
+		   BenchmarkSearchRepositories       	      13	 130537504 ns/op
+		   BenchmarkSearchRepositories-2     	      15	  73870755 ns/op
+		   BenchmarkSearchRepositories-3     	      22	  51347690 ns/op
+		   BenchmarkSearchRepositories-4     	      26	  43330084 ns/op
+		   BenchmarkSearchRepositories-5     	      31	  34350443 ns/op
+		   BenchmarkSearchRepositories-6     	      34	  30747184 ns/op
+		   BenchmarkSearchRepositories-7     	      38	  31297447 ns/op
+		   BenchmarkSearchRepositories-8     	      36	  32711526 ns/op
+		   BenchmarkSearchRepositories-9     	      30	  38050861 ns/op
+		   BenchmarkSearchRepositories-10    	      27	  38638799 ns/op
+	*/
+	for w := 0; w < 5; w++ { // for benchmarking, replace 5 with runtime.GOMAXPROCS(0)
 		wg.Add(1)
 		go worker()
 	}
