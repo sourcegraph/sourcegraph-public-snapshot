@@ -2,14 +2,25 @@
 
 Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on the Sourcegraph instance.
 
-## [Install Sourcegraph](install/index.md)
+## [Getting started](getting-started/index.md)
 
-- [Install Sourcegraph with Docker](install/docker/index.md)
-- [Install Sourcegraph with Docker Compose](install/docker-compose/index.md)
-- [Install Sourcegraph with Kubernetes](install/kubernetes/index.md)
-- [Install Sourcegraph on a cluster](install/index.md)
-- [Set up a managed instance](install/managed.md)
-- [Back up or migrate to a new Sourcegraph instance](install/migrate-backup.md)
+
+
+## [How-to guides](how-to/index.md)
+
+
+
+## [Background information](background-information/index.md)
+
+
+
+## [Reference](reference/index.md)
+
+
+
+
+
+
 
 ## Management, deployment, and configuration
 

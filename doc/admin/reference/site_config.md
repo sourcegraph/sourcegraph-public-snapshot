@@ -2,7 +2,7 @@
 
 All site configuration options and their default values are shown below.
 
-<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/site.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/config/site_config) to see rendered content.</div>
+<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/reference/site.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/config/site_config) to see rendered content.</div>
 
 ## Known bugs
 
