@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of, combineLatest } from 'rxjs'
+import { Observable, fromEventPattern, of } from 'rxjs'
 import { parseSearchQuery } from './parser'
 import { map, first, takeUntil, publishReplay, refCount, switchMap, debounceTime, share } from 'rxjs/operators'
 import { getMonacoTokens } from './tokens'
