@@ -2,7 +2,7 @@ import * as H from 'history'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useState, useMemo, useEffect } from 'react'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
+import { ButtonLink } from '../../../shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -15,6 +15,8 @@ import { onlyDefaultExtensionsAdded } from '../../../shared/src/extensions/exten
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
+import classNames from 'classnames'
+
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -162,6 +164,9 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, Telemet
 
     location: H.Location
     history: H.History
+
+    /** Whether or not an alert is displayed directly above RepoHeader */
+    isAlertDisplayed: boolean
 }
 
 /**
@@ -169,7 +174,13 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, Telemet
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsChange, resolvedRev, repo, ...props }) => {
+export const RepoHeader: React.FunctionComponent<Props> = ({
+    onLifecyclePropsChange,
+    resolvedRev,
+    repo,
+    isAlertDisplayed,
+    ...props
+}) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -186,7 +197,11 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
     const leftActions = repoHeaderContributions.filter(({ position }) => position === 'left')
     const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
     return (
-        <nav className="repo-header navbar navbar-expand">
+        <nav
+            className={classNames('repo-header navbar navbar-expand', {
+                'repo-header--alert': isAlertDisplayed,
+            })}
+        >
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
@@ -201,9 +216,9 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
             <div className="repo-header__spacer" />
             <div className="d-flex align-items-center">
                 {determineShowAddExtensions(props) && (
-                    <LinkOrButton to="/extensions" className="btn btn-outline-secondary btn-sm mx-2">
+                    <ButtonLink to="/extensions" className="btn btn-outline-secondary btn-sm mx-2">
                         Add extensions
-                    </LinkOrButton>
+                    </ButtonLink>
                 )}
             </div>
             <ul className="navbar-nav">
@@ -219,10 +234,10 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                     ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                         condition(context) && (
                             <li className="nav-item repo-header__action-list-item" key={label}>
-                                <LinkOrButton to={to(context)} data-tooltip={tooltip}>
+                                <ButtonLink to={to(context)} data-tooltip={tooltip}>
                                     {Icon && <Icon className="icon-inline" />}{' '}
                                     <span className="d-none d-lg-inline">{label}</span>
-                                </LinkOrButton>
+                                </ButtonLink>
                             </li>
                         )
                 )}
@@ -233,10 +248,10 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                 ))}
                 {repo.viewerCanAdminister && (
                     <li className="nav-item repo-header__action-list-item">
-                        <LinkOrButton to={`/${repo.name}/-/settings`} data-tooltip="Repository settings">
+                        <ButtonLink to={`/${repo.name}/-/settings`} data-tooltip="Repository settings">
                             <SettingsIcon className="icon-inline" />{' '}
                             <span className="d-none d-lg-inline">Settings</span>
-                        </LinkOrButton>
+                        </ButtonLink>
                     </li>
                 )}
             </ul>

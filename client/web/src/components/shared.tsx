@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { ActionsNavItems, ActionsNavItemsProps } from '../../../shared/src/actions/ActionsNavItems'
 import { CommandListPopoverButton, CommandListPopoverButtonProps } from '../../../shared/src/commandPalette/CommandList'
 import {
@@ -9,10 +9,11 @@ import {
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/HoverOverlay'
 import { useLocalStorage } from '../util/useLocalStorage'
+import { HoverThresholdProps } from '../repo/RepoContainer'
 
 // Components from shared with web-styling class names applied
 
-export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
+export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverThresholdProps> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -30,6 +31,18 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props
         )
         propsToUse = { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } }
     }
+
+    const { hoverOrError } = propsToUse
+    const { onHoverShown, hoveredToken } = props
+
+    /** Whether the hover has actual content (that provides value to the user) */
+    const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
+
+    useEffect(() => {
+        if (hoverHasValue) {
+            onHoverShown?.()
+        }
+    }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
     return (
         <HoverOverlay

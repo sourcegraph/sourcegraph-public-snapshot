@@ -3,159 +3,216 @@ import { upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
-import * as React from 'react'
-import { merge, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import React, { useCallback, useMemo, useState } from 'react'
+import { merge, Observable, of } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
-import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { ExternalLinkFields } from '../../graphql-operations'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
+import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 
-interface Props extends RevisionSpec, Partial<FileSpec> {
-    repo?: GQL.IRepository | null
+interface GoToCodeHostPopoverProps {
+    canShowPopover: boolean
+    onPopoverDismissed: () => void
+}
+
+interface Props extends RevisionSpec, Partial<FileSpec>, GoToCodeHostPopoverProps {
+    repo?: Pick<GQL.IRepository, 'name' | 'defaultBranch' | 'externalURLs'> | null
     filePath?: string
     commitRange?: string
     position?: Position
     range?: Range
 
     externalLinks?: ExternalLinkFields[]
+
+    browserExtensionInstalled: Observable<boolean | { platform: unknown }>
+    fetchFileExternalLinks: typeof fetchFileExternalLinks
 }
 
-interface State {
-    /**
-     * The external links for the current file/dir, or undefined while loading, null while not
-     * needed (because not viewing a file/dir), or an error.
-     */
-    fileExternalLinksOrError?: ExternalLinkFields[] | null | ErrorLike
-}
+const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
-export class GoToCodeHostAction extends React.PureComponent<Props, State> {
-    public state: State = { fileExternalLinksOrError: null }
+export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
+    const [showPopover, setShowPopover] = useState(false)
 
-    private componentUpdates = new Subject<Props>()
-    private subscriptions = new Subscription()
+    const { onPopoverDismissed, repo, revision, filePath } = props
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    startWith(this.props),
-                    distinctUntilChanged(
-                        (a, b) => a.repo === b.repo && a.revision === b.revision && a.filePath === b.filePath
-                    ),
-                    switchMap(({ repo, revision, filePath }) => {
-                        if (!repo || !filePath) {
-                            return of<Pick<State, 'fileExternalLinksOrError'>>({ fileExternalLinksOrError: null })
-                        }
-                        return merge(
-                            of({ fileExternalLinksOrError: undefined }),
-                            fetchFileExternalLinks({ repoName: repo.name, revision, filePath }).pipe(
-                                catchError(error => [asError(error)]),
-                                map(fileExternalLinksOrError => ({ fileExternalLinksOrError }))
-                            )
-                        )
-                    })
+    const isExtensionInstalled = useObservable(props.browserExtensionInstalled)
+
+    const [hasDissmissedPopup, setHasDismissedPopup] = useState(
+        () => localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true'
+    )
+
+    const hijackLink = !isExtensionInstalled && !hasDissmissedPopup && props.canShowPopover
+
+    /**
+     * The external links for the current file/dir, or undefined while loading, null while not
+     * needed (because not viewing a file/dir), or an error.
+     */
+    const fileExternalLinksOrError = useObservable<ExternalLinkFields[] | null | undefined | ErrorLike>(
+        useMemo(() => {
+            if (!repo || !filePath) {
+                return of(null)
+            }
+            return merge(
+                of(undefined),
+                fetchFileExternalLinks({ repoName: repo.name, revision, filePath }).pipe(
+                    catchError(error => [asError(error)])
                 )
-                .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
-                )
-        )
+            )
+        }, [repo, revision, filePath])
+    )
+
+    /** This is a hard rejection. Never ask the user again. */
+    const onRejection = useCallback(() => {
+        localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
+        setHasDismissedPopup(true)
+        setShowPopover(false)
+        onPopoverDismissed()
+
+        eventLogger.log('BrowserExtensionPopupRejected')
+    }, [onPopoverDismissed])
+
+    /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
+    const onClose = useCallback(() => {
+        onPopoverDismissed()
+        setShowPopover(false)
+        eventLogger.log('BrowserExtensionPopupClosed')
+    }, [onPopoverDismissed])
+
+    /** The user is likely to install the browser extension at this point, so don't show it again. */
+    const onClickInstall = useCallback(() => {
+        localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
+        setHasDismissedPopup(true)
+        setShowPopover(false)
+        onPopoverDismissed()
+
+        eventLogger.log('BrowserExtensionPopupClickedInstall')
+    }, [onPopoverDismissed])
+
+    const toggle = useCallback(() => {
+        if (showPopover) {
+            setShowPopover(false)
+            return
+        }
+
+        if (hijackLink) {
+            setShowPopover(true)
+        }
+    }, [hijackLink, showPopover])
+
+    const onClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (showPopover) {
+                event.preventDefault()
+                setShowPopover(false)
+                return
+            }
+
+            if (hijackLink) {
+                event.preventDefault()
+                setShowPopover(true)
+            }
+        },
+        [hijackLink, showPopover]
+    )
+
+    // If the default branch is undefined, set to HEAD
+    const defaultBranch =
+        (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
+        'HEAD'
+
+    // If neither repo or file can be loaded, return null, which will hide all code host icons
+    if (!props.repo || isErrorLike(fileExternalLinksOrError)) {
+        return null
     }
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+    let externalURLs: ExternalLinkFields[]
+    if (props.externalLinks && props.externalLinks.length > 0) {
+        externalURLs = props.externalLinks
+    } else if (
+        fileExternalLinksOrError === null ||
+        fileExternalLinksOrError === undefined ||
+        isErrorLike(fileExternalLinksOrError) ||
+        fileExternalLinksOrError.length === 0
+    ) {
+        // If the external link for the more specific resource within the repository is loading or errored, use the
+        // repository external link.
+        externalURLs = props.repo.externalURLs
+    } else {
+        externalURLs = fileExternalLinksOrError
+    }
+    if (externalURLs.length === 0) {
+        return null
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+    // Only show the first external link for now.
+    const externalURL = externalURLs[0]
+
+    const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
+    const Icon = icon || ExportIcon
+
+    // Extract url to add branch, line numbers or commit range.
+    let url = externalURL.url
+    if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
+        // If in a branch, add branch path to the code host URL.
+        if (props.revision && props.revision !== defaultBranch && !fileExternalLinksOrError) {
+            url += `/tree/${props.revision}`
+        }
+        // If showing a comparison, add comparison specifier to the code host URL.
+        if (props.commitRange) {
+            url += `/compare/${props.commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
+        }
+        // Add range or position path to the code host URL.
+        if (props.range) {
+            const rangeEndPrefix = externalURL.serviceType === 'gitlab' ? '' : 'L'
+            url += `#L${props.range.start.line}-${rangeEndPrefix}${props.range.end.line}`
+        } else if (props.position) {
+            url += `#L${props.position.line}`
+        }
     }
 
-    public render(): JSX.Element | null {
-        // If the default branch is undefined, set to HEAD
-        const defaultBranch =
-            (!isErrorLike(this.props.repo) &&
-                this.props.repo &&
-                this.props.repo.defaultBranch &&
-                this.props.repo.defaultBranch.displayName) ||
-            'HEAD'
-        // If neither repo or file can be loaded, return null, which will hide all code host icons
-        if (!this.props.repo || isErrorLike(this.state.fileExternalLinksOrError)) {
-            return null
-        }
+    const TARGET_ID = 'go-to-code-host'
 
-        let externalURLs: ExternalLinkFields[]
-        if (this.props.externalLinks && this.props.externalLinks.length > 0) {
-            externalURLs = this.props.externalLinks
-        } else if (
-            this.state.fileExternalLinksOrError === null ||
-            this.state.fileExternalLinksOrError === undefined ||
-            isErrorLike(this.state.fileExternalLinksOrError) ||
-            this.state.fileExternalLinksOrError.length === 0
-        ) {
-            // If the external link for the more specific resource within the repository is loading or errored, use the
-            // repository external link.
-            externalURLs = this.props.repo.externalURLs
-        } else {
-            externalURLs = this.state.fileExternalLinksOrError
-        }
-        if (externalURLs.length === 0) {
-            return null
-        }
-
-        // Only show the first external link for now.
-        const externalURL = externalURLs[0]
-
-        const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
-        const Icon = icon || ExportIcon
-
-        // Extract url to add branch, line numbers or commit range.
-        let url = externalURL.url
-        if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
-            // If in a branch, add branch path to the code host URL.
-            if (this.props.revision && this.props.revision !== defaultBranch && !this.state.fileExternalLinksOrError) {
-                url += `/tree/${this.props.revision}`
-            }
-            // If showing a comparison, add comparison specifier to the code host URL.
-            if (this.props.commitRange) {
-                url += `/compare/${this.props.commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
-            }
-            // Add range or position path to the code host URL.
-            if (this.props.range) {
-                const rangeEndPrefix = externalURL.serviceType === 'gitlab' ? '' : 'L'
-                url += `#L${this.props.range.start.line}-${rangeEndPrefix}${this.props.range.end.line}`
-            } else if (this.props.position) {
-                url += `#L${this.props.position.line}`
-            }
-        }
-
-        function logEvent(): void {
-            eventLogger.log('GoToCodeHostClicked', { codeHost: displayName })
-        }
-
-        return (
-            <LinkOrButton
+    return (
+        <>
+            <a
                 className="nav-link test-go-to-code-host"
-                to={url}
+                // empty href is OK because we always set tabindex=0
+                href={hijackLink ? '' : url}
                 target="_self"
+                rel="noopener noreferrer"
                 data-tooltip={`View on ${displayName}`}
-                onSelect={logEvent}
+                id={TARGET_ID}
+                onClick={onClick}
+                onAuxClick={onClick}
             >
                 <Icon className="icon-inline" />
-            </LinkOrButton>
-        )
-    }
+            </a>
+
+            <InstallBrowserExtensionPopover
+                url={url}
+                toggle={toggle}
+                isOpen={showPopover}
+                serviceType={externalURL.serviceType}
+                onClose={onClose}
+                onRejection={onRejection}
+                onClickInstall={onClickInstall}
+                targetID={TARGET_ID}
+            />
+        </>
+    )
 }
 
-function serviceTypeDisplayNameAndIcon(
+export function serviceTypeDisplayNameAndIcon(
     serviceType: string | null
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     switch (serviceType) {
