@@ -6,7 +6,6 @@ set -euxo pipefail
 box=$1
 exit_code=0
 
-
 pushd test/
 
 plugins=(vagrant-google vagrant-env vagrant-scp)
