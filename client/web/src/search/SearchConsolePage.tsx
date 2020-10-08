@@ -105,12 +105,13 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         if (!editorInstance) {
             return
         }
+        editorInstance.addCommand(Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter, triggerSearch)
         const disposable = editorInstance.onDidChangeModelContent(() => {
             const query = editorInstance.getValue()
             searchQuery.next(query)
         })
         return () => disposable.dispose()
-    }, [editorInstance, searchQuery, props.history])
+    }, [editorInstance, searchQuery, props.history, triggerSearch])
 
     const onExpandAllResultsToggle = useCallback((): void => {
         setAllExpanded(allExpanded => {
