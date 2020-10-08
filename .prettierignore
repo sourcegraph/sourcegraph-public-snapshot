@@ -1,7 +1,7 @@
 .bin/
 *.bundle.*
 client/phabricator/scripts/loader.js
-browser/build
+client/browser/build
 **/package.json
 **/coverage
 internal/db/schema.md
@@ -13,8 +13,8 @@ vendor/
 .nyc_output/
 out/
 dist/
-shared/src/graphqlschema.ts
-web/src/schema/
+client/shared/src/graphqlschema.ts
+client/web/src/schema/
 ts-node-*
 testdata
 .github/*
