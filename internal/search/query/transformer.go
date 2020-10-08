@@ -661,6 +661,21 @@ func concatRevFilters(nodes []Node) []Node {
 	})
 }
 
+// labelStructural converts Literal labels to Structural labels. Structural
+// queries are parsed the same as literal queries, we just convert the labels as
+// a postprocessing step to keep the parser lean.
+func labelStructural(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		annotation.Labels.unset(Literal)
+		annotation.Labels.set(Structural)
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+}
+
 // ellipsesForHoles substitutes ellipses ... for :[_] holes in structural search queries.
 func ellipsesForHoles(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
