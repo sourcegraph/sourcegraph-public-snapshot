@@ -92,7 +92,9 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                             <li>Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                         </ul>
                     </li>
-                    <li>Aggregate daily, weekly, and monthly latencies (in ms) of search queries</li>
+                    <li>
+                        Aggregate daily, weekly, and monthly latencies (in ms) of search queries
+                    </li>
                     <li>
                         Aggregate daily, weekly, and monthly counts of:
                         <ul>
