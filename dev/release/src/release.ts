@@ -51,16 +51,20 @@ interface Config {
 }
 
 type StepID =
-    | 'add-timeline-to-calendar'
     | 'help'
+    // start release process
+    | 'add-timeline-to-calendar'
     | 'tracking-issue:announce'
     | 'tracking-issue:create'
-    | 'changelog:cut'
-    | 'release-candidate:create'
-    | 'release-candidate:dev-announce'
-    | 'qa-start:dev-announce'
     | 'patch:issue'
+    // branch cut
+    | 'changelog:cut'
+    // candidates
+    | 'release-candidate:create'
+    // release
+    | 'release:status'
     | 'release:publish'
+    // testing
     | '_test:google-calendar'
     | '_test:slack'
 
@@ -283,34 +287,6 @@ Key dates:
         },
     },
     {
-        id: 'release-candidate:dev-announce',
-        run: async (config, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-
-            const query = `is:open is:issue milestone:${config.majorVersion}.${config.minorVersion} label:release-blocker`
-            const issues = await listIssues(await getAuthenticatedGitHubClient(), query)
-            const issuesURL = `https://github.com/issues?q=${encodeURIComponent(query)}`
-            const releaseBlockerMessage =
-                issues.length === 0
-                    ? 'There are currently ZERO release blocking issues'
-                    : issues.length === 1
-                    ? `There is 1 release-blocking issue: ${issuesURL}`
-                    : `There are ${issues.length} release-blocking issues: ${issuesURL}`
-
-            const message = `:captain: Release \`${version}\` has been cut :captain:
-
-- Please ensure \`CHANGELOG.md\` on \`main\` is up-to-date.
-- Run this release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
-- It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
-- ${releaseBlockerMessage}
-            `
-            await postMessage(message, config.slackAnnounceChannel)
-        },
-    },
-    {
         id: 'patch:issue',
         run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
@@ -338,6 +314,30 @@ Key dates:
                 slackAnnounceChannel
             )
             console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+        },
+    },
+    {
+        id: 'release:status',
+        run: async (config, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+
+            const query = `is:open is:issue milestone:${config.majorVersion}.${config.minorVersion} label:release-blocker`
+            const issues = await listIssues(await getAuthenticatedGitHubClient(), query)
+            const issuesURL = `https://github.com/issues?q=${encodeURIComponent(query)}`
+            const releaseBlockerMessage =
+                issues.length === 0
+                    ? 'There are currently ZERO release blocking issues'
+                    : issues.length === 1
+                    ? `There is 1 release-blocking issue: ${issuesURL}`
+                    : `There are ${issues.length} release-blocking issues: ${issuesURL}`
+
+            const message = `:captain: ${version} release status update:
+
+- ${releaseBlockerMessage}`
+            await postMessage(message, config.slackAnnounceChannel)
         },
     },
     {

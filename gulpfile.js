@@ -8,8 +8,8 @@ const {
   watchGraphQlSchema,
   watchGraphQlOperations,
   watchSchema,
-} = require('./shared/gulpfile')
-const { webpack: webWebpack, webpackDevServer: webWebpackDevServer } = require('./web/gulpfile')
+} = require('./client/shared/gulpfile')
+const { webpack: webWebpack, webpackDevServer: webWebpackDevServer } = require('./client/web/gulpfile')
 
 /**
  * Generates files needed for builds.

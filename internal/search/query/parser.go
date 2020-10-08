@@ -1214,20 +1214,20 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 
 	switch options.SearchType {
 	case SearchTypeLiteral:
-		query = substituteConcat(query, " ")
+		query = substituteConcat(query, space)
 	case SearchTypeStructural:
 		if containsNegatedPattern(query) {
 			return nil, errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
-		query = substituteConcat(query, " ")
+		query = substituteConcat(query, space)
 		query = ellipsesForHoles(query)
 	case SearchTypeRegex:
 		query = escapeParensHeuristic(query)
+		query = substituteConcat(query, fuzzyRegexp)
 	}
 
 	if options.Globbing {

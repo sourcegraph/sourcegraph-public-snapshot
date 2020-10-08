@@ -232,30 +232,50 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 
 func TestSubstituteConcat(t *testing.T) {
 	cases := []struct {
-		input string
-		want  string
+		input  string
+		concat func([]Pattern) Pattern
+		want   string
 	}{
 		{
-			input: "a b c d e f",
-			want:  `"a b c d e f"`,
+			input:  "a b c d e f",
+			concat: space,
+			want:   `"a b c d e f"`,
 		},
 		{
-			input: "a (b and c) d",
-			want:  `"a" (and "b" "c") "d"`,
+			input:  "a (b and c) d",
+			concat: space,
+			want:   `"a" (and "b" "c") "d"`,
 		},
 		{
-			input: "a b (c and d) e f (g or h) (i j k)",
-			want:  `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
+			input:  "a b (c and d) e f (g or h) (i j k)",
+			concat: space,
+			want:   `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
 		},
 		{
-			input: "(((a b c))) and d",
-			want:  `(and "(((a b c)))" "d")`,
+			input:  "(((a b c))) and d",
+			concat: space,
+			want:   `(and "(((a b c)))" "d")`,
+		},
+		{
+			input:  `foo\d "bar*"`,
+			concat: fuzzyRegexp,
+			want:   `"(foo\\d).*?(bar\\*)"`,
+		},
+		{
+			input:  `"bar*" foo\d "bar*" foo\d`,
+			concat: fuzzyRegexp,
+			want:   `"(bar\\*).*?(foo\\d).*?(bar\\*).*?(foo\\d)"`,
+		},
+		{
+			input:  "a b (c and d) e f (g or h) (i j k)",
+			concat: fuzzyRegexp,
+			want:   `"(a).*?(b)" (and "c" "d") "(e).*?(f)" (or "g" "h") "(i j k)"`,
 		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := prettyPrint(substituteConcat(query, " "))
+			got := prettyPrint(substituteConcat(query, c.concat))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}

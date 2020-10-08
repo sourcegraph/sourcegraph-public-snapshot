@@ -36,7 +36,10 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Extensions](extensions/index.md)
 - [GraphQL API](api/graphql/index.md)
 - [Adopting](adopt/index.md)
-- [Contributing](dev/index.md)
+- [Development](dev/index.md)
+  - [Getting started](dev/getting-started/index.md)
+  - [How-to guides](dev/how-to/index.md)
+  - [Background information](dev/background-information/index.md)
 - <br/>
 - [★ Quick install](index.md#quickstart-guide)
 - [★ Search query syntax](user/search/queries.md)

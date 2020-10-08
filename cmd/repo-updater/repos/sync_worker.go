@@ -38,7 +38,6 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	if opts.WorkerInterval == 0 {
 		opts.WorkerInterval = 10 * time.Second
 	}
-
 	if opts.CleanupOldJobsInterval == 0 {
 		opts.CleanupOldJobsInterval = time.Hour
 	}
@@ -137,20 +136,21 @@ func runJobCleaner(ctx context.Context, db dbutil.DB, interval time.Duration) {
 	defer t.Stop()
 
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			_, err := db.ExecContext(ctx, `
+		_, err := db.ExecContext(ctx, `
 -- source: cmd/repo-updater/repos/sync_worker.go:runJobCleaner
 DELETE FROM external_service_sync_jobs
 WHERE
   finished_at < now() - INTERVAL '1 day'
   AND state IN ('completed', 'errored')
 `)
-			if err != nil && err != context.Canceled {
-				log15.Error("error while running job cleaner", "err", err)
-			}
+		if err != nil && err != context.Canceled {
+			log15.Error("error while running job cleaner", "err", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
 		}
 	}
 }
