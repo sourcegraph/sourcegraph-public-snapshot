@@ -11,11 +11,10 @@ import (
 )
 
 const (
-	tagExternalServiceID = "external_service_id"
-	tagFamily            = "family"
-	tagID                = "id"
-	tagState             = "state"
-	tagSuccess           = "success"
+	tagFamily  = "family"
+	tagID      = "id"
+	tagState   = "state"
+	tagSuccess = "success"
 )
 
 var (
@@ -27,32 +26,27 @@ var (
 	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_syncer_sync_last_time",
 		Help: "The last time a sync finished",
-	}, []string{tagExternalServiceID, tagFamily})
+	}, []string{tagFamily})
 
 	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_start_sync",
 		Help: "A sync was started",
-	}, []string{tagExternalServiceID, tagFamily})
+	}, []string{tagFamily})
 
 	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_synced_repos_total",
 		Help: "Total number of synced repositories",
-	}, []string{tagState, tagExternalServiceID, tagFamily})
+	}, []string{tagState, tagFamily})
 
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_sync_errors_total",
 		Help: "Total number of sync errors",
-	}, []string{tagExternalServiceID, tagFamily})
+	}, []string{tagFamily})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
 		Help: "Time spent syncing",
-	}, []string{tagSuccess, tagExternalServiceID, tagFamily})
-
-	syncBackoffDuration = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_syncer_sync_backoff_duration_seconds",
-		Help: "Backoff duration after a sync",
-	}, []string{tagExternalServiceID})
+	}, []string{tagSuccess, tagFamily})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_purge_success",
