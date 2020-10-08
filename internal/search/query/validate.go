@@ -56,14 +56,6 @@ func containsPattern(node Node) bool {
 	})
 }
 
-// returns true if descendent of node contains and/or expressions.
-func containsAndOrExpression(nodes []Node) bool {
-	return exists(nodes, func(node Node) bool {
-		term, ok := node.(Operator)
-		return ok && (term.Kind == And || term.Kind == Or)
-	})
-}
-
 // ContainsAndOrKeyword returns true if this query contains or- or and-
 // keywords. It is a temporary signal to determine whether we can fallback to
 // the older existing search functionality.
@@ -135,34 +127,6 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 	}
 
 	return parameters, pattern, nil
-}
-
-// isPureSearchPattern implements a heuristic that returns true if buf, possibly
-// containing whitespace or balanced parentheses, can be treated as a search
-// pattern in the and/or grammar.
-func isPureSearchPattern(buf []byte) bool {
-	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the parensAsPatterns heuristic.
-	try := &parser{buf: buf}
-	result, err := try.parseOr()
-	if err != nil {
-		// This is not an and/or expression, but it is balanced. It
-		// could be, e.g., (foo or). Reject this sort of pattern for now.
-		return false
-	}
-	if try.balanced != 0 {
-		return false
-	}
-	if containsAndOrExpression(result) {
-		// The balanced string is an and/or expression in our grammar,
-		// so it cannot be interpreted as a search pattern.
-		return false
-	}
-	if !isPatternExpression(newOperator(result, Concat)) {
-		// The balanced string contains other parameters, like
-		// "repo:foo", which are not search patterns.
-		return false
-	}
-	return true
 }
 
 // parseBool is like strconv.ParseBool except that it also accepts y, Y, yes,
