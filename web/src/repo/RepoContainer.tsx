@@ -57,6 +57,7 @@ import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { IS_CHROME } from '../marketing/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -415,6 +416,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
             {showExtensionAlert && (
                 <InstallBrowserExtensionAlert
+                    isChrome={IS_CHROME}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={repoOrError.externalURLs}
                 />

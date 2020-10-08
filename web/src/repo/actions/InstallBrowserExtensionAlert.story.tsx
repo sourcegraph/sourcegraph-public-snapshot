@@ -6,40 +6,64 @@ import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 
 const onAlertDismissed = action('onAlertDismissed')
 
-const { add } = storiesOf('web/repo/actions', module).addDecorator(story => (
+const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionAlert', module).addDecorator(story => (
     <div className="container mt-3">{story()}</div>
 ))
 
-add('InstallBrowserExtensionAlert (GitHub)', () => (
-    <WebStory>
-        {() => (
-            <InstallBrowserExtensionAlert
-                onAlertDismissed={onAlertDismissed}
-                externalURLs={[
-                    {
-                        __typename: 'ExternalLink',
-                        url: 'https://github.com/sourcegraph/sourcegraph',
-                        serviceType: 'github',
-                    },
-                ]}
-            />
-        )}
-    </WebStory>
-))
+// Disable Chromatic for the non-GitHub alerts since they are mostly the same
 
-add('InstallBrowserExtensionAlert (GitLab)', () => (
-    <WebStory>
-        {() => (
-            <InstallBrowserExtensionAlert
-                onAlertDismissed={onAlertDismissed}
-                externalURLs={[
-                    {
-                        __typename: 'ExternalLink',
-                        url: 'https://gitlab.com/rluna-open-source/code-management/sourcegraph/sourcegraph',
-                        serviceType: 'gitlab',
-                    },
-                ]}
-            />
-        )}
-    </WebStory>
-))
+const services = ['github', 'gitlab', 'phabricator', 'bitbucketServer'] as const
+
+for (const serviceType of services) {
+    add(
+        `${serviceType} (Chrome)`,
+        () => (
+            <WebStory>
+                {() => (
+                    <InstallBrowserExtensionAlert
+                        isChrome={true}
+                        onAlertDismissed={onAlertDismissed}
+                        externalURLs={[
+                            {
+                                __typename: 'ExternalLink',
+                                url: '',
+                                serviceType,
+                            },
+                        ]}
+                    />
+                )}
+            </WebStory>
+        ),
+        {
+            chromatic: {
+                disable: serviceType !== 'github',
+            },
+        }
+    )
+
+    add(
+        `${serviceType} (non-Chrome)`,
+        () => (
+            <WebStory>
+                {() => (
+                    <InstallBrowserExtensionAlert
+                        isChrome={false}
+                        onAlertDismissed={onAlertDismissed}
+                        externalURLs={[
+                            {
+                                __typename: 'ExternalLink',
+                                url: '',
+                                serviceType,
+                            },
+                        ]}
+                    />
+                )}
+            </WebStory>
+        ),
+        {
+            chromatic: {
+                disable: serviceType !== 'github',
+            },
+        }
+    )
+}

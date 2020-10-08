@@ -32,10 +32,9 @@ exports[`InstallBrowserExtensionAlert GitHub 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence while browsing files and reading
-         
-        PR
-        s on 
+        Get code intelligence 
+        while browsing files and reading PRs
+         on 
         GitHub
          or any other connected code host.
          
@@ -95,10 +94,9 @@ exports[`InstallBrowserExtensionAlert GitLab 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence while browsing files and reading
-         
-        MR
-        s on 
+        Get code intelligence 
+        while browsing files and reading MRs
+         on 
         GitLab
          or any other connected code host.
          
