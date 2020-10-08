@@ -9,11 +9,11 @@ Sourcegraph development is open source at:
 
 ## [Getting started](getting-started/index.md)
 
-- [Quickstart](quickstart.md)
+Helpful tutorials for developers getting set up to work on the Sourcegraph code base for the first time.
 
 ## [How-to guides](how-to/index.md)
 
--
+
 
 ## Concepts
 
@@ -50,3 +50,4 @@ Sourcegraph development is open source at:
 
 - [Open source FAQ](https://about.sourcegraph.com/community/faq)
 - [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
+

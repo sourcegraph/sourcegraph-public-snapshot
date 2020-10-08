@@ -1,5 +1,7 @@
 # Configure PostgreSQL
 
+TODO: Can this be deprecated and/or combined in favor of [quickstart step 2](quickstart_2_initialize_database.md)?
+
 ## Initialize
 
 ### 1. Install PostgreSQL
