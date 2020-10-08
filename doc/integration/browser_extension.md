@@ -42,21 +42,10 @@ The Sourcegraph extension adds a search engine shortcut to your web browser that
 
 To install this search engine shortcut manually, and for more information, see "[Browser search engine shortcuts](browser_search_engine.md)".
 
-## Configuring the browser extension to use a private Sourcegraph instance
+## Make it work on your code host
 
-![Sourcegraph search shortcut](https://sourcegraphstatic.com/ConfigureSourcegraphInstanceUse.gif)
-
-By default, the browser extension communicates with [Sourcegraph.com](https://sourcegraph.com), which has only public code.
-
-To use the browser extension with a different Sourcegraph instance:
-
-1. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
-1. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`).
-1. Hit return/enter and the extension will indicate its connection status.
-
-## Enabling the browser extension on your code host
-
-By default, the Sourcegraph browser extension will only provide code intelligence on [github.com](https://github.com/). It needs additional permissions in order to run on other code hosts.
+- [github.com](https://github.com/) - no action required.
+- GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - additional permissions are needed.
 
 To grant these permissions:
 
@@ -64,6 +53,21 @@ To grant these permissions:
 1. Right-click the Sourcegraph icon in the browser extension toolbar.
 1. Click "Enable Sourcegraph on this domain".
 1. Click "Allow" in the permissions request popup.
+
+## Make it work for private code
+
+![Configure Sourcegraph Instance](https://sourcegraphstatic.com/ConfigureSourcegraphInstanceUse.gif)
+
+By default, the browser extension communicates with [Sourcegraph.com](https://sourcegraph.com), which has only public code.
+
+To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect it to the extension.
+
+Follow the instructions:
+
+1. [Install Sourcegraph](https://docs.sourcegraph.com/admin/install). Skip this step if you already have a private Sourcegraph instance.
+2. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+3. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`)
+4. Make sure the connection status shows "Looks good!"
 
 ## Troubleshooting
 
