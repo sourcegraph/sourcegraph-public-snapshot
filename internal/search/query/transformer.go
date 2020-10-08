@@ -438,7 +438,7 @@ func substituteOrForRegexp(nodes []Node) []Node {
 		}
 		return false
 	}
-	new := []Node{}
+	newNode := []Node{}
 	for _, node := range nodes {
 		switch v := node.(type) {
 		case Operator:
@@ -449,19 +449,19 @@ func substituteOrForRegexp(nodes []Node) []Node {
 					values = append(values, node.(Pattern).Value)
 				}
 				valueString := "(" + strings.Join(values, ")|(") + ")"
-				new = append(new, Pattern{Value: valueString})
+				newNode = append(newNode, Pattern{Value: valueString})
 				if len(rest) > 0 {
 					rest = substituteOrForRegexp(rest)
-					new = newOperator(append(new, rest...), Or)
+					newNode = newOperator(append(newNode, rest...), Or)
 				}
 			} else {
-				new = append(new, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
+				newNode = append(newNode, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}
 		case Parameter, Pattern:
-			new = append(new, node)
+			newNode = append(newNode, node)
 		}
 	}
-	return new
+	return newNode
 }
 
 func fuzzyRegexp(patterns []Pattern) Pattern {
@@ -538,7 +538,6 @@ func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Nod
 					}
 					if len(ps) > 0 {
 						newNode = append(newNode, callback(ps))
-						ps = []Pattern{}
 					}
 				} else {
 					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
