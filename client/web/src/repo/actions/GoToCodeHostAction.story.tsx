@@ -49,65 +49,83 @@ add('GitHub', () => (
     </WebStory>
 ))
 
-add('GitLab', () => (
-    <WebStory>
-        {() => {
-            const serviceType = 'gitlab'
-            const targetID = `view-on-${serviceType}`
-            const [open, setOpen] = useState(false)
-            useEffect(() => {
-                setTimeout(() => setOpen(true), 0)
-            }, [])
-            return (
-                <>
-                    <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
-                        <GitlabIcon className="icon-inline" />
-                    </button>
-                    <InstallBrowserExtensionPopover
-                        url=""
-                        serviceType={serviceType}
-                        onClose={onClose}
-                        onRejection={onRejection}
-                        onClickInstall={onClickInstall}
-                        targetID={targetID}
-                        isOpen={open}
-                        toggle={noop}
-                    />
-                </>
-            )
-        }}
-    </WebStory>
-))
+// Disable Chromatic for the non-GitHub popovers since they are mostly the same
 
-add('Phabricator', () => (
-    <WebStory>
-        {() => {
-            const serviceType = 'phabricator'
-            const targetID = `view-on-${serviceType}`
-            const [open, setOpen] = useState(false)
-            useEffect(() => {
-                setTimeout(() => setOpen(true), 0)
-            }, [])
-            return (
-                <>
-                    <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
-                        <PhabricatorIcon className="icon-inline" />
-                    </button>
-                    <InstallBrowserExtensionPopover
-                        url=""
-                        serviceType={serviceType}
-                        onClose={onClose}
-                        onRejection={onRejection}
-                        onClickInstall={onClickInstall}
-                        targetID={targetID}
-                        isOpen={open}
-                        toggle={noop}
-                    />
-                </>
-            )
-        }}
-    </WebStory>
-))
+add(
+    'GitLab',
+    () => (
+        <WebStory>
+            {() => {
+                const serviceType = 'gitlab'
+                const targetID = `view-on-${serviceType}`
+                const [open, setOpen] = useState(false)
+                useEffect(() => {
+                    setTimeout(() => setOpen(true), 0)
+                }, [])
+                return (
+                    <>
+                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                            <GitlabIcon className="icon-inline" />
+                        </button>
+                        <InstallBrowserExtensionPopover
+                            url=""
+                            serviceType={serviceType}
+                            onClose={onClose}
+                            onRejection={onRejection}
+                            onClickInstall={onClickInstall}
+                            targetID={targetID}
+                            isOpen={open}
+                            toggle={noop}
+                        />
+                    </>
+                )
+            }}
+        </WebStory>
+    ),
+    {
+        chromatic: {
+            disable: true,
+        },
+    }
+)
+
+add(
+    'Phabricator',
+    () => (
+        <WebStory>
+            {() => {
+                const serviceType = 'phabricator'
+                const targetID = `view-on-${serviceType}`
+                const [open, setOpen] = useState(false)
+                useEffect(() => {
+                    setTimeout(() => setOpen(true), 0)
+                }, [])
+                return (
+                    <>
+                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                            <PhabricatorIcon className="icon-inline" />
+                        </button>
+                        <InstallBrowserExtensionPopover
+                            url=""
+                            serviceType={serviceType}
+                            onClose={onClose}
+                            onRejection={onRejection}
+                            onClickInstall={onClickInstall}
+                            targetID={targetID}
+                            isOpen={open}
+                            toggle={noop}
+                        />
+                    </>
+                )
+            }}
+        </WebStory>
+    ),
+    {
+        chromatic: {
+            disable: true,
+        },
+    }
+)
 
 add(
     'Bitbucket server',
