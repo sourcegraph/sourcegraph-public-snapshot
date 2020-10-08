@@ -11,7 +11,7 @@ import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { Form } from '../../components/Form'
+import { Form } from '../../../../branded/src/components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { PersonLink } from '../../person/PersonLink'

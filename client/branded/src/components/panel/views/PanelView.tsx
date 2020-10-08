@@ -1,15 +1,18 @@
 import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { PanelViewWithComponent, PanelViewProviderRegistrationOptions } from '../../api/client/services/panelViews'
-import { FetchFileCtx } from '../../components/CodeExcerpt'
-import { Markdown } from '../../components/Markdown'
-import { ExtensionsControllerProps } from '../../extensions/controller'
-import { SettingsCascadeProps } from '../../settings/settings'
-import { renderMarkdown } from '../../util/markdown'
+import {
+    PanelViewWithComponent,
+    PanelViewProviderRegistrationOptions,
+} from '../../../../../shared/src/api/client/services/panelViews'
+import { FetchFileCtx } from '../../../../../shared/src/components/CodeExcerpt'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
+import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
-import { VersionContextProps } from '../../search/util'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
     panelView: PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>

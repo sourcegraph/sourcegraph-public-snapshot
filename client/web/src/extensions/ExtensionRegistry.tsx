@@ -21,7 +21,7 @@ import {
 import { configureExtensionRegistry, ConfiguredExtensionRegistry } from './extensions'
 import { ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
 import { Link } from 'react-router-dom'
-import { Form } from '../components/Form'
+import { Form } from '../../../branded/src/components/Form'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 import { ThemeProps } from '../../../shared/src/theme'
 

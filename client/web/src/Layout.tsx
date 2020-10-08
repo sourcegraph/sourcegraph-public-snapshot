@@ -6,7 +6,7 @@ import { ActivationProps } from '../../shared/src/components/activation/Activati
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
-import { ResizablePanel } from '../../shared/src/panel/Panel'
+import { ResizablePanel } from '../../branded/src/components/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ErrorLike } from '../../shared/src/util/errors'

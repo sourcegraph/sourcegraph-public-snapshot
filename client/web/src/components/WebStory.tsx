@@ -5,7 +5,7 @@ import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '../../../shared/src/tele
 import { ThemeProps } from '../../../shared/src/theme'
 import _webStyles from '../SourcegraphWebApp.scss'
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
-import { Tooltip } from './tooltip/Tooltip'
+import { Tooltip } from '../../../branded/src/components/tooltip/Tooltip'
 
 export interface WebStoryProps extends MemoryRouterProps {
     children: React.FunctionComponent<

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Form } from '../../../components/Form'
+import { Form } from '../../../../../branded/src/components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import MinusIcon from 'mdi-react/MinusIcon'
