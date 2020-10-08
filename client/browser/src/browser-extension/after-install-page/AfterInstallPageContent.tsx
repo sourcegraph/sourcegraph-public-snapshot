@@ -1,6 +1,6 @@
 import React from 'react'
 import LockIcon from 'mdi-react/LockIcon'
-import GitHubIcon from 'mdi-react/GitHubIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -45,7 +45,7 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                     <div className="col-sm-6">
                         <div className="bg-2 rounded p-3 mb-3">
                             <h3 className="mb-3">
-                                <GitHubIcon className="icon-inline" /> github.com
+                                <GithubIcon className="icon-inline" /> github.com
                             </h3>
                             <p className="m-0">
                                 <CheckIcon className="icon-inline" /> No action required. Your extension works here by
@@ -64,7 +64,7 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                                     <PhabricatorIcon className="icon-inline" /> Phabricator
                                 </div>
                                 <div>
-                                    <GitHubIcon className="icon-inline" /> GitHub Enterprise
+                                    <GithubIcon className="icon-inline" /> GitHub Enterprise
                                 </div>
                             </h3>
                             <p>Your extension needs explicit permissions to your code host:</p>
