@@ -2054,6 +2054,10 @@ type Query {
         """
         query: String
         """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
         Return repositories whose names are in the list.
         """
         names: [String!]
