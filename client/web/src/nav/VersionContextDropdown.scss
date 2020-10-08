@@ -3,10 +3,18 @@
 .version-context-dropdown {
     width: max-content;
 
+    &:first-child &__button {
+        border-top-left-radius: 2px;
+        border-bottom-left-radius: 2px;
+    }
+
+    &:not(:first-child) .version-context-dropdown__button {
+        border-left: 1px solid $gray-17 !important;
+    }
+
     &__button {
         display: flex;
         border-radius: 0;
-        border-left: 1px solid $gray-17 !important;
 
         &-text {
             font-size: 10px;
@@ -32,13 +40,16 @@
     }
 
     &__popover {
-        padding: 0.5rem;
         color: var(--link-color);
         min-width: 30rem;
         max-width: 30rem;
         min-height: fit-content;
         max-height: 20rem;
         overflow-y: auto;
+
+        &:focus-within {
+            outline: none;
+        }
     }
 
     &__option {
@@ -81,7 +92,7 @@
             background-color: $color-light-bg-2;
         }
 
-        &__button {
+        &:not(:first-child) .version-context-dropdown__button {
             border-left: 1px solid $gray-07 !important;
         }
 
