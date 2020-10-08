@@ -39,8 +39,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Development](dev/index.md)
   - [Getting started](dev/getting-started/index.md)
   - [How-to guides](dev/how-to/index.md)
-  - [Concepts](dev/concepts/index.md)
-  - [Reference](dev/reference/index.md)
+  - [Background information](dev/background-information/index.md)
 - <br/>
 - [★ Quick install](index.md#quickstart-guide)
 - [★ Search query syntax](user/search/queries.md)

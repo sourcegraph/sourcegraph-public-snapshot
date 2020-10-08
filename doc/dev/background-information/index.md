@@ -1,4 +1,4 @@
-# Concepts
+# Background information
 
 ## Overview
 
