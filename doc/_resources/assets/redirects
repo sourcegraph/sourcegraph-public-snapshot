@@ -86,7 +86,6 @@
 /dev/architecture/life-of-a-ping         /dev/background-information/architecture/life-of-a-ping 308
 /dev/architecture/life-of-a-repository   /dev/background-information/architecture/life-of-a-repository 308
 /dev/architecture/search-pagination      /dev/background-information/architecture/search-pagination 308
-
 /dev/architecture/architecture.dot	/dev/background-information/architecture/architecture.dot 308
 /dev/architecture/architecture.svg	/dev/background-information/architecture/architecture.svg 308
 /dev/campaigns_database_layout.dot	/dev/background-information/campaigns/campaigns_database_layout.dot 308
