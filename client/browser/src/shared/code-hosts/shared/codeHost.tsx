@@ -582,7 +582,7 @@ export function handleCodeHost({
     // This information will be used to alert the user when using Sourcegraph Cloud
     // while on a private repository.
     const isPrivateRepo = codeHost?.getContext()?.privateRepository
-    browser.runtime.sendMessage({ type: 'notifyPrivateRepo', payload: isPrivateRepo }).catch(noop)
+    browser.runtime.sendMessage({ type: 'notifyPrivateRepository', payload: isPrivateRepo }).catch(noop)
 
     const addedElements = mutations.pipe(
         concatAll(),

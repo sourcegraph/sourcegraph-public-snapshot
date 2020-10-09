@@ -77,6 +77,12 @@ initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
+    /**
+     * For each tab, we store a flag if we know that we are on a private
+     * repository. The content script notifies the background page if it's on a
+     * private repository by `notifyPrivateRepository` message.
+     */
+    const tabPrivateRepositoryCache = new Map<number, boolean>()
 
     // Open installation page after the extension was installed
     browser.runtime.onInstalled.addListener(event => {
@@ -145,19 +151,23 @@ async function main(): Promise<void> {
         })
     }
 
-    // Inject content script whenever a new tab was opened with a URL that we have permissions for
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+        if (changeInfo.status === 'loading') {
+            // A new URL is loading in the tab, so clear the cached private repository flag.
+            tabPrivateRepositoryCache.delete(tabId)
+            return
+        }
+
         if (
             changeInfo.status === 'complete' &&
             customServerOrigins.some(
                 origin => origin === '<all_urls>' || (!!tab.url && tab.url.startsWith(origin.replace('/*', '')))
             )
         ) {
+            // Inject content script whenever a new tab was opened with a URL for which we have permission
             await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
         }
     })
-
-    const tabPrivateRepositoryCache = new Map<number, boolean>()
 
     const handlers: BackgroundMessageHandlers = {
         async openOptionsPage(): Promise<void> {
@@ -183,6 +193,7 @@ async function main(): Promise<void> {
         notifyPrivateRepository(isPrivateRepository: boolean, sender: browser.runtime.MessageSender): void {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
+                console.log('Receiving notiftPrivateRepository')
                 tabPrivateRepositoryCache.set(tabId, isPrivateRepository)
             }
         },

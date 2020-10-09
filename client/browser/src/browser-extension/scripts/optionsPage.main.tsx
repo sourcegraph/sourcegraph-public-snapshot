@@ -67,7 +67,7 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
         throw new Error('Currently active tab has no URL')
     }
     const isPrivateRepository = (await browser.runtime.sendMessage({
-        type: 'checkPrivateRepo',
+        type: 'checkPrivateRepository',
         payload: id,
     })) as boolean
     const { host, protocol } = new URL(url)
