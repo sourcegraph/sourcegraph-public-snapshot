@@ -47,7 +47,7 @@
       ".ts"
     ],
     "include": [
-      "@(web|shared|browser)/src/**/*.ts?(x)"
+      "client/*/src/**/*.ts?(x)"
     ],
     "exclude": [
       "node_modules",
