@@ -72,7 +72,7 @@ const GitLabSchemaJSON = `{
         "type": "object",
         "title": "GitLabProject",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "oneOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to mirror.",
