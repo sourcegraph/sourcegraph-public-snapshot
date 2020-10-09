@@ -3,9 +3,8 @@ import '../../shared/polyfills'
 
 import React, { useEffect, useState } from 'react'
 import { render } from 'react-dom'
-import { from, noop, Observable, Subscription, combineLatest } from 'rxjs'
+import { from, noop, Observable, combineLatest } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../web-extension-api/runtime'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { initSentry } from '../../shared/sentry'
@@ -21,7 +20,7 @@ import {
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
 import { observeSourcegraphURL, isFirefox, getExtensionVersion } from '../../shared/util/context'
-import { catchError, map, mapTo, tap } from 'rxjs/operators'
+import { catchError, map, mapTo } from 'rxjs/operators'
 import { isExtension } from '../../shared/context'
 import { OptionsPage } from '../options-menu/OptionsPage'
 import { asError } from '../../../../shared/src/util/errors'
@@ -102,8 +101,6 @@ const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
     )
 }
 
-const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
-
 const observingIsActivated = observeStorageKey('sync', 'disableExtension').pipe(map(isDisabled => !isDisabled))
 const observingSourcegraphUrl = observeSourcegraphURL(true)
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues()
@@ -114,11 +111,11 @@ function handleToggleActivated(isActivated: boolean): void {
 
 function handleChangeOptionFlag(key: string, value: boolean): void {
     if (isOptionFlagKey(key)) {
-        featureFlags.set(key, value).then(noop, noop)
+        featureFlags.set(key, value).catch(noop)
     }
 }
 
-function buildRequestPermissionsHandler({ protocol, host }: NonNullable<TabStatus>) {
+function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
     return function requestPermissionsHandler(event: React.MouseEvent) {
         event.preventDefault()
         browser.permissions.request({ origins: [`${protocol}//${host}/*`] }).catch(noop)

@@ -7,12 +7,10 @@ import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { Observable } from 'rxjs'
 import { Toggle } from '../../../../branded/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
-import { noop } from 'lodash'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import { knownCodeHosts } from '../knownCodeHosts'
-import { MdiReactIconProps } from 'mdi-react'
 
 export interface OptionsPageProps {
     version: string
@@ -22,7 +20,7 @@ export interface OptionsPageProps {
     validateSourcegraphUrl: (url: string) => Observable<string | undefined>
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
-    permissionAlert?: { name: string; icon?: React.ComponentType<MdiReactIconProps> }
+    permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
     optionFlags: { key: string; label: string; value: boolean }[]
     onChangeOptionFlag: (key: string, value: boolean) => void
@@ -147,7 +145,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 }
 
 interface PermissionAlertProps {
-    icon?: React.ComponentType<MdiReactIconProps>
+    icon?: React.ComponentType<{ className?: string }>
     name: string
     onClickGrantPermissions?: React.MouseEventHandler
 }
@@ -170,7 +168,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent = props => (
+const PrivateRepositoryAlert: React.FunctionComponent = () => (
     <section className="options-page__section options-page__alert">
         <h3>
             <LockIcon className="icon-inline" />
