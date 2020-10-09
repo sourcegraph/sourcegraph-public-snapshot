@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { storiesOf } from '@storybook/react'
 import { OptionsPage, OptionsPageProps } from './OptionsPage'
-import optionsStyles from '../../options.scss'
+import brandedStyles from '../../branded.scss'
 import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
-import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')
@@ -20,12 +21,7 @@ const optionFlags: OptionsPageProps['optionFlags'] = [
 const requestPermissionsHandler = action('requestPermission')
 
 storiesOf('browser/Options/OptionsPage', module)
-    .addDecorator(story => (
-        <>
-            <style>{optionsStyles}</style>
-            <div>{story()}</div>
-        </>
-    ))
+    .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
     .add('Default', () => (
         <OptionsPage
             version={text('version', '0.0.0')}
@@ -83,7 +79,7 @@ storiesOf('browser/Options/OptionsPage', module)
             optionFlags={optionFlags}
             onChangeOptionFlag={onChangeOptionFlag}
             currentHost="github.com"
-            permissionAlert={{ name: 'GitHub', icon: MicrosoftGithubIcon }}
+            permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
             requestPermissionsHandler={requestPermissionsHandler}
         />
     ))

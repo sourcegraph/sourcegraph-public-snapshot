@@ -1,7 +1,7 @@
 import { MdiReactIconProps } from 'mdi-react'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import { PhabricatorIcon } from '../../../shared/src/components/icons'
 
 export interface KnownCodeHost {
@@ -14,7 +14,7 @@ export const knownCodeHosts: KnownCodeHost[] = [
     {
         host: 'github.com',
         name: 'GitHub',
-        icon: MicrosoftGithubIcon,
+        icon: GithubIcon,
     },
     {
         host: 'gitlab.com',

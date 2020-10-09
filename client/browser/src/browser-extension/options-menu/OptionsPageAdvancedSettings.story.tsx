@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { storiesOf } from '@storybook/react'
-import optionsStyles from '../../options.scss'
+import brandedStyles from '../../branded.scss'
 
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 
@@ -13,7 +13,7 @@ const optionFlags = [
 storiesOf('browser/Options/OptionsPageAdvancedSettings', module)
     .addDecorator(story => (
         <>
-            <style>{optionsStyles}</style>
+            <style>{brandedStyles}</style>
             <div className="options-page options-page--full">{story()}</div>
         </>
     ))

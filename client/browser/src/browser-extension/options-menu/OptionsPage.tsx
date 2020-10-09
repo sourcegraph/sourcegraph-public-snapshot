@@ -3,7 +3,6 @@ import { useInputValidation, deriveInputClassName } from '../../../../shared/src
 import { LoaderInput } from '../../../../branded/src/components/LoaderInput'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import classNames from 'classnames'
-import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { Observable } from 'rxjs'
 import { Toggle } from '../../../../branded/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
@@ -76,13 +75,14 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                             value={isActivated}
                             onToggle={onToggleActivated}
                             title={`Toggle to ${isActivated ? 'disable' : 'enable'} extension`}
+                            ariaLabel="Toggle browser extension"
                         />
                     </div>
                 </div>
                 <div className="options-page__version">v{version}</div>
             </section>
             <CodeHostsSection currentHost={currentHost} />
-            <section className="options-page__section">
+            <section className="options-page__section border-0">
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={preventDefault} noValidate={true}>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
@@ -121,7 +121,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
-            <section className="options-page__section pt-2">
+            <section className="options-page__section">
                 <p className="mb-0">
                     <button type="button" className="btn btn-link btn-sm p-0" onClick={toggleAdvancedSettings}>
                         <small>{showAdvancedSettings ? 'Hide' : 'Show'} advanced settings</small>
@@ -161,11 +161,11 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     onClickGrantPermissions,
 }) => (
     <section className="options-page__section options-page__alert">
-        <h6 className="d-flex align-items-center">
+        <h4>
             {Icon && <Icon className="icon-inline mr-2" />} <span>{name}</span>
-        </h6>
+        </h4>
         <p className="options-page__permission-text">
-            <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.
+            <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
         <button type="button" onClick={onClickGrantPermissions} className="btn btn-sm btn-primary">
             <small>Grant permissions</small>
@@ -175,31 +175,38 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
 
 const PrivateRepositoryAlert: React.FunctionComponent = () => (
     <section className="options-page__section options-page__alert">
-        <h6 className="d-flex align-items-center">
+        <h4>
             <LockIcon className="icon-inline mr-2" />
             Private repository
-        </h6>
+        </h4>
         <p>
             To use the browser extension with your private repositories, you need to set up a{' '}
             <strong>private Sourcegraph instance</strong> and connect it to the extension.
         </p>
         <ol>
             <li>
-                <a href="#">Install and configure Sourcegraph</a>. Skip this step if you already have a private
-                Sourcegraph instance.
+                <a href="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
+                    Install and configure Sourcegraph
+                </a>
+                . Skip this step if you already have a private Sourcegraph instance.
             </li>
-            <li>Click the Sourcegraph extension icon in the browser toolbar to open the settings page</li>
             <li>
-                Enter the URL (including the protocol) of your Sourcegraph instance (such as
-                https://sourcegraph.example.com above).
+                Click the Sourcegraph extension icon in the browser toolbar to open the settings page to bring up this
+                popup again.
             </li>
-            <li>Make sure that the status shows 'connected'.</li>
+            <li>
+                Enter the URL (including the protocol) of your Sourcegraph instance above, e.g.{' '}
+                <q>https://sourcegraph.example.com</q>.
+            </li>
+            <li>
+                Make sure that the status says <q>Looks good!</q>.
+            </li>
         </ol>
     </section>
 )
 
 const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ currentHost }) => (
-    <section className="options-page__section options-page__code-hosts">
+    <section className="options-page__section">
         <p>Get code intelligence tooltips while browsing files and reading PRs on your code host.</p>
         <div>
             {knownCodeHosts.map(({ host, icon: Icon }) => (
@@ -207,7 +214,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                     key={host}
                     className={classNames('code-hosts-section__icon', {
                         // Use `endsWith` in order to match subdomains.
-                        'code-hosts-section__icon--highlighted': currentHost?.endsWith(host),
+                        'bg-4': currentHost?.endsWith(host),
                     })}
                 >
                     {Icon && <Icon />}
@@ -219,10 +226,10 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
 
 const SourcegraphCloudAlert: React.FunctionComponent = () => (
     <section className="options-page__section options-page__alert">
-        <h6 className="d-flex align-items-center">
+        <h4>
             <CheckCircleOutlineIcon className="icon-inline mr-2" />
             You're on Sourcegraph Cloud
-        </h6>
+        </h4>
         <p>Naturally, browser extension is not necessary to browse public code on Sourcegraph.com</p>
     </section>
 )
