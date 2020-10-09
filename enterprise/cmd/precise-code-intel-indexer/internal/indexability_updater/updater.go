@@ -2,8 +2,8 @@ package indexabilityupdater
 
 import (
 	"context"
-	"regexp"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/inconshreveable/log15"
