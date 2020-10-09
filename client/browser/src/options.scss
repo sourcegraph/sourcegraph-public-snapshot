@@ -4,6 +4,7 @@
 @import '../../shared/src/global-styles/icons.scss';
 @import '../../shared/src/components/LoaderInput.scss';
 @import '../../shared/src/components/Toggle.scss';
+@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -38,11 +39,6 @@ body {
         box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.15);
     }
 
-    &__header {
-        display: flex;
-        justify-content: space-between;
-    }
-
     &__section {
         padding: 1rem;
         /* border-top: 1px solid var(--color-border-2); */
@@ -52,7 +48,13 @@ body {
     }
 
     &__alert {
-        background-color: #f2f4f8;
+        border-style: solid;
+        border-width: 1px 0;
+        border-color: var(--color-border-2);
+    }
+
+    &__input {
+        height: calc(2rem + 2px);
     }
 
     &__split-section {
@@ -86,5 +88,5 @@ body {
 }
 
 .code-hosts-section__icon--highlighted {
-    background-color: rgba(0, 0, 0, 0.15);
+    background-color: $gray-02;
 }

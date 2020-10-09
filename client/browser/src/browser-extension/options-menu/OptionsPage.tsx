@@ -57,7 +57,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
             <section className="options-page__section">
-                <div className="options-page__header">
+                <div className="d-flex justify-content-between">
                     <SourcegraphLogo className="options-page__logo" />
                     <div>
                         <Toggle
@@ -71,11 +71,12 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             </section>
             <CodeHostsSection currentHost={currentHost} />
             <section className="options-page__section">
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <form>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                     <LoaderInput loading={urlState.loading} className={classNames(deriveInputClassName(urlState))}>
                         <input
-                            className="form-control"
+                            className="form-control options-page__input"
                             id="sourcegraph-url"
                             type="url"
                             pattern="^https://.*"
@@ -85,14 +86,14 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         />
                     </LoaderInput>
                     {urlState.loading ? (
-                        <small className="text-muted">Checking...</small>
+                        <small className="text-muted d-block mt-1">Checking...</small>
                     ) : urlState.kind === 'INVALID' ? (
                         <small className="invalid-feedback">{urlState.reason}</small>
                     ) : (
                         <small className="valid-feedback">Looks good!</small>
                     )}
                 </form>
-                <p>Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
+                <p className="mt-2">Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
                 <p>
                     <LinkOrButton>How do we keep your code private?</LinkOrButton>
                 </p>
@@ -197,7 +198,7 @@ const codeHosts = [
 
 const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ currentHost }) => (
     <section className="options-page__section options-page__alert">
-        <p>Get code intelligence tooltips while browsing files and reading PRs on your code host. ({currentHost})</p>
+        <p>Get code intelligence tooltips while browsing files and reading PRs on your code host. {currentHost}</p>
         <div>
             {codeHosts.map(({ host, icon: Icon }) => (
                 <span

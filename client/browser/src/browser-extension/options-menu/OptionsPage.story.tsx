@@ -3,9 +3,10 @@ import optionsStyles from '../../options.scss'
 import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
+import { noop } from 'lodash'
 
-const validateSourcegraphUrl = (url: string): Observable<string | undefined> => of(undefined)
-const invalidSourcegraphUrl = (url: string): Observable<string | undefined> => of('Arbitrary error string')
+const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
+const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')
 
 const optionFlags = [
     { key: 'one', label: 'Flag One', value: true },
@@ -30,6 +31,7 @@ storiesOf('browser/Options/OptionsPage', module)
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
             showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
+            currentHost="github.com"
         />
     ))
     .add('Interactive', () => {
@@ -43,6 +45,7 @@ storiesOf('browser/Options/OptionsPage', module)
                 sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
                 isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
                 isFullPage={true}
+                currentHost="github.com"
             />
         )
     })
