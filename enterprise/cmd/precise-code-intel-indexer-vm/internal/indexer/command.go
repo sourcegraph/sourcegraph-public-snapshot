@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -13,7 +12,7 @@ import (
 )
 
 // runCommand invokes the given command on the host machine.
-func runCommand(ctx context.Context, command ...string) error {
+func runCommand(ctx context.Context, logger *IndexJobLogger, command ...string) error {
 	if len(command) == 0 {
 		return fmt.Errorf("no command supplied")
 	}
@@ -31,12 +30,11 @@ func runCommand(ctx context.Context, command ...string) error {
 		return err
 	}
 
-	log15.Debug(fmt.Sprintf("Running command: %s", strings.Join(command, " ")))
+	log15.Info(fmt.Sprintf("Running command: %s", strings.Join(command, " ")))
 
-	wg := parallel(
-		func() { processStream("stdout", stdout) },
-		func() { processStream("stderr", stderr) },
-	)
+	wg := wgWrap(func() {
+		logger.RecordCommand(command, stdout, stderr)
+	})
 
 	if err := cmd.Start(); err != nil {
 		return err
@@ -68,28 +66,14 @@ func makeCommand(ctx context.Context, command ...string) (_ *exec.Cmd, stdout, s
 	return cmd, stdout, stderr, nil
 }
 
-// parallel runs each function in its own goroutine and returns a wait group that
-// blocks until all invocations have returned.
-func parallel(funcs ...func()) *sync.WaitGroup {
+func wgWrap(f func()) *sync.WaitGroup {
 	var wg sync.WaitGroup
+	wg.Add(1)
 
-	for _, f := range funcs {
-		wg.Add(1)
-
-		go func(f func()) {
-			defer wg.Done()
-			f()
-		}(f)
-	}
+	go func() {
+		defer wg.Done()
+		f()
+	}()
 
 	return &wg
-}
-
-// processStream prefixes and logs each line of the given reader.
-func processStream(prefix string, r io.Reader) {
-	scanner := bufio.NewScanner(r)
-
-	for scanner.Scan() {
-		log15.Debug(fmt.Sprintf("%s: %s", prefix, scanner.Text()))
-	}
 }

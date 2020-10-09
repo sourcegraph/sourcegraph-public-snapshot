@@ -3,6 +3,7 @@ package indexabilityupdater
 import (
 	"context"
 	"regexp"
+	"os"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -50,7 +51,7 @@ func NewUpdater(
 		minimumSearchCount:  minimumSearchCount,
 		minimumSearchRatio:  minimumSearchRatio,
 		minimumPreciseCount: minimumPreciseCount,
-		enableIndexingCNCF:  true,
+		enableIndexingCNCF:  os.Getenv("DISABLE_CNCF") == "",
 		limiter:             rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 	})
 }

@@ -2,15 +2,11 @@ import * as React from 'react'
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { OptionsMenu } from './OptionsMenu'
-import optionsStyles from '../../options.scss'
+import brandedStyles from '../../branded.scss'
+import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
 
 storiesOf('browser/Options/OptionsMenu', module)
-    .addDecorator(story => (
-        <>
-            <style>{optionsStyles}</style>
-            <div>{story()}</div>
-        </>
-    ))
+    .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
     .add('Default', () => (
         <OptionsMenu
             version="0.0.0"

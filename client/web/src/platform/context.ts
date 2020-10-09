@@ -17,7 +17,7 @@ import {
     UIRangeSpec,
 } from '../../../shared/src/util/url'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { Tooltip } from '../components/tooltip/Tooltip'
+import { Tooltip } from '../../../branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**

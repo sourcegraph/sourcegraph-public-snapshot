@@ -536,6 +536,7 @@ func computeDiffStat(ctx context.Context, c *campaigns.Changeset, repo gitserver
 	if err != nil {
 		return nil, err
 	}
+	defer iter.Close()
 
 	stat := &diff.Stat{}
 	for {

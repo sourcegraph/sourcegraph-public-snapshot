@@ -8,6 +8,10 @@
     border-style: solid;
     border-width: 0 0 1px;
 
+    &--alert {
+        border-width: 1px 0;
+    }
+
     &__action-list-item {
         // Have a small gap between buttons so they are visually distinct when pressed
         // stylelint-disable-next-line declaration-property-unit-whitelist

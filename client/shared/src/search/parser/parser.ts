@@ -70,11 +70,22 @@ export interface Quoted {
     quotedValue: string
 }
 
+/**
+ * Represents a C-style comment, terminated by a newline.
+ *
+ * Example: `// Oh hai`
+ */
+export interface Comment {
+    type: 'comment'
+    value: string
+}
+
 export type Token =
     | { type: 'whitespace' }
     | { type: 'openingParen' }
     | { type: 'closingParen' }
     | { type: 'operator' }
+    | Comment
     | Literal
     | Filter
     | Sequence
@@ -252,6 +263,11 @@ const operator = pattern(
     (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
 )
 
+const comment = pattern(
+    /\/\/.*/,
+    (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end) })
+)
+
 const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
 
 const filterDelimiter = character(':')
@@ -322,21 +338,32 @@ const filter: Parser<Filter> = (input, start) => {
     }
 }
 
+const baseTerms = [operator, filter, quoted, literal]
+
+const createParser = (terms: Parser<Exclude<Token, Sequence>>[]): Parser<Sequence> =>
+    zeroOrMore(
+        oneOf<Token>(
+            whitespace,
+            openingParen,
+            closingParen,
+            ...terms.map(token =>
+                followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
+            )
+        )
+    )
+
 /**
  * A {@link Parser} for a Sourcegraph search query.
  */
-const searchQuery = zeroOrMore(
-    oneOf<Token>(
-        whitespace,
-        openingParen,
-        closingParen,
-        ...[operator, filter, quoted, literal].map(token =>
-            followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
-        )
-    )
-)
+const searchQuery = createParser(baseTerms)
+
+/**
+ * A {@link Parser} for a Sourcegraph search query containing comments.
+ */
+const searchQueryWithComments = createParser([comment, ...baseTerms])
 
 /**
  * Parses a search query string.
  */
-export const parseSearchQuery = (query: string): ParserResult<Sequence> => searchQuery(query, 0)
+export const parseSearchQuery = (query: string, interpretComments?: boolean): ParserResult<Sequence> =>
+    interpretComments ? searchQueryWithComments(query, 0) : searchQuery(query, 0)

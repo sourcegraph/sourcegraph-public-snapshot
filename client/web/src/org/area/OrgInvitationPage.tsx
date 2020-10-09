@@ -10,7 +10,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../backend/graphql'
-import { Form } from '../../components/Form'
+import { Form } from '../../../../branded/src/components/Form'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

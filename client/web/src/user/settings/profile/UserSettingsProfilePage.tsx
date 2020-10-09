@@ -12,7 +12,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { refreshAuthenticatedUser } from '../../../auth'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
 import { queryGraphQL } from '../../../backend/graphql'
-import { Form } from '../../../components/Form'
+import { Form } from '../../../../../branded/src/components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'

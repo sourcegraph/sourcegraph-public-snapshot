@@ -203,7 +203,7 @@ func (r *firecrackerCommandFormatter) Teardown(ctx context.Context, commander Co
 		r.name,
 	)
 	if err := commander.Run(ctx, stopCommand...); err != nil {
-		log15.Warn("failed to stop firecracker vm", "name", r.name, "err", err)
+		log15.Warn("Failed to stop firecracker vm", "name", r.name, "err", err)
 	}
 
 	removeCommand := flatten(
@@ -212,7 +212,7 @@ func (r *firecrackerCommandFormatter) Teardown(ctx context.Context, commander Co
 		r.name,
 	)
 	if err := commander.Run(ctx, removeCommand...); err != nil {
-		log15.Warn("failed to remove firecracker vm", "name", r.name, "err", err)
+		log15.Warn("Failed to remove firecracker vm", "name", r.name, "err", err)
 	}
 
 	return nil

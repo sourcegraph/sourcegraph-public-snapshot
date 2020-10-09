@@ -161,10 +161,6 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	if err := campaignsEnabled(); err != nil {
-		return nil, err
-	}
-
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	publishedState := campaigns.ChangesetPublicationStatePublished

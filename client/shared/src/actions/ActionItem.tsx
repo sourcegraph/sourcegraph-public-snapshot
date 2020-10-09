@@ -7,7 +7,7 @@ import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators
 import { ExecuteCommandParams } from '../api/client/services/command'
 import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
-import { LinkOrButton } from '../components/LinkOrButton'
+import { ButtonLink } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -206,7 +206,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 : {}
 
         return (
-            <LinkOrButton
+            <ButtonLink
                 data-tooltip={
                     this.props.showInlineError && isErrorLike(this.state.actionOrError)
                         ? `Error: ${this.state.actionOrError.message}`
@@ -237,7 +237,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         <LoadingSpinner className={this.props.iconClassName} />
                     </div>
                 )}
-            </LinkOrButton>
+            </ButtonLink>
         )
     }
 

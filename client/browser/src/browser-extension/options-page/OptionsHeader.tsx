@@ -1,5 +1,5 @@
 import SettingsOutlineIcon from 'mdi-react/SettingsOutlineIcon'
-import { Toggle } from '../../../../shared/src/components/Toggle'
+import { Toggle } from '../../../../branded/src/components/Toggle'
 import * as React from 'react'
 
 export interface OptionsHeaderProps {

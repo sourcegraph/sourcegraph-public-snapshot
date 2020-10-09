@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as H from 'history'
 import { QueryState, submitSearch } from '../../helpers'
-import { Form } from '../../../components/Form'
+import { Form } from '../../../../../branded/src/components/Form'
 import { AddFilterRow } from './AddFilterRow'
 import { SelectedFiltersRow } from './SelectedFiltersRow'
 import { SearchButton } from '../SearchButton'

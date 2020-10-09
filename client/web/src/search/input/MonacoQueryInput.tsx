@@ -1,7 +1,7 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
-import { isPlainObject } from 'lodash'
+import { isEqual, isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
@@ -46,6 +46,9 @@ export interface MonacoQueryInputProps
 
     // Whether globbing is enabled for filters.
     globbing: boolean
+
+    // Whether comments are parsed and highlighted
+    interpretComments?: boolean
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -65,8 +68,11 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
 export function addSourcegraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
-    patternTypes: Observable<SearchPatternType>,
-    globbing: Observable<boolean>
+    options: {
+        patternType: SearchPatternType
+        globbing: boolean
+        interpretComments?: boolean
+    }
 ): Subscription {
     const subscriptions = new Subscription()
 
@@ -74,7 +80,7 @@ export function addSourcegraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions, globbing)
+    const providers = getProviders(searchQueries, fetchSuggestions, options)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -154,15 +160,6 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private componentUpdates = new ReplaySubject<MonacoQueryInputProps>(1)
     private searchQueries = this.componentUpdates.pipe(
         map(({ queryState }) => queryState.query),
-        distinctUntilChanged()
-    )
-    private patternTypes = this.componentUpdates.pipe(
-        map(({ patternType }) => patternType),
-        distinctUntilChanged()
-    )
-
-    private globbing = this.componentUpdates.pipe(
-        map(({ globbing }) => globbing),
         distinctUntilChanged()
     )
     private containerRefs = new Subject<HTMLElement | null>()
@@ -287,7 +284,22 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
         this.subscriptions.add(
-            addSourcegraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
+            this.componentUpdates
+                .pipe(
+                    map(({ patternType, globbing, interpretComments }) => ({
+                        patternType,
+                        globbing,
+                        interpretComments,
+                    })),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    switchMap(
+                        options =>
+                            new Observable(() =>
+                                addSourcegraphSearchCodeIntelligence(monaco, this.searchQueries, options)
+                            )
+                    )
+                )
+                .subscribe()
         )
     }
 

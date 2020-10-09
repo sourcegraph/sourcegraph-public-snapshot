@@ -17,14 +17,12 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
-import { IS_CHROME } from '../marketing/util'
 import { ThemeProps } from '../../../shared/src/theme'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
-import { RepoContainerContext } from './RepoContainer'
+import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
@@ -48,6 +46,7 @@ export interface RepoRevisionContainerContext
         PlatformContextProps,
         ThemeProps,
         TelemetryProps,
+        HoverThresholdProps,
         ActivationProps,
         Pick<
             RepoContainerContext,
@@ -77,6 +76,7 @@ interface RepoRevisionContainerProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
@@ -215,7 +215,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
     return (
         <div className="repo-revision-container">
-            {IS_CHROME && <ChromeExtensionToast />}
             <Switch>
                 {/* eslint-disable react/jsx-no-bind */}
                 {props.routes.map(

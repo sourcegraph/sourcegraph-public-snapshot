@@ -114,18 +114,21 @@ graphql-operations.ts
 # unignore node_modules itself
 !/client/web/node_modules
 !/client/shared/node_modules
+!/client/branded/node_modules
 !/client/browser/node_modules
 !/client/packages/sourcegraph-extension-api/node_modules
 !/client/packages/@sourcegraph/extension-api-types/node_modules
 # ignore everything inside node_modules
 /client/web/node_modules/*
 /client/shared/node_modules/*
+/client/branded/node_modules/*
 /client/browser/node_modules/*
 /client/packages/sourcegraph-extension-api/node_modules/*
 /client/packages/@sourcegraph/extension-api-types/node_modules/*
 # except .bin
 !/client/web/node_modules/.bin
 !/client/shared/node_modules/.bin
+!/client/branded/node_modules/.bin
 !/client/browser/node_modules/.bin
 !/client/packages/sourcegraph-extension-api/node_modules/.bin
 !/client/packages/@sourcegraph/extension-api-types/node_modules/.bin
