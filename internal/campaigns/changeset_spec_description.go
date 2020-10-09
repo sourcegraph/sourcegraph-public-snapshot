@@ -1,9 +1,81 @@
 package campaigns
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 )
+
+type Publish struct{ Val interface{} }
+
+// True is true if the enclosed value is a bool being true.
+func (p *Publish) True() bool {
+	if b, ok := p.Val.(bool); ok {
+		return b
+	}
+	return false
+}
+
+// False is true if the enclosed value is a bool being false.
+func (p Publish) False() bool {
+	if b, ok := p.Val.(bool); ok {
+		return !b
+	}
+	return false
+}
+
+// Draft is true if the enclosed value is a string being "draft".
+func (p Publish) Draft() bool {
+	if s, ok := p.Val.(string); ok {
+		return strings.EqualFold(s, "draft")
+	}
+	return false
+}
+
+// Valid returns whether the enclosed value is of any of the permitted types.
+func (p *Publish) Valid() bool {
+	return p.True() || p.False() || p.Draft()
+}
+
+func (p Publish) MarshalJSON() ([]byte, error) {
+	fmt.Printf("%+v\n", p.Val)
+	if !p.Valid() {
+		// return nil, errors.New("invalid value")
+		v := "null"
+		return []byte(v), nil
+	}
+	if p.True() {
+		v := "true"
+		return []byte(v), nil
+	}
+	if p.False() {
+		v := "false"
+		return []byte(v), nil
+	}
+	v := `"draft"`
+	return []byte(v), nil
+}
+
+func (p Publish) UnmarshalJSON(b []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	p.Val = v
+	return nil
+}
+
+func (p *Publish) UnmarshalGraphQL(input interface{}) error {
+	p.Val = input
+	return nil
+}
+
+func (p *Publish) ImplementsGraphQLType(name string) bool {
+	return name == "PublishedTriple"
+}
 
 type ChangesetSpecDescription struct {
 	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
@@ -23,8 +95,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
-	Published bool `json:"published,omitempty"`
-	Draft     bool `json:"draft,omitempty"`
+	Published Publish `json:"published,omitempty"`
 }
 
 // Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.

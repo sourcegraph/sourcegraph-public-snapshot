@@ -508,7 +508,7 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
-		if curr.Spec.Published {
+		if curr.Spec.Published.True() {
 			action.actionType = actionPublish
 		}
 
@@ -748,9 +748,6 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 	if previous.Spec.BaseRef != current.Spec.BaseRef {
 		delta.baseRefChanged = true
 	}
-	if previous.Spec.Draft != current.Spec.Draft {
-		delta.draftChanged = true
-	}
 
 	// Diff
 	currentDiff, err := current.Spec.Diff()
@@ -811,7 +808,6 @@ type changesetSpecDelta struct {
 	titleChanged         bool
 	bodyChanged          bool
 	baseRefChanged       bool
-	draftChanged         bool
 	diffChanged          bool
 	commitMessageChanged bool
 	authorNameChanged    bool
@@ -825,7 +821,7 @@ func (d *changesetSpecDelta) NeedCommitUpdate() bool {
 }
 
 func (d *changesetSpecDelta) NeedCodeHostUpdate() bool {
-	return d.titleChanged || d.bodyChanged || d.baseRefChanged || d.draftChanged
+	return d.titleChanged || d.bodyChanged || d.baseRefChanged
 }
 
 func (d *changesetSpecDelta) AttributesChanged() bool {
