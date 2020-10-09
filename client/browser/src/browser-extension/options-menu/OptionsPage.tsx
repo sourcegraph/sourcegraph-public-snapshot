@@ -88,7 +88,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                     <LoaderInput loading={urlState.loading} className={classNames(deriveInputClassName(urlState))}>
                         <input
-                            className="form-control options-page__input"
+                            className="form-control"
                             id="sourcegraph-url"
                             type="url"
                             pattern="^https://.*"
@@ -109,9 +109,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     <small>Enter the URL of your Sourcegraph instance to use the extension on private code.</small>
                 </p>
 
-                <ButtonLink to="https://docs.sourcegraph.com/integration/browser_extension#privacy" {...linkProps}>
+                <a href="https://docs.sourcegraph.com/integration/browser_extension#privacy" {...linkProps}>
                     <small>How do we keep your code private?</small>
-                </ButtonLink>
+                </a>
             </section>
 
             {permissionAlert && (
@@ -123,9 +123,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className="options-page__section pt-2">
                 <p className="mb-0">
-                    <ButtonLink onSelect={toggleAdvancedSettings}>
+                    <button type="button" className="btn btn-link btn-sm p-0" onClick={toggleAdvancedSettings}>
                         <small>{showAdvancedSettings ? 'Hide' : 'Show'} advanced settings</small>
-                    </ButtonLink>
+                    </button>
                 </p>
                 {showAdvancedSettings && (
                     <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
@@ -133,16 +133,16 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             </section>
             <section className="d-flex">
                 <div className="options-page__split-section-part">
-                    <ButtonLink to="https://sourcegraph.com/search" {...linkProps}>
+                    <a href="https://sourcegraph.com/search" {...linkProps}>
                         <EarthIcon className="icon-inline mr-2" />
                         Sourcegraph Cloud
-                    </ButtonLink>
+                    </a>
                 </div>
-                <div className="options-page__split-section-part">
-                    <ButtonLink to="https://docs.sourcegraph.com">
-                        <BookOpenPageVariantIcon className="icon-inline mr-2" {...linkProps} />
+                <div className="options-page__split-section-part" {...linkProps}>
+                    <a href="https://docs.sourcegraph.com">
+                        <BookOpenPageVariantIcon className="icon-inline mr-2" />
                         Documentation
-                    </ButtonLink>
+                    </a>
                 </div>
             </section>
         </div>
