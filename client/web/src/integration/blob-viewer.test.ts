@@ -218,8 +218,10 @@ describe('Blob viewer', () => {
         })
 
         describe('browser extension discoverability', () => {
-            const HOVER_THRESHOLD = 3
+            const HOVER_THRESHOLD = 5
             const HOVER_COUNT_KEY = 'hover-count'
+            const BEXT_INSTALLED_TIMEOUT = 500
+
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
                 await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
@@ -281,7 +283,7 @@ describe('Blob viewer', () => {
                 }
                 await driver.page.reload()
 
-                await driver.page.waitForSelector('.repo-header')
+                await driver.page.waitForSelector('.install-browser-extension-alert')
                 // Alert should be visible now that the user has seen $HOVER_THRESHOLD hovers
                 assert(
                     !!(await driver.page.$('.install-browser-extension-alert')),
@@ -293,11 +295,17 @@ describe('Blob viewer', () => {
                 await driver.page.reload()
 
                 await driver.page.waitForSelector('.repo-header')
+                // `browserExtensionInstalled` emits false after 500ms, so
+                // wait 500ms after .repo-header is visible, at which point we know
+                // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
+                // After this point, we know whether or not the alert will be displayed for this page load.
+                await new Promise(resolve => setTimeout(resolve, BEXT_INSTALLED_TIMEOUT))
                 // Alert should not show up now that the user has dismissed it once
                 assert(
                     !(await driver.page.$('.install-browser-extension-alert')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'
                 )
+
             })
         })
     })

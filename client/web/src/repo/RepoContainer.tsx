@@ -128,7 +128,7 @@ interface RepoContainerProps
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
 
-export const HOVER_THRESHOLD = 3
+export const HOVER_THRESHOLD = 5
 
 export interface HoverThresholdProps {
     /**
