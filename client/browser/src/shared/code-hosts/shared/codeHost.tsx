@@ -113,9 +113,8 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
-import { isDefaultSourcegraphUrl, isFirefox, observeSourcegraphURL } from '../../util/context'
+import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 registerHighlightContributions()
 
