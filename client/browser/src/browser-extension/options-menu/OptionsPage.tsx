@@ -51,6 +51,11 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         )
     )
 
+    const linkProps: Pick<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'rel' | 'target'> = {
+        target: '_blank',
+        rel: 'noopener noreferrer'
+    }
+
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
             <section className="options-page__section">
@@ -69,7 +74,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             <CodeHostsSection currentHost={currentHost} />
             <section className="options-page__section">
                 {/* eslint-disable-next-line react/forbid-elements */}
-                <form>
+                <form onSubmit={preventDefault}>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                     <LoaderInput loading={urlState.loading} className={classNames(deriveInputClassName(urlState))}>
                         <input
@@ -92,7 +97,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 </form>
                 <p className="mt-2">Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
                 <p>
-                    <ButtonLink>How do we keep your code private?</ButtonLink>
+                    <ButtonLink to="https://docs.sourcegraph.com/integration/browser_extension#privacy" {...linkProps}>
+                        How do we keep your code private?
+                        </ButtonLink>
                 </p>
             </section>
 
@@ -115,13 +122,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             )}
             <section className="options-page__split-section">
                 <div className="options-page__split-section__part">
-                    <ButtonLink to="https://sourcegraph.com">
-                        <EarthIcon className="icon-inline" /> Sourcegraph Cloud
+                    <ButtonLink to="https://sourcegraph.com/search" {...linkProps}>
+                        <EarthIcon className="icon-inline mr-2" />Sourcegraph Cloud
                     </ButtonLink>
                 </div>
                 <div className="options-page__split-section__part">
                     <ButtonLink to="https://docs.sourcegraph.com">
-                        <BookOpenPageVariantIcon className="icon-inline" /> Documentation
+                        <BookOpenPageVariantIcon className="icon-inline mr-2" {...linkProps} />Documentation
                     </ButtonLink>
                 </div>
             </section>
@@ -192,3 +199,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
         </div>
     </section>
 )
+
+function preventDefault(event: React.FormEvent<HTMLFormElement>): void {
+    event.preventDefault()
+}

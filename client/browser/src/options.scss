@@ -31,6 +31,14 @@ body {
     font-size: 14px;
 }
 
+a {
+    color: var(--link-color);
+
+    &:hover {
+        color: var(--link-hover-color);
+    }
+}
+
 .options-page {
     width: 26rem;
 
