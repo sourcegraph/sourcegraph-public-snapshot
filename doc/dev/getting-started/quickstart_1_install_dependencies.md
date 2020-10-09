@@ -1,4 +1,4 @@
-# Step 1: Install dependencies
+# Quickstart step 1: Install dependencies
 
 > NOTE: Please see install instructions for [macOS](#macos) and [Ubuntu](#ubuntu) in succeeding sections.
 
