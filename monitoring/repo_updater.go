@@ -117,7 +117,7 @@ func RepoUpdater() *Container {
 							Warning:           Alert{GreaterOrEqual: 1, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check connectivity with Gitserver or GitServer logs",
+							PossibleSolutions: "Check repo-updater's connectivity with gitserver and gitserver logs",
 						},
 					},
 					{
