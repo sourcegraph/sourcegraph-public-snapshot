@@ -2913,11 +2913,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 100+ sync was started for 5m0s_
+- _repo-updater: less than 1 sync was started for 8h0m0s_
 
 **Possible solutions:**
 
-- None
+- Check repo-updater logs for errors. Ignore this alert if only one code host connection is defined
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

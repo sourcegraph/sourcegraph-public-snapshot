@@ -47,12 +47,12 @@ func RepoUpdater() *Container {
 						Observable{
 							Name:              "syncer_sync_start",
 							Description:       "sync was started",
-							Query:             `src_repoupdater_syncer_start_sync`,
+							Query:             `rate(src_repoupdater_syncer_start_sync[1m])`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 100, For: 5 * time.Minute},
+							Warning:           Alert{LessOrEqual: 1, For: 8 * time.Hour},
 							PanelOptions:      PanelOptions().LegendFormat("{{family}}-{{external_service_id}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "None",
+							PossibleSolutions: "Check repo-updater logs for errors. Ignore this alert if only one code host connection is defined",
 						},
 						Observable{
 							Name:              "syncer_sync_duration",
