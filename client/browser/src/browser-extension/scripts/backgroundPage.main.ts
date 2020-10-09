@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'
-import { combineLatest, Observable, Subscription, timer } from 'rxjs'
+import { combineLatest, merge, Observable, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
@@ -329,12 +329,16 @@ main()
 function validateSite(): Observable<boolean> {
     return fetchSite(requestGraphQL).pipe(
         mapTo(true),
-        catchError(error => [false])
+        catchError(() => [false])
     )
 }
 
 function observeSourcegraphUrlValidation(): Observable<boolean> {
-    return timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
+    return merge(
+        // Whenever the URL was persisted to storage, we can assume it was validated before-hand
+        observeStorageKey('sync', 'sourcegraphURL').pipe(mapTo(true)),
+        timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
+    )
 }
 
 function observeBrowserActionState(): Observable<BrowserActionIconState> {
