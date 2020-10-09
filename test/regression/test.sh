@@ -14,7 +14,7 @@ yarn generate
 
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 >ffmpeg.log 2>&1 &
 
-IMAGE=sourcegraph/server:3.20.1 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh
 
 pushd client/web
 sleep 10
