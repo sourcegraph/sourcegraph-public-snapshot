@@ -4,7 +4,7 @@ import { OptionsPage, OptionsPageProps } from './OptionsPage'
 import optionsStyles from '../../options.scss'
 import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
-import { boolean, text } from '@storybook/addon-knobs'
+import { text } from '@storybook/addon-knobs'
 import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
