@@ -130,13 +130,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 )}
             </section>
             <section className="d-flex">
-                <div className="options-page__split-section--part">
+                <div className="options-page__split-section-part">
                     <ButtonLink to="https://sourcegraph.com/search" {...linkProps}>
                         <EarthIcon className="icon-inline mr-2" />
                         Sourcegraph Cloud
                     </ButtonLink>
                 </div>
-                <div className="options-page__split-section__part">
+                <div className="options-page__split-section-part">
                     <ButtonLink to="https://docs.sourcegraph.com">
                         <BookOpenPageVariantIcon className="icon-inline mr-2" {...linkProps} />
                         Documentation
