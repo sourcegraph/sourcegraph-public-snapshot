@@ -51,7 +51,7 @@ func (h *Handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
 	// in a command constructed and run in the following function. Note that the command and
-	// its output may both contain sensitive values, but only only values which we directly
+	// its output may both contain sensitive values, but only values which we directly
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
