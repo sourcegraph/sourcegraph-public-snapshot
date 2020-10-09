@@ -400,9 +400,9 @@ function initCodeIntelligence({
                                       summary: {
                                           type: MarkupKind.Markdown,
                                           value:
-                                              '### Sourcegraph for private code\n\n' +
-                                              'To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect it to the extension.' +
-                                              '\n' +
+                                              '#### Sourcegraph for private code\n\n' +
+                                              'To get code intelligence on your private repositories, you need to set up a private Sourcegraph instance and connect it to the browser extension.' +
+                                              '\n\n' +
                                               `<a href="https://docs.sourcegraph.com/integration/browser_extension" class="${
                                                   codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
                                               }" target="_blank" rel="noopener norefferer">Show more info</a>`,
