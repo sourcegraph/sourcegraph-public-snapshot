@@ -105,28 +105,28 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                             )}
                 </form>
                 <p className="mt-2">Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
-                <p>
+
                     <ButtonLink to="https://docs.sourcegraph.com/integration/browser_extension#privacy" {...linkProps}>
                         How do we keep your code private?
                         </ButtonLink>
-                </p>
+
             </section>
 
             {permissionAlert && <PermissionAlert {...permissionAlert} onClickGrantPermissions={noop} />}
 
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className="options-page__section">
-                <p>
+                <p className="mb-0">
                     <ButtonLink
                         onSelect={toggleAdvancedSettings}
                     >
                         {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
                     </ButtonLink>
                 </p>
-            </section>
             {showAdvancedSettings && (
                 <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
-            )}
+                )}
+                </section>
             <section className="options-page__split-section">
                 <div className="options-page__split-section__part">
                     <ButtonLink to="https://sourcegraph.com/search" {...linkProps}>
@@ -154,7 +154,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, 
         <h4>
             {Icon && <Icon className="icon-inline" />} {name}
         </h4>
-        <p>
+        <p className="options-page__permission-text">
             <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
         <button type="button" onClick={onClickGrantPermissions} className="btn btn-primary">

@@ -9,7 +9,7 @@ export const OptionsPageAdvancedSettings: React.FunctionComponent<OptionsPageAdv
     optionFlags,
     onChangeOptionFlag,
 }) => (
-    <section className="options-page__section">
+    <section className="mt-3">
         <h6>Configuration</h6>
         <div>
             {optionFlags.map(({ label, key, value }) => (

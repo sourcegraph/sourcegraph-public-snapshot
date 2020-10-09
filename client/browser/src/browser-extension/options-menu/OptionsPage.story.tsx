@@ -69,20 +69,18 @@ storiesOf('browser/Options/OptionsPage', module)
             />
         )
     })
-    .add('Asking for permission', () => {
-        const [isActivated, setIsActivated] = useState(false)
-        return (
+    .add('Asking for permission', () => (
             <OptionsPage
-                version={text('version', '0.0.0')}
-                isActivated={isActivated}
-                onToggleActivated={setIsActivated}
-                validateSourcegraphUrl={invalidSourcegraphUrl}
-                sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-                // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
-                isFullPage={true}
-                optionFlags={optionFlags}
-                onChangeOptionFlag={onChangeOptionFlag}
-                permissionAlert={{name: 'github', icon: MicrosoftGithubIcon}}
-            />
-        )
-    })
+            version={text('version', '0.0.0')}
+            // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
+            validateSourcegraphUrl={validateSourcegraphUrl}
+            onToggleActivated={action('onToggleActivated')}
+            isActivated={true}
+            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+            isFullPage={true}
+            optionFlags={optionFlags}
+            onChangeOptionFlag={onChangeOptionFlag}
+            currentHost="github.com"
+            permissionAlert={{name: 'GitHub', icon: MicrosoftGithubIcon}}
+        />
+        ))
