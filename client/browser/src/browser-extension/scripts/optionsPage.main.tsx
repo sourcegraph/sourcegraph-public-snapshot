@@ -137,6 +137,10 @@ function handleChangeOptionFlag(key: string, value: boolean): void {
     }
 }
 
+function handleChangeSourcegraphUrl(url: string): void {
+    storage.sync.set({ sourcegraphURL: url }).catch(console.error)
+}
+
 function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
     return function requestPermissionsHandler(event: React.MouseEvent) {
         event.preventDefault()
@@ -184,6 +188,7 @@ const Options: React.FunctionComponent = () => {
         <OptionsPage
             isFullPage={isFullPage}
             sourcegraphUrl={sourcegraphUrl}
+            onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
             version={version}
             validateSourcegraphUrl={validateSourcegraphUrl}
             isActivated={!!isActivated}

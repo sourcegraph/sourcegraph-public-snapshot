@@ -14,17 +14,24 @@ import { knownCodeHosts } from '../knownCodeHosts'
 
 export interface OptionsPageProps {
     version: string
+
+    // Sourcegraph URL
     sourcegraphUrl: string
+    validateSourcegraphUrl: (url: string) => Observable<string | undefined>
+    onChangeSourcegraphUrl: (url: string) => void
+
+    // Option flags
+    optionFlags: { key: string; label: string; value: boolean }[]
+    onChangeOptionFlag: (key: string, value: boolean) => void
+
     isActivated: boolean
     onToggleActivated: (value: boolean) => void
-    validateSourcegraphUrl: (url: string) => Observable<string | undefined>
+
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
     showSourcegraphCloudAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
-    optionFlags: { key: string; label: string; value: boolean }[]
-    onChangeOptionFlag: (key: string, value: boolean) => void
     currentHost?: string
 }
 
@@ -41,6 +48,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     requestPermissionsHandler,
     optionFlags,
     onChangeOptionFlag,
+    onChangeSourcegraphUrl,
     currentHost,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
