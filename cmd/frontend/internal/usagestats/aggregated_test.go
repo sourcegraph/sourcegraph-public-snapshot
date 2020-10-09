@@ -215,18 +215,16 @@ func TestGroupAggregatedStats(t *testing.T) {
 				StartTime: t3,
 				Hover: &types.CodeIntelEventCategoryStatistics{
 					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:     16,
-						EventsCount:    intptr(13),
-						EventLatencies: &types.CodeIntelEventLatencies{P50: 17, P90: 18, P99: 19},
+						UsersCount:  16,
+						EventsCount: intptr(13),
 					},
 					LSP:    codeIntelEventStatistics(),
 					Search: codeIntelEventStatistics(),
 				},
 				Definitions: &types.CodeIntelEventCategoryStatistics{
 					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:     26,
-						EventsCount:    intptr(23),
-						EventLatencies: &types.CodeIntelEventLatencies{P50: 27, P90: 28, P99: 29},
+						UsersCount:  26,
+						EventsCount: intptr(23),
 					},
 					LSP:    codeIntelEventStatistics(),
 					Search: codeIntelEventStatistics(),
@@ -239,18 +237,16 @@ func TestGroupAggregatedStats(t *testing.T) {
 				StartTime: t2,
 				Hover: &types.CodeIntelEventCategoryStatistics{
 					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:     15,
-						EventsCount:    intptr(12),
-						EventLatencies: &types.CodeIntelEventLatencies{P50: 14, P90: 15, P99: 16},
+						UsersCount:  15,
+						EventsCount: intptr(12),
 					},
 					LSP:    codeIntelEventStatistics(),
 					Search: codeIntelEventStatistics(),
 				},
 				Definitions: &types.CodeIntelEventCategoryStatistics{
 					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:     25,
-						EventsCount:    intptr(22),
-						EventLatencies: &types.CodeIntelEventLatencies{P50: 24, P90: 25, P99: 26},
+						UsersCount:  25,
+						EventsCount: intptr(22),
 					},
 					LSP:    codeIntelEventStatistics(),
 					Search: codeIntelEventStatistics(),
@@ -263,18 +259,16 @@ func TestGroupAggregatedStats(t *testing.T) {
 				StartTime: t1,
 				Hover: &types.CodeIntelEventCategoryStatistics{
 					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:     14,
-						EventsCount:    intptr(11),
-						EventLatencies: &types.CodeIntelEventLatencies{P50: 11, P90: 12, P99: 13},
+						UsersCount:  14,
+						EventsCount: intptr(11),
 					},
 					LSP:    codeIntelEventStatistics(),
 					Search: codeIntelEventStatistics(),
 				},
 				Definitions: &types.CodeIntelEventCategoryStatistics{
 					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:     24,
-						EventsCount:    intptr(21),
-						EventLatencies: &types.CodeIntelEventLatencies{P50: 21, P90: 22, P99: 23},
+						UsersCount:  24,
+						EventsCount: intptr(21),
 					},
 					LSP:    codeIntelEventStatistics(),
 					Search: codeIntelEventStatistics(),
