@@ -171,7 +171,7 @@ func RepoUpdater() *Container {
 							Warning:           Alert{LessOrEqual: 1, For: 8 * time.Hour},
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
+							PossibleSolutions: "Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts",
 						},
 					},
 					{
@@ -183,7 +183,7 @@ func RepoUpdater() *Container {
 							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs for errors.",
+							PossibleSolutions: "Check repo-updater logs for errors",
 						},
 					},
 				},

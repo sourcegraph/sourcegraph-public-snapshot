@@ -3019,7 +3019,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Check connectivity with Gitserver or GitServer logs
+- Check repo-updater`s connectivity with gitserver and gitserver logs
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3104,7 +3104,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Check repo-updater logs. This is expected to fire if there are no user added code hosts
+- Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3121,7 +3121,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Check repo-updater logs
+- Check repo-updater logs for errors
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
