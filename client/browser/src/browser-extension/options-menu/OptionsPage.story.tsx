@@ -4,7 +4,7 @@ import { OptionsPage, OptionsPageProps } from './OptionsPage'
 import optionsStyles from '../../options.scss'
 import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
-import { text } from '@storybook/addon-knobs'
+import { boolean, text } from '@storybook/addon-knobs'
 import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
@@ -29,7 +29,8 @@ storiesOf('browser/Options/OptionsPage', module)
     .add('Default', () => (
         <OptionsPage
             version={text('version', '0.0.0')}
-            // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
+            showPrivateRepositoryAlert={boolean('isCurrentRepositoryPrivate', false)}
+            showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
@@ -48,7 +49,8 @@ storiesOf('browser/Options/OptionsPage', module)
                 onToggleActivated={setIsActivated}
                 validateSourcegraphUrl={validateSourcegraphUrl}
                 sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
-                // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
+                showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
+                showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
                 isFullPage={true}
                 optionFlags={optionFlags}
                 onChangeOptionFlag={onChangeOptionFlag}
@@ -64,7 +66,6 @@ storiesOf('browser/Options/OptionsPage', module)
                 onToggleActivated={setIsActivated}
                 validateSourcegraphUrl={invalidSourcegraphUrl}
                 sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-                // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
                 isFullPage={true}
                 optionFlags={optionFlags}
                 onChangeOptionFlag={onChangeOptionFlag}
@@ -74,7 +75,6 @@ storiesOf('browser/Options/OptionsPage', module)
     .add('Asking for permission', () => (
         <OptionsPage
             version={text('version', '0.0.0')}
-            // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
@@ -85,5 +85,35 @@ storiesOf('browser/Options/OptionsPage', module)
             currentHost="github.com"
             permissionAlert={{ name: 'GitHub', icon: MicrosoftGithubIcon }}
             requestPermissionsHandler={requestPermissionsHandler}
+        />
+    ))
+    .add('On private repository', () => (
+        <OptionsPage
+            version={text('version', '0.0.0')}
+            validateSourcegraphUrl={validateSourcegraphUrl}
+            onToggleActivated={action('onToggleActivated')}
+            isActivated={true}
+            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+            isFullPage={true}
+            optionFlags={optionFlags}
+            onChangeOptionFlag={onChangeOptionFlag}
+            currentHost="github.com"
+            showPrivateRepositoryAlert={true}
+            requestPermissionsHandler={requestPermissionsHandler}
+        />
+    ))
+    .add('On Sourcegraph Cloud', () => (
+        <OptionsPage
+            version={text('version', '0.0.0')}
+            validateSourcegraphUrl={validateSourcegraphUrl}
+            onToggleActivated={action('onToggleActivated')}
+            isActivated={true}
+            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+            isFullPage={true}
+            optionFlags={optionFlags}
+            onChangeOptionFlag={onChangeOptionFlag}
+            currentHost="sourcegraph.com"
+            requestPermissionsHandler={requestPermissionsHandler}
+            showSourcegraphCloudAlert={true}
         />
     ))

@@ -10,6 +10,7 @@ import { SourcegraphLogo } from './SourcegraphLogo'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
+import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import { knownCodeHosts } from '../knownCodeHosts'
 
 export interface OptionsPageProps {
@@ -20,6 +21,7 @@ export interface OptionsPageProps {
     validateSourcegraphUrl: (url: string) => Observable<string | undefined>
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
+    showSourcegraphCloudAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
     optionFlags: { key: string; label: string; value: boolean }[]
@@ -35,6 +37,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onToggleActivated,
     isFullPage,
     showPrivateRepositoryAlert,
+    showSourcegraphCloudAlert,
     permissionAlert,
     requestPermissionsHandler,
     optionFlags,
@@ -115,6 +118,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 <PermissionAlert {...permissionAlert} onClickGrantPermissions={requestPermissionsHandler} />
             )}
 
+            {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
+
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className="options-page__section pt-2">
                 <p className="mb-0">
@@ -170,10 +175,10 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
 
 const PrivateRepositoryAlert: React.FunctionComponent = () => (
     <section className="options-page__section options-page__alert">
-        <h3>
-            <LockIcon className="icon-inline" />
+        <h6 className="d-flex align-items-center">
+            <LockIcon className="icon-inline mr-2" />
             Private repository
-        </h3>
+        </h6>
         <p>
             To use the browser extension with your private repositories, you need to set up a{' '}
             <strong>private Sourcegraph instance</strong> and connect it to the extension.
@@ -209,6 +214,16 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                 </span>
             ))}
         </div>
+    </section>
+)
+
+const SourcegraphCloudAlert: React.FunctionComponent = () => (
+    <section className="options-page__section options-page__alert">
+        <h6 className="d-flex align-items-center">
+            <CheckCircleOutlineIcon className="icon-inline mr-2" />
+            You're on Sourcegraph Cloud
+        </h6>
+        <p>Naturally, browser extension is not necessary to browse public code on Sourcegraph.com</p>
     </section>
 )
 

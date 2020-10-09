@@ -136,10 +136,13 @@ const Options: React.FunctionComponent = () => {
         }, noop)
     }, [])
 
+    const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
+
     let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
     if (
         currentTabStatus &&
         !currentTabStatus?.status.hasPermissions &&
+        !showSourcegraphCloudAlert &&
         !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.status.protocol)
     ) {
         const knownCodeHost = knownCodeHosts.find(({ host }) => host === currentTabStatus.status.host)
@@ -166,6 +169,7 @@ const Options: React.FunctionComponent = () => {
             optionFlags={optionFlagsWithValues}
             onChangeOptionFlag={handleChangeOptionFlag}
             showPrivateRepositoryAlert={false}
+            showSourcegraphCloudAlert={showSourcegraphCloudAlert}
             permissionAlert={permissionAlert}
             currentHost={currentTabStatus?.status.host}
             requestPermissionsHandler={currentTabStatus?.handler}
