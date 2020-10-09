@@ -89,17 +89,17 @@ export function useInputValidation(
                 // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
                 debounceTime(500),
                 switchMap(value => {
-                    // check any custom sync validators before built-in validators to override/customize error messages
-                    const syncReason = head(compact(synchronousValidators.map(validator => validator(value))))
-                    if (syncReason) {
-                        inputReference.current?.setCustomValidity(syncReason)
-                        return of({ kind: 'INVALID' as const, reason: syncReason })
-                    }
-
                     // check validity (synchronous)
                     const valid = inputReference.current?.checkValidity()
                     if (!valid) {
                         return of({ kind: 'INVALID' as const, reason: inputReference.current?.validationMessage ?? '' })
+                    }
+
+                    // check custom sync validators
+                    const syncReason = head(compact(synchronousValidators.map(validator => validator(value))))
+                    if (syncReason) {
+                        inputReference.current?.setCustomValidity(syncReason)
+                        return of({ kind: 'INVALID' as const, reason: syncReason })
                     }
 
                     if (asynchronousValidators.length === 0) {
