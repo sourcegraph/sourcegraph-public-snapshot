@@ -48,7 +48,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         useMemo(
             () => ({
                 initialValue: sourcegraphUrl,
-                synchronousValidators: [onlyHTTPS],
+                synchronousValidators: [],
                 asynchronousValidators: [validateSourcegraphUrl],
             }),
             [sourcegraphUrl, validateSourcegraphUrl]
@@ -100,7 +100,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     {urlState.loading ? (
                         <small className="text-muted d-block mt-1">Checking...</small>
                     ) : urlState.kind === 'INVALID' ? (
-                        <small className="invalid-feedback">{urlState.reason}</small>
+                        <small className="invalid-feedback">
+                            {urlInputReference.current?.validity.typeMismatch
+                                ? 'Please enter a valid URL, including the protocol prefix (e.g. https://sourcegraph.example.com).'
+                                : urlInputReference.current?.validity.patternMismatch
+                                ? 'The browser extension can only work over HTTPS in modern browsers.'
+                                : urlState.reason}
+                        </small>
                     ) : (
                         <small className="valid-feedback">Looks good!</small>
                     )}
@@ -236,12 +242,4 @@ const SourcegraphCloudAlert: React.FunctionComponent = () => (
 
 function preventDefault(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault()
-}
-
-/**
- * Synchronous validator to provide helpful error message
- */
-function onlyHTTPS(url: string): string | undefined {
-    // TODO(tj): improve copy
-    return url.startsWith('https://') ? undefined : 'We support only https'
 }
