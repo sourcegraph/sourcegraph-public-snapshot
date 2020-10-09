@@ -12,8 +12,9 @@ import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import { knownCodeHosts } from '../knownCodeHosts'
+import { MdiReactIconProps } from 'mdi-react'
 
-interface OptionsPageProps {
+export interface OptionsPageProps {
     version: string
     sourcegraphUrl: string
     isActivated: boolean
@@ -21,10 +22,15 @@ interface OptionsPageProps {
     validateSourcegraphUrl: (url: string) => Observable<string | undefined>
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
-    permissionAlert?: { name: string; icon?: JSX.Element }
+    permissionAlert?: { name: string; icon?: React.ComponentType<MdiReactIconProps> }
     optionFlags: { key: string; label: string; value: boolean }[]
     onChangeOptionFlag: (key: string, value: boolean) => void
     currentHost?: string
+}
+
+function onlyHTTPS(url: string): string | undefined {
+    // TODO(tj): improve copy
+    return url.startsWith('https://') ? undefined : 'We support only https'
 }
 
 export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
@@ -45,11 +51,14 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         useMemo(
             () => ({
                 initialValue: sourcegraphUrl,
+                synchronousValidators: [onlyHTTPS],
                 asynchronousValidators: [validateSourcegraphUrl],
             }),
             [sourcegraphUrl, validateSourcegraphUrl]
         )
     )
+
+    const toggleAdvancedSettings = useCallback(() => setShowAdvancedSettings(showAdvancedSettings => !showAdvancedSettings), [])
 
     const linkProps: Pick<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'rel' | 'target'> = {
         target: '_blank',
@@ -74,7 +83,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             <CodeHostsSection currentHost={currentHost} />
             <section className="options-page__section">
                 {/* eslint-disable-next-line react/forbid-elements */}
-                <form onSubmit={preventDefault}>
+                <form onSubmit={preventDefault} noValidate={true}>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                     <LoaderInput loading={urlState.loading} className={classNames(deriveInputClassName(urlState))}>
                         <input
@@ -92,8 +101,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     ) : urlState.kind === 'INVALID' ? (
                         <small className="invalid-feedback">{urlState.reason}</small>
                     ) : (
-                        <small className="valid-feedback">Looks good!</small>
-                    )}
+                                <small className="valid-feedback">Looks good!</small>
+                            )}
                 </form>
                 <p className="mt-2">Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
                 <p>
@@ -109,9 +118,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             <section className="options-page__section">
                 <p>
                     <ButtonLink
-                        onSelect={useCallback(() => setShowAdvancedSettings(!showAdvancedSettings), [
-                            showAdvancedSettings,
-                        ])}
+                        onSelect={toggleAdvancedSettings}
                     >
                         {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
                     </ButtonLink>
@@ -137,15 +144,15 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 }
 
 interface PermissionAlertProps {
-    icon?: JSX.Element
+    icon?: React.ComponentType<MdiReactIconProps>
     name: string
     onClickGrantPermissions: () => void
 }
 
-const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, icon, onClickGrantPermissions }) => (
+const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, icon: Icon, onClickGrantPermissions }) => (
     <section className="options-page__section options-page__alert">
         <h4>
-            {icon} {name}
+            {Icon && <Icon className="icon-inline" />} {name}
         </h4>
         <p>
             <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.

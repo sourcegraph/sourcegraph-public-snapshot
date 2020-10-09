@@ -27,7 +27,8 @@ import { OptionsPage } from '../options-menu/OptionsPage'
 import { asError } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AnchorLink, setLinkComponent } from '../../../../shared/src/components/Link'
-import { knownCodeHosts } from '../knownCodeHosts'
+import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
+import { Optional } from 'utility-types'
 
 interface TabStatus {
     host: string
@@ -129,9 +130,9 @@ const Options: React.FunctionComponent = () => {
         }, noop)
     }, [])
 
-    let permissionAlert
+    let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
     if (currentTabStatus && !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.protocol)) {
-        const knownCodeHost = knownCodeHosts[currentTabStatus.host]
+        const knownCodeHost=   knownCodeHosts.find(({host}) => host === currentTabStatus.host)
         if (knownCodeHosts) {
             permissionAlert = knownCodeHost
         } else {
