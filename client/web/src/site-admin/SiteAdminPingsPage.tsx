@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { isEmpty, noop } from 'lodash'
