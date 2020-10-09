@@ -80,4 +80,6 @@ export interface BackgroundMessageHandlers {
         variables: V
         sourcegraphURL?: string
     }): Promise<GraphQLResult<T>>
+    notifyPrivateRepository(isPrivateRepository: boolean, sender: browser.runtime.MessageSender): void
+    checkPrivateRepository(tabId: number): boolean
 }

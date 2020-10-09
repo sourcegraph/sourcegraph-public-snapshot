@@ -19,7 +19,12 @@ import {
     optionFlagDefinitions,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { observeSourcegraphURL, isFirefox, getExtensionVersion } from '../../shared/util/context'
+import {
+    observeSourcegraphURL,
+    isFirefox,
+    getExtensionVersion,
+    DEFAULT_SOURCEGRAPH_URL,
+} from '../../shared/util/context'
 import { catchError, map, mapTo } from 'rxjs/operators'
 import { isExtension } from '../../shared/context'
 import { OptionsPage } from '../options-menu/OptionsPage'
@@ -33,6 +38,7 @@ interface TabStatus {
     host: string
     protocol: string
     hasPermissions: boolean
+    isPrivateRepository: boolean
 }
 
 assertEnvironment('OPTIONS')
@@ -56,15 +62,19 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
     }
-    const { url } = tabs[0]
+    const { url, id } = tabs[0]
     if (!url) {
         throw new Error('Currently active tab has no URL')
     }
+    const isPrivateRepository = (await browser.runtime.sendMessage({
+        type: 'checkPrivateRepo',
+        payload: id,
+    })) as boolean
     const { host, protocol } = new URL(url)
     const hasPermissions = await browser.permissions.contains({
         origins: [`${protocol}//${host}/*`],
     })
-    return { host, protocol, hasPermissions }
+    return { isPrivateRepository, host, protocol, hasPermissions }
 }
 
 // Make GraphQL requests from background page
@@ -180,7 +190,9 @@ const Options: React.FunctionComponent = () => {
             onToggleActivated={handleToggleActivated}
             optionFlags={optionFlagsWithValues}
             onChangeOptionFlag={handleChangeOptionFlag}
-            showPrivateRepositoryAlert={false}
+            showPrivateRepositoryAlert={
+                currentTabStatus?.status.isPrivateRepository && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
+            }
             showSourcegraphCloudAlert={showSourcegraphCloudAlert}
             permissionAlert={permissionAlert}
             currentHost={currentTabStatus?.status.host}

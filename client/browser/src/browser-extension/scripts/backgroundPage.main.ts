@@ -157,6 +157,8 @@ async function main(): Promise<void> {
         }
     })
 
+    const tabPrivateRepositoryCache = new Map<number, boolean>()
+
     const handlers: BackgroundMessageHandlers = {
         async openOptionsPage(): Promise<void> {
             await browser.runtime.openOptionsPage()
@@ -177,16 +179,29 @@ async function main(): Promise<void> {
         }): Promise<GraphQLResult<T>> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
+
+        notifyPrivateRepository(isPrivateRepository: boolean, sender: browser.runtime.MessageSender): void {
+            const tabId = sender.tab?.id
+            if (tabId !== undefined) {
+                tabPrivateRepositoryCache.set(tabId, isPrivateRepository)
+            }
+        },
+
+        checkPrivateRepository(tabId: number): boolean {
+            return !!tabPrivateRepositoryCache.get(tabId)
+        },
     }
 
     // Handle calls from other scripts
-    browser.runtime.onMessage.addListener(async (message: { type: keyof BackgroundMessageHandlers; payload: any }) => {
-        const method = message.type
-        if (!handlers[method]) {
-            throw new Error(`Invalid RPC call for "${method}"`)
+    browser.runtime.onMessage.addListener(
+        async (message: { type: keyof BackgroundMessageHandlers; payload: any }, sender) => {
+            const method = message.type
+            if (!handlers[method]) {
+                throw new Error(`Invalid RPC call for "${method}"`)
+            }
+            return handlers[method](message.payload, sender)
         }
-        return handlers[method](message.payload)
-    })
+    )
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 

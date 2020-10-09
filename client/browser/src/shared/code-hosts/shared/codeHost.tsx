@@ -110,6 +110,7 @@ import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/c
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { noop } from 'lodash'
 
 registerHighlightContributions()
 
@@ -576,6 +577,12 @@ export function handleCodeHost({
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
+
+    // Notify the background page that we are on a private repository
+    // This information will be used to alert the user when using Sourcegraph Cloud
+    // while on a private repository.
+    const isPrivateRepo = codeHost?.getContext()?.privateRepository
+    browser.runtime.sendMessage({ type: 'notifyPrivateRepo', payload: isPrivateRepo }).catch(noop)
 
     const addedElements = mutations.pipe(
         concatAll(),
