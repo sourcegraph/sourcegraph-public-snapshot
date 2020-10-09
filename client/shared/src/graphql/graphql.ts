@@ -52,7 +52,7 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
-export function requestGraphQL<T, V = object>({
+export function requestGraphQLCommon<T, V = object>({
     request,
     baseUrl,
     variables,
