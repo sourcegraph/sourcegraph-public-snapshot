@@ -96,7 +96,7 @@ Create a campaign by specifying a search query to get a list of repositories and
   </div>
   <div class="getting-started-box">
   <a href="introduction_to_campaigns">
-  <span>Introduction to campaigns</span></br>Find out what campaigns are and what they can, learn key concepts and see what others use them for.
+  <span>Introduction to campaigns</span></br>Find out what campaigns are, learn key concepts and see what others use them for.
   </a>
   </div>
 </div>
