@@ -365,7 +365,7 @@ export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node)
+        map(data => data.node as GQL.ISavedSearch)
     )
 }
 
