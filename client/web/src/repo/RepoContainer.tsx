@@ -330,18 +330,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
 
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
-    const [canShowPopover, setCanShowPopover] = useState(
-        () => parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD
-    )
     const [hasDismissedExtensionAlert, setHasDismissedExtensionAlert] = useLocalStorage(HAS_DISMISSED_ALERT_KEY, false)
-    // Intentionally use useMemo() here without a dependency on localStorage to only show the alert on the next reload,
-    // to not cause an annoying layout shift.
+    const [hasDismissedPopover, setHasDismissedPopover] = useState(false)
+    const [hoverCount, setHoverCount] = useLocalStorage(HOVER_COUNT_KEY, 0)
+    const canShowPopover =
+        !hasDismissedPopover && isBrowserExtensionInstalled === false && hoverCount >= HOVER_THRESHOLD
     const showExtensionAlert = useMemo(
-        () =>
-            isBrowserExtensionInstalled === false &&
-            !hasDismissedExtensionAlert &&
-            IS_CHROME && // Remove when Firefox extension works again
-            parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD,
+        () => isBrowserExtensionInstalled === false && !hasDismissedExtensionAlert && hoverCount >= HOVER_THRESHOLD,
+        // Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
+        // to not cause an annoying layout shift from displaying the alert.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [hasDismissedExtensionAlert, isBrowserExtensionInstalled]
     )
 
@@ -350,22 +348,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
     const onHoverShown = useCallback(() => {
-        const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
-
+        const count = hoverCount + 1
         if (count > HOVER_THRESHOLD) {
+            // No need to keep updating localStorage
             return
         }
-
-        if (count === HOVER_THRESHOLD) {
-            setCanShowPopover(true)
-            // Only show alert on first render to avoid layout shift on the triggering hover
-        }
-
-        localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
-    }, [])
+        setHoverCount(count)
+    }, [hoverCount, setHoverCount])
 
     const onPopoverDismissed = useCallback(() => {
-        setCanShowPopover(false)
+        setHasDismissedPopover(true)
     }, [])
 
     const onAlertDismissed = useCallback(() => {
@@ -440,7 +432,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         position={position}
                         range={range}
                         externalLinks={externalLinks}
-                        browserExtensionInstalled={browserExtensionInstalled}
                         fetchFileExternalLinks={fetchFileExternalLinks}
                         canShowPopover={canShowPopover}
                         onPopoverDismissed={onPopoverDismissed}
