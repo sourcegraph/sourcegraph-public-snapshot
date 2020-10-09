@@ -2896,7 +2896,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 28800s+ time since oldest sync for 5m0s_
+- _repo-updater: 28800s+ time since oldest sync for 10m0s_
 
 **Possible solutions:**
 
@@ -2905,7 +2905,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_src_repoupdater_max_sync_backoff"
+  "critical_repo-updater_src_repoupdater_max_sync_backoff"
 ]
 ```
 
@@ -2913,11 +2913,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 100+ sync was started for 5m0s_
+- _repo-updater: less than 1 sync was started for 8h0m0s_
 
 **Possible solutions:**
 
-- None
+- Check repo-updater logs for errors. Ignore this alert if only one code host connection is defined
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2934,7 +2934,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2951,7 +2951,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2964,10 +2964,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories synced for 5m0s_
+- _repo-updater: less than 1 repositories synced for 8h0m0s_
 
 **Possible solutions:**
 
+- Check network connectivity to code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2980,15 +2981,33 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories sourced for 5m0s_
+- _repo-updater: less than 1 repositories sourced for 8h0m0s_
 
 **Possible solutions:**
 
+- Check network connectivity to code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
   "warning_repo-updater_sourced_repos"
+]
+```
+
+## repo-updater: user_added_repos
+
+**Descriptions:**
+
+- _repo-updater: 180000+ total number of user added repos for 5m0s_
+
+**Possible solutions:**
+
+- Check for unusual spikes in user added repos. Each user is only allowed to add 2000
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_user_added_repos"
 ]
 ```
 
@@ -3000,6 +3019,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
+- Check repo-updater`s connectivity with gitserver and gitserver logs
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3008,30 +3028,15 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## repo-updater: purge_success
-
-**Descriptions:**
-
-- _repo-updater: 10+ repositories purge succeeded for 5m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_purge_success"
-]
-```
-
 ## repo-updater: sched_auto_fetch
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories scheduled due to hitting a deadline for 5m0s_
+- _repo-updater: less than 1 repositories scheduled due to hitting a deadline for 8h0m0s_
 
 **Possible solutions:**
 
+- Check repo-updater logs. This is expected to fire if there are no user added code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3044,10 +3049,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories scheduled due to user traffic for 5m0s_
+- _repo-updater: less than 1 repositories scheduled due to user traffic for 8h0m0s_
 
 **Possible solutions:**
 
+- Check repo-updater logs. This is expected to fire if there are no user added code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3060,10 +3066,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories managed by the scheduler for 5m0s_
+- _repo-updater: less than 1 repositories managed by the scheduler for 10m0s_
 
 **Possible solutions:**
 
+- Check repo-updater logs. This is expected to fire if there are no user added code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3080,11 +3087,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
+- Check repo-updater logs. The queue should drop as items are sent to GitServer
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_sched_update_queue_length"
+  "critical_repo-updater_sched_update_queue_length"
 ]
 ```
 
@@ -3092,10 +3100,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 10+ scheduler loops for 5m0s_
+- _repo-updater: less than 1 scheduler loops for 8h0m0s_
 
 **Possible solutions:**
 
+- Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3112,6 +3121,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
+- Check repo-updater logs for errors
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3250,12 +3260,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- None
+- Check for spikes in external services, could be abuse
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_src_repoupdater_external_services_total"
+  "critical_repo-updater_src_repoupdater_external_services_total"
 ]
 ```
 
@@ -3267,7 +3277,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- None
+- Check for spikes in external services, could be abuse
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3302,7 +3312,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- None
+- Check repo-updater logs. Jobs older than 1 day should have been removed.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3319,7 +3329,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- None
+- Check repo-updater logs. Check code host connectivity
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
