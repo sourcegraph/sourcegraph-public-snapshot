@@ -6,9 +6,12 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
+import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
 
 export const AfterInstallPageContent: React.FunctionComponent = () => (
-    <div className="web-content">
+    <div className="web-content after-install-page-content">
+        <SourcegraphIcon className="after-install-page-content__sourcegraph-logo" />
+
         <div className="container">
             <h1 className="mt-5">🎉 You’ve just installed the Sourcegraph browser extension!</h1>
             <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
@@ -44,8 +47,9 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                 <div className="row">
                     <div className="col-sm-6">
                         <div className="bg-2 rounded p-3 mb-3">
-                            <h3 className="mb-3">
-                                <GithubIcon className="icon-inline" /> github.com
+                            <h3 className="mb-3 after-install-page-content__code-host-titles">
+                                <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                github.com
                             </h3>
                             <p className="m-0">
                                 <CheckIcon className="icon-inline" /> No action required. Your extension works here by
@@ -53,28 +57,40 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             </p>
                         </div>
                         <div className="bg-2 rounded p-3">
-                            <h3 className="d-flex justify-content-between flex-wrap mb-3">
-                                <div className="mr-1">
-                                    <GitlabIcon className="icon-inline" /> GitLab
+                            <h3 className="d-flex flex-wrap mb-3 after-install-page-content__code-host-titles">
+                                <div className="mr-5 mb-3">
+                                    <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                    GitHub Enterprise
                                 </div>
-                                <div className="mr-1">
-                                    <BitbucketIcon className="icon-inline" /> Bitbucket
+                                <div className="mr-5 mb-3">
+                                    <GitlabIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                    GitLab
                                 </div>
-                                <div className="mr-1">
-                                    <PhabricatorIcon className="icon-inline" /> Phabricator
+                                <div className="mr-5 mb-3">
+                                    <BitbucketIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                    Bitbucket Server
                                 </div>
-                                <div>
-                                    <GithubIcon className="icon-inline" /> GitHub Enterprise
+                                <div className="mr-5 mb-3">
+                                    <PhabricatorIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                    Phabricator
                                 </div>
                             </h3>
                             <p>Your extension needs explicit permissions to your code host:</p>
                             <ol className="m-0">
                                 <li>Navigate to any page on your code host.</li>
                                 <li>
-                                    Click the <q>Grant permissions</q> button.
+                                    Click the{' '}
+                                    <q>
+                                        <strong>Grant permissions</strong>
+                                    </q>{' '}
+                                    button.
                                 </li>
                                 <li>
-                                    Click <q>Allow</q> in the permissions request popup.
+                                    Click{' '}
+                                    <q>
+                                        <strong>Allow</strong>
+                                    </q>{' '}
+                                    in the permissions request popup.
                                 </li>
                             </ol>
                         </div>
@@ -110,15 +126,9 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                                     ). Skip this step if you already have a private Sourcegraph instance.
                                 </li>
                                 <li>
-                                    Click the Sourcegraph extension icon in the browser toolbar to open the settings
-                                    page, or click{' '}
-                                    <a
-                                        href="./options.html"
-                                        rel="noopener"
-                                        target="_blank"
-                                        aria-label="Sourcegraph browser extension options"
-                                    >
-                                        here
+                                    Click the Sourcegraph extension icon in the browser toolbar to{' '}
+                                    <a href="./options.html" rel="noopener" target="_blank">
+                                        open the settings page
                                     </a>
                                     .
                                 </li>
@@ -135,7 +145,7 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
             </div>
         </section>
 
-        <section className="border-bottom py-5">
+        <section className="py-5">
             <div className="container">
                 <h2 className="mb-4">Additional resources</h2>
                 <div className="d-flex w-100 align-items-center">
