@@ -48,6 +48,10 @@ body {
     }
 
     &__alert {
+        background-color: $gray-01;
+    }
+
+    &__code-hosts {
         border-style: solid;
         border-width: 1px 0;
         border-color: var(--color-border-2);

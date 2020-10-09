@@ -143,7 +143,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, 
         <p>
             <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
-        <button onClick={onClickGrantPermissions} className="btn btn-primary">
+        <button type="button" onClick={onClickGrantPermissions} className="btn btn-primary">
             Grant permissions
         </button>
     </section>
@@ -175,7 +175,7 @@ const PrivateRepositoryAlert: React.FunctionComponent = props => (
 )
 
 const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ currentHost }) => (
-    <section className="options-page__section options-page__alert">
+    <section className="options-page__section options-page__code-hosts">
         <p>Get code intelligence tooltips while browsing files and reading PRs on your code host.</p>
         <div>
             {knownCodeHosts.map(({ host, icon: Icon }) => (
