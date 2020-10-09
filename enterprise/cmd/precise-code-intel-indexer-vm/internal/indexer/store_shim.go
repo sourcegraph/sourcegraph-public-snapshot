@@ -33,5 +33,10 @@ func (s *storeShim) MarkErrored(ctx context.Context, id int, failureMessage stri
 
 // Done is a no-op.
 func (s *storeShim) Done(err error) error {
-	return nil
+	return err
+}
+
+// SetLogContents calls into the inner client.
+func (s *storeShim) SetLogContents(ctx context.Context, id int, payload string) error {
+	return s.queueClient.SetLogContents(ctx, id, payload)
 }

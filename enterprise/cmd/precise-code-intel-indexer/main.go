@@ -61,7 +61,7 @@ func main() {
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexManager := indexmanager.New(store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
+	indexManager := indexmanager.New(s, store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
 		MaximumTransactions:   maximumTransactions,
 		RequeueDelay:          requeueDelay,
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),

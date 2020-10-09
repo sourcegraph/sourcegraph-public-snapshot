@@ -54,6 +54,7 @@ type ObservedStore struct {
 	insertIndexOperation                           *observation.Operation
 	markIndexCompleteOperation                     *observation.Operation
 	markIndexErroredOperation                      *observation.Operation
+	setIndexLogContentsOperation                   *observation.Operation
 	dequeueIndexOperation                          *observation.Operation
 	requeueIndexOperation                          *observation.Operation
 	deleteIndexByIdOperation                       *observation.Operation
@@ -283,6 +284,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"mark_index_errored"},
 			Metrics:      metrics,
 		}),
+		setIndexLogContentsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.SetIndexLogContents",
+			MetricLabels: []string{"set_index_log_contents"},
+			Metrics:      metrics,
+		}),
 		dequeueIndexOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DequeueIndex",
 			MetricLabels: []string{"dequeue_index"},
@@ -380,6 +386,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		insertIndexOperation:                           s.insertIndexOperation,
 		markIndexCompleteOperation:                     s.markIndexCompleteOperation,
 		markIndexErroredOperation:                      s.markIndexErroredOperation,
+		setIndexLogContentsOperation:                   s.setIndexLogContentsOperation,
 		dequeueIndexOperation:                          s.dequeueIndexOperation,
 		requeueIndexOperation:                          s.requeueIndexOperation,
 		deleteIndexByIdOperation:                       s.deleteIndexByIdOperation,
@@ -713,6 +720,13 @@ func (s *ObservedStore) MarkIndexErrored(ctx context.Context, id int, failureMes
 	ctx, endObservation := s.markIndexErroredOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.MarkIndexErrored(ctx, id, failureMessage)
+}
+
+// SetIndexLogContents calls into the inner store and registers the observed results.
+func (s *ObservedStore) SetIndexLogContents(ctx context.Context, id int, contents string) (err error) {
+	ctx, endObservation := s.setIndexLogContentsOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.SetIndexLogContents(ctx, id, contents)
 }
 
 // DequeueIndex calls into the inner store and registers the observed results.

@@ -12,6 +12,7 @@ import (
 func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
 	mux.Path("/dequeue").Methods("POST").HandlerFunc(s.handleDequeue)
+	mux.Path("/setlog").Methods("POST").HandlerFunc(s.handleSetLogContents)
 	mux.Path("/complete").Methods("POST").HandlerFunc(s.handleComplete)
 	mux.Path("/heartbeat").Methods("POST").HandlerFunc(s.handleHeartbeat)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -39,6 +40,22 @@ func (s *Server) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, index)
+}
+
+// POST /setlog
+func (s *Server) handleSetLogContents(w http.ResponseWriter, r *http.Request) {
+	var payload types.SetLogRequest
+	if !decodeBody(w, r, &payload) {
+		return
+	}
+
+	if err := s.indexManager.SetLogContents(r.Context(), payload.IndexerName, payload.IndexID, payload.Contents); err != nil {
+		log15.Error("Failed to set log contents", "err", err)
+		http.Error(w, fmt.Sprintf("failed to set log contents: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // POST /complete

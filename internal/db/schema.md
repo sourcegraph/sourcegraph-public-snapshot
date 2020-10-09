@@ -614,6 +614,7 @@ Indexes:
  indexer         | text                     | not null
  indexer_args    | text[]                   | not null
  outfile         | text                     | not null
+ log_contents    | text                     | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:

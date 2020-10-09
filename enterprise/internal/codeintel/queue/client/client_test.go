@@ -70,6 +70,44 @@ func TestDequeueBadResponse(t *testing.T) {
 	}
 }
 
+func TestSetLogContents(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
+		}
+		if r.URL.Path != "/.internal-code-intel/index-queue/setlog" {
+			t.Errorf("unexpected method. want=%s have=%s", "/.internal-code-intel/index-queue/setlog", r.URL.Path)
+		}
+		if _, password, _ := r.BasicAuth(); password != "hunter2" {
+			t.Errorf("unexpected password. want=%s have=%s", "hunter2", password)
+		}
+
+		comparePayload(t, r.Body, []byte(`{
+			"indexerName": "deadbeef",
+			"indexId": 42,
+			"payload": "test payload"
+		}`))
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	if err := testClient(ts.URL).SetLogContents(context.Background(), 42, "test payload"); err != nil {
+		t.Fatalf("unexpected error setting log contents: %s", err)
+	}
+}
+
+func TestSetLogContentsBadResponse(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	if err := testClient(ts.URL).SetLogContents(context.Background(), 42, "test payload"); err == nil {
+		t.Fatalf("unexpected error setting log contents: %s", err)
+	}
+}
+
 func TestComplete(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -120,7 +158,7 @@ func TestCompleteBadResponse(t *testing.T) {
 	defer ts.Close()
 
 	if err := testClient(ts.URL).Complete(context.Background(), 42, fmt.Errorf("oops")); err == nil {
-		t.Fatalf("unexpected nil error dequeueing record")
+		t.Fatalf("unexpected error marking record complete: %s", err)
 	}
 }
 
