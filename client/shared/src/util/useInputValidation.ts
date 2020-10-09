@@ -1,5 +1,5 @@
 import { compact, head } from 'lodash'
-import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import { useMemo, useState, useCallback, useRef } from 'react'
 import { concat, EMPTY, Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 import { useEventObservable } from './useObservable'

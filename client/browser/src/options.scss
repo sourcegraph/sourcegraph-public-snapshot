@@ -1,9 +1,9 @@
 // Options page CSS entry point
 
-@import '../../shared/src/global-styles/colors.scss';
+@import '../../branded/src/global-styles/colors.scss';
+@import '../../branded/src/components/LoaderInput.scss';
+@import '../../branded/src/components/Toggle.scss';
 @import '../../shared/src/global-styles/icons.scss';
-@import '../../shared/src/components/LoaderInput.scss';
-@import '../../shared/src/components/Toggle.scss';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';

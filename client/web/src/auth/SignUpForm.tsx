@@ -14,7 +14,7 @@ import { catchError, switchMap } from 'rxjs/operators'
 import { fromFetch } from 'rxjs/fetch'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { LoaderButton } from '../components/LoaderButton'
-import { LoaderInput } from '../../../shared/src/components/LoaderInput'
+import { LoaderInput } from '../../../branded/src/components/LoaderInput'
 import {
     useInputValidation,
     ValidationOptions,

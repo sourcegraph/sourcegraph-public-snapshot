@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
-import { LoaderInput } from '../../../../shared/src/components/LoaderInput'
+import { LoaderInput } from '../../../../branded/src/components/LoaderInput'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import classNames from 'classnames'
-import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
+import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { Observable } from 'rxjs'
-import { Toggle } from '../../../../shared/src/components/Toggle'
+import { Toggle } from '../../../../branded/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
 import { noop } from 'lodash'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
@@ -92,7 +92,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 </form>
                 <p className="mt-2">Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
                 <p>
-                    <LinkOrButton>How do we keep your code private?</LinkOrButton>
+                    <ButtonLink>How do we keep your code private?</ButtonLink>
                 </p>
             </section>
 
@@ -101,13 +101,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className="options-page__section">
                 <p>
-                    <LinkOrButton
+                    <ButtonLink
                         onSelect={useCallback(() => setShowAdvancedSettings(!showAdvancedSettings), [
                             showAdvancedSettings,
                         ])}
                     >
                         {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
-                    </LinkOrButton>
+                    </ButtonLink>
                 </p>
             </section>
             {showAdvancedSettings && (
@@ -115,14 +115,14 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             )}
             <section className="options-page__split-section">
                 <div className="options-page__split-section__part">
-                    <LinkOrButton to="https://sourcegraph.com">
+                    <ButtonLink to="https://sourcegraph.com">
                         <EarthIcon className="icon-inline" /> Sourcegraph Cloud
-                    </LinkOrButton>
+                    </ButtonLink>
                 </div>
                 <div className="options-page__split-section__part">
-                    <LinkOrButton to="https://docs.sourcegraph.com">
+                    <ButtonLink to="https://docs.sourcegraph.com">
                         <BookOpenPageVariantIcon className="icon-inline" /> Documentation
-                    </LinkOrButton>
+                    </ButtonLink>
                 </div>
             </section>
         </div>

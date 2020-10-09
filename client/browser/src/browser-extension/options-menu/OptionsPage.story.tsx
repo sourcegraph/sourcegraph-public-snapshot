@@ -1,18 +1,13 @@
+import React, { useState } from 'react'
+import { storiesOf } from '@storybook/react'
 import { OptionsPage } from './OptionsPage'
 import optionsStyles from '../../options.scss'
 import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
-import { noop } from 'lodash'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')
-
-const optionFlags = [
-    { key: 'one', label: 'Flag One', value: true },
-    { key: 'two', label: 'Flag Two', value: false },
-    { key: 'three', label: 'Flag Three', value: false },
-]
 
 storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => (
@@ -30,8 +25,6 @@ storiesOf('browser/Options/OptionsPage', module)
             isActivated={true}
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
-            showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
-            currentHost="github.com"
         />
     ))
     .add('Interactive', () => {
@@ -45,7 +38,6 @@ storiesOf('browser/Options/OptionsPage', module)
                 sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
                 isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
                 isFullPage={true}
-                currentHost="github.com"
             />
         )
     })
@@ -63,17 +55,3 @@ storiesOf('browser/Options/OptionsPage', module)
             />
         )
     })
-    .add('With permission alert', () => (
-        <OptionsPage
-            version={text('version', '0.0.0')}
-            isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
-            validateSourcegraphUrl={validateSourcegraphUrl}
-            onToggleActivated={action('onToggleActivated')}
-            isActivated={true}
-            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
-            isFullPage={true}
-            permissionAlert={{ name: 'GitLab.com' }}
-            optionFlags={optionFlags}
-            onChangeOptionFlag={noop}
-        />
-    ))
