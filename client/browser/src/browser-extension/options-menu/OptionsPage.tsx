@@ -23,14 +23,10 @@ export interface OptionsPageProps {
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<MdiReactIconProps> }
+    requestPermissionsHandler?: React.MouseEventHandler
     optionFlags: { key: string; label: string; value: boolean }[]
     onChangeOptionFlag: (key: string, value: boolean) => void
     currentHost?: string
-}
-
-function onlyHTTPS(url: string): string | undefined {
-    // TODO(tj): improve copy
-    return url.startsWith('https://') ? undefined : 'We support only https'
 }
 
 export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
@@ -42,6 +38,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     isFullPage,
     showPrivateRepositoryAlert,
     permissionAlert,
+    requestPermissionsHandler,
     optionFlags,
     onChangeOptionFlag,
     currentHost,
@@ -116,7 +113,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 </ButtonLink>
             </section>
 
-            {permissionAlert && <PermissionAlert {...permissionAlert} onClickGrantPermissions={noop} />}
+            {permissionAlert && (
+                <PermissionAlert {...permissionAlert} onClickGrantPermissions={requestPermissionsHandler} />
+            )}
 
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className="options-page__section pt-2">
@@ -150,7 +149,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 interface PermissionAlertProps {
     icon?: React.ComponentType<MdiReactIconProps>
     name: string
-    onClickGrantPermissions: () => void
+    onClickGrantPermissions?: React.MouseEventHandler
 }
 
 const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
@@ -217,4 +216,12 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
 
 function preventDefault(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault()
+}
+
+/**
+ * Synchronous validator to provide helpful error message
+ */
+function onlyHTTPS(url: string): string | undefined {
+    // TODO(tj): improve copy
+    return url.startsWith('https://') ? undefined : 'We support only https'
 }

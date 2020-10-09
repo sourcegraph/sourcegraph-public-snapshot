@@ -12,10 +12,12 @@ const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrar
 
 const onChangeOptionFlag = action('onChangeOptionFlag')
 const optionFlags: OptionsPageProps['optionFlags'] = [
-    {key: 'allowErrorReporting', label: 'Allow error reporting', value: false},
-    {key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false},
-    {key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false}
+    { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
+    { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
+    { key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false },
 ]
+
+const requestPermissionsHandler = action('requestPermission')
 
 storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => (
@@ -70,7 +72,7 @@ storiesOf('browser/Options/OptionsPage', module)
         )
     })
     .add('Asking for permission', () => (
-            <OptionsPage
+        <OptionsPage
             version={text('version', '0.0.0')}
             // isCurrentRepositoryPrivate={boolean('isCurrentRepositoryPrivate', false)}
             validateSourcegraphUrl={validateSourcegraphUrl}
@@ -81,6 +83,7 @@ storiesOf('browser/Options/OptionsPage', module)
             optionFlags={optionFlags}
             onChangeOptionFlag={onChangeOptionFlag}
             currentHost="github.com"
-            permissionAlert={{name: 'GitHub', icon: MicrosoftGithubIcon}}
+            permissionAlert={{ name: 'GitHub', icon: MicrosoftGithubIcon }}
+            requestPermissionsHandler={requestPermissionsHandler}
         />
-        ))
+    ))

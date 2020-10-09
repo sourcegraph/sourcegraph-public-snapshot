@@ -118,27 +118,45 @@ function handleChangeOptionFlag(key: string, value: boolean): void {
     }
 }
 
+function buildRequestPermissionsHandler({ protocol, host }: NonNullable<TabStatus>) {
+    return function requestPermissionsHandler(event: React.MouseEvent) {
+        event.preventDefault()
+        browser.permissions.request({ origins: [`${protocol}//${host}/*`] }).catch(noop)
+    }
+}
+
 const Options: React.FunctionComponent = () => {
     const sourcegraphUrl = useObservable(observingSourcegraphUrl) || ''
     const isActivated = useObservable(observingIsActivated)
     const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues) || []
-    const [currentTabStatus, setCurrentTabStatus] = useState<TabStatus | undefined>()
+    const [currentTabStatus, setCurrentTabStatus] = useState<
+        { status: TabStatus; handler: React.MouseEventHandler } | undefined
+    >()
 
     useEffect(() => {
         fetchCurrentTabStatus().then(tabStatus => {
-            setCurrentTabStatus(tabStatus)
+            setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
         }, noop)
     }, [])
 
     let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
-    if (currentTabStatus && !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.protocol)) {
-        const knownCodeHost=   knownCodeHosts.find(({host}) => host === currentTabStatus.host)
-        if (knownCodeHosts) {
+    if (
+        currentTabStatus &&
+        !currentTabStatus?.status.hasPermissions &&
+        !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.status.protocol)
+    ) {
+        const knownCodeHost = knownCodeHosts.find(({ host }) => host === currentTabStatus.status.host)
+        if (knownCodeHost) {
             permissionAlert = knownCodeHost
         } else {
-            permissionAlert = { name: currentTabStatus.host }
+            permissionAlert = { name: currentTabStatus.status.host }
         }
     }
+
+    /**
+     * TODO(tj): Finish permissions logic, then implement private repo logic
+     * - Observe permissions (browser.permissions.onAdded), set currentTabStatus in subscription
+     */
 
     return (
         <OptionsPage
@@ -152,7 +170,8 @@ const Options: React.FunctionComponent = () => {
             onChangeOptionFlag={handleChangeOptionFlag}
             showPrivateRepositoryAlert={false}
             permissionAlert={permissionAlert}
-            currentHost={currentTabStatus?.host}
+            currentHost={currentTabStatus?.status.host}
+            requestPermissionsHandler={currentTabStatus?.handler}
         />
     )
 }
