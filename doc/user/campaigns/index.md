@@ -1,11 +1,18 @@
 # Campaigns
 
 <style>
+
 .subtitle {
   font-weight: 600;
   margin-top: -0.5em;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  color: var(--text-muted);
 }
+
+.lead {
+  font-size: 1.15rem;
+}
+
 .markdown-body h2 {
   margin-top: 2em;
 }
@@ -37,7 +44,7 @@
 
 </style>
 
-<p class="subtitle">Make large-scale code changes across many repositories and code hosts.</p>
+<p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
 
 <p class="lead">
 Create a campaign by specifying a search query to get a list of repositories and a script to run in each. The campaign then lets you create pull requests on all affected repositories and tracks their progress until they're all merged. You can preview the changes and update them at any time.
