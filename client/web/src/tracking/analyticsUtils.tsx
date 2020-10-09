@@ -1,5 +1,5 @@
-import { fromEvent, of } from 'rxjs'
-import { catchError, map, publishReplay, refCount, take, timeout } from 'rxjs/operators'
+import { fromEvent, Observable, of } from 'rxjs'
+import { catchError, map, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
 import { asError } from '../../../shared/src/util/errors'
 
@@ -38,7 +38,8 @@ export const browserExtensionMessageReceived = (extensionMarker
  * Indicates if the current user has the browser extension installed. It waits 500ms for the browser
  * extension to fire a registration event, and if it doesn't, emits false
  */
-export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
+export const browserExtensionInstalled: Observable<boolean> = browserExtensionMessageReceived.pipe(
+    mapTo(true),
     timeout(500),
     catchError(error => {
         if (asError(error).name === 'TimeoutError') {

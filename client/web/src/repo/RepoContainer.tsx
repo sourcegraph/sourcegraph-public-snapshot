@@ -58,6 +58,7 @@ import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { IS_CHROME } from '../marketing/util'
+import { useLocalStorage } from '../util/useLocalStorage'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -125,7 +126,7 @@ interface RepoContainerProps
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
-export const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
 
 export const HOVER_THRESHOLD = 3
 
@@ -326,22 +327,23 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
+    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
+
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
-    const [canShowPopover, setCanShowPopover] = useState(() => {
-        if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
-            return true
-        }
-        return false
-    })
-    const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
-        if (
-            localStorage.getItem(HAS_DISMISSED_ALERT_KEY) !== 'true' &&
-            parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD
-        ) {
-            return true
-        }
-        return false
-    })
+    const [canShowPopover, setCanShowPopover] = useState(
+        () => parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD
+    )
+    const [hasDismissedExtensionAlert, setHasDismissedExtensionAlert] = useLocalStorage(HAS_DISMISSED_ALERT_KEY, false)
+    // Intentionally use useMemo() here without a dependency on localStorage to only show the alert on the next reload,
+    // to not cause an annoying layout shift.
+    const showExtensionAlert = useMemo(
+        () =>
+            isBrowserExtensionInstalled === false &&
+            !hasDismissedExtensionAlert &&
+            IS_CHROME && // Remove when Firefox extension works again
+            parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD,
+        [hasDismissedExtensionAlert, isBrowserExtensionInstalled]
+    )
 
     const { onExtensionAlertDismissed } = props
 
@@ -368,9 +370,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
-        localStorage.setItem(HAS_DISMISSED_ALERT_KEY, 'true')
-        setShowExtensionAlert(false)
-    }, [onExtensionAlertDismissed])
+        setHasDismissedExtensionAlert(true)
+    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
