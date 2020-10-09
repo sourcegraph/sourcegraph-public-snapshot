@@ -82,7 +82,19 @@ const isFullPage = !new URLSearchParams(window.location.search).get('popup')
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
         mapTo(undefined),
-        catchError(error => [asError(error).message])
+        catchError(error => {
+            const { message } = asError(error)
+            // We lose Error type when communicating from the background page
+            // to the options page, so we determine the error type from the message
+            if (message.includes('Failed to fetch')) {
+                return ['Incorrect Sourcegraph instance address']
+            }
+            if (message.includes('401')) {
+                return ['You are not authenticated']
+            }
+
+            return [message]
+        })
     )
 
 const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
