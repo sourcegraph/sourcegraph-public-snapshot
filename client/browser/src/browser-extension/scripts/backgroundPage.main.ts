@@ -76,6 +76,15 @@ initializeOmniboxInterface(requestGraphQL)
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
 
+    // Open installation page after the extension was installed
+    browser.runtime.onInstalled.addListener(event => {
+        if (event.reason === 'install') {
+            browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
+                console.error('Error opening after-install page:', error)
+            })
+        }
+    })
+
     // Mirror the managed sourcegraphURL to sync storage
     subscriptions.add(
         observeStorageKey('managed', 'sourcegraphURL')
