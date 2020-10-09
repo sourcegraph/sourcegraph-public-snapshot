@@ -181,7 +181,7 @@ const PrivateRepositoryAlert: React.FunctionComponent = () => (
         </h4>
         <p>
             To use the browser extension with your private repositories, you need to set up a{' '}
-            <strong>private Sourcegraph instance</strong> and connect it to the extension.
+            <strong>private Sourcegraph instance</strong> and connect the browser extension to it.
         </p>
         <ol>
             <li>
@@ -230,7 +230,7 @@ const SourcegraphCloudAlert: React.FunctionComponent = () => (
             <CheckCircleOutlineIcon className="icon-inline mr-2" />
             You're on Sourcegraph Cloud
         </h4>
-        <p>Naturally, browser extension is not necessary to browse public code on Sourcegraph.com</p>
+        <p>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</p>
     </section>
 )
 
