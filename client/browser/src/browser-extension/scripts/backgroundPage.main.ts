@@ -13,7 +13,6 @@ import {
     switchMap,
     take,
     concatMap,
-    tap,
     mapTo,
     catchError,
 } from 'rxjs/operators'
@@ -67,11 +66,6 @@ const configureOmnibox = (serverUrl: string): void => {
         description: `Search code on ${serverUrl}`,
     })
 }
-
-const doesUrlHavePermissions = (url: string): Promise<boolean> =>
-    browser.permissions.contains({
-        origins: [`${url}/*`],
-    })
 
 const requestGraphQL = <T, V = object>({
     request,
