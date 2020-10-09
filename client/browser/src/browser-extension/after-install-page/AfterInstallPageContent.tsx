@@ -57,7 +57,7 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             </p>
                         </div>
                         <div className="bg-2 rounded p-3">
-                            <h3 className="d-flex flex-wrap mb-3 after-install-page-content__code-host-titles">
+                            <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
                                 <div className="mr-5 mb-3">
                                     <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
                                     GitHub Enterprise
