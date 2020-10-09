@@ -91,7 +91,12 @@ import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './c
 import { ContentView, handleContentViews } from './contentViews'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import {
+    createPrivateCodeHoverAlert,
+    getActiveHoverAlerts,
+    onHoverAlertDismissed,
+    userNeedsToSetupPrivateInstance,
+} from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -390,12 +395,17 @@ function initCodeIntelligence({
                             )
                         )
                     ),
-                    getActiveHoverAlerts(hoverAlerts),
+                    getActiveHoverAlerts([
+                        ...hoverAlerts,
+                        ...(userNeedsToSetupPrivateInstance(codeHost, platformContext.sourcegraphURL)
+                            ? [of(createPrivateCodeHoverAlert(codeHost))]
+                            : []),
+                    ]),
                 ]).pipe(
                     map(
                         ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverMerged | null> => ({
                             isLoading,
-                            result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                            result: hoverMerged || alerts?.length ? { contents: [], ...hoverMerged, alerts } : null,
                         })
                     )
                 )
@@ -590,7 +600,12 @@ export function handleCodeHost({
     const hoverAlerts: Observable<HoverAlert>[] = []
 
     if (codeHost.nativeTooltipResolvers) {
-        const { subscription, nativeTooltipsAlert } = handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost)
+        const { subscription, nativeTooltipsAlert } = handleNativeTooltips(
+            mutations,
+            nativeTooltipsEnabled,
+            codeHost,
+            platformContext.sourcegraphURL
+        )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
         subscriptions.add(registerNativeTooltipContributions(extensionsController))

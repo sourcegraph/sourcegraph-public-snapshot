@@ -115,6 +115,8 @@ export const renderMarkdown = (
                     ...sanitize.defaults.allowedAttributes.a,
                     'title',
                     'data-tooltip', // TODO support fancy tooltips through native titles
+                    'class',
+                    { name: 'rel', values: ['noopener', 'noreferrer'] },
                 ],
                 img: [...sanitize.defaults.allowedAttributes.img, 'alt'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
