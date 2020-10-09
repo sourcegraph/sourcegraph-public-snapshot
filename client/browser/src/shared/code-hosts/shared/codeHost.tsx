@@ -451,7 +451,6 @@ function initCodeIntelligence({
         }
         public render(): JSX.Element | null {
             const hoverOverlayProps = this.getHoverOverlayProps()
-            console.log('hoverOverlayProps', hoverOverlayProps)
             return hoverOverlayProps ? (
                 <HoverOverlay
                     {...hoverOverlayProps}
