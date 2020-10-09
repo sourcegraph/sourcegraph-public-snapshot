@@ -183,7 +183,7 @@ func RepoUpdater() *Container {
 							Critical:          Alert{GreaterOrEqual: 1, For: time.Minute},
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs",
+							PossibleSolutions: "Check repo-updater logs for errors.",
 						},
 					},
 				},
