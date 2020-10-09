@@ -21,7 +21,6 @@
   display: inline-block;
   margin: 0;
   padding: 1rem 1.25rem;
-  border: 0;
   border-radius: 4px;
   text-decoration: none;
   -webkit-appearance: none;
@@ -42,6 +41,32 @@
   margin: 3em 0;
 }
 
+
+.getting-started {
+  display: flex;
+  align-items: stretch;
+}
+
+.getting-started-box {
+  flex: 1;
+  margin: 0.5em;
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  border: 1px solid var(--sidebar-nav-active-bg);
+}
+.getting-started-box a {
+  color: var(--text-color);
+}
+
+.getting-started-box a:hover {
+  color: var(--link-color);
+}
+
+.getting-started-box a span {
+  color: var(--link-color);
+  font-weight: bold;
+}
+
 </style>
 
 <p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
@@ -58,9 +83,23 @@ Create a campaign by specifying a search query to get a list of repositories and
 
 ## Getting started
 
-- New to campaigns? See the [🏃 **quickstart guide**](quickstart.md)
-- Watch the [**🎥 campaigns demo video**](https://www.youtube.com/watch?v=EfKwKFzOs3E)
-- [Introduction to campaigns](introduction_to_campaigns.md)
+<div class="getting-started">
+  <div class="getting-started-box">
+  <a href="quickstart">
+  <span>New to campaigns?</span></br>Run through the <b>quickstart guide</b> and create a campaign in less than 10 minutes.
+  </a>
+  </div>
+  <div class="getting-started-box">
+  <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E">
+  <span>Demo video</span></br>Watch the campaigns demo video to see what campaigns are capable of.
+  </a>
+  </div>
+  <div class="getting-started-box">
+  <a href="introduction_to_campaigns">
+  <span>Introduction to campaigns</span></br>Find out what campaigns are and what they can, learn key concepts and see what others use them for.
+  </a>
+  </div>
+</div>
 
 ## How-tos
 
