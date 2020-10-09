@@ -6,7 +6,7 @@ import { PhabricatorIcon } from '../../../shared/src/components/icons'
 
 export interface KnownCodeHost {
     host: string
-    icon?: React.ComponentType<MdiReactIconProps>
+    icon?: React.ComponentType<{ className?: string }>
     name: string
 }
 

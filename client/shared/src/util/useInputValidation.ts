@@ -54,10 +54,10 @@ export function useInputValidation(
     options: ValidationOptions,
     onInputChange?: (inputStateCallback: (previousInputState: InputValidationState) => InputValidationState) => void
 ): [
-        InputValidationState,
-        (change: React.ChangeEvent<HTMLInputElement>) => void,
-        React.MutableRefObject<HTMLInputElement | null>
-    ] {
+    InputValidationState,
+    (change: React.ChangeEvent<HTMLInputElement>) => void,
+    React.MutableRefObject<HTMLInputElement | null>
+] {
     const { synchronousValidators, asynchronousValidators } = useMemo(() => {
         const { synchronousValidators = [], asynchronousValidators = [] } = options
 
