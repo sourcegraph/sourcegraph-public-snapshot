@@ -159,14 +159,14 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     onClickGrantPermissions,
 }) => (
     <section className="options-page__section options-page__alert">
-        <h4>
-            {Icon && <Icon className="icon-inline" />} {name}
-        </h4>
+        <h6 className="d-flex align-items-center">
+            {Icon && <Icon className="icon-inline mr-2" />} <span>{name}</span>
+        </h6>
         <p className="options-page__permission-text">
             <strong>Grant the permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
-        <button type="button" onClick={onClickGrantPermissions} className="btn btn-primary">
-            Grant permissions
+        <button type="button" onClick={onClickGrantPermissions} className="btn btn-sm btn-primary">
+            <small>Grant permissions</small>
         </button>
     </section>
 )
