@@ -88,7 +88,7 @@
 
         // Make sure HoverOverlay doesn't get too large even with large alerts.
         overflow-y: auto;
-        max-height: 10rem;
+        max-height: 20rem;
     }
     &__alert {
         padding: 0.5rem;
@@ -99,8 +99,8 @@
 
         // this is necessary otherwise single line alerts will render on two lines
         // if they are dismissible.
-        p {
-            display: inline-block;
+        p:last-child {
+            display: inline;
         }
     }
 
