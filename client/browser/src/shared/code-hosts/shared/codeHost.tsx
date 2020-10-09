@@ -91,7 +91,12 @@ import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './c
 import { ContentView, handleContentViews } from './contentViews'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import {
+    createPrivateCodeHoverAlert,
+    getActiveHoverAlerts,
+    onHoverAlertDismissed,
+    userNeedsToSetupPrivateInstance,
+} from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -108,7 +113,7 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
-import { isFirefox, observeSourcegraphURL } from '../../util/context'
+import { isDefaultSourcegraphUrl, isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
@@ -393,22 +398,8 @@ function initCodeIntelligence({
                     ),
                     getActiveHoverAlerts([
                         ...hoverAlerts,
-                        ...(codeHost.getContext?.().privateRepository
-                            ? [
-                                  of({
-                                      type: 'private-code',
-                                      summary: {
-                                          type: MarkupKind.Markdown,
-                                          value:
-                                              '#### Sourcegraph for private code\n\n' +
-                                              'To get code intelligence on your private repositories, you need to set up a private Sourcegraph instance and connect it to the browser extension.' +
-                                              '\n\n' +
-                                              `<a href="https://docs.sourcegraph.com/integration/browser_extension" class="${
-                                                  codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
-                                              }" target="_blank" rel="noopener norefferer">Show more info</a>`,
-                                      },
-                                  }),
-                              ]
+                        ...(userNeedsToSetupPrivateInstance(codeHost, platformContext.sourcegraphURL)
+                            ? [of(createPrivateCodeHoverAlert(codeHost))]
                             : []),
                     ]),
                 ]).pipe(
@@ -460,6 +451,7 @@ function initCodeIntelligence({
         }
         public render(): JSX.Element | null {
             const hoverOverlayProps = this.getHoverOverlayProps()
+            console.log('hoverOverlayProps', hoverOverlayProps)
             return hoverOverlayProps ? (
                 <HoverOverlay
                     {...hoverOverlayProps}
@@ -610,7 +602,12 @@ export function handleCodeHost({
     const hoverAlerts: Observable<HoverAlert>[] = []
 
     if (codeHost.nativeTooltipResolvers) {
-        const { subscription, nativeTooltipsAlert } = handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost)
+        const { subscription, nativeTooltipsAlert } = handleNativeTooltips(
+            mutations,
+            nativeTooltipsEnabled,
+            codeHost,
+            platformContext.sourcegraphURL
+        )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
         subscriptions.add(registerNativeTooltipContributions(extensionsController))
