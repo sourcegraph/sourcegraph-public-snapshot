@@ -6,30 +6,6 @@
 @import './browser-extension/after-install-page/AfterInstallPageContent';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
-:root {
-    // Use the same root size as the webapp to maintain consistency
-    font-size: 16px;
-}
-
-body {
-    // Use a smaller base size than the default 16px,
-    // because an options menu should feel more like a
-    // natural extension of the browser's UI than a webpage
-    font-size: 14px;
-}
-
-a {
-    color: var(--link-color);
-
-    &:hover {
-        color: var(--link-hover-color);
-    }
-}
-
-small {
-    font-size: 0.75rem !important;
-}
-
 .options-page {
     width: 26rem;
 
@@ -41,7 +17,6 @@ small {
     &__section {
         padding: 1rem;
 
-        /* border-top: 1px solid var(--color-border-2); */
         &:first-child {
             border-top: none;
         }
@@ -55,10 +30,6 @@ small {
         border-style: solid;
         border-width: 1px 0;
         border-color: var(--color-border-2);
-    }
-
-    &__input {
-        height: calc(2rem + 2px);
     }
 
     &__split-section-part {
@@ -76,7 +47,7 @@ small {
     }
 
     &__version {
-        margin-left: 2.1rem;
+        margin-left: 3rem;
         margin-top: 0.25rem;
     }
 
