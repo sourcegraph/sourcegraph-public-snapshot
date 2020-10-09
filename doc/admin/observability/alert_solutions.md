@@ -3092,7 +3092,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_sched_update_queue_length"
+  "critical_repo-updater_sched_update_queue_length"
 ]
 ```
 

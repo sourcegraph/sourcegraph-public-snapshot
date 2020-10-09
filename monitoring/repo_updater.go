@@ -158,7 +158,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories queued for update",
 							Query:             `src_repoupdater_sched_update_queue_length`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute},
+							Critical:          Alert{GreaterOrEqual: 1000, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. The queue should drop as items are sent to GitServer",
