@@ -71,6 +71,10 @@ Create a campaign by specifying a search query to get a list of repositories and
 - [Refactoring Go code using Comby](tutorials/refactor_go_comby.md)
 - [Updating Go import statements using Comby](tutorials/updating_go_import_statements.md)
 
+## References
+
+- [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
+
 ## Known issues
 
 - Campaigns currently support **GitHub**, **GitLab** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
