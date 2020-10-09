@@ -153,13 +153,13 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                         <BookOpenPageVariantIcon className="icon-inline" />
                     </div>
                     <p className="flex-grow-1 m-0 ml-3">
-                        Read{' '}
+                        Read the{' '}
                         <a
                             href="https://docs.sourcegraph.com/integration/browser_extension"
                             rel="noopener"
                             target="_blank"
                         >
-                            the Sourcegraph Documentation
+                            Sourcegraph Documentation
                         </a>{' '}
                         to learn more about how we respect your privacy, troubleshooting and extension features.
                     </p>
