@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
@@ -58,7 +59,7 @@ var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
 
-func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
+func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published interface{}) string {
 	diff := `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
@@ -78,6 +79,11 @@ index e5af166..d44c3fc 100644
  Line 9
  Line 10
 `
+
+	p, err := json.Marshal(published)
+	if err != nil {
+		panic(err)
+	}
 	tmpl := `{
 
 		"baseRepository": %q,
@@ -90,13 +96,13 @@ index e5af166..d44c3fc 100644
 		"title": "the title",
 		"body": "the body of the PR",
 
-		"published": false,
+		"published": %s,
 
 		"commits": [
 		  {"message": "git commit message\n\nand some more content in a second paragraph.", "diff": %q, "authorName": "Mary McButtons", "authorEmail": %q}]
 	}`
 
-	return fmt.Sprintf(tmpl, repo, baseRev, repo, diff, ChangesetSpecAuthorEmail)
+	return fmt.Sprintf(tmpl, repo, baseRev, repo, p, diff, ChangesetSpecAuthorEmail)
 }
 
 func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {

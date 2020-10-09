@@ -179,7 +179,7 @@ func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateR
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() campaigns.Publish {
-	return campaigns.Publish{Val: r.desc.Published}
+	return r.desc.Published
 }
 
 func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {

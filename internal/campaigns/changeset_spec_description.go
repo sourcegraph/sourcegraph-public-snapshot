@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -41,11 +40,12 @@ func (p *Publish) Valid() bool {
 }
 
 func (p Publish) MarshalJSON() ([]byte, error) {
-	fmt.Printf("%+v\n", p.Val)
 	if !p.Valid() {
-		// return nil, errors.New("invalid value")
-		v := "null"
-		return []byte(v), nil
+		if p.Val == nil {
+			v := "null"
+			return []byte(v), nil
+		}
+		return nil, errors.New("invalid value")
 	}
 	if p.True() {
 		v := "true"
@@ -59,12 +59,17 @@ func (p Publish) MarshalJSON() ([]byte, error) {
 	return []byte(v), nil
 }
 
-func (p Publish) UnmarshalJSON(b []byte) error {
-	var v interface{}
-	if err := json.Unmarshal(b, &v); err != nil {
+func (p *Publish) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &p.Val); err != nil {
 		return err
 	}
-	p.Val = v
+	return nil
+}
+
+func (p Publish) UnmarshalYAML(b []byte) error {
+	if err := json.Unmarshal(b, &p.Val); err != nil {
+		return err
+	}
 	return nil
 }
 

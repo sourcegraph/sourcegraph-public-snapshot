@@ -194,6 +194,7 @@ Referenced by:
  unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
+ draft                 | boolean                  | not null default false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)

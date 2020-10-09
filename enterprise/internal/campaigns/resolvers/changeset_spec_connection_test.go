@@ -53,7 +53,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(repos))
 	for _, r := range repos {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := campaigns.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "d34db33f"))
+		s, err := campaigns.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "d34db33f", false))
 		if err != nil {
 			t.Fatal(err)
 		}

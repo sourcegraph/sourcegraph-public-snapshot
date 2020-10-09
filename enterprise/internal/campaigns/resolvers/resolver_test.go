@@ -214,7 +214,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"changesetSpec": ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f"),
+		"changesetSpec": ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f", false),
 	}
 
 	var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
