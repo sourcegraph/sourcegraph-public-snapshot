@@ -1,23 +1,10 @@
-// Options page CSS entry point
+// CSS entry point for branded contexts (options menu and after-install page)
+// Bootstrap etc can be used freely here (in opposite to the content page styles in app.scss)
 
-@import '../../branded/src/global-styles/colors.scss';
-@import '../../branded/src/components/LoaderInput.scss';
-@import '../../branded/src/components/Toggle.scss';
-@import '../../shared/src/global-styles/icons.scss';
+@import '../../branded/src/global-styles/index.scss';
+@import '../../branded/src/components/Toggle';
+@import './browser-extension/after-install-page/AfterInstallPageContent';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/reboot';
-@import 'bootstrap/scss/type';
-@import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/forms';
-@import 'bootstrap/scss/input-group';
-@import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/button-group';
-@import 'bootstrap/scss/alert';
 
 :root {
     // Use the same root size as the webapp to maintain consistency
@@ -53,6 +40,7 @@ small {
 
     &__section {
         padding: 1rem;
+
         /* border-top: 1px solid var(--color-border-2); */
         &:first-child {
             border-top: none;

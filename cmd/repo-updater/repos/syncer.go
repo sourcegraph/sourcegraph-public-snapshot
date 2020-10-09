@@ -836,6 +836,8 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(d *Diff, err *error) {
+		syncStarted.WithLabelValues(family).Inc()
+
 		now := s.Now()
 		took := s.Now().Sub(began).Seconds()
 
@@ -862,7 +864,6 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 		tr.LogFields(fields...)
 
 		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
-		syncStarted.WithLabelValues(family).Inc()
 
 		success := err == nil || *err == nil
 		syncDuration.WithLabelValues(strconv.FormatBool(success), family).Observe(took)

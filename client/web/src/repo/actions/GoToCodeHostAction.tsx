@@ -4,7 +4,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useCallback, useMemo, useState } from 'react'
-import { merge, Observable, of } from 'rxjs'
+import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -16,9 +16,18 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
+import { useLocalStorage } from '../../util/useLocalStorage'
 
 interface GoToCodeHostPopoverProps {
+    /**
+     * Whether the GoToCodeHostAction can show a popover to install the browser extension.
+     * It may still not do so if the popover was permanently dismissed.
+     */
     canShowPopover: boolean
+
+    /**
+     * Called when the popover is dismissed in any way ("No thanks", "Remind me later" or "Install").
+     */
     onPopoverDismissed: () => void
 }
 
@@ -31,11 +40,10 @@ interface Props extends RevisionSpec, Partial<FileSpec>, GoToCodeHostPopoverProp
 
     externalLinks?: ExternalLinkFields[]
 
-    browserExtensionInstalled: Observable<boolean | { platform: unknown }>
     fetchFileExternalLinks: typeof fetchFileExternalLinks
 }
 
-const HAS_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
+const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
@@ -45,13 +53,12 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     const { onPopoverDismissed, repo, revision, filePath } = props
 
-    const isExtensionInstalled = useObservable(props.browserExtensionInstalled)
-
-    const [hasDissmissedPopup, setHasDismissedPopup] = useState(
-        () => localStorage.getItem(HAS_DISMISSED_POPUP_KEY) === 'true'
+    const [hasPermanentlyDismissedPopup, setHasPermanentlyDismissedPopup] = useLocalStorage(
+        HAS_PERMANENTLY_DISMISSED_POPUP_KEY,
+        false
     )
 
-    const hijackLink = !isExtensionInstalled && !hasDissmissedPopup && props.canShowPopover
+    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not
@@ -73,30 +80,29 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     /** This is a hard rejection. Never ask the user again. */
     const onRejection = useCallback(() => {
-        localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
-        setHasDismissedPopup(true)
+        setHasPermanentlyDismissedPopup(true)
         setShowPopover(false)
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupRejected')
-    }, [onPopoverDismissed])
+    }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
     /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
         onPopoverDismissed()
         setShowPopover(false)
+
         eventLogger.log('BrowserExtensionPopupClosed')
     }, [onPopoverDismissed])
 
     /** The user is likely to install the browser extension at this point, so don't show it again. */
     const onClickInstall = useCallback(() => {
-        localStorage.setItem(HAS_DISMISSED_POPUP_KEY, 'true')
-        setHasDismissedPopup(true)
+        setHasPermanentlyDismissedPopup(true)
         setShowPopover(false)
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupClickedInstall')
-    }, [onPopoverDismissed])
+    }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
     const toggle = useCallback(() => {
         if (showPopover) {
@@ -188,7 +194,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 className="nav-link test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
-                target="_self"
+                target="_blank"
                 rel="noopener noreferrer"
                 data-tooltip={`View on ${displayName}`}
                 id={TARGET_ID}

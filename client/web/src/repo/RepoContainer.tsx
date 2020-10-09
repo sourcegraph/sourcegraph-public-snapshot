@@ -58,6 +58,7 @@ import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { IS_CHROME } from '../marketing/util'
+import { useLocalStorage } from '../util/useLocalStorage'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -125,9 +126,9 @@ interface RepoContainerProps
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
-export const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
 
-export const HOVER_THRESHOLD = 3
+export const HOVER_THRESHOLD = 5
 
 export interface HoverThresholdProps {
     /**
@@ -326,51 +327,43 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         interactiveSearchMode,
     ])
 
+    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
+
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
-    const [canShowPopover, setCanShowPopover] = useState(() => {
-        if (parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD) {
-            return true
-        }
-        return false
-    })
-    const [showExtensionAlert, setShowExtensionAlert] = useState(() => {
-        if (
-            localStorage.getItem(HAS_DISMISSED_ALERT_KEY) !== 'true' &&
-            parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) >= HOVER_THRESHOLD
-        ) {
-            return true
-        }
-        return false
-    })
+    const [hasDismissedExtensionAlert, setHasDismissedExtensionAlert] = useLocalStorage(HAS_DISMISSED_ALERT_KEY, false)
+    const [hasDismissedPopover, setHasDismissedPopover] = useState(false)
+    const [hoverCount, setHoverCount] = useLocalStorage(HOVER_COUNT_KEY, 0)
+    const canShowPopover =
+        !hasDismissedPopover && isBrowserExtensionInstalled === false && hoverCount >= HOVER_THRESHOLD
+    const showExtensionAlert = useMemo(
+        () => isBrowserExtensionInstalled === false && !hasDismissedExtensionAlert && hoverCount >= HOVER_THRESHOLD,
+        // Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
+        // to not cause an annoying layout shift from displaying the alert.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [hasDismissedExtensionAlert, isBrowserExtensionInstalled]
+    )
 
     const { onExtensionAlertDismissed } = props
 
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
     const onHoverShown = useCallback(() => {
-        const count = parseInt(localStorage.getItem(HOVER_COUNT_KEY) ?? '0', 10) + 1
-
+        const count = hoverCount + 1
         if (count > HOVER_THRESHOLD) {
+            // No need to keep updating localStorage
             return
         }
-
-        if (count === HOVER_THRESHOLD) {
-            setCanShowPopover(true)
-            // Only show alert on first render to avoid layout shift on the triggering hover
-        }
-
-        localStorage.setItem(HOVER_COUNT_KEY, count.toString(10))
-    }, [])
+        setHoverCount(count)
+    }, [hoverCount, setHoverCount])
 
     const onPopoverDismissed = useCallback(() => {
-        setCanShowPopover(false)
+        setHasDismissedPopover(true)
     }, [])
 
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
-        localStorage.setItem(HAS_DISMISSED_ALERT_KEY, 'true')
-        setShowExtensionAlert(false)
-    }, [onExtensionAlertDismissed])
+        setHasDismissedExtensionAlert(true)
+    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -439,7 +432,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         position={position}
                         range={range}
                         externalLinks={externalLinks}
-                        browserExtensionInstalled={browserExtensionInstalled}
                         fetchFileExternalLinks={fetchFileExternalLinks}
                         canShowPopover={canShowPopover}
                         onPopoverDismissed={onPopoverDismissed}
