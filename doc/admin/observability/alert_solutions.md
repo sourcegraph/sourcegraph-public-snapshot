@@ -3083,11 +3083,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 repositories queued for update for 8h0m0s_
+- _repo-updater: 1000+ repositories queued for update for 5m0s_
 
 **Possible solutions:**
 
-- Check repo-updater logs. This is expected to fire if there are no user added code hosts
+- Check repo-updater logs. The queue should drop as items are sent to GitServer
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

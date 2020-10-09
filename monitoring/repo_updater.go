@@ -158,10 +158,10 @@ func RepoUpdater() *Container {
 							Description:       "repositories queued for update",
 							Query:             `src_repoupdater_sched_update_queue_length`,
 							DataMayNotExist:   true,
-							Warning:           Alert{LessOrEqual: 1, For: 8 * time.Hour},
+							Warning:           Alert{GreaterOrEqual: 1000, For: 5 * time.Minute},
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
+							PossibleSolutions: "Check repo-updater logs. The queue should drop as items are sent to GitServer",
 						},
 						Observable{
 							Name:              "sched_loops",
