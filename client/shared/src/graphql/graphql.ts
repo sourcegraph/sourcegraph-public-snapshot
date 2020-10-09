@@ -52,6 +52,11 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
+/**
+ * This function should not be called directly as it does not
+ * add the necessary headers to authorize the GraphQL API call.
+ * Use `requestGraphQL()` in `client/web/src/backend/graphql.ts` instead.
+ */
 export function requestGraphQLCommon<T, V = object>({
     request,
     baseUrl,
