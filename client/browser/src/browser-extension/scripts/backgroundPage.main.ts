@@ -3,8 +3,19 @@ import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'
-import { noop, Observable, Subscription } from 'rxjs'
-import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take, concatMap } from 'rxjs/operators'
+import { combineLatest, merge, Observable, Subscription, timer } from 'rxjs'
+import {
+    bufferCount,
+    filter,
+    groupBy,
+    map,
+    mergeMap,
+    switchMap,
+    take,
+    concatMap,
+    mapTo,
+    catchError,
+} from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
@@ -20,9 +31,14 @@ import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { isDefined } from '../../../../shared/src/util/types'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
 import { EndpointPair } from '../../../../shared/src/platform/context'
-import { setBrowserActionIconState } from '../browser-action-icon'
+import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
+import { fetchSite } from '../../shared/backend/server'
 
 const IS_EXTENSION = true
+
+// Interval to check if the Sourcegraph URL is valid
+// This polling allows to detect if Sourcegraph instance is invalid or needs authentication.
+const INTERVAL_FOR_SOURCEGRPAH_URL_CHECK = 5 /* minutes */ * 60 * 1000
 
 assertEnvironment('BACKGROUND')
 
@@ -103,12 +119,8 @@ async function main(): Promise<void> {
 
     // Update the browserAction icon based on the state of the extension
     subscriptions.add(
-        observeStorageKey('sync', 'disableExtension').subscribe(isDisabled => {
-            if (isDisabled) {
-                setBrowserActionIconState('inactive')
-            } else {
-                setBrowserActionIconState('active')
-            }
+        observeBrowserActionState().subscribe(state => {
+            setBrowserActionIconState(state)
         })
     )
 
@@ -186,8 +198,8 @@ async function main(): Promise<void> {
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 
-    browser.browserAction.onClicked.addListener(noop)
-    browser.browserAction.setBadgeText({ text: '' })
+    // The `popup=true` param is used by the options page to determine if it's
+    // loaded in the popup or in th standalone options page.
     browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
 
     // Add "Enable Sourcegraph on this domain" context menu item
@@ -322,3 +334,34 @@ function handleBrowserPortPair(
 // Browsers log this unhandled Promise automatically (and with a better stack trace through console.error)
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()
+
+function validateSite(): Observable<boolean> {
+    return fetchSite(requestGraphQL).pipe(
+        mapTo(true),
+        catchError(() => [false])
+    )
+}
+
+function observeSourcegraphUrlValidation(): Observable<boolean> {
+    return merge(
+        // Whenever the URL was persisted to storage, we can assume it was validated before-hand
+        observeStorageKey('sync', 'sourcegraphURL').pipe(mapTo(true)),
+        timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
+    )
+}
+
+function observeBrowserActionState(): Observable<BrowserActionIconState> {
+    return combineLatest([observeStorageKey('sync', 'disableExtension'), observeSourcegraphUrlValidation()]).pipe(
+        map(([isDisabled, isSourcegraphUrlValid]) => {
+            if (isDisabled) {
+                return 'inactive'
+            }
+
+            if (!isSourcegraphUrlValid) {
+                return 'active-with-alert'
+            }
+
+            return 'active'
+        })
+    )
+}
