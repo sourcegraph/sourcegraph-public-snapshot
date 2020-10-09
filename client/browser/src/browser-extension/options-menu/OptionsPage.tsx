@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
 import { LoaderInput } from '../../../../branded/src/components/LoaderInput'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
@@ -72,6 +72,12 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         target: '_blank',
         rel: 'noopener noreferrer',
     }
+
+    useEffect(() => {
+        if (!urlState.loading && urlState.kind === 'VALID') {
+            onChangeSourcegraphUrl(urlState.value)
+        }
+    }, [onChangeSourcegraphUrl, urlState.kind, urlState.value, urlState.loading])
 
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
