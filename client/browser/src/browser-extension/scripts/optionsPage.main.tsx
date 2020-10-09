@@ -82,9 +82,8 @@ const isFullPage = !new URLSearchParams(window.location.search).get('popup')
 
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
-        tap(value => console.log('Response', { url, value })),
         mapTo(undefined),
-        catchError(error => asError(error).message)
+        catchError(error => [asError(error).message])
     )
 
 const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {

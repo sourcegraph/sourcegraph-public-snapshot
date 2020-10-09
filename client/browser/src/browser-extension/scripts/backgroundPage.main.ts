@@ -160,11 +160,13 @@ async function main(): Promise<void> {
         async requestGraphQL<T, V = object>({
             request,
             variables,
+            sourcegraphURL,
         }: {
             request: string
             variables: V
+            sourcegraphURL?: string
         }): Promise<GraphQLResult<T>> {
-            return requestGraphQL<T, V>({ request, variables }).toPromise()
+            return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
     }
 
