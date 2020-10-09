@@ -39,6 +39,10 @@ a {
     }
 }
 
+small {
+    font-size: 0.75rem !important;
+}
+
 .options-page {
     width: 26rem;
 
@@ -69,11 +73,7 @@ a {
         height: calc(2rem + 2px);
     }
 
-    &__split-section {
-        display: flex;
-    }
-
-    &__split-section__part {
+    &__split-section--part {
         border-top: 1px solid var(--color-border-2);
         padding: 0.75rem 1rem;
         flex: 50%;
@@ -90,6 +90,10 @@ a {
     &__version {
         margin-left: 2.1rem;
         margin-top: 0.25rem;
+    }
+
+    &__body-text {
+        font-size: 0.75rem;
     }
 
     &__permission-text {

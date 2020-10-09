@@ -58,11 +58,14 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
         )
     )
 
-    const toggleAdvancedSettings = useCallback(() => setShowAdvancedSettings(showAdvancedSettings => !showAdvancedSettings), [])
+    const toggleAdvancedSettings = useCallback(
+        () => setShowAdvancedSettings(showAdvancedSettings => !showAdvancedSettings),
+        []
+    )
 
     const linkProps: Pick<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'rel' | 'target'> = {
         target: '_blank',
-        rel: 'noopener noreferrer'
+        rel: 'noopener noreferrer',
     }
 
     return (
@@ -101,41 +104,42 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                     ) : urlState.kind === 'INVALID' ? (
                         <small className="invalid-feedback">{urlState.reason}</small>
                     ) : (
-                                <small className="valid-feedback">Looks good!</small>
-                            )}
+                        <small className="valid-feedback">Looks good!</small>
+                    )}
                 </form>
-                <p className="mt-2">Enter the URL of your Sourcegraph instance to use the extension on private code.</p>
+                <p className="mt-3 mb-1">
+                    <small>Enter the URL of your Sourcegraph instance to use the extension on private code.</small>
+                </p>
 
-                    <ButtonLink to="https://docs.sourcegraph.com/integration/browser_extension#privacy" {...linkProps}>
-                        How do we keep your code private?
-                        </ButtonLink>
-
+                <ButtonLink to="https://docs.sourcegraph.com/integration/browser_extension#privacy" {...linkProps}>
+                    <small>How do we keep your code private?</small>
+                </ButtonLink>
             </section>
 
             {permissionAlert && <PermissionAlert {...permissionAlert} onClickGrantPermissions={noop} />}
 
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
-            <section className="options-page__section">
+            <section className="options-page__section pt-2">
                 <p className="mb-0">
-                    <ButtonLink
-                        onSelect={toggleAdvancedSettings}
-                    >
-                        {showAdvancedSettings ? 'Hide' : 'Show'} advanced settings
+                    <ButtonLink onSelect={toggleAdvancedSettings}>
+                        <small>{showAdvancedSettings ? 'Hide' : 'Show'} advanced settings</small>
                     </ButtonLink>
                 </p>
-            {showAdvancedSettings && (
-                <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
+                {showAdvancedSettings && (
+                    <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
                 )}
-                </section>
-            <section className="options-page__split-section">
-                <div className="options-page__split-section__part">
+            </section>
+            <section className="d-flex">
+                <div className="options-page__split-section--part">
                     <ButtonLink to="https://sourcegraph.com/search" {...linkProps}>
-                        <EarthIcon className="icon-inline mr-2" />Sourcegraph Cloud
+                        <EarthIcon className="icon-inline mr-2" />
+                        Sourcegraph Cloud
                     </ButtonLink>
                 </div>
                 <div className="options-page__split-section__part">
                     <ButtonLink to="https://docs.sourcegraph.com">
-                        <BookOpenPageVariantIcon className="icon-inline mr-2" {...linkProps} />Documentation
+                        <BookOpenPageVariantIcon className="icon-inline mr-2" {...linkProps} />
+                        Documentation
                     </ButtonLink>
                 </div>
             </section>
@@ -149,7 +153,11 @@ interface PermissionAlertProps {
     onClickGrantPermissions: () => void
 }
 
-const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({ name, icon: Icon, onClickGrantPermissions }) => (
+const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
+    name,
+    icon: Icon,
+    onClickGrantPermissions,
+}) => (
     <section className="options-page__section options-page__alert">
         <h4>
             {Icon && <Icon className="icon-inline" />} {name}

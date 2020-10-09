@@ -10,7 +10,9 @@ export const OptionsPageAdvancedSettings: React.FunctionComponent<OptionsPageAdv
     onChangeOptionFlag,
 }) => (
     <section className="mt-3">
-        <h6>Configuration</h6>
+        <h6>
+            <small>Configuration</small>
+        </h6>
         <div>
             {optionFlags.map(({ label, key, value }) => (
                 <div className="form-check" key={key}>
