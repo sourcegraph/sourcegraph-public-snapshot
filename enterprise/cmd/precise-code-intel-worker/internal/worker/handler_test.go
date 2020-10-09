@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	persistencemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/mocks"
 	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,7 +38,7 @@ func TestHandle(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockPersistenceStore := persistencemocks.NewMockStore()
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	gitserverClient := gitservermocks.NewMockClient()
+	gitserverClient := NewMockGitserverClient()
 
 	// Set default transaction behavior
 	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
@@ -141,7 +140,7 @@ func TestHandleError(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockPersistenceStore := persistencemocks.NewMockStore()
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	gitserverClient := gitservermocks.NewMockClient()
+	gitserverClient := NewMockGitserverClient()
 
 	// Set default transaction behavior
 	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
@@ -209,7 +208,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 
 	mockStore := storemocks.NewMockStore()
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	gitserverClient := gitservermocks.NewMockClient()
+	gitserverClient := NewMockGitserverClient()
 
 	handler := &handler{
 		bundleManagerClient: bundleManagerClient,
