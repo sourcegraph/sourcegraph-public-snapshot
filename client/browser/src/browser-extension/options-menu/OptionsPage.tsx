@@ -9,12 +9,9 @@ import { Toggle } from '../../../../shared/src/components/Toggle'
 import { SourcegraphLogo } from './SourcegraphLogo'
 import { noop } from 'lodash'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import { PhabricatorIcon } from '../../../../shared/src/components/icons'
+import { knownCodeHosts } from '../knownCodeHosts'
 
 interface OptionsPageProps {
     version: string
@@ -177,30 +174,11 @@ const PrivateRepositoryAlert: React.FunctionComponent = props => (
     </section>
 )
 
-const codeHosts = [
-    {
-        host: 'github.com',
-        icon: MicrosoftGithubIcon,
-    },
-    {
-        host: 'gitlab.com',
-        icon: GitlabIcon,
-    },
-    {
-        host: 'bitbucket.org',
-        icon: BitbucketIcon,
-    },
-    {
-        host: 'phabricator.com',
-        icon: PhabricatorIcon,
-    },
-]
-
 const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ currentHost }) => (
     <section className="options-page__section options-page__alert">
-        <p>Get code intelligence tooltips while browsing files and reading PRs on your code host. {currentHost}</p>
+        <p>Get code intelligence tooltips while browsing files and reading PRs on your code host.</p>
         <div>
-            {codeHosts.map(({ host, icon: Icon }) => (
+            {knownCodeHosts.map(({ host, icon: Icon }) => (
                 <span
                     key={host}
                     className={classNames('code-hosts-section__icon', {
@@ -208,7 +186,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                         'code-hosts-section__icon--highlighted': currentHost?.endsWith(host),
                     })}
                 >
-                    <Icon />
+                    {Icon && <Icon />}
                 </span>
             ))}
         </div>

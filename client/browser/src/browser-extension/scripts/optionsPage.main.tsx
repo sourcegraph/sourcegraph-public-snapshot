@@ -27,8 +27,7 @@ import { OptionsPage } from '../options-menu/OptionsPage'
 import { asError } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AnchorLink, setLinkComponent } from '../../../../shared/src/components/Link'
-import MicrosoftGithubIcon from 'mdi-react/MicrosoftGithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
+import { knownCodeHosts } from '../knownCodeHosts'
 
 interface TabStatus {
     host: string
@@ -116,11 +115,6 @@ function handleChangeOptionFlag(key: string, value: boolean): void {
     if (isOptionFlagKey(key)) {
         featureFlags.set(key, value).then(noop, noop)
     }
-}
-
-const knownCodeHosts: Record<string, { name: string; icon: JSX.Element }> = {
-    'github.com': { name: 'GitHub', icon: <MicrosoftGithubIcon className="icon-inline" /> },
-    'gitlab.com': { name: 'GitLab', icon: <GitlabIcon className="icon-inline" /> },
 }
 
 const Options: React.FunctionComponent = () => {
