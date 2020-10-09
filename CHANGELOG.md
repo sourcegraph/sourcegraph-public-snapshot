@@ -50,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The explore page (`/explore`) was removed.
 - The sign out page was removed.
 - The unused GraphQL types `DiffSearchResult` and `DeploymentConfiguration` were removed.
+- Total counts of users by product area have been removed from pings.
 
 ## 3.20.1
 
