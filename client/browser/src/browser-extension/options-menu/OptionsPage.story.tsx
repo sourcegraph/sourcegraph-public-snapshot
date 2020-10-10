@@ -7,16 +7,21 @@ import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
+import { subtypeOf } from '../../../../shared/src/util/types'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')
 
-const onChangeOptionFlag = action('onChangeOptionFlag')
-const optionFlags: OptionsPageProps['optionFlags'] = [
-    { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-    { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
-    { key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false },
-]
+const commonProps = subtypeOf<Partial<OptionsPageProps>>()({
+    onChangeOptionFlag: action('onChangeOptionFlag'),
+    optionFlags: [
+        { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
+        { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
+        { key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false },
+    ],
+    version: text('version', '0.0.0'),
+    onChangeSourcegraphUrl: action('onChangeSourcegraphUrl'),
+})
 
 const requestPermissionsHandler = action('requestPermission')
 
@@ -24,7 +29,7 @@ storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
     .add('Default', () => (
         <OptionsPage
-            version={text('version', '0.0.0')}
+            {...commonProps}
             showPrivateRepositoryAlert={boolean('isCurrentRepositoryPrivate', false)}
             showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
             validateSourcegraphUrl={validateSourcegraphUrl}
@@ -32,15 +37,13 @@ storiesOf('browser/Options/OptionsPage', module)
             isActivated={true}
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
-            optionFlags={optionFlags}
-            onChangeOptionFlag={onChangeOptionFlag}
         />
     ))
     .add('Interactive', () => {
         const [isActivated, setIsActivated] = useState(false)
         return (
             <OptionsPage
-                version={text('version', '0.0.0')}
+                {...commonProps}
                 isActivated={isActivated}
                 onToggleActivated={setIsActivated}
                 validateSourcegraphUrl={validateSourcegraphUrl}
@@ -48,8 +51,6 @@ storiesOf('browser/Options/OptionsPage', module)
                 showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
                 showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
                 isFullPage={true}
-                optionFlags={optionFlags}
-                onChangeOptionFlag={onChangeOptionFlag}
             />
         )
     })
@@ -57,27 +58,23 @@ storiesOf('browser/Options/OptionsPage', module)
         const [isActivated, setIsActivated] = useState(false)
         return (
             <OptionsPage
-                version={text('version', '0.0.0')}
+                {...commonProps}
                 isActivated={isActivated}
                 onToggleActivated={setIsActivated}
                 validateSourcegraphUrl={invalidSourcegraphUrl}
                 sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
                 isFullPage={true}
-                optionFlags={optionFlags}
-                onChangeOptionFlag={onChangeOptionFlag}
             />
         )
     })
     .add('Asking for permission', () => (
         <OptionsPage
-            version={text('version', '0.0.0')}
+            {...commonProps}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
-            optionFlags={optionFlags}
-            onChangeOptionFlag={onChangeOptionFlag}
             currentHost="github.com"
             permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
             requestPermissionsHandler={requestPermissionsHandler}
@@ -85,14 +82,12 @@ storiesOf('browser/Options/OptionsPage', module)
     ))
     .add('On private repository', () => (
         <OptionsPage
-            version={text('version', '0.0.0')}
+            {...commonProps}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
-            optionFlags={optionFlags}
-            onChangeOptionFlag={onChangeOptionFlag}
             currentHost="github.com"
             showPrivateRepositoryAlert={true}
             requestPermissionsHandler={requestPermissionsHandler}
@@ -100,14 +95,12 @@ storiesOf('browser/Options/OptionsPage', module)
     ))
     .add('On Sourcegraph Cloud', () => (
         <OptionsPage
-            version={text('version', '0.0.0')}
+            {...commonProps}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
             sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
-            optionFlags={optionFlags}
-            onChangeOptionFlag={onChangeOptionFlag}
             currentHost="sourcegraph.com"
             requestPermissionsHandler={requestPermissionsHandler}
             showSourcegraphCloudAlert={true}
