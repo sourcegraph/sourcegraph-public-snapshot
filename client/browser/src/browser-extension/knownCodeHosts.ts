@@ -1,4 +1,3 @@
-import { MdiReactIconProps } from 'mdi-react'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
