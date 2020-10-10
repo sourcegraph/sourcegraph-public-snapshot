@@ -62,7 +62,7 @@ body.theme-dark {
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #191929;
-  --table-row-bg-2: #080820; 
+  --table-row-bg-2: #080820;
   --text-muted: #7c7c9f;
   --search-result-path-color: #e89fff;
 }
@@ -205,6 +205,7 @@ body > #sidebar #logo a {
 }
 body > #sidebar #logo img {
     width: 170px;
+    height: 22.8px;
 }
 body.theme-dark > #sidebar #logo img.theme-light, body.theme-light > #sidebar #logo img.theme-dark {
     display: none;
