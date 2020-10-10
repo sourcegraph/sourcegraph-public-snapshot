@@ -129,6 +129,8 @@ function exec<C>(node: ExpressionNode, context: Context<C>): any {
                 return undefined
             case 'null':
                 return null
+            case 'context':
+                return context
         }
         return context[node.Identifier]
     }
