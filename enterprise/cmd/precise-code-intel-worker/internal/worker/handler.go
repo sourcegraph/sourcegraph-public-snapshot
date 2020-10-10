@@ -14,7 +14,6 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,11 +26,15 @@ import (
 type handler struct {
 	store               store.Store
 	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserver.Client
+	gitserverClient     gitserverClient
 	metrics             metrics.WorkerMetrics
 	enableBudget        bool
 	budgetRemaining     int64
 	createStore         func(id int) persistence.Store
+}
+
+type gitserverClient interface {
+	DirectoryChildren(ctx context.Context, store store.Store, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 }
 
 var _ dbworker.Handler = &handler{}

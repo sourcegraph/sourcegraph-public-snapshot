@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -45,10 +44,15 @@ type CheckFunc func(ctx context.Context) (bool, error)
 
 type updater struct {
 	store           store.Store
-	gitserverClient gitserver.Client
+	gitserverClient gitserverClient
 }
 
-func NewUpdater(store store.Store, gitserverClient gitserver.Client) Updater {
+type gitserverClient interface {
+	Head(ctx context.Context, store store.Store, repositoryID int) (string, error)
+	CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error)
+}
+
+func NewUpdater(store store.Store, gitserverClient gitserverClient) Updater {
 	return &updater{
 		store:           store,
 		gitserverClient: gitserverClient,

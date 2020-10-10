@@ -1,10 +1,10 @@
 import { Observable, of, combineLatest, defer, from } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-import { dataOrThrowErrors, gql, requestGraphQL } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
@@ -546,7 +546,7 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
 export interface EventLogResult {
     totalCount: number
     nodes: { argument: string | null; timestamp: string; url: string }[]
-    pageInfo: { endCursor: string | null; hasNextPage: boolean }
+    pageInfo: { hasNextPage: boolean }
 }
 
 function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observable<EventLogResult | null> {
@@ -554,8 +554,8 @@ function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observab
         return of(null)
     }
 
-    const result = requestGraphQL<EventLogsDataResult, EventLogsDataVariables>({
-        request: gql`
+    const result = requestGraphQL<EventLogsDataResult, EventLogsDataVariables>(
+        gql`
             query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
                 node(id: $userId) {
                     ... on User {
@@ -566,7 +566,6 @@ function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observab
                                 url
                             }
                             pageInfo {
-                                endCursor
                                 hasNextPage
                             }
                             totalCount
@@ -575,8 +574,8 @@ function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observab
                 }
             }
         `,
-        variables: { userId, first: first ?? null, eventName },
-    })
+        { userId, first: first ?? null, eventName }
+    )
 
     return result.pipe(
         map(dataOrThrowErrors),

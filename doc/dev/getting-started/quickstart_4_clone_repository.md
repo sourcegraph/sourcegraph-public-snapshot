@@ -1,4 +1,4 @@
-# Quickstart Step 4: Get the code
+# Quickstart step 4: Get the code
 
 ```bash
 git clone https://github.com/sourcegraph/sourcegraph.git

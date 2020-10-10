@@ -57,6 +57,5 @@ export function isFirefox(): boolean {
 }
 
 export function isDefaultSourcegraphUrl(url: string): boolean {
-    // TODO: Can this be improved by normalizing the url first?
-    return url === DEFAULT_SOURCEGRAPH_URL
+    return url.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
 }

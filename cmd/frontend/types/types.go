@@ -399,6 +399,7 @@ type SavedSearches struct {
 	NotificationsSent    int32
 	NotificationsClicked int32
 	UniqueUserPageViews  int32
+	OrgSavedSearches     int32
 }
 
 // Secret represents the secrets table

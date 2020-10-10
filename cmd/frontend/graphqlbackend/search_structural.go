@@ -97,12 +97,14 @@ func templateToRegexp(buf []byte) []Term {
 		case '[':
 			if open > 0 {
 				inside++
+				currentHole = append(currentHole, '[')
 				continue
 			}
 			currentLiteral = append(currentLiteral, r)
 		case ']':
 			if open > 0 && inside > 0 {
 				inside--
+				currentHole = append(currentHole, ']')
 				continue
 			}
 			if open > 0 {
