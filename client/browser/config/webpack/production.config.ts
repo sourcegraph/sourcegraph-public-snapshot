@@ -21,7 +21,7 @@ const config: webpack.Configuration = {
                         beautify: false,
                     },
                 },
-            }),
+            }) as webpack.WebpackPluginInstance,
         ],
     },
     plugins: (plugins || []).concat(

@@ -3,29 +3,28 @@ import * as webpack from 'webpack'
 import baseConfig from './base.config'
 import { generateBundleUID } from './utils'
 
-const { plugins, entry, ...base } = baseConfig
-
-const entries = entry as webpack.Entry
-
-const entriesWithAutoReload = {
-    ...entries,
-    background: [path.join(__dirname, '../../src/browser-extension/scripts/auto-reloading.ts'), ...entries.background],
-}
-
 const config: webpack.Configuration = {
-    ...base,
-    entry: process.env.AUTO_RELOAD === 'false' ? entries : entriesWithAutoReload,
+    ...baseConfig,
+    entry:
+        process.env.AUTO_RELOAD === 'false'
+            ? baseConfig.entry
+            : {
+                  ...baseConfig.entry,
+                  background: [
+                      path.resolve(__dirname, '../../src/browser-extension/scripts/auto-reloading.ts'),
+                      ...baseConfig.entry.background,
+                  ],
+              },
     mode: 'development',
-    plugins: (plugins || []).concat(
-        ...[
-            new webpack.DefinePlugin({
-                'process.env': {
-                    NODE_ENV: JSON.stringify('development'),
-                    BUNDLE_UID: JSON.stringify(generateBundleUID()),
-                    USE_EXTENSIONS: JSON.stringify(process.env.USE_EXTENSIONS),
-                },
-            }),
-        ]
-    ),
+    plugins: [
+        ...baseConfig.plugins,
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify('development'),
+                BUNDLE_UID: JSON.stringify(generateBundleUID()),
+                USE_EXTENSIONS: JSON.stringify(process.env.USE_EXTENSIONS),
+            },
+        }),
+    ],
 }
 export default config

@@ -5,7 +5,6 @@ import path from 'path'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
-import { Stats } from 'webpack'
 import extensionInfo from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
 
@@ -35,7 +34,7 @@ const BUILDS_DIR = 'build'
  */
 const useUtcVersion = true
 
-export const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions = {
+export const WEBPACK_STATS_OPTIONS = {
     all: false,
     timings: true,
     errors: true,

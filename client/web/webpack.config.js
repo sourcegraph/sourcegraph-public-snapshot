@@ -12,7 +12,7 @@ const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
-const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
+const devtool = mode === 'production' ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -54,7 +54,6 @@ const config = {
         },
       }),
     ],
-    namedModules: false,
 
     ...(mode === 'development'
       ? {
@@ -109,12 +108,15 @@ const config = {
         'suggest',
       ],
     }),
-    new webpack.IgnorePlugin(/\.flow$/, /.*/),
+    new webpack.IgnorePlugin({ resourceRegExp: /\.flow$/, contextRegExp: /.*/ }),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    fallback: {
+      path: require.resolve('path-browserify'),
+    },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
@@ -126,6 +128,14 @@ const config = {
   },
   module: {
     rules: [
+      // Workaround for https://github.com/babel/babel/issues/12058
+      // Remove after fixed (if build succeeds without it - more packages may be affected)
+      {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
       // Run hot-loading-related Babel plugins on our application code only (because they'd be
       // slow to run on all JavaScript code).
       {
