@@ -39,29 +39,21 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err err
 
 	const q = `
 -- source: internal/db/default_repos.go:defaultRepos.List
-SELECT
-    id,
-    name
-FROM
-    repo r
+SELECT DISTINCT ON(repo.id) repo.id, repo.name
+FROM repo
+JOIN LATERAL (
+  SELECT esr.repo_id
+  FROM external_service_repos esr
+  JOIN external_services es ON es.id = esr.external_service_id
+  WHERE
+    es.namespace_user_id IS NOT NULL AND
+    es.deleted_at IS NULL
+  UNION ALL
+  SELECT repo_id
+  FROM default_repos
+) repo_ids ON repo.id = repo_ids.repo_id
 WHERE
-    EXISTS (
-        SELECT
-        FROM
-            external_service_repos sr
-            INNER JOIN external_services s ON s.id = sr.external_service_id
-        WHERE
-			s.namespace_user_id IS NOT NULL
-			AND s.deleted_at IS NULL
-			AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL)
-UNION
-    SELECT
-        repo.id,
-        repo.name
-    FROM
-        default_repos
-        JOIN repo ON default_repos.repo_id = repo.id;
+  repo.deleted_at IS NULL;
 `
 	rows, err := dbconn.Global.QueryContext(ctx, q)
 	if err != nil {
