@@ -143,6 +143,17 @@ func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err
 	return json.Marshal(savedSearches)
 }
 
+func getAndMarshalHomepagePanelsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
+
+	homepagePanels, err := usagestats.GetHomepagePanels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(homepagePanels)
+}
+
+
 func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
@@ -190,6 +201,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
+		HomepagePanels       []byte("{}"),
 		Repositories:        []byte("{}"),
 	}
 
@@ -241,6 +253,12 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
 		}
+
+		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalHomepagePanelsJSON failed", "error", err)
+		}
+
 
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 		if err != nil {
@@ -300,6 +318,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		Argument:        json.RawMessage(contents),
 		Timestamp:       time.Now().UTC(),
 	})
+
+	fmt.Println(string(contents))
+
 	return bytes.NewReader(contents), err
 }
 
