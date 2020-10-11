@@ -162,14 +162,7 @@ const config = {
         use: [
           mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
           'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              config: {
-                path: path.resolve(__dirname, '..'),
-              },
-            },
-          },
+          'postcss-loader',
           {
             loader: 'sass-loader',
             options: {

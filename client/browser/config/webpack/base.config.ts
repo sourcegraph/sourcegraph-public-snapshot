@@ -75,11 +75,6 @@ const config: webpack.Configuration = {
                     },
                     {
                         loader: 'postcss-loader',
-                        options: {
-                            config: {
-                                path: path.join(__dirname, '..', '..', '..'),
-                            },
-                        },
                     },
                     {
                         loader: 'sass-loader',
