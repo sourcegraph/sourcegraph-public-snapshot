@@ -10,7 +10,8 @@ const isChromatic = !!process.env.CHROMATIC
 
 const config = {
   stories: ['../client/**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs'],
+  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs', 'storybook-dark-mode'],
+
   /**
    * @param config {import('webpack').Configuration}
    * @returns {import('webpack').Configuration}

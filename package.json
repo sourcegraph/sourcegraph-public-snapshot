@@ -27,7 +27,7 @@
     "cover-integration": "nyc --hook-require=false yarn test-integration",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/end-to-end.test.ts",
     "cover-e2e": "nyc --hook-require=false yarn test-e2e",
-    "storybook": "start-storybook -p 9001 -c .storybook",
+    "storybook": "start-storybook -p 9001 -c .storybook -s ui/assets",
     "build-storybook": "build-storybook -c .storybook",
     "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
     "deduplicate": "yarn-deduplicate -s fewer"
@@ -234,6 +234,7 @@
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "storybook-addon-designs": "^5.4.2",
+    "storybook-dark-mode": "^1.0.3",
     "string-width": "^4.2.0",
     "style-loader": "^2.0.0",
     "stylelint": "^13.7.2",

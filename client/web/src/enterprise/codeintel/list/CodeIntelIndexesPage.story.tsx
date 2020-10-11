@@ -13,7 +13,7 @@ window.context = {} as SourcegraphContext & SuiteFunction
 
 const { add } = storiesOf('web/Codeintel administration/CodeIntelIndexes', module).addDecorator(story => (
     <>
-        <div className="theme-light container">{story()}</div>
+        <div className="container">{story()}</div>
         <style>{webStyles}</style>
     </>
 ))
