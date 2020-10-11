@@ -73,7 +73,7 @@ export interface SearchResultsListProps
 
     interactiveSearchMode: boolean
 
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (context: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
 interface State {

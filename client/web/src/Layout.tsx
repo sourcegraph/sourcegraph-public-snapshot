@@ -115,7 +115,7 @@ export interface LayoutProps
     // Search
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (context: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: QueryState['query'],
         version: string,

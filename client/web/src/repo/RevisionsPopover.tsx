@@ -67,7 +67,7 @@ const fetchRepositoryCommits = memoizeObservable(
     args => JSON.stringify(args)
 )
 
-interface GitRefPopoverNodeProps {
+interface GitReferencePopoverNodeProps {
     node: GQL.IGitRef
 
     defaultBranch: string
@@ -76,7 +76,7 @@ interface GitRefPopoverNodeProps {
     location: H.Location
 }
 
-const GitReferencePopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({
+const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
     node,
     defaultBranch,
     currentRevision,
@@ -188,7 +188,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                 >
                     {RevisionsPopover.TABS.map(tab =>
                         tab.type ? (
-                            <FilteredConnection<GQL.IGitRef, Omit<GitRefPopoverNodeProps, 'node'>>
+                            <FilteredConnection<GQL.IGitRef, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
