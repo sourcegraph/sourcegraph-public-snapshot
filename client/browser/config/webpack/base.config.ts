@@ -22,6 +22,20 @@ const extensionHostWorker = /main\.worker\.ts$/
 
 const config = subtypeOf<webpack.Configuration>()({
     target: 'browserslist',
+    cache: {
+        type: 'filesystem',
+        name: 'browser',
+        cacheDirectory: path.resolve(__dirname, '../../../../node_modules/.cache/webpack'),
+        buildDependencies: {
+            // Add config as buildDependency to get cache invalidation on config change
+            config: [
+                __filename,
+                path.resolve(__dirname, '../../babel.config.js'),
+                path.resolve(__dirname, '../../../../babel.config.js'),
+                path.resolve(__dirname, '../../../../postcss.config.js'),
+            ],
+        },
+    },
     entry: {
         // Browser extension
         background: [

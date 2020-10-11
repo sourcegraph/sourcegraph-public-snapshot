@@ -41,6 +41,20 @@ const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
   target: 'browserslist',
+  cache: {
+    type: 'filesystem',
+    name: 'web',
+    cacheDirectory: path.resolve(__dirname, '../../node_modules/.cache/webpack'),
+    buildDependencies: {
+      // Add config as buildDependency to get cache invalidation on config change
+      config: [
+        __filename,
+        path.resolve(__dirname, 'babel.config.js'),
+        path.resolve(__dirname, '../../babel.config.js'),
+        path.resolve(__dirname, '../../postcss.config.js'),
+      ],
+    },
+  },
   optimization: {
     minimize: mode === 'production',
     minimizer: [
