@@ -2728,8 +2728,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:client/packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -20933,8 +20932,7 @@ sourcegraph@^24.0.0:
   integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:client/packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.7.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -21168,10 +21166,10 @@ store2@^2.7.1:
   resolved "https://registry.npmjs.org/store2/-/store2-2.7.1.tgz#22070b7dc04748a792fc6912a58ab99d3a21d788"
   integrity sha512-zzzP5ZY6QWumnAFV6kBRbS44pUMcpZBNER5DWUe1HETlaKXqLcCQxbNu6IHaKr1pUsjuhUGBdOy8sWKmMkL6pQ==
 
-storybook-addon-designs@^5.4.1:
-  version "5.4.1"
-  resolved "https://registry.npmjs.org/storybook-addon-designs/-/storybook-addon-designs-5.4.1.tgz#23aa25d189aa7dbe3b5cbc915d923c15e401f1d1"
-  integrity sha512-NU/ZcYovTYyJ3xDbkd54gjTZLcYKttvMubVc6eRBSHhRJsh3fi1qyYDKmolBmy3YPyYguo9mhNg88Id7aSmGtA==
+storybook-addon-designs@^5.4.2:
+  version "5.4.2"
+  resolved "https://registry.npmjs.org/storybook-addon-designs/-/storybook-addon-designs-5.4.2.tgz#5cd98c2e1665e610c4fb190cfe8310d720657057"
+  integrity sha512-NByEwHN18GZIYD3YmsswcpKfa/R7nlY0fTYt4M158UwZgfg08Mf6v06zhq0I3MaL7CF/DdjBVIIXT13nlSi5BA==
   dependencies:
     react-pdf "^4.0.5"
 
