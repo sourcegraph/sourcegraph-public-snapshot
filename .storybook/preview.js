@@ -20,7 +20,15 @@ export const parameters = {
   },
 }
 
+configureActions({ depth: 100, limit: 20 })
+
 setLinkComponent(AnchorLink)
+
+// Default to light theme for Chromatic and "Open canvas in new tab" button.
+// addon-dark-mode will override this if it's running.
+if (!document.body.classList.contains('theme-dark')) {
+  document.body.classList.add('theme-light')
+}
 
 if (isChromatic()) {
   const style = document.createElement('style')
@@ -32,4 +40,12 @@ if (isChromatic()) {
   document.head.append(style)
 }
 
-configureActions({ depth: 100, limit: 20 })
+// @ts-ignore
+window.MonacoEnvironment = {
+  getWorkerUrl(_, label) {
+    if (label === 'json') {
+      return '/json.worker.bundle.js'
+    }
+    return '/editor.worker.bundle.js'
+  },
+}
