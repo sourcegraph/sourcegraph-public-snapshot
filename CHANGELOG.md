@@ -53,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The deprecated GraphQL mutation `updateAllMirrorRepositories`.
 - The deprecated GraphQL field `Site.noRepositoriesEnabled`.
 - Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover	tooltips) have been removed from pings.
+- Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover tooltips) have been removed from pings.
 
 ## 3.20.1
 
