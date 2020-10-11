@@ -5,7 +5,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { FetchFileCtx } from '../../../../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { RepoLink } from '../../../../../shared/src/components/RepoLink'
 import { Resizable } from '../../../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -48,7 +48,7 @@ export interface HierarchicalLocationsViewProps
 
     isLightTheme: boolean
 
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
 }
 
 interface State {

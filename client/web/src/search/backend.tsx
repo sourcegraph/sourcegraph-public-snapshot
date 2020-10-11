@@ -7,7 +7,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
 import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
@@ -18,7 +18,7 @@ export function search(
     version: string,
     patternType: SearchPatternType,
     versionContext: string | undefined,
-    extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+    extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     const transformedQuery = from(extensionHostPromise).pipe(
         switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
@@ -196,7 +196,7 @@ export function searchStream(
     version: string,
     patternType: SearchPatternType,
     versionContext: string | undefined,
-    extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+    extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     const transformedQuery = from(extensionHostPromise).pipe(
         switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))

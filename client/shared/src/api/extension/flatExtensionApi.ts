@@ -2,7 +2,7 @@ import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
-import { FlatExtHostAPI, MainThreadAPI } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
@@ -11,7 +11,7 @@ import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { ExtensionDocuments } from './api/documents'
 import { toPosition } from './api/types'
-import { TextDocumentPositionParams } from '../protocol'
+import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { Hover } from '@sourcegraph/extension-api-types'
@@ -23,7 +23,7 @@ import { isNot, isExactly } from '../../util/types'
  * Holds the entire state exposed to the extension host
  * as a single object
  */
-export interface ExtState {
+export interface ExtensionHostState {
     settings: Readonly<SettingsCascade<object>>
 
     // Workspace
@@ -46,9 +46,9 @@ export interface RegisteredProvider<T> {
 export interface InitResult {
     configuration: sourcegraph.ConfigurationService
     workspace: PartialWorkspaceNamespace
-    exposedToMain: FlatExtHostAPI
+    exposedToMain: FlatExtensionHostAPI
     // todo this is needed as a temp solution for getter problem
-    state: Readonly<ExtState>
+    state: Readonly<ExtensionHostState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
     languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider' | 'registerDocumentHighlightProvider'>
@@ -73,7 +73,7 @@ export const initNewExtensionAPI = (
     initialSettings: Readonly<SettingsCascade<object>>,
     textDocuments: ExtensionDocuments
 ): InitResult => {
-    const state: ExtState = {
+    const state: ExtensionHostState = {
         roots: [],
         versionContext: undefined,
         settings: initialSettings,
@@ -93,7 +93,7 @@ export const initNewExtensionAPI = (
 
     const versionContextChanges = new Subject<string | undefined>()
 
-    const exposedToMain: FlatExtHostAPI = {
+    const exposedToMain: FlatExtensionHostAPI = {
         // Configuration
         syncSettingsData: data => {
             state.settings = Object.freeze(data)
@@ -134,7 +134,7 @@ export const initNewExtensionAPI = (
             ),
 
         // Language
-        getHover: (textParameters: TextDocumentPositionParams) => {
+        getHover: (textParameters: TextDocumentPositionParameters) => {
             const document = textDocuments.get(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
@@ -147,7 +147,7 @@ export const initNewExtensionAPI = (
                 )
             )
         },
-        getDocumentHighlights: (textParameters: TextDocumentPositionParams) => {
+        getDocumentHighlights: (textParameters: TextDocumentPositionParameters) => {
             const document = textDocuments.get(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 

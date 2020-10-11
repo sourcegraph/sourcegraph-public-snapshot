@@ -4,7 +4,7 @@ import { of, Subject } from 'rxjs'
 import { pretendRemote } from '../util'
 import { SettingsEdit } from './services/settings'
 import { SettingsCascade } from '../../settings/settings'
-import { FlatExtHostAPI } from '../contract'
+import { FlatExtensionHostAPI } from '../contract'
 import { createWorkspaceService } from './services/workspaceService'
 import { CommandRegistry } from './services/command'
 
@@ -71,7 +71,7 @@ describe('configuration', () => {
 
         const passedToExtensionHost: SettingsCascade<object>[] = []
         initMainThreadAPI(
-            pretendRemote<FlatExtHostAPI>({
+            pretendRemote<FlatExtensionHostAPI>({
                 syncSettingsData: data => {
                     passedToExtensionHost.push(data)
                 },
@@ -92,7 +92,7 @@ describe('configuration', () => {
 
         const passedToExtensionHost: SettingsCascade<object>[] = []
         const { subscription } = initMainThreadAPI(
-            pretendRemote<FlatExtHostAPI>({
+            pretendRemote<FlatExtensionHostAPI>({
                 syncSettingsData: data => {
                     passedToExtensionHost.push(data)
                 },

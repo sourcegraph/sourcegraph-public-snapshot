@@ -296,7 +296,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
         )
     }
 
-    private onAlertDismissedCallback(alertType: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
+    private onAlertDismissedCallback(alertType: string): (event: React.MouseEvent<HTMLAnchorElement>) => void {
         return event => {
             event.preventDefault()
             if (this.props.onAlertDismissed) {

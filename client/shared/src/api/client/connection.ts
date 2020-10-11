@@ -16,16 +16,16 @@ import { ClientWindows } from './api/windows'
 import { Services } from './services'
 import {
     MessageActionItem,
-    ShowInputParams,
-    ShowMessageRequestParams,
-    ShowNotificationParams,
+    ShowInputParameters,
+    ShowMessageRequestParameters,
+    ShowNotificationParameters,
 } from './services/notifications'
 import { TextModelUpdate } from './services/modelService'
 import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
-import { FlatExtHostAPI } from '../contract'
+import { FlatExtensionHostAPI } from '../contract'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -57,7 +57,7 @@ export async function createExtensionHostClientConnection(
     services: Services,
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
-): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtHostAPI> }> {
+): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtensionHostAPI> }> {
     const subscription = new Subscription()
 
     // MAIN THREAD
@@ -107,12 +107,12 @@ export async function createExtensionHostClientConnection(
     )
 
     const clientWindows = new ClientWindows(
-        (parameters: ShowNotificationParams) => services.notifications.showMessages.next({ ...parameters }),
-        (parameters: ShowMessageRequestParams) =>
+        (parameters: ShowNotificationParameters) => services.notifications.showMessages.next({ ...parameters }),
+        (parameters: ShowMessageRequestParameters) =>
             new Promise<MessageActionItem | null>(resolve => {
                 services.notifications.showMessageRequests.next({ ...parameters, resolve })
             }),
-        (parameters: ShowInputParams) =>
+        (parameters: ShowInputParameters) =>
             new Promise<string | null>(resolve => {
                 services.notifications.showInputs.next({ ...parameters, resolve })
             }),

@@ -4,11 +4,11 @@ import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from
 import { CompletionList } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../util/types'
-import { TextDocumentPositionParams } from '../../protocol'
+import { TextDocumentPositionParameters } from '../../protocol'
 import { DocumentFeatureProviderRegistry } from './registry'
 
 export type ProvideCompletionItemSignature = (
-    params: TextDocumentPositionParams
+    parameters: TextDocumentPositionParameters
 ) => Observable<CompletionList | null | undefined>
 
 /** Provides hovers from all extensions. */
@@ -19,7 +19,7 @@ export class CompletionItemProviderRegistry extends DocumentFeatureProviderRegis
      * provider result is omitted from the emission of the observable (the observable does not emit
      * the error).
      */
-    public getCompletionItems(parameters: TextDocumentPositionParams): Observable<CompletionList | null> {
+    public getCompletionItems(parameters: TextDocumentPositionParameters): Observable<CompletionList | null> {
         return getCompletionItems(this.providersForDocument(parameters.textDocument), parameters)
     }
 }
@@ -35,7 +35,7 @@ export class CompletionItemProviderRegistry extends DocumentFeatureProviderRegis
  */
 export function getCompletionItems(
     providers: Observable<ProvideCompletionItemSignature[]>,
-    parameters: TextDocumentPositionParams,
+    parameters: TextDocumentPositionParameters,
     logErrors = true
 ): Observable<CompletionList | null> {
     return providers.pipe(

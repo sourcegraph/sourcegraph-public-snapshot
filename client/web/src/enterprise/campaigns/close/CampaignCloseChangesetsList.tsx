@@ -12,7 +12,7 @@ import {
     CampaignChangesetsResult,
 } from '../../../graphql-operations'
 import { Subject } from 'rxjs'
-import { FilteredConnectionQueryArgs, FilteredConnection } from '../../../components/FilteredConnection'
+import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
@@ -67,7 +67,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
 }) => {
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
+        (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
                 externalState: ChangesetExternalState.OPEN,
                 publicationState: ChangesetPublicationState.PUBLISHED,

@@ -4,9 +4,9 @@ import * as sourcegraph from 'sourcegraph'
 import {
     MessageActionItem,
     NotificationType,
-    ShowInputParams,
-    ShowMessageRequestParams,
-    ShowNotificationParams,
+    ShowInputParameters,
+    ShowMessageRequestParameters,
+    ShowNotificationParameters,
 } from '../services/notifications'
 
 /** @internal */
@@ -23,17 +23,17 @@ export class ClientWindows implements ClientWindowsAPI {
 
     constructor(
         /** Called when the client receives a window/showMessage notification. */
-        private showMessage: (params: ShowNotificationParams) => void,
+        private showMessage: (parameters: ShowNotificationParameters) => void,
         /**
          * Called when the client receives a window/showMessageRequest request and expected to return a promise
          * that resolves to the selected action.
          */
-        private showMessageRequest: (params: ShowMessageRequestParams) => Promise<MessageActionItem | null>,
+        private showMessageRequest: (parameters: ShowMessageRequestParameters) => Promise<MessageActionItem | null>,
         /**
          * Called when the client receives a window/showInput request and expected to return a promise that
          * resolves to the user's input.
          */
-        private showInput: (params: ShowInputParams) => Promise<string | null>,
+        private showInput: (parameters: ShowInputParameters) => Promise<string | null>,
         private createProgressReporter: (options: sourcegraph.ProgressOptions) => Subject<sourcegraph.Progress>
     ) {}
 
