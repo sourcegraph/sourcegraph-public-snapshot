@@ -237,7 +237,7 @@
     "socket.io-client": "^2.3.0",
     "storybook-addon-designs": "^5.4.1",
     "string-width": "^4.2.0",
-    "style-loader": "^1.2.1",
+    "style-loader": "^2.0.0",
     "stylelint": "^13.7.2",
     "term-size": "^2.2.0",
     "terser-webpack-plugin": "^4.1.0",
