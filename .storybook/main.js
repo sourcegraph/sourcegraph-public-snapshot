@@ -7,7 +7,7 @@ const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco
 
 const config = {
   stories: ['../client/**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', '@storybook/addon-options', 'storybook-addon-designs'],
+  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs'],
   /**
    * @param config {import('webpack').Configuration}
    * @returns {import('webpack').Configuration}

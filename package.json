@@ -98,7 +98,6 @@
     "@storybook/addon-console": "^1.2.1",
     "@storybook/addon-knobs": "^6.0.26",
     "@storybook/addon-links": "^6.0.26",
-    "@storybook/addon-options": "^5.3.19",
     "@storybook/addon-storyshots": "^6.0.26",
     "@storybook/addon-storyshots-puppeteer": "^6.0.26",
     "@storybook/addons": "^6.0.26",
