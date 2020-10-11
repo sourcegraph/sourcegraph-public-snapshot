@@ -22,7 +22,7 @@ const config = {
     // @ts-ignore
     definePlugin.definitions['process.env'].NODE_ENV = JSON.stringify('development')
 
-    // We don't use Storybook's default config for our repo, it doesn't handle TypeScript.
+    // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
     config.module.rules.splice(0, 1)
 
     if (process.env.CI) {
@@ -36,8 +36,6 @@ const config = {
         configFile: path.resolve(__dirname, '..', 'babel.config.js'),
       },
     })
-
-    config.resolve.extensions.push('.ts', '.tsx')
 
     config.plugins.push(
       new MonacoWebpackPlugin({
