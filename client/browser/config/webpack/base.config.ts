@@ -96,7 +96,7 @@ const config: webpack.Configuration = {
                 use: [
                     {
                         loader: 'worker-loader',
-                        options: { name: 'extensionHostWorker.bundle.js' },
+                        options: { filename: 'extensionHostWorker.bundle.js' },
                     },
                     babelLoader,
                 ],
