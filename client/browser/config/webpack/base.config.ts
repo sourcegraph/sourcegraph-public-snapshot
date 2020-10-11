@@ -21,6 +21,7 @@ const babelLoader = {
 const extensionHostWorker = /main\.worker\.ts$/
 
 const config = subtypeOf<webpack.Configuration>()({
+    target: 'browserslist',
     entry: {
         // Browser extension
         background: [

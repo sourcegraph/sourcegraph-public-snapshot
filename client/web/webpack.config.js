@@ -40,6 +40,7 @@ const extensionHostWorker = /main\.worker\.ts$/
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
+  target: 'browserslist',
   optimization: {
     minimize: mode === 'production',
     minimizer: [
