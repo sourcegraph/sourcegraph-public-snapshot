@@ -189,7 +189,7 @@ const config = {
       },
       {
         test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
+        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, babelLoader],
       },
       { test: /\.ya?ml$/, use: ['raw-loader'] },
     ],
