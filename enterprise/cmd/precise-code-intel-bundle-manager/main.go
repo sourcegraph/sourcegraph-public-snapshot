@@ -79,7 +79,7 @@ func main() {
 
 	server := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
-	janitor := janitor.New(store, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
+	janitor := janitor.New(store, nil, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
 
 	routines := []goroutine.BackgroundRoutine{
 		server,

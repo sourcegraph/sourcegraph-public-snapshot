@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -109,4 +110,8 @@ func (w *sqliteStore) CreateTables(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (w *sqliteStore) Clear(ctx context.Context) error {
+	return fmt.Errorf("unsupported operation")
 }

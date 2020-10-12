@@ -11,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
+	postgresreader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 )
 
 // GetStateBatchSize is the maximum number of bundle ids to request the state of from the
@@ -89,12 +90,19 @@ func (j *Janitor) uploadPathsByID() (map[int]string, error) {
 	return pathsByID, nil
 }
 
-// TODO - test
-// TODO - implement
-
 // removeOrphanedData removes data from the codeintel database that does not have a
 // corresponding upload record in the frontend database.
 func (j *Janitor) removeOrphanedData(ctx context.Context) error {
-	// TODO
+	var dumpIDs []int
+	// TODO - pull in chunks and check them against the db
+
+	// TODO - this needs to be moved
+
+	for _, dumpID := range dumpIDs {
+		if err := postgresreader.NewStore(j.codeIntelDB, dumpID).Clear(ctx); err != nil {
+			log15.Error("Failed to remove data for dump", "dump_id", dumpID)
+		}
+	}
+
 	return nil
 }

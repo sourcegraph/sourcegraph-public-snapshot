@@ -24,6 +24,7 @@ type ObservedStore struct {
 	writeResultChunksOperation *observation.Operation
 	writeDefinitionsOperation  *observation.Operation
 	writeReferencesOperation   *observation.Operation
+	clearOperation             *observation.Operation
 }
 
 var _ Store = &ObservedStore{}
@@ -111,6 +112,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"write_references"},
 			Metrics:      metrics,
 		}),
+		clearOperation: observationContext.Operation(observation.Op{
+			Name:         "Store.Clear",
+			MetricLabels: []string{"clear"},
+			Metrics:      metrics,
+		}),
 	}
 }
 
@@ -178,6 +184,7 @@ func (s *ObservedStore) Transact(ctx context.Context) (_ Store, err error) {
 		writeResultChunksOperation: s.writeResultChunksOperation,
 		writeDefinitionsOperation:  s.writeDefinitionsOperation,
 		writeReferencesOperation:   s.writeReferencesOperation,
+		clearOperation:             s.clearOperation,
 	}, nil
 }
 
@@ -235,6 +242,13 @@ func (s *ObservedStore) WriteReferences(ctx context.Context, monikerLocations ch
 	ctx, endObservation := s.writeReferencesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.WriteReferences(ctx, monikerLocations)
+}
+
+// Clear calls into the inner Store and registers the observed result.
+func (s *ObservedStore) Clear(ctx context.Context) (err error) {
+	ctx, endObservation := s.clearOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.Clear(ctx)
 }
 
 func (s *ObservedStore) Close(err error) error {

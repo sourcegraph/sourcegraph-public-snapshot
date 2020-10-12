@@ -2,6 +2,8 @@ package janitor
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"os"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 
 type Janitor struct {
 	store              store.Store
+	codeIntelDB        *sql.DB
 	bundleDir          string
 	desiredPercentFree int
 	maxUploadAge       time.Duration
@@ -25,6 +28,7 @@ var _ goroutine.Handler = &Janitor{}
 
 func New(
 	store store.Store,
+	codeIntelDB *sql.DB,
 	bundleDir string,
 	desiredPercentFree int,
 	janitorInterval time.Duration,
@@ -35,6 +39,7 @@ func New(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), janitorInterval, &Janitor{
 		store:              store,
+		codeIntelDB:        codeIntelDB,
 		bundleDir:          bundleDir,
 		desiredPercentFree: desiredPercentFree,
 		maxUploadAge:       maxUploadAge,
@@ -46,6 +51,8 @@ func New(
 
 // Handle performs a best-effort cleanup process.
 func (j *Janitor) Handle(ctx context.Context) error {
+	fmt.Printf("JANET!\n")
+
 	if err := j.removeOldUploadFiles(ctx); err != nil {
 		return errors.Wrap(err, "janitor.removeOldUploadFiles")
 	}
