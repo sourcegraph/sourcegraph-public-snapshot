@@ -4,8 +4,6 @@ import {
     ensureTrackingIssue,
     getAuthenticatedGitHubClient,
     listIssues,
-    getIssueByTitle,
-    trackingIssueTitle,
     ensurePatchReleaseIssue,
     createChangesets,
 } from './github'
@@ -19,6 +17,7 @@ import * as path from 'path'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 const formatDate = (date: Date): string =>
     `${date.toLocaleString('en-US', {
         timeZone: 'America/Los_Angeles',
@@ -29,6 +28,7 @@ const formatDate = (date: Date): string =>
         dateStyle: 'medium',
         timeStyle: 'short',
     } as Intl.DateTimeFormatOptions)} (Berlin time)`
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
 
 interface Config {
     teamEmail: string
@@ -165,7 +165,7 @@ const steps: Step[] = [
             ]
 
             for (const event of events) {
-                console.log(`Create calendar event: ${event.title}: ${event.startDateTime!}`)
+                console.log(`Create calendar event: ${event.title}: ${event.startDateTime || 'undefined'}`)
                 await ensureEvent(event, googleCalendar)
             }
         },
