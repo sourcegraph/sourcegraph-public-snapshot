@@ -49,13 +49,14 @@ type CommitGraphOptions struct {
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
-// to its parents.
+// to its parents. If a commit is supplied, the returned graph will be rooted at the given
+// commit. If a non-zero limit is supplied, at most that many commits will be returned.
 func (c *Client) CommitGraph(ctx context.Context, store store.Store, repositoryID int, options CommitGraphOptions) (map[string][]string, error) {
 	commands := []string{"log", "--all", "--pretty=%H %P"}
 	if options.Commit != "" {
 		commands = append(commands, options.Commit)
 	}
-	if options.Limit >= 0 {
+	if options.Limit > 0 {
 		commands = append(commands, fmt.Sprintf("-%d", options.Limit))
 	}
 
