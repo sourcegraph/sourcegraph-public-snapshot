@@ -80,7 +80,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     }, [onChangeSourcegraphUrl, urlState])
 
     return (
-        <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
+        <div className={classNames('options-page', isFullPage && 'options-page--full shadow')}>
             <section className="options-page__section">
                 <div className="d-flex justify-content-between">
                     <SourcegraphLogo className="options-page__logo" />
@@ -184,7 +184,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     icon: Icon,
     onClickGrantPermissions,
 }) => (
-    <section className="options-page__section options-page__alert">
+    <section className="options-page__section bg-2">
         <h4>
             {Icon && <Icon className="icon-inline mr-2" />} <span>{name}</span>
         </h4>
@@ -198,7 +198,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
 )
 
 const PrivateRepositoryAlert: React.FunctionComponent = () => (
-    <section className="options-page__section options-page__alert">
+    <section className="options-page__section bg-2">
         <h4>
             <LockIcon className="icon-inline mr-2" />
             Private repository
@@ -249,7 +249,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
 )
 
 const SourcegraphCloudAlert: React.FunctionComponent = () => (
-    <section className="options-page__section options-page__alert">
+    <section className="options-page__section bg-2">
         <h4>
             <CheckCircleOutlineIcon className="icon-inline mr-2" />
             You're on Sourcegraph Cloud

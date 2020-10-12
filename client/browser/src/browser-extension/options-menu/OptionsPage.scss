@@ -3,7 +3,6 @@
 
     &--full {
         margin: 8rem auto;
-        box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.15);
     }
 
     &__section {
@@ -13,10 +12,6 @@
         &:last-of-type {
             border-bottom: none;
         }
-    }
-
-    &__alert {
-        background-color: $gray-01;
     }
 
     &__split-section-part {
