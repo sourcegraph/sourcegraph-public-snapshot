@@ -50,7 +50,6 @@ func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	if err != nil {
 		return err
 	}
-
 	defer func() {
 		err = tx.Done(err)
 	}()

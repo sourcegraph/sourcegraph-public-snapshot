@@ -16,7 +16,7 @@ func (j *Janitor) removeOrphanedData(ctx context.Context) error {
 	offset := 0
 	for {
 		dumpIDs, err := j.lsifStore.DumpIDs(ctx, GetStateBatchSize, offset)
-		if err != nil || len(dumpIDs) == 0 {
+		if err != nil {
 			return err
 		}
 
@@ -31,6 +31,10 @@ func (j *Janitor) removeOrphanedData(ctx context.Context) error {
 					log15.Error("Failed to remove data for dump", "dump_id", dumpID)
 				}
 			}
+		}
+
+		if len(dumpIDs) < GetStateBatchSize {
+			break
 		}
 
 		offset += GetStateBatchSize
