@@ -216,7 +216,6 @@ const getBaseFilePathForDiffCodeView = ({
             const match = tooltipText.match(renameRegexp)
             if (!match) {
                 throw new Error(
-                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
                     `Rename change type badge content did not match ${renameRegexp.toString()}: "${tooltipText}"`
                 )
             }
