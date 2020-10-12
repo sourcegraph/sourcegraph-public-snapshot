@@ -1,4 +1,4 @@
-# Sourcegraph Search Query Language
+# Sourcegraph search query language
 
 <style>
 
