@@ -258,19 +258,27 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		}()
 	}
 
-	progress := out.Progress([]output.ProgressBar{
-		{Label: "Sending changeset specs", Max: float64(len(specs))},
-	}, nil)
 	ids := make([]campaigns.ChangesetSpecID, len(specs))
-	for i, spec := range specs {
-		id, err := svc.CreateChangesetSpec(ctx, spec)
-		if err != nil {
-			return "", "", err
+
+	if len(specs) > 0 {
+		progress := out.Progress([]output.ProgressBar{
+			{Label: "Sending changeset specs", Max: float64(len(specs))},
+		}, nil)
+		for i, spec := range specs {
+			id, err := svc.CreateChangesetSpec(ctx, spec)
+			if err != nil {
+				return "", "", err
+			}
+			ids[i] = id
+			progress.SetValue(0, float64(i+1))
 		}
-		ids[i] = id
-		progress.SetValue(0, float64(i+1))
+		progress.Complete()
+
+	} else {
+		if len(repos) == 0 {
+			out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning, `No changeset specs created`))
+		}
 	}
-	progress.Complete()
 
 	pending = campaignsCreatePending(out, "Creating campaign spec on Sourcegraph")
 	id, url, err := svc.CreateCampaignSpec(ctx, namespace, rawSpec, ids)
