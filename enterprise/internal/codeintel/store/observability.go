@@ -33,6 +33,7 @@ type ObservedStore struct {
 	getDumpByIDOperation                           *observation.Operation
 	findClosestDumpsOperation                      *observation.Operation
 	deleteOldestDumpOperation                      *observation.Operation
+	softDeleteOldDumpsOperation                    *observation.Operation
 	deleteOverlappingDumpsOperation                *observation.Operation
 	getPackageOperation                            *observation.Operation
 	updatePackagesOperation                        *observation.Operation
@@ -177,6 +178,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		deleteOldestDumpOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteOldestDump",
 			MetricLabels: []string{"delete_oldest_dump"},
+			Metrics:      metrics,
+		}),
+		softDeleteOldDumpsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.SoftDeleteOldDumps",
+			MetricLabels: []string{"soft_delete_old_dumps"},
 			Metrics:      metrics,
 		}),
 		deleteOverlappingDumpsOperation: observationContext.Operation(observation.Op{
@@ -365,6 +371,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		getDumpByIDOperation:                           s.getDumpByIDOperation,
 		findClosestDumpsOperation:                      s.findClosestDumpsOperation,
 		deleteOldestDumpOperation:                      s.deleteOldestDumpOperation,
+		softDeleteOldDumpsOperation:                    s.softDeleteOldDumpsOperation,
 		deleteOverlappingDumpsOperation:                s.deleteOverlappingDumpsOperation,
 		getPackageOperation:                            s.getPackageOperation,
 		updatePackagesOperation:                        s.updatePackagesOperation,
@@ -573,6 +580,13 @@ func (s *ObservedStore) DeleteOldestDump(ctx context.Context) (_ int, _ bool, er
 	ctx, endObservation := s.deleteOldestDumpOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.DeleteOldestDump(ctx)
+}
+
+// SoftDeleteOldDumps calls into the inner store and registers the observed results.
+func (s *ObservedStore) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, endObservation := s.softDeleteOldDumpsOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(count), observation.Args{}) }()
+	return s.store.SoftDeleteOldDumps(ctx, maxAge, now)
 }
 
 // DeleteOverlappingDumps calls into the inner store and registers the observed results.
