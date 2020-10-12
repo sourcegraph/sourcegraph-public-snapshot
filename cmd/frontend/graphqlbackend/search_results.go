@@ -726,37 +726,56 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	var count int // count non-overlapping files when we merge.
 	var merged []SearchResultResolver
 	rightFileMatches := make(map[string]*FileMatchResolver)
+	rightRepoMatches := make(map[string]*RepositoryResolver)
 
-	// accumulate file matches for the right subexpression in a lookup.
+	// accumulate matches for the right subexpression in a lookup.
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
 			rightFileMatches[fileMatch.uri] = fileMatch
+			continue
+		}
+		if repoMatch, ok := r.ToRepository(); ok {
+			rightRepoMatches[string(repoMatch.URL())] = repoMatch
 			continue
 		}
 		merged = append(merged, r)
 	}
 
 	for _, leftMatch := range left.SearchResults {
-		leftFileMatch, ok := leftMatch.ToFileMatch()
-		if !ok {
-			merged = append(merged, leftMatch)
+		if leftFileMatch, ok := leftMatch.ToFileMatch(); ok {
+			rightFileMatch := rightFileMatches[leftFileMatch.uri]
+			if rightFileMatch == nil {
+				// no overlap with existing matches.
+				merged = append(merged, leftMatch)
+				count++
+				continue
+			}
+
+			// merge line matches with a file match that already exists.
+			rightFileMatch.appendMatches(leftFileMatch)
+			rightFileMatches[leftFileMatch.uri] = rightFileMatch
 			continue
 		}
 
-		rightFileMatch := rightFileMatches[leftFileMatch.uri]
-		if rightFileMatch == nil {
-			// no overlap with existing matches.
-			merged = append(merged, leftMatch)
-			count++
+		if leftRepoMatch, ok := leftMatch.ToRepository(); ok {
+			rightRepoMatch := rightRepoMatches[string(leftRepoMatch.URL())]
+			if rightRepoMatch == nil {
+				// no overlap with existing matches.
+				merged = append(merged, leftMatch)
+				count++
+				continue
+			}
+
+			rightRepoMatches[string(leftRepoMatch.URL())] = rightRepoMatch
 			continue
 		}
-
-		// merge line matches with a file match that already exists.
-		rightFileMatch.appendMatches(leftFileMatch)
-		rightFileMatches[leftFileMatch.uri] = rightFileMatch
+		merged = append(merged, leftMatch)
 	}
 
 	for _, v := range rightFileMatches {
+		merged = append(merged, v)
+	}
+	for _, v := range rightRepoMatches {
 		merged = append(merged, v)
 	}
 
@@ -1007,6 +1026,25 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	return result, nil
 }
 
+func prettyPrint(nodes []query.Node) string {
+	var resultStr []string
+	for _, node := range nodes {
+		resultStr = append(resultStr, node.String())
+	}
+	return strings.Join(resultStr, " ")
+}
+
+// setQuery sets a new query in the search resolver, for potentially repeated
+// calls in the search pipeline. The important part is it takes care of
+// invalidating cached repo info.
+func (r *searchResolver) setQuery(q []query.Node) {
+	r.resolved.repoRevs = nil
+	r.resolved.missingRepoRevs = nil
+	r.repoErr = nil
+	log15.Info("q", prettyPrint(q))
+	r.query.(*query.AndOrQuery).Query = q
+}
+
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
 	switch term := node.(type) {
@@ -1014,13 +1052,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		if term.Kind == query.And || term.Kind == query.Or {
 			return r.evaluateOperator(ctx, scopeParameters, term)
 		} else if term.Kind == query.Concat {
-			q := append(scopeParameters, term)
-			r.query.(*query.AndOrQuery).Query = q
+			r.setQuery(append(scopeParameters, term))
 			return r.evaluateLeaf(ctx)
 		}
 	case query.Pattern:
-		q := append(scopeParameters, term)
-		r.query.(*query.AndOrQuery).Query = q
+		r.setQuery(append(scopeParameters, term))
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
@@ -1037,7 +1073,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 		return alertForQuery("", err).wrap(), nil
 	}
 	if pattern == nil {
-		r.query.(*query.AndOrQuery).Query = scopeParameters
+		r.setQuery(scopeParameters)
 		return r.evaluateLeaf(ctx)
 	}
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
@@ -1058,7 +1094,20 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	case *query.OrdinaryQuery:
 		srr, err = r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		srr, err = r.evaluate(ctx, q.Query)
+		for _, disjunct := range query.Dnf(q.Query) {
+			disjunct = query.ConcatRevFilters(disjunct)
+			newResult, err := r.evaluate(ctx, disjunct)
+			if err != nil {
+				// Fail if any subquery fails.
+				return nil, err
+			}
+			if newResult != nil {
+				srr = union(srr, newResult)
+			}
+		}
+		if srr != nil {
+			r.sortResults(ctx, srr.SearchResults)
+		}
 	default:
 		// Unreachable.
 		return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
@@ -1066,6 +1115,9 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
 		srr.userSettings = r.userSettings
+	}
+	if srr == nil {
+		srr = &SearchResultsResolver{}
 	}
 	return srr, err
 }
