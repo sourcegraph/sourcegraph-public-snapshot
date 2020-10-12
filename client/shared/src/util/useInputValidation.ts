@@ -81,6 +81,8 @@ export function deriveInputClassName(inputState: InputValidationState): string {
     return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
 }
 
+export const VALIDATION_DEBOUNCE_TIME = 500
+
 /**
  * Exported for testing
  */
@@ -112,7 +114,7 @@ export function createValidationPipeline(
             }),
             // Debounce everything.
             // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
-            debounceTime(500),
+            debounceTime(VALIDATION_DEBOUNCE_TIME),
             switchMap(value => {
                 // check validity (synchronous)
                 const valid = inputReference.current?.checkValidity()

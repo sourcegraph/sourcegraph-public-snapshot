@@ -1,11 +1,16 @@
 import { noop } from 'lodash'
 import { Observable, Subject, Subscription } from 'rxjs'
 import * as sinon from 'sinon'
-import { createValidationPipeline, InputValidationState } from './useInputValidation'
+import { createValidationPipeline, InputValidationState, ValidationOptions } from './useInputValidation'
 
 describe('useInputValidation()', () => {
     let clock: sinon.SinonFakeTimers
     let subscriptions: Subscription
+
+    let setupValidationPipelineTest: (
+        validationOptions: ValidationOptions
+    ) => (inputScript: (string | number)[]) => InputValidationState[]
+
     beforeAll(() => {
         clock = sinon.useFakeTimers()
     })
@@ -16,6 +21,60 @@ describe('useInputValidation()', () => {
 
     beforeEach(() => {
         subscriptions = new Subscription()
+
+        setupValidationPipelineTest = (
+            validationOptions
+        ): ((inputScript: (string | number)[]) => InputValidationState[]) => {
+            const inputElement = createEmailInputElement()
+            const inputReference = { current: inputElement }
+
+            const inputValidationStates: InputValidationState[] = []
+
+            const validationPipeline = createValidationPipeline(
+                validationOptions,
+                inputReference,
+                // We want to test the values that this callback is called with,
+                // not the emissions of the returned observable. Therefore, we will
+                // push these values to an array whose values we will assert.
+                inputValidationStates.push.bind(inputValidationStates)
+            )
+
+            // Creating this type instead of a generic util because TS doesn't support higher-kinded types
+            type ObservableEmission<T> = T extends Observable<infer V> ? V : never
+            const changeEvents = new Subject<ObservableEmission<Parameters<typeof validationPipeline>[0]>>()
+
+            // We don't care about this observable.
+            // Here, we simply set up the pipeline:
+            // change event -> validation pipeline -> validation results
+            //                      |
+            //                      v
+            //                 validation states (this is what we're testing)
+            subscriptions.add(validationPipeline(changeEvents).subscribe(noop))
+
+            // Simulate user input: change input value, then dispatch change event
+            function userInput(value: string): void {
+                inputElement.changeValue(value)
+                changeEvents.next({
+                    preventDefault: noop,
+                    target: inputReference.current,
+                })
+            }
+
+            // "Scripting" user interaction: strings are new input values, numbers are delays before next input in ms.
+            return function executeUserInputScript(inputScript) {
+                for (const input of inputScript) {
+                    if (typeof input === 'string') {
+                        userInput(input)
+                    } else {
+                        clock.tick(input)
+                    }
+                }
+                // Wait for debounceTime after final input
+                clock.tick(500)
+
+                return inputValidationStates
+            }
+        }
     })
 
     afterEach(() => {
@@ -69,7 +128,18 @@ describe('useInputValidation()', () => {
     }
 
     /**
-     *  Tests
+     * Shared test validators
+     */
+    function isDotCo(email: string): string | undefined {
+        if (email.endsWith('.co')) {
+            return undefined
+        }
+
+        return "Email must end with '.co'"
+    }
+
+    /**
+     * Tests
      * - Works without initial value
      * - Works with initial value
      * - Built-in sync reason
@@ -78,59 +148,12 @@ describe('useInputValidation()', () => {
      * - All validators passed
      */
     it('works without initial value', () => {
-        const inputElement = createEmailInputElement()
-        const inputReference = { current: inputElement }
+        const executeUserInputScript = setupValidationPipelineTest({
+            synchronousValidators: [isDotCo],
+        })
 
-        function isDotCo(email: string): string | undefined {
-            if (email.endsWith('.co')) {
-                return undefined
-            }
-
-            return "Email must end with '.co'"
-        }
-
-        const inputValidationStates: InputValidationState[] = []
-
-        const validationPipeline = createValidationPipeline(
-            {
-                synchronousValidators: [isDotCo],
-            },
-            inputReference,
-            // We want to test the values that this callback is called with,
-            // not the emissions of the returned observable. Therefore, we will
-            // push these values to an array whose values we will assert.
-            inputValidationStates.push.bind(inputValidationStates)
-        )
-
-        // Creating this type instead of a generic util because TS doesn't support higher-kinded types
-        type ObservableEmission<T> = T extends Observable<infer V> ? V : never
-        const changeEvents = new Subject<ObservableEmission<Parameters<typeof validationPipeline>[0]>>()
-
-        // We don't care about this observable. Here, we simply set up the pipeline
-        // change event -> validation pipeline -> validation states
-        subscriptions.add(validationPipeline(changeEvents).subscribe(noop))
-
-        // Simulate user input: change input value, then dispatch change event
-        function userInput(value: string): void {
-            inputElement.changeValue(value)
-            changeEvents.next({
-                preventDefault: noop,
-                target: inputReference.current,
-            })
-        }
-
-        // "Scripting" user interaction: strings are new input values, numbers are delays before next input in ms.
+        // Explain intent:
         const inputs: (string | number)[] = ['source', 'sourcegraph', 300, 'sourcegraph@', 500, 'sourcegraph@sg.co']
-
-        for (const input of inputs) {
-            if (typeof input === 'string') {
-                userInput(input)
-            } else {
-                clock.tick(input)
-            }
-        }
-        // Wait for debounceTime after final input
-        clock.tick(500)
 
         const expectedStates: InputValidationState[] = [
             {
@@ -160,6 +183,62 @@ describe('useInputValidation()', () => {
             },
         ]
 
-        expect(inputValidationStates).toStrictEqual(expectedStates)
+        expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
+    })
+
+    it('works with initial value', () => {
+        const executeUserInputScript = setupValidationPipelineTest({
+            synchronousValidators: [isDotCo],
+            initialValue: 'so',
+        })
+
+        const inputs: (string | number)[] = [
+            500,
+            'source',
+            'sourcegraph',
+            300,
+            'sourcegraph@',
+            500,
+            'sourcegraph@sg.co',
+        ]
+
+        const expectedStates: InputValidationState[] = [
+            {
+                kind: 'LOADING',
+                value: 'so',
+            },
+            {
+                kind: 'INVALID',
+                reason: "Email must include '@'",
+                value: 'so',
+            },
+            {
+                kind: 'LOADING',
+                value: 'source',
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph',
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph@',
+            },
+            {
+                kind: 'INVALID',
+                value: 'sourcegraph@',
+                reason: "Email must end with '.co'",
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph@sg.co',
+            },
+            {
+                kind: 'VALID',
+                value: 'sourcegraph@sg.co',
+            },
+        ]
+
+        expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
     })
 })
