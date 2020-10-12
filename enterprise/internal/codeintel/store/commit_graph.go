@@ -11,8 +11,22 @@ type UploadMeta struct {
 	Root     string
 	Indexer  string
 
-	// Distance is the number of commits between the reference to definition commits.
+	// Distance is the number of commits between the definition and reference commits.
 	Distance int
+
+	// AncestorVisible indicates whether or not this upload was visible to the commit by
+	// looking for older uploads defined in an ancestor commit. False indicates that the
+	// upload is only visible via another upload defined in a descendant commit.
+	AncestorVisible bool
+
+	// Overwritten indicates that this upload defined on an ancestor commit that is farther
+	// away than an upload defined on a descendant commit that has the same root and indexer.
+	//
+	// If overwritten, this upload is not considered in nearest commit operations, but is kept
+	// in the database so that we can reconstruct the set of all ancestor-visible uploads of a
+	// commit, which is useful when determining the closest uploads with only a partial commit
+	// graph.
+	Overwritten bool
 }
 
 // calculateVisibleUploads transforms the given commit graph and the set of LSIF uploads
