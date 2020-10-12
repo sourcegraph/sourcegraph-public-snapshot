@@ -90,8 +90,8 @@ const version = getExtensionVersion()
 const isFullPage = !new URLSearchParams(window.location.search).get('popup')
 
 // "Error code" constants for Sourcegraph URL validation
-export const URL_FETCH_ERROR = '0'
-export const URL_AUTH_ERROR = '1'
+export const URL_FETCH_ERROR = 'URL_FETCH_ERROR'
+export const URL_AUTH_ERROR = 'URL_AUTH_ERROR'
 
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
