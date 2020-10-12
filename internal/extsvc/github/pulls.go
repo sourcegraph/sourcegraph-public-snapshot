@@ -13,7 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// Redux paging information.
+// timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
+const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT`
+
+// PageInfo contains the paging information based on the Redux conventions.
 type PageInfo struct {
 	HasNextPage bool
 	EndCursor   string
@@ -821,7 +824,7 @@ func (c *Client) loadRemainingTimelineItems(ctx context.Context, pr *PullRequest
   node(id: %q) {
     ... on PullRequest {
       __typename
-      timelineItems(first: 250, after: %q, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
+      timelineItems(first: 250, after: %q, itemTypes: [`+timelineItemTypes+`]) {
         pageInfo {
           hasNextPage
           endCursor
@@ -1144,7 +1147,7 @@ fragment pr on PullRequest {
       ...prCommit
     }
   }
-  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
+  timelineItems(first: 250, itemTypes: [` + timelineItemTypes + `]) {
     pageInfo {
       hasNextPage
       endCursor
