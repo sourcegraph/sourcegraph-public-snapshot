@@ -44,7 +44,7 @@ waitRepoCloned:
 searchQuery: repo:^github.com/footest/foo$ uniquelyFoo
 ```  
 
-The validation command executes the following steps: 
+With this configuration, the validation command executes the following steps: 
 
 * create the first admin user
 * add an external service
