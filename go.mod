@@ -8,6 +8,7 @@ require (
 	github.com/google/go-cmp v0.5.2
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
+	github.com/json-iterator/go v1.1.10
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.9
