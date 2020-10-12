@@ -74,7 +74,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
-<a class="btn" href="introduction_to_campaigns">Introduction to campaigns</a>
+<a class="btn" href="explanations/introduction_to_campaigns">Introduction to campaigns</a>
 </div>
 
 > NOTE: This documentation describes the campaign functionality shipped in Sourcegraph 3.19 and src-cli 3.18. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in older versions of Sourcegraph and src-cli.
@@ -101,6 +101,10 @@ Create a campaign by specifying a search query to get a list of repositories and
   </a>
 </div>
 
+## Explanations
+
+- [Introduction to campaigns](explanations/introduction_to_campaigns.md)
+
 ## How-tos
 
 - [Viewing campaigns](how-tos/viewing_campaigns.md)
@@ -120,12 +124,3 @@ Create a campaign by specifying a search query to get a list of repositories and
 ## References
 
 - [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
-
-## Known issues
-
-- Campaigns currently support **GitHub**, **GitLab** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
-- It is not yet possible for a campaign to create multiple changesets in a single repository (e.g., to make changes to multiple subtrees in a monorepo).
-- Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your campaign will change (in order to push a branch to it).
-- Campaign steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing campaign steps on the server. For this reason, the APIs for creating and updating a campaign require you to upload all of the changeset specs (which are produced by executing the campaign spec locally). {#server-execution}
-- It is not yet possible for multiple users to edit the same campaign that was created under an organization.
-- It is not yet possible to reuse a branch in a repository across multiple campaigns.
