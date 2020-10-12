@@ -60,6 +60,18 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	const symbolmatchesChunk = 1000
+	symbolmatchesBuf := make([]eventSymbolMatch, 0, symbolmatchesChunk)
+	flushSymbolMatchesBuf := func() {
+		if len(symbolmatchesBuf) > 0 {
+			if err := eventWriter.Event("symbolmatches", symbolmatchesBuf); err != nil {
+				// EOF
+				return
+			}
+			symbolmatchesBuf = symbolmatchesBuf[:0]
+		}
+	}
+
 	const repomatchesChunk = 1000
 	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
 	flushRepoMatchesBuf := func() {
@@ -86,9 +98,31 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 
 	for _, result := range resultsResolver.Results() {
 		if fm, ok := result.ToFileMatch(); ok {
-			filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
-			if len(filematchesBuf) == cap(filematchesBuf) {
-				flushFileMatchesBuf()
+			if syms := fm.Symbols(); len(syms) > 0 {
+				// Inlining to avoid exporting a bunch of stuff from
+				// graphqlbackend
+				symbols := make([]symbol, 0, len(syms))
+				for _, sym := range syms {
+					u, err := sym.URL(ctx)
+					if err != nil {
+						continue
+					}
+					symbols = append(symbols, symbol{
+						URL:           u,
+						Name:          sym.Name(),
+						ContainerName: fromStrPtr(sym.ContainerName()),
+						Kind:          sym.Kind(),
+					})
+				}
+				symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
+				if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
+					flushSymbolMatchesBuf()
+				}
+			} else {
+				filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
+				if len(filematchesBuf) == cap(filematchesBuf) {
+					flushFileMatchesBuf()
+				}
 			}
 		}
 		if repo, ok := result.ToRepository(); ok {
@@ -106,6 +140,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	flushFileMatchesBuf()
+	flushSymbolMatchesBuf()
 	flushRepoMatchesBuf()
 	flushCommitMatchesBuf()
 
@@ -170,6 +205,13 @@ func strPtr(s string) *string {
 	return &s
 }
 
+func fromStrPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
 	for _, lm := range fm.JLineMatches {
@@ -191,6 +233,21 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 		Branches:    branches,
 		Version:     string(fm.CommitID),
 		LineMatches: lineMatches,
+	}
+}
+
+func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eventSymbolMatch {
+	var branches []string
+	if fm.InputRev != nil {
+		branches = []string{*fm.InputRev}
+	}
+
+	return eventSymbolMatch{
+		Path:       fm.JPath,
+		Repository: fm.Repo.Name(),
+		Branches:   branches,
+		Version:    string(fm.CommitID),
+		Symbols:    symbols,
 	}
 }
 
@@ -303,6 +360,23 @@ type eventLineMatch struct {
 type eventRepoMatch struct {
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
+}
+
+// eventSymbolMatch is eventFileMatch but with Symbols instead of LineMatches
+type eventSymbolMatch struct {
+	Path       string   `json:"name"`
+	Repository string   `json:"repository"`
+	Branches   []string `json:"branches,omitempty"`
+	Version    string   `json:"version,omitempty"`
+
+	Symbols []symbol `json:"symbols"`
+}
+
+type symbol struct {
+	URL           string `json:"url"`
+	Name          string `json:"name"`
+	ContainerName string `json:"containerName"`
+	Kind          string `json:"kind"`
 }
 
 // eventCommitMatch is the generic results interface from GQL. There is a lot

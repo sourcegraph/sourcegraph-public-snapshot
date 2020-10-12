@@ -13,6 +13,7 @@ type SearchEvent =
     | { type: 'filematches'; matches: FileMatch[] }
     | { type: 'repomatches'; matches: RepositoryMatch[] }
     | { type: 'commitmatches'; matches: CommitMatch[] }
+    | { type: 'symbolmatches'; matches: FileSymbolMatch[] }
     | { type: 'filters'; filters: Filter[] }
 
 interface FileMatch extends RepositoryMatch {
@@ -27,6 +28,17 @@ interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+}
+
+interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches'> {
+    symbols: SymbolMatch[]
+}
+
+interface SymbolMatch {
+    url: string
+    name: string
+    containerName: string
+    kind: string
 }
 
 type MarkdownText = string
@@ -65,7 +77,7 @@ const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
     preview: line.line,
 })
 
-function toGQLFileMatch(fm: FileMatch): GQL.IFileMatch {
+function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches'>): GQL.IFileMatch {
     let revision = ''
     if (fm.branches) {
         const branch = fm.branches[0]
@@ -97,10 +109,28 @@ function toGQLFileMatch(fm: FileMatch): GQL.IFileMatch {
         revSpec: null,
         resource: fm.name,
         symbols: [],
-        lineMatches: fm.lineMatches.map(toGQLLineMatch),
+        lineMatches: [],
         limitHit: false,
     }
 }
+
+const toGQLFileMatch = (fm: FileMatch): GQL.IFileMatch => ({
+    ...toGQLFileMatchBase(fm),
+    lineMatches: fm.lineMatches.map(toGQLLineMatch),
+})
+
+function toGQLSymbol(symbol: SymbolMatch): GQL.ISymbol {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    return {
+        __typename: 'Symbol',
+        ...symbol,
+    } as GQL.ISymbol
+}
+
+const toGQLSymbolMatch = (fm: FileSymbolMatch): GQL.IFileMatch => ({
+    ...toGQLFileMatchBase(fm),
+    symbols: fm.symbols.map(toGQLSymbol),
+})
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 const toMarkdown = (text: string | MarkdownText): GQL.IMarkdown => ({ __typename: 'Markdown', text } as GQL.IMarkdown)
@@ -209,6 +239,13 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
                     results: results.results.concat(newEvent.matches.map(toGQLCommitMatch)),
                 }
 
+            case 'symbolmatches':
+                return {
+                    ...results,
+                    // symbol matches are additive
+                    results: results.results.concat(newEvent.matches.map(toGQLSymbolMatch)),
+                }
+
             case 'filters':
                 return {
                     ...results,
@@ -263,6 +300,11 @@ export function search(
         subscriptions.add(
             observeMessages<FileMatch[]>(eventSource, 'filematches')
                 .pipe(map(matches => ({ type: 'filematches' as const, matches })))
+                .subscribe(observer)
+        )
+        subscriptions.add(
+            observeMessages<FileSymbolMatch[]>(eventSource, 'symbolmatches')
+                .pipe(map(matches => ({ type: 'symbolmatches' as const, matches })))
                 .subscribe(observer)
         )
         subscriptions.add(
