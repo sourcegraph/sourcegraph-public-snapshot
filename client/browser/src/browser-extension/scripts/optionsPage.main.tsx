@@ -148,7 +148,9 @@ function handleChangeSourcegraphUrl(url: string): void {
 function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
     return function requestPermissionsHandler(event: React.MouseEvent) {
         event.preventDefault()
-        browser.permissions.request({ origins: [`${protocol}//${host}/*`] }).catch(noop)
+        browser.permissions.request({ origins: [`${protocol}//${host}/*`] }).catch(error => {
+            console.error('Error requesting permissions:', error)
+        })
     }
 }
 
