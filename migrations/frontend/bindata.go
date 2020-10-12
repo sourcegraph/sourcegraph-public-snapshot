@@ -94,6 +94,8 @@
 // 1528395729_add_external_services_namespace_user_id_index.up.sql (113B)
 // 1528395730_lsif_index_log_contents.down.sql (68B)
 // 1528395730_lsif_index_log_contents.up.sql (72B)
+// 1528395731_add_nearest_upload_direction.down.sql (138B)
+// 1528395731_add_nearest_upload_direction.up.sql (510B)
 
 package migrations
 
@@ -2042,6 +2044,46 @@ func _1528395730_lsif_index_log_contentsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395731_add_nearest_upload_directionDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcc\x4b\x4e\x2d\x2e\xc9\x2f\x8a\x2f\xcb\x2c\xce\x4c\xca\x49\xb5\x26\x4d\x7b\x7e\x59\x6a\x51\x79\x51\x66\x49\x49\x6a\x9e\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x69\xe5\xe8\xb4\x8a\x00\x00\x00")
+
+func _1528395731_add_nearest_upload_directionDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395731_add_nearest_upload_directionDownSql,
+		"1528395731_add_nearest_upload_direction.down.sql",
+	)
+}
+
+func _1528395731_add_nearest_upload_directionDownSql() (*asset, error) {
+	bytes, err := _1528395731_add_nearest_upload_directionDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395731_add_nearest_upload_direction.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x26, 0x4, 0x94, 0xa1, 0x59, 0x86, 0x52, 0xf0, 0x52, 0x6f, 0xe7, 0x73, 0x8f, 0x71, 0xe2, 0x9d, 0xfc, 0x28, 0xf8, 0xf5, 0x4c, 0xe1, 0x9c, 0xa2, 0x3, 0x8b, 0x3f, 0x39, 0x4f, 0xaf, 0xb4, 0x67}}
+	return a, nil
+}
+
+var __1528395731_add_nearest_upload_directionUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x90\x41\x4b\xc3\x40\x14\x84\xef\xfb\x2b\xe6\xae\x3d\x78\x0e\x1e\xd2\x26\x48\x61\x93\x88\x6e\xce\x61\x6b\x5f\xc8\xd2\x35\x5b\xde\x7b\x36\xf8\xef\xa5\x51\xb0\x41\x0a\xf6\xb8\xc3\xec\x37\xf3\x66\x5d\x3e\x6d\xeb\xcc\x98\xdc\xba\xf2\x05\x2e\x5f\xdb\x12\x51\x42\xdf\x8d\xe4\x99\x44\xbb\x8f\x63\x4c\x7e\x2f\xc8\x8b\x02\x9b\xc6\xb6\x55\x0d\x3f\xbe\x91\x68\xe2\xee\x14\x24\xec\x22\x61\x97\x52\x24\x3f\x66\x37\x51\xd2\x89\x78\xe2\xa0\x4a\xe3\x2f\xa0\x7d\x2e\x72\x77\xe5\xef\x6b\xe9\xfe\x46\x3f\xa2\xf7\x51\xe8\x7e\x81\xfb\x11\xff\xd3\x67\x36\x5c\xbb\xeb\x9c\x58\x37\x0e\x75\x6b\xed\xad\xb0\xcb\x3e\x4b\x8e\x59\xad\x50\x79\x3e\xc0\xc7\x08\xa6\x63\x92\xa0\x89\x03\x09\xbc\x60\x1f\x58\x3f\x21\x09\x3a\x78\xc5\x44\x98\xc2\xec\xea\x99\x64\x80\x0e\xf4\xbe\xd8\x68\xb6\x77\x0b\xc8\x39\xec\x5b\xd6\x74\x98\xc7\xb8\x7c\xdd\xe1\x21\x33\x66\xd3\x54\xd5\xd6\x65\xe6\x2b\x00\x00\xff\xff\x18\x8e\x6b\x99\xfe\x01\x00\x00")
+
+func _1528395731_add_nearest_upload_directionUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395731_add_nearest_upload_directionUpSql,
+		"1528395731_add_nearest_upload_direction.up.sql",
+	)
+}
+
+func _1528395731_add_nearest_upload_directionUpSql() (*asset, error) {
+	bytes, err := _1528395731_add_nearest_upload_directionUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395731_add_nearest_upload_direction.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd9, 0x19, 0xf0, 0x4e, 0x71, 0x24, 0x50, 0x1b, 0x7d, 0x3, 0xb5, 0xb9, 0xa2, 0xef, 0x4d, 0x30, 0xc, 0xb4, 0xe, 0x26, 0xe8, 0x18, 0x8a, 0x80, 0x2e, 0x46, 0x13, 0x41, 0x70, 0x38, 0x1, 0xb}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2227,6 +2269,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              _1528395729_add_external_services_namespace_user_id_indexUpSql,
 	"1528395730_lsif_index_log_contents.down.sql":                                  _1528395730_lsif_index_log_contentsDownSql,
 	"1528395730_lsif_index_log_contents.up.sql":                                    _1528395730_lsif_index_log_contentsUpSql,
+	"1528395731_add_nearest_upload_direction.down.sql":                             _1528395731_add_nearest_upload_directionDownSql,
+	"1528395731_add_nearest_upload_direction.up.sql":                               _1528395731_add_nearest_upload_directionUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2367,6 +2411,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              {_1528395729_add_external_services_namespace_user_id_indexUpSql, map[string]*bintree{}},
 	"1528395730_lsif_index_log_contents.down.sql":                                  {_1528395730_lsif_index_log_contentsDownSql, map[string]*bintree{}},
 	"1528395730_lsif_index_log_contents.up.sql":                                    {_1528395730_lsif_index_log_contentsUpSql, map[string]*bintree{}},
+	"1528395731_add_nearest_upload_direction.down.sql":                             {_1528395731_add_nearest_upload_directionDownSql, map[string]*bintree{}},
+	"1528395731_add_nearest_upload_direction.up.sql":                               {_1528395731_add_nearest_upload_directionUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
