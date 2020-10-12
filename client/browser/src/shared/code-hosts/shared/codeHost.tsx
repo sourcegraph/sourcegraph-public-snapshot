@@ -105,7 +105,6 @@ import {
 } from './nativeTooltips'
 import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
-
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
@@ -115,7 +114,6 @@ import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/c
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
-import { noop } from 'lodash'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 
