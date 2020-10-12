@@ -1,7 +1,7 @@
 # Sourcegraph Instance Validation
 
 >NOTE: **Sourcegraph Instance Validation is currently experimental.** We're exploring this feature set. 
->Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph) 
+>Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
 >with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
 
 Instance validation provides a quick way to check that a Sourcegraph instance functions properly after a fresh install
@@ -12,8 +12,7 @@ The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental comm
 
 ### Validation specification
  
-The best way to describe this initial, simple and experimental validation specification is with the example below
-(in YAML format to allow for comments):
+The best way to describe this initial, simple and experimental validation specification is with the example below:
 
 ```yaml
 # creates the first admin user on a fresh install (skips creation if user exists)
@@ -45,7 +44,7 @@ waitRepoCloned:
 searchQuery: repo:^github.com/footest/foo$ uniquelyFoo
 ```  
 
-The validation command executes the following steps: 
+With this configuration, the validation command executes the following steps: 
 
 * create the first admin user
 * add an external service
@@ -73,6 +72,6 @@ src validate -context github_token=$GITHUB_TOKEN validate.yaml
 ```
 
 The `src` binary finds the Sourcegraph instance to validate from the environment variables 
-[SRC_ENDPOINT and SRC_ACCESS_TOKEN](https://github.com/sourcegraph/src-cli#setup-with-your-sourcegraph-instance). 
+[`SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`](https://github.com/sourcegraph/src-cli#setup-with-your-sourcegraph-instance). 
 
 > Note: The `SRC_ACCESS_TOKEN` is not needed when a first admin user is declared in the validation specification.
