@@ -10,7 +10,7 @@ const noopMain = pretendRemote<MainThreadAPI>({})
 const emptySettings: SettingsCascade<object> = { subjects: [], final: {} }
 const noopDocuments = new ExtensionDocuments(() => Promise.resolve())
 
-const observe = (onValue: (val: string) => void): Remote<Observer<string> & ProxyMarked> =>
+const observe = (onValue: (value: string) => void): Remote<Observer<string> & ProxyMarked> =>
     pretendRemote({
         next: onValue,
         error: (error: any) => {

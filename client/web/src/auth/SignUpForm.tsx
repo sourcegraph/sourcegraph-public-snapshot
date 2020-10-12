@@ -17,7 +17,7 @@ import { LoaderButton } from '../components/LoaderButton'
 import { LoaderInput } from '../components/LoaderInput'
 import { useInputValidation, InputValidationState, FieldValidators } from '../components/useInputValidation'
 
-export interface SignUpArgs {
+export interface SignUpArguments {
     email: string
     username: string
     password: string
@@ -28,7 +28,7 @@ interface SignUpFormProps {
     className?: string
 
     /** Called to perform the signup on the server. */
-    doSignUp: (args: SignUpArgs) => Promise<void>
+    doSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
     history: H.History

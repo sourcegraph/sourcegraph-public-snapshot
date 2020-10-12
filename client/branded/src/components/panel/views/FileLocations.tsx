@@ -8,7 +8,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { FetchFileCtx } from '../../../../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { FileMatch, IFileMatch, ILineMatch } from '../../../../../shared/src/components/FileMatch'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
@@ -46,7 +46,7 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
 
     isLightTheme: boolean
 
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
 }
 
 const LOADING = 'loading' as const

@@ -10,7 +10,7 @@ import {
     ProvidePanelViewSignature,
     PanelViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/panelViews'
-import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
+import { ContributableViewContainer, TextDocumentPositionParameters } from '../../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -86,12 +86,12 @@ export class BlobPanel extends React.PureComponent<Props> {
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
-        const entryForViewProviderRegistration = <P extends TextDocumentPositionParams>(
+        const entryForViewProviderRegistration = <P extends TextDocumentPositionParameters>(
             id: string,
             title: string,
             priority: number,
             registry: TextDocumentLocationProviderRegistry<P>,
-            extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+            extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
             provider: from(this.props.extensionsController.services.viewer.activeViewerUpdates).pipe(
@@ -111,7 +111,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                             if (!hasProviders) {
                                 return null
                             }
-                            const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(
+                            const parameters: TextDocumentPositionParameters | null = getActiveCodeEditorPosition(
                                 activeEditor
                             )
                             if (!parameters) {

@@ -11,7 +11,7 @@ import { ContributableMenu, ContributableViewContainer } from '../../../../share
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { Resizable } from '../../../../shared/src/components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../Tabs'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -33,7 +33,7 @@ interface Props
     location: H.Location
     history: H.History
     repoName?: string
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
 }
 
 interface State {

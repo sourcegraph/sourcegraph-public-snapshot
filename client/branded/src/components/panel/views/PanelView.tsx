@@ -5,7 +5,7 @@ import {
     PanelViewWithComponent,
     PanelViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/panelViews'
-import { FetchFileCtx } from '../../../../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
@@ -20,7 +20,7 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps, Version
     history: H.History
     location: H.Location
     isLightTheme: boolean
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
 }
 
 interface State {}

@@ -4,7 +4,7 @@ import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { PageTitle } from '../PageTitle'
 import * as H from 'history'
 import { queryExternalServices as _queryExternalServices } from './backend'
@@ -48,7 +48,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     const onDidUpdateExternalServices = useCallback(() => updates.next(), [updates])
 
     const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
+        (args: FilteredConnectionQueryArguments) =>
             queryExternalServices({
                 first: args.first ?? null,
                 after: args.after ?? null,

@@ -9,7 +9,7 @@ interface Props {
     history: H.History
     className?: string
     /** A function to attain a reference to the top-level div from a parent component. */
-    refFn?: (ref: HTMLElement | null) => void
+    refFn?: (reference: HTMLElement | null) => void
 }
 
 export const Markdown: React.FunctionComponent<Props> = ({

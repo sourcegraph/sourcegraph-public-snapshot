@@ -298,7 +298,6 @@ function handleBrowserPortPair(
         subscriptions.add(() => from.removeEventListener('message', messageListener))
 
         // False positive https://github.com/eslint/eslint/issues/12822
-        // eslint-disable-next-line no-unused-expressions
         from.start?.()
     }
 
