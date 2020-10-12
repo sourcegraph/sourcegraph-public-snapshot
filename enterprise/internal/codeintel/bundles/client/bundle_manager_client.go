@@ -24,6 +24,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/codeintelutils"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -135,9 +136,10 @@ func New(
 // BundleClient creates a client that can answer intelligence queries for a single dump.
 func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 	return &bundleClientImpl{
-		base:     c,
-		bundleID: bundleID,
-		store:    persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext),
+		base:           c,
+		bundleID:       bundleID,
+		store:          persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext),
+		databaseOpener: database.OpenDatabase,
 	}
 }
 
