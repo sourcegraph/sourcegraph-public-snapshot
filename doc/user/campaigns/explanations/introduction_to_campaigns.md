@@ -31,13 +31,11 @@ A campaign tracks all of its changesets (a generic term for pull requests or mer
 - Checks: passed (green), failed (red), or pending (yellow)
 - Review status: approved, changes requested, pending, or other statuses (depending on your code host or code review tool)
 
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_tracking_sourcegraph_prs.png" class="screenshot">
+
 You can see the overall trend of a campaign in the burndown chart, which shows the proportion of changesets that have been merged over time since the campaign was created.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_tracking_sourcegraph_prs_burndown.png" class="screenshot">
-
-In the list of changesets, you can see the detailed status for each changeset.
-
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_tracking_sourcegraph_prs.png" class="screenshot">
 
 ## Supported code hosts and changeset types
 
