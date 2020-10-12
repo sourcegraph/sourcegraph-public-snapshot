@@ -1,4 +1,4 @@
-# Managing access to campaigns
+# Permissions in campaigns
 
 > NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
 

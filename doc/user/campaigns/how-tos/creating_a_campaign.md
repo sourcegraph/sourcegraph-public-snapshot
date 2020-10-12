@@ -44,6 +44,6 @@ After you've applied a campaign spec, you can [publish changesets](publishing_ch
 
 You can share the link to your campaign with other people if you want their help. Any person on your Sourcegraph instance can [view it in the campaigns list](viewing_campaigns.md).
 
-If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](../explanations/managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
+If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](../explanations/permissions_in_campaigns.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
 You can update a campaign's changes at any time, even after you've published changesets. For more information, see [Updating a campaign](updating_a_campaign.md).

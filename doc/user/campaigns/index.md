@@ -104,7 +104,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 ## Explanations
 
 - [Introduction to campaigns](explanations/introduction_to_campaigns.md)
-- [Managing access to campaigns](explanations/managing_access.md)
+- [Managing access to campaigns](explanations/permissions_in_campaigns.md)
 
 ## How-tos
 
