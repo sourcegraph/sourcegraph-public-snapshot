@@ -7,22 +7,18 @@ type MarkdownResolver interface {
 	HTML() string
 }
 
-type markdownResolver struct {
-	text string
-}
+type Markdown string
 
-var _ MarkdownResolver = &markdownResolver{}
+var _ MarkdownResolver = Markdown("")
 
 func NewMarkdownResolver(text string) MarkdownResolver {
-	return &markdownResolver{
-		text: text,
-	}
+	return Markdown(text)
 }
 
-func (m *markdownResolver) Text() string {
-	return m.text
+func (m Markdown) Text() string {
+	return string(m)
 }
 
-func (m *markdownResolver) HTML() string {
-	return markdown.Render(m.text)
+func (m Markdown) HTML() string {
+	return markdown.Render(string(m))
 }
