@@ -42,7 +42,7 @@ waitRepoCloned:
 
 # performs the specified search and checks that at least one result is returned
 searchQuery: repo:^github.com/footest/foo$ uniquelyFoo
-```  
+```
 
 With this configuration, the validation command executes the following steps: 
 
