@@ -2,66 +2,8 @@
 
 <style>
 
-.subtitle {
-  font-weight: 600;
-  margin-top: -0.5em;
-  font-size: 1.3rem;
-  color: var(--text-muted);
-}
-
-.lead {
-  font-size: 1.15rem;
-}
-
 .markdown-body h2 {
   margin-top: 2em;
-}
-
-.btn {
-  display: inline-block;
-  margin: 0;
-  padding: 1rem 1.25rem;
-  border-radius: 4px;
-  text-decoration: none;
-  -webkit-appearance: none;
-  -webkit-font-smoothing: antialiased;
-  border: 1px solid var(--sidebar-nav-active-bg);
-}
-
-.btn-primary {
-  background-color: var(--sidebar-nav-active-bg);
-}
-
-.btn:hover {
-  opacity: 0.85;
-  text-decoration: none;
-}
-
-.cta-group {
-  margin: 3em 0;
-}
-
-.getting-started {
-  display: flex;
-  align-items: stretch;
-}
-
-.getting-started .btn {
-  flex: 1;
-  margin: 0.5em;
-  padding: 1rem 1.25rem;
-  color: var(--text-color);
-  border-radius: 4px;
-  border: 1px solid var(--sidebar-nav-active-bg);
-}
-
-.getting-started .btn:hover {
-  color: var(--link-color);
-}
-
-.getting-started .btn span {
-  color: var(--link-color);
-  font-weight: bold;
 }
 
 .markdown-body ul {
@@ -74,19 +16,19 @@
 }
 
 .markdown-body ul li:before {
-    content: '';
-    display: inline-block;
-    height: 1.2em;
-    width: 1em;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-image: url(campaigns/file-icon.svg);
-    margin-right: 0.5em;
-    margin-bottom: -0.29em;
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(campaigns/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
 }
 
 body.theme-dark .markdown-body ul li:before {
-    filter: invert(50%);
+  filter: invert(50%);
 }
 
 </style>
