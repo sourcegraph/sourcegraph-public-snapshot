@@ -47,16 +47,16 @@ func (r *commitSearchResultResolver) Icon() string {
 	return r.icon
 }
 
-func (r *commitSearchResultResolver) Label() *markdownResolver {
-	return &markdownResolver{text: r.label}
+func (r *commitSearchResultResolver) Label() Markdown {
+	return Markdown(r.label)
 }
 
 func (r *commitSearchResultResolver) URL() string {
 	return r.url
 }
 
-func (r *commitSearchResultResolver) Detail() *markdownResolver {
-	return &markdownResolver{text: r.detail}
+func (r *commitSearchResultResolver) Detail() Markdown {
+	return Markdown(r.detail)
 }
 
 func (r *commitSearchResultResolver) Matches() []*searchResultMatchResolver {
