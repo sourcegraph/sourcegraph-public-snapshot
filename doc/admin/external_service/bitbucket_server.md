@@ -15,7 +15,7 @@ Also consider installing the [Sourcegraph Bitbucket Server plugin](../../integra
 
 Sourcegraph requires a Bitbucket Server personal access token with **read** permissions to sync repositories.
 
-When using [campaigns](../../user/campaigns/index.md) the access token needs **write** permissions on the project and repository level. See "[Code host interactions in campaigns](../../user/campaigns/managing_access.md#code-host-interactions-in-campaigns)" for details.
+When using [campaigns](../../user/campaigns/index.md) the access token needs **write** permissions on the project and repository level. See "[Code host interactions in campaigns](../../user/campaigns/explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns)" for details.
 
 You can create a personal access token at `https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add`. Also set the corresponding `username` field.
 
