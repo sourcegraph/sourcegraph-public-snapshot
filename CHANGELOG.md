@@ -50,6 +50,8 @@ All notable changes to Sourcegraph are documented in this file.
 - The explore page (`/explore`) was removed.
 - The sign out page was removed.
 - The unused GraphQL types `DiffSearchResult` and `DeploymentConfiguration` were removed.
+- The deprecated GraphQL mutation `updateAllMirrorRepositories`.
+- The deprecated GraphQL field `Site.noRepositoriesEnabled`.
 
 ## 3.20.1
 
