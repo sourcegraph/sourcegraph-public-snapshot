@@ -88,14 +88,9 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 func withOAuthExternalHTTPClient(r *http.Request) *http.Request {
 	client := httpcli.ExternalHTTPClient()
 	if traceLogEnabled {
-		if httpClient, ok := client.(*http.Client); ok {
-			loggingClient := *httpClient
-			loggingClient.Transport = &loggingRoundTripper{underlying: loggingClient.Transport}
-			ctx := context.WithValue(r.Context(), oauth2.HTTPClient, &loggingClient)
-			return r.WithContext(ctx)
-		} else {
-			log15.Warn("Could not initialize logging HTTP client, because external HTTP client was not an instance of *http.Client")
-		}
+		loggingClient := *client
+		loggingClient.Transport = &loggingRoundTripper{underlying: client.Transport}
+		client = &loggingClient
 	}
 	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, client)
 	return r.WithContext(ctx)
