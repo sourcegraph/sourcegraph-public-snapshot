@@ -38,8 +38,13 @@ type campaignProgressPrinter struct {
 }
 
 func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStatus) {
-	statusBars := []*output.StatusBar{}
-	for i := 0; i < p.numParallelism; i++ {
+	numStatusBars := p.numParallelism
+	if len(statuses) < numStatusBars {
+		numStatusBars = len(statuses)
+	}
+
+	statusBars := make([]*output.StatusBar, 0, numStatusBars)
+	for i := 0; i < numStatusBars; i++ {
 		statusBars = append(statusBars, output.NewStatusBarWithLabel("Starting worker..."))
 	}
 
@@ -56,6 +61,10 @@ func (p *campaignProgressPrinter) Complete() {
 }
 
 func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus) {
+	if len(statuses) == 0 {
+		return
+	}
+
 	if p.progress == nil {
 		p.initProgressBar(statuses)
 	}
