@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 )
 
 // BundleClient is the interface to the precise-code-intel-bundle-manager service scoped to a particular dump.
@@ -43,6 +45,7 @@ type BundleClient interface {
 type bundleClientImpl struct {
 	base     baseClient
 	bundleID int
+	store    persistence.Store
 }
 
 var _ BundleClient = &bundleClientImpl{}

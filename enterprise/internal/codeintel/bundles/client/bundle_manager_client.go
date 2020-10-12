@@ -3,6 +3,7 @@ package client
 import (
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,7 +24,10 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/codeintelutils"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
@@ -96,6 +100,8 @@ var defaultTransport = &ot.Transport{
 }
 
 type bundleManagerClientImpl struct {
+	codeIntelDB         *sql.DB
+	observationContext  *observation.Context
 	httpClient          *http.Client
 	httpLimiter         *parallel.Run
 	bundleManagerURL    string
@@ -108,8 +114,14 @@ type bundleManagerClientImpl struct {
 var _ BundleManagerClient = &bundleManagerClientImpl{}
 var _ baseClient = &bundleManagerClientImpl{}
 
-func New(bundleManagerURL string) BundleManagerClient {
+func New(
+	codeIntelDB *sql.DB,
+	observationContext *observation.Context,
+	bundleManagerURL string,
+) BundleManagerClient {
 	return &bundleManagerClientImpl{
+		codeIntelDB:         codeIntelDB,
+		observationContext:  observationContext,
 		httpClient:          &http.Client{Transport: defaultTransport},
 		httpLimiter:         parallel.NewRun(500),
 		bundleManagerURL:    bundleManagerURL,
@@ -125,6 +137,7 @@ func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 	return &bundleClientImpl{
 		base:     c,
 		bundleID: bundleID,
+		store:    persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext),
 	}
 }
 
