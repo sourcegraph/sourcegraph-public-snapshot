@@ -72,6 +72,6 @@ src validate -context github_token=$GITHUB_TOKEN validate.yaml
 ```
 
 The `src` binary finds the Sourcegraph instance to validate from the environment variables 
-[SRC_ENDPOINT and SRC_ACCESS_TOKEN](https://github.com/sourcegraph/src-cli#setup-with-your-sourcegraph-instance). 
+[`SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`](https://github.com/sourcegraph/src-cli#setup-with-your-sourcegraph-instance). 
 
 > Note: The `SRC_ACCESS_TOKEN` is not needed when a first admin user is declared in the validation specification.
