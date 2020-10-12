@@ -131,7 +131,7 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 	}
 
 	// Set up a source with which we can create a changeset
-	ccs, err := r.buildChangesetSource(repo, extSvc)
+	ccs, err := r.buildChangesetSource(ctx, tx, repo, extSvc, campaign.LastApplierID)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	}
 
 	// Set up a source with which we can update the changeset on the code host.
-	ccs, err := r.buildChangesetSource(repo, extSvc)
+	ccs, err := r.buildChangesetSource(ctx, tx, repo, extSvc, 0)
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func (r *reconciler) reopenChangeset(ctx context.Context, tx *Store, ch *campaig
 	}
 
 	// Set up a source with which we can update the changeset on the code host.
-	ccs, err := r.buildChangesetSource(repo, extSvc)
+	ccs, err := r.buildChangesetSource(ctx, tx, repo, extSvc, 0)
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaign
 	}
 
 	// Set up a source with which we can close the changeset
-	ccs, err := r.buildChangesetSource(repo, extSvc)
+	ccs, err := r.buildChangesetSource(ctx, tx, repo, extSvc, 0)
 	if err != nil {
 		return err
 	}
@@ -366,8 +366,19 @@ func (r *reconciler) pushCommit(ctx context.Context, opts protocol.CreateCommitF
 	return ref, nil
 }
 
-func (r *reconciler) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService) (repos.ChangesetSource, error) {
-	sources, err := r.sourcer(extSvc)
+func (r *reconciler) buildChangesetSource(ctx context.Context, tx *Store, repo *repos.Repo, extSvc *repos.ExternalService, userID int32) (repos.ChangesetSource, error) {
+	var token *string
+	if userID != 0 {
+		if ut, err := tx.GetUserToken(ctx, userID, extSvc.ID); err == nil && ut != nil {
+			token = ut.Token.S
+		} else if err != ErrNoResults {
+			// We're not going to treat this as fatal — we can fall back to the
+			// global configuration — but we should log it, because it's weird.
+			log15.Warn("error looking up user token", "err", err, "userID", userID, "extSvc", extSvc)
+		}
+	}
+
+	sources, err := r.sourcer(repos.SourceTuple{ExternalService: extSvc, Token: token})
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -14,7 +15,12 @@ import (
 
 // A Sourcer converts the given ExternalServices to Sources
 // whose yielded Repos should be synced.
-type Sourcer func(...*ExternalService) (Sources, error)
+type Sourcer func(...SourceTuple) (Sources, error)
+
+type SourceTuple struct {
+	*ExternalService
+	Token *string
+}
 
 // NewSourcer returns a Sourcer that converts the given ExternalServices
 // into Sources that use the provided httpcli.Factory to create the
@@ -24,18 +30,23 @@ type Sourcer func(...*ExternalService) (Sources, error)
 //
 // The provided decorator functions will be applied to each Source.
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svcs ...*ExternalService) (Sources, error) {
-		srcs := make([]Source, 0, len(svcs))
+	return func(tuples ...SourceTuple) (Sources, error) {
+		srcs := make([]Source, 0, len(tuples))
 		var errs *multierror.Error
 
-		for _, svc := range svcs {
-			if svc.IsDeleted() {
+		for _, st := range tuples {
+			if st.ExternalService == nil {
+				log15.Warn("ExternalService is nil")
 				continue
 			}
 
-			src, err := NewSource(svc, cf)
+			if st.ExternalService.IsDeleted() {
+				continue
+			}
+
+			src, err := NewSource(st.ExternalService, st.Token, cf)
 			if err != nil {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: st.ExternalService})
 				continue
 			}
 
@@ -51,12 +62,12 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(svc *ExternalService, token *string, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(svc, token, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(svc, cf)
+		return NewGitLabSource(svc, token, cf)
 	case extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(svc, cf)
 	case extsvc.KindBitbucketCloud:
@@ -77,7 +88,7 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 // NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
 // rate limiter
 func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory) (ChangesetSource, error) {
-	source, err := NewSource(svc, cf)
+	source, err := NewSource(svc, nil, cf)
 	if err != nil {
 		return nil, err
 	}

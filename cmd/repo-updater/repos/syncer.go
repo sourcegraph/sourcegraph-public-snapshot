@@ -721,7 +721,12 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, observe ...func(*Repo)) ([]*Repo, error) {
-	srcs, err := s.Sourcer(svcs...)
+	sts := make([]SourceTuple, len(svcs))
+	for i, svc := range svcs {
+		sts[i].ExternalService = svc
+	}
+
+	srcs, err := s.Sourcer(sts...)
 	if err != nil {
 		return nil, err
 	}

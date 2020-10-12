@@ -663,7 +663,7 @@ func groupChangesetsBySource(
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		sources, err := sourcer(e)
+		sources, err := sourcer(repos.SourceTuple{ExternalService: e})
 		if err != nil {
 			return nil, err
 		}

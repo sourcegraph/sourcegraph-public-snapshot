@@ -43,15 +43,15 @@ type GithubSource struct {
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, token *string, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf)
+	return newGithubSource(svc, &c, token, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, token *string, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -105,6 +105,10 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
+	if token == nil {
+		token = &c.Token
+	}
+
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
@@ -113,8 +117,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, c.Token, cli),
-		searchClient:     github.NewClient(apiURL, c.Token, cli),
+		client:           github.NewClient(apiURL, *token, cli),
+		searchClient:     github.NewClient(apiURL, *token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }
