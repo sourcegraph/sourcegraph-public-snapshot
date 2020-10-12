@@ -1,16 +1,25 @@
 import { noop } from 'lodash'
-import { Observable, Subject } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import * as sinon from 'sinon'
 import { createValidationPipeline, InputValidationState } from './useInputValidation'
 
 describe('useInputValidation()', () => {
     let clock: sinon.SinonFakeTimers
+    let subscriptions: Subscription
     beforeAll(() => {
         clock = sinon.useFakeTimers()
     })
 
     afterAll(() => {
         clock.restore()
+    })
+
+    beforeEach(() => {
+        subscriptions = new Subscription()
+    })
+
+    afterEach(() => {
+        subscriptions.unsubscribe()
     })
 
     /**
@@ -60,7 +69,7 @@ describe('useInputValidation()', () => {
     }
 
     /**
-     * Marble tests
+     *  Tests
      * - Works without initial value
      * - Works with initial value
      * - Built-in sync reason
@@ -68,7 +77,7 @@ describe('useInputValidation()', () => {
      * - Async reason
      * - All validators passed
      */
-    it.skip('works without initial value', () => {
+    it('works without initial value', () => {
         const inputElement = createEmailInputElement()
         const inputReference = { current: inputElement }
 
@@ -80,46 +89,77 @@ describe('useInputValidation()', () => {
             return "Email must end with '.co'"
         }
 
-        const validationStates: Subject<InputValidationState> = new Subject()
+        const inputValidationStates: InputValidationState[] = []
 
         const validationPipeline = createValidationPipeline(
             {
                 synchronousValidators: [isDotCo],
             },
             inputReference,
-            // We want to test the value that this callback is called with,
+            // We want to test the values that this callback is called with,
             // not the emissions of the returned observable. Therefore, we will
-            // redirect these values to another observable whose emissions we will assert.
-            validationStates.next.bind(validationStates)
+            // push these values to an array whose values we will assert.
+            inputValidationStates.push.bind(inputValidationStates)
         )
 
         // Creating this type instead of a generic util because TS doesn't support higher-kinded types
         type ObservableEmission<T> = T extends Observable<infer V> ? V : never
         const changeEvents = new Subject<ObservableEmission<Parameters<typeof validationPipeline>[0]>>()
 
-        // This is not the observable that we care about. Here, we simply set up the pipeline
+        // We don't care about this observable. Here, we simply set up the pipeline
         // change event -> validation pipeline -> validation states
-        const validationResults = validationPipeline(changeEvents)
-
-        validationResults.subscribe(value => console.log('obsval', value))
-        validationStates.subscribe(value => console.log('valstates', value))
+        subscriptions.add(validationPipeline(changeEvents).subscribe(noop))
 
         // Simulate user input: change input value, then dispatch change event
-        inputElement.changeValue('so')
-        changeEvents.next({
-            preventDefault: noop,
-            target: inputReference.current,
-        })
+        function userInput(value: string): void {
+            inputElement.changeValue(value)
+            changeEvents.next({
+                preventDefault: noop,
+                target: inputReference.current,
+            })
+        }
 
-        inputElement.changeValue('so@so.co')
-        changeEvents.next({
-            preventDefault: noop,
-            target: inputReference.current,
-        })
+        // "Scripting" user interaction: strings are new input values, numbers are delays before next input in ms.
+        const inputs: (string | number)[] = ['source', 'sourcegraph', 300, 'sourcegraph@', 500, 'sourcegraph@sg.co']
 
-        console.log('value in test', inputReference.current.value)
+        for (const input of inputs) {
+            if (typeof input === 'string') {
+                userInput(input)
+            } else {
+                clock.tick(input)
+            }
+        }
+        // Wait for debounceTime after final input
+        clock.tick(500)
 
-        // return new Promise(resolve => setTimeout(resolve, 1200))
-        clock.tick(1200)
+        const expectedStates: InputValidationState[] = [
+            {
+                kind: 'LOADING',
+                value: 'source',
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph',
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph@',
+            },
+            {
+                kind: 'INVALID',
+                value: 'sourcegraph@',
+                reason: "Email must end with '.co'",
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph@sg.co',
+            },
+            {
+                kind: 'VALID',
+                value: 'sourcegraph@sg.co',
+            },
+        ]
+
+        expect(inputValidationStates).toStrictEqual(expectedStates)
     })
 })
