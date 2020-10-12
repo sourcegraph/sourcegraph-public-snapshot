@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import { Observable, Subject } from 'rxjs'
 import * as sinon from 'sinon'
-import { createValidationPipeline } from './useInputValidation'
+import { createValidationPipeline, InputValidationState } from './useInputValidation'
 
 describe('useInputValidation()', () => {
     let clock: sinon.SinonFakeTimers
@@ -24,35 +24,37 @@ describe('useInputValidation()', () => {
         HTMLInputElement,
         'checkValidity' | 'validationMessage' | 'setCustomValidity' | 'value'
     > & { changeValue: (newValue: string) => void } {
-        let value = ''
-        let validationMessage = ''
+        const internalStrings = {
+            value: '',
+            validationMessage: '',
+        }
 
         return {
-            validationMessage,
-            checkValidity: () => {
+            get value() {
+                return internalStrings.value
+            },
+            get validationMessage() {
+                return internalStrings.validationMessage
+            },
+            checkValidity() {
                 // Check if custom validity was set
-                if (validationMessage.length > 0) {
+                if (internalStrings.validationMessage.length > 0) {
                     return false
                 }
                 // Built-in rules
-                if (!value.includes('@')) {
-                    validationMessage = "Email must include '@'"
+                if (!internalStrings.value.includes('@')) {
+                    internalStrings.validationMessage = "Email must include '@'"
                     return false
                 }
                 // Clear built-in messages
-                validationMessage = ''
+                internalStrings.validationMessage = ''
                 return true
             },
-            setCustomValidity: error => {
-                validationMessage = error
+            setCustomValidity(error) {
+                internalStrings.validationMessage = error
             },
-            changeValue: newValue => {
-                console.log('changin value', value)
-                value = newValue
-                console.log('changed value', value)
-            },
-            get value() {
-                return value
+            changeValue(newValue) {
+                internalStrings.value = newValue
             },
         }
     }
@@ -66,8 +68,8 @@ describe('useInputValidation()', () => {
      * - Async reason
      * - All validators passed
      */
-    it('works without initial value', () => {
-        const { changeValue, ...inputElement } = createEmailInputElement()
+    it.skip('works without initial value', () => {
+        const inputElement = createEmailInputElement()
         const inputReference = { current: inputElement }
 
         function isDotCo(email: string): string | undefined {
@@ -78,23 +80,46 @@ describe('useInputValidation()', () => {
             return "Email must end with '.co'"
         }
 
+        const validationStates: Subject<InputValidationState> = new Subject()
+
         const validationPipeline = createValidationPipeline(
             {
                 synchronousValidators: [isDotCo],
             },
             inputReference,
-            () => {}
+            // We want to test the value that this callback is called with,
+            // not the emissions of the returned observable. Therefore, we will
+            // redirect these values to another observable whose emissions we will assert.
+            validationStates.next.bind(validationStates)
         )
 
         // Creating this type instead of a generic util because TS doesn't support higher-kinded types
         type ObservableEmission<T> = T extends Observable<infer V> ? V : never
         const changeEvents = new Subject<ObservableEmission<Parameters<typeof validationPipeline>[0]>>()
 
+        // This is not the observable that we care about. Here, we simply set up the pipeline
+        // change event -> validation pipeline -> validation states
         const validationResults = validationPipeline(changeEvents)
 
+        validationResults.subscribe(value => console.log('obsval', value))
+        validationStates.subscribe(value => console.log('valstates', value))
+
+        // Simulate user input: change input value, then dispatch change event
+        inputElement.changeValue('so')
         changeEvents.next({
             preventDefault: noop,
             target: inputReference.current,
         })
+
+        inputElement.changeValue('so@so.co')
+        changeEvents.next({
+            preventDefault: noop,
+            target: inputReference.current,
+        })
+
+        console.log('value in test', inputReference.current.value)
+
+        // return new Promise(resolve => setTimeout(resolve, 1200))
+        clock.tick(1200)
     })
 })

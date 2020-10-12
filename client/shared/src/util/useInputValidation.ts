@@ -129,7 +129,6 @@ export function createValidationPipeline(
                 const syncReason = head(compact(synchronousValidators?.map(validator => validator(value))))
                 if (syncReason) {
                     inputReference.current?.setCustomValidity(syncReason)
-
                     onValidationUpdate({
                         value,
                         kind: 'INVALID',
@@ -138,7 +137,7 @@ export function createValidationPipeline(
                     return of(syncReason)
                 }
 
-                if (asynchronousValidators?.length === 0) {
+                if (!asynchronousValidators || asynchronousValidators.length === 0) {
                     // clear possible custom sync validation error from previous value
                     inputReference.current?.setCustomValidity('')
                     onValidationUpdate({
