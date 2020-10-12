@@ -1,5 +1,5 @@
 import { compact, head } from 'lodash'
-import { useMemo, useState, useCallback, useRef } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { concat, EMPTY, Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 import { useEventObservable } from './useObservable'
@@ -53,15 +53,6 @@ export function useInputValidation(
     (change: React.ChangeEvent<HTMLInputElement>) => void,
     React.MutableRefObject<HTMLInputElement | null>
 ] {
-    const { synchronousValidators, asynchronousValidators } = useMemo(() => {
-        const { synchronousValidators = [], asynchronousValidators = [] } = options
-
-        return {
-            synchronousValidators,
-            asynchronousValidators,
-        }
-    }, [options])
-
     const inputReference = useRef<HTMLInputElement>(null)
 
     const [inputState, setInputState] = useState<InputValidationState>({
@@ -69,70 +60,9 @@ export function useInputValidation(
         value: options.initialValue ?? '',
     })
 
-    const validationPipeline = useCallback(
-        (events: Observable<React.ChangeEvent<HTMLInputElement>>): Observable<ValidationResult> =>
-            concat(
-                options.initialValue !== undefined ? of(options.initialValue) : EMPTY,
-                events.pipe(
-                    tap(event => event.preventDefault()),
-                    map(event => event.target.value)
-                )
-            ).pipe(
-                tap(value => {
-                    inputReference.current?.setCustomValidity('')
-                    setInputState({ value, kind: 'LOADING' })
-                }),
-                // Debounce everything.
-                // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
-                debounceTime(500),
-                switchMap(value => {
-                    // check validity (synchronous)
-                    const valid = inputReference.current?.checkValidity()
-                    if (!valid) {
-                        setInputState({
-                            value,
-                            kind: 'INVALID',
-                            reason: inputReference.current?.validationMessage ?? '',
-                        })
-                        return of(inputReference.current?.validationMessage ?? '')
-                    }
-
-                    // check custom sync validators
-                    const syncReason = head(compact(synchronousValidators.map(validator => validator(value))))
-                    if (syncReason) {
-                        inputReference.current?.setCustomValidity(syncReason)
-
-                        setInputState({
-                            value,
-                            kind: 'INVALID',
-                            reason: syncReason,
-                        })
-                        return of(syncReason)
-                    }
-
-                    if (asynchronousValidators.length === 0) {
-                        // clear possible custom sync validation error from previous value
-                        inputReference.current?.setCustomValidity('')
-                        setInputState({
-                            value,
-                            kind: 'VALID',
-                        })
-                        return of(undefined)
-                    }
-
-                    // check async validators
-                    return zip(...asynchronousValidators.map(validator => validator(value))).pipe(
-                        map(values => head(compact(values))),
-                        tap(reason => {
-                            inputReference.current?.setCustomValidity(reason ?? '')
-                            setInputState(reason ? { kind: 'INVALID', value, reason } : { kind: 'VALID', value })
-                        })
-                    )
-                }),
-                catchError(error => of(asError(error).message || 'Unknown error'))
-            ),
-        [synchronousValidators, asynchronousValidators, options.initialValue]
-    )
+    const validationPipeline = useMemo(() => createValidationPipeline(options, inputReference, setInputState), [
+        options,
+    ])
 
     const [nextInputChangeEvent] = useEventObservable(validationPipeline)
 
@@ -149,4 +79,84 @@ export function deriveInputClassName(inputState: InputValidationState): string {
         return ''
     }
     return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
+}
+
+/**
+ * Exported for testing
+ */
+export function createValidationPipeline(
+    { asynchronousValidators, synchronousValidators, initialValue }: ValidationOptions,
+    inputReference: React.MutableRefObject<Pick<
+        HTMLInputElement,
+        'checkValidity' | 'setCustomValidity' | 'validationMessage'
+    > | null>,
+    onValidationUpdate: (validationState: InputValidationState) => void
+) {
+    return (
+        changeEvents: Observable<
+            Pick<React.ChangeEvent<HTMLInputElement>, 'preventDefault'> & {
+                target: Pick<React.ChangeEvent<HTMLInputElement>['target'], 'value'>
+            }
+        >
+    ): Observable<ValidationResult> =>
+        concat(
+            initialValue !== undefined ? of(initialValue) : EMPTY,
+            changeEvents.pipe(
+                tap(event => event.preventDefault()),
+                map(event => event.target.value)
+            )
+        ).pipe(
+            tap(value => {
+                inputReference.current?.setCustomValidity('')
+                onValidationUpdate({ value, kind: 'LOADING' })
+            }),
+            // Debounce everything.
+            // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
+            debounceTime(500),
+            switchMap(value => {
+                // check validity (synchronous)
+                const valid = inputReference.current?.checkValidity()
+                if (!valid) {
+                    onValidationUpdate({
+                        value,
+                        kind: 'INVALID',
+                        reason: inputReference.current?.validationMessage ?? '',
+                    })
+                    return of(inputReference.current?.validationMessage ?? '')
+                }
+
+                // check custom sync validators
+                const syncReason = head(compact(synchronousValidators?.map(validator => validator(value))))
+                if (syncReason) {
+                    inputReference.current?.setCustomValidity(syncReason)
+
+                    onValidationUpdate({
+                        value,
+                        kind: 'INVALID',
+                        reason: syncReason,
+                    })
+                    return of(syncReason)
+                }
+
+                if (asynchronousValidators?.length === 0) {
+                    // clear possible custom sync validation error from previous value
+                    inputReference.current?.setCustomValidity('')
+                    onValidationUpdate({
+                        value,
+                        kind: 'VALID',
+                    })
+                    return of(undefined)
+                }
+
+                // check async validators
+                return zip(...(asynchronousValidators?.map(validator => validator(value)) ?? [])).pipe(
+                    map(values => head(compact(values))),
+                    tap(reason => {
+                        inputReference.current?.setCustomValidity(reason ?? '')
+                        onValidationUpdate(reason ? { kind: 'INVALID', value, reason } : { kind: 'VALID', value })
+                    })
+                )
+            }),
+            catchError(error => of(asError(error).message || 'Unknown error'))
+        )
 }

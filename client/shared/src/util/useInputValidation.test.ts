@@ -1,6 +1,7 @@
-import { act, renderHook } from '@testing-library/react-hooks'
+import { noop } from 'lodash'
+import { Observable, Subject } from 'rxjs'
 import * as sinon from 'sinon'
-import { useInputValidation } from './useInputValidation'
+import { createValidationPipeline } from './useInputValidation'
 
 describe('useInputValidation()', () => {
     let clock: sinon.SinonFakeTimers
@@ -56,7 +57,19 @@ describe('useInputValidation()', () => {
         }
     }
 
-    it.skip('works with custom sync validators', () => {
+    /**
+     * Marble tests
+     * - Works without initial value
+     * - Works with initial value
+     * - Built-in sync reason
+     * - Custom sync reason
+     * - Async reason
+     * - All validators passed
+     */
+    it('works without initial value', () => {
+        const { changeValue, ...inputElement } = createEmailInputElement()
+        const inputReference = { current: inputElement }
+
         function isDotCo(email: string): string | undefined {
             if (email.endsWith('.co')) {
                 return undefined
@@ -65,36 +78,23 @@ describe('useInputValidation()', () => {
             return "Email must end with '.co'"
         }
 
-        const { result } = renderHook(() =>
-            useInputValidation({
+        const validationPipeline = createValidationPipeline(
+            {
                 synchronousValidators: [isDotCo],
-            })
+            },
+            inputReference,
+            () => {}
         )
 
-        const { changeValue, ...inputElement } = createEmailInputElement()
-        result.current[2].current = inputElement as HTMLInputElement
+        // Creating this type instead of a generic util because TS doesn't support higher-kinded types
+        type ObservableEmission<T> = T extends Observable<infer V> ? V : never
+        const changeEvents = new Subject<ObservableEmission<Parameters<typeof validationPipeline>[0]>>()
 
-        function simulateUserInput(value: string): void {
-            // Call `changeValue` before `onChange` so that the internal value is accurate
-            changeValue(value)
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            act(() => {
-                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                result.current[1]({
-                    preventDefault: () => {},
-                    target: inputElement as EventTarget & HTMLInputElement,
-                } as React.ChangeEvent<HTMLInputElement>)
-            })
-        }
+        const validationResults = validationPipeline(changeEvents)
 
-        // Valid email
-        simulateUserInput('sourcegraph@sg.co')
-
-        clock.tick(1200)
-        console.log('state?', result.current[0])
-
-        expect(true).toBe(true)
+        changeEvents.next({
+            preventDefault: noop,
+            target: inputReference.current,
+        })
     })
-
-    it.skip('works with async validators', () => {})
 })
