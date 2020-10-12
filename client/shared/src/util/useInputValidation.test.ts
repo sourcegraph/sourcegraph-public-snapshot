@@ -149,7 +149,6 @@ describe('useInputValidation()', () => {
             synchronousValidators: [isDotCo],
         })
 
-        // Explain intent:
         const inputs: (string | number)[] = [
             'source',
             'sourcegraph',

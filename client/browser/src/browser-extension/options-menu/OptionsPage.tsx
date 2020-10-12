@@ -11,6 +11,7 @@ import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import { knownCodeHosts } from '../knownCodeHosts'
+import { URL_AUTH_ERROR, URL_FETCH_ERROR } from '../scripts/optionsPage.main'
 
 export interface OptionsPageProps {
     version: string
@@ -119,11 +120,23 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         <small className="text-muted d-block mt-1">Checking...</small>
                     ) : urlState.kind === 'INVALID' ? (
                         <small className="invalid-feedback">
-                            {urlInputReference.current?.validity.typeMismatch
-                                ? 'Please enter a valid URL, including the protocol prefix (e.g. https://sourcegraph.example.com).'
-                                : urlInputReference.current?.validity.patternMismatch
-                                ? 'The browser extension can only work over HTTPS in modern browsers.'
-                                : urlState.reason}
+                            {urlState.reason === URL_FETCH_ERROR ? (
+                                'Incorrect Sourcegraph instance address'
+                            ) : urlState.reason === URL_AUTH_ERROR ? (
+                                <>
+                                    Authentication to Sourcegraph failed.{' '}
+                                    <a href={urlState.value} {...linkProps}>
+                                        Sign in to your instance
+                                    </a>{' '}
+                                    to continue
+                                </>
+                            ) : urlInputReference.current?.validity.typeMismatch ? (
+                                'Please enter a valid URL, including the protocol prefix (e.g. https://sourcegraph.example.com).'
+                            ) : urlInputReference.current?.validity.patternMismatch ? (
+                                'The browser extension can only work over HTTPS in modern browsers.'
+                            ) : (
+                                urlState.reason
+                            )}
                         </small>
                     ) : (
                         <small className="valid-feedback">Looks good!</small>

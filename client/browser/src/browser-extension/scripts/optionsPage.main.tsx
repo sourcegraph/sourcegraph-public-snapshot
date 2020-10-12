@@ -89,6 +89,10 @@ function requestGraphQL<T, V = object>(options: {
 const version = getExtensionVersion()
 const isFullPage = !new URLSearchParams(window.location.search).get('popup')
 
+// "Error code" constants for Sourcegraph URL validation
+export const URL_FETCH_ERROR = '0'
+export const URL_AUTH_ERROR = '1'
+
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
         mapTo(undefined),
@@ -97,10 +101,10 @@ const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
             // We lose Error type when communicating from the background page
             // to the options page, so we determine the error type from the message
             if (message.includes('Failed to fetch')) {
-                return ['Incorrect Sourcegraph instance address']
+                return [URL_FETCH_ERROR]
             }
             if (message.includes('401')) {
-                return ['You are not authenticated']
+                return [URL_AUTH_ERROR]
             }
 
             return [message]
