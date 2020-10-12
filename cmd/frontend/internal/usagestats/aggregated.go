@@ -26,7 +26,6 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 				RegisteredUserCount:  summary.RegisteredUniquesDay,
 				AnonymousUserCount:   summary.UniquesDay - summary.RegisteredUniquesDay,
 				IntegrationUserCount: summary.IntegrationUniquesDay,
-				Stages:               &types.Stages{},
 			},
 		},
 		WAUs: []*types.SiteActivityPeriod{
@@ -36,12 +35,6 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 				RegisteredUserCount:  summary.RegisteredUniquesWeek,
 				AnonymousUserCount:   summary.UniquesWeek - summary.RegisteredUniquesWeek,
 				IntegrationUserCount: summary.IntegrationUniquesWeek,
-				Stages: &types.Stages{
-					Manage:  summary.ManageUniquesWeek,
-					Code:    summary.CodeUniquesWeek,
-					Verify:  summary.VerifyUniquesWeek,
-					Monitor: summary.MonitorUniquesWeek,
-				},
 			},
 		},
 		MAUs: []*types.SiteActivityPeriod{
@@ -51,12 +44,6 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 				RegisteredUserCount:  summary.RegisteredUniquesMonth,
 				AnonymousUserCount:   summary.UniquesMonth - summary.RegisteredUniquesMonth,
 				IntegrationUserCount: summary.IntegrationUniquesMonth,
-				Stages: &types.Stages{
-					Manage:  summary.ManageUniquesMonth,
-					Code:    summary.CodeUniquesMonth,
-					Verify:  summary.VerifyUniquesMonth,
-					Monitor: summary.MonitorUniquesMonth,
-				},
 			},
 		},
 	}

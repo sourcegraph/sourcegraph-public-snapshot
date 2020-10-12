@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { isEmpty, noop } from 'lodash'
@@ -99,10 +99,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
             <h3>Other telemetry</h3>
             <p>
                 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
-                personal or specific information is ever included. Starting in May 2020 (Sourcegraph version 3.16),
-                Sourcegraph admins can disable the telemetry items below by setting the{' '}
-                <code>DisableNonCriticalTelemetry</code> setting to <code>true</code> on the{' '}
-                <Link to="/site-admin/configuration">Site configuration page</Link>.
+                personal or specific information is ever included.
             </p>
             <ul>
                 <li>Whether the instance is deployed on localhost (true/false)</li>
@@ -123,10 +120,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     Aggregate counts of current daily, weekly, and monthly users, by:
                     <ul>
                         <li>Whether they are using code host integrations</li>
-                        <li>
-                            Product area (site management, code search and navigation, code review, saved searches, diff
-                            searches)
-                        </li>
                         <li>Search modes used (interactive search, plain-text search)</li>
                         <li>Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>

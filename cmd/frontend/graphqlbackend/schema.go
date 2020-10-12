@@ -6466,60 +6466,6 @@ type SiteUsagePeriod {
     Excludes anonymous users.
     """
     integrationUserCount: Int!
-    """
-    The user count of Sourcegraph products at each stage of the software development lifecycle.
-    """
-    stages: SiteUsageStages
-}
-
-"""
-Aggregate site usage of features by software development lifecycle stage.
-"""
-type SiteUsageStages {
-    """
-    The number of users using management stage features.
-    """
-    manage: Int!
-    """
-    The number of users using planning stage features.
-    """
-    plan: Int!
-    """
-    The number of users using coding stage features.
-    """
-    code: Int!
-    """
-    The number of users using review stage features.
-    """
-    review: Int!
-    """
-    The number of users using verification stage features.
-    """
-    verify: Int!
-    """
-    The number of users using packaging stage features.
-    """
-    package: Int!
-    """
-    The number of users using deployment stage features.
-    """
-    deploy: Int!
-    """
-    The number of users using configuration stage features.
-    """
-    configure: Int!
-    """
-    The number of users using monitoring stage features.
-    """
-    monitor: Int!
-    """
-    The number of users using security stage features.
-    """
-    secure: Int!
-    """
-    The number of users using automation stage features.
-    """
-    automate: Int!
 }
 
 """

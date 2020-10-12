@@ -45,7 +45,6 @@ func TestGroupSiteUsageStats(t *testing.T) {
 				RegisteredUserCount:  3,
 				AnonymousUserCount:   3,
 				IntegrationUserCount: 9,
-				Stages:               &types.Stages{},
 			},
 		},
 		WAUs: []*types.SiteActivityPeriod{
@@ -55,12 +54,6 @@ func TestGroupSiteUsageStats(t *testing.T) {
 				RegisteredUserCount:  2,
 				AnonymousUserCount:   3,
 				IntegrationUserCount: 8,
-				Stages: &types.Stages{
-					Manage:  14,
-					Code:    15,
-					Verify:  16,
-					Monitor: 17,
-				},
 			},
 		},
 		MAUs: []*types.SiteActivityPeriod{
@@ -70,12 +63,6 @@ func TestGroupSiteUsageStats(t *testing.T) {
 				RegisteredUserCount:  1,
 				AnonymousUserCount:   3,
 				IntegrationUserCount: 7,
-				Stages: &types.Stages{
-					Manage:  10,
-					Code:    11,
-					Verify:  12,
-					Monitor: 13,
-				},
 			},
 		},
 	}
@@ -123,12 +110,6 @@ func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
 				RegisteredUserCount:  1,
 				AnonymousUserCount:   3,
 				IntegrationUserCount: 7,
-				Stages: &types.Stages{
-					Manage:  10,
-					Code:    11,
-					Verify:  12,
-					Monitor: 13,
-				},
 			},
 		},
 	}
