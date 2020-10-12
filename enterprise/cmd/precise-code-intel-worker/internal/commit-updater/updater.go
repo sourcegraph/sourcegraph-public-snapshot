@@ -43,7 +43,7 @@ func (u *Updater) Handle(ctx context.Context) error {
 
 	for repositoryID, dirtyFlag := range repositoryIDs {
 		if err := u.updater.TryUpdate(ctx, repositoryID, dirtyFlag); err != nil {
-			return errors.Wrap(err, "updater.TryUpdate")
+			log15.Warn("Failed to update commit graph", "err", err)
 		}
 	}
 
