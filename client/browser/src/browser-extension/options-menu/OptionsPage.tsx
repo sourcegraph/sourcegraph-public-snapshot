@@ -11,7 +11,6 @@ import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import { knownCodeHosts } from '../knownCodeHosts'
-import { URL_AUTH_ERROR, URL_FETCH_ERROR } from '../scripts/optionsPage.main'
 
 export interface OptionsPageProps {
     version: string
@@ -35,6 +34,10 @@ export interface OptionsPageProps {
     requestPermissionsHandler?: React.MouseEventHandler
     currentHost?: string
 }
+
+// "Error code" constants for Sourcegraph URL validation
+export const URL_FETCH_ERROR = 'URL_FETCH_ERROR'
+export const URL_AUTH_ERROR = 'URL_AUTH_ERROR'
 
 export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     version,

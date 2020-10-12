@@ -27,7 +27,7 @@ import {
 } from '../../shared/util/context'
 import { catchError, map, mapTo } from 'rxjs/operators'
 import { isExtension } from '../../shared/context'
-import { OptionsPage } from '../options-menu/OptionsPage'
+import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
 import { asError } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AnchorLink, setLinkComponent } from '../../../../shared/src/components/Link'
@@ -88,10 +88,6 @@ function requestGraphQL<T, V = object>(options: {
 
 const version = getExtensionVersion()
 const isFullPage = !new URLSearchParams(window.location.search).get('popup')
-
-// "Error code" constants for Sourcegraph URL validation
-export const URL_FETCH_ERROR = 'URL_FETCH_ERROR'
-export const URL_AUTH_ERROR = 'URL_AUTH_ERROR'
 
 const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
