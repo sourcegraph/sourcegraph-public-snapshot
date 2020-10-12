@@ -1,6 +1,6 @@
 # Updating a Docker Compose Sourcegraph instance
 
-This document describes the exact changes needed to update a [Docker Compose Sourcegraph instance](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/master/docker-compose).
+This document describes the exact changes needed to update a [Docker Compose Sourcegraph instance](../install/docker-compose.md).
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
