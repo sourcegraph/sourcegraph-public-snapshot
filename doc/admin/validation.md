@@ -12,8 +12,7 @@ The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental comm
 
 ### Validation specification
  
-The best way to describe this initial, simple and experimental validation specification is with the example below
-(in YAML format to allow for comments):
+The best way to describe this initial, simple and experimental validation specification is with the example below:
 
 ```yaml
 # creates the first admin user on a fresh install (skips creation if user exists)
