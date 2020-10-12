@@ -51,7 +51,7 @@ export interface ConduitReposResponse {
     data: ConduitRepo[]
 }
 
-interface ConduitRef {
+interface ConduitReference {
     ref: string
     type: 'base' | 'diff'
     commit: string // a SHA
@@ -76,7 +76,7 @@ interface ConduitDiffDetails {
     properties: {
         'arc.staging': {
             status: string
-            refs: ConduitRef[]
+            refs: ConduitReference[]
         }
         'local:commits': string[]
     }
@@ -119,7 +119,7 @@ type ConduitResponse<T> =
     | { error_code: null; error_info: null; result: T }
     | { error_code: string; error_info: string; result: null }
 
-export type QueryConduitHelper<T> = (endpoint: string, params: {}) => Observable<T>
+export type QueryConduitHelper<T> = (endpoint: string, parameters: {}) => Observable<T>
 
 /**
  * Generic helper to query the Phabricator Conduit API.
@@ -501,7 +501,7 @@ function getPropsWithDiffDetails(
 
 function getStagingDetails(
     propsWithInfo: PropsWithDiffDetails
-): { repoName: string; ref: ConduitRef; unconfigured: boolean } | undefined {
+): { repoName: string; ref: ConduitReference; unconfigured: boolean } | undefined {
     const stagingInfo = propsWithInfo.diffDetails.properties['arc.staging']
     if (!stagingInfo) {
         return undefined
