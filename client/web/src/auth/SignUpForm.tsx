@@ -14,8 +14,12 @@ import { catchError, switchMap } from 'rxjs/operators'
 import { fromFetch } from 'rxjs/fetch'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { LoaderButton } from '../components/LoaderButton'
-import { LoaderInput } from '../components/LoaderInput'
-import { useInputValidation, InputValidationState, FieldValidators } from '../components/useInputValidation'
+import { LoaderInput } from '../../../branded/src/components/LoaderInput'
+import {
+    useInputValidation,
+    ValidationOptions,
+    deriveInputClassName,
+} from '../../../shared/src/util/useInputValidation'
 
 export interface SignUpArguments {
     email: string
@@ -34,6 +38,8 @@ interface SignUpFormProps {
     history: H.History
 }
 
+const preventDefault = (event: React.FormEvent): void => event.preventDefault()
+
 /**
  * The form for creating an account
  */
@@ -42,7 +48,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
-    const signUpFieldValidators: Record<'email' | 'username' | 'password', FieldValidators> = useMemo(
+    const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
         () => ({
             email: {
                 synchronousValidators: [],
@@ -59,28 +65,17 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         []
     )
 
-    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
-        'email',
-        signUpFieldValidators.email
-    )
+    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(signUpFieldValidators.email)
 
     const [usernameState, nextUsernameFieldChange, usernameInputReference] = useInputValidation(
-        'username',
         signUpFieldValidators.username
     )
 
     const [passwordState, nextPasswordFieldChange, passwordInputReference] = useInputValidation(
-        'password',
         signUpFieldValidators.password
     )
 
-    const canRegister =
-        emailState.kind === 'VALID' &&
-        !emailState.loading &&
-        usernameState.kind === 'VALID' &&
-        !usernameState.loading &&
-        passwordState.kind === 'VALID' &&
-        !passwordState.loading
+    const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
     const disabled = loading || !canRegister
 
@@ -110,15 +105,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         setRequestedTrial(event.target.checked)
     }, [])
 
-    const preventDefault = useCallback((event: React.FormEvent) => event.preventDefault(), [])
-
-    const deriveInputClassName = useCallback((inputState: InputValidationState): string => {
-        if (inputState.loading || inputState.kind === 'NOT_VALIDATED') {
-            return ''
-        }
-        return inputState.kind === 'INVALID' ? 'is-invalid' : 'is-valid'
-    }, [])
-
     const externalAuthProviders = window.context.authProviders.filter(provider => !provider.isBuiltin)
 
     return (
@@ -143,12 +129,15 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     <label
                         htmlFor="email"
                         className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': emailState.kind === 'INVALID' && !emailState.loading,
+                            'text-danger font-weight-bold': emailState.kind === 'INVALID',
                         })}
                     >
                         Email
                     </label>
-                    <LoaderInput className={classNames(deriveInputClassName(emailState))} loading={emailState.loading}>
+                    <LoaderInput
+                        className={classNames(deriveInputClassName(emailState))}
+                        loading={emailState.kind === 'LOADING'}
+                    >
                         <EmailInput
                             className={classNames('signin-signup-form__input', deriveInputClassName(emailState))}
                             onChange={nextEmailFieldChange}
@@ -160,22 +149,20 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             inputRef={emailInputReference}
                         />
                     </LoaderInput>
-                    {!emailState.loading && emailState.kind === 'INVALID' && (
-                        <small className="invalid-feedback">{emailState.reason}</small>
-                    )}
+                    {emailState.kind === 'INVALID' && <small className="invalid-feedback">{emailState.reason}</small>}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="username"
                         className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': !usernameState.loading && usernameState.kind === 'INVALID',
+                            'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
                     </label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
-                        loading={usernameState.loading}
+                        loading={usernameState.kind === 'LOADING'}
                     >
                         <UsernameInput
                             className={classNames('signin-signup-form__input', deriveInputClassName(usernameState))}
@@ -187,9 +174,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             inputRef={usernameInputReference}
                         />
                     </LoaderInput>
-                    {!usernameState.loading && usernameState.kind === 'INVALID' && (
+                    {usernameState.kind === 'INVALID' && (
                         <small className="invalid-feedback" role="alert">
-                            {usernameInputReference.current?.validationMessage}
+                            {usernameState.reason}
                         </small>
                     )}
                 </div>
@@ -197,14 +184,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     <label
                         htmlFor="password"
                         className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': passwordState.kind === 'INVALID' && !passwordState.loading,
+                            'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
                     </label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
-                        loading={passwordState.loading}
+                        loading={passwordState.kind === 'LOADING'}
                     >
                         <PasswordInput
                             className={classNames('signin-signup-form__input', deriveInputClassName(passwordState))}
@@ -220,7 +207,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             formNoValidate={true}
                         />
                     </LoaderInput>
-                    {!passwordState.loading && passwordState.kind === 'INVALID' ? (
+                    {passwordState.kind === 'INVALID' ? (
                         <small className="invalid-feedback" role="alert">
                             {passwordState.reason}
                         </small>

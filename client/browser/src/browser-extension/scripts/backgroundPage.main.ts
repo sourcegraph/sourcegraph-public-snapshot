@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'
-import { combineLatest, merge, Observable, Subscription, timer } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
@@ -19,7 +19,7 @@ import {
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
-import { BackgroundMessageHandlers } from '../web-extension-api/types'
+import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { initSentry } from '../../shared/sentry'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
@@ -70,11 +70,13 @@ const configureOmnibox = (serverUrl: string): void => {
 const requestGraphQL = <T, V = object>({
     request,
     variables,
+    sourcegraphURL,
 }: {
     request: string
     variables: V
+    sourcegraphURL?: string
 }): Observable<GraphQLResult<T>> =>
-    observeSourcegraphURL(IS_EXTENSION).pipe(
+    (sourcegraphURL ? of(sourcegraphURL) : observeSourcegraphURL(IS_EXTENSION)).pipe(
         take(1),
         switchMap(sourcegraphURL =>
             requestGraphQLCommon<T, V>({
@@ -91,6 +93,12 @@ initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
+    /**
+     * For each tab, we store a flag if we know that we are on a private
+     * repository. The content script notifies the background page if it's on a
+     * private repository by `notifyPrivateRepository` message.
+     */
+    const tabPrivateRepositoryCache = new Map<number, boolean>()
 
     // Open installation page after the extension was installed
     browser.runtime.onInstalled.addListener(event => {
@@ -155,19 +163,25 @@ async function main(): Promise<void> {
         })
     }
 
-    // Inject content script whenever a new tab was opened with a URL that we have permissions for
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+        if (changeInfo.status === 'loading') {
+            // A new URL is loading in the tab, so clear the cached private repository flag.
+            tabPrivateRepositoryCache.delete(tabId)
+            return
+        }
+
         if (
             changeInfo.status === 'complete' &&
             customServerOrigins.some(
                 origin => origin === '<all_urls>' || (!!tab.url && tab.url.startsWith(origin.replace('/*', '')))
             )
         ) {
+            // Inject content script whenever a new tab was opened with a URL for which we have permission
             await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
         }
     })
 
-    const handlers: BackgroundMessageHandlers = {
+    const handlers: BackgroundPageApiHandlers = {
         async openOptionsPage(): Promise<void> {
             await browser.runtime.openOptionsPage()
         },
@@ -179,21 +193,44 @@ async function main(): Promise<void> {
         async requestGraphQL<T, V = object>({
             request,
             variables,
+            sourcegraphURL,
         }: {
             request: string
             variables: V
+            sourcegraphURL?: string
         }): Promise<GraphQLResult<T>> {
-            return requestGraphQL<T, V>({ request, variables }).toPromise()
+            return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
+        },
+
+        async notifyPrivateRepository(
+            isPrivateRepository: boolean,
+            sender: browser.runtime.MessageSender
+        ): Promise<void> {
+            const tabId = sender.tab?.id
+            if (tabId !== undefined) {
+                tabPrivateRepositoryCache.set(tabId, isPrivateRepository)
+            }
+            return Promise.resolve()
+        },
+
+        async checkPrivateRepository(tabId: number): Promise<boolean> {
+            return Promise.resolve(!!tabPrivateRepositoryCache.get(tabId))
         },
     }
 
     // Handle calls from other scripts
-    browser.runtime.onMessage.addListener(async (message: { type: keyof BackgroundMessageHandlers; payload: any }) => {
+    browser.runtime.onMessage.addListener(async (message: { type: keyof BackgroundPageApi; payload: any }, sender) => {
         const method = message.type
+
         if (!handlers[method]) {
             throw new Error(`Invalid RPC call for "${method}"`)
         }
-        return handlers[method](message.payload)
+
+        // https://stackoverflow.com/questions/55572797/why-does-typescript-expect-never-as-function-argument-when-retrieving-the-func
+        return (handlers[method] as (
+            payload: any,
+            sender?: browser.runtime.MessageSender
+        ) => ReturnType<BackgroundPageApi[typeof method]>)(message.payload, sender)
     })
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')

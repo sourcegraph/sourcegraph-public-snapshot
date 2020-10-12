@@ -94,6 +94,10 @@ const commonArguments = () =>
         render: RENDER,
         userSignedIn: true,
         minimalUI: false,
+        background: {
+            notifyPrivateRepository: () => Promise.resolve(),
+            openOptionsPage: () => Promise.resolve(),
+        },
     })
 
 describe('codeHost', () => {
