@@ -36,20 +36,6 @@ func (j *Janitor) removeOrphanedUploadFiles(ctx context.Context) error {
 	})
 }
 
-// removeOrphanedUploadFiles removes any bundle file on disk that is associated with an
-// terminal (errored or deleted) entry in the database.
-func (j *Janitor) removeOrphanedBundleFiles(ctx context.Context) error {
-	pathsByID, err := j.databasePathsByID()
-	if err != nil {
-		return err
-	}
-
-	return j.removeOrphans(ctx, pathsByID, func(id int, path string) {
-		log15.Debug("Removed orphaned bundle file", "id", id, "path", path)
-		j.metrics.OrphanedFilesRemoved.Inc()
-	})
-}
-
 // removeOrphans removes files from the given mapping if the upload identifier matches an
 // terminal (errored or deleted) entry in the database. The onRemove function is called
 // when a file or directory is successfully unlinked.
@@ -97,23 +83,6 @@ func (j *Janitor) uploadPathsByID() (map[int]string, error) {
 
 		if id, err := strconv.Atoi(strings.Split(fileInfo.Name(), ".")[0]); err == nil {
 			pathsByID[id] = filepath.Join(paths.UploadsDir(j.bundleDir), fileInfo.Name())
-		}
-	}
-
-	return pathsByID, nil
-}
-
-// databasePathsByID returns map of bundle ids to their path on disk.
-func (j *Janitor) databasePathsByID() (map[int]string, error) {
-	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.bundleDir))
-	if err != nil {
-		return nil, err
-	}
-
-	pathsByID := map[int]string{}
-	for _, fileInfo := range fileInfos {
-		if id, err := strconv.Atoi(fileInfo.Name()); err == nil {
-			pathsByID[id] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
 		}
 	}
 

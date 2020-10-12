@@ -31,16 +31,6 @@ func (j *Janitor) removeOldUploadPartFiles(ctx context.Context) error {
 	})
 }
 
-// removeOldDatabasePartFiles removes all database part files that are older than the configured
-// max database part age. These files are left on disk if a worker does not successfully complete
-// all requests of a SendDB command.
-func (j *Janitor) removeOldDatabasePartFiles(ctx context.Context) error {
-	return j.removeOldFiles(paths.DBPartsDir(j.bundleDir), j.maxDatabasePartAge, func(path string, age time.Duration) {
-		log15.Debug("Removed old database part file", "path", path, "age", age)
-		j.metrics.PartFilesRemoved.Inc()
-	})
-}
-
 // removeOldFiles removes all part files within the given directrory that are older than the given
 // age. The onRemove function is called when a file or directory is successfully unlinked.
 func (j *Janitor) removeOldFiles(root string, maxAge time.Duration, onRemove func(path string, age time.Duration)) error {
