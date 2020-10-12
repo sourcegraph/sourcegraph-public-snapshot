@@ -1,6 +1,7 @@
 package database
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -43,7 +44,7 @@ func TestFindRanges(t *testing.T) {
 
 	m := map[types.ID]types.RangeData{}
 	for i, r := range ranges {
-		m[types.ID(i)] = r
+		m[types.ID(strconv.Itoa(i))] = r
 	}
 
 	for i, r := range ranges {
@@ -91,7 +92,7 @@ func TestFindRangesOrder(t *testing.T) {
 
 	m := map[types.ID]types.RangeData{}
 	for i, r := range ranges {
-		m[types.ID(i)] = r
+		m[types.ID(strconv.Itoa(i))] = r
 	}
 
 	actual := findRanges(m, 2, 4)
@@ -127,6 +128,27 @@ func TestComparePosition(t *testing.T) {
 	for _, testCase := range testCases {
 		if cmp := comparePosition(left, testCase.line, testCase.character); cmp != testCase.expected {
 			t.Errorf("unexpected comparisonPosition result for %d:%d. want=%d have=%d", testCase.line, testCase.character, testCase.expected, cmp)
+		}
+	}
+}
+
+func TestRangeIntersectsSpan(t *testing.T) {
+	testCases := []struct {
+		startLine int
+		endLine   int
+		expected  bool
+	}{
+		{startLine: 1, endLine: 4, expected: false},
+		{startLine: 7, endLine: 9, expected: false},
+		{startLine: 1, endLine: 6, expected: true},
+		{startLine: 6, endLine: 7, expected: true},
+	}
+
+	r := types.RangeData{StartLine: 5, StartCharacter: 1, EndLine: 6, EndCharacter: 10}
+
+	for _, testCase := range testCases {
+		if val := rangeIntersectsSpan(r, testCase.startLine, testCase.endLine); val != testCase.expected {
+			t.Errorf("unexpected result. want=%v have=%v", testCase.expected, val)
 		}
 	}
 }

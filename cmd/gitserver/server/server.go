@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -230,6 +231,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repos-stats", s.handleReposStats)
 	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
@@ -574,12 +576,16 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				fetchDuration = cmdStart.Sub(start)
 			}
 
-			if honey.Enabled() || traceLogs {
+			isSlow := cmdDuration > shortGitCommandSlow(req.Args)
+			isSlowFetch := fetchDuration > 10*time.Second
+			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				ev := honey.Event("gitserver-exec")
+				ev.SampleRate = honeySampleRate
 				ev.AddField("repo", req.Repo)
 				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
+				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -595,6 +601,14 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
 					ev.AddField("fetch_duration_ms", fetchDuration.Seconds()*1000)
 				}
+				if span := opentracing.SpanFromContext(ctx); span != nil {
+					spanURL := trace.SpanURL(span)
+					// URLs starting with # don't have a trace. eg
+					// "#tracer-not-enabled"
+					if !strings.HasPrefix(spanURL, "#") {
+						ev.AddField("trace", spanURL)
+					}
+				}
 
 				if honey.Enabled() {
 					_ = ev.Send()
@@ -602,13 +616,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				if traceLogs {
 					log15.Debug("TRACE gitserver exec", mapToLog15Ctx(ev.Fields())...)
 				}
-			}
-
-			if cmdDuration > shortGitCommandSlow(req.Args) {
-				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", cmdDuration.Round(time.Millisecond))
-			}
-			if fetchDuration > 10*time.Second {
-				log15.Warn("Slow fetch/clone for exec request", "repo", req.Repo, "args", req.Args, "duration", fetchDuration)
+				if isSlow {
+					log15.Warn("Long exec request", mapToLog15Ctx(ev.Fields())...)
+				}
+				if isSlowFetch {
+					log15.Warn("Slow fetch/clone for exec request", mapToLog15Ctx(ev.Fields())...)
+				}
 			}
 		}()
 	}
@@ -1054,6 +1067,20 @@ func init() {
 	prometheus.MustRegister(repoClonedCounter)
 }
 
+// Send 1 in 16 events to honeycomb. This is hardcoded since we only use this
+// for Sourcegraph.com.
+//
+// 2020-05-29 1 in 4. We are currently at the top tier for honeycomb (before
+// enterprise) and using double our quota. This gives us room to grow. If you
+// find we keep bumping this / missing data we care about we can look into
+// more dynamic ways to sample in our application code.
+//
+// 2020-07-20 1 in 16. Again hitting very high usage. Likely due to recent
+// scaling up of the indexed search cluster. Will require more investigation,
+// but we should probably segment user request path traffic vs internal batch
+// traffic.
+const honeySampleRate = 16
+
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string) error {
@@ -1351,6 +1378,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 	}
 
+	// Fallback to git's default branch name if git remote show fails.
 	headBranch := "master"
 
 	// try to fetch HEAD from origin

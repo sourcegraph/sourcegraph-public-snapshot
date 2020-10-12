@@ -7,11 +7,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-// changesetHistory is a collection of a changesets states (open/closed/merged
-// state and review state) over time.
+// changesetHistory is a collection of external changeset states
+// (open/closed/merged state and review state) over time.
 type changesetHistory []changesetStatesAtTime
 
 // StatesAtTime returns the changeset's states valid at the given time. If the
@@ -38,15 +37,15 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 }
 
 type changesetStatesAtTime struct {
-	t           time.Time
-	state       cmpgn.ChangesetState
-	reviewState cmpgn.ChangesetReviewState
+	t             time.Time
+	externalState campaigns.ChangesetExternalState
+	reviewState   campaigns.ChangesetReviewState
 }
 
 // computeHistory calculates the changesetHistory for the given Changeset and
 // its ChangesetEvents.
 // The ChangesetEvents MUST be sorted by their Timestamp.
-func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, error) {
+func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHistory, error) {
 	if !sort.IsSorted(ce) {
 		return nil, errors.New("changeset events not sorted")
 	}
@@ -54,17 +53,17 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 	var (
 		states = []changesetStatesAtTime{}
 
-		currentState       = cmpgn.ChangesetStateOpen
-		currentReviewState = cmpgn.ChangesetReviewStatePending
+		currentExtState    = campaigns.ChangesetExternalStateOpen
+		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
 	)
 
 	pushStates := func(t time.Time) {
 		states = append(states, changesetStatesAtTime{
-			t:           t,
-			state:       currentState,
-			reviewState: currentReviewState,
+			t:             t,
+			externalState: currentExtState,
+			reviewState:   currentReviewState,
 		})
 	}
 
@@ -81,27 +80,34 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 		}
 
 		switch e.Kind {
-		case cmpgn.ChangesetEventKindGitHubClosed, cmpgn.ChangesetEventKindBitbucketServerDeclined:
+		case campaigns.ChangesetEventKindGitHubClosed,
+			campaigns.ChangesetEventKindBitbucketServerDeclined,
+			campaigns.ChangesetEventKindGitLabClosed:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != cmpgn.ChangesetStateMerged {
-				currentState = cmpgn.ChangesetStateClosed
+			if currentExtState != campaigns.ChangesetExternalStateMerged {
+				currentExtState = campaigns.ChangesetExternalStateClosed
 				pushStates(et)
 			}
 
-		case cmpgn.ChangesetEventKindGitHubMerged, cmpgn.ChangesetEventKindBitbucketServerMerged:
-			currentState = cmpgn.ChangesetStateMerged
+		case campaigns.ChangesetEventKindGitHubMerged,
+			campaigns.ChangesetEventKindBitbucketServerMerged,
+			campaigns.ChangesetEventKindGitLabMerged:
+			currentExtState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
-		case cmpgn.ChangesetEventKindGitHubReopened, cmpgn.ChangesetEventKindBitbucketServerReopened:
+		case campaigns.ChangesetEventKindGitHubReopened,
+			campaigns.ChangesetEventKindBitbucketServerReopened,
+			campaigns.ChangesetEventKindGitLabReopened:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != cmpgn.ChangesetStateMerged {
-				currentState = cmpgn.ChangesetStateOpen
+			if currentExtState != campaigns.ChangesetExternalStateMerged {
+				currentExtState = campaigns.ChangesetExternalStateOpen
 				pushStates(et)
 			}
 
 		case campaigns.ChangesetEventKindGitHubReviewed,
 			campaigns.ChangesetEventKindBitbucketServerApproved,
-			campaigns.ChangesetEventKindBitbucketServerReviewed:
+			campaigns.ChangesetEventKindBitbucketServerReviewed,
+			campaigns.ChangesetEventKindGitLabApproved:
 
 			s, err := e.ReviewState()
 			if err != nil {
@@ -136,7 +142,7 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 				lastReviewByAuthor[author] = s
 			}
 
-			newReviewState := computeReviewState(lastReviewByAuthor)
+			newReviewState := reduceReviewStates(lastReviewByAuthor)
 
 			if newReviewState != oldReviewState {
 				currentReviewState = newReviewState
@@ -152,7 +158,8 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 			continue
 
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
-			campaigns.ChangesetEventKindBitbucketServerDismissed:
+			campaigns.ChangesetEventKindBitbucketServerDismissed,
+			campaigns.ChangesetEventKindGitLabUnapproved:
 			author, err := e.ReviewAuthor()
 			if err != nil {
 				return nil, err
@@ -185,7 +192,7 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 			// recompute overall review state
 			oldReviewState := currentReviewState
 			delete(lastReviewByAuthor, author)
-			newReviewState := computeReviewState(lastReviewByAuthor)
+			newReviewState := reduceReviewStates(lastReviewByAuthor)
 
 			if newReviewState != oldReviewState {
 				currentReviewState = newReviewState
@@ -198,9 +205,19 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 	// ExternalDeletedAt manually in the Syncer.
 	deletedAt := ch.ExternalDeletedAt
 	if !deletedAt.IsZero() {
-		currentState = cmpgn.ChangesetStateClosed
+		currentExtState = campaigns.ChangesetExternalStateClosed
 		pushStates(deletedAt)
 	}
 
 	return states, nil
+}
+
+// reduceReviewStates reduces the given a map of review per author down to a
+// single overall ChangesetReviewState.
+func reduceReviewStates(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
+	states := make(map[campaigns.ChangesetReviewState]bool)
+	for _, s := range statesByAuthor {
+		states[s] = true
+	}
+	return selectReviewState(states)
 }

@@ -13,6 +13,9 @@ type BundleClient interface {
 	// Exists determines if the given path exists in the dump.
 	Exists(ctx context.Context, path string) (bool, error)
 
+	// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+	Ranges(ctx context.Context, path string, startLine, endLine int) ([]CodeIntelligenceRange, error)
+
 	// Definitions retrieves a list of definition locations for the symbol under the given location.
 	Definitions(ctx context.Context, path string, line, character int) ([]Location, error)
 
@@ -53,6 +56,18 @@ func (c *bundleClientImpl) ID() int {
 func (c *bundleClientImpl) Exists(ctx context.Context, path string) (exists bool, err error) {
 	err = c.request(ctx, "exists", map[string]interface{}{"path": path}, &exists)
 	return exists, err
+}
+
+// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+func (c *bundleClientImpl) Ranges(ctx context.Context, path string, startLine, endLine int) (codeintelRanges []CodeIntelligenceRange, err error) {
+	args := map[string]interface{}{
+		"path":      path,
+		"startLine": startLine,
+		"endLine":   endLine,
+	}
+
+	err = c.request(ctx, "ranges", args, &codeintelRanges)
+	return codeintelRanges, err
 }
 
 // Definitions retrieves a list of definition locations for the symbol under the given location.

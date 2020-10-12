@@ -2,6 +2,7 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,6 +29,9 @@ type RepoFields struct {
 
 	// Archived is whether this repository has been archived.
 	Archived bool
+
+	// Cloned is whether this repository is cloned.
+	Cloned bool
 }
 
 // Repo represents a source code repository.
@@ -61,13 +65,16 @@ func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID          int64
-	Kind        string
-	DisplayName string
-	Config      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
+	ID              int64
+	Kind            string
+	DisplayName     string
+	Config          string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       *time.Time
+	LastSyncAt      *time.Time
+	NextSyncAt      *time.Time
+	NamespaceUserID *int32
 }
 
 // URN returns a unique resource identifier of this external service.
@@ -82,15 +89,16 @@ type GlobalState struct {
 
 // User represents a registered user.
 type User struct {
-	ID          int32
-	Username    string
-	DisplayName string
-	AvatarURL   string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	SiteAdmin   bool
-	BuiltinAuth bool
-	Tags        []string
+	ID                    int32
+	Username              string
+	DisplayName           string
+	AvatarURL             string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	SiteAdmin             bool
+	BuiltinAuth           bool
+	Tags                  []string
+	InvalidatedSessionsAt time.Time
 }
 
 type Org struct {
@@ -159,24 +167,6 @@ type SiteActivityPeriod struct {
 	RegisteredUserCount  int32
 	AnonymousUserCount   int32
 	IntegrationUserCount int32
-	Stages               *Stages
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type Stages struct {
-	Manage    int32 `json:"mng"`
-	Plan      int32 `json:"plan"`
-	Code      int32 `json:"code"`
-	Review    int32 `json:"rev"`
-	Verify    int32 `json:"ver"`
-	Package   int32 `json:"pkg"`
-	Deploy    int32 `json:"depl"`
-	Configure int32 `json:"conf"`
-	Monitor   int32 `json:"mtr"`
-	Secure    int32 `json:"sec"`
-	Automate  int32 `json:"auto"`
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -222,18 +212,8 @@ type CodeIntelEventCategoryStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodeIntelEventStatistics struct {
-	UsersCount     int32
-	EventsCount    *int32
-	EventLatencies *CodeIntelEventLatencies
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventLatencies struct {
-	P50 float64
-	P90 float64
-	P99 float64
+	UsersCount  int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -371,4 +351,42 @@ type Event struct {
 	Source          string
 	Version         string
 	Timestamp       time.Time
+}
+
+// GrowthStatistics represents the total users that were created,
+// deleted, resurrected, churned and retained over the current month.
+type GrowthStatistics struct {
+	DeletedUsers     int32
+	CreatedUsers     int32
+	ResurrectedUsers int32
+	ChurnedUsers     int32
+	RetainedUsers    int32
+}
+
+// SavedSearches represents the total number of saved searches, users
+// using saved searches, and usage of saved searches.
+type SavedSearches struct {
+	TotalSavedSearches   int32
+	UniqueUsers          int32
+	NotificationsSent    int32
+	NotificationsClicked int32
+	UniqueUserPageViews  int32
+	OrgSavedSearches     int32
+}
+
+// Secret represents the secrets table
+type Secret struct {
+	ID int32
+
+	// The table containing an object whose token is being encrypted.
+	SourceType sql.NullString
+
+	// The ID of the object in the SourceType table.
+	SourceID sql.NullInt32
+
+	// KeyName represents a unique key for the case where we're storing key-value pairs.
+	KeyName sql.NullString
+
+	// Value contains the encrypted string
+	Value string
 }

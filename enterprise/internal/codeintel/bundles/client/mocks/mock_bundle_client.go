@@ -37,6 +37,9 @@ type MockBundleClient struct {
 	// PackageInformationFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageInformation.
 	PackageInformationFunc *BundleClientPackageInformationFunc
+	// RangesFunc is an instance of a mock function object controlling the
+	// behavior of the method Ranges.
+	RangesFunc *BundleClientRangesFunc
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *BundleClientReferencesFunc
@@ -86,6 +89,11 @@ func NewMockBundleClient() *MockBundleClient {
 				return client.PackageInformationData{}, nil
 			},
 		},
+		RangesFunc: &BundleClientRangesFunc{
+			defaultHook: func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+				return nil, nil
+			},
+		},
 		ReferencesFunc: &BundleClientReferencesFunc{
 			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
 				return nil, nil
@@ -122,6 +130,9 @@ func NewMockBundleClientFrom(i client.BundleClient) *MockBundleClient {
 		},
 		PackageInformationFunc: &BundleClientPackageInformationFunc{
 			defaultHook: i.PackageInformation,
+		},
+		RangesFunc: &BundleClientRangesFunc{
+			defaultHook: i.Ranges,
 		},
 		ReferencesFunc: &BundleClientReferencesFunc{
 			defaultHook: i.References,
@@ -1041,6 +1052,120 @@ func (c BundleClientPackageInformationFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BundleClientPackageInformationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BundleClientRangesFunc describes the behavior when the Ranges method of
+// the parent MockBundleClient instance is invoked.
+type BundleClientRangesFunc struct {
+	defaultHook func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)
+	hooks       []func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)
+	history     []BundleClientRangesFuncCall
+	mutex       sync.Mutex
+}
+
+// Ranges delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBundleClient) Ranges(v0 context.Context, v1 string, v2 int, v3 int) ([]client.CodeIntelligenceRange, error) {
+	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3)
+	m.RangesFunc.appendCall(BundleClientRangesFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Ranges method of the
+// parent MockBundleClient instance is invoked and the hook queue is empty.
+func (f *BundleClientRangesFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Ranges method of the parent MockBundleClient instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *BundleClientRangesFunc) PushHook(hook func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleClientRangesFunc) SetDefaultReturn(r0 []client.CodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleClientRangesFunc) PushReturn(r0 []client.CodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleClientRangesFunc) nextHook() func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleClientRangesFunc) appendCall(r0 BundleClientRangesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleClientRangesFuncCall objects
+// describing the invocations of this function.
+func (f *BundleClientRangesFunc) History() []BundleClientRangesFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleClientRangesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleClientRangesFuncCall is an object that describes an invocation of
+// method Ranges on an instance of MockBundleClient.
+type BundleClientRangesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []client.CodeIntelligenceRange
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleClientRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleClientRangesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

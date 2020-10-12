@@ -141,6 +141,15 @@ func setMockStorePackageReferencePager(t *testing.T, mockStore *storemocks.MockS
 	})
 }
 
+func setMockStoreHasRepository(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, exists bool) {
+	mockStore.HasRepositoryFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (bool, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository id for HasRepository. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+		return exists, nil
+	})
+}
+
 func setMockStoreHasCommit(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit string, exists bool) {
 	mockStore.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
 		if repositoryID != expectedRepositoryID {
@@ -179,6 +188,21 @@ func setMockBundleClientExists(t *testing.T, mockBundleClient *bundlemocks.MockB
 			t.Errorf("unexpected path for Exists. want=%s have=%s", expectedPath, path)
 		}
 		return exists, nil
+	})
+}
+
+func setMockBundleClientRanges(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
+	mockBundleClient.RangesFunc.SetDefaultHook(func(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
+		if path != expectedPath {
+			t.Errorf("unexpected path for Ranges. want=%s have=%s", expectedPath, path)
+		}
+		if startLine != expectedStartLine {
+			t.Errorf("unexpected start line for Ranges. want=%d have=%d", expectedStartLine, startLine)
+		}
+		if endLine != expectedEndLine {
+			t.Errorf("unexpected end line for Ranges. want=%d have=%d", expectedEndLine, endLine)
+		}
+		return ranges, nil
 	})
 }
 

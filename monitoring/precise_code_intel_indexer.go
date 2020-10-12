@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func PreciseCodeIntelIndexer() *Container {
 	return &Container{
 		Name:        "precise-code-intel-indexer",
@@ -17,6 +19,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("indexes queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +29,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("index queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -36,6 +40,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -46,9 +51,9 @@ func PreciseCodeIntelIndexer() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_store_duration_seconds_bucket{job="precise-code-intel-indexer"}[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -58,6 +63,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -75,6 +81,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -84,6 +91,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -101,6 +109,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -110,6 +119,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -119,6 +129,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -136,6 +147,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -145,6 +157,7 @@ func PreciseCodeIntelIndexer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -160,23 +173,24 @@ func PreciseCodeIntelIndexer() *Container {
 							Description:       "99th percentile successful gitserver query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="precise-code-intel-indexer"}[5m])))`,
 							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
 							Name:              "gitserver_error_responses",
 							Description:       "gitserver error responses every 5m",
-							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-indexer",code!~"2.."}[5m]))`,
+							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-indexer",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-indexer"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Warning:           Alert{GreaterOrEqual: 5, For: 15 * time.Minute},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
 					{
-						sharedFrontendInternalAPIErrorResponses("precise-code-intel-indexer"),
+						sharedFrontendInternalAPIErrorResponses("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -185,9 +199,12 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-indexer"),
-						sharedContainerMemoryUsage("precise-code-intel-indexer"),
-						sharedContainerCPUUsage("precise-code-intel-indexer"),
+						sharedContainerCPUUsage("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -196,12 +213,31 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsage1d("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsageLongTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsageShortTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+						sharedGoGcDuration("precise-code-intel-indexer", ObservableOwnerCodeIntel),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-indexer", ObservableOwnerCodeIntel),
 					},
 				},
 			},

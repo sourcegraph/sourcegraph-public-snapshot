@@ -205,7 +205,7 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, err error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.PersonalAccessToken != "" {
@@ -235,24 +235,24 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if c.RateLimiter != nil {
 		err = c.RateLimiter.Wait(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "rate limit")
+			return nil, 0, errors.Wrap(err, "rate limit")
 		}
 	}
 
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-		return nil, err
+		return nil, 0, err
 	}
 	defer resp.Body.Close()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
 	c.RateLimitMonitor.Update(resp.Header)
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, resp.StatusCode, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
-	return resp.Header, json.NewDecoder(resp.Body).Decode(result)
+	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
 }
 
 type httpError int

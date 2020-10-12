@@ -1,0 +1,7 @@
+.campaign-stats-card {
+    &__changesets-pill {
+        // Should be the same height as plain mdi icons.
+        /* stylelint-disable declaration-property-unit-whitelist */
+        height: 24px;
+    }
+}

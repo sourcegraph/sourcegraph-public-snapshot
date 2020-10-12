@@ -66,6 +66,9 @@ type Server struct {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
 	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
@@ -322,7 +325,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.Syncer.TriggerSync()
+	s.Syncer.TriggerEnqueueSyncJobs()
 
 	err := externalServiceValidate(ctx, &req)
 	if err == github.ErrIncompleteResults {
@@ -520,7 +523,13 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}
 	}
 
-	err = s.Syncer.SyncSubset(ctx, repo)
+	if repo.Private {
+		return &protocol.RepoLookupResult{
+			ErrorNotFound: true,
+		}, nil
+	}
+
+	err = s.Syncer.SyncRepo(ctx, s.Store, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -554,7 +563,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	if e := s.Syncer.LastSyncError(); e != nil {
+	for _, e := range s.Syncer.SyncErrors() {
 		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
 			for _, e := range multiErr.Errors {
 				if sourceErr, ok := e.(*repos.SourceError); ok {

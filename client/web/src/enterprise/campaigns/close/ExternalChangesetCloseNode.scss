@@ -1,0 +1,6 @@
+.external-changeset-close-node {
+    &__expanded-section {
+        // Make it full width in the current row.
+        grid-column: 1 / -1;
+    }
+}

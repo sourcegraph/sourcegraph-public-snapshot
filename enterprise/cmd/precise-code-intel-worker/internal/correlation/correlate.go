@@ -10,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif/jsonlines"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -66,14 +65,14 @@ func pruneWrapped(ctx context.Context, state *State, root string, getChildren ex
 func groupBundleDataWrapped(ctx context.Context, state *State, dumpID int, metrics metrics.WorkerMetrics) (_ *GroupedBundleData, err error) {
 	_, endOperation := metrics.GroupBundleDataOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
-	return groupBundleData(state, dumpID)
+	return groupBundleData(ctx, state, dumpID)
 }
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.
 // The data in the correlation state is neither canonicalized nor pruned.
 func correlateFromReader(r io.Reader, root string) (*State, error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := jsonlines.Read(ctx, r)
+	ch := lsif.Read(ctx, r)
 	defer func() {
 		// stop producer from reading more input on correlation error
 		cancel()
@@ -108,14 +107,14 @@ func correlateFromReader(r io.Reader, root string) (*State, error) {
 type wrappedState struct {
 	*State
 	dumpRoot            string
-	unsupportedVertexes datastructures.IDSet
+	unsupportedVertices *datastructures.IDSet
 }
 
 func newWrappedState(dumpRoot string) *wrappedState {
 	return &wrappedState{
 		State:               newState(),
 		dumpRoot:            dumpRoot,
-		unsupportedVertexes: datastructures.IDSet{},
+		unsupportedVertices: datastructures.NewIDSet(),
 	}
 }
 
@@ -153,14 +152,14 @@ func correlateVertex(state *wrappedState, element lsif.Element) error {
 		// don't track this, item edges related to something other than a
 		// definition or reference result will result in a spurious error
 		// although the LSIF index is valid.
-		state.unsupportedVertexes.Add(element.ID)
+		state.unsupportedVertices.Add(element.ID)
 		return nil
 	}
 
 	return handler(state, element)
 }
 
-var edgeHandlers = map[string]func(state *wrappedState, id string, edge lsif.Edge) error{
+var edgeHandlers = map[string]func(state *wrappedState, id int, edge lsif.Edge) error{
 	"contains":                correlateContainsEdge,
 	"next":                    correlateNextEdge,
 	"item":                    correlateItemEdge,
@@ -208,7 +207,7 @@ func correlateMetaData(state *wrappedState, element lsif.Element) error {
 		payload.ProjectRoot += "/"
 	}
 
-	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, state.dumpRoot) {
+	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, "/"+state.dumpRoot) {
 		payload.ProjectRoot += state.dumpRoot
 	}
 
@@ -218,7 +217,7 @@ func correlateMetaData(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateDocument(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Payload.(lsif.Document)
+	payload, ok := element.Payload.(string)
 	if !ok {
 		return ErrUnexpectedPayload
 	}
@@ -227,13 +226,12 @@ func correlateDocument(state *wrappedState, element lsif.Element) error {
 		return ErrMissingMetaData
 	}
 
-	relativeURI, err := filepath.Rel(state.ProjectRoot, payload.URI)
+	relativeURI, err := filepath.Rel(state.ProjectRoot, payload)
 	if err != nil {
-		return fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload.URI, state.ProjectRoot, err)
+		return fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload, state.ProjectRoot, err)
 	}
 
-	payload.URI = relativeURI
-	state.DocumentData[element.ID] = payload
+	state.DocumentData[element.ID] = relativeURI
 	return nil
 }
 
@@ -248,19 +246,17 @@ func correlateRange(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateResultSet(state *wrappedState, element lsif.Element) error {
-	state.ResultSetData[element.ID] = lsif.ResultSet{
-		MonikerIDs: datastructures.IDSet{},
-	}
+	state.ResultSetData[element.ID] = lsif.ResultSet{}
 	return nil
 }
 
 func correlateDefinitionResult(state *wrappedState, element lsif.Element) error {
-	state.DefinitionData[element.ID] = map[string]datastructures.IDSet{}
+	state.DefinitionData[element.ID] = datastructures.NewDefaultIDSetMap()
 	return nil
 }
 
 func correlateReferenceResult(state *wrappedState, element lsif.Element) error {
-	state.ReferenceData[element.ID] = map[string]datastructures.IDSet{}
+	state.ReferenceData[element.ID] = datastructures.NewDefaultIDSetMap()
 	return nil
 }
 
@@ -295,18 +291,17 @@ func correlatePackageInformation(state *wrappedState, element lsif.Element) erro
 }
 
 func correlateDiagnosticResult(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Payload.(lsif.DiagnosticResult)
+	payload, ok := element.Payload.([]lsif.Diagnostic)
 	if !ok {
 		return ErrUnexpectedPayload
 	}
 
-	state.Diagnostics[element.ID] = payload
+	state.DiagnosticResults[element.ID] = payload
 	return nil
 }
 
-func correlateContainsEdge(state *wrappedState, id string, edge lsif.Edge) error {
-	document, ok := state.DocumentData[edge.OutV]
-	if !ok {
+func correlateContainsEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
 		// Do not track this relation for project vertices
 		return nil
 	}
@@ -315,12 +310,12 @@ func correlateContainsEdge(state *wrappedState, id string, edge lsif.Edge) error
 		if _, ok := state.RangeData[inV]; !ok {
 			return malformedDump(id, edge.InV, "range")
 		}
-		document.Contains.Add(inV)
+		state.Contains.SetAdd(edge.OutV, inV)
 	}
 	return nil
 }
 
-func correlateNextEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateNextEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.ResultSetData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "resultSet")
 	}
@@ -335,7 +330,7 @@ func correlateNextEdge(state *wrappedState, id string, edge lsif.Edge) error {
 	return nil
 }
 
-func correlateItemEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateItemEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if documentMap, ok := state.DefinitionData[edge.OutV]; ok {
 		for _, inV := range edge.InVs {
 			if _, ok := state.RangeData[inV]; !ok {
@@ -343,7 +338,7 @@ func correlateItemEdge(state *wrappedState, id string, edge lsif.Edge) error {
 			}
 
 			// Link definition data to defining range
-			documentMap.GetOrCreate(edge.Document).Add(inV)
+			documentMap.SetAdd(edge.Document, inV)
 		}
 
 		return nil
@@ -353,21 +348,21 @@ func correlateItemEdge(state *wrappedState, id string, edge lsif.Edge) error {
 		for _, inV := range edge.InVs {
 			if _, ok := state.ReferenceData[inV]; ok {
 				// Link reference data identifiers together
-				state.LinkedReferenceResults.Union(edge.OutV, inV)
+				state.LinkedReferenceResults.Link(edge.OutV, inV)
 			} else {
 				if _, ok = state.RangeData[inV]; !ok {
 					return malformedDump(id, edge.InV, "range")
 				}
 
 				// Link reference data to a reference range
-				documentMap.GetOrCreate(edge.Document).Add(inV)
+				documentMap.SetAdd(edge.Document, inV)
 			}
 		}
 
 		return nil
 	}
 
-	if !state.unsupportedVertexes.Contains(edge.OutV) {
+	if !state.unsupportedVertices.Contains(edge.OutV) {
 		return malformedDump(id, edge.OutV, "vertex")
 	}
 
@@ -375,7 +370,7 @@ func correlateItemEdge(state *wrappedState, id string, edge lsif.Edge) error {
 	return nil
 }
 
-func correlateTextDocumentDefinitionEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateTextDocumentDefinitionEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.DefinitionData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "definitionResult")
 	}
@@ -390,7 +385,7 @@ func correlateTextDocumentDefinitionEdge(state *wrappedState, id string, edge ls
 	return nil
 }
 
-func correlateTextDocumentReferencesEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateTextDocumentReferencesEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.ReferenceData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "referenceResult")
 	}
@@ -405,7 +400,7 @@ func correlateTextDocumentReferencesEdge(state *wrappedState, id string, edge ls
 	return nil
 }
 
-func correlateTextDocumentHoverEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateTextDocumentHoverEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.HoverData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "hoverResult")
 	}
@@ -420,25 +415,22 @@ func correlateTextDocumentHoverEdge(state *wrappedState, id string, edge lsif.Ed
 	return nil
 }
 
-func correlateMonikerEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateMonikerEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.MonikerData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "moniker")
 	}
 
-	ids := datastructures.IDSet{}
-	ids.Add(edge.InV)
-
-	if source, ok := state.RangeData[edge.OutV]; ok {
-		state.RangeData[edge.OutV] = source.SetMonikerIDs(ids)
-	} else if source, ok := state.ResultSetData[edge.OutV]; ok {
-		state.ResultSetData[edge.OutV] = source.SetMonikerIDs(ids)
+	if _, ok := state.RangeData[edge.OutV]; ok {
+		state.Monikers.SetAdd(edge.OutV, edge.InV)
+	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
+		state.Monikers.SetAdd(edge.OutV, edge.InV)
 	} else {
 		return malformedDump(id, edge.OutV, "range", "resultSet")
 	}
 	return nil
 }
 
-func correlateNextMonikerEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlateNextMonikerEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.MonikerData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "moniker")
 	}
@@ -446,11 +438,11 @@ func correlateNextMonikerEdge(state *wrappedState, id string, edge lsif.Edge) er
 		return malformedDump(id, edge.OutV, "moniker")
 	}
 
-	state.LinkedMonikers.Union(edge.InV, edge.OutV)
+	state.LinkedMonikers.Link(edge.InV, edge.OutV)
 	return nil
 }
 
-func correlatePackageInformationEdge(state *wrappedState, id string, edge lsif.Edge) error {
+func correlatePackageInformationEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if _, ok := state.PackageInformationData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "packageInformation")
 	}
@@ -473,16 +465,15 @@ func correlatePackageInformationEdge(state *wrappedState, id string, edge lsif.E
 	return nil
 }
 
-func correlateDiagnosticEdge(state *wrappedState, id string, edge lsif.Edge) error {
-	document, ok := state.DocumentData[edge.OutV]
-	if !ok {
+func correlateDiagnosticEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
 		return malformedDump(id, edge.OutV, "document")
 	}
 
-	if _, ok := state.Diagnostics[edge.InV]; !ok {
+	if _, ok := state.DiagnosticResults[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "diagnosticResult")
 	}
 
-	document.Diagnostics.Add(edge.InV)
+	state.Diagnostics.SetAdd(edge.OutV, edge.InV)
 	return nil
 }

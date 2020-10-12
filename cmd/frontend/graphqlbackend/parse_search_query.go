@@ -49,7 +49,7 @@ func toJSON(node query.Node) interface{} {
 			Field:   n.Field,
 			Value:   n.Value,
 			Negated: n.Negated,
-			Labels:  query.Strings(n.Annotation.Labels),
+			Labels:  n.Annotation.Labels.String(),
 			Range:   n.Annotation.Range,
 		}
 	case query.Pattern:
@@ -61,7 +61,7 @@ func toJSON(node query.Node) interface{} {
 		}{
 			Value:   n.Value,
 			Negated: n.Negated,
-			Labels:  query.Strings(n.Annotation.Labels),
+			Labels:  n.Annotation.Labels.String(),
 			Range:   n.Annotation.Range,
 		}
 	}
@@ -84,7 +84,15 @@ func (*schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 	default:
 		searchType = query.SearchTypeLiteral
 	}
-	q, err := query.ProcessAndOr(args.Query, searchType)
+
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	globbing := getBoolPtr(settings.SearchGlobbing, false)
+
+	q, err := query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 	if err != nil {
 		return nil, err
 	}

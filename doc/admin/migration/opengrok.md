@@ -19,7 +19,7 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 - Sourcegraph's [query syntax](../../user/search/queries.md), user interface, and [integrations](../../integration/index.md) are superior and easier to use.
 - Sourcegraph's [code intelligence](../../user/code_intelligence/index.md), has better language support (hover tooltips, definitions, references, implementations, etc.) and is based on the Language Server Protocol standard.
 - The [Sourcegraph API](../../api/graphql/index.md) is more powerful, better documented, and easier to use than OpenGrok's API.
-- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/cluster.md)).
+- Sourcegraph scales to more repositories/users and supports Kubernetes-based clustered/high-availability deployments better (with the [cluster deployment option](../install/kubernetes/index.md)).
 
 Both Sourcegraph and OpenGrok are self-hosted, and your code never touches Sourcegraph's (or Oracle's) servers.
 
@@ -51,7 +51,7 @@ The following sections guide you through the migration process.
 You can deploy Sourcegraph in 2 ways:
 
 - [Single Docker container](../install/docker/index.md): single-server deployment from the `sourcegraph/server` Docker image
-- [Kubernetes cluster](../install/cluster.md): cluster deployment using Kubernetes for 1,000s of repositories/users
+- [Kubernetes cluster](../install/kubernetes/index.md): cluster deployment using Kubernetes for 1,000s of repositories/users
 
 The fastest way to try it is to run Sourcegraph Server locally [with the quickstart instructions](../index.md).
 
@@ -83,7 +83,7 @@ When you've added repositories and confirmed that you can search and browse them
 
 Like Oracle OpenGrok, Sourcegraph is self-hosted. You control who can access it. Sourcegraph supports many user authentication and security options:
 
-- [OpenID Connect user authentication](../auth/index.md#openid-connect) and [SAML user authentication](../auth/index.md#saml) (for Google/G Suite accounts, Okta, OneLogin, etc.)
+- [OpenID Connect user authentication](../auth/index.md#openid-connect) and [SAML user authentication](../auth/index.md#saml) (for Google/Google Workspace accounts, Okta, OneLogin, etc.)
 - [HTTP user authentication proxies](../auth/index.md#http-authentication-proxies)
 - [Builtin username-password authentication](../auth/index.md#builtin-authentication)
 - [TLS/SSL and other HTTP/HTTPS configuration](../http_https_configuration.md)
@@ -107,7 +107,7 @@ After you've set Sourcegraph up, it's time to share it with your organization. S
 
 - Create an internal document based on the [Sourcegraph tour](../../user/tour.md), substituting links to and names of your organization's code. This explains how Sourcegraph helps developers perform common tasks better.
 - Encourage installation of the [browser extension](../../integration/browser_extension.md) to get Sourcegraph code intelligence and search in your organization's existing code host.
-- Roll out the Chrome extension using [G Suite automatic installation](../../integration/google_gsuite.md) to everyone in your organization.
+- Roll out the Chrome extension using [Google Workspace automatic installation](../../integration/google_workspace.md) to everyone in your organization.
 - Check the access logs for OpenGrok to see what users search for. Try searching for the same things on Sourcegraph, and ensure that you get the expected results. (Note: Sourcegraph's [search query syntax](../../user/search/queries.md) differs from OpenGrok's.)
 - Monitor your Sourcegraph instance's site admin "Analytics" page to see who's using it. Ask them for specific feedback. Also seek feedback from the most frequent users of OpenGrok.
 
