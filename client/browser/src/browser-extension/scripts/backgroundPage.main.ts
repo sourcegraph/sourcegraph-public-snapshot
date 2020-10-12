@@ -226,7 +226,12 @@ async function main(): Promise<void> {
             if (!handlers[method]) {
                 throw new Error(`Invalid RPC call for "${method}"`)
             }
-            return handlers[method](message.payload, sender)
+
+            // https://stackoverflow.com/questions/55572797/why-does-typescript-expect-never-as-function-argument-when-retrieving-the-func
+            return (handlers[method] as (
+                payload: any,
+                sender?: browser.runtime.MessageSender
+            ) => ReturnType<BackgroundMessageHandlers[typeof method]>)(message.payload, sender)
         }
     )
 
