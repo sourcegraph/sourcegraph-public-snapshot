@@ -9,7 +9,6 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -20,7 +19,7 @@ func NewWorker(
 	s store.Store,
 	codeIntelDB *sql.DB,
 	bundleManagerClient bundles.BundleManagerClient,
-	gitserverClient gitserver.Client,
+	gitserverClient gitserverClient,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	budgetMax int64,

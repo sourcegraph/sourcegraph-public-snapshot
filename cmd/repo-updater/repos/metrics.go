@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -100,9 +101,9 @@ func MustRegisterMetrics(db dbutil.DB) {
 		return float64(count), nil
 	}
 
-	scanFloat := func(sql string) (float64, error) {
-		row := db.QueryRowContext(context.Background(), sql)
-		var v float64
+	scanNullFloat := func(q string) (sql.NullFloat64, error) {
+		row := db.QueryRowContext(context.Background(), q)
+		var v sql.NullFloat64
 		err := row.Scan(&v)
 		return v, err
 	}
@@ -235,7 +236,7 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
 		Name: "src_repoupdater_max_sync_backoff",
 		Help: "The maximum number of seconds since any external service synced",
 	}, func() float64 {
-		seconds, err := scanFloat(`
+		seconds, err := scanNullFloat(`
 -- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
 SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
 WHERE deleted_at IS NULL
@@ -245,7 +246,12 @@ AND last_sync_at IS NOT NULL
 			log15.Error("Failed to get max sync backoff", "err", err)
 			return 0
 		}
-		return seconds
+		if !seconds.Valid {
+			// This can happen when no external services have been synced and they all
+			// have last_sync_at as null.
+			return 0
+		}
+		return seconds.Float64
 	})
 
 }

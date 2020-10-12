@@ -1,7 +1,9 @@
-import { fromEvent, of } from 'rxjs'
-import { catchError, map, publishReplay, refCount, take, timeout } from 'rxjs/operators'
+import { fromEvent, concat, Observable, of } from 'rxjs'
+import { catchError, filter, map, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
 import { asError } from '../../../shared/src/util/errors'
+import { fromFetch } from 'rxjs/fetch'
+import { IS_CHROME } from '../marketing/util'
 
 interface EventQueryParameters {
     utm_campaign?: string
@@ -34,19 +36,40 @@ export const browserExtensionMessageReceived = (extensionMarker
     refCount()
 )
 
+const CHROME_EXTENSION_ID = 'dgjhfomjieaadpoljlnidmbgkdffpack'
+
+/**
+ * A better way to check if the Chrome extension is installed that doesn't depend on the extension having permissions to the page.
+ * This is not possible on Firefox though.
+ */
+const checkChromeExtensionInstalled = (): Observable<boolean> => {
+    if (!IS_CHROME) {
+        return of(false)
+    }
+    return fromFetch(`chrome-extension://${CHROME_EXTENSION_ID}/img/icon-16.png`, {
+        selector: response => of(response.ok),
+    }).pipe(catchError(() => of(false)))
+}
+
 /**
  * Indicates if the current user has the browser extension installed. It waits 500ms for the browser
  * extension to fire a registration event, and if it doesn't, emits false
  */
-export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
-    timeout(500),
-    catchError(error => {
-        if (asError(error).name === 'TimeoutError') {
-            return [false]
-        }
-        throw error
-    }),
-    catchError(() => [false]),
+export const browserExtensionInstalled: Observable<boolean> = concat(
+    checkChromeExtensionInstalled().pipe(filter(isInstalled => isInstalled)),
+    browserExtensionMessageReceived.pipe(
+        mapTo(true),
+        timeout(500),
+        catchError(error => {
+            if (asError(error).name === 'TimeoutError') {
+                return [false]
+            }
+            throw error
+        }),
+        catchError(() => [false])
+    )
+).pipe(
+    take(1),
     // Replay the same latest value for every subscriber
     publishReplay(1),
     refCount()

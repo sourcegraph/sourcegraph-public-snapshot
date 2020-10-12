@@ -126,17 +126,6 @@ type Mutation {
         repository: ID!
     ): EmptyResponse!
     """
-    DEPRECATED: All repositories are scheduled for updates periodically. This
-    mutation will be removed in 3.6.
-
-    Schedules all repositories to be updated from their original source
-    repositories. Updating occurs automatically, so this should not normally
-    be needed.
-
-    Only site admins may perform this mutation.
-    """
-    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    """
     Creates a new user account.
 
     Only site admins may perform this mutation.
@@ -6109,15 +6098,6 @@ type Site implements SettingsSubject {
     Only applies if the site does not have a valid license.
     """
     freeUsersExceeded: Boolean!
-
-    """
-    DEPRECATED: This field is always false and will be removed in future
-    releases. All repositories are enabled by default starting with
-    Sourcegraph 3.4
-    Whether the site has zero access-enabled repositories.
-    """
-    noRepositoriesEnabled: Boolean!
-        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     """
     Alerts to display to the viewer.
     """

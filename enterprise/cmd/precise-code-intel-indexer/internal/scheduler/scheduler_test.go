@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -66,7 +65,7 @@ func TestUpdateIndexConfigurationInDatabase(t *testing.T) {
 	mockStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 	mockStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
@@ -187,7 +186,7 @@ func TestUpdateIndexConfigurationInRepository(t *testing.T) {
 	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
 	mockStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
@@ -283,7 +282,7 @@ func TestUpdateIndexConfigurationInferred(t *testing.T) {
 		return repositoryID%2 != 0, nil
 	})
 
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})

@@ -29,8 +29,9 @@ const config: webpack.Configuration = {
             backgroundEntry,
             '../../src/browser-extension/scripts/backgroundPage.main.ts'
         ),
-        options: buildEntry(extensionEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
         inject: buildEntry(extensionEntry, contentEntry, '../../src/browser-extension/scripts/contentPage.main.ts'),
+        options: buildEntry(extensionEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
+        'after-install': path.resolve(__dirname, '../../src/browser-extension/scripts/afterInstallPage.main.tsx'),
 
         // Common native integration entry point (Gitlab, Bitbucket)
         integration: buildEntry(pageEntry, '../../src/native-integration/integration.main.ts'),
@@ -39,7 +40,7 @@ const config: webpack.Configuration = {
 
         // Styles
         style: path.join(__dirname, '../../src/app.scss'),
-        'options-style': path.join(__dirname, '../../src/options.scss'),
+        'branded-style': path.join(__dirname, '../../src/branded.scss'),
     },
     output: {
         path: path.join(__dirname, '../../build/dist/js'),
@@ -74,11 +75,6 @@ const config: webpack.Configuration = {
                     },
                     {
                         loader: 'postcss-loader',
-                        options: {
-                            config: {
-                                path: path.join(__dirname, '..', '..', '..'),
-                            },
-                        },
                     },
                     {
                         loader: 'sass-loader',
@@ -95,7 +91,7 @@ const config: webpack.Configuration = {
                 use: [
                     {
                         loader: 'worker-loader',
-                        options: { name: 'extensionHostWorker.bundle.js' },
+                        options: { filename: 'extensionHostWorker.bundle.js' },
                     },
                     babelLoader,
                 ],

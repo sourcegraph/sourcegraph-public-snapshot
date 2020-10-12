@@ -178,7 +178,10 @@ type Store interface {
 	MarkIndexComplete(ctx context.Context, id int) (err error)
 
 	// MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
-	MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error)
+	MarkIndexErrored(ctx context.Context, id int, failureMessage string) error
+
+	// SetIndexLogContents updates the log contents fo the index.
+	SetIndexLogContents(ctx context.Context, indexID int, contents string) error
 
 	// DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 	// the index is returned along with a store instance which wraps the transaction. This transaction must be

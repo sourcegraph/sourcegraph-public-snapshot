@@ -9,10 +9,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -273,33 +271,6 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	}
 	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 		return nil, err
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*EmptyResponse, error) {
-	// Only usable for self-hosted instances
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("Not available on sourcegraph.com")
-	}
-	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	reposList, err := db.Repos.List(ctx, db.ReposListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, repo := range reposList {
-		gitserverRepo, err := backend.GitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
-			return nil, err
-		}
 	}
 	return &EmptyResponse{}, nil
 }

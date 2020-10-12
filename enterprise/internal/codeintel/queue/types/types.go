@@ -7,6 +7,19 @@ type DequeueRequest struct {
 	IndexerName string `json:"indexerName"`
 }
 
+// SetLogRequest is sent to the index manager API to set the log contents
+// of an index job that is currently being processed.
+type SetLogRequest struct {
+	// IndexerName is a unique name identifying the requesting indexer.
+	IndexerName string `json:"indexerName"`
+
+	// IndexID is the identifier of the index record is being processed.
+	IndexID int `json:"indexId"`
+
+	// Payload the content of the index job logs.
+	Contents string `json:"payload"`
+}
+
 // CompleteRequest is sent to the index manager API once an index request
 // has finished. This request is used both on success and failure.
 type CompleteRequest struct {

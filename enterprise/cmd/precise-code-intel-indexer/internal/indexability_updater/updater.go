@@ -3,12 +3,12 @@ package indexabilityupdater
 import (
 	"context"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -19,7 +19,7 @@ const MaxGitserverRequestsPerSecond = 20
 
 type Updater struct {
 	store               store.Store
-	gitserverClient     gitserver.Client
+	gitserverClient     gitserverClient
 	metrics             UpdaterMetrics
 	minimumSearchCount  int
 	minimumSearchRatio  float64
@@ -28,11 +28,16 @@ type Updater struct {
 	limiter             *rate.Limiter
 }
 
+type gitserverClient interface {
+	Head(ctx context.Context, store store.Store, repositoryID int) (string, error)
+	ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+}
+
 var _ goroutine.Handler = &Updater{}
 
 func NewUpdater(
 	store store.Store,
-	gitserverClient gitserver.Client,
+	gitserverClient gitserverClient,
 	interval time.Duration,
 	metrics UpdaterMetrics,
 	minimumSearchCount int,

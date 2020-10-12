@@ -47,7 +47,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	commitUpdater := commits.NewUpdater(store, codeintelgitserver.DefaultClient)
-	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient, commitUpdater), observationContext)
+	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, commitUpdater), observationContext)
 	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
 	if err != nil {
 		return fmt.Errorf("failed to initialize hunk cache: %s", err)

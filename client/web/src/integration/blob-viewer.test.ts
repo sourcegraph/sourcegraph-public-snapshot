@@ -218,8 +218,9 @@ describe('Blob viewer', () => {
         })
 
         describe('browser extension discoverability', () => {
-            const HOVER_THRESHOLD = 3
+            const HOVER_THRESHOLD = 5
             const HOVER_COUNT_KEY = 'hover-count'
+
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
                 await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
@@ -281,19 +282,20 @@ describe('Blob viewer', () => {
                 }
                 await driver.page.reload()
 
-                await driver.page.waitForSelector('.repo-header')
                 // Alert should be visible now that the user has seen $HOVER_THRESHOLD hovers
-                assert(
-                    !!(await driver.page.$('.install-browser-extension-alert')),
-                    'Expected "Install browser extension" alert to be displayed after user reaches hover threshold'
-                )
+                await driver.page.waitForSelector('.install-browser-extension-alert', { timeout: 5000 })
 
                 // Dismiss alert
                 await driver.page.click('.test-close-alert')
                 await driver.page.reload()
 
-                await driver.page.waitForSelector('.repo-header')
                 // Alert should not show up now that the user has dismissed it once
+                await driver.page.waitForSelector('.repo-header')
+                // `browserExtensionInstalled` emits false after 500ms, so
+                // wait 500ms after .repo-header is visible, at which point we know
+                // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
+                // After this point, we know whether or not the alert will be displayed for this page load.
+                await driver.page.waitFor(500)
                 assert(
                     !(await driver.page.$('.install-browser-extension-alert')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'

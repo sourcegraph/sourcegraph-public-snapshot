@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -35,7 +34,7 @@ func TestUpdate(t *testing.T) {
 		{RepositoryID: 4, SearchCount: 50, PreciseCount: 100},
 	}, nil)
 
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})

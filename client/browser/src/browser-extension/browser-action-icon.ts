@@ -9,7 +9,7 @@
 
 /** State of the Sourcegraph browser extension, as represented by the browser
  * action icon. */
-type BrowserActionIconState = 'active' | 'active-with-alert' | 'inactive'
+export type BrowserActionIconState = 'active' | 'active-with-alert' | 'inactive'
 interface BrowserActionIconPaths {
     '16': string
     '48': string

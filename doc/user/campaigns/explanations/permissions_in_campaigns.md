@@ -1,4 +1,4 @@
-# Managing access to campaigns
+# Permissions in campaigns
 
 > NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
 
@@ -53,15 +53,15 @@ All interactions with the code host are performed by Sourcegraph with the token 
 
 See these code host specific pages for which permissions and scopes the tokens require:
 
-- [GitHub](../../admin/external_service/github.md#github-api-token-and-access)
-- [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
-- [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
+- [GitHub](../../../admin/external_service/github.md#github-api-token-and-access)
+- [GitLab](../../../admin/external_service/gitlab.md#access-token-scopes)
+- [Bitbucket Server](../../../admin/external_service/gitlab.md#access-token-permissions)
 
 In the future you'll be able to perform all code host interactions with a separate access token or your personal code host account.
 
 ## Repository permissions for campaigns
 
-Your [repository permissions](../../admin/repo/permissions.md) determine what information in a campaign you can view. You can only see a campaign's proposed changes to a repository if you have read access to that repository. Read or admin permissions on a campaign does not (by itself) permit you to view all of the campaign's changes.
+Your [repository permissions](../../../admin/repo/permissions.md) determine what information in a campaign you can view. You can only see a campaign's proposed changes to a repository if you have read access to that repository. Read or admin permissions on a campaign does not (by itself) permit you to view all of the campaign's changes.
 
 When you view a campaign, you can see a list of patches and changesets. For each patch and changeset:
 
@@ -83,4 +83,4 @@ If you are not permitted to view a repository on Sourcegraph, then you won't be 
 
 ## Disabling campaigns
 
-A site admin can disable campaigns for the entire site by setting the [site configuration](../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.
+A site admin can disable campaigns for the entire site by setting the [site configuration](../../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.
