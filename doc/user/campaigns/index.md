@@ -41,28 +41,25 @@
   margin: 3em 0;
 }
 
-
 .getting-started {
   display: flex;
   align-items: stretch;
 }
 
-.getting-started-box {
+.getting-started .btn {
   flex: 1;
   margin: 0.5em;
   padding: 1rem 1.25rem;
+  color: var(--text-color);
   border-radius: 4px;
   border: 1px solid var(--sidebar-nav-active-bg);
 }
-.getting-started-box a {
-  color: var(--text-color);
-}
 
-.getting-started-box a:hover {
+.getting-started .btn:hover {
   color: var(--link-color);
 }
 
-.getting-started-box a span {
+.getting-started .btn span {
   color: var(--link-color);
   font-weight: bold;
 }
@@ -76,7 +73,8 @@ Create a campaign by specifying a search query to get a list of repositories and
 </p>
 
 <div class="cta-group">
-<a class="btn btn-primary" href="quickstart">★ Quickstart</a> <a class="btn" href="introduction_to_campaigns">Introduction to campaigns</a>
+<a class="btn btn-primary" href="quickstart">★ Quickstart</a>
+<a class="btn" href="introduction_to_campaigns">Introduction to campaigns</a>
 </div>
 
 > NOTE: This documentation describes the campaign functionality shipped in Sourcegraph 3.19 and src-cli 3.18. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in older versions of Sourcegraph and src-cli.
@@ -84,21 +82,23 @@ Create a campaign by specifying a search query to get a list of repositories and
 ## Getting started
 
 <div class="getting-started">
-  <div class="getting-started-box">
-  <a href="quickstart">
-  <span>New to campaigns?</span></br>Run through the <b>quickstart guide</b> and create a campaign in less than 10 minutes.
+  <a href="quickstart" class="btn" alt="Run through the Quickstart guide">
+   <span>New to campaigns?</span>
+   </br>
+   Run through the <b>quickstart guide</b> and create a campaign in less than 10 minutes.
   </a>
-  </div>
-  <div class="getting-started-box">
-  <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E">
-  <span>Demo video</span></br>Watch the campaigns demo video to see what campaigns are capable of.
+
+  <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E" class="btn" alt="Watch the campaigns demo video">
+   <span>Demo video</span>
+   </br>
+   Watch the campaigns demo video to see what campaigns are capable of.
   </a>
-  </div>
-  <div class="getting-started-box">
-  <a href="introduction_to_campaigns">
-  <span>Introduction to campaigns</span></br>Find out what campaigns are, learn key concepts and see what others use them for.
+
+  <a href="introduction_to_campaigns" class="btn" alt="Read the Introduction to campaigns">
+   <span>Introduction to campaigns</span>
+   </br>
+   Find out what campaigns are, learn key concepts and see what others use them for.
   </a>
-  </div>
 </div>
 
 ## How-tos
