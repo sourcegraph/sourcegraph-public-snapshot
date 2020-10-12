@@ -88,3 +88,13 @@ func (j *Janitor) uploadPathsByID() (map[int]string, error) {
 
 	return pathsByID, nil
 }
+
+// TODO - test
+// TODO - implement
+
+// removeOrphanedData removes data from the codeintel database that does not have a
+// corresponding upload record in the frontend database.
+func (j *Janitor) removeOrphanedData(ctx context.Context) error {
+	// TODO
+	return nil
+}

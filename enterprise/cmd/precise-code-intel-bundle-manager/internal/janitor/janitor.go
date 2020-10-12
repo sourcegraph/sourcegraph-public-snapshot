@@ -17,7 +17,7 @@ type Janitor struct {
 	desiredPercentFree int
 	maxUploadAge       time.Duration
 	maxUploadPartAge   time.Duration
-	maxDatabasePartAge time.Duration
+	maxDataAge         time.Duration
 	metrics            JanitorMetrics
 }
 
@@ -30,7 +30,7 @@ func New(
 	janitorInterval time.Duration,
 	maxUploadAge time.Duration,
 	maxUploadPartAge time.Duration,
-	maxDatabasePartAge time.Duration,
+	maxDataAge time.Duration,
 	metrics JanitorMetrics,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), janitorInterval, &Janitor{
@@ -39,7 +39,7 @@ func New(
 		desiredPercentFree: desiredPercentFree,
 		maxUploadAge:       maxUploadAge,
 		maxUploadPartAge:   maxUploadPartAge,
-		maxDatabasePartAge: maxDatabasePartAge,
+		maxDataAge:         maxDataAge,
 		metrics:            metrics,
 	})
 }
@@ -66,15 +66,16 @@ func (j *Janitor) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "janitor.removeOldUploadingRecords")
 	}
 
-	// Note: We are disabling freeing space on disk as we are no longer writing to
-	// disk as our primary store (so it shouldn't grow). We'll need to figure out
-	// a data retention policy that works better using postgres.
-	// if err := j.freeSpace(ctx); err != nil {
-	// 	return errors.Wrap(err, "janitor.freeSpace")
-	// }
+	if err := j.removeExpiredData(ctx); err != nil {
+		return errors.Wrap(err, "janitor.removeExpiredData")
+	}
 
 	if err := j.hardDeleteDeletedRecords(ctx); err != nil {
 		return errors.Wrap(err, "janitor.hardDeleteDeletedRecords")
+	}
+
+	if err := j.removeOrphanedData(ctx); err != nil {
+		return errors.Wrap(err, "janitor.removeOrphanedData")
 	}
 
 	return nil
