@@ -313,11 +313,11 @@ Key dates:
                 )
             }
 
-            const blockingQuery = `is:open is:issue milestone:${config.majorVersion}.${config.minorVersion} label:release-blocker`
+            const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
 
-            const openQuery = `is:open is:issue milestone:${config.majorVersion}.${config.minorVersion}`
+            const openQuery = `is:open org:sourcegraph is:issue milestone:${config.majorVersion}.${config.minorVersion}`
             const openIssues = await listIssues(githubClient, openQuery)
             const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
 
