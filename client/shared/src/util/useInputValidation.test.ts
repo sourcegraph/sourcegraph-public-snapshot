@@ -1,7 +1,13 @@
-import { noop } from 'lodash'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { min, noop } from 'lodash'
+import { Observable, of, Subject, Subscription } from 'rxjs'
+import { delay } from 'rxjs/operators'
 import * as sinon from 'sinon'
-import { createValidationPipeline, InputValidationState, ValidationOptions } from './useInputValidation'
+import {
+    createValidationPipeline,
+    InputValidationState,
+    ValidationOptions,
+    VALIDATION_DEBOUNCE_TIME,
+} from './useInputValidation'
 
 describe('useInputValidation()', () => {
     let clock: sinon.SinonFakeTimers
@@ -138,22 +144,21 @@ describe('useInputValidation()', () => {
         return "Email must end with '.co'"
     }
 
-    /**
-     * Tests
-     * - Works without initial value
-     * - Works with initial value
-     * - Built-in sync reason
-     * - Custom sync reason
-     * - Async reason
-     * - All validators passed
-     */
     it('works without initial value', () => {
         const executeUserInputScript = setupValidationPipelineTest({
             synchronousValidators: [isDotCo],
         })
 
         // Explain intent:
-        const inputs: (string | number)[] = ['source', 'sourcegraph', 300, 'sourcegraph@', 500, 'sourcegraph@sg.co']
+        const inputs: (string | number)[] = [
+            'source',
+            'sourcegraph',
+            // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
+            min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
+            'sourcegraph@',
+            VALIDATION_DEBOUNCE_TIME,
+            'sourcegraph@sg.co',
+        ]
 
         const expectedStates: InputValidationState[] = [
             {
@@ -193,12 +198,13 @@ describe('useInputValidation()', () => {
         })
 
         const inputs: (string | number)[] = [
-            500,
+            VALIDATION_DEBOUNCE_TIME,
             'source',
             'sourcegraph',
-            300,
+            // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
+            min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
             'sourcegraph@',
-            500,
+            VALIDATION_DEBOUNCE_TIME,
             'sourcegraph@sg.co',
         ]
 
@@ -228,6 +234,71 @@ describe('useInputValidation()', () => {
                 kind: 'INVALID',
                 value: 'sourcegraph@',
                 reason: "Email must end with '.co'",
+            },
+            {
+                kind: 'LOADING',
+                value: 'sourcegraph@sg.co',
+            },
+            {
+                kind: 'VALID',
+                value: 'sourcegraph@sg.co',
+            },
+        ]
+
+        expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
+    })
+
+    it('works with async validators', () => {
+        function isEmailUnique(email: string): Observable<string | undefined> {
+            return of(email === 'test@sg.co' ? 'Email is taken' : undefined).pipe(delay(200))
+        }
+
+        const executeUserInputScript = setupValidationPipelineTest({
+            synchronousValidators: [isDotCo],
+            asynchronousValidators: [isEmailUnique],
+        })
+
+        const inputs: (string | number)[] = [
+            'test',
+            VALIDATION_DEBOUNCE_TIME,
+            'test@sg.c',
+            'test@sg.co',
+            // Advance 200 more ms due to delay from `isEmailUnique`
+            VALIDATION_DEBOUNCE_TIME + 200,
+            '@sg.co',
+            // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
+            min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
+            'sourcegraph@sg.co',
+            // Advance 200 more ms due to delay from `isEmailUnique`
+            200,
+        ]
+
+        const expectedStates: InputValidationState[] = [
+            {
+                kind: 'LOADING',
+                value: 'test',
+            },
+            {
+                kind: 'INVALID',
+                reason: "Email must include '@'",
+                value: 'test',
+            },
+            {
+                kind: 'LOADING',
+                value: 'test@sg.c',
+            },
+            {
+                kind: 'LOADING',
+                value: 'test@sg.co',
+            },
+            {
+                kind: 'INVALID',
+                value: 'test@sg.co',
+                reason: 'Email is taken',
+            },
+            {
+                kind: 'LOADING',
+                value: '@sg.co',
             },
             {
                 kind: 'LOADING',
