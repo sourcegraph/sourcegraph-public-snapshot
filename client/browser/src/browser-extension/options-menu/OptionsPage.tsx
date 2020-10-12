@@ -74,10 +74,10 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     }
 
     useEffect(() => {
-        if (!urlState.loading && urlState.kind === 'VALID') {
+        if (urlState.kind === 'VALID') {
             onChangeSourcegraphUrl(urlState.value)
         }
-    }, [onChangeSourcegraphUrl, urlState.kind, urlState.value, urlState.loading])
+    }, [onChangeSourcegraphUrl, urlState])
 
     return (
         <div className={classNames('options-page', { 'options-page--full': isFullPage })}>
@@ -100,7 +100,10 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={preventDefault} noValidate={true}>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
-                    <LoaderInput loading={urlState.loading} className={classNames(deriveInputClassName(urlState))}>
+                    <LoaderInput
+                        loading={urlState.kind === 'LOADING'}
+                        className={classNames(deriveInputClassName(urlState))}
+                    >
                         <input
                             className="form-control"
                             id="sourcegraph-url"
@@ -109,9 +112,10 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                             value={urlState.value}
                             onChange={nextUrlFieldChange}
                             ref={urlInputReference}
+                            spellCheck={false}
                         />
                     </LoaderInput>
-                    {urlState.loading ? (
+                    {urlState.kind === 'LOADING' ? (
                         <small className="text-muted d-block mt-1">Checking...</small>
                     ) : urlState.kind === 'INVALID' ? (
                         <small className="invalid-feedback">

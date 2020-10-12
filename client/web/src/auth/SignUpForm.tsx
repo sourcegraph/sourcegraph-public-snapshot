@@ -75,13 +75,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         signUpFieldValidators.password
     )
 
-    const canRegister =
-        emailState.kind === 'VALID' &&
-        !emailState.loading &&
-        usernameState.kind === 'VALID' &&
-        !usernameState.loading &&
-        passwordState.kind === 'VALID' &&
-        !passwordState.loading
+    const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
     const disabled = loading || !canRegister
 
@@ -135,12 +129,15 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     <label
                         htmlFor="email"
                         className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': emailState.kind === 'INVALID' && !emailState.loading,
+                            'text-danger font-weight-bold': emailState.kind === 'INVALID',
                         })}
                     >
                         Email
                     </label>
-                    <LoaderInput className={classNames(deriveInputClassName(emailState))} loading={emailState.loading}>
+                    <LoaderInput
+                        className={classNames(deriveInputClassName(emailState))}
+                        loading={emailState.kind === 'LOADING'}
+                    >
                         <EmailInput
                             className={classNames('signin-signup-form__input', deriveInputClassName(emailState))}
                             onChange={nextEmailFieldChange}
@@ -152,22 +149,20 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             inputRef={emailInputReference}
                         />
                     </LoaderInput>
-                    {!emailState.loading && emailState.kind === 'INVALID' && (
-                        <small className="invalid-feedback">{emailState.reason}</small>
-                    )}
+                    {emailState.kind === 'INVALID' && <small className="invalid-feedback">{emailState.reason}</small>}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="username"
                         className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': !usernameState.loading && usernameState.kind === 'INVALID',
+                            'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
                     </label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
-                        loading={usernameState.loading}
+                        loading={usernameState.kind === 'LOADING'}
                     >
                         <UsernameInput
                             className={classNames('signin-signup-form__input', deriveInputClassName(usernameState))}
@@ -179,7 +174,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             inputRef={usernameInputReference}
                         />
                     </LoaderInput>
-                    {!usernameState.loading && usernameState.kind === 'INVALID' && (
+                    {usernameState.kind === 'INVALID' && (
                         <small className="invalid-feedback" role="alert">
                             {usernameState.reason}
                         </small>
@@ -189,14 +184,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     <label
                         htmlFor="password"
                         className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': passwordState.kind === 'INVALID' && !passwordState.loading,
+                            'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
                     </label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
-                        loading={passwordState.loading}
+                        loading={passwordState.kind === 'LOADING'}
                     >
                         <PasswordInput
                             className={classNames('signin-signup-form__input', deriveInputClassName(passwordState))}
@@ -212,7 +207,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             formNoValidate={true}
                         />
                     </LoaderInput>
-                    {!passwordState.loading && passwordState.kind === 'INVALID' ? (
+                    {passwordState.kind === 'INVALID' ? (
                         <small className="invalid-feedback" role="alert">
                             {passwordState.reason}
                         </small>
