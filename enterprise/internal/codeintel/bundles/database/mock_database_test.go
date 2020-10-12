@@ -10,7 +10,7 @@ import (
 
 // MockDatabase is a mock implementation of the Database interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/database)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database)
 // used for unit testing.
 type MockDatabase struct {
 	// CloseFunc is an instance of a mock function object controlling the
