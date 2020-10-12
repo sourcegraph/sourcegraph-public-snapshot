@@ -155,7 +155,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	// Insert new data for this repository in batches - it's likely we'll exceed the maximum
 	// number of placeholders per query so we need to break it into several queries below this
 	// size.
-	for _, batch := range batchQueries(nearestUploadsRows, MaxPostgresNumParameters/4) {
+	for _, batch := range batchQueries(nearestUploadsRows, MaxPostgresNumParameters/6) {
 		if err := tx.Store.Exec(ctx, sqlf.Sprintf(
 			`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
 			sqlf.Join(batch, ","),
