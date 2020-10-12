@@ -19,7 +19,10 @@ If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a backgroun
 
 > Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
 
-Once this message has been printed, you are free to delete the bundle files moved into the `/lsif-storage/db-backups` directory on the bundle-manager volume.
+**Wait for the above message to be printed in `docker logs precise-code-intel-bundle-manager` before upgrading to the next Sourcegraph version**, then if everything is working you can free up disk space by deleting the backup bundle files using this command:
+
+```sh
+docker exec -it precise-code-intel-bundle-manager sh -c 'rm -rf /lsif-storage/db-backups'
 
 > Warning: In order to ensure there is no data loss, **do not upgrade out of the 3.21.x release branch** until you have seen this log message, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty.
 
