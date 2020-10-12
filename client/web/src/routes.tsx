@@ -21,8 +21,8 @@ const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 
-interface LayoutRouteComponentProps<Parameters_ extends { [K in keyof Parameters_]?: string }>
-    extends RouteComponentProps<Parameters_>,
+interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
+    extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
         BreadcrumbSetters,
