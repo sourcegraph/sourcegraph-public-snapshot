@@ -2,16 +2,13 @@ import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
-import webMainStyles from '../SourcegraphWebApp.scss'
 import { subtypeOf } from '../../../shared/src/util/types'
 import { action } from '@storybook/addon-actions'
 import { SearchPatternType } from '../graphql-operations'
+import { WebStory } from '../components/WebStory'
 
 const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(story => (
-    <>
-        <style>{webMainStyles}</style>
-        <div className="theme-light">{story()}</div>
-    </>
+    <WebStory>{webProps => story()}</WebStory>
 ))
 
 const setVersionContext = action('setVersionContext')
@@ -46,4 +43,10 @@ add('Context selected', () => <VersionContextDropdown {...commonProps} versionCo
 })
 add('Selected context appears at the top of the list', () => (
     <VersionContextDropdown {...commonProps} versionContext="test 3" />
+))
+add('Not first child', () => (
+    <>
+        <div />
+        <VersionContextDropdown {...commonProps} versionContext="test 4" />
+    </>
 ))
