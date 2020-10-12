@@ -25,7 +25,7 @@ People usually use campaigns to make the following kinds of changes:
 - Patching critical security issues.
 - Standardizing build, configuration, and deployment files.
 
-A campaign tracks all of its changesets for updates to:
+A campaign tracks all of its changesets (a generic term for pull requests or merge requests) for updates to:
 
 - Status: open, merged, or closed
 - Checks: passed (green), failed (red), or pending (yellow)
@@ -39,6 +39,19 @@ In the list of changesets, you can see the detailed status for each changeset.
 
 <img src="campaign_tracking_sourcegraph_prs.png" class="screenshot">
 
+## Supported code hosts and changeset types
+
+The generic term **changeset** is used to refer to any of the following:
+
+- GitHub pull requests.
+- Bitbucket Server pull requests.
+- GitLab merge requests.
+- Bitbucket Cloud pull requests (not yet supported).
+- Phabricator diffs (not yet supported).
+- Gerrit changes (not yet supported).
+
+A single campaign can span many repositories and many code hosts.
+
 ## Concepts
 
 - A **campaign** is group of related changes to code, along with a title and description.
@@ -49,7 +62,7 @@ In the list of changesets, you can see the detailed status for each changeset.
 - A campaign has many **changeset specs**, which are produced by executing the campaign spec (i.e., running the commands on each selected repository) and then using its changeset template to produce a list of changesets, including the diffs, commit messages, changeset title, and changeset body. You don't need to view or edit the raw changeset specs; you will edit the campaign spec and view the changesets in the UI.
 - The **campaign controller** reconciles the actual state of the campaign's changesets on the code host so that they match your desired intent (as described in the changeset specs).
 
-To learn about the internals of campaigns, see [Campaigns](../../dev/background-information/campaigns/index.md) in the developer documentation.
+To learn about the internals of campaigns, see [Campaigns](../../../dev/background-information/campaigns/index.md) in the developer documentation.
 
 ## Known issues
 

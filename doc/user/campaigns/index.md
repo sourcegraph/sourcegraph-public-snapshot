@@ -94,7 +94,7 @@ Create a campaign by specifying a search query to get a list of repositories and
    Watch the campaigns demo video to see what campaigns are capable of.
   </a>
 
-  <a href="introduction_to_campaigns" class="btn" alt="Read the Introduction to campaigns">
+  <a href="explanations/introduction_to_campaigns" class="btn" alt="Read the Introduction to campaigns">
    <span>Introduction to campaigns</span>
    </br>
    Find out what campaigns are, learn key concepts and see what others use them for.
@@ -104,16 +104,16 @@ Create a campaign by specifying a search query to get a list of repositories and
 ## Explanations
 
 - [Introduction to campaigns](explanations/introduction_to_campaigns.md)
+- [Managing access to campaigns](explanations/managing_access.md)
 
 ## How-tos
 
-- [Viewing campaigns](how-tos/viewing_campaigns.md)
 - [Creating a campaign](how-tos/creating_a_campaign.md)
 - [Publishing changesets to the code host](how-tos/publishing_changesets.md)
+- [Updating a campaign](how-tos/updating_a_campaign.md)
+- [Viewing campaigns](how-tos/viewing_campaigns.md)
 - [Tracking existing changesets](how-tos/tracking_existing_changesets.md)
 - [Closing or deleting a campaign](how-tos/closing_or_deleting_a_campaign.md)
-- [Code host and repository permissions in campaigns](how-tos/code_host_repository_permissions.md)
-- [Managing access to campaigns](how-tos/managing_access.md)
 - [Site admin configuration for campaigns](how-tos/site_admin_configuration.md)
 
 ## Tutorials

@@ -40,18 +40,10 @@ changesetTemplate:
 1. Examine the preview. Confirm that the changes are what you intended. If not, edit the campaign spec and then rerun the command above.
 1. Click the **Create campaign** button.
 
-After you've applied a campaign spec, you can [publish changesets](#publishing-changesets-to-the-code-host) to the code host when you're ready. This will turn the patches into commits, branches, and changesets (such as GitHub pull requests) for others to review and merge.
+After you've applied a campaign spec, you can [publish changesets](publishing_changesets.md) to the code host when you're ready. This will turn the patches into commits, branches, and changesets (such as GitHub pull requests) for others to review and merge.
 
-You can share the link to your campaign with other people if you want their help. Any person on your Sourcegraph instance can [view it in the campaigns list](#viewing-campaigns).
+You can share the link to your campaign with other people if you want their help. Any person on your Sourcegraph instance can [view it in the campaigns list](viewing_campaigns.md).
 
-If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
+If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](../explanations/managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
-You can update a campaign's changes at any time, even after you've published changesets. For more information, see [Updating a campaign](#updating-a-campaign).
-
-### Example campaigns
-
-The [example campaigns](examples/index.md) show how to use campaigns to make useful, real-world changes:
-
-- [Refactoring Go code using Comby](examples/refactor_go_comby.md)
-- [Updating Go import statements using Comby](examples/updating_go_import_statements.md)
-
+You can update a campaign's changes at any time, even after you've published changesets. For more information, see [Updating a campaign](updating_a_campaign.md).

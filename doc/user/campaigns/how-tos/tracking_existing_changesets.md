@@ -25,7 +25,7 @@ importChangesets:
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
 1. Click the **Create campaign** button.
 
-You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see [Tracking campaign progress and changeset statuses](#tracking-campaign-progress-and-changeset-statuses).
+You'll see the existing changeset in the list. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign). For more information, see ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md).
 
 > NOTE: You can combine the tracking of existing changesets and creating new ones by adding `importChangesets:` to your campaign specs that have `on:`, `steps:` and `changesetTemplate:` properties.
 
