@@ -9,6 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "batch"
+}
+
 func TestBatchInserter(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
