@@ -8,6 +8,16 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.20 -> 3.21.0
+
+If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db`. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
+
+> Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
+
+Once this message has been printed, you are free to delete the bundle files moved into the `/lsif-storage/db-backups` directory on the bundle-manager volume.
+
+> Warning: In order to ensure there is no data loss, **do not upgrade out of the 3.21.x release branch** until you have seen this log message, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty.
+
 ### Standard upgrade procedure
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.

@@ -15,6 +15,14 @@ Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://githu
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database  as described in the [external database documentation](../external_database.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
+If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db`. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
+
+> Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
+
+Once this message has been printed, you are free to delete the bundle files moved into the `/lsif-storage/db-backups` directory on the bundle-manager volume.
+
+> Warning: In order to ensure there is no data loss, **do not upgrade out of the 3.21.x release branch** until you have seen this log message, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty.
+
 ## 3.19.2 -> 3.20.1
 
 No manual migration required.
