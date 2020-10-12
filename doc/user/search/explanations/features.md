@@ -4,13 +4,13 @@
 
 Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search query syntax allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.
 
-See the [query syntax](queries.md) and [query reference](language.md) documentation for a comprehensive overview of supported syntax.
+See the [query syntax](../reference/queries.md) and [query reference](../reference/language.md) documentation for a comprehensive overview of supported syntax.
 
 ## Language-aware structural code search
 
 Sourcegraph supports advanced code search for specifically matching patterns inside code structures, like function parameters and loop bodies.
 
-See the [structural search](structural.md) documentation for a detailed explanation of this search mode.
+See the [structural search](../reference/structural.md) documentation for a detailed explanation of this search mode.
 
 ## Commit diff search
 
@@ -18,13 +18,13 @@ Search over commit diffs using `type:diff` to see how your codebase has changed 
 
 You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude commits reachable from a ref by prefixing it with `^`. Diff searches can be further narrowed down with parameters that filter by author and time.
 
-See the [query syntax](queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
+See the [query syntax](../reference/queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
 
 ## Commit message search
 
 Searching over commit messages is supported in Sourcegraph by adding `type:commit` to your search query. Separately, you can also use the `message:"any string"` parameter to filter `type:diff` searches for a given commit message. Commit message searches can narrowed down further with filters such as author and time.
 
-See our [query syntax](queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
+See our [query syntax](../reference/queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
 
 ## Symbol search
 
@@ -34,7 +34,7 @@ Searching for symbols makes it easier to find specific functions, variables, and
 
 Saved searches let you save and describe search queries so you can easily monitor the results on an ongoing basis. You can create a saved search for anything, including diffs and commits across all branches of your repositories. Saved searches can be an early warning system for common problems in your code and a way to monitor best practices, the progress of refactors, etc.
 
-See the [saved searches](saved_searches.md) documentation for instructions for setting up and configuring saved searches.
+See the [saved searches](../how-to/saved_searches.md) documentation for instructions for setting up and configuring saved searches.
 
 ## Search scopes
 
@@ -117,7 +117,7 @@ Your site admin can configure indexed branches in site configuration under the `
 }
 ```
 
-Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
+Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
 
 > NOTE: The default branch (`HEAD`) is always indexed.
 

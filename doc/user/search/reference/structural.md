@@ -168,7 +168,7 @@ continually improving functionality of this new feature, so please note the
 following:
 
 - **Only indexed repos.** Structural search can currently only be performed on
-  _indexed_ repositories. See [configuration](../../admin/search.md) for more
+  _indexed_ repositories. See [configuration](../../../admin/search.md) for more
   details if you host your own Sourcegraph installation. Our service hosted at
   [sourcegraph.com](https://sourcegraph.com/search) indexes approximately 200,000
   of the most popular repositories on GitHub. Other repositories are currently

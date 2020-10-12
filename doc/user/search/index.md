@@ -52,6 +52,8 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
   - Set up notifications for code changes that match a query.
   - View [language statistics](explanations/features.md#statistics) for search results.
 - [Search details](explanations/search_details.md)
+- [Sourcegraph Cloud](explanations/sourcegraph_cloud.md)
+- [Search tips](explanations/tips.md)
 
 ## How-tos
 
