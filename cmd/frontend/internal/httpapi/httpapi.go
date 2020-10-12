@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
@@ -59,7 +60,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
-	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
+	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(gziphandler.GzipHandler(handler(serveGraphQL(schema)))))
 
 	m.Get(apirouter.SearchStream).Handler(trace.TraceRoute(http.HandlerFunc(frontendsearch.ServeStream)))
 

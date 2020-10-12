@@ -31,12 +31,14 @@ func serveGraphQL(schema *graphql.Schema) func(w http.ResponseWriter, r *http.Re
 		r = r.WithContext(trace.WithRequestSource(r.Context(), guessSource(r)))
 
 		if r.Header.Get("Content-Encoding") == "gzip" {
-			reader, err := gzip.NewReader(r.Body)
+			gzipReader, err := gzip.NewReader(r.Body)
 			if err != nil {
 				return err
 			}
 
-			r.Body = reader
+			r.Body = gzipReader
+
+			defer gzipReader.Close()
 		}
 
 		relayHandler.ServeHTTP(w, r)
