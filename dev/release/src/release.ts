@@ -4,8 +4,6 @@ import {
     ensureTrackingIssue,
     getAuthenticatedGitHubClient,
     listIssues,
-    getIssueByTitle,
-    trackingIssueTitle,
     ensurePatchReleaseIssue,
     createChangesets,
 } from './github'
@@ -19,6 +17,7 @@ import * as path from 'path'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 const formatDate = (date: Date): string =>
     `${date.toLocaleString('en-US', {
         timeZone: 'America/Los_Angeles',
@@ -29,6 +28,7 @@ const formatDate = (date: Date): string =>
         dateStyle: 'medium',
         timeStyle: 'short',
     } as Intl.DateTimeFormatOptions)} (Berlin time)`
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
 
 interface Config {
     teamEmail: string
@@ -52,17 +52,15 @@ interface Config {
 
 type StepID =
     | 'help'
-    // start release process
-    | 'add-timeline-to-calendar'
-    | 'tracking-issue:announce'
-    | 'tracking-issue:create'
-    | 'patch:issue'
+    // release tracking
+    | 'tracking:release-timeline'
+    | 'tracking:release-issue'
+    | 'tracking:patch-issue'
     // branch cut
     | 'changelog:cut'
-    // candidates
-    | 'release-candidate:create'
     // release
     | 'release:status'
+    | 'release:create-candidate'
     | 'release:publish'
     // testing
     | '_test:google-calendar'
@@ -115,7 +113,7 @@ const steps: Step[] = [
         },
     },
     {
-        id: 'add-timeline-to-calendar',
+        id: 'tracking:release-timeline',
         run: async config => {
             const googleCalendar = await getClient()
             const events: EventOptions[] = [
@@ -167,13 +165,13 @@ const steps: Step[] = [
             ]
 
             for (const event of events) {
-                console.log(`Create calendar event: ${event.title}: ${event.startDateTime!}`)
+                console.log(`Create calendar event: ${event.title}: ${event.startDateTime || 'undefined'}`)
                 await ensureEvent(event, googleCalendar)
             }
         },
     },
     {
-        id: 'tracking-issue:create',
+        id: 'tracking:release-issue',
         run: async ({
             majorVersion,
             minorVersion,
@@ -182,6 +180,9 @@ const steps: Step[] = [
             oneWorkingDayBeforeRelease,
             fourWorkingDaysBeforeRelease,
             fiveWorkingDaysBeforeRelease,
+
+            captainSlackUsername,
+            slackAnnounceChannel,
         }: Config) => {
             const { url, created } = await ensureTrackingIssue({
                 majorVersion,
@@ -193,29 +194,17 @@ const steps: Step[] = [
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
             })
             console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
-        },
-    },
-    {
-        id: 'tracking-issue:announce',
-        run: async config => {
-            const trackingIssueURL = await getIssueByTitle(
-                await getAuthenticatedGitHubClient(),
-                trackingIssueTitle(config.majorVersion, config.minorVersion)
-            )
-            if (!trackingIssueURL) {
-                throw new Error(
-                    `Tracking issue for version ${config.majorVersion}.${config.minorVersion} not found--has it been create yet?`
-                )
-            }
+
             await postMessage(
-                `:captain: ${config.majorVersion}.${config.minorVersion} Release :captain:
-Release captain: @${config.captainSlackUsername}
-Tracking issue: ${trackingIssueURL}
-Key dates:
-- Release branch cut, testing commences: ${formatDate(new Date(config.fourWorkingDaysBeforeRelease))}
-- Final release tag: ${formatDate(new Date(config.oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(config.releaseDateTime))}`,
-                config.slackAnnounceChannel
+                `:captain: ${majorVersion}.${minorVersion} Release :captain:
+
+                Release captain: @${captainSlackUsername}
+                Tracking issue: ${url}
+                Key dates:
+                - Release branch cut, testing commences: ${formatDate(new Date(fourWorkingDaysBeforeRelease))}
+                - Final release tag: ${formatDate(new Date(oneWorkingDayBeforeRelease))}
+                - Release: ${formatDate(new Date(releaseDateTime))}`,
+                slackAnnounceChannel
             )
         },
     },
@@ -266,7 +255,7 @@ Key dates:
         },
     },
     {
-        id: 'release-candidate:create',
+        id: 'release:create-candidate',
         argNames: ['version'],
         run: async (_config, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
@@ -287,7 +276,7 @@ Key dates:
         },
     },
     {
-        id: 'patch:issue',
+        id: 'tracking:patch-issue',
         run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
@@ -308,7 +297,7 @@ Key dates:
                 return
             }
 
-            // - Announce issue if issue does not already exist
+            // Announce issue if issue does not already exist
             await postMessage(
                 `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
                 slackAnnounceChannel
