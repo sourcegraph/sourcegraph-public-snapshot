@@ -2,7 +2,9 @@ package codeintel
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -19,6 +21,7 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -44,8 +47,10 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	codeIntelDB := mustInitializeCodeIntelDatabase()
+
 	store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-	bundleManagerClient := bundles.New(bundleManagerURL)
+	bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL)
 	commitUpdater := commits.NewUpdater(store, codeintelgitserver.DefaultClient)
 	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, commitUpdater), observationContext)
 	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
@@ -73,4 +78,24 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 
 	enterpriseServices.NewCodeIntelInternalProxyHandler = h
 	return nil
+}
+
+func mustInitializeCodeIntelDatabase() *sql.DB {
+	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	conf.Watch(func() {
+		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+		}
+	})
+
+	db, err := dbconn.New(postgresDSN, "_codeintel")
+	if err != nil {
+		log.Fatalf("failed to connect to codeintel database: %s", err)
+	}
+
+	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+		log.Fatalf("failed to perform codeintel database migration: %s", err)
+	}
+
+	return db
 }
