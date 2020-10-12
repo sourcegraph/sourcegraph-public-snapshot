@@ -179,11 +179,6 @@ const Options: React.FunctionComponent = () => {
         }
     }
 
-    /**
-     * TODO(tj): Finish permissions logic, then implement private repo logic
-     * - Observe permissions (browser.permissions.onAdded), set currentTabStatus in subscription
-     */
-
     return (
         <OptionsPage
             isFullPage={isFullPage}

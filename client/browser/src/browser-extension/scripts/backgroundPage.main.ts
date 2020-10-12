@@ -202,16 +202,19 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        notifyPrivateRepository(isPrivateRepository: boolean, sender: browser.runtime.MessageSender): void {
+        async notifyPrivateRepository(
+            isPrivateRepository: boolean,
+            sender: browser.runtime.MessageSender
+        ): Promise<void> {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                console.log('Receiving notiftPrivateRepository')
                 tabPrivateRepositoryCache.set(tabId, isPrivateRepository)
             }
+            return Promise.resolve()
         },
 
-        checkPrivateRepository(tabId: number): boolean {
-            return !!tabPrivateRepositoryCache.get(tabId)
+        async checkPrivateRepository(tabId: number): Promise<boolean> {
+            return Promise.resolve(!!tabPrivateRepositoryCache.get(tabId))
         },
     }
 

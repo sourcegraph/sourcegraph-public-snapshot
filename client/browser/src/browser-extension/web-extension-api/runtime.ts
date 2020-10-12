@@ -20,4 +20,6 @@ export const background: BackgroundMessageHandlers = {
     createBlobURL: messageSender('createBlobURL'),
     openOptionsPage: messageSender('openOptionsPage'),
     requestGraphQL: messageSender('requestGraphQL'),
+    notifyPrivateRepository: messageSender('notifyPrivateRepository'),
+    checkPrivateRepository: messageSender('checkPrivateRepository'),
 }
