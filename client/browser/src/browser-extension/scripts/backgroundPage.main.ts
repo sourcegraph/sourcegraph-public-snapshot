@@ -19,7 +19,7 @@ import {
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
-import { BackgroundMessageHandlers } from '../web-extension-api/types'
+import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { initSentry } from '../../shared/sentry'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
         }
     })
 
-    const handlers: BackgroundMessageHandlers = {
+    const handlers: BackgroundPageApiHandlers = {
         async openOptionsPage(): Promise<void> {
             await browser.runtime.openOptionsPage()
         },
@@ -219,21 +219,19 @@ async function main(): Promise<void> {
     }
 
     // Handle calls from other scripts
-    browser.runtime.onMessage.addListener(
-        async (message: { type: keyof BackgroundMessageHandlers; payload: any }, sender) => {
-            const method = message.type
+    browser.runtime.onMessage.addListener(async (message: { type: keyof BackgroundPageApi; payload: any }, sender) => {
+        const method = message.type
 
-            if (!handlers[method]) {
-                throw new Error(`Invalid RPC call for "${method}"`)
-            }
-
-            // https://stackoverflow.com/questions/55572797/why-does-typescript-expect-never-as-function-argument-when-retrieving-the-func
-            return (handlers[method] as (
-                payload: any,
-                sender?: browser.runtime.MessageSender
-            ) => ReturnType<BackgroundMessageHandlers[typeof method]>)(message.payload, sender)
+        if (!handlers[method]) {
+            throw new Error(`Invalid RPC call for "${method}"`)
         }
-    )
+
+        // https://stackoverflow.com/questions/55572797/why-does-typescript-expect-never-as-function-argument-when-retrieving-the-func
+        return (handlers[method] as (
+            payload: any,
+            sender?: browser.runtime.MessageSender
+        ) => ReturnType<BackgroundPageApi[typeof method]>)(message.payload, sender)
+    })
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 

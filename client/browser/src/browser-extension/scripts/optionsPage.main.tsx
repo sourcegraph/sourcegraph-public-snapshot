@@ -66,10 +66,10 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!url) {
         throw new Error('Currently active tab has no URL')
     }
-    const isPrivateRepository = (await browser.runtime.sendMessage({
-        type: 'checkPrivateRepository',
-        payload: id,
-    })) as boolean
+    if (!id) {
+        throw new Error('Currently active tab has no ID')
+    }
+    const isPrivateRepository = await background.checkPrivateRepository(id)
     const { host, protocol } = new URL(url)
     const hasPermissions = await browser.permissions.contains({
         origins: [`${protocol}//${host}/*`],

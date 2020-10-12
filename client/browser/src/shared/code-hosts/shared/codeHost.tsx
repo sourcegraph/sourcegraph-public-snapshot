@@ -116,6 +116,8 @@ import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 import { noop } from 'lodash'
+import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 
 registerHighlightContributions()
 
@@ -571,6 +573,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI: boolean
+    background: Pick<BackgroundPageApi, 'notifyPrivateRepository' | 'openOptionsPage'>
 }
 
 export function handleCodeHost({
@@ -583,6 +586,7 @@ export function handleCodeHost({
     telemetryService,
     render,
     minimalUI,
+    background,
 }: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
@@ -591,11 +595,10 @@ export function handleCodeHost({
     // Notify the background page that we are on a private repository
     // This information will be used to alert the user when using Sourcegraph Cloud
     // while on a private repository.
-    // (Don't run this code in tests)
-    if (process.env.JEST_WORKER_ID === undefined) {
-        const isPrivateRepo = codeHost?.getContext?.().privateRepository
-        browser.runtime.sendMessage({ type: 'notifyPrivateRepository', payload: isPrivateRepo }).catch(noop)
-    }
+    const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
+    background.notifyPrivateRepository(isPrivateRepo).catch(error => {
+        console.error('Error notifying background page of private repository:', error)
+    })
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -705,7 +708,7 @@ export function handleCodeHost({
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
             event.preventDefault()
-            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+            await background.openOptionsPage()
         }
 
         subscriptions.add(
@@ -1138,6 +1141,7 @@ export function injectCodeIntelligenceToCodeHost(
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,
+                    background,
                 })
                 subscriptions.add(codeHostSubscription)
                 console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
