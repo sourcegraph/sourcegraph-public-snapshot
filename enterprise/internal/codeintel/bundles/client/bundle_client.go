@@ -3,8 +3,12 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
+	pkgerrors "github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	postgresreader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 )
 
 // BundleClient is the interface to the precise-code-intel-bundle-manager service scoped to a particular dump.
@@ -57,7 +61,9 @@ func (c *bundleClientImpl) ID() int {
 
 // Exists determines if the given path exists in the dump.
 func (c *bundleClientImpl) Exists(ctx context.Context, path string) (exists bool, err error) {
-	err = c.request(ctx, "exists", map[string]interface{}{"path": path}, &exists)
+	err = c.request(ctx, "exists", map[string]interface{}{"path": path}, &exists, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	return exists, err
 }
 
@@ -69,7 +75,9 @@ func (c *bundleClientImpl) Ranges(ctx context.Context, path string, startLine, e
 		"endLine":   endLine,
 	}
 
-	err = c.request(ctx, "ranges", args, &codeintelRanges)
+	err = c.request(ctx, "ranges", args, &codeintelRanges, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	return codeintelRanges, err
 }
 
@@ -81,7 +89,9 @@ func (c *bundleClientImpl) Definitions(ctx context.Context, path string, line, c
 		"character": character,
 	}
 
-	err = c.request(ctx, "definitions", args, &locations)
+	err = c.request(ctx, "definitions", args, &locations, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	c.addBundleIDToLocations(locations)
 	return locations, err
 }
@@ -94,7 +104,9 @@ func (c *bundleClientImpl) References(ctx context.Context, path string, line, ch
 		"character": character,
 	}
 
-	err = c.request(ctx, "references", args, &locations)
+	err = c.request(ctx, "references", args, &locations, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	c.addBundleIDToLocations(locations)
 	return locations, err
 }
@@ -108,7 +120,9 @@ func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, charact
 	}
 
 	var target *json.RawMessage
-	if err := c.request(ctx, "hover", args, &target); err != nil {
+	if err := c.request(ctx, "hover", args, &target, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	}); err != nil {
 		return "", Range{}, false, err
 	}
 
@@ -116,10 +130,11 @@ func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, charact
 		return "", Range{}, false, nil
 	}
 
-	payload := struct {
+	type Response struct {
 		Text  string `json:"text"`
 		Range Range  `json:"range"`
-	}{}
+	}
+	payload := Response{}
 
 	if err := json.Unmarshal(*target, &payload); err != nil {
 		return "", Range{}, false, err
@@ -140,12 +155,15 @@ func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string, skip,
 		args["take"] = take
 	}
 
-	target := struct {
+	type Response struct {
 		Diagnostics []Diagnostic `json:"diagnostics"`
 		Count       int          `json:"count"`
-	}{}
+	}
+	target := Response{}
 
-	err = c.request(ctx, "diagnostics", args, &target)
+	err = c.request(ctx, "diagnostics", args, &target, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	diagnostics = target.Diagnostics
 	count = target.Count
 	c.addBundleIDToDiagnostics(diagnostics)
@@ -162,7 +180,9 @@ func (c *bundleClientImpl) MonikersByPosition(ctx context.Context, path string, 
 		"character": character,
 	}
 
-	err = c.request(ctx, "monikersByPosition", args, &target)
+	err = c.request(ctx, "monikersByPosition", args, &target, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	return target, err
 }
 
@@ -180,12 +200,15 @@ func (c *bundleClientImpl) MonikerResults(ctx context.Context, modelType, scheme
 		args["take"] = take
 	}
 
-	target := struct {
+	type Response struct {
 		Locations []Location `json:"locations"`
 		Count     int        `json:"count"`
-	}{}
+	}
+	target := Response{}
 
-	err = c.request(ctx, "monikerResults", args, &target)
+	err = c.request(ctx, "monikerResults", args, &target, func(db database.Database) (err error) {
+		return postgresreader.ErrNoMetadata
+	})
 	locations = target.Locations
 	count = target.Count
 	c.addBundleIDToLocations(locations)
@@ -199,12 +222,28 @@ func (c *bundleClientImpl) PackageInformation(ctx context.Context, path, package
 		"packageInformationId": packageInformationID,
 	}
 
-	err = c.request(ctx, "packageInformation", args, &target)
+	err = c.request(ctx, "packageInformation", args, &target, func(db database.Database) (err error) {
+		target, _, err = db.PackageInformation(ctx, path, packageInformationID)
+		return err
+	})
 	return target, err
 }
 
-func (c *bundleClientImpl) request(ctx context.Context, path string, qs map[string]interface{}, target interface{}) error {
-	return c.base.QueryBundle(ctx, c.bundleID, path, qs, &target)
+func (c *bundleClientImpl) request(ctx context.Context, path string, qs map[string]interface{}, target interface{}, handler func(database.Database) error) error {
+	if _, err := c.store.ReadMeta(ctx); err != nil {
+		if err == postgresreader.ErrNoMetadata {
+			return c.base.QueryBundle(ctx, c.bundleID, path, qs, &target)
+		}
+
+		return err
+	}
+
+	db, err := database.OpenDatabase(ctx, fmt.Sprintf("%d", c.bundleID), c.store)
+	if err != nil {
+		return pkgerrors.Wrap(err, "database.OpenDatabase")
+	}
+
+	return handler(db)
 }
 
 func (c *bundleClientImpl) addBundleIDToLocations(locations []Location) {
