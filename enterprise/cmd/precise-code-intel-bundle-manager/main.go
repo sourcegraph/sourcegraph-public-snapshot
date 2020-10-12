@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/readers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/server"
 	sqlitereader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -79,7 +80,7 @@ func main() {
 
 	server := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
-	janitor := janitor.New(store, nil, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
+	janitor := janitor.New(store, lsifstore.New(codeIntelDB), bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
 
 	routines := []goroutine.BackgroundRoutine{
 		server,

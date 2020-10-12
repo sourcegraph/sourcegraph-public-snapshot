@@ -36,6 +36,4 @@ type Store interface {
 	WriteResultChunks(ctx context.Context, resultChunks chan IndexedResultChunkData) error
 	WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) error
 	WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) error
-
-	Clear(ctx context.Context) error
 }

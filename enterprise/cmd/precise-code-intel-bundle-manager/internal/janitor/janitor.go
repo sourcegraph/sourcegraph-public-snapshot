@@ -2,20 +2,19 @@ package janitor
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type Janitor struct {
 	store              store.Store
-	codeIntelDB        *sql.DB
+	lsifStore          lsifstore.Store
 	bundleDir          string
 	desiredPercentFree int
 	maxUploadAge       time.Duration
@@ -28,7 +27,7 @@ var _ goroutine.Handler = &Janitor{}
 
 func New(
 	store store.Store,
-	codeIntelDB *sql.DB,
+	lsifStore lsifstore.Store,
 	bundleDir string,
 	desiredPercentFree int,
 	janitorInterval time.Duration,
@@ -39,7 +38,7 @@ func New(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), janitorInterval, &Janitor{
 		store:              store,
-		codeIntelDB:        codeIntelDB,
+		lsifStore:          lsifStore,
 		bundleDir:          bundleDir,
 		desiredPercentFree: desiredPercentFree,
 		maxUploadAge:       maxUploadAge,
@@ -51,7 +50,9 @@ func New(
 
 // Handle performs a best-effort cleanup process.
 func (j *Janitor) Handle(ctx context.Context) error {
-	fmt.Printf("JANET!\n")
+	if err := j.removeOldUploadingRecords(ctx); err != nil {
+		return errors.Wrap(err, "janitor.removeOldUploadingRecords")
+	}
 
 	if err := j.removeOldUploadFiles(ctx); err != nil {
 		return errors.Wrap(err, "janitor.removeOldUploadFiles")
@@ -61,16 +62,8 @@ func (j *Janitor) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "janitor.removeOldUploadPartFiles")
 	}
 
-	if err := j.removeOrphanedUploadFiles(ctx); err != nil {
-		return errors.Wrap(err, "janitor.removeOrphanedUploadFiles")
-	}
-
 	if err := j.removeRecordsForDeletedRepositories(ctx); err != nil {
 		return errors.Wrap(err, "janitor.removeRecordsForDeletedRepositories")
-	}
-
-	if err := j.removeOldUploadingRecords(ctx); err != nil {
-		return errors.Wrap(err, "janitor.removeOldUploadingRecords")
 	}
 
 	if err := j.removeExpiredData(ctx); err != nil {

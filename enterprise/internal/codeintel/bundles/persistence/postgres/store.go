@@ -26,7 +26,7 @@ type store struct {
 
 var _ persistence.Store = &store{}
 
-func NewStore(db *sql.DB, dumpID int) persistence.Store {
+func NewStore(db dbutil.DB, dumpID int) persistence.Store {
 	return &store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		dumpID:     dumpID,
@@ -53,24 +53,6 @@ func (s *store) Done(err error) error {
 
 func (s *store) CreateTables(ctx context.Context) error {
 	return nil // no-op
-}
-
-func (s *store) Clear(ctx context.Context) (err error) {
-	tableNames := []string{
-		"lsif_data_metadata",
-		"lsif_data_documents",
-		"lsif_data_result_chunks",
-		"lsif_data_definitions",
-		"lsif_data_references",
-	}
-
-	for _, tableName := range tableNames {
-		if err := s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM "`+tableName+`" WHERE dump_id = %s`, s.dumpID)); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (s *store) Close(err error) error {
