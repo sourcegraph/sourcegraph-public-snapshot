@@ -64,6 +64,31 @@
   font-weight: bold;
 }
 
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+
+.markdown-body ul li:before {
+    content: '';
+    display: inline-block;
+    height: 1.2em;
+    width: 1em;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-image: url(campaigns/file-icon.svg);
+    margin-right: 0.5em;
+    margin-bottom: -0.29em;
+}
+
+body.theme-dark .markdown-body ul li:before {
+    filter: invert(50%);
+}
+
 </style>
 
 <p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
