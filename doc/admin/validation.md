@@ -1,7 +1,7 @@
 # Sourcegraph Instance Validation
 
 >NOTE: **Sourcegraph Instance Validation is currently experimental.** We're exploring this feature set. 
->Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph) 
+>Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
 >with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
 
 Instance validation provides a quick way to check that a Sourcegraph instance functions properly after a fresh install
