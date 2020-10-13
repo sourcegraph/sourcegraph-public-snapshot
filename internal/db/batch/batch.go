@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -61,7 +62,7 @@ func (i *BatchInserter) Flush(ctx context.Context) error {
 		// Create a query with enough placeholders to match the current batch size. This should
 		// generally be the full querySuffix string, except for the last call to Flush which
 		// may be a partial batch.
-		if _, err := i.db.ExecContext(ctx, i.makeQuery(len(batch)), batch...); err != nil {
+		if _, err := i.db.ExecContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...); err != nil {
 			return err
 		}
 	}
