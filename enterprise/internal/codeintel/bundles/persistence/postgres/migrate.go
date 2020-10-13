@@ -57,6 +57,10 @@ func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dum
 	ch <- values[0]
 	close(ch)
 
+	// There should only be one row to insert here. withBatchInserter assumes that
+	// the given inserter function can be called from multiple goroutines, so we feed
+	// the single value into a channel so that only one of the invocations will write
+	// the row to the database.
 	return withBatchInserter(ctx, to, "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, func(inserter *batch.BatchInserter) error {
 		for v := range ch {
 			if err := inserter.Insert(ctx, dumpID, v); err != nil {
