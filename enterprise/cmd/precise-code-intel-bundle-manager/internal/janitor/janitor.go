@@ -64,10 +64,10 @@ func (j *Janitor) Handle(ctx context.Context) error {
 	wg.Add(len(fns))
 
 	for _, f := range fns {
-		go func() {
+		go func(f func(ctx context.Context)) {
 			defer wg.Done()
 			f(ctx)
-		}()
+		}(f)
 	}
 
 	wg.Wait()
