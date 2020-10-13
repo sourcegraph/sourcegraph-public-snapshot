@@ -407,6 +407,10 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 
 // GetStates returns the states for the uploads with the given identifiers.
 func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
 	return scanStates(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT id, state FROM lsif_uploads
 		WHERE id IN (%s)
