@@ -47,6 +47,7 @@ add(
                     onThemePreferenceChange={onThemePreferenceChange}
                     showDotComMarketing={boolean('showDotComMarketing', true)}
                     isExtensionAlertAnimating={false}
+                    isNativeIntegrationEnabled={boolean('isNativeIntegrationEnabled', false)}
                 />
             )}
         </WebStory>

@@ -37,6 +37,7 @@ exports[`UserNavItem simple 1`] = `
       }
       isExtensionAlertAnimating={false}
       isLightTheme={true}
+      isNativeIntegrationEnabled={false}
       location="[Location path=/]"
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
