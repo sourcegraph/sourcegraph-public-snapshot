@@ -22,4 +22,3 @@ Please report any other issues and feature requests on the [Sourcegraph issue tr
 
 - The number may be overcounted because it is the sum of counts for all of the repository's subpackages. If another project uses multiple subpackages in this repository, the project is counted multiple times.
 - Importers using custom Go import paths (i.e., anything other than import paths prefixed by the repository name, such as `github.com/foo/bar`) will not be counted.
-
