@@ -469,7 +469,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
-            await new Promise(() => {})
+
             assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
 
             // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
