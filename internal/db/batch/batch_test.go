@@ -1,4 +1,4 @@
-package postgres
+package batch
 
 import (
 	"context"
@@ -8,6 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
+
+func init() {
+	dbtesting.DBNameSuffix = "batch"
+}
 
 func TestBatchInserter(t *testing.T) {
 	if testing.Short() {

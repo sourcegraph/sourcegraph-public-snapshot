@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 )
 
 // scanUploadMeta scans upload metadata grouped by commit from the return value of `*store.query`.
@@ -132,55 +133,48 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		}
 	}
 
-	n := 0
-	for _, uploads := range visibleUploads {
-		n += len(uploads)
-	}
-	nearestUploadsRows := make([]*sqlf.Query, 0, n)
-
+	nearestUploadsInserter := batch.NewBatchInserter(
+		ctx,
+		s.Store.Handle().DB(),
+		"lsif_nearest_uploads",
+		"repository_id",
+		"commit",
+		"upload_id",
+		"distance",
+		"ancestor_visible",
+		"overwritten",
+	)
 	for commit, uploads := range visibleUploads {
 		for _, uploadMeta := range uploads {
-			nearestUploadsRows = append(nearestUploadsRows, sqlf.Sprintf(
-				"(%s, %s, %s, %s, %s, %s)",
+			if err := nearestUploadsInserter.Insert(
+				ctx,
 				repositoryID,
 				commit,
 				uploadMeta.UploadID,
 				uploadMeta.Distance,
 				uploadMeta.AncestorVisible,
 				uploadMeta.Overwritten,
-			))
+			); err != nil {
+				return err
+			}
 		}
 	}
-
-	// Insert new data for this repository in batches - it's likely we'll exceed the maximum
-	// number of placeholders per query so we need to break it into several queries below this
-	// size.
-	for _, batch := range batchQueries(nearestUploadsRows, MaxPostgresNumParameters/6) {
-		if err := tx.Store.Exec(ctx, sqlf.Sprintf(
-			`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
-			sqlf.Join(batch, ","),
-		)); err != nil {
-			return err
-		}
-	}
-
-	visibleAtTipRows := make([]*sqlf.Query, 0, len(visibleUploads[tipCommit]))
-	for _, uploadMeta := range visibleUploads[tipCommit] {
-		visibleAtTipRows = append(visibleAtTipRows, sqlf.Sprintf("(%s, %s)", repositoryID, uploadMeta.UploadID))
+	if err := nearestUploadsInserter.Flush(ctx); err != nil {
+		return err
 	}
 
 	// Update which repositories are visible from the tip of the default branch. This
 	// flag is used to determine which bundles for a repository we open during a global
 	// find references query.
-	if len(visibleAtTipRows) > 0 {
-		for _, batch := range batchQueries(visibleAtTipRows, MaxPostgresNumParameters/2) {
-			if err := tx.Store.Exec(ctx, sqlf.Sprintf(
-				`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id) VALUES %s`,
-				sqlf.Join(batch, ","),
-			)); err != nil {
-				return err
-			}
+	uploadsVisibleAtTipInserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_uploads_visible_at_tip", "repository_id", "upload_id")
+
+	for _, uploadMeta := range visibleUploads[tipCommit] {
+		if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
+			return err
 		}
+	}
+	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+		return err
 	}
 
 	if dirtyToken != 0 {
@@ -198,26 +192,4 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	}
 
 	return nil
-}
-
-// MaxPostgresNumParameters is the maximum number of parameters per query that Postgres
-// will allow. Exceeding this number of parameters will cause the query to be rejected
-// by the server.
-const MaxPostgresNumParameters = 65535
-
-// batchQueries cuts the given query slice into batches of a maximum size. This function
-// will allocate only the outer array to hold each batch, and the data for each batch
-// will refer to the given slice.
-func batchQueries(queries []*sqlf.Query, batchSize int) (batches [][]*sqlf.Query) {
-	for len(queries) > 0 {
-		if len(queries) > batchSize {
-			batches = append(batches, queries[:batchSize])
-			queries = queries[batchSize:]
-		} else {
-			batches = append(batches, queries)
-			queries = nil
-		}
-	}
-
-	return batches
 }
