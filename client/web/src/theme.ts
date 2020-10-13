@@ -14,5 +14,5 @@ export enum ThemePreference {
  */
 export interface ThemePreferenceProps {
     themePreference: ThemePreference
-    onThemePreferenceChange: (theme: ThemePreference) => void
+    onThemePreferenceChange: (theme: ThemePreference | ((previous: ThemePreference) => ThemePreference)) => void
 }

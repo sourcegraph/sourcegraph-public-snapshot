@@ -58,16 +58,15 @@ export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
-    const {
-        location,
-        themePreference,
-        onThemePreferenceChange,
-        isExtensionAlertAnimating,
-        testIsOpen,
-        codeHostIntegrationMessaging,
-    } = props
-
+export const UserNavItem: React.FunctionComponent<UserNavItemProps> = ({
+    location,
+    themePreference,
+    onThemePreferenceChange,
+    isExtensionAlertAnimating,
+    testIsOpen,
+    codeHostIntegrationMessaging,
+    ...props
+}) => {
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
         []
@@ -151,7 +150,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <select
                             className="custom-select custom-select-sm test-theme-toggle"
                             onChange={onThemeChange}
-                            value={props.themePreference}
+                            value={themePreference}
                         >
                             <option value={ThemePreference.Light}>Light</option>
                             <option value={ThemePreference.Dark}>Dark</option>
@@ -159,7 +158,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                             <option value={ThemePreference.System}>System</option>
                         </select>
                     </div>
-                    {props.themePreference === ThemePreference.System && !supportsSystemTheme && (
+                    {themePreference === ThemePreference.System && !supportsSystemTheme && (
                         <div className="text-wrap">
                             <small>
                                 <a
