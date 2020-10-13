@@ -39,8 +39,8 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
 
     return (
         <>
-            <div className="d-flex flex-wrap justify-content-between align-items-center mb-2 test-campaigns-spec">
-                <p className="m-0 campaign-spec-tab__header-col">
+            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-campaigns-spec">
+                <p className="mb-2 campaign-spec-tab__header-col">
                     {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
                     {createdAt === lastAppliedAt ? 'created' : 'updated'} this campaign{' '}
                     <Timestamp date={lastAppliedAt} /> by applying the following campaign spec:
