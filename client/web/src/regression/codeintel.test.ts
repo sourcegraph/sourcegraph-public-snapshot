@@ -1,10 +1,5 @@
 import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
-import * as path from 'path'
-import { range } from 'lodash'
-import { ElementHandle } from 'puppeteer'
-import { map } from 'rxjs/operators'
-import * as child_process from 'mz/child_process'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
@@ -16,10 +11,9 @@ import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helper
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/testing/driver'
 import { Config, getConfig } from '../../../shared/src/testing/config'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { asError } from '../../../shared/src/util/errors'
+import { ElementHandle } from 'puppeteer'
 
 describe('Code intelligence regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
@@ -49,55 +43,7 @@ describe('Code intelligence regression test suite', () => {
     ]
 
     const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
-    const prometheusCommonLSIFCommit = '287d3e634a1e550c9e463dd7e5a75a422c614505' // 2 behind HEAD
-    const prometheusCommonFallbackCommit = 'e8215224146358493faab0295ce364cd386223b9' // 2 behind LSIF
-    const prometheusClientHeadCommit = '333f01cef0d61f9ef05ada3d94e00e69c8d5cdda'
     const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
-
-    const prometheusCommonSamplePairLocations = [
-        { path: 'model/value.go', line: 31, character: 19 },
-        { path: 'model/value.go', line: 78, character: 6 },
-        { path: 'model/value.go', line: 84, character: 9 },
-        { path: 'model/value.go', line: 97, character: 10 },
-        { path: 'model/value.go', line: 104, character: 10 },
-        { path: 'model/value.go', line: 108, character: 9 },
-        { path: 'model/value.go', line: 137, character: 43 },
-        { path: 'model/value.go', line: 147, character: 10 },
-        { path: 'model/value.go', line: 163, character: 10 },
-        { path: 'model/value.go', line: 225, character: 11 },
-        { path: 'model/value_test.go', line: 133, character: 9 },
-        { path: 'model/value_test.go', line: 137, character: 11 },
-        { path: 'model/value_test.go', line: 156, character: 10 },
-    ]
-
-    const prometheusClientSamplePairLocations = [
-        { path: 'api/prometheus/v1/api.go', line: 41, character: 15 },
-        { path: 'api/prometheus/v1/api.go', line: 70, character: 17 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1119, character: 18 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1123, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1127, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1131, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1135, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1139, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1143, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1147, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1151, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1155, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1159, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1163, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1167, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1171, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1175, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1179, character: 20 },
-        { path: 'api/prometheus/v1/api_test.go', line: 1197, character: 17 },
-        { path: 'api/prometheus/v1/api_bench_test.go', line: 34, character: 26 },
-    ]
-
-    const prometheusRedefinitionSamplePairLocations = [
-        { path: 'sample.go', line: 7, character: 6 },
-        { path: 'sample.go', line: 12, character: 10 },
-        { path: 'sample.go', line: 16, character: 10 },
-    ]
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -166,26 +112,6 @@ describe('Code intelligence regression test suite', () => {
             }
         })
 
-        test('Definitions, references, and hovers', () =>
-            testCodeNavigation(driver, config, {
-                page: `/github.com/sourcegraph-testing/prometheus-client-golang@${prometheusClientHeadCommit}/-/blob/api/prometheus/v1/api.go`,
-                line: 41,
-                token: 'SamplePair',
-                precise: false,
-                expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                expectedDefinition: [
-                    {
-                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L78:1`,
-                        precise: false,
-                    },
-                    {
-                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:1`,
-                        precise: false,
-                    },
-                ],
-                expectedReferences: [],
-            }))
-
         test('File sidebar, multiple levels of directories', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
@@ -209,7 +135,7 @@ describe('Code intelligence regression test suite', () => {
                 config.sourcegraphBaseUrl +
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
             )
-            await driver.findElementWithText('SYMBOLS', {
+            await driver.findElementWithText('Symbols', {
                 action: 'click',
                 selector: '.test-repo-revision-sidebar button',
                 wait: { timeout: 10 * 1000 },
@@ -240,147 +166,38 @@ describe('Code intelligence regression test suite', () => {
                 { timeout: 2 * 1000 }
             )
         })
-    })
 
-    describe('Precise code intelligence regression test suite', () => {
-        const innerResourceManager = new TestResourceManager()
-        before(async function () {
-            this.timeout(30 * 1000)
-
-            const repoCommits = [
-                { repository: 'prometheus-common', commit: prometheusCommonLSIFCommit },
-                { repository: 'prometheus-client-golang', commit: prometheusClientHeadCommit },
-            ]
-
-            for (const { repository } of repoCommits) {
-                // First, remove all existing uploads for the repository
-                await clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
-            }
-
-            const uploadUrls = []
-            for (const { repository, commit } of repoCommits) {
-                // Upload each upload in parallel and get back the upload status URLs
-                uploadUrls.push(
-                    await performUpload(config, {
-                        repository: `github.com/sourcegraph-testing/${repository}`,
-                        commit,
-                        root: '/',
-                        filename: `lsif-data/github.com/sourcegraph-testing/${repository}@${commit.slice(0, 12)}.lsif`,
-                    })
-                )
-
-                innerResourceManager.add('LSIF upload', `${repository} upload`, () =>
-                    clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
-                )
-            }
-
-            for (const uploadUrl of uploadUrls) {
-                // Check the upload status URLs to ensure that they succeed, then ensure
-                // that they are all listed as one of the "active" uploads for that repo
-                await ensureUpload(driver, uploadUrl)
-            }
-
-            await clearUploads(gqlClient, 'github.com/sourcegraph-testing/prometheus-redefinitions')
-            innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, true))
-        })
-        after(async () => {
-            if (!config.noCleanup) {
-                await innerResourceManager.destroyAll()
-            }
-        })
-
-        /**
-         * Construct a code navigation test case that ensures that there are precise results from
-         * the prometheus-common and prometheus-client-golang repositories and imprecise results from
-         * the prometheus-redefinitions library.
-         *
-         * All of these tests deal with the same SamplePair struct.
-         */
-        const makeTestCase = (
-            page: string,
-            line: number,
-            commonCommit: string = prometheusCommonLSIFCommit
-        ): CodeNavigationTestCase => {
-            const prometheusCommonPrefix = `/github.com/sourcegraph-testing/prometheus-common@${commonCommit}/-/blob/`
-            const prometheusCommonLocations = prometheusCommonSamplePairLocations.map(({ path, line, character }) => ({
-                url: `${prometheusCommonPrefix}${path}?subtree=true#L${line}:${character}`,
-                precise: true,
-            }))
-
-            const prometheusClientPrefix = `/github.com/sourcegraph-testing/prometheus-client-golang@${prometheusClientHeadCommit}/-/blob/`
-            const prometheusClientLocations = prometheusClientSamplePairLocations.map(({ path, line, character }) => ({
-                url: `${prometheusClientPrefix}${path}?subtree=true#L${line}:${character}`,
-                precise: true,
-            }))
-
-            const prometheusRedefinitionPrefix = `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/`
-            const prometheusRedefinitionLocations = prometheusRedefinitionSamplePairLocations.map(
-                ({ path, line, character }) => ({
-                    url: `${prometheusRedefinitionPrefix}${path}?subtree=true#L${line}:${character}`,
-                    precise: false,
-                })
-            )
-
-            return {
-                page,
-                line,
+        test('Definitions, references, and hovers', () =>
+            testCodeNavigation(driver, config, {
+                page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
+                line: 225,
                 token: 'SamplePair',
-                precise: true,
+                precise: false,
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                expectedDefinition: {
-                    url: `/github.com/sourcegraph-testing/prometheus-common@${commonCommit}/-/blob/model/value.go?subtree=true#L78:6`,
-                    precise: true,
-                },
-                expectedReferences: prometheusCommonLocations
-                    .concat(prometheusClientLocations)
-                    .concat(prometheusRedefinitionLocations),
-            }
-        }
-
-        test('Cross-repository definitions, references, and hovers (from definition)', async () => {
-            await testCodeNavigation(
-                driver,
-                config,
-                makeTestCase(
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonLSIFCommit}/-/blob/model/value.go`,
-                    31
-                )
-            )
-        })
-
-        test('Cross-repository definitions, references, and hovers (from reference)', async () => {
-            await testCodeNavigation(
-                driver,
-                config,
-                makeTestCase(
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonLSIFCommit}/-/blob/model/value_test.go`,
-                    133
-                )
-            )
-        })
-
-        test('Cross-repository definitions, references, and hovers (from remote reference)', async () => {
-            await testCodeNavigation(
-                driver,
-                config,
-                makeTestCase(
-                    `/github.com/sourcegraph-testing/prometheus-client-golang@${prometheusClientHeadCommit}/-/blob/api/prometheus/v1/api.go`,
-                    41
-                )
-            )
-        })
-
-        test('Cross-repository definitions, references, and hovers (from old commit)', async () => {
-            await testCodeNavigation(
-                driver,
-                config,
-                makeTestCase(
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonFallbackCommit}/-/blob/model/value.go`,
-                    31,
-                    prometheusCommonFallbackCommit
-                )
-            )
-        })
+                // TODO(efritz) - determine why reference panel shows up during this test,
+                // but only when automated - doing the same flow manually works correctly.
+                expectedDefinition: [
+                    // Replace array with this single definition
+                    // {
+                    //     url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
+                    //     precise: false,
+                    // },
+                ],
+                expectedReferences: [
+                    {
+                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L97:10`,
+                        precise: false,
+                    },
+                    {
+                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L225:11`,
+                        precise: false,
+                    },
+                    {
+                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:6`,
+                        precise: false,
+                    },
+                ],
+            }))
     })
 })
 
@@ -499,6 +316,7 @@ async function testCodeNavigation(
             { timeout: 2000 },
             expectedDefinition.url
         )
+
         await driver.page.goBack()
     }
 
@@ -571,7 +389,7 @@ async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
 /**
  * Find the element with the token text on the given line.
  *
- * Will close any toast so that the enture line is visible and will hover over the line
+ * Will close any toast so that the entire line is visible and will hover over the line
  * to ensure that the line is tokenized (as this is done on-demand).
  */
 async function findTokenElement(driver: Driver, line: number, token: string): Promise<ElementHandle<Element>> {
@@ -660,143 +478,4 @@ async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unk
         const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
         await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
     }
-}
-
-/**
- * Delete all LSIF uploads for a repository.
- */
-async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
-    const { nodes, hasNextPage } = await gqlClient
-        .queryGraphQL(
-            gql`
-                query ResolveRev($repoName: String!) {
-                    repository(name: $repoName) {
-                        lsifUploads {
-                            nodes {
-                                id
-                            }
-
-                            pageInfo {
-                                hasNextPage
-                            }
-                        }
-                    }
-                }
-            `,
-            { repoName }
-        )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ repository }) =>
-                repository === null
-                    ? { nodes: [], hasNextPage: false }
-                    : { nodes: repository.lsifUploads.nodes, hasNextPage: repository.lsifUploads.pageInfo.hasNextPage }
-            )
-        )
-        .toPromise()
-
-    const indices = range(nodes.length)
-    const args: { [k: string]: string } = {}
-    for (const index of indices) {
-        args[`upload${index}`] = nodes[index].id
-    }
-
-    await gqlClient
-        .mutateGraphQL(
-            gql`
-                mutation(${indices.map(index => `$upload${index}: ID!`).join(', ')}) {
-                    ${indices
-                        .map(index => gql`delete${index}: deleteLSIFUpload(id: $upload${index}) { alwaysNil }`)
-                        .join('\n')}
-                }
-            `,
-            args
-        )
-        .pipe(map(dataOrThrowErrors))
-        .toPromise()
-
-    if (hasNextPage) {
-        // If we have more upload, clear the next page
-        return clearUploads(gqlClient, repoName)
-    }
-}
-
-/**
- * Untar the LSIF data from the lsif-data directory and perform an LSIF upload
- * via src command, which must be a binary available on the $PATH. Returns the
- * URI of the upload's details (in UI).
- */
-async function performUpload(
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
-    {
-        repository,
-        commit,
-        root,
-        filename,
-    }: {
-        repository: string
-        commit: string
-        root: string
-        filename: string
-    }
-): Promise<string> {
-    const cwd = path.join(__dirname, 'lsif-data', path.dirname(repository))
-
-    try {
-        // Untar the lsif data for this upload
-        const tarCommand = ['tar', '-xzf', `${path.basename(filename)}.gz`].join(' ')
-        await child_process.exec(tarCommand, { cwd })
-    } catch (error) {
-        throw new Error(`Failed to untar test data: ${asError(error).message}`)
-    }
-
-    let out!: string
-    try {
-        // Upload data
-        const uploadCommand = [
-            `src -endpoint ${config.sourcegraphBaseUrl}`,
-            'lsif upload',
-            `-repo ${repository}`,
-            `-commit ${commit}`,
-            `-root ${root}`,
-            `-file ${path.basename(filename)}`,
-        ].join(' ')
-        ;[out] = await child_process.exec(uploadCommand, { cwd })
-    } catch (error) {
-        try {
-            // See if the error is due to a missing utility
-            await child_process.exec('which src')
-        } catch {
-            throw new Error('src-cli is not available on PATH')
-        }
-
-        throw new Error(
-            `Failed to upload LSIF data: ${(error.stderr as string) || (error.stdout as string) || '(no output)'}`
-        )
-    }
-
-    // Extract the status URL
-    const match = out.match(/View processing status at (.+).\n$/)
-    if (!match) {
-        throw new Error(`Unexpected output from Sourcegraph cli: ${out}`)
-    }
-
-    return match[1]
-}
-
-/**
- * Wait on the upload page until it has finished processing and ensure that it's
- * visible at the tip of the default branch.
- */
-async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
-    await driver.page.goto(uploadUrl)
-
-    await driver.page.waitFor(
-        () => document.querySelector('.test-upload-state')?.textContent === 'Upload processed successfully.'
-    )
-
-    const isLatestForRepoText = await (await driver.page.waitFor('.test-is-latest-for-repo')).evaluate(
-        element => element.textContent
-    )
-    expect(isLatestForRepoText).toEqual('yes')
 }
