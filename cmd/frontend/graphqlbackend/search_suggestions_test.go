@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"go.uber.org/atomic"
 )
 
 func TestSearchSuggestions(t *testing.T) {
@@ -101,9 +102,9 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer git.ResetMocks()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
@@ -121,7 +122,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposListFoo {
 				t.Error("!calledReposListFoo")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
@@ -158,11 +159,11 @@ func TestSearchSuggestions(t *testing.T) {
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			if args.PatternInfo.Pattern != "." && args.PatternInfo.Pattern != "foo" {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
@@ -201,7 +202,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposListFooRepo3 {
 				t.Error("!calledReposListFooRepo3")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 			if !calledResolveRepoGroups {
@@ -239,11 +240,11 @@ func TestSearchSuggestions(t *testing.T) {
 		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowLangSuggestions = nil }()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			repos, err := getRepos(context.Background(), args.RepoPromise)
 			if err != nil {
 				t.Error(err)
@@ -262,7 +263,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposList {
 				t.Error("!calledReposList")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
@@ -349,11 +350,11 @@ func TestSearchSuggestions(t *testing.T) {
 		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowLangSuggestions = nil }()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			repos, err := getRepos(context.Background(), args.RepoPromise)
 			if err != nil {
 				t.Error(err)
@@ -372,7 +373,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposList {
 				t.Error("!calledReposList")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
