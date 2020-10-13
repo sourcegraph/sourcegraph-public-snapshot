@@ -104,7 +104,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
@@ -163,7 +163,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			if args.PatternInfo.Pattern != "." && args.PatternInfo.Pattern != "foo" {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
@@ -244,7 +244,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			repos, err := getRepos(context.Background(), args.RepoPromise)
 			if err != nil {
 				t.Error(err)
@@ -354,7 +354,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			repos, err := getRepos(context.Background(), args.RepoPromise)
 			if err != nil {
 				t.Error(err)
