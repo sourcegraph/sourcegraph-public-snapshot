@@ -81,7 +81,7 @@ func initDefaultEncryptor() error {
 	}
 
 	defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
-	log15.Info("Encryption initialized")
+	log15.Info("Database secrets encryption initialized")
 	return nil
 }
 
