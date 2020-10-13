@@ -12,8 +12,8 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 - [Usage](user/index.md)
   - [Tour](user/tour.md)
-  - [Code intelligence](user/code_intelligence/index.md)
   - [Code search](user/search/index.md)
+  - [Code intelligence](user/code_intelligence/index.md)
   - [Campaigns](user/campaigns/index.md)
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
