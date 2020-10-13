@@ -493,7 +493,7 @@ describe('Repository', () => {
             assert.strictEqual(blobContent, `content for: ${filePath}`)
         })
 
-        it.only('works with spaces in the repository name', async () => {
+        it('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
             const repositorySourcegraphUrl = `/github.com/${shortRepositoryName}`
 
