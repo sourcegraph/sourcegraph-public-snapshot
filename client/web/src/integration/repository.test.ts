@@ -417,7 +417,7 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(`/${repoName}`),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
                         `https://${repoName}/blob/${revision}/${filePath.split('/').map(encodeURIComponent).join('/')}`
@@ -469,6 +469,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
+            await new Promise(() => {})
             assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
 
             // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
@@ -491,6 +492,53 @@ describe('Repository', () => {
 
             const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
             assert.strictEqual(blobContent, `content for: ${filePath}`)
+        })
+
+        it('works with repos with spaces in the name', async () => {
+            const shortRepositoryName = 'the author/repo name'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${repositoryName}`
+            const fileName = 'file with spaces.ts'
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+                FileExternalLinks: ({ filePath, repoName, revision }) =>
+                    createFileExternalLinksResult(
+                        `https://${repoName}/blob/${revision}/${filePath.split('/').map(encodeURIComponent).join('/')}`
+                    ),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, [fileName]),
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
+            await driver.page.waitForSelector('.test-tree-file-link')
+            assert.strictEqual(
+                await driver.page.evaluate(() => document.querySelector('.test-tree-file-link')?.textContent),
+                fileName
+            )
+
+            // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
+            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
+
+            await driver.page.waitForSelector('.test-repo-blob')
+
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', fileName])
+
+            const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
+            assert.strictEqual(blobContent, `content for: ${fileName}`)
         })
     })
 })

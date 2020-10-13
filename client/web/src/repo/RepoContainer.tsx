@@ -447,25 +447,35 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         '/-/blob',
                         '/-/tree',
                         '/-/commits',
-                    ].map(routePath => (
-                        <Route
-                            path={`${repoMatchURL}${routePath}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={routePath === ''}
-                            render={routeComponentProps => (
-                                <RepoRevisionContainer
-                                    {...routeComponentProps}
-                                    {...context}
-                                    {...childBreadcrumbSetters}
-                                    routes={props.repoRevisionContainerRoutes}
-                                    revision={revision || ''}
-                                    resolvedRevisionOrError={resolvedRevisionOrError}
-                                    // must exactly match how the revision was encoded in the URL
-                                    routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                />
-                            )}
-                        />
-                    ))}
+                    ].map(routePath => {
+                        // Match encoded URLs for repos with spaces since browsers automatically encode URLs,
+                        // and React Router no longer automatically decodes URLs
+                        const matchablePaths = [`${repoMatchURL}${routePath}`, `${encodeURI(repoMatchURL)}${routePath}`]
+                        return (
+                            <Route
+                                path={matchablePaths}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={routePath === ''}
+                                render={routeComponentProps => (
+                                    <RepoRevisionContainer
+                                        {...routeComponentProps}
+                                        {...context}
+                                        {...childBreadcrumbSetters}
+                                        routes={props.repoRevisionContainerRoutes}
+                                        revision={revision || ''}
+                                        resolvedRevisionOrError={resolvedRevisionOrError}
+                                        // must exactly match how the revision was encoded in the URL. The first `matchablePath` is unencoded.
+                                        routePrefix={
+                                            routeComponentProps.match.path === matchablePaths[0]
+                                                ? `${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`
+                                                : `${encodeURI(repoMatchURL)}${rawRevision ? `@${rawRevision}` : ''}`
+                                        }
+                                    />
+                                )}
+                            />
+                        )
+                    })}
+
                     {props.repoContainerRoutes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(context) && (
