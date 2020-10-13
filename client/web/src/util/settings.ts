@@ -64,7 +64,7 @@ export function experimentalFeaturesFromSettings(
         copyQueryButton = false,
         searchStreaming = false,
         showRepogroupHomepage = false,
-        showOnboardingTour = false,
+        showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
     } = experimentalFeatures
