@@ -109,7 +109,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         className={classNames(deriveInputClassName(urlState))}
                     >
                         <input
-                            className="form-control"
+                            className={classNames('form-control', deriveInputClassName(urlState))}
                             id="sourcegraph-url"
                             type="url"
                             pattern="^https://.*"
