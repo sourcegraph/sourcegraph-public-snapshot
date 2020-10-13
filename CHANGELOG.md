@@ -15,6 +15,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - The `published` flag in campaign specs may now be an array, which allows only specific changesets within a campaign to be published based on the repository name. [#294](https://github.com/sourcegraph/src-cli/pull/294)
 - A new `src campaign new` command creates a campaign spec YAML file with common values prefilled to make it easier to create a new campaign. [#339](https://github.com/sourcegraph/src-cli/pull/339)
+- New experimental command [`src validate`](https://docs.sourcegraph.com/admin/validation) validates a Sourcegraph installation. [#200](https://github.com/sourcegraph/src-cli/pull/200)
 
 ### Changed
 
