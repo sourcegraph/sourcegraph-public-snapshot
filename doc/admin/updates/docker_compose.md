@@ -9,11 +9,15 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-## 3.20.1 -> 3.21.0
+## 3.20 -> 3.21
 
 Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.21.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database  as described in the [external database documentation](../external_database.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+
+### If you wish to keep existing LSIF data
+
+> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
 
 If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
@@ -23,8 +27,7 @@ If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a backgroun
 
 ```sh
 docker exec -it precise-code-intel-bundle-manager sh -c 'rm -rf /lsif-storage/db-backups'
-
-> Warning: In order to ensure there is no data loss, **do not upgrade out of the 3.21.x release branch** until you have seen this log message, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty.
+```
 
 ## 3.19.2 -> 3.20.1
 
