@@ -96,6 +96,8 @@
 // 1528395730_lsif_index_log_contents.up.sql (72B)
 // 1528395731_add_nearest_upload_direction.down.sql (138B)
 // 1528395731_add_nearest_upload_direction.up.sql (510B)
+// 1528395732_add_external_services_sync_jobs_state_index.down.sql (76B)
+// 1528395732_add_external_services_sync_jobs_state_index.up.sql (120B)
 
 package migrations
 
@@ -2084,6 +2086,46 @@ func _1528395731_add_nearest_upload_directionUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395732_add_external_services_sync_jobs_state_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xae\xcc\x4b\x8e\xcf\xca\x4f\x2a\x8e\x2f\x2e\x49\x2c\x49\x8d\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x67\x6a\xe0\x8d\x4c\x00\x00\x00")
+
+func _1528395732_add_external_services_sync_jobs_state_indexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395732_add_external_services_sync_jobs_state_indexDownSql,
+		"1528395732_add_external_services_sync_jobs_state_index.down.sql",
+	)
+}
+
+func _1528395732_add_external_services_sync_jobs_state_indexDownSql() (*asset, error) {
+	bytes, err := _1528395732_add_external_services_sync_jobs_state_indexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395732_add_external_services_sync_jobs_state_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x77, 0xbe, 0x1f, 0x9e, 0xd6, 0x2f, 0x8d, 0x80, 0x5b, 0x27, 0x5, 0x54, 0x34, 0xdd, 0xa2, 0xe7, 0x12, 0x1, 0x29, 0xbd, 0x2c, 0x7a, 0xff, 0x36, 0x14, 0x0, 0xf9, 0xf3, 0x84, 0x16, 0x4b, 0xcc}}
+	return a, nil
+}
+
+var __1528395732_add_external_services_sync_jobs_state_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xae\xcc\x4b\x8e\xcf\xca\x4f\x2a\x8e\x2f\x2e\x49\x2c\x49\x8d\xcf\x4c\xa9\x50\xf0\xf7\xc3\xa3\x4e\x41\x03\xac\x50\x13\x64\x8f\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x09\x1d\xe1\xc0\x78\x00\x00\x00")
+
+func _1528395732_add_external_services_sync_jobs_state_indexUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395732_add_external_services_sync_jobs_state_indexUpSql,
+		"1528395732_add_external_services_sync_jobs_state_index.up.sql",
+	)
+}
+
+func _1528395732_add_external_services_sync_jobs_state_indexUpSql() (*asset, error) {
+	bytes, err := _1528395732_add_external_services_sync_jobs_state_indexUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395732_add_external_services_sync_jobs_state_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa0, 0x23, 0xe4, 0xbb, 0x3d, 0xb6, 0x5b, 0xce, 0x7c, 0x96, 0x4b, 0xc, 0x3f, 0x38, 0x13, 0x32, 0x91, 0x10, 0x4, 0xa8, 0x4c, 0xb3, 0x97, 0x3e, 0xc2, 0x40, 0xb1, 0xaf, 0xe7, 0xfb, 0xc8, 0x50}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2271,6 +2313,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395730_lsif_index_log_contents.up.sql":                                    _1528395730_lsif_index_log_contentsUpSql,
 	"1528395731_add_nearest_upload_direction.down.sql":                             _1528395731_add_nearest_upload_directionDownSql,
 	"1528395731_add_nearest_upload_direction.up.sql":                               _1528395731_add_nearest_upload_directionUpSql,
+	"1528395732_add_external_services_sync_jobs_state_index.down.sql":              _1528395732_add_external_services_sync_jobs_state_indexDownSql,
+	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                _1528395732_add_external_services_sync_jobs_state_indexUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2413,6 +2457,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395730_lsif_index_log_contents.up.sql":                                    {_1528395730_lsif_index_log_contentsUpSql, map[string]*bintree{}},
 	"1528395731_add_nearest_upload_direction.down.sql":                             {_1528395731_add_nearest_upload_directionDownSql, map[string]*bintree{}},
 	"1528395731_add_nearest_upload_direction.up.sql":                               {_1528395731_add_nearest_upload_directionUpSql, map[string]*bintree{}},
+	"1528395732_add_external_services_sync_jobs_state_index.down.sql":              {_1528395732_add_external_services_sync_jobs_state_indexDownSql, map[string]*bintree{}},
+	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                {_1528395732_add_external_services_sync_jobs_state_indexUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
