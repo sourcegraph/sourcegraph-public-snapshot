@@ -180,7 +180,6 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 		pipeline.AddStep(":chains:",
 			bk.Cmd("pushd enterprise"),
 			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Cmd("./cmd/server/build.sh"),
 			bk.Cmd("popd"),
 			bk.Cmd("./dev/ci/backend-integration.sh"),
 			bk.Cmd(`docker image rm -f "$IMAGE"`),
