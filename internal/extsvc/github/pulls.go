@@ -519,11 +519,11 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
 
-	if ti.PageInfo.HasNextPage {
-		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
-			return nil, err
-		}
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return nil, err
 	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return pr, nil
 }
@@ -579,11 +579,11 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
 
-	if ti.PageInfo.HasNextPage {
-		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
-			return nil, err
-		}
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return nil, err
 	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return pr, nil
 }
@@ -623,11 +623,11 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
 
-	if ti.PageInfo.HasNextPage {
-		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
-			return err
-		}
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
 	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -667,11 +667,11 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ReopenPullRequest.PullRequest.Participants.Nodes
 
-	if ti.PageInfo.HasNextPage {
-		if err := c.loadRemainingTimelineItems(ctx, pr, ti.PageInfo.EndCursor); err != nil {
-			return err
-		}
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
 	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -755,11 +755,11 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 		for prLabel, pr := range prs {
 			pr.PullRequest.Participants = pr.Participants.Nodes
 			pr.PullRequest.TimelineItems = pr.TimelineItems.Nodes
-			if pr.TimelineItems.PageInfo.HasNextPage {
-				if err := c.loadRemainingTimelineItems(ctx, &pr.PullRequest, pr.TimelineItems.PageInfo.EndCursor); err != nil {
-					return err
-				}
+			items, err := c.loadRemainingTimelineItems(ctx, pr.ID, pr.TimelineItems.PageInfo)
+			if err != nil {
+				return err
 			}
+			pr.PullRequest.TimelineItems = append(pr.PullRequest.TimelineItems, items...)
 			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
 		}
 	}
@@ -806,17 +806,18 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	pr.Participants = node.Participants.Nodes
 	pr.TimelineItems = node.TimelineItems.Nodes
 
-	if node.TimelineItems.PageInfo.HasNextPage {
-		if err := c.loadRemainingTimelineItems(ctx, &pr, node.TimelineItems.PageInfo.EndCursor); err != nil {
-			return nil, err
-		}
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, node.TimelineItems.PageInfo)
+	if err != nil {
+		return nil, err
 	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return &pr, nil
 }
 
-func (c *Client) loadRemainingTimelineItems(ctx context.Context, pr *PullRequest, afterCursor string) error {
-	for {
+func (c *Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
+	pi := pageInfo
+	for pi.HasNextPage {
 		var q strings.Builder
 		q.WriteString(prCommonFragments)
 		q.WriteString(timelineItemsFragment)
@@ -837,7 +838,7 @@ func (c *Client) loadRemainingTimelineItems(ctx context.Context, pr *PullRequest
     }
   }
 }
-`, pr.ID, afterCursor))
+`, prID, pi.EndCursor))
 
 		var results struct {
 			Node struct {
@@ -846,22 +847,22 @@ func (c *Client) loadRemainingTimelineItems(ctx context.Context, pr *PullRequest
 			}
 		}
 
-		err := c.requestGraphQL(ctx, q.String(), nil, &results)
+		err = c.requestGraphQL(ctx, q.String(), nil, &results)
 		if err != nil {
-			return err
+			return
 		}
 
 		if results.Node.TypeName != "PullRequest" {
-			return fmt.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
+			return nil, fmt.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
 		}
 
-		pr.TimelineItems = append(pr.TimelineItems, results.Node.TimelineItems.Nodes...)
+		items = append(items, results.Node.TimelineItems.Nodes...)
 		if !results.Node.TimelineItems.PageInfo.HasNextPage {
 			break
 		}
-		afterCursor = results.Node.TimelineItems.PageInfo.EndCursor
+		pi = results.Node.TimelineItems.PageInfo
 	}
-	return nil
+	return
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
