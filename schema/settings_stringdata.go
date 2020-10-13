@@ -225,6 +225,11 @@ const SettingsSchemaJSON = `{
       "type": "boolean",
       "default": false
     },
+    "codeHost.nativeIntegrationEnabled": {
+      "description": "Whether the Sourcegraph native integration is installed on the code host. This affects in-app messaging users read inside the webapp.",
+      "type": "boolean",
+      "default": false
+    },
     "search.uppercase": {
       "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
       "type": "boolean",
