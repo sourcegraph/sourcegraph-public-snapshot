@@ -373,7 +373,7 @@ func (p panelOptions) withDefaults() panelOptions {
 		p.min = &defaultMin
 	}
 	if p.legendFormat == "" {
-		p.legendFormat = "{{instance}}"
+		p.legendFormat = "value"
 	}
 	if p.unitType == "" {
 		p.unitType = Number
