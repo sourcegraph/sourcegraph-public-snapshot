@@ -6,7 +6,7 @@ import { ThemeProps } from '../theme'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
-import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
+import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
@@ -21,7 +21,7 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     result: IFileMatch
     allMatches: boolean
     subsetMatches: number
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
     /**
      * Called when the file's search result is selected.
      */

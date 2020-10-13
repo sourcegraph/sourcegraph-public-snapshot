@@ -21,24 +21,24 @@ const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 
-interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
-    extends RouteComponentProps<Params>,
+interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
+    extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps {}
 
-export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
+export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
     path: string
     exact?: boolean
-    render: (props: LayoutRouteComponentProps<Params>) => React.ReactNode
+    render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps<Params>) => boolean
+    condition?: (props: LayoutRouteComponentProps<Parameters_>) => boolean
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.

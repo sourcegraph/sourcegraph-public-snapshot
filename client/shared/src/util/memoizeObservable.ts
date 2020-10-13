@@ -22,9 +22,9 @@ export function resetAllMemoizationCaches(): void {
  * the first argument provided to the memoized function.
  */
 export function memoizeObservable<P, T>(
-    func: (params: P) => Observable<T>,
-    resolver: (params: P) => string
-): (params: P, force?: boolean) => Observable<T> {
+    func: (parameters: P) => Observable<T>,
+    resolver: (parameters: P) => string
+): (parameters: P, force?: boolean) => Observable<T> {
     const cache = new Map<string, Observable<T>>()
     let cacheResetSeq = allCachesResetSeq
     return (parameters: P, force = false) => {

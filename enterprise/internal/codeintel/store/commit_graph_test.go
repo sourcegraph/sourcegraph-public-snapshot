@@ -7,6 +7,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// testGraph has the following layout:
+//
+//              +--0c5a779c ------------------------------------------------------+-- [5971b083]
+//              |                                                                 |
+// [e66e8f9b] --+               +-- 4d36f88b                     +-- [95dd4b2b] --+-- 7cb4a974 --+-- [0ed556d3]
+//              |               |                                |
+//              +--[f635b8d1] --+               +-- [d6e54842] --+
+//                              |               |                |
+//                              +-- 026b8df9  --+                +-- [5340d471] --+-- cbc5cf7c
+//                                              |
+//                                              +-- 6c301adb
 var testGraph = map[string][]string{
 	"e66e8f9b": {},
 	"0c5a779c": {"e66e8f9b"},
@@ -105,7 +116,7 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 			{UploadID: 56, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
 		},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads, UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected graph (-want +got):\n%s", diff)
 	}
 }

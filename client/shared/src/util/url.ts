@@ -212,7 +212,7 @@ export interface Repo extends RepoSpec {}
 /**
  * A repo with a (possibly unresolved) revspec.
  */
-export interface RepoRev extends RepoSpec, RevisionSpec {}
+export interface RepoRevision extends RepoSpec, RevisionSpec {}
 
 /**
  * A repo resolved to an exact commit

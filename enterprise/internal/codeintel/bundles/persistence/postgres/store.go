@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"runtime"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -182,7 +184,7 @@ func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme,
 }
 
 func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
-	inserter := NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
+	inserter := batch.NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
 
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
@@ -194,7 +196,7 @@ func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) (err error) 
 }
 
 func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
-	inserter := func(inserter *BatchInserter) error {
+	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
 			if err != nil {
@@ -213,7 +215,7 @@ func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.K
 }
 
 func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
-	inserter := func(inserter *BatchInserter) error {
+	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
 			if err != nil {
@@ -240,7 +242,7 @@ func (s *store) WriteReferences(ctx context.Context, monikerLocations chan types
 }
 
 func (s *store) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations chan types.MonikerLocations) error {
-	inserter := func(inserter *BatchInserter) error {
+	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
@@ -258,11 +260,11 @@ func (s *store) writeDefinitionReferences(ctx context.Context, tableName string,
 	return withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data"}, inserter)
 }
 
-var numWriterRoutines = 1 // runtime.GOMAXPROCS(0)
+var numWriterRoutines = runtime.GOMAXPROCS(0)
 
-func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *BatchInserter) error) error {
+func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) error {
 	return util.InvokeN(numWriterRoutines, func() (err error) {
-		inserter := NewBatchInserter(ctx, db, tableName, columns...)
+		inserter := batch.NewBatchInserter(ctx, db, tableName, columns...)
 
 		defer func() {
 			if flushErr := inserter.Flush(ctx); flushErr != nil {

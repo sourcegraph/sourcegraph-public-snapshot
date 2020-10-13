@@ -100,8 +100,114 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.
+//
+// This method should be used when the commit is known to exist in the lsif_nearest_uploads table. If it doesn't, then this method
+// will return no dumps (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
+// refreshed before calling this method when the commit is unknown.
+//
+// Because refreshing the commit graph can be very expensive, we also provide FindClosestDumpsFromGraphFragment. That method should
+// be used instead in low-latency paths. It should be supplied a small fragment of the commit graph that contains the input commit
+// as well as a commit that is likely to exist in the lsif_nearest_uploads table. This is enough to propagate the correct upload
+// visibility data down the graph fragment.
+//
+// The graph supplied to FindClosestDumpsFromGraphFragment will also determine whether or not it is possible to produce a partial set
+// of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
+// by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
+// we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
 func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
-	var conds []*sqlf.Query
+	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
+
+	return scanDumps(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(`
+			SELECT
+				d.id,
+				d.commit,
+				d.root,
+				EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
+				d.uploaded_at,
+				d.state,
+				d.failure_message,
+				d.started_at,
+				d.finished_at,
+				d.process_after,
+				d.num_resets,
+				d.num_failures,
+				d.repository_id,
+				d.repository_name,
+				d.indexer
+			FROM lsif_nearest_uploads u
+			JOIN lsif_dumps_with_repository_name d ON d.id = u.upload_id
+			WHERE u.repository_id = %s AND u.commit = %s AND NOT u.overwritten AND %s
+		`, repositoryID, commit, sqlf.Join(conds, " AND ")),
+	))
+}
+
+// FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
+// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
+func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error) {
+	if len(graph) == 0 {
+		return nil, nil
+	}
+
+	commits := make([]*sqlf.Query, 0, len(graph))
+	for commit := range graph {
+		commits = append(commits, sqlf.Sprintf("%s", commit))
+	}
+
+	uploadMeta, err := scanUploadMeta(s.Store.Query(ctx, sqlf.Sprintf(`
+		SELECT nu.upload_id, nu.commit, u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
+		FROM lsif_nearest_uploads nu
+		JOIN lsif_uploads u ON u.id = nu.upload_id
+		WHERE nu.repository_id = %s AND nu.commit IN (%s) AND nu.ancestor_visible
+	`, repositoryID, sqlf.Join(commits, ", "))))
+	if err != nil {
+		return nil, err
+	}
+
+	visibleUploads, err := calculateVisibleUploads(graph, uploadMeta)
+	if err != nil {
+		return nil, err
+	}
+
+	var ids []*sqlf.Query
+	for _, uploadMeta := range visibleUploads[commit] {
+		if uploadMeta.Overwritten == false {
+			ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
+		}
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
+
+	return scanDumps(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(`
+			SELECT
+				d.id,
+				d.commit,
+				d.root,
+				EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
+				d.uploaded_at,
+				d.state,
+				d.failure_message,
+				d.started_at,
+				d.finished_at,
+				d.process_after,
+				d.num_resets,
+				d.num_failures,
+				d.repository_id,
+				d.repository_name,
+				d.indexer
+			FROM lsif_dumps_with_repository_name d
+			WHERE d.id IN (%s) AND %s
+		`, sqlf.Join(ids, ","), sqlf.Join(conds, " AND ")),
+	))
+}
+
+func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexer string) (conds []*sqlf.Query) {
 	if rootMustEnclosePath {
 		// Ensure that the root is a prefix of the path
 		conds = append(conds, sqlf.Sprintf(`%s LIKE (d.root || '%%%%')`, path))
@@ -113,30 +219,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
 	}
 
-	return scanDumps(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-	 		SELECT
-	 			d.id,
-	 			d.commit,
-				d.root,
-				EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
-	 			d.uploaded_at,
-	 			d.state,
-	 			d.failure_message,
-	 			d.started_at,
-	 			d.finished_at,
-	 			d.process_after,
-				d.num_resets,
-				d.num_failures,
-	 			d.repository_id,
-	 			d.repository_name,
-	 			d.indexer
-			 FROM lsif_nearest_uploads u
-			 JOIN lsif_dumps_with_repository_name d ON d.id = u.upload_id
-			 WHERE u.repository_id = %s AND u.commit = %s AND %s
-		`, repositoryID, commit, sqlf.Join(conds, " AND ")),
-	))
+	return conds
 }
 
 func scanFirstIntPair(rows *sql.Rows, queryErr error) (_ int, _ int, _ bool, err error) {

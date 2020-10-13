@@ -98,6 +98,10 @@ type Store interface {
 	// any dump with a root intersecting the given path is returned.
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
+	// FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
+	// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error)
+
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
 	// will be marked as dirty so that its commit graph will be updated in the background.

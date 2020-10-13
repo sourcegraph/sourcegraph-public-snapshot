@@ -1,7 +1,7 @@
 import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import { Services } from '../api/client/services'
-import { ExecuteCommandParams } from '../api/client/services/command'
+import { ExecuteCommandParameters } from '../api/client/services/command'
 import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
 import { ExtensionsService } from '../api/client/services/extensionsService'
 import { NotificationType } from '../api/client/services/notifications'
@@ -13,7 +13,7 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI } from '../api/contract'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -37,14 +37,14 @@ export interface Controller extends Unsubscribable {
      * error will be shown in the global notification UI component. Pass suppressNotificationOnError as true to
      * skip this. The error is always returned to the caller.
      */
-    executeCommand(params: ExecuteCommandParams, suppressNotificationOnError?: boolean): Promise<any>
+    executeCommand(parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean): Promise<any>
 
     /**
      * Frees all resources associated with this client.
      */
     unsubscribe(): void
 
-    extHostAPI: Promise<Remote<FlatExtHostAPI>>
+    extHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 }
 
 /**

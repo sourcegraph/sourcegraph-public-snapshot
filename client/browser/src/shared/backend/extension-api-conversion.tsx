@@ -1,5 +1,5 @@
 import { TextDocumentIdentifier } from '../../../../shared/src/api/client/types/textDocument'
-import { TextDocumentPositionParams } from '../../../../shared/src/api/protocol'
+import { TextDocumentPositionParameters } from '../../../../shared/src/api/protocol'
 import { AbsoluteRepoFilePosition, FileSpec, RepoSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 
 export const toTextDocumentIdentifier = (
@@ -8,7 +8,9 @@ export const toTextDocumentIdentifier = (
     uri: `git://${position.repoName}?${position.commitID}#${position.filePath}`,
 })
 
-export const toTextDocumentPositionParameters = (position: AbsoluteRepoFilePosition): TextDocumentPositionParams => ({
+export const toTextDocumentPositionParameters = (
+    position: AbsoluteRepoFilePosition
+): TextDocumentPositionParameters => ({
     textDocument: toTextDocumentIdentifier(position),
     position: {
         character: position.position.character - 1,

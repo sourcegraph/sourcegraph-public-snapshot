@@ -9,7 +9,7 @@ import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
 
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
@@ -105,6 +105,6 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
+    private queryRepositories = (args: FilteredConnectionQueryArguments): Observable<GQL.IRepositoryConnection> =>
         fetchRepositories({ ...args })
 }

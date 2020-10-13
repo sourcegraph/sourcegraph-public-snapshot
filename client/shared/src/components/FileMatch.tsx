@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { pluralize } from '../util/strings'
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
-import { FetchFileCtx } from './CodeExcerpt'
+import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
@@ -69,7 +69,7 @@ interface Props extends SettingsCascadeProps {
 
     allExpanded?: boolean
 
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
 }
 
 export class FileMatch extends React.PureComponent<Props> {

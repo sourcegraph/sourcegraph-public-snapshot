@@ -111,7 +111,6 @@ body,
 @import './repo/settings/RepoSettingsArea';
 @import './repo/actions//InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/LoaderInput';
 @import '../../branded/src/components/CodeSnippet';
 @import './components/PageHeader';
 @import './components/completion/CompletionWidgetDropdown';
@@ -144,6 +143,7 @@ body,
 @import '../../branded/src/components/panel/Panel';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/panel/views/HierarchicalLocationsView';
+@import '../../branded/src/components/LoaderInput';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';

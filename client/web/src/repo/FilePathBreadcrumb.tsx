@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { RepoRev, toPrettyBlobURL } from '../../../shared/src/util/url'
+import { RepoRevision, toPrettyBlobURL } from '../../../shared/src/util/url'
 import { toTreeURL } from '../util/url'
 import classNames from 'classnames'
 
@@ -9,7 +9,7 @@ import classNames from 'classnames'
  * links.
  */
 export const FilePathBreadcrumb: React.FunctionComponent<
-    RepoRev & {
+    RepoRevision & {
         filePath: string
         isDir: boolean
     }

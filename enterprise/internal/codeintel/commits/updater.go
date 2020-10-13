@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -49,7 +50,7 @@ type updater struct {
 
 type gitserverClient interface {
 	Head(ctx context.Context, store store.Store, repositoryID int) (string, error)
-	CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error)
+	CommitGraph(ctx context.Context, store store.Store, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
 }
 
 func NewUpdater(store store.Store, gitserverClient gitserverClient) Updater {
@@ -111,7 +112,7 @@ func (u *updater) TryUpdate(ctx context.Context, repositoryID, dirtyToken int) e
 }
 
 func (u *updater) update(ctx context.Context, repositoryID, dirtyToken int) error {
-	graph, err := u.gitserverClient.CommitGraph(ctx, u.store, repositoryID)
+	graph, err := u.gitserverClient.CommitGraph(ctx, u.store, repositoryID, gitserver.CommitGraphOptions{})
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitGraph")
 	}

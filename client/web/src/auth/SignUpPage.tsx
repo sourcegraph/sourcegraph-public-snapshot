@@ -5,7 +5,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
-import { SignUpArgs, SignUpForm } from './SignUpForm'
+import { SignUpArguments, SignUpForm } from './SignUpForm'
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphIcon } from './icons'
 
@@ -60,7 +60,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
         )
     }
 
-    private doSignUp = (args: SignUpArgs): Promise<void> =>
+    private doSignUp = (args: SignUpArguments): Promise<void> =>
         fetch('/-/sign-up', {
             credentials: 'same-origin',
             method: 'POST',
