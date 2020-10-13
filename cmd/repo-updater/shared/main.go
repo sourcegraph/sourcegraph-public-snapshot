@@ -52,7 +52,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	err := secret.Init()
 	if err != nil {
-		log.Fatalf("Failed to initialize encryption: %v", err)
+		log.Fatalf("Failed to initialize secrets encryption: %v", err)
 	}
 
 	clock := func() time.Time { return time.Now().UTC() }
