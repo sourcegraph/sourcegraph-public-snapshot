@@ -48,11 +48,11 @@ interface FileSuggestion extends BaseSuggestion {
     type: 'file'
 }
 
-interface DirSuggestion extends BaseSuggestion {
+interface DirectorySuggestion extends BaseSuggestion {
     type: 'dir'
 }
 
-export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
+export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirectorySuggestion
 
 /**
  * Returns all but the last element of path, or "." if that would be the empty path.

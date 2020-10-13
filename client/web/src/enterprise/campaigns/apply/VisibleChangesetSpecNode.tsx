@@ -6,7 +6,7 @@ import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'
 import { map } from 'rxjs/operators'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
-import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import { FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { Link } from '../../../../../shared/src/components/Link'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { ChangesetSpecAction } from './ChangesetSpecAction'
@@ -44,7 +44,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
+        (args: FilteredConnectionQueryArguments) =>
             queryChangesetSpecFileDiffs({
                 after: args.after ?? null,
                 first: args.first ?? null,

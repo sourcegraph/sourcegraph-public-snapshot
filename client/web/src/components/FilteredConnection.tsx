@@ -342,7 +342,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
     extends ConnectionPropsCommon<N, NP>,
         FilteredConnectionDisplayProps {
     /** Called to fetch the connection data to populate this component. */
-    queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
+    queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined) => void
@@ -351,7 +351,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-export interface FilteredConnectionQueryArgs {
+export interface FilteredConnectionQueryArguments {
     first?: number
     after?: string
     query?: string

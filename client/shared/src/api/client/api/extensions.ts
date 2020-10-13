@@ -1,7 +1,7 @@
 import { Remote } from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
-import { ExtExtensionsAPI } from '../../extension/api/extensions'
+import { ExtensionExtensionsAPI } from '../../extension/api/extensions'
 import { ExecutableExtension, IExtensionsService } from '../services/extensionsService'
 
 /** @internal */
@@ -15,7 +15,7 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(private proxy: Remote<ExtExtensionsAPI>, extensionRegistry: IExtensionsService) {
+    constructor(private proxy: Remote<ExtensionExtensionsAPI>, extensionRegistry: IExtensionsService) {
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))

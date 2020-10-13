@@ -77,7 +77,7 @@ class ThrottleTimeWindowSubscriber<T> extends Subscriber<T> {
             }
             this.valuesInCurrentWindow++
             if (this.valuesInCurrentWindow === this.valuesPerWindow) {
-                this.throttled = this.scheduler.schedule<DispatchArg<T>>(
+                this.throttled = this.scheduler.schedule<DispatchArgument<T>>(
                     dispatchNext,
                     this.intervalEnds! - this.scheduler.now(),
                     {
@@ -116,11 +116,11 @@ class ThrottleTimeWindowSubscriber<T> extends Subscriber<T> {
     }
 }
 
-interface DispatchArg<T> {
+interface DispatchArgument<T> {
     subscriber: ThrottleTimeWindowSubscriber<T>
 }
 
-function dispatchNext<T>(argument: DispatchArg<T> | undefined): void {
+function dispatchNext<T>(argument: DispatchArgument<T> | undefined): void {
     if (argument) {
         argument.subscriber.clearThrottle()
     }

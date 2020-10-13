@@ -6,7 +6,7 @@ import {
     RepoSeeOtherError,
     RevisionNotFoundError,
 } from '../../../shared/src/backend/errors'
-import { FetchFileCtx } from '../../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../../shared/src/components/CodeExcerpt'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -14,7 +14,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
     makeRepoURI,
-    RepoRev,
+    RepoRevision,
     RevisionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
@@ -162,7 +162,7 @@ interface HighlightedFileResult {
 }
 
 const fetchHighlightedFile = memoizeObservable(
-    (context: FetchFileCtx): Observable<HighlightedFileResult> =>
+    (context: FetchFileParameters): Observable<HighlightedFileResult> =>
         queryGraphQL(
             gql`
                 query HighlightedFile(
@@ -205,7 +205,7 @@ const fetchHighlightedFile = memoizeObservable(
  * Produces a list like ['<tr>...</tr>', ...]
  */
 export const fetchHighlightedFileLines = memoizeObservable(
-    (context: FetchFileCtx, force?: boolean): Observable<string[]> =>
+    (context: FetchFileParameters, force?: boolean): Observable<string[]> =>
         fetchHighlightedFile(context, force).pipe(
             map(result => {
                 if (result.isDirectory) {
@@ -223,7 +223,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
-    (context: RepoRev & { filePath: string }): Observable<ExternalLinkFields[]> =>
+    (context: RepoRevision & { filePath: string }): Observable<ExternalLinkFields[]> =>
         queryGraphQL(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {

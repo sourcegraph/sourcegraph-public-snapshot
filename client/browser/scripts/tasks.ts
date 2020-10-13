@@ -18,7 +18,7 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
     process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
 )
 
-export type BuildEnv = 'dev' | 'prod'
+export type BuildEnvironment = 'dev' | 'prod'
 
 type Browser = 'firefox' | 'chrome'
 
@@ -107,7 +107,7 @@ const BROWSER_BLOCKLIST = {
     firefox: ['key'] as const,
 }
 
-function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
+function writeSchema(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
     fs.writeFileSync(`${writeDirectory}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
@@ -115,7 +115,7 @@ const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
 
 const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
 
-function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
+function writeManifest(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
     const manifest = {
         ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLOCKLIST[browser]]),
         ...omit(extensionInfo[environment], BROWSER_BLOCKLIST[browser]),
@@ -149,7 +149,7 @@ function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: 
     fs.writeFileSync(`${writeDirectory}/manifest.json`, JSON.stringify(manifest, null, 4))
 }
 
-function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
+function buildForBrowser(browser: Browser): (environment: BuildEnvironment) => () => void {
     ensurePaths()
     return environment => {
         const title = BROWSER_TITLES[browser]

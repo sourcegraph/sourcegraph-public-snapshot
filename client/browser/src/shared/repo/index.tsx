@@ -1,6 +1,6 @@
 import { RepoSpec, RevisionSpec } from '../../../../shared/src/util/url'
 
-export interface DiffResolvedRevSpec {
+export interface DiffResolvedRevisionSpec {
     baseCommitID: string
     headCommitID: string
 }

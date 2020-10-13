@@ -72,8 +72,25 @@ export interface ManagedStorageItems extends SourcegraphURL {
 /**
  * Functions in the background page that can be invoked from content scripts.
  */
-export interface BackgroundMessageHandlers {
+export interface BackgroundPageApi {
     openOptionsPage(): Promise<void>
     createBlobURL(bundleUrl: string): Promise<string>
-    requestGraphQL<T, V = object>(options: { request: string; variables: V }): Promise<GraphQLResult<T>>
+    requestGraphQL<T, V = object>(options: {
+        request: string
+        variables: V
+        sourcegraphURL?: string
+    }): Promise<GraphQLResult<T>>
+    notifyPrivateRepository(isPrivateRepository: boolean): Promise<void>
+    checkPrivateRepository(tabId: number): Promise<boolean>
+}
+
+/**
+ * Shape of the handler object in the background page.
+ * The handlers get access to the sender tab of the message as a parameter.
+ */
+export type BackgroundPageApiHandlers = {
+    [M in keyof BackgroundPageApi]: (
+        payload: Parameters<BackgroundPageApi[M]>[0],
+        sender: browser.runtime.MessageSender
+    ) => ReturnType<BackgroundPageApi[M]>
 }

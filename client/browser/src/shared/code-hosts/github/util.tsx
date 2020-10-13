@@ -1,5 +1,5 @@
 import { RawRepoSpec } from '../../../../../shared/src/util/url'
-import { DiffResolvedRevSpec } from '../../repo'
+import { DiffResolvedRevisionSpec } from '../../repo'
 
 /**
  * Returns the elements on the page which should be marked
@@ -54,7 +54,7 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 /**
  * Returns the base and head revision SHA, or null for non-diff views.
  */
-export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevSpec | null {
+export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevisionSpec | null {
     const { pageType } = parseURL()
     if (!isDiffPageType(pageType)) {
         return null
@@ -124,7 +124,7 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevS
 // https://github.com/lguychard/sourcegraph-configurable-references/pull/1/files/fa32ce95d666d73cf4cb3e13b547993374eb158d#diff-45327f86d4438556066de133327f4ca2
 const COMMENTED_SNIPPET_DIFF_REGEX = /\/files\/((\w+)\.\.)?(\w+)#diff-\w+$/
 
-function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolvedRevSpec | null {
+function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolvedRevisionSpec | null {
     // For commented snippets, try to get the HEAD commit ID from the file header,
     // as it will always be the most accurate (for example in the case of outdated snippets).
     const linkToFile: HTMLLinkElement | null = codeView.querySelector('.file-header a')
@@ -149,7 +149,7 @@ function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolve
         : null
 }
 
-function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
+function getResolvedDiffForCompare(): DiffResolvedRevisionSpec | undefined {
     const [base, head] = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
     if (base && head && base.textContent && head.textContent) {
         return {
@@ -160,7 +160,10 @@ function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
     return undefined
 }
 
-function getDiffResolvedRevisionFromPageSource(pageSource: string, isPullRequest: boolean): DiffResolvedRevSpec | null {
+function getDiffResolvedRevisionFromPageSource(
+    pageSource: string,
+    isPullRequest: boolean
+): DiffResolvedRevisionSpec | null {
     if (!isPullRequest) {
         return null
     }

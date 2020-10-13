@@ -16,7 +16,7 @@ function getRawRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathn
     }
 }
 
-interface RevisionRefInfo {
+interface RevisionReferenceInfo {
     latestCommit?: string
 }
 
@@ -26,7 +26,7 @@ function getRevisionSpecFromRevisionSelector(): RevisionSpec {
         throw new Error('branchNameElement not found')
     }
     const revisionReferenceString = branchNameElement.getAttribute('data-revision-ref')
-    let revisionReferenceInfo: RevisionRefInfo | null = null
+    let revisionReferenceInfo: RevisionReferenceInfo | null = null
     if (revisionReferenceString) {
         try {
             revisionReferenceInfo = JSON.parse(revisionReferenceString)

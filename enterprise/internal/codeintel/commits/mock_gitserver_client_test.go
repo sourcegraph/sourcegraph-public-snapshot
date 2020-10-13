@@ -4,6 +4,7 @@ package commits
 
 import (
 	"context"
+	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"sync"
 )
@@ -27,7 +28,7 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, store.Store, int) (map[string][]string, error) {
+			defaultHook: func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 				return nil, nil
 			},
 		},
@@ -44,7 +45,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockGitserverClient interface {
-	CommitGraph(context.Context, store.Store, int) (map[string][]string, error)
+	CommitGraph(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
 	Head(context.Context, store.Store, int) (string, error)
 }
 
@@ -65,24 +66,24 @@ func NewMockGitserverClientFrom(i surrogateMockGitserverClient) *MockGitserverCl
 // GitserverClientCommitGraphFunc describes the behavior when the
 // CommitGraph method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitGraphFunc struct {
-	defaultHook func(context.Context, store.Store, int) (map[string][]string, error)
-	hooks       []func(context.Context, store.Store, int) (map[string][]string, error)
+	defaultHook func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
+	hooks       []func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
 	history     []GitserverClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 store.Store, v2 int) (map[string][]string, error) {
-	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
-	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
+func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 store.Store, v2 int, v3 gitserver.CommitGraphOptions) (map[string][]string, error) {
+	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2, v3)
+	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, store.Store, int) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -90,7 +91,7 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Contex
 // CommitGraph method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, store.Store, int) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -99,7 +100,7 @@ func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, sto
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int) (map[string][]string, error) {
+	f.SetDefaultHook(func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 		return r0, r1
 	})
 }
@@ -107,12 +108,12 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientCommitGraphFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int) (map[string][]string, error) {
+	f.PushHook(func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, store.Store, int) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -154,6 +155,9 @@ type GitserverClientCommitGraphFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 gitserver.CommitGraphOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]string
@@ -165,7 +169,7 @@ type GitserverClientCommitGraphFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCommitGraphFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

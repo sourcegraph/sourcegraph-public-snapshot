@@ -21,7 +21,7 @@ interface PromiseCallback<T> {
 /**
  * The parameters of a notification message.
  */
-export interface ShowNotificationParams {
+export interface ShowNotificationParameters {
     /**
      * The notification type. See {@link NotificationType}
      */
@@ -40,7 +40,7 @@ export interface MessageActionItem {
     title: string
 }
 
-export interface ShowMessageRequestParams {
+export interface ShowMessageRequestParameters {
     /**
      * The message type. See {@link NotificationType}
      */
@@ -58,7 +58,7 @@ export interface ShowMessageRequestParams {
 }
 
 /** The parameters for window/showInput. */
-export interface ShowInputParams {
+export interface ShowInputParameters {
     /** The message to display in the input dialog. */
     message: string
 
@@ -66,13 +66,13 @@ export interface ShowInputParams {
     defaultValue?: string
 }
 
-type ShowMessageRequest = ShowMessageRequestParams & PromiseCallback<MessageActionItem | null>
+type ShowMessageRequest = ShowMessageRequestParameters & PromiseCallback<MessageActionItem | null>
 
-type ShowInputRequest = ShowInputParams & PromiseCallback<string | null>
+type ShowInputRequest = ShowInputParameters & PromiseCallback<string | null>
 
 export class NotificationsService {
     /** Messages from extensions intended for display to the user. */
-    public readonly showMessages = new Subject<ShowNotificationParams>()
+    public readonly showMessages = new Subject<ShowNotificationParameters>()
 
     /** Messages from extensions requesting the user to select an action. */
     public readonly showMessageRequests = new Subject<ShowMessageRequest>()

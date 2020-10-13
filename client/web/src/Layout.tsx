@@ -3,7 +3,7 @@ import React, { Suspense, useCallback } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
-import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { ResizablePanel } from '../../branded/src/components/panel/Panel'
@@ -58,7 +58,7 @@ import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { SearchPatternType } from './graphql-operations'
@@ -115,13 +115,13 @@ export interface LayoutProps
     // Search
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: QueryState['query'],
         version: string,
         patternType: SearchPatternType,
         versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined

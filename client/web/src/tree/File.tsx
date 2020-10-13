@@ -8,8 +8,8 @@ interface FileProps extends TreeLayerProps {
     className: string
     maxEntries: number
     handleTreeClick: () => void
-    noopRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
-    linkRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
+    noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 export const File: React.FunctionComponent<FileProps> = props => (

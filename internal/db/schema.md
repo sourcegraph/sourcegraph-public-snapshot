@@ -442,6 +442,8 @@ Triggers:
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
+Indexes:
+    "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 
@@ -624,12 +626,14 @@ Check constraints:
 
 # Table "public.lsif_nearest_uploads"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- commit        | text    | not null
- upload_id     | integer | not null
- distance      | integer | not null
+      Column      |  Type   | Modifiers 
+------------------+---------+-----------
+ repository_id    | integer | not null
+ commit           | text    | not null
+ upload_id        | integer | not null
+ distance         | integer | not null
+ ancestor_visible | boolean | not null
+ overwritten      | boolean | not null
 Indexes:
     "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
 

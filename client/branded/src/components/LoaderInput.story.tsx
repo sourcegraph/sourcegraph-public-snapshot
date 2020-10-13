@@ -1,16 +1,16 @@
 import { storiesOf } from '@storybook/react'
 import React, { useCallback, useState } from 'react'
 import { LoaderInput } from './LoaderInput'
-import { WebStory } from './WebStory'
+import { BrandedStory } from './BrandedStory'
 
-const { add } = storiesOf('web/LoaderInput', module).addDecorator(story => (
+const { add } = storiesOf('branded/LoaderInput', module).addDecorator(story => (
     <div className="container mt-3" style={{ width: 800 }}>
         {story()}
     </div>
 ))
 
 add('Interactive', () => (
-    <WebStory>
+    <BrandedStory>
         {() => {
             const [loading, setLoading] = useState(true)
             const toggleLoading = useCallback(() => setLoading(loading => !loading), [])
@@ -28,5 +28,5 @@ add('Interactive', () => (
                 </>
             )
         }}
-    </WebStory>
+    </BrandedStory>
 ))
