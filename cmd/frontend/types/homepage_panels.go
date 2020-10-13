@@ -58,17 +58,17 @@ FROM
 	}
 
 	return &types.SavedSearches{
-		RecentFilesClickedPercentage:   int32(recentFilesClickedPercentage),
-		RecentSearchClickedPercentage:          int32(recentSearchClickedPercentage),
-		RecentRepositoriesClickedPercentage:    int32(RecentRepositoriesClickedPercentage),
-		SavedSearchesClickedPercentage: int32(savedSearchesClickedPercentage),
-		NewSavedSearchesClickedPercentage:  int32(newSavedSearchesClickedPercentage),
-		TotalPanelViews:     int32(totalPanelViews),
-		UsersFilesClickedPercentage: float32(usersFilesClickedPercentage),
-		UsersSearchClickedPercentage: float32(usersSearchClickedPercentage),
-		UsersRepositoriesClickedPercentage: float32(usersRepositoriesClickedPercentage),
-		UsersSavedSearchesClickedPercentage: float32(usersSavedSearchesClickedPercentage),
+		RecentFilesClickedPercentage:           float32(recentFilesClickedPercentage),
+		RecentSearchClickedPercentage:          float32(recentSearchClickedPercentage),
+		RecentRepositoriesClickedPercentage:    float32(RecentRepositoriesClickedPercentage),
+		SavedSearchesClickedPercentage:         float32(savedSearchesClickedPercentage),
+		NewSavedSearchesClickedPercentage:      float32(newSavedSearchesClickedPercentage),
+		TotalPanelViews:                        float32(totalPanelViews),
+		UsersFilesClickedPercentage:            float32(usersFilesClickedPercentage),
+		UsersSearchClickedPercentage:           float32(usersSearchClickedPercentage),
+		UsersRepositoriesClickedPercentage:     float32(usersRepositoriesClickedPercentage),
+		UsersSavedSearchesClickedPercentage:    float32(usersSavedSearchesClickedPercentage),
 		UsersNewSavedSearchesClickedPercentage: float32(usersNewSavedSearchesClickedPercentage),
-		PercentUsersShown: float32(PercentUsersShown)
+		PercentUsersShown:                      float32(PercentUsersShown)
 	}, nil
 }
