@@ -404,7 +404,7 @@ type SavedSearches struct {
 
 // Panel homepage represents interaction data on the
 // enterprise homepage panels.
-type SavedSearches struct {
+type HomepagePanels struct {
 	RecentFilesClickedPercentage              float32
 	RecentSearchClickedPercentage             float32
 	RecentRepositoriesClickedPercentage       float32
