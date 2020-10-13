@@ -2,5 +2,20 @@
     &__expanded-section {
         // Make it full width in the current row.
         grid-column: 2 / -1;
+        @include media-breakpoint-down(xs) {
+            grid-column: 1 / -1;
+        }
+    }
+    &__state,
+    &__information {
+        @include media-breakpoint-down(xs) {
+            grid-column: 1 / -1;
+        }
+    }
+    &__show-details {
+        @include media-breakpoint-down(xs) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
     }
 }

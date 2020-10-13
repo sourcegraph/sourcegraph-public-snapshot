@@ -1,13 +1,7 @@
 .campaign-spec-tab {
-    &__specfile {
-        background-color: $gray-18;
-    }
-}
-
-.theme-light {
-    .campaign-spec-tab {
-        &__specfile {
-            background-color: $gray-01;
+    &__header-col {
+        @include media-breakpoint-down(sm) {
+            flex-basis: 100%;
         }
     }
 }

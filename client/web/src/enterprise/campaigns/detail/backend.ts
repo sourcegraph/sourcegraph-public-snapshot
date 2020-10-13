@@ -26,6 +26,7 @@ const changesetStatsFragment = gql`
     fragment ChangesetStatsFields on ChangesetConnectionStats {
         total
         closed
+        deleted
         merged
         open
         unpublished

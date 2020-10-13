@@ -27,31 +27,31 @@ export const ChangesetReviewStatusCell: React.FunctionComponent<ChangesetReviewS
 }
 
 export const ChangesetReviewStatusPending: React.FunctionComponent<{}> = () => (
-    <div className="text-warning m-0 mx-4 text-nowrap d-flex flex-column align-items-center justify-content-center">
+    <div className="text-warning m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
         <TimerSandIcon />
         <span className="text-muted">Pending</span>
     </div>
 )
 export const ChangesetReviewStatusDismissed: React.FunctionComponent<{}> = () => (
-    <div className="text-muted m-0 mx-4 text-nowrap d-flex flex-column align-items-center justify-content-center">
+    <div className="text-muted m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
         <GateArrowRightIcon />
         <span className="text-muted">Dismissed</span>
     </div>
 )
 export const ChangesetReviewStatusCommented: React.FunctionComponent<{}> = () => (
-    <div className="text-muted m-0 mx-4 text-nowrap d-flex flex-column align-items-center justify-content-center">
+    <div className="text-muted m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
         <CommentOutlineIcon />
         <span className="text-muted">Commented</span>
     </div>
 )
 export const ChangesetReviewStatusChangesRequested: React.FunctionComponent<{}> = () => (
-    <div className="text-warning m-0 mx-4 text-nowrap d-flex flex-column align-items-center justify-content-center">
+    <div className="text-warning m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
         <DeltaIcon />
         <span className="text-muted">Changes requested</span>
     </div>
 )
 export const ChangesetReviewStatusApproved: React.FunctionComponent<{}> = () => (
-    <div className="text-success m-0 mx-4 text-nowrap d-flex flex-column align-items-center justify-content-center">
+    <div className="text-success m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
         <CheckCircleIcon />
         <span className="text-muted">Approved</span>
     </div>

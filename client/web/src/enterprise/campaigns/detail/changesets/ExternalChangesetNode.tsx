@@ -52,7 +52,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         <>
             <button
                 type="button"
-                className="btn btn-icon test-campaigns-expand-changeset"
+                className="btn btn-icon test-campaigns-expand-changeset d-none d-sm-block"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -62,13 +62,31 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <ChangesetStatusCell changeset={node} />
-            <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
+            <ChangesetStatusCell changeset={node} className="external-changeset-node__state d-block d-sm-flex" />
+            <ExternalChangesetInfoCell
+                node={node}
+                viewerCanAdminister={viewerCanAdminister}
+                className="external-changeset-node__information"
+            />
             <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
             <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
             <div className="d-flex justify-content-center">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
+            {/* The button for expanding the information used on xs devices. */}
+            <button
+                type="button"
+                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                onClick={toggleIsExpanded}
+                className="external-changeset-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-changeset"
+            >
+                {isExpanded ? (
+                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                ) : (
+                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                )}{' '}
+                {isExpanded ? 'Hide' : 'Show'} details
+            </button>
             {isExpanded && (
                 <>
                     <div />

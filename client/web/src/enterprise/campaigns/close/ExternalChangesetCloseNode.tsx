@@ -54,7 +54,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
         <>
             <button
                 type="button"
-                className="btn btn-icon test-campaigns-expand-changeset"
+                className="btn btn-icon test-campaigns-expand-changeset d-none d-sm-block"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -64,13 +64,46 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            {willClose ? <ChangesetCloseActionClose /> : <ChangesetCloseActionKept />}
-            <ExternalChangesetInfoCell node={node} viewerCanAdminister={viewerCanAdminister} />
-            <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
-            <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div className="d-flex justify-content-center">
+            {willClose ? (
+                <ChangesetCloseActionClose className="external-changeset-close-node__action" />
+            ) : (
+                <ChangesetCloseActionKept className="external-changeset-close-node__action" />
+            )}
+            <ExternalChangesetInfoCell
+                node={node}
+                viewerCanAdminister={viewerCanAdminister}
+                className="external-changeset-close-node__information"
+            />
+            <div className="d-flex d-md-none justify-content-between external-changeset-close-node__statuses">
+                <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
+                <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
+                <div className="d-flex justify-content-center">
+                    {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
+                </div>
+            </div>
+            <span className="d-none d-md-inline">
+                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
+            </span>
+            <span className="d-none d-md-inline">
+                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
+            </span>
+            <div className="d-none d-md-flex justify-content-center">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
+            {/* The button for expanding the information used on xs devices. */}
+            <button
+                type="button"
+                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                onClick={toggleIsExpanded}
+                className="external-changeset-close-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-changeset"
+            >
+                {isExpanded ? (
+                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                ) : (
+                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                )}{' '}
+                {isExpanded ? 'Hide' : 'Show'} details
+            </button>
             {isExpanded && (
                 <div className="external-changeset-close-node__expanded-section">
                     {node.error && <ErrorAlert error={node.error} history={history} />}
