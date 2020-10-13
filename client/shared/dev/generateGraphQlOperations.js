@@ -61,7 +61,7 @@ async function generateGraphQlOperations({ watch } = {}) {
           JSONValue: 'unknown',
           GitObjectID: 'string',
           JSONCString: 'string',
-          PublishedTriple: "boolean | 'draft'",
+          PublishedValue: "boolean | 'draft'",
         },
       },
       generates: {

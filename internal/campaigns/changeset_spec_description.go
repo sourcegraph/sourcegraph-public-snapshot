@@ -1,86 +1,9 @@
 package campaigns
 
 import (
-	"encoding/json"
-	"strings"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 )
-
-type Publish struct{ Val interface{} }
-
-// True is true if the enclosed value is a bool being true.
-func (p *Publish) True() bool {
-	if b, ok := p.Val.(bool); ok {
-		return b
-	}
-	return false
-}
-
-// False is true if the enclosed value is a bool being false.
-func (p Publish) False() bool {
-	if b, ok := p.Val.(bool); ok {
-		return !b
-	}
-	return false
-}
-
-// Draft is true if the enclosed value is a string being "draft".
-func (p Publish) Draft() bool {
-	if s, ok := p.Val.(string); ok {
-		return strings.EqualFold(s, "draft")
-	}
-	return false
-}
-
-// Valid returns whether the enclosed value is of any of the permitted types.
-func (p *Publish) Valid() bool {
-	return p.True() || p.False() || p.Draft()
-}
-
-func (p Publish) MarshalJSON() ([]byte, error) {
-	if !p.Valid() {
-		if p.Val == nil {
-			v := "null"
-			return []byte(v), nil
-		}
-		return nil, errors.New("invalid value")
-	}
-	if p.True() {
-		v := "true"
-		return []byte(v), nil
-	}
-	if p.False() {
-		v := "false"
-		return []byte(v), nil
-	}
-	v := `"draft"`
-	return []byte(v), nil
-}
-
-func (p *Publish) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &p.Val); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p Publish) UnmarshalYAML(b []byte) error {
-	if err := json.Unmarshal(b, &p.Val); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p *Publish) UnmarshalGraphQL(input interface{}) error {
-	p.Val = input
-	return nil
-}
-
-func (p *Publish) ImplementsGraphQLType(name string) bool {
-	return name == "PublishedTriple"
-}
 
 type ChangesetSpecDescription struct {
 	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
@@ -100,7 +23,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
-	Published Publish `json:"published,omitempty"`
+	Published PublishedValue `json:"published,omitempty"`
 }
 
 // Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.

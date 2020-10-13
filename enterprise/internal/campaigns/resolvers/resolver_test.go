@@ -297,7 +297,7 @@ func TestApplyCampaign(t *testing.T) {
 				Commit: campaigns.CommitTemplate{
 					Message: "Add hello world",
 				},
-				Published: overridable.FromBool(false),
+				Published: overridable.FromBoolOrString(false),
 			},
 		},
 		UserID:          userID,

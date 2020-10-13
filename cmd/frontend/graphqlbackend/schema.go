@@ -797,7 +797,7 @@ type ExistingChangesetReference {
 """
 A triple that represents all possible states of the published value: true, false or 'draft'.
 """
-scalar PublishedTriple
+scalar PublishedValue
 
 """
 A description of a changeset that represents the proposal to merge one branch into another.
@@ -881,7 +881,7 @@ type GitBranchChangesetDescription {
     Another ChangesetSpec with the same description, but "published: true",
     can later be applied publish the changeset.
     """
-    published: PublishedTriple!
+    published: PublishedValue!
 }
 
 """

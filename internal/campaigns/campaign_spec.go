@@ -77,11 +77,11 @@ type CampaignImportChangeset struct {
 }
 
 type ChangesetTemplate struct {
-	Title     string           `json:"title"`
-	Body      string           `json:"body"`
-	Branch    string           `json:"branch"`
-	Commit    CommitTemplate   `json:"commit"`
-	Published overridable.Bool `json:"published"`
+	Title     string                   `json:"title"`
+	Body      string                   `json:"body"`
+	Branch    string                   `json:"branch"`
+	Commit    CommitTemplate           `json:"commit"`
+	Published overridable.BoolOrString `json:"published"`
 }
 
 type CommitTemplate struct {
