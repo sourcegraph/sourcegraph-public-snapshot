@@ -501,9 +501,8 @@ describe('Repository', () => {
                 ...commonWebGraphQlResults,
                 RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
                 ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
-                FileExternalLinks: ({ filePath }) =>
-                      createFileExternalLinksResult(filePath),
-                    TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
+                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
 
                 TreeCommits: () => ({
                     node: {
@@ -514,14 +513,11 @@ describe('Repository', () => {
                 // Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
             })
 
-            await driver.page.goto(
-                `${driver.sourcegraphBaseUrl}/${shortRepositoryName}`
-            )
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${shortRepositoryName}`)
 
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' my org/repo with spaces')
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
-
         })
     })
 })
