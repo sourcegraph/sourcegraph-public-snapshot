@@ -54,7 +54,7 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 	var createdRepos []*types.Repo
 	for _, repo := range repos {
 		createRepo(ctx, t, repo)
-		repo, err := Repos.GetByName(ctx, repo.Name)
+		repo, err := Repos.GetByName(ctx, string(repo.Name))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -145,7 +145,7 @@ func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 	// upsert is logged as a modification to the DB, even if it is a no-op. So
 	// we do this check to avoid log spam if postgres is configured with
 	// log_statement='mod'.
-	r, err := s.GetByName(ctx, op.Name)
+	r, err := s.GetByName(ctx, string(op.Name))
 	if err != nil {
 		if _, ok := err.(*RepoNotFoundErr); !ok {
 			return err

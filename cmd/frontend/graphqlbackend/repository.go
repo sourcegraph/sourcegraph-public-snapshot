@@ -381,7 +381,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	Description *string
 	Date        *string
 }) (*GitCommitResolver, error) {
-	repo, err := db.Repos.GetByName(ctx, api.RepoName(args.RepoName))
+	repo, err := db.Repos.GetByName(ctx, args.RepoName)
 	if err != nil {
 		return nil, err
 	}

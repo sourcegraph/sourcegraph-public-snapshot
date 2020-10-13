@@ -244,9 +244,9 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 	for _, fork := range []bool{true, false} {
 		for _, archived := range []bool{true, false} {
 			i++
-			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
+			name := fmt.Sprintf("myrepo-%d", i)
 
-			if err := Repos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: api.RepoName(name), Fork: fork, Archived: archived}); err != nil {
 				t.Fatal(err)
 			}
 

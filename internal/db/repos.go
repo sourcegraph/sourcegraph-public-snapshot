@@ -69,9 +69,9 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 // Name is the name for this repository (e.g., "github.com/user/repo"). It is
 // the same as URI, unless the user configures a non-default
 // repositoryPathPattern.
-func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
+func (s *repos) GetByName(ctx context.Context, nameOrURI string) (*types.Repo, error) {
 	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, nameOrURI)
+		return Mocks.Repos.GetByName(ctx, api.RepoName(nameOrURI))
 	}
 
 	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", nameOrURI))
@@ -92,7 +92,7 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 	}
 
 	if len(repos) == 0 {
-		return nil, &RepoNotFoundErr{Name: nameOrURI}
+		return nil, &RepoNotFoundErr{Name: api.RepoName(nameOrURI)}
 	}
 
 	return repos[0], nil

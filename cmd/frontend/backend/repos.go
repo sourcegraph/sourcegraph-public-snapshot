@@ -60,7 +60,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := db.Repos.GetByName(ctx, name); {
+	switch repo, err := db.Repos.GetByName(ctx, string(name)); {
 	case err == nil:
 		return repo, nil
 	case !errcode.IsNotFound(err):
@@ -70,7 +70,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		if err := s.Add(ctx, name); err != nil {
 			return nil, err
 		}
-		return db.Repos.GetByName(ctx, name)
+		return db.Repos.GetByName(ctx, string(name))
 	case shouldRedirect(name):
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
