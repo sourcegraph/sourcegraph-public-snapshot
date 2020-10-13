@@ -23,6 +23,7 @@ All notable changes to `src-cli` are documented in this file.
 - `src campaign [preview|apply]` now check whether `git` and `docker` are available before trying to execute a campaign spec's steps. [#326](https://github.com/sourcegraph/src-cli/pull/326)
 - The progress bar displayed by `src campaign [preview|apply]` has been extended by status bars that show which steps are currently being executed for each repository. [#338](https://github.com/sourcegraph/src-cli/pull/338)
 - `src campaign [preview|apply]` now shows a warning when no changeset specs have been created.
+- Requests sent to Sourcegraph by the `src campaign` commands now use gzip compression for the body when talking to Sourcegraph 3.21.0 and later. [#336](https://github.com/sourcegraph/src-cli/pull/336) and [#343](https://github.com/sourcegraph/src-cli/pull/343)
 
 ### Fixed
 

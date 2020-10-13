@@ -65,6 +65,10 @@ Examples:
 			Client:           cfg.apiClient(flags.api, flagSet.Output()),
 		})
 
+		if err := svc.DetermineFeatureFlags(ctx); err != nil {
+			return err
+		}
+
 		if err := doApply(ctx, out, svc, flags); err != nil {
 			printExecutionError(out, err)
 			return &exitCodeError{nil, 1}

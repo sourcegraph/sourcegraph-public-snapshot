@@ -17,8 +17,9 @@ import (
 )
 
 type Service struct {
-	allowUnsupported bool
-	client           api.Client
+	allowUnsupported   bool
+	client             api.Client
+	useGzipCompression bool
 }
 
 type ServiceOpts struct {
@@ -37,6 +38,55 @@ func NewService(opts *ServiceOpts) *Service {
 	}
 }
 
+const sourcegraphVersionQuery = `query SourcegraphVersion {
+	site {
+	  productVersion
+	}
+  }
+  `
+
+// getSourcegraphVersion queries the Sourcegraph GraphQL API to get the
+// current version of the Sourcegraph instance.
+func (svc *Service) getSourcegraphVersion(ctx context.Context) (string, error) {
+	var result struct {
+		Site struct {
+			ProductVersion string
+		}
+	}
+
+	ok, err := svc.client.NewQuery(sourcegraphVersionQuery).Do(ctx, &result)
+	if err != nil || !ok {
+		return "", err
+	}
+
+	return result.Site.ProductVersion, err
+}
+
+// DetermineFeatureFlags fetches the version of the configured Sourcegraph
+// instance and then sets flags on the Service itself to use features available
+// in that version, e.g. gzip compression.
+func (svc *Service) DetermineFeatureFlags(ctx context.Context) error {
+	version, err := svc.getSourcegraphVersion(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to query Sourcegraph version to check for available features")
+	}
+
+	supportsGzip, err := api.CheckSourcegraphVersion(version, ">= 3.21.0", "2020-10-12")
+	if err != nil {
+		return errors.Wrap(err, "failed to check version returned by Sourcegraph")
+	}
+	svc.useGzipCompression = supportsGzip
+
+	return nil
+}
+
+func (svc *Service) newRequest(query string, vars map[string]interface{}) api.Request {
+	if svc.useGzipCompression {
+		return svc.client.NewGzippedRequest(query, vars)
+	}
+	return svc.client.NewRequest(query, vars)
+}
+
 type CampaignSpecID string
 type ChangesetSpecID string
 
@@ -52,7 +102,7 @@ func (svc *Service) ApplyCampaign(ctx context.Context, spec CampaignSpecID) (*gr
 	var result struct {
 		Campaign *graphql.Campaign `json:"applyCampaign"`
 	}
-	if ok, err := svc.client.NewRequest(applyCampaignMutation, map[string]interface{}{
+	if ok, err := svc.newRequest(applyCampaignMutation, map[string]interface{}{
 		"campaignSpec": spec,
 	}).Do(ctx, &result); err != nil || !ok {
 		return nil, err
@@ -120,7 +170,7 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *ChangesetSpec
 			ID string
 		}
 	}
-	if ok, err := svc.client.NewRequest(createChangesetSpecMutation, map[string]interface{}{
+	if ok, err := svc.newRequest(createChangesetSpecMutation, map[string]interface{}{
 		"spec": string(raw),
 	}).Do(ctx, &result); err != nil || !ok {
 		return "", err

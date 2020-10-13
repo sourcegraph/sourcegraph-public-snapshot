@@ -42,6 +42,10 @@ Examples:
 			Client:           cfg.apiClient(flags.api, flagSet.Output()),
 		})
 
+		if err := svc.DetermineFeatureFlags(ctx); err != nil {
+			return err
+		}
+
 		_, url, err := campaignsExecute(ctx, out, svc, flags)
 		if err != nil {
 			printExecutionError(out, err)

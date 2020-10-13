@@ -10,12 +10,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	"github.com/hashicorp/go-multierror"
-	"github.com/jig/teereadcloser"
+	ioaux "github.com/jig/teereadcloser"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
@@ -30,6 +28,13 @@ type Client interface {
 
 	// NewRequest creates a GraphQL request.
 	NewRequest(query string, vars map[string]interface{}) Request
+
+	// NewGzippedRequest creates a GraphQL request with gzip compression turned on.
+	NewGzippedRequest(query string, vars map[string]interface{}) Request
+
+	// NewGzippedQuery is a convenience wrapper around NewQuery with gzip
+	// compression turned on.
+	NewGzippedQuery(query string) Request
 
 	// NewHTTPRequest creates an http.Request for the Sourcegraph API.
 	//
@@ -56,8 +61,7 @@ type Request interface {
 
 // client is the internal concrete type implementing Client.
 type client struct {
-	opts         ClientOpts
-	supportsGzip *bool
+	opts ClientOpts
 }
 
 // request is the internal concrete type implementing Request.
@@ -65,6 +69,7 @@ type request struct {
 	client *client
 	query  string
 	vars   map[string]interface{}
+	gzip   bool
 }
 
 // ClientOpts encapsulates the options given to NewClient.
@@ -116,34 +121,23 @@ func (c *client) NewRequest(query string, vars map[string]interface{}) Request {
 	}
 }
 
+func (c *client) NewGzippedRequest(query string, vars map[string]interface{}) Request {
+	return &request{
+		client: c,
+		query:  query,
+		vars:   vars,
+		gzip:   true,
+	}
+}
+
+func (c *client) NewGzippedQuery(query string) Request {
+	return c.NewGzippedRequest(query, nil)
+}
+
 func (c *client) NewHTTPRequest(ctx context.Context, method, p string, body io.Reader) (*http.Request, error) {
-	if c.supportsGzip == nil {
-		// set to false, unless we have a new enough version
-		supportsGzip := false
-		c.supportsGzip = &supportsGzip
-
-		version, err := c.getSourcegraphVersion(ctx)
-
-		// ignore errors; we only care if the version is sufficently new
-		if err == nil {
-			supportsGzip, err = sourcegraphVersionCheck(version, ">= 3.21.0", "2020-10-12")
-			if err == nil {
-				c.supportsGzip = &supportsGzip
-			}
-		}
-	}
-
-	if *c.supportsGzip && body != nil {
-		body = codeintelutils.Gzip(body)
-	}
-
 	req, err := c.createHTTPRequest(ctx, method, p, body)
 	if err != nil {
 		return nil, err
-	}
-
-	if *c.supportsGzip {
-		req.Header.Set("Content-Encoding", "gzip")
 	}
 
 	return req, nil
@@ -201,10 +195,19 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		return false, err
 	}
 
+	var bufBody io.Reader = bytes.NewBuffer(reqBody)
+	if r.gzip {
+		bufBody = codeintelutils.Gzip(bufBody)
+	}
+
 	// Create the HTTP request.
-	req, err := r.client.NewHTTPRequest(ctx, "POST", ".api/graphql", bytes.NewBuffer(reqBody))
+	req, err := r.client.NewHTTPRequest(ctx, "POST", ".api/graphql", bufBody)
 	if err != nil {
 		return false, err
+	}
+
+	if r.gzip {
+		req.Header.Set("Content-Encoding", "gzip")
 	}
 
 	// Perform the request.
@@ -302,81 +305,4 @@ func (r *request) curlCmd() (string, error) {
 	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
 	s += fmt.Sprintf("   %s", shellquote.Join(r.client.opts.Endpoint+"/.api/graphql"))
 	return s, nil
-}
-
-const sourcegraphVersionQuery = `query SourcegraphVersion {
-	site {
-	  productVersion
-	}
-  }
-  `
-
-func (c *client) getSourcegraphVersion(ctx context.Context) (string, error) {
-	var sourcegraphVersion struct {
-		Data struct {
-			Site struct {
-				ProductVersion string
-			}
-		}
-	}
-
-	// Create the JSON object.
-	reqBody, err := json.Marshal(map[string]interface{}{
-		"query": sourcegraphVersionQuery,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	// Create the HTTP request.
-	req, err := c.createHTTPRequest(ctx, "POST", ".api/graphql", bytes.NewBuffer(reqBody))
-	if err != nil {
-		return "", err
-	}
-
-	// Perform the request.
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("checking sourcegraph backend version; got status code %d", resp.StatusCode)
-	}
-
-	err = json.Unmarshal(respBytes, &sourcegraphVersion)
-	if err != nil {
-		return "", err
-	}
-
-	return sourcegraphVersion.Data.Site.ProductVersion, err
-}
-
-func sourcegraphVersionCheck(version, constraint, minDate string) (bool, error) {
-	if version == "dev" || version == "0.0.0+dev" {
-		return true, nil
-	}
-
-	buildDate := regexp.MustCompile(`^\d+_(\d{4}-\d{2}-\d{2})_[a-z0-9]{7}$`)
-	matches := buildDate.FindStringSubmatch(version)
-	if len(matches) > 1 {
-		return matches[1] >= minDate, nil
-	}
-
-	c, err := semver.NewConstraint(constraint)
-	if err != nil {
-		return false, nil
-	}
-
-	v, err := semver.NewVersion(version)
-	if err != nil {
-		return false, err
-	}
-	return c.Check(v), nil
 }

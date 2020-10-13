@@ -73,7 +73,9 @@ Examples:
 			ViewerSettings  *SettingsCascade
 			SettingsSubject *SettingsSubject
 		}
-		if ok, err := client.NewRequest(query, queryVars).Do(context.Background(), &result); err != nil || !ok {
+
+		ok, err := client.NewRequest(query, queryVars).Do(context.Background(), &result)
+		if err != nil || !ok {
 			return err
 		}
 
