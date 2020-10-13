@@ -259,7 +259,8 @@ func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error)
 			WHERE NOT EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)
 			ORDER BY d.uploaded_at
 			LIMIT 1
-		) RETURNING id, repository_id
+		)
+		RETURNING id, repository_id
 	`)))
 	if err != nil {
 		return 0, false, err
@@ -273,6 +274,42 @@ func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error)
 	}
 
 	return id, true, nil
+}
+
+// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
+// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+// background.
+func (s *store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(`
+		WITH u AS (
+			UPDATE lsif_uploads u
+				SET state = 'deleted'
+				WHERE
+					%s - u.finished_at > (%s || ' second')::interval AND
+					u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
+				RETURNING id, repository_id
+		)
+		SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
+	`, now, maxAge/time.Second)))
+	if err != nil {
+		return 0, err
+	}
+
+	for repositoryID, numUpdated := range repositoryIDs {
+		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+			return 0, err
+		}
+
+		count += numUpdated
+	}
+
+	return count, nil
 }
 
 // DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
