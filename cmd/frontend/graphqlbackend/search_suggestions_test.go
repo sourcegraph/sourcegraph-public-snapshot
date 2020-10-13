@@ -122,7 +122,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposListFoo {
 				t.Error("!calledReposListFoo")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
@@ -202,7 +202,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposListFooRepo3 {
 				t.Error("!calledReposListFooRepo3")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 			if !calledResolveRepoGroups {
@@ -263,7 +263,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposList {
 				t.Error("!calledReposList")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
@@ -373,7 +373,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !calledReposList {
 				t.Error("!calledReposList")
 			}
-			if !calledSearchFilesInRepos {
+			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}

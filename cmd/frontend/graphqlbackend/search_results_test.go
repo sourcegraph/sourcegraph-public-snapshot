@@ -160,7 +160,7 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
 		}
-		if !calledSearchFilesInRepos {
+		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
 		if calledSearchSymbols {
@@ -226,7 +226,7 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
 		}
-		if !calledSearchFilesInRepos {
+		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
 		if calledSearchSymbols {
