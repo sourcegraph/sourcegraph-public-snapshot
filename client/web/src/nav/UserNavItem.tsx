@@ -57,9 +57,14 @@ export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
-    const { location, themePreference, onThemePreferenceChange, isExtensionAlertAnimating, testIsOpen } = props
-
+export const UserNavItem: React.FunctionComponent<UserNavItemProps> = ({
+    location,
+    themePreference,
+    onThemePreferenceChange,
+    isExtensionAlertAnimating,
+    testIsOpen,
+    ...props
+}) => {
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
         []
@@ -83,8 +88,10 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     )
 
     const onThemeCycle = useCallback((): void => {
-        onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
-    }, [onThemePreferenceChange, themePreference])
+        onThemePreferenceChange(previous =>
+            previous === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
+        )
+    }, [onThemePreferenceChange])
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
