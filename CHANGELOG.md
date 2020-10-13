@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Homepage panels are now enabled by default. [#14287](https://github.com/sourcegraph/sourcegraph/issues/14287)
 - The most recent ping data is now available to site admins via the Site-admin > Pings page. [#13956](https://github.com/sourcegraph/sourcegraph/issues/13956)
 - Added an onboarding tour of Sourcegraph for new users. [#14636](https://github.com/sourcegraph/sourcegraph/pull/14636)
+- Homepage now has a footer with links to different extensibility features. [#14638](https://github.com/sourcegraph/sourcegraph/issues/14638)
 
 ### Changed
 
