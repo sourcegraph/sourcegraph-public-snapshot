@@ -153,7 +153,6 @@ func getAndMarshalHomepagePanelsJSON(ctx context.Context) (_ json.RawMessage, er
 	return json.Marshal(homepagePanels)
 }
 
-
 func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
@@ -201,7 +200,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
-		HomepagePanels       []byte("{}"),
+		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
 	}
 
