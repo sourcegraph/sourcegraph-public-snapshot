@@ -10,7 +10,7 @@ import { checkOk } from '../../../../../shared/src/backend/fetch'
 /**
  * Significant revisions for a merge request.
  */
-interface DiffRefs {
+interface DiffReferences {
     base_sha: string
     head_sha: string
     start_sha: string
@@ -21,7 +21,7 @@ interface DiffRefs {
  * is more information returned but we are not using it.
  */
 interface MergeRequestResponse {
-    diff_refs: DiffRefs
+    diff_refs: DiffReferences
     source_project_id: string
 }
 

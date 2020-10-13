@@ -10,7 +10,7 @@ import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { DiffOrBlobInfo } from '../shared/codeHost'
 
 interface ConduitResponseMap {
-    [endpoint: string]: (params: any) => Observable<any>
+    [endpoint: string]: (parameters: any) => Observable<any>
 }
 
 const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {

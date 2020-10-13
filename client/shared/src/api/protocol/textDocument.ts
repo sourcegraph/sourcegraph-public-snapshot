@@ -6,7 +6,7 @@ import { TextDocumentIdentifier } from '../client/types/textDocument'
  * A parameter literal used in requests to pass a text document and a position inside that
  * document.
  */
-export interface TextDocumentPositionParams {
+export interface TextDocumentPositionParameters {
     /**
      * The text document.
      */

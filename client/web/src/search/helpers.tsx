@@ -12,7 +12,7 @@ import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filter
 import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
 import { VersionContextProps } from '../../../shared/src/search/util'
 
-export interface SubmitSearchParams
+export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
@@ -38,7 +38,7 @@ export function submitSearch({
     filtersInQuery,
     source,
     searchParameters,
-}: SubmitSearchParams): void {
+}: SubmitSearchParameters): void {
     const searchQueryParameter = buildSearchURLQuery(
         query,
         patternType,

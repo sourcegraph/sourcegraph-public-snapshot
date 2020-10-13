@@ -16,7 +16,7 @@ interface Props {
      */
     onVisibilityChange?: (isVisible: boolean, index: number) => void
 
-    onRef?: (ref: HTMLElement | null) => void
+    onRef?: (reference: HTMLElement | null) => void
 
     /**
      * Element to use as a viewport when checking visibility. If undefined,

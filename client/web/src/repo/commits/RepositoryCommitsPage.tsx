@@ -6,7 +6,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -124,7 +124,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBread
     useBreadcrumb(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
 
     const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
+        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
             fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),
         [props.repo.id, props.commitID]
     )

@@ -136,14 +136,15 @@ export class Driver {
         public sourcegraphBaseUrl: string,
         public keepBrowser?: boolean
     ) {
-        const recordVisitedPage = (target: Target): void => {
-            if (target.type() !== 'page') {
-                return
-            }
-            this.visitedPages.push(new URL(target.url()))
+        browser.on('targetchanged', this.recordVisitedPage)
+        browser.on('targetcreated', this.recordVisitedPage)
+    }
+
+    private recordVisitedPage = (target: Target): void => {
+        if (target.type() !== 'page') {
+            return
         }
-        browser.on('targetchanged', recordVisitedPage)
-        browser.on('targetcreated', recordVisitedPage)
+        this.visitedPages.push(new URL(target.url()))
     }
 
     public async ensureLoggedIn({

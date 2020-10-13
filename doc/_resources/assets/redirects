@@ -70,8 +70,6 @@
 /team/roadmap https://about.sourcegraph.com/direction 308
 /team/style_guide https://about.sourcegraph.com/handbook/communication/style_guide 308
 /adopt/comp https://about.sourcegraph.com/workflow 308
-/user/automation /user/campaigns 308
-/dev/automation_development /dev/campaigns_development 308
 /admin/monitoring /admin/observability 308
 /admin/monitoring/reporting_search_timeouts /admin/observability/troubleshooting#scenario-search-timeouts 308
 /admin/monitoring/metrics_reference /admin/observability/metrics_guide 308
@@ -132,4 +130,7 @@
 /dev/documentation	/dev/how-to/documentation_implementation 308
 /dev/zoekt	/dev/how-to/zoekt_local_dev 308
 
-
+/user/automation /user/campaigns 308
+/user/campaigns/examples /user/campaigns/tutorials 308
+/user/campaigns/managing_access /user/campaigns/explanations/permissions_in_campaigns 308
+/dev/automation_development /dev/campaigns_development 308

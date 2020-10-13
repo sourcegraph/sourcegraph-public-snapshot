@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import * as H from 'history'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { Subject } from 'rxjs'
 import {
     queryChangesets as _queryChangesets,
@@ -65,7 +65,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         reconcilerState: null,
     })
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
+        (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
                 externalState: changesetFilters.externalState,
                 reviewState: changesetFilters.reviewState,

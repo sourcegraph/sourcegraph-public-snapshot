@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 )
 
 // GetPackage returns the dump that provides the package with the given scheme, name, and version and a flag indicating its existence.
@@ -40,10 +41,12 @@ func (s *store) UpdatePackages(ctx context.Context, packages []types.Package) (e
 		return nil
 	}
 
-	var values []*sqlf.Query
+	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_packages", "dump_id", "scheme", "name", "version")
 	for _, p := range packages {
-		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", p.DumpID, p.Scheme, p.Name, p.Version))
+		if err := inserter.Insert(ctx, p.DumpID, p.Scheme, p.Name, p.Version); err != nil {
+			return err
+		}
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`INSERT INTO lsif_packages (dump_id, scheme, name, version) VALUES %s`, sqlf.Join(values, ",")))
+	return inserter.Flush(ctx)
 }

@@ -14,7 +14,7 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
      * Callback to trigger a search when a filter is submitted.
      */
-    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+    onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
 
     /**
      * Callback to handle a filter's value being updated.

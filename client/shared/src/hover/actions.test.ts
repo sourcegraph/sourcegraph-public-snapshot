@@ -12,7 +12,7 @@ import { ContributionRegistry } from '../api/client/services/contribution'
 import { createTestViewerService } from '../api/client/services/viewerService.test'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
 import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
-import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
+import { ContributableMenu, ReferenceParameters, TextDocumentPositionParameters } from '../api/protocol'
 import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { getContributedActionItems } from '../contributions/contributions'
 import { SuccessGraphQLResult } from '../graphql/graphql'
@@ -32,7 +32,7 @@ import {
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
-const FIXTURE_PARAMS: TextDocumentPositionParams & URLToFileContext = {
+const FIXTURE_PARAMS: TextDocumentPositionParameters & URLToFileContext = {
     textDocument: { uri: 'git://r?c#f' },
     position: { line: 1, character: 1 },
     part: undefined,
@@ -105,7 +105,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParams, Location>[]>(
+                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
                                                 'a',
                                                 { a: [() => of(null)] }
                                             ),
@@ -182,7 +182,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParams, Location>[]>(
+                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
                                                 'a',
                                                 { a: [() => of(null)] }
                                             ),
@@ -264,7 +264,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParams, Location>[]>(
+                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
                                                 'e 10ms p',
                                                 { e: [], p: [() => of(null)] }
                                             ),
@@ -328,7 +328,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParams, Location>[]>(
+                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
                                                 'a',
                                                 { a: [() => of(null)] }
                                             ),

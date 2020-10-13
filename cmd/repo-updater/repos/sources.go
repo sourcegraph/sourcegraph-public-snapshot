@@ -74,20 +74,6 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 	}
 }
 
-// NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
-// rate limiter
-func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory) (ChangesetSource, error) {
-	source, err := NewSource(svc, cf)
-	if err != nil {
-		return nil, err
-	}
-	css, ok := source.(ChangesetSource)
-	if !ok {
-		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", svc.Kind)
-	}
-	return css, nil
-}
-
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {

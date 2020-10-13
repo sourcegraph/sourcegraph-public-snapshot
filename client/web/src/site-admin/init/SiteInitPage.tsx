@@ -1,13 +1,13 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
+import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../auth'
 
-const initSite = async (args: SignUpArgs): Promise<void> => {
+const initSite = async (args: SignUpArguments): Promise<void> => {
     const response = await fetch('/-/site-init', {
         credentials: 'same-origin',
         method: 'POST',
