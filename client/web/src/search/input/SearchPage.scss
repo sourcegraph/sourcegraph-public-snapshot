@@ -14,7 +14,7 @@
     justify-content: flex-start;
     width: 100%;
     overflow: auto;
-    padding-bottom: 4rem;
+    padding-bottom: 3rem;
 
     &__logo {
         flex: 0 0 auto;
@@ -99,6 +99,10 @@
 
     &__repogroup-listing-title {
         margin-bottom: 0.25rem;
+    }
+
+    &__footer {
+        margin-top: 2rem;
     }
 }
 

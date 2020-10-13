@@ -34,6 +34,7 @@ import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { HomePanels } from '../panels/HomePanels'
+import { SearchPageFooter } from './SearchPageFooter'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -325,6 +326,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 )}
 
             {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+
+            <SearchPageFooter className="search-page__footer" />
         </div>
     )
 }
