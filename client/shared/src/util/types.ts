@@ -40,7 +40,7 @@ export const isExactly = <T, C extends T>(constant: C) => (value: T): value is C
  *
  * @param isType The type guard that checks whether the given input value should be excluded.
  */
-export const isNot = <TInput, TExclude extends TInput>(isType: (val: TInput) => val is TExclude) => (
+export const isNot = <TInput, TExclude extends TInput>(isType: (value: TInput) => value is TExclude) => (
     value: TInput
 ): value is Exclude<TInput, TExclude> => !isType(value)
 

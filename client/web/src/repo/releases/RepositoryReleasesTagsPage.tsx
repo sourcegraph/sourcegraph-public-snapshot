@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react'
 import * as H from 'history'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
@@ -33,7 +33,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
     }, [])
 
     const queryTags = useCallback(
-        (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
+        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
             queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG }),
         [repo.id, queryGitReferences]
     )

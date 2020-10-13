@@ -1,7 +1,7 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { BehaviorSubject, Subscribable, throwError, Observable, Subject } from 'rxjs'
 import { map, filter, takeWhile, startWith, switchMap } from 'rxjs/operators'
-import { TextDocumentPositionParams } from '../../protocol'
+import { TextDocumentPositionParameters } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
 import { ReferenceCounter } from '../../../util/ReferenceCounter'
 
@@ -243,7 +243,7 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
  * {@link ViewerService#viewers}. If there is no active viewer or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition(activeViewer: Viewer | undefined): TextDocumentPositionParams | null {
+export function getActiveCodeEditorPosition(activeViewer: Viewer | undefined): TextDocumentPositionParameters | null {
     if (!activeViewer || activeViewer.type !== 'CodeEditor') {
         return null
     }

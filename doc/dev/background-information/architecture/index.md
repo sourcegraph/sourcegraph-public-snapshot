@@ -6,6 +6,9 @@ You can click on each component to jump to its respective code repository or sub
 <object data="/dev/background-information/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
 </object>
 
+Note that almost every service has a link back to the frontend, from which is gathers configuration updates.
+These edges are omitted for clarity.
+
 ## Clients
 
 We maintain multiple Sourcegraph clients:
@@ -25,7 +28,7 @@ These clients generally communicate with a Sourcegraph instance (either https://
 
 Our backend is composed of multiple services:
 
-- Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) folder.
+- Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) and [enterprise/cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/cmd) folders.
 - [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
 - [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) and [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) provide indexed search. They are written in Go.
 

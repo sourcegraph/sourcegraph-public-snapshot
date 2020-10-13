@@ -4,7 +4,7 @@ import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
-export interface ExtExtensionsAPI extends ProxyMarked {
+export interface ExtensionExtensionsAPI extends ProxyMarked {
     $activateExtension(extensionID: string, bundleURL: string): Promise<void>
     $deactivateExtension(extensionID: string): Promise<void>
 }
@@ -13,7 +13,7 @@ export interface ExtExtensionsAPI extends ProxyMarked {
 declare const self: any
 
 /** @internal */
-export class Extensions implements ExtExtensionsAPI, Unsubscribable, ProxyMarked {
+export class Extensions implements ExtensionExtensionsAPI, Unsubscribable, ProxyMarked {
     public readonly [proxyMarker] = true
 
     /** Extensions' deactivate functions. */

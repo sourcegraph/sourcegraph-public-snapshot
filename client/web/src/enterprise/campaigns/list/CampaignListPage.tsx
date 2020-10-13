@@ -107,7 +107,7 @@ export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageP
                 userID,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,
             }),
@@ -130,7 +130,7 @@ export const OrgCampaignListPage: React.FunctionComponent<OrgCampaignListPagePro
                 orgID,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,
             }),

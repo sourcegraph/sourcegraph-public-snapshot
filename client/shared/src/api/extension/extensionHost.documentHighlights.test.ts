@@ -45,7 +45,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         final: {},
     }
 
-    const observe = <T>(onValue: (val: T) => void): Remote<Observer<T> & ProxyMarked> =>
+    const observe = <T>(onValue: (value: T) => void): Remote<Observer<T> & ProxyMarked> =>
         pretendRemote({
             next: onValue,
             error: (error: any) => {

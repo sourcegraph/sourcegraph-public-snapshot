@@ -18,19 +18,13 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 
 	uploadMeta := map[string][]UploadMeta{}
 	for rows.Next() {
-		var uploadID int
 		var commit string
-		var root string
-		var indexer string
-		if err := rows.Scan(&uploadID, &commit, &root, &indexer); err != nil {
+		var upload UploadMeta
+		if err := rows.Scan(&upload.UploadID, &commit, &upload.Root, &upload.Indexer, &upload.Distance, &upload.AncestorVisible, &upload.Overwritten); err != nil {
 			return nil, err
 		}
 
-		uploadMeta[commit] = append(uploadMeta[commit], UploadMeta{
-			UploadID: uploadID,
-			Root:     root,
-			Indexer:  indexer,
-		})
+		uploadMeta[commit] = append(uploadMeta[commit], upload)
 	}
 
 	return uploadMeta, nil
@@ -53,7 +47,7 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
-		WHERE repository_id = %s and commit = %s
+		WHERE repository_id = %s AND commit = %s AND NOT overwritten
 		LIMIT 1
 	`, repositoryID, commit)))
 
@@ -115,7 +109,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
 	uploadMeta, err := scanUploadMeta(tx.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT id, commit, root, indexer
+		SELECT id, commit, root, indexer, 0 as distance, true as ancestor_visible, false as overwritten
 		FROM lsif_uploads
 		WHERE state = 'completed' AND repository_id = %s
 	`, repositoryID)))
@@ -139,10 +133,28 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		}
 	}
 
-	nearestUploadsInserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_nearest_uploads", "repository_id", "commit", "upload_id", "distance")
+	nearestUploadsInserter := batch.NewBatchInserter(
+		ctx,
+		s.Store.Handle().DB(),
+		"lsif_nearest_uploads",
+		"repository_id",
+		"commit",
+		"upload_id",
+		"distance",
+		"ancestor_visible",
+		"overwritten",
+	)
 	for commit, uploads := range visibleUploads {
 		for _, uploadMeta := range uploads {
-			if err := nearestUploadsInserter.Insert(ctx, repositoryID, commit, uploadMeta.UploadID, uploadMeta.Distance); err != nil {
+			if err := nearestUploadsInserter.Insert(
+				ctx,
+				repositoryID,
+				commit,
+				uploadMeta.UploadID,
+				uploadMeta.Distance,
+				uploadMeta.AncestorVisible,
+				uploadMeta.Overwritten,
+			); err != nil {
 				return err
 			}
 		}

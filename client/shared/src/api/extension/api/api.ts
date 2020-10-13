@@ -1,16 +1,16 @@
 import { ProxyMarked } from 'comlink'
 import { InitData } from '../extensionHost'
-import { ExtDocumentsAPI } from './documents'
-import { ExtExtensionsAPI } from './extensions'
+import { ExtensionDocumentsAPI } from './documents'
+import { ExtensionExtensionsAPI } from './extensions'
 import { ExtensionWindowsAPI } from './windows'
-import { FlatExtHostAPI } from '../../contract'
+import { FlatExtensionHostAPI } from '../../contract'
 
 export type ExtensionHostAPIFactory = (initData: InitData) => ExtensionHostAPI
 
-export interface ExtensionHostAPI extends ProxyMarked, FlatExtHostAPI {
+export interface ExtensionHostAPI extends ProxyMarked, FlatExtensionHostAPI {
     ping(): 'pong'
 
-    documents: ExtDocumentsAPI
-    extensions: ExtExtensionsAPI
+    documents: ExtensionDocumentsAPI
+    extensions: ExtensionExtensionsAPI
     windows: ExtensionWindowsAPI
 }

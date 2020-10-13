@@ -134,7 +134,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         const orgChanges = this.componentUpdates.pipe(distinctUntilChanged((a, b) => a.orgID !== b.orgID))
 
-        type Update = (prevState: State) => State
+        type Update = (previousState: State) => State
 
         this.subscriptions.add(this.usernameChanges.subscribe(username => this.setState({ username })))
 

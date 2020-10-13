@@ -4,7 +4,7 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
 import { Unsubscribable, DocumentHighlight } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
-import { TextDocumentPositionParams } from './protocol'
+import { TextDocumentPositionParameters } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 
@@ -13,7 +13,7 @@ import { HoverMerged } from './client/types/hover'
  * e.g. for communicating  direction "main -> ext host"
  * Note this API object lives in the extension host thread
  */
-export interface FlatExtHostAPI {
+export interface FlatExtensionHostAPI {
     /**
      * Updates the settings exposed to extensions.
      */
@@ -27,8 +27,8 @@ export interface FlatExtHostAPI {
     transformSearchQuery: (query: string) => ProxySubscribable<string>
 
     // Languages
-    getHover: (parameters: TextDocumentPositionParams) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
-    getDocumentHighlights: (parameters: TextDocumentPositionParams) => ProxySubscribable<DocumentHighlight[]>
+    getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
+    getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
 }
 
 /**

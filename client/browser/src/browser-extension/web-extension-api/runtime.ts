@@ -1,9 +1,7 @@
 import { isBackground, isInPage } from '../../shared/context'
-import { BackgroundMessageHandlers } from './types'
+import { BackgroundPageApi } from './types'
 
-const messageSender = <T extends keyof BackgroundMessageHandlers>(type: T): BackgroundMessageHandlers[T] => (
-    payload?: any
-) => {
+const messageSender = <T extends keyof BackgroundPageApi>(type: T): BackgroundPageApi[T] => (payload?: any) => {
     if (isBackground) {
         throw new Error('Tried to call background page function from background page itself')
     }
@@ -16,8 +14,10 @@ const messageSender = <T extends keyof BackgroundMessageHandlers>(type: T): Back
 /**
  * Functions that can be invoked from content scripts that will be executed in the background page.
  */
-export const background: BackgroundMessageHandlers = {
+export const background: BackgroundPageApi = {
     createBlobURL: messageSender('createBlobURL'),
     openOptionsPage: messageSender('openOptionsPage'),
     requestGraphQL: messageSender('requestGraphQL'),
+    notifyPrivateRepository: messageSender('notifyPrivateRepository'),
+    checkPrivateRepository: messageSender('checkPrivateRepository'),
 }
