@@ -42,9 +42,10 @@ Also, both Facebook and Google provide an in-house Sourcegraph-like code search 
 
 ## How do I start using Sourcegraph?
 
-1.  [Install Sourcegraph](../admin/install/index.md) inside your organization on your internal code, if nobody else has yet
-1.  Install and configure the [web browser code host integrations](../integration/browser_extension.md) (recommended)
-1.  Start searching and browsing code on Sourcegraph by visiting the URL of your organization's internal Sourcegraph instance
+1. [Install Sourcegraph](../admin/install/index.md) inside your organization on your internal code, if nobody else has yet
+1. Install and configure the [web browser code host integrations](../integration/browser_extension.md) (recommended)
+1. Start searching and browsing code on Sourcegraph by visiting the URL of your organization's internal Sourcegraph instance
+1. [Personalize Sourcegraph](personalization/index.md) with themes, quick links, and badges!
 
 You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a public instance of Sourcegraph for use on open-source code only.
 
