@@ -66,6 +66,7 @@ type ObservedStore struct {
 	repoNameOperation                              *observation.Operation
 	getRepositoriesWithIndexConfigurationOperation *observation.Operation
 	getIndexConfigurationByRepositoryIDOperation   *observation.Operation
+	deleteUploadsStuckUploadingOperation           *observation.Operation
 }
 
 var _ Store = &ObservedStore{}
@@ -346,6 +347,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"get_index_configuration_by_repository_id"},
 			Metrics:      metrics,
 		}),
+		deleteUploadsStuckUploadingOperation: observationContext.Operation(observation.Op{
+			Name:         "store.DeleteUploadsStuckUploading",
+			MetricLabels: []string{"delete_uploads_stuck_uploading"},
+			Metrics:      metrics,
+		}),
 	}
 }
 
@@ -410,6 +416,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		repoNameOperation:                              s.repoNameOperation,
 		getRepositoriesWithIndexConfigurationOperation: s.getRepositoriesWithIndexConfigurationOperation,
 		getIndexConfigurationByRepositoryIDOperation:   s.getIndexConfigurationByRepositoryIDOperation,
+		deleteUploadsStuckUploadingOperation:           s.deleteUploadsStuckUploadingOperation,
 	}
 }
 
@@ -555,10 +562,10 @@ func (s *ObservedStore) DeleteUploadsWithoutRepository(ctx context.Context, now 
 }
 
 // HardDeleteUploadByID calls into the inner store and registers the observed results.
-func (s *ObservedStore) HardDeleteUploadByID(ctx context.Context, id int) (err error) {
+func (s *ObservedStore) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
 	ctx, endObservation := s.hardDeleteUploadByIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.HardDeleteUploadByID(ctx, id)
+	return s.store.HardDeleteUploadByID(ctx, ids...)
 }
 
 // ResetStalled calls into the inner store and registers the observed results.
@@ -825,4 +832,11 @@ func (s *ObservedStore) GetIndexConfigurationByRepositoryID(ctx context.Context,
 	ctx, endObservation := s.getIndexConfigurationByRepositoryIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
+}
+
+// DeleteUploadsStuckUploading calls into the inner store and registers the observed results.
+func (s *ObservedStore) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+	ctx, endObservation := s.deleteUploadsStuckUploadingOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
 }

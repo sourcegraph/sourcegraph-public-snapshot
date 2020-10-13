@@ -12,7 +12,7 @@ import (
 
 func TestRemoveOrphanedData(t *testing.T) {
 	var dumpIDs []int
-	for i := 0; i < GetStateBatchSize*5-1; i++ {
+	for i := 0; i < orphanBatchSize*5-1; i++ {
 		dumpIDs = append(dumpIDs, i)
 	}
 
@@ -41,10 +41,7 @@ func TestRemoveOrphanedData(t *testing.T) {
 		lsifStore: mockLSIFStore,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
-
-	if err := j.removeOrphanedData(context.Background()); err != nil {
-		t.Fatalf("unexpected error removing orphaned data: %s", err)
-	}
+	j.removeOrphanedData(context.Background())
 
 	if len(mockStore.GetStatesFunc.History()) != 5 {
 		t.Errorf("unexpected number of GetStatesFunc calls. want=%d have=%d", 5, len(mockStore.GetStatesFunc.History()))

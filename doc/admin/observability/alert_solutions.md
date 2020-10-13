@@ -1464,7 +1464,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## precise-code-intel-bundle-manager: janitor_old_uploads_removed
+## precise-code-intel-bundle-manager: janitor_upload_files_removed
 
 **Descriptions:**
 
@@ -1476,15 +1476,15 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_old_uploads_removed"
+  "warning_precise-code-intel-bundle-manager_janitor_upload_files_removed"
 ]
 ```
 
-## precise-code-intel-bundle-manager: janitor_old_parts_removed
+## precise-code-intel-bundle-manager: janitor_upload_part_files_removed
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 20+ upload and database part files removed (due to age) every 5m_
+- _precise-code-intel-bundle-manager: 20+ upload part files removed (due to age) every 5m_
 
 **Possible solutions:**
 
@@ -1492,43 +1492,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_old_parts_removed"
+  "warning_precise-code-intel-bundle-manager_janitor_upload_part_files_removed"
 ]
 ```
 
-## precise-code-intel-bundle-manager: janitor_old_dumps_removed
-
-**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ bundle files removed (due to low disk space) every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_old_dumps_removed"
-]
-```
-
-## precise-code-intel-bundle-manager: janitor_orphans
-
-**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ bundle and upload files removed (with no corresponding database entry) every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_orphans"
-]
-```
-
-## precise-code-intel-bundle-manager: janitor_uploads_removed
+## precise-code-intel-bundle-manager: janitor_upload_records_removed
 
 **Descriptions:**
 
@@ -1540,7 +1508,23 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_uploads_removed"
+  "warning_precise-code-intel-bundle-manager_janitor_upload_records_removed"
+]
+```
+
+## precise-code-intel-bundle-manager: janitor_data_rows_removed
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 20+ codeintel database rows removed (due to deleted upload) every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-bundle-manager_janitor_data_rows_removed"
 ]
 ```
 
