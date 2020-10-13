@@ -3,12 +3,12 @@ package githuboauth
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -62,7 +62,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 	}), messages
 }
 
-var clientIDSecretValidator = regexp.MustCompile("^[a-z0-9]*$")
+var clientIDSecretValidator = lazyregexp.MustCompile("^[a-z0-9]*$")
 
 func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
