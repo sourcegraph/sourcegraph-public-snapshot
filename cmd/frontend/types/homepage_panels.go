@@ -27,18 +27,18 @@ func GetHomepagePanels(ctx context.Context) (*types.GetHomepagePanels, error) {
 FROM
   sub`
 	var (
-		recentFilesClickedPercentage              float32
-		recentSearchClickedPercentage             float32
-		recentRepositoriesClickedPercentage       float32
-		savedSearchesClickedPercentage            float32
-		newSavedSearchesClickedPercentage         float32
-		totalPanelViews                           float32
-		usersFilesClickedPercentage               float32
-		usersSearchClickedPercentage              float32
-		usersRepositoriesClickedPercentage        float32
-		usersSavedSearchesClickedPercentage       float32
-		usersNewSavedSearchesClickedPercentage    float32
-		percentUsersShown                         float32
+		recentFilesClickedPercentage              float64
+		recentSearchClickedPercentage             float64
+		recentRepositoriesClickedPercentage       float64
+		savedSearchesClickedPercentage            float64
+		newSavedSearchesClickedPercentage         float64
+		totalPanelViews                           float64
+		usersFilesClickedPercentage               float64
+		usersSearchClickedPercentage              float64
+		usersRepositoriesClickedPercentage        float64
+		usersSavedSearchesClickedPercentage       float64
+		usersNewSavedSearchesClickedPercentage    float64
+		percentUsersShown                         float64
 	)
 	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
 		&recentFilesClickedPercentage,
@@ -58,17 +58,17 @@ FROM
 	}
 
 	return &types.SavedSearches{
-		RecentFilesClickedPercentage:           float32(recentFilesClickedPercentage),
-		RecentSearchClickedPercentage:          float32(recentSearchClickedPercentage),
-		RecentRepositoriesClickedPercentage:    float32(RecentRepositoriesClickedPercentage),
-		SavedSearchesClickedPercentage:         float32(savedSearchesClickedPercentage),
-		NewSavedSearchesClickedPercentage:      float32(newSavedSearchesClickedPercentage),
-		TotalPanelViews:                        float32(totalPanelViews),
-		UsersFilesClickedPercentage:            float32(usersFilesClickedPercentage),
-		UsersSearchClickedPercentage:           float32(usersSearchClickedPercentage),
-		UsersRepositoriesClickedPercentage:     float32(usersRepositoriesClickedPercentage),
-		UsersSavedSearchesClickedPercentage:    float32(usersSavedSearchesClickedPercentage),
-		UsersNewSavedSearchesClickedPercentage: float32(usersNewSavedSearchesClickedPercentage),
-		PercentUsersShown:                      float32(PercentUsersShown)
+		RecentFilesClickedPercentage:           float64(recentFilesClickedPercentage),
+		RecentSearchClickedPercentage:          float64(recentSearchClickedPercentage),
+		RecentRepositoriesClickedPercentage:    float64(RecentRepositoriesClickedPercentage),
+		SavedSearchesClickedPercentage:         float64(savedSearchesClickedPercentage),
+		NewSavedSearchesClickedPercentage:      float64(newSavedSearchesClickedPercentage),
+		TotalPanelViews:                        float64(totalPanelViews),
+		UsersFilesClickedPercentage:            float64(usersFilesClickedPercentage),
+		UsersSearchClickedPercentage:           float64(usersSearchClickedPercentage),
+		UsersRepositoriesClickedPercentage:     float64(usersRepositoriesClickedPercentage),
+		UsersSavedSearchesClickedPercentage:    float64(usersSavedSearchesClickedPercentage),
+		UsersNewSavedSearchesClickedPercentage: float64(usersNewSavedSearchesClickedPercentage),
+		PercentUsersShown:                      float64(PercentUsersShown)
 	}, nil
 }
