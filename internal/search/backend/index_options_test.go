@@ -169,14 +169,16 @@ func TestGetIndexOptions(t *testing.T) {
 		})
 	}
 
-	getVersionFunc := func(repo string) func(string) (string, error) {
-		return func(branch string) (string, error) {
-			return "!" + branch, nil
-		}
+	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+		return &RepoIndexOptions{
+			GetVersion: func(branch string) (string, error) {
+				return "!" + branch, nil
+			},
+		}, nil
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			b := GetIndexOptions(&tc.conf, getVersionFunc, tc.repo)
+			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -248,7 +250,13 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			b := GetIndexOptions(&conf, func(repo string) func(string) (string, error) { return tc.f }, "repo")
+			getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+				return &RepoIndexOptions{
+					GetVersion: tc.f,
+				}, nil
+			}
+
+			b := GetIndexOptions(&conf, getRepoIndexOptions, "repo")
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -289,16 +297,18 @@ func TestGetIndexOptions_batch(t *testing.T) {
 			})
 		}
 	}
-	getVersion := func(repo string) func(string) (string, error) {
-		return func(branch string) (string, error) {
-			if strings.HasPrefix(repo, "error") {
-				return "", errors.New("error")
-			}
-			return fmt.Sprintf("!%s-%s", branch, repo), nil
-		}
+	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+		return &RepoIndexOptions{
+			GetVersion: func(branch string) (string, error) {
+				if strings.HasPrefix(repo, "error") {
+					return "", errors.New("error")
+				}
+				return fmt.Sprintf("!%s-%s", branch, repo), nil
+			},
+		}, nil
 	}
 
-	b := GetIndexOptions(&schema.SiteConfiguration{}, getVersion, repos...)
+	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
 	got := make([]zoektIndexOptions, len(repos))
 	for i := range repos {

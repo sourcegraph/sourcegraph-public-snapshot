@@ -164,8 +164,8 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	siteConfig := conf.Get().SiteConfiguration
-	getVersion := func(repo string) func(string) (string, error) {
-		return func(branch string) (string, error) {
+	getRepoIndexOptions := func(repo string) (*searchbackend.RepoIndexOptions, error) {
+		getVersion := func(branch string) (string, error) {
 			// Do not to trigger a repo-updater lookup since this is a batch job.
 			commitID, err := git.ResolveRevision(ctx, gitserver.Repo{Name: api.RepoName(repo)}, nil, branch, git.ResolveRevisionOptions{})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
@@ -175,13 +175,17 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			}
 			return string(commitID), err
 		}
+
+		return &searchbackend.RepoIndexOptions{
+			GetVersion: getVersion,
+		}, nil
 	}
 
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
 
-	b := searchbackend.GetIndexOptions(&siteConfig, getVersion, r.Form["repo"]...)
+	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, r.Form["repo"]...)
 	_, _ = w.Write(b)
 	return nil
 }
