@@ -184,7 +184,7 @@ describe('Repository', () => {
                                             '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
                                         author: {
                                             person: {
-                                                avatarURL: 'https://avatars0.githubusercontent.com/u/1976?v=4',
+                                                avatarURL: '',
                                                 name: 'Quinn Slack',
                                                 email: 'qslack@qslack.com',
                                                 displayName: 'Quinn Slack',
@@ -491,6 +491,37 @@ describe('Repository', () => {
 
             const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
             assert.strictEqual(blobContent, `content for: ${filePath}`)
+        })
+
+        it.only('works with spaces in the repository name', async () => {
+            const shortRepositoryName = 'my org/repo with spaces'
+            const repositorySourcegraphUrl = `/github.com/${shortRepositoryName}`
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath }) =>
+                      createFileExternalLinksResult(filePath),
+                    TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
+
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                // Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+            })
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/${shortRepositoryName}`
+            )
+
+            await driver.page.waitForSelector('h2.tree-page__title')
+            await assertSelectorHasText('h2.tree-page__title', ' my org/repo with spaces')
+            await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
+
         })
     })
 })
