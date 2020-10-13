@@ -11,7 +11,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -191,7 +191,7 @@ type hook struct{}
 // we use to cut out the row payloads from bulk insertion tracing data. We don't
 // need all the parameter data for such requests, which are too big to fit into
 // Jaeger spans.
-var postgresBulkInsertRowPattern = regexp.MustCompile(`(\([$\d,\s]+\)[,\s]*)+`)
+var postgresBulkInsertRowPattern = lazyregexp.New(`(\([$\d,\s]+\)[,\s]*)+`)
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
