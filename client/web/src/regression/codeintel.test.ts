@@ -43,7 +43,6 @@ describe('Code intelligence regression test suite', () => {
     ]
 
     const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
-    // const prometheusClientHeadCommit = '333f01cef0d61f9ef05ada3d94e00e69c8d5cdda'
     const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
 
     let driver: Driver
