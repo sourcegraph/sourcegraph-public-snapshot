@@ -71,7 +71,7 @@ func TestResolverTo(t *testing.T) {
 		&NamespaceResolver{},
 		&NodeResolver{},
 		&RepositoryResolver{},
-		&commitSearchResultResolver{},
+		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&searchSuggestionResolver{},
 		&settingsSubject{},
