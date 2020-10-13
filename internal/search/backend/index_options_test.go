@@ -42,6 +42,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: schema.SiteConfiguration{},
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -53,6 +54,7 @@ func TestGetIndexOptions(t *testing.T) {
 			SearchIndexSymbolsEnabled: boolPtr(false)},
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID: 1,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
@@ -64,6 +66,7 @@ func TestGetIndexOptions(t *testing.T) {
 		},
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:     1,
 			Symbols:    true,
 			LargeFiles: []string{"**/*.jar", "*.bin"},
 			Branches: []zoekt.RepositoryBranch{
@@ -75,6 +78,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo@b", "repo@a"), vc("bar", "repo@c", "repo@a", "other@d")),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -88,6 +92,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo@a")),
 		repo: "not_in_version_context",
 		want: zoektIndexOptions{
+			RepoID:  3,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{{
 				Name:    "HEAD",
@@ -99,6 +104,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo@HEAD", "repo@a")),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -111,6 +117,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo", "repo@a")),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -122,6 +129,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": {"a"}}),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -135,6 +143,7 @@ func TestGetIndexOptions(t *testing.T) {
 			map[string][]string{"repo": {"b", "c"}}),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -163,6 +172,7 @@ func TestGetIndexOptions(t *testing.T) {
 			conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": branches}),
 			repo: "repo",
 			want: zoektIndexOptions{
+				RepoID:   1,
 				Symbols:  true,
 				Branches: want,
 			},
@@ -170,7 +180,15 @@ func TestGetIndexOptions(t *testing.T) {
 	}
 
 	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+		repoID := int32(1)
+		for _, r := range []string{"repo", "foo", "not_in_version_context"} {
+			if r == repo {
+				break
+			}
+			repoID++
+		}
 		return &RepoIndexOptions{
+			RepoID: repoID,
 			GetVersion: func(branch string) (string, error) {
 				return "!" + branch, nil
 			},

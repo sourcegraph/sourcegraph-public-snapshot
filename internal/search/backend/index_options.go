@@ -15,6 +15,9 @@ import (
 //
 // We only specify a subset of the fields.
 type zoektIndexOptions struct {
+	// RepoID is the Sourcegraph Repository ID.
+	RepoID int32
+
 	// LargeFiles is a slice of glob patterns where matching file paths should
 	// be indexed regardless of their size. The pattern syntax can be found
 	// here: https://golang.org/pkg/path/filepath/#Match.
@@ -33,6 +36,9 @@ type zoektIndexOptions struct {
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
 // repository.
 type RepoIndexOptions struct {
+	// RepoID is the Sourcegraph Repository ID.
+	RepoID int32
+
 	// GetVersion is used to resolve revisions for a repo. If it fails, the
 	// error is encoded in the body. If the revision is missing, an empty
 	// string should be returned rather than an error.
@@ -71,6 +77,7 @@ func getIndexOptions(c *schema.SiteConfiguration, repoName string, getRepoIndexO
 	}
 
 	o := &zoektIndexOptions{
+		RepoID:     opts.RepoID,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}
