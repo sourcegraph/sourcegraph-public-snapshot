@@ -42,7 +42,7 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 }
 ```
 
-The site admin should also set `codeHost.nativeIntegrationInstalled` in [global settings](../admin/config/settings#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
+The site admin should also set `codeHost.nativeIntegrationInstalled` in [global settings](../admin/config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
 
 ### Updating
 
