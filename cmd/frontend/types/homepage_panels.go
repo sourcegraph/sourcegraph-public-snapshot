@@ -57,7 +57,7 @@ FROM
 		return nil, err
 	}
 
-	return &types.SavedSearches{
+	return &types.HomepagePanels{
 		RecentFilesClickedPercentage:           float64(recentFilesClickedPercentage),
 		RecentSearchClickedPercentage:          float64(recentSearchClickedPercentage),
 		RecentRepositoriesClickedPercentage:    float64(RecentRepositoriesClickedPercentage),
