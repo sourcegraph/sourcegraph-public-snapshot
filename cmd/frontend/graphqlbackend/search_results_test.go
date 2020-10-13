@@ -140,7 +140,7 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchSymbols = nil }()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
@@ -206,7 +206,7 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchSymbols = nil }()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
