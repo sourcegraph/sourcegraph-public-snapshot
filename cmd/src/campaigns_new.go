@@ -105,19 +105,21 @@ func getGitConfig(attribute string) (string, error) {
 const campaignSpecTmpl = `name: NAME-OF-YOUR-CAMPAIGN
 description: DESCRIPTION-OF-YOUR-CAMPAIGN
 
-
-# "on" specifies on which repositories to execute the "steps"
+# "on" specifies on which repositories to execute the "steps".
 on:
   # Example: find all repositories that contain a README.md file.
   - repositoriesMatchingQuery: file:README.md
 
-# steps are run in each repository. Each repository's resulting diff is captured.
+# "steps" are run in each repository. Each step is run in a Docker container
+# with the repository as the working directory. Once complete, each
+# repository's resulting diff is captured.
 steps:
   # Example: append "Hello World" to every README.md
   - run: echo "Hello World" | tee -a $(find -name README.md)
     container: alpine:3
 
-# Describe the changeset (e.g., GitHub pull request) you want for each repository.
+# "changesetTemplate" describes the changeset (e.g., GitHub pull request) that
+# will be created for each repository.
 changesetTemplate:
   title: Hello World
   body: This adds Hello World to the README
