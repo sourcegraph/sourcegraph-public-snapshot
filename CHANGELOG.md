@@ -48,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Previously large files that match the site configuration [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFiles) would not be indexed if they contained a large number of unique trigrams. We now index those files as well. Note: files matching the glob still need to be valid utf-8. [#12443](https://github.com/sourcegraph/sourcegraph/issues/12443)
 - Git tags without a `creatordate` value will no longer break tag search within a repository. [#5453](https://github.com/sourcegraph/sourcegraph/issues/5453)
 - Campaigns pages now work properly on small viewports. [#14292](https://github.com/sourcegraph/sourcegraph/pull/14292)
+- Fix an issue with viewing repositories that have spaces in the repository name [#2867](https://github.com/sourcegraph/sourcegraph/issues/2867)
 
 ### Removed
 

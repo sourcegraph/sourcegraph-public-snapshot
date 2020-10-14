@@ -392,7 +392,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     }
 
-    const repoMatchURL = `/${repoOrError.name}`
+    const repoMatchURL = '/' + repoName.split('/').map(encodeURIComponent).join('/')
 
     const context: RepoContainerContext = {
         ...props,
