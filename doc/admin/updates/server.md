@@ -22,11 +22,11 @@ If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a backgroun
 
 **Wait for the above message to be printed in `docker logs precise-code-intel-bundle-manager` before upgrading to the next Sourcegraph version**.
 
-### Turn off the database encryption
+### Turn off the database secrets encryption
 
 > WARNING: Please be sure to delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
 
-Previously on 3.20, we would automatically generate a secret key file (`/var/lib/sourcegraph/token`) inside the container for encrypting secrets stored in the database. However, it is not yet ready for general use and format of the secret key file might change. Therefore, it is best to delete the secret key file (`/var/lib/sourcegraph/token`) and turns off the database encryption.
+Previously on 3.20, we would automatically generate a secret key file (`/var/lib/sourcegraph/token`) inside the container for encrypting secrets stored in the database. However, it is not yet ready for general use and format of the secret key file might change. Therefore, it is best to delete the secret key file (`/var/lib/sourcegraph/token`) and turns off the database secrets encryption.
 
 ### Standard upgrade procedure
 
