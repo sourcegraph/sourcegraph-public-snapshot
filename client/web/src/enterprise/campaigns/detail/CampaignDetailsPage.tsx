@@ -26,6 +26,7 @@ import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { CampaignInfoByline } from './CampaignInfoByline'
+import { UnpublishedNotice } from './UnpublishedNotice'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -140,6 +141,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 lastApplier={campaign.lastApplier}
                 className="mb-3"
             />
+            <UnpublishedNotice unpublished={campaign.changesets.stats.unpublished} className="mb-3" />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesets.stats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />
             <CampaignTabs
