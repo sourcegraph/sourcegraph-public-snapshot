@@ -136,10 +136,17 @@ func New(
 // BundleClient creates a client that can answer intelligence queries for a single dump.
 func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 	return &bundleClientImpl{
-		base:           c,
-		bundleID:       bundleID,
-		store:          persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext),
-		databaseOpener: database.OpenDatabase,
+		base:     c,
+		bundleID: bundleID,
+		store:    persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext),
+		databaseOpener: func(ctx context.Context, filename string, store persistence.Store) (database.Database, error) {
+			db, err := database.OpenDatabase(ctx, filename, store)
+			if err != nil {
+				return nil, err
+			}
+
+			return database.NewObserved(db, filename, c.observationContext), nil
+		},
 	}
 }
 

@@ -7,54 +7,83 @@ func PreciseCodeIntelBundleManager() *Container {
 		Description: "Stores and manages precise code intelligence bundles.",
 		Groups: []Group{
 			{
-				Title: "General",
+				Title: "Database",
 				Rows: []Row{
 					{
 						{
-							Name:        "99th_percentile_bundle_database_duration",
-							Description: "99th percentile successful bundle database query duration over 5m",
-							// TODO(efritz) - ensure these exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_bundle_database_duration_seconds_bucket[5m])))`,
+							Name:        "code_intel_frontend_db_store_99th_percentile_duration",
+							Description: "99th percentile successful frontend database query duration over 5m",
+							// TODO(efritz) - exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_frontend_db_store_duration_seconds_bucket{job="precise-code-intel-bundle-manager"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("database operation").Unit(Seconds),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "bundle_database_errors",
-							Description:       "bundle database errors every 5m",
-							Query:             `increase(src_bundle_database_errors_total[5m])`,
+							Name:              "code_intel_frontend_db_store_errors",
+							Description:       "frontend database errors every 5m",
+							Query:             `increase(src_code_intel_frontend_db_store_errors_total{job="precise-code-intel-bundle-manager"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("database operation"),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
 					{
 						{
-							Name:        "99th_percentile_bundle_reader_duration",
-							Description: "99th percentile successful bundle reader query duration over 5m",
-							// TODO(efritz) - ensure these exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_bundle_reader_duration_seconds_bucket[5m])))`,
+							Name:        "code_intel_codeintel_db_store_99th_percentile_duration",
+							Description: "99th percentile successful codeintel database query duration over 5m",
+							// TODO(efritz) - exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_codeintel_db_store_duration_seconds_bucket{job="precise-code-intel-bundle-manager"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("reader operation").Unit(Seconds),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "bundle_reader_errors",
-							Description:       "bundle reader errors every 5m",
-							Query:             `increase(src_bundle_reader_errors_total[5m])`,
+							Name:              "code_intel_codeintel_db_store_errors",
+							Description:       "codeintel database every 5m",
+							Query:             `increase(src_code_intel_codeintel_db_store_errors_total{job="precise-code-intel-bundle-manager"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("reader operation"),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
+					{
+						{
+							Name:        "code_intel_bundle_store_99th_percentile_duration",
+							Description: "99th percentile successful bundle database store operation duration over 5m",
+							// TODO(efritz) - exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_bundle_store_duration_seconds_bucket{job="precise-code-intel-bundle-manager"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "code_intel_bundle_store_errors",
+							Description:       "bundle store errors every 5m",
+							Query:             `increase(src_code_intel_bundle_store_errors_total{job="precise-code-intel-bundle-manager"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Janitor - expires old data in the database and on disk",
+				Hidden: true,
+				Rows: []Row{
 					{
 						{
 							Name:            "disk_space_remaining",
@@ -66,16 +95,10 @@ func PreciseCodeIntelBundleManager() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
 							Owner:           ObservableOwnerCodeIntel,
 							PossibleSolutions: `
-								- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
+									- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
 							`,
 						},
 					},
-				},
-			},
-			{
-				Title:  "Janitor - expires old data in the database and on disk",
-				Hidden: true,
-				Rows: []Row{
 					{
 						{
 							Name:              "janitor_errors",
