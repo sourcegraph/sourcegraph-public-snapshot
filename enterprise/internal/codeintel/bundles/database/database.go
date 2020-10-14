@@ -8,7 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
