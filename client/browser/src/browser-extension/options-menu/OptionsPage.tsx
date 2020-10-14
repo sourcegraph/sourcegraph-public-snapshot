@@ -117,6 +117,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                             onChange={nextUrlFieldChange}
                             ref={urlInputReference}
                             spellCheck={false}
+                            required={true}
                         />
                     </LoaderInput>
                     {urlState.kind === 'LOADING' ? (
