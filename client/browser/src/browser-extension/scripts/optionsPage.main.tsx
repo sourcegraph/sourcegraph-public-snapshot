@@ -33,6 +33,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AnchorLink, setLinkComponent } from '../../../../shared/src/components/Link'
 import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
 import { Optional } from 'utility-types'
+import { ThemeWrapper } from '../ThemeWrapper'
 
 interface TabStatus {
     host: string
@@ -182,29 +183,30 @@ const Options: React.FunctionComponent = () => {
     }
 
     return (
-        <OptionsPage
-            isFullPage={isFullPage}
-            sourcegraphUrl={sourcegraphUrl}
-            onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
-            version={version}
-            validateSourcegraphUrl={validateSourcegraphUrl}
-            isActivated={!!isActivated}
-            onToggleActivated={handleToggleActivated}
-            optionFlags={optionFlagsWithValues}
-            onChangeOptionFlag={handleChangeOptionFlag}
-            showPrivateRepositoryAlert={
-                currentTabStatus?.status.isPrivateRepository && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
-            }
-            showSourcegraphCloudAlert={showSourcegraphCloudAlert}
-            permissionAlert={permissionAlert}
-            currentHost={currentTabStatus?.status.host}
-            requestPermissionsHandler={currentTabStatus?.handler}
-        />
+        <ThemeWrapper>
+            <OptionsPage
+                isFullPage={isFullPage}
+                sourcegraphUrl={sourcegraphUrl}
+                onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
+                version={version}
+                validateSourcegraphUrl={validateSourcegraphUrl}
+                isActivated={!!isActivated}
+                onToggleActivated={handleToggleActivated}
+                optionFlags={optionFlagsWithValues}
+                onChangeOptionFlag={handleChangeOptionFlag}
+                showPrivateRepositoryAlert={
+                    currentTabStatus?.status.isPrivateRepository && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
+                }
+                showSourcegraphCloudAlert={showSourcegraphCloudAlert}
+                permissionAlert={permissionAlert}
+                currentHost={currentTabStatus?.status.host}
+                requestPermissionsHandler={currentTabStatus?.handler}
+            />
+        </ThemeWrapper>
     )
 }
 
 const inject = (): void => {
-    document.body.classList.add('theme-light')
     render(<Options />, document.body)
 }
 
