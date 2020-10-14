@@ -10,7 +10,7 @@
 - [Add user authentication providers (SSO)](../auth/index.md)
 - [Configure search scopes](../../user/search/how-to/scopes.md)
 - [Integrate with Phabricator](../../integration/phabricator.md)
-- [Add organizations](../../user/organizations/index.md)
+- [Add organizations](../organizations.md)
 - [Set up HTTPS](../http_https_configuration.md)
 - [Use a custom domain](../url.md)
 - [Update Sourcegraph](../updates.md)

@@ -151,3 +151,11 @@
 /user/code_intelligence/adding_lsif_to_workflows    /user/code_intelligence/how-to/adding_lsif_to_workflows 308
 /user/code_intelligence/languages/go    /user/code_intelligence/how-to/index_a_go_repository 308
 /user/code_intelligence/languages/typescript_and_javascript /user/code_intelligence/how-to/index_a_typescript_and_javascript_repository 308
+
+/user/markdown  /admin/markdown 308
+/user/organizations/index   /admin/organizations 308
+/user/usage_statistics  /admin/usage_statistics 308
+/user/user_surveys  /admin/user_surveys 308
+/user/repository/badges /user/personalization/badges 308
+/user/quick_links   /user/personalization/quick_links 308
+/user/themes    /user/personalization/themes 308

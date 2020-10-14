@@ -39,7 +39,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
   </a>
 </div>
 
-## Explanations
+## [Explanations](explanations/index.md)
 
 - [Search features](explanations/features.md)
   - Use regular expressions and exact queries to perform full-text searches.
@@ -55,17 +55,17 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 - [Sourcegraph Cloud](explanations/sourcegraph_cloud.md)
 - [Search tips](explanations/tips.md)
 
-## How-tos
+## [How-tos](how-to/index.md)
 
 - [Switch from Oracle OpenGrok to Sourcegraph](how-to/opengrok.md)
 - [Create a saved search](how-to/saved_searches.md)
 - [Create a custom search scope](how-to/scopes.md)
 
-## Tutorials
+## [Tutorials](tutorials/index.md)
 
 - [Useful search examples](tutorials/examples.md)
 
-## References
+## [References](reference/index.md)
 
 - [Search query syntax](reference/queries.md)
 - [Sourcegraph search query language](reference/language.md)
