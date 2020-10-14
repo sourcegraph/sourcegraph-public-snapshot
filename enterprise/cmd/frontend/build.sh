@@ -14,7 +14,9 @@ trap cleanup EXIT
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
-export CGO_ENABLED=0
+
+# Get additional build args
+. ./dev/libsqlite3-pcre/go-build-args.sh
 
 pkg=github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
