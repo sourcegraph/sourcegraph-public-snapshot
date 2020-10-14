@@ -85,6 +85,7 @@ describe('Search', () => {
 
     describe('Interactive search mode', () => {
         const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
+            ...commonWebGraphQlResults,
             ViewerSettings: () => ({
                 viewerSettings: {
                     subjects: [
