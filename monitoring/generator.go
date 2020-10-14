@@ -378,7 +378,7 @@ func (p panelOptions) withDefaults() panelOptions {
 		//
 		// 1. Using "{{instance}}" is often wrong, see: https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars#faq-why-can-t-i-create-a-graph-panel-with-more-than-5-cardinality-labels
 		// 2. More often than not, you actually do want to aggregate your whole query with `sum()`, `max()` or similar.
-		// 3. If "{{instance}"  or similar was the default, it would be easy for people to say "I guess that's intentional"
+		// 3. If "{{instance}}" or similar was the default, it would be easy for people to say "I guess that's intentional"
 		//    instead of seeing multiple "value" labels on their dashboard (which immediately makes them think
 		//    "how can I fix that?".)
 		//
