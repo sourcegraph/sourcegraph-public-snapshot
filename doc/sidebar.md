@@ -42,4 +42,4 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Background information](dev/background-information/index.md)
 - <br/>
 - [★ Quick install](index.md#quickstart-guide)
-- [★ Search query syntax](user/search/queries.md)
+- [★ Search query syntax](user/search/reference/queries.md)

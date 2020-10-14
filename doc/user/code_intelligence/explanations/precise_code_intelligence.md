@@ -13,12 +13,12 @@ First navigate to your [global settings](https://sourcegraph.example.com/site-ad
   "codeIntel.lsif": true
 ```
 
-Then select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](lsif_quickstart.md) to setup precise code intelligence.
+Then select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](../lsif_quickstart.md) to setup precise code intelligence.
 
-- [Go](languages/go.md)
-- [Javascript / Typescript](languages/typescript_and_javascript.md)
+- [Go](../how-to/index_a_go_repository.md)
+- [Javascript / Typescript](../how-to/index_a_typescript_and_javascript_repository.md)
 
-After completing the initial setup, follow the [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate indexing of code changes as part of your CI/CD practice.
+After completing the initial setup, follow the [continuous integration guide](../how-to/adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate indexing of code changes as part of your CI/CD practice.
 
 > NOTE: LSIF support is still a relatively new feature. We are currently validating that the feature remains responsive even with tens of thousands of repositories. We recommend you start by uploading a smaller number of key repositories. Once you reach 50 to 100 repositories we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
 
@@ -28,7 +28,7 @@ Cross-repository code intelligence will only be powered by LSIF when **both** re
 
 ## Why are my results sometimes incorrect?
 
-If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to basic code intelligence. You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
+If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to basic code intelligence. You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](../img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
 - The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
@@ -56,7 +56,7 @@ The bulk of LSIF data is stored on-disk, and as code intelligence data for a com
 ## More about LSIF
 
 - [Writing an LSIF indexer](writing_an_indexer.md)
-- [Adding LSIF to many repositories](adding_lsif_to_many_repos.md)
+- [Adding LSIF to many repositories](../how-to/adding_lsif_to_many_repos.md)
 
 To learn more, check out our lightning talk about LSIF from GopherCon 2019 or the [introductory blog post](https://about.sourcegraph.com/go/code-intelligence-with-lsif):
 

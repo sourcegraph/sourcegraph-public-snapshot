@@ -8,13 +8,9 @@
 @import '../panels/HomePanels.scss';
 
 .search-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: flex-start;
     width: 100%;
     overflow: auto;
-    padding-bottom: 4rem;
 
     &__logo {
         flex: 0 0 auto;
@@ -99,6 +95,10 @@
 
     &__repogroup-listing-title {
         margin-bottom: 0.25rem;
+    }
+
+    &__footer {
+        margin-top: 2rem;
     }
 }
 
