@@ -323,7 +323,7 @@ type ReposListOptions struct {
 	// CursorValue contains the relevant value for cursor-based pagination (e.g. "Zaphod").
 	CursorValue string
 
-	// CursorDirection contains the comparison for cursor-based pagination(e.g. "next").
+	// CursorDirection contains the comparison for cursor-based pagination, all possible values are: next, prev.
 	CursorDirection string
 
 	*LimitOffset
