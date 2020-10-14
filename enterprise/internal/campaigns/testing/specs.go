@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 const TestRawCampaignSpec = `{
@@ -59,7 +60,7 @@ var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
 
-func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published interface{}) string {
+func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published campaigns.PublishedValue) string {
 	diff := `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
