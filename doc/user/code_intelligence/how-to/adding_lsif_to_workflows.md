@@ -1,6 +1,6 @@
 # Adding Precise Code Intelligence to CI/CD workflows
 
-## [Language-specific guides](././index.md)
+## [Language-specific guides](index.md)
 
 We are working on creating language specific guides for use with LSIF indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
 
