@@ -31,12 +31,14 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                 .filter(Boolean)
                 .join(':')
         )
+
     // Right-align location, like in Chrome dev tools
     const locationLine = chalk.dim(
         formattedLocation &&
             '\n' +
                 (!process.env.CI
-                    ? ' '.repeat(terminalSize().columns - stringWidth(formattedLocation)) + formattedLocation
+                    ? ' '.repeat(Math.max(0, terminalSize().columns - stringWidth(formattedLocation))) +
+                      formattedLocation
                     : '\t' + formattedLocation)
     )
     return [
