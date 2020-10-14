@@ -128,7 +128,8 @@ export const createSharedIntegrationTestContext = async <
     })
     const { server } = polly
 
-    // Fail test when there is an error
+    // Fail the test in the case a request handler threw an error,
+    // e.g. because a request had no mock defined.
     const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe(error => {
