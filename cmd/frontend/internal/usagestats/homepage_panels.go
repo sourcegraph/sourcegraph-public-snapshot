@@ -7,24 +7,60 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
+const getHomepagePanelsQuery = `
+-- source: cmd/frontend/internal/usagestats/homepage_panels.go:GetHomePagePanels
+SELECT
+  recentFilesPanelFileClicked / recentFilesPanelLoaded                         AS recentFilesClickedPercentage,
+  recentSearchesPanelSearchClicked / recentSearchesPanelLoaded                 AS recentSearchClickedPercentage,
+  repositoriesPanelRepoFilterClicked / repositoriesPanelLoaded                 AS recentRepositoriesClickedPercentage,
+  savedSearchesPanelSearchClicked / savedSearchesPanelLoaded                   AS savedSearchesClickedPercentage,
+  savedSearchesPanelCreateButtonClicked / savedSearchesPanelLoaded             AS newSavedSearchesClickedPercentage,
+  recentSearchesPanelLoaded                                                    AS totalPanelViews,
+  recentFilesPanelFileClicked / uniqueRecentFilesPanelLoaded                   AS usersFilesClickedPercentage,
+  uniqueRecentSearchesPanelSearchClicked / uniqueRecentSearchesPanelLoaded     AS usersSearchClickedPercentage,
+  uniqueRepositoriesPanelRepoFilterClicked / uniqueRepositoriesPanelLoaded     AS usersRepositoriesClickedPercentage,
+  uniqueSavedSearchesPanelSearchClicked / uniqueSavedSearchesPanelLoaded       AS usersSavedSearchesClickedPercentage,
+  uniqueSavedSearchesPanelCreateButtonClicked / uniqueSavedSearchesPanelLoaded AS usersNewSavedSearchesClickedPercentage,
+  uniqueRecentSearchesPanelLoaded                                              AS percentUsersShown
+FROM (
+  SELECT
+    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelFileClicked'), 0)           :: FLOAT AS recentFilesPanelFileClicked,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelLoaded'), 0)                :: FLOAT AS recentFilesPanelLoaded,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked'), 0)      :: FLOAT AS recentSearchesPanelSearchClicked,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded'), 0)             :: FLOAT AS recentSearchesPanelLoaded,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked'), 0)    :: FLOAT AS repositoriesPanelRepoFilterClicked,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelLoaded'), 0)               :: FLOAT AS repositoriesPanelLoaded,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked'), 0)       :: FLOAT AS savedSearchesPanelSearchClicked,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'), 0)              :: FLOAT AS savedSearchesPanelLoaded,
+    NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS savedSearchesPanelCreateButtonClicked,
+
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelLoaded'), 0)                :: FLOAT AS uniqueRecentFilesPanelLoaded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked'), 0)      :: FLOAT AS uniqueRecentSearchesPanelSearchClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded'), 0)             :: FLOAT AS uniqueRecentSearchesPanelLoaded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked'), 0)    :: FLOAT AS uniqueRepositoriesPanelRepoFilterClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelLoaded'), 0)               :: FLOAT AS uniqueRepositoriesPanelLoaded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked'), 0)       :: FLOAT AS uniqueSavedSearchesPanelSearchClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'), 0)              :: FLOAT AS uniqueSavedSearchesPanelLoaded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS uniqueSavedSearchesPanelCreateButtonClicked 
+  FROM
+    event_logs
+  WHERE name IN (
+   'RecentFilesPanelFileClicked',
+   'RecentFilesPanelLoaded',
+   'RecentSearchesPanelSearchClicked',
+   'RecentSearchesPanelLoaded',
+   'RepositoriesPanelRepoFilterClicked',
+   'RepositoriesPanelLoaded',
+   'SavedSearchesPanelSearchClicked',
+   'SavedSearchesPanelLoaded',
+   'SavedSearchesPanelCreateButtonClicked',
+   'RecentFilesPanelFileClicked',
+   'RecentFilesPanelLoaded'
+  ) AND DATE_TRUNC('week', DATE(TIMEZONE('UTC', timestamp))) = DATE_TRUNC('week', current_date)
+) sub
+`
+
 func GetHomepagePanels(ctx context.Context) (*types.HomepagePanels, error) {
-	const q = `
-	WITH sub AS (SELECT name, user_id FROM event_logs WHERE name LIKE '%Panel%' AND DATE_TRUNC('week', timestamp) = DATE_TRUNC('week', current_date))
-		SELECT
-   CAST(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelFileClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelLoaded'),0) AS recentFilesClickedPercentage,
-   CAST(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded'),0) AS recentSearchClickedPercentage,
-   CAST(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelLoaded'),0) AS recentRepositoriesClickedPercentage,
-   CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS savedSearchesClickedPercentage,
-   CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS newSavedSearchesClickedPercentage,
-  COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded') as totalPanelViews,
-   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelFileClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelLoaded'),0) AS usersFilesClickedPercentage,
-   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded'),0) AS usersSearchClickedPercentage,
-   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelLoaded'),0) AS usersRepositoriesClickedPercentage,
-   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS usersSavedSearchesClickedPercentage,
-   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS usersNewSavedSearchesClickedPercentage,
-  COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded') AS percentUsersShown
-FROM
-  sub`
 	var (
 		recentFilesClickedPercentage           float64
 		recentSearchClickedPercentage          float64
@@ -39,7 +75,7 @@ FROM
 		usersNewSavedSearchesClickedPercentage float64
 		percentUsersShown                      float64
 	)
-	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
+	if err := dbconn.Global.QueryRowContext(ctx, getHomepagePanelsQuery).Scan(
 		&recentFilesClickedPercentage,
 		&recentSearchClickedPercentage,
 		&recentRepositoriesClickedPercentage,
