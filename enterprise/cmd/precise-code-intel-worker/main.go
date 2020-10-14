@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	commitupdater "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/commit-updater"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/resetter"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
@@ -21,12 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
+
+const Port = 3188
 
 func main() {
 	env.Lock()
@@ -58,7 +61,7 @@ func main() {
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	server := server.New()
+	server := httpserver.New(Port, func(router *mux.Router) {})
 	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
 	commitUpdater := commitupdater.NewUpdater(
 		store,
