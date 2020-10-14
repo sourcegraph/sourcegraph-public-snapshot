@@ -31,7 +31,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
         if (!this.props.context.allowSignup) {
             return <Redirect to="/sign-in" />
         }
-        
+
         return (
             <div className="signin-signup-page sign-up-page web-content">
                 <PageTitle title="Sign up" />
