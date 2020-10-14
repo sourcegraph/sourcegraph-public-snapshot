@@ -65,7 +65,7 @@ export const createRepositoryRedirectResult = (
         id: `RepositoryID:${repoName}`,
         name: repoName,
         url: `/${repoName}`,
-        externalURLs: [{ url: new URL(`https://github.com/${repoName}`).href, serviceType }],
+        externalURLs: [{ url: new URL(`https://${repoName}`).href, serviceType }],
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master' },
