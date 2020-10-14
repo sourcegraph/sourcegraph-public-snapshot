@@ -255,9 +255,9 @@ export const createSharedIntegrationTestContext = async <
         },
         dispose: async () => {
             subscriptions.unsubscribe()
-            await polly.stop()
             await recordCoverage(driver.browser)
             await driver.page.close()
+            await polly.stop()
         },
     }
 }

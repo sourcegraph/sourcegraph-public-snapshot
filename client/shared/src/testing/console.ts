@@ -31,7 +31,7 @@ export async function formatPuppeteerConsoleMessage(page: Page, message: Console
                 .filter(Boolean)
                 .join(':')
         ) +
-        ` in page ${page.url()}`
+        ` from page ${chalk.underline(page.url())}`
     // Right-align location, like in Chrome dev tools
     const locationLine = chalk.dim(
         formattedLocation &&
