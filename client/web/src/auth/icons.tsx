@@ -1,7 +1,7 @@
 import React from 'react'
 
 export const SourcegraphIcon: React.FunctionComponent<React.SVGAttributes<SVGSVGElement>> = props => (
-    <svg viewBox="0 0 65 64" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <svg width="65" height="64" viewBox="0 0 65 64" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <path
             fillRule="evenodd"
             clipRule="evenodd"

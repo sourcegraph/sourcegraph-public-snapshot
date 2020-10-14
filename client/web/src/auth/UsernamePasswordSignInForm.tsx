@@ -7,12 +7,17 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 import { asError } from '../../../shared/src/util/errors'
 import classNames from 'classnames'
+import { SourcegraphContext } from '../jscontext'
 
 interface Props {
     location: H.Location
     history: H.History
     onAuthError: (error: Error | null) => void
     noThirdPartyProviders?: boolean
+    context: Pick<
+        SourcegraphContext,
+        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+    >
 }
 
 /**
@@ -22,6 +27,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
     location,
     onAuthError,
     noThirdPartyProviders,
+    context,
 }) => {
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -48,7 +54,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                 credentials: 'same-origin',
                 method: 'POST',
                 headers: {
-                    ...window.context.xhrHeaders,
+                    ...context.xhrHeaders,
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                 },
@@ -77,7 +83,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                     onAuthError(asError(error))
                 })
         },
-        [usernameOrEmail, loading, location, password, onAuthError]
+        [usernameOrEmail, loading, location, password, onAuthError, context]
     )
 
     return (
@@ -103,7 +109,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                 <div className="form-group d-flex flex-column align-content-start">
                     <div className="d-flex justify-content-between">
                         <label htmlFor="password">Password</label>
-                        {window.context.resetPasswordEnabled && (
+                        {context.resetPasswordEnabled && (
                             <small className="form-text text-muted">
                                 <Link to="/password-reset">Forgot password?</Link>
                             </small>
