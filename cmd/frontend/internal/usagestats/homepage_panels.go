@@ -41,7 +41,7 @@ FROM (
     NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelLoaded'), 0)               :: FLOAT AS uniqueRepositoriesPanelLoaded,
     NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked'), 0)       :: FLOAT AS uniqueSavedSearchesPanelSearchClicked,
     NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'), 0)              :: FLOAT AS uniqueSavedSearchesPanelLoaded,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS uniqueSavedSearchesPanelCreateButtonClicked 
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS uniqueSavedSearchesPanelCreateButtonClicked
   FROM
     event_logs
   WHERE name IN (
@@ -61,49 +61,19 @@ FROM (
 `
 
 func GetHomepagePanels(ctx context.Context) (*types.HomepagePanels, error) {
-	var (
-		recentFilesClickedPercentage           float64
-		recentSearchClickedPercentage          float64
-		recentRepositoriesClickedPercentage    float64
-		savedSearchesClickedPercentage         float64
-		newSavedSearchesClickedPercentage      float64
-		totalPanelViews                        float64
-		usersFilesClickedPercentage            float64
-		usersSearchClickedPercentage           float64
-		usersRepositoriesClickedPercentage     float64
-		usersSavedSearchesClickedPercentage    float64
-		usersNewSavedSearchesClickedPercentage float64
-		percentUsersShown                      float64
+	var p types.HomepagePanels
+	return &p, dbconn.Global.QueryRowContext(ctx, getHomepagePanelsQuery).Scan(
+		&p.RecentFilesClickedPercentage,
+		&p.RecentSearchClickedPercentage,
+		&p.RecentRepositoriesClickedPercentage,
+		&p.SavedSearchesClickedPercentage,
+		&p.NewSavedSearchesClickedPercentage,
+		&p.TotalPanelViews,
+		&p.UsersFilesClickedPercentage,
+		&p.UsersSearchClickedPercentage,
+		&p.UsersRepositoriesClickedPercentage,
+		&p.UsersSavedSearchesClickedPercentage,
+		&p.UsersNewSavedSearchesClickedPercentage,
+		&p.PercentUsersShown,
 	)
-	if err := dbconn.Global.QueryRowContext(ctx, getHomepagePanelsQuery).Scan(
-		&recentFilesClickedPercentage,
-		&recentSearchClickedPercentage,
-		&recentRepositoriesClickedPercentage,
-		&savedSearchesClickedPercentage,
-		&newSavedSearchesClickedPercentage,
-		&totalPanelViews,
-		&usersFilesClickedPercentage,
-		&usersSearchClickedPercentage,
-		&usersRepositoriesClickedPercentage,
-		&usersSavedSearchesClickedPercentage,
-		&usersNewSavedSearchesClickedPercentage,
-		&percentUsersShown,
-	); err != nil {
-		return nil, err
-	}
-
-	return &types.HomepagePanels{
-		RecentFilesClickedPercentage:           float64(recentFilesClickedPercentage),
-		RecentSearchClickedPercentage:          float64(recentSearchClickedPercentage),
-		RecentRepositoriesClickedPercentage:    float64(recentRepositoriesClickedPercentage),
-		SavedSearchesClickedPercentage:         float64(savedSearchesClickedPercentage),
-		NewSavedSearchesClickedPercentage:      float64(newSavedSearchesClickedPercentage),
-		TotalPanelViews:                        float64(totalPanelViews),
-		UsersFilesClickedPercentage:            float64(usersFilesClickedPercentage),
-		UsersSearchClickedPercentage:           float64(usersSearchClickedPercentage),
-		UsersRepositoriesClickedPercentage:     float64(usersRepositoriesClickedPercentage),
-		UsersSavedSearchesClickedPercentage:    float64(usersSavedSearchesClickedPercentage),
-		UsersNewSavedSearchesClickedPercentage: float64(usersNewSavedSearchesClickedPercentage),
-		PercentUsersShown:                      float64(percentUsersShown),
-	}, nil
 }
