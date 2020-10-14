@@ -555,7 +555,7 @@ func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	case "prev":
 		direction = "<="
 	default:
-		err = fmt.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
+		return nil, fmt.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
 	}
 
 	switch opt.CursorColumn {
