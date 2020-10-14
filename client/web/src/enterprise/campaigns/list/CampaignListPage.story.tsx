@@ -5,9 +5,13 @@ import { nodes } from './CampaignNode.story'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/CampaignListPage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const { add } = storiesOf('web/campaigns/CampaignListPage', module)
+    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+        },
+    })
 
 const queryCampaigns = () =>
     of({

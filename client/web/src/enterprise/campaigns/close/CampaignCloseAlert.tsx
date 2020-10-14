@@ -60,19 +60,19 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                     {totalCount > 0 && (
                         <>
                             <p>By default, all changesets remain untouched.</p>
-                            <p>
+                            <div className="form-check mb-3">
                                 <input
                                     id="closeChangesets"
                                     type="checkbox"
                                     checked={closeChangesets}
                                     onChange={onChangeCloseChangesets}
-                                    className="test-campaigns-close-changesets-checkbox"
+                                    className="test-campaigns-close-changesets-checkbox form-check-input"
                                     disabled={isClosing === true || !viewerCanAdminister}
-                                />{' '}
-                                <label htmlFor="closeChangesets">
+                                />
+                                <label className="form-check-label" htmlFor="closeChangesets">
                                     Also close all {totalCount} open changesets on code hosts.
                                 </label>
-                            </p>
+                            </div>
                             {!viewerCanAdminister && (
                                 <p className="text-warning">
                                     You don't have permission to close this campaign. See{' '}

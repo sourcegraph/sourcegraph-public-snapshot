@@ -52,7 +52,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           history="[History]"
         />
       }
-      className="test-campaign-details-page"
+      className="justify-content-end test-campaign-details-page"
       icon={[Function]}
       title={
         <React.Fragment>
@@ -67,7 +67,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       }
     >
       <div
-        className="page-header d-flex flex-wrap align-items-center test-campaign-details-page"
+        className="page-header d-flex flex-wrap align-items-center justify-content-end test-campaign-details-page"
       >
         <h1
           className="flex-grow-1"
@@ -207,6 +207,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
     stats={
       Object {
         "closed": 0,
+        "deleted": 1,
         "merged": 0,
         "open": 8,
         "total": 10,
@@ -224,16 +225,17 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           className="d-flex flex-wrap justify-content-between align-items-center"
         >
           <div
-            className="d-flex align-items-center flex-grow-1"
+            className="d-flex flex-wrap align-items-center flex-grow-1"
           >
             <h2
               className="m-0 mr-3"
             >
               <CampaignStateBadge
+                className="campaign-stats-card__state-badge"
                 isClosed={false}
               >
                 <span
-                  className="badge badge-success text-uppercase"
+                  className="badge badge-success text-uppercase campaign-stats-card__state-badge"
                 >
                   Open
                 </span>
@@ -248,127 +250,154 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
             </h1>
              
             <span
-              className="lead"
+              className="lead text-nowrap campaign-stats-card__completeness"
             >
-              0
+              10
               % complete
             </span>
-          </div>
-          <CampaignStatsTotalAction
-            count={10}
-          >
             <div
-              className="m-0 mr-3 flex-grow-0 flex-shrink-0 text-nowrap d-flex flex-column align-items-center justify-content-center"
+              className="d-flex flex-wrap justify-content-end flex-grow-1"
             >
-              <span
-                className="campaign-stats-card__changesets-pill"
+              <CampaignStatsTotalAction
+                count={10}
               >
-                <span
-                  className="badge badge-pill badge-secondary"
+                <div
+                  className="m-0 flex-grow-0 pr-2 text-truncate campaign-stats-card__stat text-nowrap d-flex flex-column align-items-center justify-content-center"
                 >
-                  10
-                </span>
-              </span>
-              <span
-                className="text-muted"
+                  <span
+                    className="campaign-stats-card__changesets-pill"
+                  >
+                    <span
+                      className="badge badge-pill badge-secondary"
+                    >
+                      10
+                    </span>
+                  </span>
+                  <span
+                    className="text-muted"
+                  >
+                    changesets
+                  </span>
+                </div>
+              </CampaignStatsTotalAction>
+              <ChangesetStatusUnpublished
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    2
+                     unpublished
+                  </span>
+                }
               >
-                changesets
-              </span>
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-muted d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                  data-tooltip="Set published: true to publish to code host"
+                >
+                  <Memo(SourceBranchIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    2
+                     unpublished
+                  </span>
+                </div>
+              </ChangesetStatusUnpublished>
+              <ChangesetStatusDeleted
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    1
+                     deleted
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-muted d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(DeleteIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    1
+                     deleted
+                  </span>
+                </div>
+              </ChangesetStatusDeleted>
+              <ChangesetStatusOpen
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    8
+                     open
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-success d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(SourcePullIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    8
+                     open
+                  </span>
+                </div>
+              </ChangesetStatusOpen>
+              <ChangesetStatusClosed
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     closed
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-danger d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(SourcePullIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     closed
+                  </span>
+                </div>
+              </ChangesetStatusClosed>
+              <ChangesetStatusMerged
+                className="d-flex flex-grow-0 pl-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     merged
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-merged d-flex flex-grow-0 pl-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(SourceMergeIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     merged
+                  </span>
+                </div>
+              </ChangesetStatusMerged>
             </div>
-          </CampaignStatsTotalAction>
-          <ChangesetStatusUnpublished
-            className="flex-grow-0 flex-shrink-0 mx-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                2
-                 unpublished
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-muted flex-grow-0 flex-shrink-0 mx-3"
-              data-tooltip="Set published: true to publish to code host"
-            >
-              <Memo(SourceBranchIcon) />
-              <span
-                className="text-muted"
-              >
-                2
-                 unpublished
-              </span>
-            </div>
-          </ChangesetStatusUnpublished>
-          <ChangesetStatusOpen
-            className="flex-grow-0 flex-shrink-0 mx-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                8
-                 open
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-success flex-grow-0 flex-shrink-0 mx-3"
-            >
-              <Memo(SourcePullIcon) />
-              <span
-                className="text-muted"
-              >
-                8
-                 open
-              </span>
-            </div>
-          </ChangesetStatusOpen>
-          <ChangesetStatusClosed
-            className="flex-grow-0 flex-shrink-0 mx-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                0
-                 closed
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-danger flex-grow-0 flex-shrink-0 mx-3"
-            >
-              <Memo(SourcePullIcon) />
-              <span
-                className="text-muted"
-              >
-                0
-                 closed
-              </span>
-            </div>
-          </ChangesetStatusClosed>
-          <ChangesetStatusMerged
-            className="flex-grow-0 flex-shrink-0 ml-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                0
-                 merged
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-merged flex-grow-0 flex-shrink-0 ml-3"
-            >
-              <Memo(SourceMergeIcon) />
-              <span
-                className="text-muted"
-              >
-                0
-                 merged
-              </span>
-            </div>
-          </ChangesetStatusMerged>
+          </div>
         </div>
       </div>
     </div>
@@ -406,6 +435,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         "changesets": Object {
           "stats": Object {
             "closed": 0,
+            "deleted": 1,
             "merged": 0,
             "open": 8,
             "total": 10,
@@ -457,52 +487,56 @@ description: somestring",
       }
     }
   >
-    <ul
-      className="nav nav-tabs mb-2"
+    <div
+      className="overflow-auto mb-2"
     >
-      <li
-        className="nav-item"
+      <ul
+        className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap"
       >
-        <a
-          className="nav-link active"
-          href=""
-          onClick={[Function]}
+        <li
+          className="nav-item"
         >
-          <Memo(SourceBranchIcon)
-            className="icon-inline text-muted mr-1"
-          />
-           Changesets
-        </a>
-      </li>
-      <li
-        className="nav-item test-campaigns-chart-tab"
-      >
-        <a
-          className="nav-link"
-          href=""
-          onClick={[Function]}
+          <a
+            className="nav-link active"
+            href=""
+            onClick={[Function]}
+          >
+            <Memo(SourceBranchIcon)
+              className="icon-inline text-muted mr-1"
+            />
+             Changesets
+          </a>
+        </li>
+        <li
+          className="nav-item test-campaigns-chart-tab"
         >
-          <Memo(ChartLineVariantIcon)
-            className="icon-inline text-muted mr-1"
-          />
-           Burndown chart
-        </a>
-      </li>
-      <li
-        className="nav-item test-campaigns-spec-tab"
-      >
-        <a
-          className="nav-link"
-          href=""
-          onClick={[Function]}
+          <a
+            className="nav-link"
+            href=""
+            onClick={[Function]}
+          >
+            <Memo(ChartLineVariantIcon)
+              className="icon-inline text-muted mr-1"
+            />
+             Burndown chart
+          </a>
+        </li>
+        <li
+          className="nav-item test-campaigns-spec-tab"
         >
-          <Memo(FileDocumentIcon)
-            className="icon-inline text-muted mr-1"
-          />
-           Spec
-        </a>
-      </li>
-    </ul>
+          <a
+            className="nav-link"
+            href=""
+            onClick={[Function]}
+          >
+            <Memo(FileDocumentIcon)
+              className="icon-inline text-muted mr-1"
+            />
+             Spec
+          </a>
+        </li>
+      </ul>
+    </div>
     <CampaignChangesets
       campaignID="c"
       history="[History]"
@@ -544,7 +578,7 @@ description: somestring",
               }
             >
               <div
-                className="btn-group flex-wrap mr-2"
+                className="d-none d-lg-block btn-group flex-wrap mr-2"
                 role="group"
               >
                 <button
@@ -611,6 +645,75 @@ description: somestring",
                   Deleted
                 </button>
               </div>
+              <ChangesetFilter
+                className="d-block d-lg-none mr-2"
+                label="Changeset state"
+                onChange={[Function]}
+                values={
+                  Array [
+                    "UNPUBLISHED",
+                    "ERRORED",
+                    "PROCESSING",
+                    "OPEN",
+                    "CLOSED",
+                    "MERGED",
+                    "DELETED",
+                  ]
+                }
+              >
+                <select
+                  className="form-control changeset-filter__dropdown d-block d-lg-none mr-2"
+                  onChange={[Function]}
+                >
+                  <option
+                    value=""
+                  >
+                    Changeset state
+                  </option>
+                  <option
+                    key="UNPUBLISHED"
+                    value="UNPUBLISHED"
+                  >
+                    Unpublished
+                  </option>
+                  <option
+                    key="ERRORED"
+                    value="ERRORED"
+                  >
+                    Errored
+                  </option>
+                  <option
+                    key="PROCESSING"
+                    value="PROCESSING"
+                  >
+                    Processing
+                  </option>
+                  <option
+                    key="OPEN"
+                    value="OPEN"
+                  >
+                    Open
+                  </option>
+                  <option
+                    key="CLOSED"
+                    value="CLOSED"
+                  >
+                    Closed
+                  </option>
+                  <option
+                    key="MERGED"
+                    value="MERGED"
+                  >
+                    Merged
+                  </option>
+                  <option
+                    key="DELETED"
+                    value="DELETED"
+                  >
+                    Deleted
+                  </option>
+                </select>
+              </ChangesetFilter>
             </ChangesetUIStateFilter>
             <ChangesetFilter
               className="mr-2"
@@ -625,7 +728,7 @@ description: somestring",
               }
             >
               <select
-                className="form-control mr-2"
+                className="form-control changeset-filter__dropdown mr-2"
                 onChange={[Function]}
               >
                 <option
@@ -667,7 +770,7 @@ description: somestring",
               }
             >
               <select
-                className="form-control"
+                className="form-control changeset-filter__dropdown"
                 onChange={[Function]}
               >
                 <option
@@ -812,7 +915,7 @@ description: somestring",
                   className="col-md-8 offset-md-2 col-sm-12 card mt-5"
                 >
                   <div
-                    className="card-body p-5"
+                    className="card-body p-5 empty-changeset-list-element__body"
                   >
                     <h2
                       className="text-center mb-4"
@@ -921,7 +1024,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           history="[History]"
         />
       }
-      className="test-campaign-details-page"
+      className="justify-content-end test-campaign-details-page"
       icon={[Function]}
       title={
         <React.Fragment>
@@ -936,7 +1039,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       }
     >
       <div
-        className="page-header d-flex flex-wrap align-items-center test-campaign-details-page"
+        className="page-header d-flex flex-wrap align-items-center justify-content-end test-campaign-details-page"
       >
         <h1
           className="flex-grow-1"
@@ -1076,6 +1179,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
     stats={
       Object {
         "closed": 0,
+        "deleted": 1,
         "merged": 0,
         "open": 8,
         "total": 10,
@@ -1093,16 +1197,17 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           className="d-flex flex-wrap justify-content-between align-items-center"
         >
           <div
-            className="d-flex align-items-center flex-grow-1"
+            className="d-flex flex-wrap align-items-center flex-grow-1"
           >
             <h2
               className="m-0 mr-3"
             >
               <CampaignStateBadge
+                className="campaign-stats-card__state-badge"
                 isClosed={false}
               >
                 <span
-                  className="badge badge-success text-uppercase"
+                  className="badge badge-success text-uppercase campaign-stats-card__state-badge"
                 >
                   Open
                 </span>
@@ -1117,127 +1222,154 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
             </h1>
              
             <span
-              className="lead"
+              className="lead text-nowrap campaign-stats-card__completeness"
             >
-              0
+              10
               % complete
             </span>
-          </div>
-          <CampaignStatsTotalAction
-            count={10}
-          >
             <div
-              className="m-0 mr-3 flex-grow-0 flex-shrink-0 text-nowrap d-flex flex-column align-items-center justify-content-center"
+              className="d-flex flex-wrap justify-content-end flex-grow-1"
             >
-              <span
-                className="campaign-stats-card__changesets-pill"
+              <CampaignStatsTotalAction
+                count={10}
               >
-                <span
-                  className="badge badge-pill badge-secondary"
+                <div
+                  className="m-0 flex-grow-0 pr-2 text-truncate campaign-stats-card__stat text-nowrap d-flex flex-column align-items-center justify-content-center"
                 >
-                  10
-                </span>
-              </span>
-              <span
-                className="text-muted"
+                  <span
+                    className="campaign-stats-card__changesets-pill"
+                  >
+                    <span
+                      className="badge badge-pill badge-secondary"
+                    >
+                      10
+                    </span>
+                  </span>
+                  <span
+                    className="text-muted"
+                  >
+                    changesets
+                  </span>
+                </div>
+              </CampaignStatsTotalAction>
+              <ChangesetStatusUnpublished
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    2
+                     unpublished
+                  </span>
+                }
               >
-                changesets
-              </span>
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-muted d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                  data-tooltip="Set published: true to publish to code host"
+                >
+                  <Memo(SourceBranchIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    2
+                     unpublished
+                  </span>
+                </div>
+              </ChangesetStatusUnpublished>
+              <ChangesetStatusDeleted
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    1
+                     deleted
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-muted d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(DeleteIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    1
+                     deleted
+                  </span>
+                </div>
+              </ChangesetStatusDeleted>
+              <ChangesetStatusOpen
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    8
+                     open
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-success d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(SourcePullIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    8
+                     open
+                  </span>
+                </div>
+              </ChangesetStatusOpen>
+              <ChangesetStatusClosed
+                className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     closed
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-danger d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(SourcePullIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     closed
+                  </span>
+                </div>
+              </ChangesetStatusClosed>
+              <ChangesetStatusMerged
+                className="d-flex flex-grow-0 pl-2 text-truncate campaign-stats-card__stat"
+                label={
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     merged
+                  </span>
+                }
+              >
+                <div
+                  className="m-0 text-nowrap flex-column align-items-center justify-content-center text-merged d-flex flex-grow-0 pl-2 text-truncate campaign-stats-card__stat"
+                >
+                  <Memo(SourceMergeIcon) />
+                  <span
+                    className="text-muted"
+                  >
+                    0
+                     merged
+                  </span>
+                </div>
+              </ChangesetStatusMerged>
             </div>
-          </CampaignStatsTotalAction>
-          <ChangesetStatusUnpublished
-            className="flex-grow-0 flex-shrink-0 mx-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                2
-                 unpublished
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-muted flex-grow-0 flex-shrink-0 mx-3"
-              data-tooltip="Set published: true to publish to code host"
-            >
-              <Memo(SourceBranchIcon) />
-              <span
-                className="text-muted"
-              >
-                2
-                 unpublished
-              </span>
-            </div>
-          </ChangesetStatusUnpublished>
-          <ChangesetStatusOpen
-            className="flex-grow-0 flex-shrink-0 mx-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                8
-                 open
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-success flex-grow-0 flex-shrink-0 mx-3"
-            >
-              <Memo(SourcePullIcon) />
-              <span
-                className="text-muted"
-              >
-                8
-                 open
-              </span>
-            </div>
-          </ChangesetStatusOpen>
-          <ChangesetStatusClosed
-            className="flex-grow-0 flex-shrink-0 mx-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                0
-                 closed
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-danger flex-grow-0 flex-shrink-0 mx-3"
-            >
-              <Memo(SourcePullIcon) />
-              <span
-                className="text-muted"
-              >
-                0
-                 closed
-              </span>
-            </div>
-          </ChangesetStatusClosed>
-          <ChangesetStatusMerged
-            className="flex-grow-0 flex-shrink-0 ml-3"
-            label={
-              <span
-                className="text-muted"
-              >
-                0
-                 merged
-              </span>
-            }
-          >
-            <div
-              className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-merged flex-grow-0 flex-shrink-0 ml-3"
-            >
-              <Memo(SourceMergeIcon) />
-              <span
-                className="text-muted"
-              >
-                0
-                 merged
-              </span>
-            </div>
-          </ChangesetStatusMerged>
+          </div>
         </div>
       </div>
     </div>
@@ -1275,6 +1407,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         "changesets": Object {
           "stats": Object {
             "closed": 0,
+            "deleted": 1,
             "merged": 0,
             "open": 8,
             "total": 10,
@@ -1326,52 +1459,56 @@ description: somestring",
       }
     }
   >
-    <ul
-      className="nav nav-tabs mb-2"
+    <div
+      className="overflow-auto mb-2"
     >
-      <li
-        className="nav-item"
+      <ul
+        className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap"
       >
-        <a
-          className="nav-link active"
-          href=""
-          onClick={[Function]}
+        <li
+          className="nav-item"
         >
-          <Memo(SourceBranchIcon)
-            className="icon-inline text-muted mr-1"
-          />
-           Changesets
-        </a>
-      </li>
-      <li
-        className="nav-item test-campaigns-chart-tab"
-      >
-        <a
-          className="nav-link"
-          href=""
-          onClick={[Function]}
+          <a
+            className="nav-link active"
+            href=""
+            onClick={[Function]}
+          >
+            <Memo(SourceBranchIcon)
+              className="icon-inline text-muted mr-1"
+            />
+             Changesets
+          </a>
+        </li>
+        <li
+          className="nav-item test-campaigns-chart-tab"
         >
-          <Memo(ChartLineVariantIcon)
-            className="icon-inline text-muted mr-1"
-          />
-           Burndown chart
-        </a>
-      </li>
-      <li
-        className="nav-item test-campaigns-spec-tab"
-      >
-        <a
-          className="nav-link"
-          href=""
-          onClick={[Function]}
+          <a
+            className="nav-link"
+            href=""
+            onClick={[Function]}
+          >
+            <Memo(ChartLineVariantIcon)
+              className="icon-inline text-muted mr-1"
+            />
+             Burndown chart
+          </a>
+        </li>
+        <li
+          className="nav-item test-campaigns-spec-tab"
         >
-          <Memo(FileDocumentIcon)
-            className="icon-inline text-muted mr-1"
-          />
-           Spec
-        </a>
-      </li>
-    </ul>
+          <a
+            className="nav-link"
+            href=""
+            onClick={[Function]}
+          >
+            <Memo(FileDocumentIcon)
+              className="icon-inline text-muted mr-1"
+            />
+             Spec
+          </a>
+        </li>
+      </ul>
+    </div>
     <CampaignChangesets
       campaignID="c"
       history="[History]"
@@ -1413,7 +1550,7 @@ description: somestring",
               }
             >
               <div
-                className="btn-group flex-wrap mr-2"
+                className="d-none d-lg-block btn-group flex-wrap mr-2"
                 role="group"
               >
                 <button
@@ -1480,6 +1617,75 @@ description: somestring",
                   Deleted
                 </button>
               </div>
+              <ChangesetFilter
+                className="d-block d-lg-none mr-2"
+                label="Changeset state"
+                onChange={[Function]}
+                values={
+                  Array [
+                    "UNPUBLISHED",
+                    "ERRORED",
+                    "PROCESSING",
+                    "OPEN",
+                    "CLOSED",
+                    "MERGED",
+                    "DELETED",
+                  ]
+                }
+              >
+                <select
+                  className="form-control changeset-filter__dropdown d-block d-lg-none mr-2"
+                  onChange={[Function]}
+                >
+                  <option
+                    value=""
+                  >
+                    Changeset state
+                  </option>
+                  <option
+                    key="UNPUBLISHED"
+                    value="UNPUBLISHED"
+                  >
+                    Unpublished
+                  </option>
+                  <option
+                    key="ERRORED"
+                    value="ERRORED"
+                  >
+                    Errored
+                  </option>
+                  <option
+                    key="PROCESSING"
+                    value="PROCESSING"
+                  >
+                    Processing
+                  </option>
+                  <option
+                    key="OPEN"
+                    value="OPEN"
+                  >
+                    Open
+                  </option>
+                  <option
+                    key="CLOSED"
+                    value="CLOSED"
+                  >
+                    Closed
+                  </option>
+                  <option
+                    key="MERGED"
+                    value="MERGED"
+                  >
+                    Merged
+                  </option>
+                  <option
+                    key="DELETED"
+                    value="DELETED"
+                  >
+                    Deleted
+                  </option>
+                </select>
+              </ChangesetFilter>
             </ChangesetUIStateFilter>
             <ChangesetFilter
               className="mr-2"
@@ -1494,7 +1700,7 @@ description: somestring",
               }
             >
               <select
-                className="form-control mr-2"
+                className="form-control changeset-filter__dropdown mr-2"
                 onChange={[Function]}
               >
                 <option
@@ -1536,7 +1742,7 @@ description: somestring",
               }
             >
               <select
-                className="form-control"
+                className="form-control changeset-filter__dropdown"
                 onChange={[Function]}
               >
                 <option
@@ -1681,7 +1887,7 @@ description: somestring",
                   className="col-md-8 offset-md-2 col-sm-12 card mt-5"
                 >
                   <div
-                    className="card-body p-5"
+                    className="card-body p-5 empty-changeset-list-element__body"
                   >
                     <h2
                       className="text-center mb-4"

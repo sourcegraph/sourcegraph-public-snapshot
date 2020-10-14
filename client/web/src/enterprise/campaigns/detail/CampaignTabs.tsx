@@ -92,35 +92,37 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     )
     return (
         <>
-            <ul className="nav nav-tabs mb-2">
-                <li className="nav-item">
-                    <a
-                        href=""
-                        onClick={onSelectChangesets}
-                        className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
-                    >
-                        <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
-                    </a>
-                </li>
-                <li className="nav-item test-campaigns-chart-tab">
-                    <a
-                        href=""
-                        onClick={onSelectChart}
-                        className={classNames('nav-link', selectedTab === 'chart' && 'active')}
-                    >
-                        <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
-                    </a>
-                </li>
-                <li className="nav-item test-campaigns-spec-tab">
-                    <a
-                        href=""
-                        onClick={onSelectSpec}
-                        className={classNames('nav-link', selectedTab === 'spec' && 'active')}
-                    >
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
-                    </a>
-                </li>
-            </ul>
+            <div className="overflow-auto mb-2">
+                <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+                    <li className="nav-item">
+                        <a
+                            href=""
+                            onClick={onSelectChangesets}
+                            className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
+                        >
+                            <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
+                        </a>
+                    </li>
+                    <li className="nav-item test-campaigns-chart-tab">
+                        <a
+                            href=""
+                            onClick={onSelectChart}
+                            className={classNames('nav-link', selectedTab === 'chart' && 'active')}
+                        >
+                            <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
+                        </a>
+                    </li>
+                    <li className="nav-item test-campaigns-spec-tab">
+                        <a
+                            href=""
+                            onClick={onSelectSpec}
+                            className={classNames('nav-link', selectedTab === 'spec' && 'active')}
+                        >
+                            <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
+                        </a>
+                    </li>
+                </ul>
+            </div>
             {selectedTab === 'chart' && (
                 <CampaignBurndownChart
                     campaignID={campaign.id}
