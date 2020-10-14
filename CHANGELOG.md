@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.21.0
+
+### Added
+
 - The new GraphQL API query field `namespaceByName(name: String!)` makes it easier to look up the user or organization with the given name. Previously callers needed to try looking up the user and organization separately.
 - Changesets created by campaigns will now include a link back to the campaign in their body text. [#14033](https://github.com/sourcegraph/sourcegraph/issues/14033)
 - Users can now preview commits that are going to be created in their repositories in the campaign preview UI. [#14181](https://github.com/sourcegraph/sourcegraph/pull/14181)
