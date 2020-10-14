@@ -564,7 +564,7 @@ func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	case string(RepoListCreatedAt):
 		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", opt.CursorValue))
 	default:
-		err = fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
+		return nil, fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
 	}
 	return
 }
