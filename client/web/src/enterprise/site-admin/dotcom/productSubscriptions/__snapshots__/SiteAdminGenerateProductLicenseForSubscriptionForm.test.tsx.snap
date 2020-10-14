@@ -48,29 +48,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
       <small
         className="form-text text-muted"
       >
-        Tags restrict a license. Recognized tags: 
-        <code>
-          true-up
-        </code>
-         (allow user creation beyond limit), 
-        <code>
-          trial
-        </code>
-         (shows a "trial" indicator), 
-        <code>
-          dev
-        </code>
-         (shows a "for development only" indicator). Separate multiple with commas and no spaces (like
-         
-        <code>
-          true-up,trial
-        </code>
-        ). Order does not matter.
-      </small>
-      <small
-        className="form-text text-muted mt-2"
-      >
-        Please refer to
+        Tags restrict a license. Please refer to
          
         <a
           href="https://about.sourcegraph.com/handbook/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
