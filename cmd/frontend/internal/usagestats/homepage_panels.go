@@ -56,7 +56,7 @@ FROM (
    'SavedSearchesPanelCreateButtonClicked',
    'RecentFilesPanelFileClicked',
    'RecentFilesPanelLoaded'
-  ) AND DATE_TRUNC('week', DATE(TIMEZONE('UTC', timestamp))) = DATE_TRUNC('week', current_date)
+  ) AND DATE(TIMEZONE('UTC', timestamp)) >= DATE_TRUNC('week', current_date)
 ) sub
 `
 
