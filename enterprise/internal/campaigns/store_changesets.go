@@ -388,8 +388,7 @@ type ListChangesetsOpts struct {
 	ExternalCheckState   *campaigns.ChangesetCheckState
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
-	// OnlySynced adds a conditional on changeset.unsynced IS FALSE.
-	OnlySynced bool
+	OnlySynced           bool
 }
 
 // ListChangesets lists Changesets with the given filters.
