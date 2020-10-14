@@ -99,7 +99,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: campaigns.Publish{Val: false},
+						Published: campaigns.PublishedValue{Val: false},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
@@ -154,7 +154,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: campaigns.Publish{Val: "draft"},
+						Published: campaigns.PublishedValue{Val: "draft"},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
