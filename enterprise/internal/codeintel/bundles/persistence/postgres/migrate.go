@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	sqlitestore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -52,9 +53,17 @@ func migrateMeta(ctx context.Context, from *sqlitestore.Store, to dbutil.DB, dum
 		return err
 	}
 
-	return withBatchInserter(ctx, to, "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, func(inserter *BatchInserter) error {
-		for _, value := range values {
-			if err := inserter.Insert(ctx, dumpID, value); err != nil {
+	ch := make(chan int, 1)
+	ch <- values[0]
+	close(ch)
+
+	// There should only be one row to insert here. withBatchInserter assumes that
+	// the given inserter function can be called from multiple goroutines, so we feed
+	// the single value into a channel so that only one of the invocations will write
+	// the row to the database.
+	return withBatchInserter(ctx, to, "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, func(inserter *batch.BatchInserter) error {
+		for v := range ch {
+			if err := inserter.Insert(ctx, dumpID, v); err != nil {
 				return err
 			}
 		}
@@ -89,7 +98,7 @@ func migrateDocuments(ctx context.Context, from *sqlitestore.Store, to dbutil.DB
 		}
 	}()
 
-	return withBatchInserter(ctx, to, "lsif_data_documents", []string{"dump_id", "path", "data"}, func(inserter *BatchInserter) error {
+	return withBatchInserter(ctx, to, "lsif_data_documents", []string{"dump_id", "path", "data"}, func(inserter *batch.BatchInserter) error {
 		for document := range ch {
 			if document.err != nil {
 				return document.err
@@ -130,7 +139,7 @@ func migrateResultChunks(ctx context.Context, from *sqlitestore.Store, to dbutil
 		}
 	}()
 
-	return withBatchInserter(ctx, to, "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, func(inserter *BatchInserter) error {
+	return withBatchInserter(ctx, to, "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, func(inserter *batch.BatchInserter) error {
 		for resultChunk := range ch {
 			if resultChunk.err != nil {
 				return resultChunk.err
@@ -180,7 +189,7 @@ func migrateDefinitionReferences(ctx context.Context, tableName string, from *sq
 		}
 	}()
 
-	return withBatchInserter(ctx, to, fmt.Sprintf("lsif_data_%s", tableName), []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *BatchInserter) error {
+	return withBatchInserter(ctx, to, fmt.Sprintf("lsif_data_%s", tableName), []string{"dump_id", "scheme", "identifier", "data"}, func(inserter *batch.BatchInserter) error {
 		for location := range ch {
 			if location.err != nil {
 				return location.err

@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { DiffResolvedRevSpec } from '../../repo'
+import { DiffResolvedRevisionSpec } from '../../repo'
 import { FileInfo, DiffInfo } from '../shared/codeHost'
 
 export interface BitbucketRepoInfo {
@@ -216,7 +216,6 @@ const getBaseFilePathForDiffCodeView = ({
             const match = tooltipText.match(renameRegexp)
             if (!match) {
                 throw new Error(
-                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
                     `Rename change type badge content did not match ${renameRegexp.toString()}: "${tooltipText}"`
                 )
             }
@@ -325,7 +324,7 @@ export function getPRIDFromPathName(): number {
 /**
  * Gets the head and base commit ID from the comparison pickers on the compare page.
  */
-export function getCommitInfoFromComparePage(): DiffResolvedRevSpec {
+export function getCommitInfoFromComparePage(): DiffResolvedRevisionSpec {
     const headCommitElement = document.querySelector('#branch-compare .source-selector a.commitid[data-commitid]')
     const baseCommitElement = document.querySelector('#branch-compare .target-selector a.commitid[data-commitid]')
     if (!headCommitElement || !baseCommitElement) {

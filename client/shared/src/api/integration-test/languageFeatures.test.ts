@@ -7,7 +7,7 @@ import { Services } from '../client/services'
 import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../contract'
+import { FlatExtensionHostAPI } from '../contract'
 import { wrapRemoteObservable } from '../client/api/common'
 
 describe('LanguageFeatures (integration)', () => {
@@ -120,11 +120,13 @@ function testLocationProvider<P>({
     ) => (selector: sourcegraph.DocumentSelector, provider: P) => sourcegraph.Unsubscribable
     labeledProvider: (label: string) => P
     labeledProviderResults: (labels: string[]) => any
-    providerWithImplementation: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P
+    providerWithImplementation: (
+        run: (textDocument: sourcegraph.TextDocument, position: sourcegraph.Position) => void
+    ) => P
     getResult: (
         services: Services,
         uri: string,
-        extHost: Remote<FlatExtHostAPI>
+        extensionHost: Remote<FlatExtensionHostAPI>
     ) => Observable<MaybeLoadingResult<unknown>>
     emptyResultValue: unknown
 }): void {

@@ -1,4 +1,4 @@
-import { TextDocumentPositionParams } from './textDocument'
+import { TextDocumentPositionParameters } from './textDocument'
 
 export interface ReferenceContext {
     /**
@@ -10,6 +10,6 @@ export interface ReferenceContext {
 /**
  * Parameters for a [ReferencesRequest](#ReferencesRequest).
  */
-export interface ReferenceParams extends TextDocumentPositionParams {
+export interface ReferenceParameters extends TextDocumentPositionParameters {
     context: ReferenceContext
 }

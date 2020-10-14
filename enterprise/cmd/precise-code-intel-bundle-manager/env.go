@@ -15,7 +15,7 @@ var (
 	rawJanitorInterval     = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
 	rawMaxUploadAge        = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
 	rawMaxUploadPartAge    = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE", "2h", "The maximum time an upload part file can sit on disk.")
-	rawMaxDatabasePartAge  = env.Get("PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE", "2h", "The maximum time a database part file can sit on disk.")
+	rawMaxDataAge          = env.Get("PRECISE_CODE_INTEL_MAX_DATA_AGE", "720h", "The maximum time LSIF data not visible from the tip of the default branch can remain in the database.")
 	rawDisableJanitor      = env.Get("PRECISE_CODE_INTEL_DISABLE_JANITOR", "false", "Set to true to disable the janitor process during system migrations.")
 )
 

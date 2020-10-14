@@ -203,15 +203,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 dom: domFunctions,
             })
         )
-        const goToDefinition = (event: MouseEvent): void => {
-            const goToDefinitionAction =
-                Array.isArray(this.state.actionsOrError) &&
-                this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
-            if (goToDefinitionAction) {
-                this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
-                event.stopPropagation()
-            }
-        }
 
         let hoveredTokenElement: HTMLElement | undefined
         this.subscriptions.add(
@@ -219,11 +210,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement) {
                     if (hoveredTokenElement) {
                         hoveredTokenElement.style.cursor = 'auto'
-                        hoveredTokenElement.removeEventListener('click', goToDefinition)
+                        hoveredTokenElement.removeEventListener('click', this.goToDefinition)
                     }
                     if (update.hoveredTokenElement) {
                         update.hoveredTokenElement.style.cursor = 'pointer'
-                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
+                        update.hoveredTokenElement.addEventListener('click', this.goToDefinition)
                     }
                     hoveredTokenElement = update.hoveredTokenElement
                 }
@@ -419,6 +410,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 }
             })
         )
+    }
+
+    private goToDefinition = (event: MouseEvent): void => {
+        const goToDefinitionAction =
+            Array.isArray(this.state.actionsOrError) &&
+            this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
+        if (goToDefinitionAction) {
+            this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
+            event.stopPropagation()
+        }
     }
 
     private getLSPTextDocumentPositionParams(

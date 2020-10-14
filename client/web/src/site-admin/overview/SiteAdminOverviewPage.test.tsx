@@ -116,7 +116,6 @@ describe('SiteAdminOverviewPage', () => {
             anonymousUserCount: 2,
             integrationUserCount: 0,
             startTime: new Date().toISOString(),
-            stages: undefined as any,
         }
         const component = renderer.create(
             <SiteAdminOverviewPage

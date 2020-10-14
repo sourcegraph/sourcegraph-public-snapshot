@@ -43,10 +43,24 @@ func (c *Client) Head(ctx context.Context, store store.Store, repositoryID int) 
 	return execGitCommand(ctx, store, repositoryID, "rev-parse", "HEAD")
 }
 
+type CommitGraphOptions struct {
+	Commit string
+	Limit  int
+}
+
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
-// to its parents.
-func (c *Client) CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error) {
-	out, err := execGitCommand(ctx, store, repositoryID, "log", "--all", "--pretty=%H %P")
+// to its parents. If a commit is supplied, the returned graph will be rooted at the given
+// commit. If a non-zero limit is supplied, at most that many commits will be returned.
+func (c *Client) CommitGraph(ctx context.Context, store store.Store, repositoryID int, options CommitGraphOptions) (map[string][]string, error) {
+	commands := []string{"log", "--all", "--pretty=%H %P"}
+	if options.Commit != "" {
+		commands = append(commands, options.Commit)
+	}
+	if options.Limit > 0 {
+		commands = append(commands, fmt.Sprintf("-%d", options.Limit))
+	}
+
+	out, err := execGitCommand(ctx, store, repositoryID, commands...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +81,13 @@ func parseParents(pair []string) map[string][]string {
 		}
 
 		parts := strings.Split(line, " ")
-		commits[parts[0]] = parts[1:]
+		commits[parts[0]] = append(commits[parts[0]], parts[1:]...)
+
+		for _, part := range parts[1:] {
+			if _, ok := commits[part]; !ok {
+				commits[part] = []string{}
+			}
+		}
 	}
 
 	return commits

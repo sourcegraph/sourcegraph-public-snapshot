@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import * as H from 'history'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { Scalars, ChangesetSpecFields } from '../../../graphql-operations'
 import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetSpecNode, ChangesetSpecNodeProps } from './ChangesetSpecNode'
@@ -34,7 +34,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
     expandChangesetDescriptions,
 }) => {
     const queryChangesetSpecsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
+        (args: FilteredConnectionQueryArguments) =>
             queryChangesetSpecs({
                 first: args.first ?? null,
                 after: args.after ?? null,

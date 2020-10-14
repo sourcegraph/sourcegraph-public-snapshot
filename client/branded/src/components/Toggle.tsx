@@ -16,6 +16,8 @@ interface Props {
     /** The title attribute (tooltip). */
     title?: string
 
+    ariaLabel?: string
+
     disabled?: boolean
     tabIndex?: number
     className?: string
@@ -34,6 +36,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     tabIndex,
     onToggle,
     dataTest,
+    ariaLabel,
 }) => {
     function onClick(): void {
         if (!disabled && onToggle) {
@@ -53,6 +56,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             disabled={disabled}
             role="switch"
             aria-checked={value}
+            aria-label={ariaLabel}
             data-test={dataTest}
         >
             <span

@@ -32,7 +32,9 @@ type ObservedStore struct {
 	resetStalledOperation                          *observation.Operation
 	getDumpByIDOperation                           *observation.Operation
 	findClosestDumpsOperation                      *observation.Operation
+	findClosestDumpsFromGraphFragmentOperation     *observation.Operation
 	deleteOldestDumpOperation                      *observation.Operation
+	softDeleteOldDumpsOperation                    *observation.Operation
 	deleteOverlappingDumpsOperation                *observation.Operation
 	getPackageOperation                            *observation.Operation
 	updatePackagesOperation                        *observation.Operation
@@ -174,9 +176,19 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"find_closest_dumps"},
 			Metrics:      metrics,
 		}),
+		findClosestDumpsFromGraphFragmentOperation: observationContext.Operation(observation.Op{
+			Name:         "store.FindClosestDumpsFromGraphFragment",
+			MetricLabels: []string{"find_closest_dumps_from_graph_fragment"},
+			Metrics:      metrics,
+		}),
 		deleteOldestDumpOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteOldestDump",
 			MetricLabels: []string{"delete_oldest_dump"},
+			Metrics:      metrics,
+		}),
+		softDeleteOldDumpsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.SoftDeleteOldDumps",
+			MetricLabels: []string{"soft_delete_old_dumps"},
 			Metrics:      metrics,
 		}),
 		deleteOverlappingDumpsOperation: observationContext.Operation(observation.Op{
@@ -364,7 +376,9 @@ func (s *ObservedStore) wrap(other Store) Store {
 		resetStalledOperation:                          s.resetStalledOperation,
 		getDumpByIDOperation:                           s.getDumpByIDOperation,
 		findClosestDumpsOperation:                      s.findClosestDumpsOperation,
+		findClosestDumpsFromGraphFragmentOperation:     s.findClosestDumpsFromGraphFragmentOperation,
 		deleteOldestDumpOperation:                      s.deleteOldestDumpOperation,
+		softDeleteOldDumpsOperation:                    s.softDeleteOldDumpsOperation,
 		deleteOverlappingDumpsOperation:                s.deleteOverlappingDumpsOperation,
 		getPackageOperation:                            s.getPackageOperation,
 		updatePackagesOperation:                        s.updatePackagesOperation,
@@ -568,11 +582,25 @@ func (s *ObservedStore) FindClosestDumps(ctx context.Context, repositoryID int, 
 	return s.store.FindClosestDumps(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer)
 }
 
+// FindClosestDumpsFromGraphFragment calls into the inner store and registers the observed results.
+func (s *ObservedStore) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) (dumps []Dump, err error) {
+	ctx, endObservation := s.findClosestDumpsFromGraphFragmentOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
+	return s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer, graph)
+}
+
 // DeleteOldestDump calls into the inner store and registers the observed results.
 func (s *ObservedStore) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error) {
 	ctx, endObservation := s.deleteOldestDumpOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.DeleteOldestDump(ctx)
+}
+
+// SoftDeleteOldDumps calls into the inner store and registers the observed results.
+func (s *ObservedStore) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, endObservation := s.softDeleteOldDumpsOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(count), observation.Args{}) }()
+	return s.store.SoftDeleteOldDumps(ctx, maxAge, now)
 }
 
 // DeleteOverlappingDumps calls into the inner store and registers the observed results.

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"go.uber.org/atomic"
 )
 
 var mockCount = func(_ context.Context, options db.ReposListOptions) (int, error) { return 0, nil }
@@ -140,9 +141,9 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchSymbols = nil }()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
@@ -159,7 +160,7 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
 		}
-		if !calledSearchFilesInRepos {
+		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
 		if calledSearchSymbols {
@@ -206,9 +207,9 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchSymbols = nil }()
 
-		calledSearchFilesInRepos := false
+		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			calledSearchFilesInRepos = true
+			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
@@ -225,7 +226,7 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
 		}
-		if !calledSearchFilesInRepos {
+		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
 		if calledSearchSymbols {

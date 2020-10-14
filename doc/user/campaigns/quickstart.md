@@ -33,7 +33,7 @@ Configure your code host connections to have the right permissions for campaigns
 - [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
 - [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
 
-See ["Code host interactions in campaigns"](managing_access.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
+See ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
 
 ## Install the Sourcegraph CLI
 

@@ -9,7 +9,7 @@ import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 import { GitReferenceNode, queryGitReferences } from './GitReference'
@@ -67,7 +67,7 @@ const fetchRepositoryCommits = memoizeObservable(
     args => JSON.stringify(args)
 )
 
-interface GitRefPopoverNodeProps {
+interface GitReferencePopoverNodeProps {
     node: GQL.IGitRef
 
     defaultBranch: string
@@ -76,7 +76,7 @@ interface GitRefPopoverNodeProps {
     location: H.Location
 }
 
-const GitReferencePopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({
+const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodeProps> = ({
     node,
     defaultBranch,
     currentRevision,
@@ -188,7 +188,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                 >
                     {RevisionsPopover.TABS.map(tab =>
                         tab.type ? (
-                            <FilteredConnection<GQL.IGitRef, Omit<GitRefPopoverNodeProps, 'node'>>
+                            <FilteredConnection<GQL.IGitRef, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
@@ -238,13 +238,13 @@ export class RevisionsPopover extends React.PureComponent<Props> {
         )
     }
 
-    private queryGitBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
+    private queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
         queryGitReferences({ ...args, repo: this.props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
 
-    private queryGitTags = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
+    private queryGitTags = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
         queryGitReferences({ ...args, repo: this.props.repo, type: GitRefType.GIT_TAG, withBehindAhead: false })
 
-    private queryRepositoryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
+    private queryRepositoryCommits = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
         fetchRepositoryCommits({
             ...args,
             repo: this.props.repo,

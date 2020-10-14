@@ -1,25 +1,15 @@
 # Regression tests
 
-> The regression test suite is currently a work-in-progress and should not yet be relied upon by
-> non-Sourcegraphers.
+This regression test suite is intended only for testing Sourcegraph prior to release. A long time ago, we performed manual QA tests as an organization prior to performing releases.
 
-The purpose of the regression test suite is to provide end-user testing of important GUI features
-and workflows. The tests are intended to be run against an arbitrary Sourcegraph instance by the
-following sets of people:
-
-- Sourcegraph contributors, before releasing a new version of Sourcegraph
-- Sourcegraph administrators, immediately after upgrading a Sourcegraph instance
-
-These tests are derived from the [manual release testing
-grid](https://airtable.com/tbldgo7xoJ7PN9BEv/viwTWNmYGC5Vj5E7o). The tests use Puppeteer to drive
-Chrome.
+Today, this automated test suite effectively does what those manual QA tests used to - and we are trying to reduce the scope of this test suite by having individual teams improve their own unit and regression tests so this test suite is minimal.
 
 ## Running the tests
 
 Prerequisites:
 
 - A running Sourcegraph instance to which you have admin access (you'll need to create an
-  admin-level access token).
+  admin-level `site-admin:sudo` access token).
 - Ensure [src](https://github.com/sourcegraph/src-cli) is in your PATH.
 - The regression tests will create test users as a side-effect. These are cleaned up if the tests
   run to completion, but if the tests are aborted, the lingering users should be cleaned up manually
@@ -32,12 +22,10 @@ Prerequisites:
 
 Run the tests:
 
-1. From the repository root directory, `cd` into the `web/` directory.
-1. Run `yarn run test:regression`. This will fail with an error indicating environment variables
-   need to be set. The required set of env vars varies with each test suite, so you can set the
-   union of all the env vars or just the ones for the test cases you wish to run. Set these in your
-   `.envrc` file and run `direnv allow`. (There are also optional environment variables. You can
-   view a full list in `shared/src/testing/config.ts`.)
+1. From the repository root directory, `cd web` and then `yarn` and `yarn generate`.
+1. From the repository root directory, `cd client/web`.
+1. Create a `.envrc` file using the information in the 1Password Shared vault (look for `test:regression envrc` note.), and run `direnv allow` after.
+1. Run `yarn run test:regression`.
 1. You should see a Chrome window pop up and the tests will play in that window. The initial run may
    take awhile, because test repositories need to be cloned.
 1. some tests require additional manual verification of screenshots after the test completes.

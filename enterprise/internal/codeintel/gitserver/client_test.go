@@ -58,6 +58,28 @@ func TestParseParents(t *testing.T) {
 	}
 }
 
+func TestParseParentsPartial(t *testing.T) {
+	commits := []string{
+		"9ad62c7ec68e377b41a8b8dd846e573b76634172 1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3 683cafd122632142bda6e36563f5719e5b0fa37d",
+		"683cafd122632142bda6e36563f5719e5b0fa37d 1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3",
+		"1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3 02f41985f46b400b7a673c3dfb6bab8fd1ac6a6d",
+		"a94fb112d1f2e70f55851c6c569916a9e31caee1 2716762a5213f5fe2576d2a52d1182282704004c",
+	}
+
+	expected := map[string][]string{
+		"9ad62c7ec68e377b41a8b8dd846e573b76634172": {"1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3", "683cafd122632142bda6e36563f5719e5b0fa37d"},
+		"683cafd122632142bda6e36563f5719e5b0fa37d": {"1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3"},
+		"1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3": {"02f41985f46b400b7a673c3dfb6bab8fd1ac6a6d"},
+		"a94fb112d1f2e70f55851c6c569916a9e31caee1": {"2716762a5213f5fe2576d2a52d1182282704004c"},
+		"02f41985f46b400b7a673c3dfb6bab8fd1ac6a6d": {},
+		"2716762a5213f5fe2576d2a52d1182282704004c": {},
+	}
+
+	if diff := cmp.Diff(expected, parseParents(commits)); diff != "" {
+		t.Errorf("unexpected commit mapping (-want +got):\n%s", diff)
+	}
+}
+
 func TestParseDirectoryChildrenRoot(t *testing.T) {
 	dirnames := []string{""}
 	paths := []string{

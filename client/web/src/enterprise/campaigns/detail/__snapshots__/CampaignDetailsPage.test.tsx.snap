@@ -169,6 +169,38 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       </Timestamp>
     </div>
   </CampaignInfoByline>
+  <UnpublishedNotice
+    className="mb-3"
+    unpublished={2}
+  >
+    <div
+      className="alert alert-secondary mb-3"
+    >
+      <Memo(SourceBranchIcon)
+        className="icon-inline"
+      />
+       
+      2
+       unpublished
+       
+      changesets
+      . Set
+       
+      <code
+        className="badge badge-secondary"
+      >
+        published: true
+      </code>
+       in the campaign spec and re-run
+       
+      <code
+        className="badge badge-secondary"
+      >
+        src campaign apply -f $CAMPAIGN_SPEC_FILE
+      </code>
+       to publish to your code host.
+    </div>
+  </UnpublishedNotice>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -257,6 +289,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
           >
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-muted flex-grow-0 flex-shrink-0 mx-3"
+              data-tooltip="Set published: true to publish to code host"
             >
               <Memo(SourceBranchIcon) />
               <span
@@ -1005,6 +1038,38 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       </Timestamp>
     </div>
   </CampaignInfoByline>
+  <UnpublishedNotice
+    className="mb-3"
+    unpublished={2}
+  >
+    <div
+      className="alert alert-secondary mb-3"
+    >
+      <Memo(SourceBranchIcon)
+        className="icon-inline"
+      />
+       
+      2
+       unpublished
+       
+      changesets
+      . Set
+       
+      <code
+        className="badge badge-secondary"
+      >
+        published: true
+      </code>
+       in the campaign spec and re-run
+       
+      <code
+        className="badge badge-secondary"
+      >
+        src campaign apply -f $CAMPAIGN_SPEC_FILE
+      </code>
+       to publish to your code host.
+    </div>
+  </UnpublishedNotice>
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -1093,6 +1158,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
           >
             <div
               className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center text-muted flex-grow-0 flex-shrink-0 mx-3"
+              data-tooltip="Set published: true to publish to code host"
             >
               <Memo(SourceBranchIcon) />
               <span

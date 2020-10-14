@@ -1,6 +1,6 @@
 import { Observable, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { TextDocumentPositionParameters, TextDocumentRegistrationOptions } from '../../protocol'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import {
     DocumentFeatureProviderRegistry as AbstractDocumentFeatureProviderRegistry,
@@ -13,7 +13,7 @@ export const FIXTURE = {
     TextDocumentPositionParams: {
         position: { line: 1, character: 2 },
         textDocument: { uri: 'file:///f' },
-    } as TextDocumentPositionParams,
+    } as TextDocumentPositionParameters,
 
     PartialEntry: {
         registrationOptions: {

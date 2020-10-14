@@ -26,7 +26,7 @@ import classNames from 'classnames'
 class RepoHeaderContributionStore {
     constructor(
         /** The common ancestor component's setState method. */
-        private setState: (callback: (prevState: RepoHeaderContribution[]) => RepoHeaderContribution[]) => void
+        private setState: (callback: (previousState: RepoHeaderContribution[]) => RepoHeaderContribution[]) => void
     ) {}
 
     private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {

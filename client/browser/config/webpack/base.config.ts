@@ -75,11 +75,6 @@ const config: webpack.Configuration = {
                     },
                     {
                         loader: 'postcss-loader',
-                        options: {
-                            config: {
-                                path: path.join(__dirname, '..', '..', '..'),
-                            },
-                        },
                     },
                     {
                         loader: 'sass-loader',
@@ -96,7 +91,7 @@ const config: webpack.Configuration = {
                 use: [
                     {
                         loader: 'worker-loader',
-                        options: { name: 'extensionHostWorker.bundle.js' },
+                        options: { filename: 'extensionHostWorker.bundle.js' },
                     },
                     babelLoader,
                 ],

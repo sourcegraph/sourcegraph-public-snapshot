@@ -199,7 +199,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     private onEditOperationName = (newOperationName: string): void =>
         this.updateStateParameters(parameters => ({ ...parameters, operationName: newOperationName }))
 
-    private updateStateParameters(update: (params: Parameters) => Parameters): void {
+    private updateStateParameters(update: (parameters: Parameters) => Parameters): void {
         this.setState(
             state => ({ ...state, parameters: update(state.parameters) }),
             () => this.updates.next(this.state.parameters)

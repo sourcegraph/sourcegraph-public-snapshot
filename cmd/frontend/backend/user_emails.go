@@ -187,12 +187,12 @@ Verify your email address {{printf "%q" .Email}} on Sourcegraph by following thi
 func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
 	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
-		log15.Warn("Failed to get user email", "error", err, ctx)
+		log15.Warn("Failed to get user email", "error", err)
 		return err
 	}
 	usr, err := db.Users.GetByID(ctx, id)
 	if err != nil {
-		log15.Warn("Failed to get user from database", "error", err, ctx)
+		log15.Warn("Failed to get user from database", "error", err)
 		return err
 	}
 
