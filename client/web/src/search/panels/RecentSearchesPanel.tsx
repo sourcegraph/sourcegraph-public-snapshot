@@ -89,7 +89,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             }
                             className="text-monospace"
                         >
-                            lang:c if(:[eval_match]) {'{'} :[statement_match] {'}'}
+                            <SyntaxHighlightedSearchQuery query="lang:c if(:[eval_match]) { :[statement_match] }" />
                         </Link>
                     </small>
                 </li>
@@ -106,7 +106,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             }
                             className="text-monospace"
                         >
-                            lang:java type:diff after:"1 week ago"
+                            <SyntaxHighlightedSearchQuery query='lang:java type:diff after:"1 week ago"' />
                         </Link>
                     </small>
                 </li>
@@ -116,7 +116,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
                             className="text-monospace"
                         >
-                            lang:java
+                            <SyntaxHighlightedSearchQuery query="lang:java" />
                         </Link>
                     </small>
                 </li>

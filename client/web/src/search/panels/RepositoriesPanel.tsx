@@ -13,6 +13,7 @@ import { parseSearchURLQuery } from '..'
 import { ShowMoreButton } from './ShowMoreButton'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -44,12 +45,12 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
                 <p className="mb-1">
                     Search in repositories with the <strong>repo:</strong> filter:
                 </p>
-                <p className="mb-1 text-monospace">
-                    <span className="search-keyword">repo:</span>sourcegraph/sourcegraph
+                <p className="mb-1">
+                    <SyntaxHighlightedSearchQuery query="repo:sourcegraph/sourcegraph" />
                 </p>
                 <p className="mb-1">Add the code host to scope to a single repository:</p>
-                <p className="mb-1 text-monospace">
-                    <span className="search-keyword">repo:</span>^git\.local/my/repo$
+                <p className="mb-1">
+                    <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
                 </p>
             </small>
         </div>
@@ -93,8 +94,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
                 <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
                     <small>
                         <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                            <span className="search-keyword">repo:</span>
-                            <span className="repositories-panel__search-value">{repoFilterValue}</span>
+                            <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
                         </Link>
                     </small>
                 </dd>
