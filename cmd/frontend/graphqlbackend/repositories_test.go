@@ -192,6 +192,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 			return repos[0:2], nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
@@ -227,6 +229,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 			return repos[1:], nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
@@ -262,6 +266,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 			return repos[1:], nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
@@ -297,6 +303,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 			return repos, nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
@@ -336,6 +344,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 			return nil, nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
@@ -369,6 +379,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 			return nil, nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: mustParseGraphQLSchema(t),
