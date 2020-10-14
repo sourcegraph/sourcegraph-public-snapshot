@@ -114,7 +114,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							Description:       "upload records removed every 5m",
 							Query:             `sum(increase(src_bundle_manager_janitor_upload_records_removed_total[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 20},
+							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("records removed"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
