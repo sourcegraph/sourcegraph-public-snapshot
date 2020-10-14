@@ -36,8 +36,8 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Search](search.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
-- [Usage statistics](../user/usage_statistics.md)
-- [User feedback surveys](../user/user_surveys.md)
+- [Usage statistics](usage_statistics.md)
+- [User feedback surveys](user_surveys.md)
 
 ## Integrations
 

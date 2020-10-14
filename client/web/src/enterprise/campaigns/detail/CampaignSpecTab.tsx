@@ -39,20 +39,22 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
 
     return (
         <>
-            <div className="d-flex justify-content-between align-items-center mb-2 test-campaigns-spec">
-                <p className="m-0">
+            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-campaigns-spec">
+                <p className="mb-2 campaign-spec-tab__header-col">
                     {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
                     {createdAt === lastAppliedAt ? 'created' : 'updated'} this campaign{' '}
                     <Timestamp date={lastAppliedAt} /> by applying the following campaign spec:
                 </p>
-                <a
-                    download={`${campaignName}.campaign.yaml`}
-                    href={downloadUrl}
-                    className="text-right btn btn-secondary text-nowrap"
-                    data-tooltip={`Download ${campaignName}.campaign.yaml`}
-                >
-                    <FileDownloadIcon className="icon-inline" /> Download YAML
-                </a>
+                <div className="campaign-spec-tab__header-col">
+                    <a
+                        download={`${campaignName}.campaign.yaml`}
+                        href={downloadUrl}
+                        className="text-right btn btn-secondary text-nowrap"
+                        data-tooltip={`Download ${campaignName}.campaign.yaml`}
+                    >
+                        <FileDownloadIcon className="icon-inline" /> Download YAML
+                    </a>
+                </div>
             </div>
             <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className="mb-3" />
         </>

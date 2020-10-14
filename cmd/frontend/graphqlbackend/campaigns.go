@@ -234,6 +234,7 @@ type ChangesetsConnectionStatsResolver interface {
 	Open() int32
 	Merged() int32
 	Closed() int32
+	Deleted() int32
 	Total() int32
 }
 

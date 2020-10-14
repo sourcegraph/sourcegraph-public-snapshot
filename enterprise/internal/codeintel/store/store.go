@@ -82,7 +82,7 @@ type Store interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
 	// HardDeleteUploadByID deletes the upload record with the given identifier.
-	HardDeleteUploadByID(ctx context.Context, id int) error
+	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
@@ -106,6 +106,11 @@ type Store interface {
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
 	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
+
+	// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
+	// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+	// background.
+	SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
@@ -223,6 +228,9 @@ type Store interface {
 
 	// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error)
+
+	// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 }
 
 type store struct {

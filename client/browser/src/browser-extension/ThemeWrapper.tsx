@@ -5,9 +5,9 @@ import { ThemeProps } from '../../../shared/src/theme'
  * Wrapper for the browser extension that listens to changes of the OS theme.
  */
 export function ThemeWrapper({
-    children: Children,
+    children,
 }: {
-    children: (props: ThemeProps) => JSX.Element | null
+    children: JSX.Element | null | ((props: ThemeProps) => JSX.Element | null)
 }): JSX.Element | null {
     const darkThemeMediaList = useMemo(() => window.matchMedia('(prefers-color-scheme: dark)'), [])
     const [isLightTheme, setIsLightTheme] = useState(!darkThemeMediaList.matches)
@@ -21,5 +21,9 @@ export function ThemeWrapper({
         document.body.classList.toggle('theme-dark', !isLightTheme)
     }, [isLightTheme])
 
-    return <Children isLightTheme={isLightTheme} />
+    if (typeof children === 'function') {
+        const Children = children
+        return <Children isLightTheme={isLightTheme} />
+    }
+    return children
 }

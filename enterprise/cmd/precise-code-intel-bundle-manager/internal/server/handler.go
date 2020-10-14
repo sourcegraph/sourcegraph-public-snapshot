@@ -15,8 +15,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/codeintelutils"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	postgresreader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	sqlitereader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
@@ -389,7 +389,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		payload, err := handler(ctx, db)
+		payload, err := handler(ctx, database.NewObserved(db, filename, s.observationContext))
 		if err != nil {
 			return err
 		}
@@ -404,7 +404,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		payload, err := handler(ctx, db)
+		payload, err := handler(ctx, database.NewObserved(db, filename, s.observationContext))
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,7 @@ import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { Toggle } from '../../../../branded/src/components/Toggle'
-import { SourcegraphLogo } from './SourcegraphLogo'
+import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
@@ -109,7 +109,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         className={classNames(deriveInputClassName(urlState))}
                     >
                         <input
-                            className="form-control"
+                            className={classNames('form-control', deriveInputClassName(urlState))}
                             id="sourcegraph-url"
                             type="url"
                             pattern="^https://.*"

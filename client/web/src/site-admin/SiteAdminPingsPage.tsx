@@ -170,6 +170,13 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total number of lines of code stored in text search index</li>
                     </ul>
                 </li>
+                <li>
+                    Homepage panel engagement
+                    <ul>
+                        <li>Percentage of panel clicks (out of total views)</li>
+                        <li>Total count of unique users engaging with the panels</li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>

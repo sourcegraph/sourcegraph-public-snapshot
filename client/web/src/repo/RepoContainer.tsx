@@ -251,7 +251,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         >
                             <MenuDownIcon className="icon-inline" />
                         </button>
-                        <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
+                        <UncontrolledPopover
+                            placement="bottom-start"
+                            target="repo-popover"
+                            trigger="legacy"
+                            hideArrow={true}
+                            popperClassName="border-0"
+                        >
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 history={props.history}

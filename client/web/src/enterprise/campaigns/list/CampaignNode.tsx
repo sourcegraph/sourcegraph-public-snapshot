@@ -33,13 +33,13 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
 }) => (
     <>
         <span className="campaign-node__separator" />
-        {!node.closedAt && <span className="badge badge-success text-uppercase w-100">Open</span>}
-        {node.closedAt && <span className="badge badge-danger text-uppercase w-100">Closed</span>}
+        {!node.closedAt && <span className="campaign-node__badge badge badge-success text-uppercase">Open</span>}
+        {node.closedAt && <span className="campaign-node__badge badge badge-danger text-uppercase">Closed</span>}
         <div className="campaign-node__content">
-            <div className="m-0 d-flex align-items-baseline">
-                <h3 className="m-0 d-inline-block">
+            <div className="m-0 d-md-flex d-block align-items-baseline">
+                <h3 className="m-0 d-md-inline-block d-block campaign-node__title">
                     {displayNamespace && (
-                        <>
+                        <div className="d-md-inline-block d-block">
                             <Link
                                 className="text-muted test-campaign-namespace-link"
                                 to={`${node.namespace.url}/campaigns`}
@@ -47,13 +47,13 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
                                 {node.namespace.namespaceName}
                             </Link>
                             <span className="text-muted d-inline-block mx-1">/</span>
-                        </>
+                        </div>
                     )}
-                    <Link className="test-campaign-link" to={node.url}>
+                    <Link className="test-campaign-link mr-2" to={node.url}>
                         {node.name}
                     </Link>
                 </h3>
-                <small className="ml-2 text-muted">
+                <small className="text-muted d-sm-block">
                     created{' '}
                     <span data-tooltip={<Timestamp date={node.createdAt} />}>
                         {formatDistance(parseISO(node.createdAt), now)} ago
@@ -61,15 +61,24 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
                 </small>
             </div>
             <Markdown
-                className={classNames('text-truncate', !node.description && 'text-muted font-italic')}
+                className={classNames('text-truncate d-none d-md-block', !node.description && 'text-muted font-italic')}
                 dangerousInnerHTML={
                     node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                 }
                 history={history}
             />
         </div>
-        <ChangesetStatusOpen label={<span className="text-muted">{node.changesets.stats.open} open</span>} />
-        <ChangesetStatusClosed label={<span className="text-muted">{node.changesets.stats.closed} closed</span>} />
-        <ChangesetStatusMerged label={<span className="text-muted">{node.changesets.stats.merged} merged</span>} />
+        <ChangesetStatusOpen
+            className="d-block d-sm-flex"
+            label={<span className="text-muted">{node.changesets.stats.open} open</span>}
+        />
+        <ChangesetStatusClosed
+            className="d-block d-sm-flex text-center"
+            label={<span className="text-muted">{node.changesets.stats.closed} closed</span>}
+        />
+        <ChangesetStatusMerged
+            className="d-block d-sm-flex"
+            label={<span className="text-muted">{node.changesets.stats.merged} merged</span>}
+        />
     </>
 )

@@ -18,12 +18,6 @@ type RepoFields struct {
 	// Description is a brief description of the repository.
 	Description string
 
-	// DEPRECATED: this field is always empty for new repositories as of
-	// https://github.com/sourcegraph/sourcegraph/issues/2586. Do not use it.
-	//
-	// Language is the primary programming language used in this repository.
-	Language string
-
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 
@@ -32,6 +26,9 @@ type RepoFields struct {
 
 	// Cloned is whether this repository is cloned.
 	Cloned bool
+
+	// CreatedAt indicates when the repository record was created.
+	CreatedAt time.Time
 }
 
 // Repo represents a source code repository.
@@ -372,6 +369,23 @@ type SavedSearches struct {
 	NotificationsClicked int32
 	UniqueUserPageViews  int32
 	OrgSavedSearches     int32
+}
+
+// Panel homepage represents interaction data on the
+// enterprise homepage panels.
+type HomepagePanels struct {
+	RecentFilesClickedPercentage           float64
+	RecentSearchClickedPercentage          float64
+	RecentRepositoriesClickedPercentage    float64
+	SavedSearchesClickedPercentage         float64
+	NewSavedSearchesClickedPercentage      float64
+	TotalPanelViews                        float64
+	UsersFilesClickedPercentage            float64
+	UsersSearchClickedPercentage           float64
+	UsersRepositoriesClickedPercentage     float64
+	UsersSavedSearchesClickedPercentage    float64
+	UsersNewSavedSearchesClickedPercentage float64
+	PercentUsersShown                      float64
 }
 
 // Secret represents the secrets table
