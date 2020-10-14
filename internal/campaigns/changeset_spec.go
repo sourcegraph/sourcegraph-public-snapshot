@@ -22,7 +22,7 @@ type CreatedChangeset struct {
 	Title          string                 `json:"title"`
 	Body           string                 `json:"body"`
 	Commits        []GitCommitDescription `json:"commits"`
-	Published      bool                   `json:"published"`
+	Published      interface{}            `json:"published"`
 }
 
 type GitCommitDescription struct {
