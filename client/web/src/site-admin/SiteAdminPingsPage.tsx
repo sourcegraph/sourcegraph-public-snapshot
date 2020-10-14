@@ -11,7 +11,7 @@ import { useObservable } from '../../../shared/src/util/useObservable'
 import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../shared/src/backend/fetch'
 
-interface Props extends RouteComponentProps, ThemeProps {}
+interface Props extends RouteComponentProps, ThemeProps { }
 
 /**
  * A page displaying information about telemetry pings for the site.
@@ -67,15 +67,15 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 ) : isEmpty(latestPing) ? (
                     <p>No recent ping data to display.</p>
                 ) : (
-                    <MonacoEditor
-                        {...props}
-                        language="json"
-                        options={options}
-                        height={300}
-                        editorWillMount={noop}
-                        value={JSON.stringify(latestPing, undefined, 4)}
-                    />
-                )}
+                            <MonacoEditor
+                                {...props}
+                                language="json"
+                                options={options}
+                                height={300}
+                                editorWillMount={noop}
+                                value={JSON.stringify(latestPing, undefined, 4)}
+                            />
+                        )}
             </p>
             <h3>Critical telemetry</h3>
             <p>
@@ -180,12 +180,19 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total number of lines of code stored in text search index</li>
                     </ul>
                 </li>
+                <li>
+                    Homepage panel engagement
+                    <ul>
+                        <li>Percentage of panel clicks (out of total views)</li>
+                        <li>Total count of unique users engaging with the panels</li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>
             ) : (
-                nonCriticalTelemetryDisabled && <p>Non-critical telemetry is disabled.</p>
-            )}
+                    nonCriticalTelemetryDisabled && <p>Non-critical telemetry is disabled.</p>
+                )}
         </div>
     )
 }
