@@ -180,6 +180,7 @@ var getBySQLColumns = []string{
 	"fork",
 	"archived",
 	"cloned",
+	"created_at",
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
@@ -249,6 +250,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&r.Fork,
 		&r.Archived,
 		&r.Cloned,
+		&r.CreatedAt,
 	)
 }
 
@@ -314,6 +316,15 @@ type ReposListOptions struct {
 
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
+
+	// CursorColumn contains the relevant column for cursor-based pagination (e.g. "name")
+	CursorColumn string
+
+	// CursorValue contains the relevant value for cursor-based pagination (e.g. "Zaphod").
+	CursorValue string
+
+	// CursorDirection contains the comparison for cursor-based pagination, all possible values are: next, prev.
+	CursorDirection string
 
 	*LimitOffset
 }
@@ -440,6 +451,15 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	conds = []*sqlf.Query{
 		sqlf.Sprintf("deleted_at IS NULL"),
 	}
+
+	// Cursor-based pagination requires parsing a handful of extra fields, which
+	// may result in additional query conditions.
+	cursorConds, err := parseCursorConds(opt)
+	if err != nil {
+		return nil, err
+	}
+	conds = append(conds, cursorConds...)
+
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
@@ -519,6 +539,33 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		}
 	}
 
+	return conds, nil
+}
+
+// parseCursorConds checks whether the query is using cursor-based pagination, and
+// if so performs the necessary transformations for it to be successful.
+func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
+	if opt.CursorColumn == "" || opt.CursorValue == "" {
+		return nil, nil
+	}
+	var direction string
+	switch opt.CursorDirection {
+	case "next":
+		direction = ">="
+	case "prev":
+		direction = "<="
+	default:
+		return nil, fmt.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
+	}
+
+	switch opt.CursorColumn {
+	case string(RepoListName):
+		conds = append(conds, sqlf.Sprintf("name "+direction+" %s", opt.CursorValue))
+	case string(RepoListCreatedAt):
+		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", opt.CursorValue))
+	default:
+		return nil, fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
+	}
 	return conds, nil
 }
 

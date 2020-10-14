@@ -32,6 +32,9 @@ type RepoFields struct {
 
 	// Cloned is whether this repository is cloned.
 	Cloned bool
+
+	// CreatedAt indicates when the repository record was created.
+	CreatedAt time.Time
 }
 
 // Repo represents a source code repository.
