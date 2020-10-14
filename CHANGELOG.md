@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+:warning: WARNING :warning: For users of single-image Sourcegraph instance, please be sure to delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
+
 ### Added
 
 - The new GraphQL API query field `namespaceByName(name: String!)` makes it easier to look up the user or organization with the given name. Previously callers needed to try looking up the user and organization separately.
