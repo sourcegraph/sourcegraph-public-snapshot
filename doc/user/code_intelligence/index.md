@@ -32,7 +32,7 @@ Code intelligence provides advanced code navigation features that let developers
   </a>
 </div>
 
-## Explanations
+## [Explanations](explanations/index.md)
 
 - [Basic code intelligence](explanations/basic_code_intelligence.md)
 - [Precise code intelligence](explanations/precise_code_intelligence.md)
@@ -43,7 +43,7 @@ Code intelligence provides advanced code navigation features that let developers
   - [Symbol search](explanations/features.md#symbol-search)
 - [Writing an indexer](explanations/writing_an_indexer.md)
 
-## How-tos
+## [How-tos](how-to/index.md)
 
 - [LSIF quickstart guide](lsif_quickstart.md)
 - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
@@ -51,12 +51,12 @@ Code intelligence provides advanced code navigation features that let developers
 - [Index a Go repository](how-to/index_a_go_repository.md)
 - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
 
-## Tutorials
+## [Tutorials](tutorials/index.md)
 
 - TODO: Index a popular public repository for Go
 - TODO: Index a popular public repository for TypeScript
 
-## References
+## [References](references/index.md)
 
 - [LSIF.dev](https://lsif.dev/)
 - TODO: Supported languages/indexer status
