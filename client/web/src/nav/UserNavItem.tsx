@@ -205,7 +205,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         About Sourcegraph <OpenInNewIcon className="icon-inline" />
                     </a>
                 )}
-                {!codeHostIntegrationMessaging && (
+                {codeHostIntegrationMessaging === 'browser-extension' && (
                     <a
                         href="https://docs.sourcegraph.com/integration/browser_extension"
                         target="_blank"
