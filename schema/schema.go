@@ -1039,12 +1039,12 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
+	// AlertsCodeHostIntegrationMessaging description: What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to "native-integration" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.
+	AlertsCodeHostIntegrationMessaging string `json:"alerts.codeHostIntegrationMessaging,omitempty"`
 	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
-	// CodeHostNativeIntegrationEnabled description: Whether the Sourcegraph native integration is installed on the code host. This affects in-app messaging users read inside the webapp.
-	CodeHostNativeIntegrationEnabled bool `json:"codeHost.nativeIntegrationEnabled,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.

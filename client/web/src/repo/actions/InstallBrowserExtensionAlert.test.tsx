@@ -14,7 +14,9 @@ describe('InstallBrowserExtensionAlert', () => {
                         <InstallBrowserExtensionAlert
                             isChrome={integrationType === 'Chrome'}
                             onAlertDismissed={noop}
-                            isNativeIntegrationEnabled={integrationType === 'native integration'}
+                            codeHostIntegrationMessaging={
+                                integrationType === 'native integration' ? 'native-integration' : 'browser-extension'
+                            }
                             externalURLs={[
                                 {
                                     __typename: 'ExternalLink',

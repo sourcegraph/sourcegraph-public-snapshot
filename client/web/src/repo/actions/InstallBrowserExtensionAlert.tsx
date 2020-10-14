@@ -8,7 +8,7 @@ interface Props {
     onAlertDismissed: () => void
     externalURLs: GQL.IExternalLink[]
     isChrome: boolean
-    isNativeIntegrationEnabled: boolean
+    codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
 }
 
 // TODO(tj): Add Firefox once the Firefox extension is back
@@ -18,7 +18,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
     onAlertDismissed,
     externalURLs,
     isChrome,
-    isNativeIntegrationEnabled,
+    codeHostIntegrationMessaging,
 }) => {
     const { serviceType } = externalURLs[0]
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
@@ -40,7 +40,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                     <Icon className="install-browser-extension-alert__icon" />
                 </div>
                 <p className="install-browser-extension-alert__text my-0 mr-3">
-                    {isNativeIntegrationEnabled ? (
+                    {codeHostIntegrationMessaging ? (
                         <>
                             Sourcegraph's code intelligence will follow you to your code host. Your site admin set up
                             the Sourcegraph native integration for {displayName}.{' '}

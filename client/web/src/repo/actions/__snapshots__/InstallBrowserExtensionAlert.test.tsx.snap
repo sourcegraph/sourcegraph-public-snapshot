@@ -2,6 +2,7 @@
 
 exports[`InstallBrowserExtensionAlert bitbucketServer (Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -12,7 +13,6 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (Chrome) 1`] = `
     ]
   }
   isChrome={true}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -34,20 +34,29 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
+        Bitbucket Server
+        .
+         
         <a
           className="alert-link"
-          href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Install the Sourcegraph browser extension
+          Learn more
         </a>
          
-        to add code intelligence 
-        to PRs and file views
-         on 
-        Bitbucket Server
-         or any other connected code host.
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
+        </a>
       </p>
     </div>
     <button
@@ -66,6 +75,7 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert bitbucketServer (native integration) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="native-integration"
   externalURLs={
     Array [
       Object {
@@ -76,7 +86,6 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (native integration) 1`] =
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={true}
   onAlertDismissed={[Function]}
 >
   <div
@@ -139,6 +148,7 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (native integration) 1`] =
 
 exports[`InstallBrowserExtensionAlert bitbucketServer (non-Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -149,7 +159,6 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (non-Chrome) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -171,19 +180,28 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing files and reading PRs
-         on 
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         Bitbucket Server
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
-          href="/help/integration/browser_extension"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Learn more about Sourcegraph Chrome and Firefox extensions
+          Learn more
+        </a>
+         
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
         </a>
       </p>
     </div>
@@ -203,6 +221,7 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (non-Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert github (Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -213,7 +232,6 @@ exports[`InstallBrowserExtensionAlert github (Chrome) 1`] = `
     ]
   }
   isChrome={true}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -235,20 +253,29 @@ exports[`InstallBrowserExtensionAlert github (Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
+        GitHub
+        .
+         
         <a
           className="alert-link"
-          href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Install the Sourcegraph browser extension
+          Learn more
         </a>
          
-        to add code intelligence 
-        to PRs and file views
-         on 
-        GitHub
-         or any other connected code host.
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
+        </a>
       </p>
     </div>
     <button
@@ -267,6 +294,7 @@ exports[`InstallBrowserExtensionAlert github (Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert github (native integration) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="native-integration"
   externalURLs={
     Array [
       Object {
@@ -277,7 +305,6 @@ exports[`InstallBrowserExtensionAlert github (native integration) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={true}
   onAlertDismissed={[Function]}
 >
   <div
@@ -340,6 +367,7 @@ exports[`InstallBrowserExtensionAlert github (native integration) 1`] = `
 
 exports[`InstallBrowserExtensionAlert github (non-Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -350,7 +378,6 @@ exports[`InstallBrowserExtensionAlert github (non-Chrome) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -372,19 +399,28 @@ exports[`InstallBrowserExtensionAlert github (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing files and reading PRs
-         on 
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         GitHub
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
-          href="/help/integration/browser_extension"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Learn more about Sourcegraph Chrome and Firefox extensions
+          Learn more
+        </a>
+         
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
         </a>
       </p>
     </div>
@@ -404,6 +440,7 @@ exports[`InstallBrowserExtensionAlert github (non-Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert gitlab (Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -414,7 +451,6 @@ exports[`InstallBrowserExtensionAlert gitlab (Chrome) 1`] = `
     ]
   }
   isChrome={true}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -436,20 +472,29 @@ exports[`InstallBrowserExtensionAlert gitlab (Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
+        GitLab
+        .
+         
         <a
           className="alert-link"
-          href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Install the Sourcegraph browser extension
+          Learn more
         </a>
          
-        to add code intelligence 
-        to MRs and file views
-         on 
-        GitLab
-         or any other connected code host.
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
+        </a>
       </p>
     </div>
     <button
@@ -468,6 +513,7 @@ exports[`InstallBrowserExtensionAlert gitlab (Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert gitlab (native integration) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="native-integration"
   externalURLs={
     Array [
       Object {
@@ -478,7 +524,6 @@ exports[`InstallBrowserExtensionAlert gitlab (native integration) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={true}
   onAlertDismissed={[Function]}
 >
   <div
@@ -541,6 +586,7 @@ exports[`InstallBrowserExtensionAlert gitlab (native integration) 1`] = `
 
 exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -551,7 +597,6 @@ exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -573,19 +618,28 @@ exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing files and reading MRs
-         on 
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         GitLab
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
-          href="/help/integration/browser_extension"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Learn more about Sourcegraph Chrome and Firefox extensions
+          Learn more
+        </a>
+         
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
         </a>
       </p>
     </div>
@@ -605,6 +659,7 @@ exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -615,7 +670,6 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
     ]
   }
   isChrome={true}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -665,20 +719,29 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
+        Phabricator
+        .
+         
         <a
           className="alert-link"
-          href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Install the Sourcegraph browser extension
+          Learn more
         </a>
          
-        to add code intelligence 
-        while browsing and reviewing code
-         on 
-        Phabricator
-         or any other connected code host.
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
+        </a>
       </p>
     </div>
     <button
@@ -697,6 +760,7 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
 
 exports[`InstallBrowserExtensionAlert phabricator (native integration) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="native-integration"
   externalURLs={
     Array [
       Object {
@@ -707,7 +771,6 @@ exports[`InstallBrowserExtensionAlert phabricator (native integration) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={true}
   onAlertDismissed={[Function]}
 >
   <div
@@ -798,6 +861,7 @@ exports[`InstallBrowserExtensionAlert phabricator (native integration) 1`] = `
 
 exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
 <InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
   externalURLs={
     Array [
       Object {
@@ -808,7 +872,6 @@ exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
     ]
   }
   isChrome={false}
-  isNativeIntegrationEnabled={false}
   onAlertDismissed={[Function]}
 >
   <div
@@ -858,19 +921,28 @@ exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing and reviewing code
-         on 
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         Phabricator
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
-          href="/help/integration/browser_extension"
-          rel="noopener noreferrer"
+          href="https://docs.sourcegraph.com/integration/browser_extension"
+          rel="noopener"
           target="_blank"
         >
-          Learn more about Sourcegraph Chrome and Firefox extensions
+          Learn more
+        </a>
+         
+        or
+         
+        <a
+          className="alert-link"
+          href=""
+          rel="noopener"
+          target="_blank"
+        >
+          try it out
         </a>
       </p>
     </div>

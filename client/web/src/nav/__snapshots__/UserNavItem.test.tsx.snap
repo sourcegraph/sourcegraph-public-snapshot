@@ -35,9 +35,9 @@ exports[`UserNavItem simple 1`] = `
           "username": "alice",
         }
       }
+      codeHostIntegrationMessaging="browser-extension"
       isExtensionAlertAnimating={false}
       isLightTheme={true}
-      isNativeIntegrationEnabled={false}
       location="[Location path=/]"
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
@@ -416,17 +416,6 @@ exports[`UserNavItem simple 1`] = `
                     target="_blank"
                   >
                     About Sourcegraph 
-                    <Memo(OpenInNewIcon)
-                      className="icon-inline"
-                    />
-                  </a>
-                  <a
-                    className="dropdown-item"
-                    href="https://docs.sourcegraph.com/integration/browser_extension"
-                    rel="noopener"
-                    target="_blank"
-                  >
-                    Browser extension 
                     <Memo(OpenInNewIcon)
                       className="icon-inline"
                     />

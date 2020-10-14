@@ -46,7 +46,7 @@ describe('UserNavItem', () => {
                         authenticatedUser={USER}
                         showDotComMarketing={true}
                         isExtensionAlertAnimating={false}
-                        isNativeIntegrationEnabled={false}
+                        codeHostIntegrationMessaging="browser-extension"
                     />
                 </MemoryRouter>
             )

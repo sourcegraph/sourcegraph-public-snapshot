@@ -23,7 +23,7 @@ for (const serviceType of services) {
                     <InstallBrowserExtensionAlert
                         isChrome={true}
                         onAlertDismissed={onAlertDismissed}
-                        isNativeIntegrationEnabled={false}
+                        codeHostIntegrationMessaging="browser-extension"
                         externalURLs={[
                             {
                                 __typename: 'ExternalLink',
@@ -50,7 +50,7 @@ for (const serviceType of services) {
                     <InstallBrowserExtensionAlert
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
-                        isNativeIntegrationEnabled={false}
+                        codeHostIntegrationMessaging="browser-extension"
                         externalURLs={[
                             {
                                 __typename: 'ExternalLink',
@@ -77,7 +77,7 @@ for (const serviceType of services) {
                     <InstallBrowserExtensionAlert
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
-                        isNativeIntegrationEnabled={true}
+                        codeHostIntegrationMessaging="native-integration"
                         externalURLs={[
                             {
                                 __typename: 'ExternalLink',

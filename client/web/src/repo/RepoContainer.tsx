@@ -335,9 +335,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     ])
 
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
-    const isNativeIntegrationEnabled =
-        !isErrorLike(props.settingsCascade.final) &&
-        !!props.settingsCascade.final?.['codeHost.nativeIntegrationEnabled']
+    const codeHostIntegrationMessaging =
+        (!isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+        'browser-extension'
 
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
     const [hasDismissedExtensionAlert, setHasDismissedExtensionAlert] = useLocalStorage(HAS_DISMISSED_ALERT_KEY, false)
@@ -346,7 +347,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const canShowPopover =
         !hasDismissedPopover &&
         isBrowserExtensionInstalled === false &&
-        !isNativeIntegrationEnabled &&
+        !codeHostIntegrationMessaging &&
         hoverCount >= HOVER_THRESHOLD
     const showExtensionAlert = useMemo(
         () => isBrowserExtensionInstalled === false && !hasDismissedExtensionAlert && hoverCount >= HOVER_THRESHOLD,
@@ -419,7 +420,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     isChrome={IS_CHROME}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={repoOrError.externalURLs}
-                    isNativeIntegrationEnabled={isNativeIntegrationEnabled}
+                    codeHostIntegrationMessaging={codeHostIntegrationMessaging}
                 />
             )}
             <RepoHeader

@@ -207,6 +207,12 @@ const SettingsSchemaJSON = `{
       "default": true,
       "!go": { "pointer": true }
     },
+    "alerts.codeHostIntegrationMessaging": {
+      "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
+      "type": "string",
+      "enum": ["browser-extension", "native-integration"],
+      "default": "browser-extension"
+    },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",
       "type": "object",
@@ -222,11 +228,6 @@ const SettingsSchemaJSON = `{
     },
     "codeHost.useNativeTooltips": {
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
-      "type": "boolean",
-      "default": false
-    },
-    "codeHost.nativeIntegrationEnabled": {
-      "description": "Whether the Sourcegraph native integration is installed on the code host. This affects in-app messaging users read inside the webapp.",
       "type": "boolean",
       "default": false
     },

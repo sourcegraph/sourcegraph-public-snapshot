@@ -20,7 +20,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showDotComMarketing: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     testIsOpen?: boolean
-    isNativeIntegrationEnabled: boolean
+    codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -65,7 +65,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         onThemePreferenceChange,
         isExtensionAlertAnimating,
         testIsOpen,
-        isNativeIntegrationEnabled,
+        codeHostIntegrationMessaging,
     } = props
 
     const supportsSystemTheme = useMemo(
@@ -205,7 +205,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         About Sourcegraph <OpenInNewIcon className="icon-inline" />
                     </a>
                 )}
-                {!isNativeIntegrationEnabled && (
+                {!codeHostIntegrationMessaging && (
                     <a
                         href="https://docs.sourcegraph.com/integration/browser_extension"
                         target="_blank"
