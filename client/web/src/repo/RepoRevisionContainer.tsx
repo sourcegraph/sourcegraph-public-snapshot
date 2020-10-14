@@ -138,7 +138,13 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                         >
                             <MenuDownIcon className="icon-inline" />
                         </button>
-                        <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
+                        <UncontrolledPopover
+                            placement="bottom-start"
+                            target="repo-revision-popover"
+                            trigger="legacy"
+                            hideArrow={true}
+                            popperClassName="border-0"
+                        >
                             <RevisionsPopover
                                 repo={props.repo.id}
                                 repoName={props.repo.name}
