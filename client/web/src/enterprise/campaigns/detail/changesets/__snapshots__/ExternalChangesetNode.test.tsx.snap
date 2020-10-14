@@ -4,7 +4,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
 <Fragment>
   <button
     aria-label="Expand section"
-    className="btn btn-icon test-campaigns-expand-changeset"
+    className="btn btn-icon test-campaigns-expand-changeset d-none d-sm-block"
     onClick={[Function]}
     type="button"
   >
@@ -55,8 +55,10 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
         "updatedAt": "2020-01-01T00:00:00.000Z",
       }
     }
+    className="external-changeset-node__state d-block d-sm-flex"
   />
   <ExternalChangesetInfoCell
+    className="external-changeset-node__information"
     node={
       Object {
         "__typename": "ExternalChangeset",
@@ -100,18 +102,41 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
     }
     viewerCanAdminister={true}
   />
-  <span>
+  <div
+    className="d-flex d-md-none justify-content-start external-changeset-node__statuses"
+  >
+    <ChangesetCheckStatusCell
+      checkState="FAILED"
+      className="mr-3"
+    />
+    <ChangesetReviewStatusCell
+      className="mr-3"
+      reviewState="PENDING"
+    />
+    <Memo(DiffStat)
+      added={100}
+      changed={200}
+      deleted={100}
+      expandedCounts={true}
+      separateLines={true}
+    />
+  </div>
+  <span
+    className="d-none d-md-inline"
+  >
     <ChangesetCheckStatusCell
       checkState="FAILED"
     />
   </span>
-  <span>
+  <span
+    className="d-none d-md-inline"
+  >
     <ChangesetReviewStatusCell
       reviewState="PENDING"
     />
   </span>
   <div
-    className="d-flex justify-content-center"
+    className="d-none d-md-flex justify-content-center"
   >
     <Memo(DiffStat)
       added={100}
@@ -121,5 +146,19 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       separateLines={true}
     />
   </div>
+  <button
+    aria-label="Expand section"
+    className="external-changeset-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-changeset"
+    onClick={[Function]}
+    type="button"
+  >
+    <Memo(ChevronRightIcon)
+      aria-label="Expand section"
+      className="icon-inline"
+    />
+     
+    Show
+     details
+  </button>
 </Fragment>
 `;

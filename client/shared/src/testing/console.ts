@@ -32,12 +32,14 @@ export async function formatPuppeteerConsoleMessage(page: Page, message: Console
                 .join(':')
         ) +
         ` from page ${chalk.underline(page.url())}`
+
     // Right-align location, like in Chrome dev tools
     const locationLine = chalk.dim(
         formattedLocation &&
             '\n' +
                 (!process.env.CI
-                    ? ' '.repeat(terminalSize().columns - stringWidth(formattedLocation)) + formattedLocation
+                    ? ' '.repeat(Math.max(0, terminalSize().columns - stringWidth(formattedLocation))) +
+                      formattedLocation
                     : '\t' + formattedLocation)
     )
     return [

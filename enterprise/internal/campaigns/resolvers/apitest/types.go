@@ -164,6 +164,7 @@ type ChangesetConnectionStats struct {
 	Open        int
 	Merged      int
 	Closed      int
+	Deleted     int
 	Total       int
 }
 

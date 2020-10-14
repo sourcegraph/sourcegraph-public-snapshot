@@ -911,7 +911,6 @@ func TestSearchResultsHydration(t *testing.T) {
 		RepoFields: &types.RepoFields{
 			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
 			Description: "This is a description of a repository",
-			Language:    "monkey",
 			Fork:        false,
 		}}
 

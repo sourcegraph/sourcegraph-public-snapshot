@@ -176,6 +176,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 					Open:        tc.wantOpen,
 					Merged:      1,
 					Closed:      0,
+					Deleted:     0,
 					Total:       tc.wantTotalCount,
 				},
 				TotalCount: tc.wantTotalCount,
@@ -229,7 +230,7 @@ query($campaign: ID!, $first: Int, $after: String, $reviewState: ChangesetReview
     ... on Campaign {
       changesets(first: $first, after: $after, reviewState: $reviewState) {
         totalCount
-        stats { unpublished, open, merged, closed, total }
+        stats { unpublished, open, merged, closed, deleted, total }
         nodes {
           __typename
 

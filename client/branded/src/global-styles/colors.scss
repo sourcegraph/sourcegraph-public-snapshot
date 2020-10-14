@@ -127,6 +127,7 @@ $body-bg-color-dark: #04070e;
     --link-hover-color: #{$gray-21};
     --color-border: #{$color-light-border};
     --color-border-2: #{$color-light-border-2};
+    --sourcegraph-logo-text-color: #242427;
 }
 .theme-dark {
     --secondary: #{$secondary};
@@ -142,4 +143,5 @@ $body-bg-color-dark: #04070e;
     --link-color: #{$gray-07};
     --link-active-color: #{$gray-02};
     --link-hover-color: #{$white};
+    --sourcegraph-logo-text-color: #{$white};
 }

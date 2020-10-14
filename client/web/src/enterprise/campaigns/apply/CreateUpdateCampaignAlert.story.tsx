@@ -4,9 +4,13 @@ import React from 'react'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', module)
+    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+        },
+    })
 
 add('Create', () => (
     <EnterpriseWebStory>

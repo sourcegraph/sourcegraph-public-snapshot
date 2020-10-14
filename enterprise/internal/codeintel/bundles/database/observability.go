@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -36,7 +36,7 @@ func NewObserved(database Database, filename string, observationContext *observa
 	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
 		return metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"bundle_database",
+			"code_intel_bundle_store",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of results returned"),
 		)

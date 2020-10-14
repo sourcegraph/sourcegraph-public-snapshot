@@ -1601,6 +1601,10 @@ type ChangesetConnectionStats {
     """
     closed: Int!
     """
+    The count of externalState: DELETED changesets.
+    """
+    deleted: Int!
+    """
     The count of all changesets. Equal to totalCount of the connection.
     """
     total: Int!
@@ -2053,6 +2057,10 @@ type Query {
         Return repositories whose names match the query.
         """
         query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
         """
         Return repositories whose names are in the list.
         """

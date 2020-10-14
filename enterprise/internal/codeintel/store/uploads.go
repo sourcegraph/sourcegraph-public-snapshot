@@ -192,6 +192,24 @@ type GetUploadsOptions struct {
 	Offset         int
 }
 
+// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
+func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error) {
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(`
+			WITH deleted AS (
+				UPDATE lsif_uploads
+				SET state = 'deleted'
+				WHERE state = 'uploading' AND uploaded_at < %s
+				RETURNING repository_id
+			)
+			SELECT count(*) FROM deleted
+		`, uploadedBefore),
+	))
+
+	return count, err
+}
+
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
 	tx, err := s.transact(ctx)
@@ -479,8 +497,17 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 }
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
-func (s *store) HardDeleteUploadByID(ctx context.Context, id int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, id))
+func (s *store) HardDeleteUploadByID(ctx context.Context, ids ...int) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	var idQueries []*sqlf.Query
+	for _, id := range ids {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id IN (%s)`, sqlf.Join(idQueries, ", ")))
 }
 
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an

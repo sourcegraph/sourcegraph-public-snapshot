@@ -38,7 +38,7 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
 		return metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"bundle_store",
+			"code_intel_codeintel_db_store",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of results returned"),
 		)
