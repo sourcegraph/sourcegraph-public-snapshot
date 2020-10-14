@@ -9,6 +9,7 @@ import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { ShowMoreButton } from './ShowMoreButton'
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
@@ -146,8 +147,8 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         <tr key={index} className="recent-searches-panel__results-table-row">
                             <td>
                                 <small>
-                                    <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>
-                                        {recentSearch.searchText}
+                                    <Link to={recentSearch.url} onClick={logSearchClicked}>
+                                        <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
                                     </Link>
                                 </small>
                             </td>
