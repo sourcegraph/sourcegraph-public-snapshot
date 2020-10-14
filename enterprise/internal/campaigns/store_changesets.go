@@ -388,6 +388,8 @@ type ListChangesetsOpts struct {
 	ExternalCheckState   *campaigns.ChangesetCheckState
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
+	// OnlySynced adds a conditional on changeset.unsynced IS FALSE.
+	OnlySynced bool
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -469,6 +471,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 	if opts.OnlyWithoutDiffStats {
 		preds = append(preds, sqlf.Sprintf("(changesets.diff_stat_added IS NULL OR changesets.diff_stat_changed IS NULL OR changesets.diff_stat_deleted IS NULL)"))
+	}
+
+	if opts.OnlySynced {
+		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
 	}
 
 	return sqlf.Sprintf(
