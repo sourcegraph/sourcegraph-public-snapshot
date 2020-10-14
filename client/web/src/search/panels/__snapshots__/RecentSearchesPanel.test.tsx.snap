@@ -83,11 +83,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -104,15 +99,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -137,15 +123,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -202,11 +179,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -224,15 +196,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="recent-searches-panel__results-table-row"
               key="0"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -271,15 +234,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="recent-searches-panel__results-table-row"
               key="1"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -422,11 +376,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -443,15 +392,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -476,15 +416,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -509,15 +440,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -542,15 +464,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -603,11 +516,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -625,15 +533,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="0"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -672,15 +571,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="1"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -719,15 +609,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="2"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -766,15 +647,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="3"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -900,11 +772,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -921,15 +788,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -954,15 +812,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -1015,11 +864,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -1037,15 +881,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="recent-searches-panel__results-table-row"
               key="0"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
@@ -1084,15 +919,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="recent-searches-panel__results-table-row"
               key="1"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
