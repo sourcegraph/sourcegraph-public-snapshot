@@ -3,6 +3,7 @@ package apitest
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -56,11 +57,11 @@ func Exec(
 		return r.Errors
 	}
 
-	// _, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 
-	// if testing.Verbose() && !disableLog {
-	t.Logf("\n---- GraphQL Query ----\n%s\n\nVars: %s\n---- GraphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Data)
-	// }
+	if testing.Verbose() && !disableLog {
+		t.Logf("\n---- GraphQL Query ----\n%s\n\nVars: %s\n---- GraphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Data)
+	}
 
 	if err := json.Unmarshal(r.Data, out); err != nil {
 		t.Fatalf("failed to unmarshal graphql data: %v", err)
