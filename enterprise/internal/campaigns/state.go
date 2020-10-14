@@ -215,7 +215,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
 		}
 		for _, c := range commit.Commit.CheckSuites.Nodes {
-			if c.Status == "QUEUED" && len(c.CheckRuns.Nodes) == 0 {
+			if (c.Status == "QUEUED" || c.Status == "COMPLETED") && len(c.CheckRuns.Nodes) == 0 {
 				// Ignore queued suites with no runs.
 				// It is common for suites to be created and then stay in the QUEUED state
 				// forever with zero runs.
@@ -246,7 +246,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 				}
 			}
 		case *github.CheckSuite:
-			if m.Status == "QUEUED" && len(m.CheckRuns.Nodes) == 0 {
+			if (m.Status == "QUEUED" || m.Status == "COMPLETED") && len(m.CheckRuns.Nodes) == 0 {
 				// Ignore suites with no runs.
 				// See previous comment.
 				continue

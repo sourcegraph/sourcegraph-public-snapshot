@@ -34,6 +34,7 @@ import { PrivateCodeCta } from './PrivateCodeCta'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { HomePanels } from '../panels/HomePanels'
+import { SearchPageFooter } from './SearchPageFooter'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -96,7 +97,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         )
     )
     return (
-        <div className="web-content search-page">
+        <div className="web-content search-page d-flex flex-column align-items-center pb-5">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
@@ -325,6 +326,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 )}
 
             {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+
+            <SearchPageFooter className="search-page__footer" />
         </div>
     )
 }

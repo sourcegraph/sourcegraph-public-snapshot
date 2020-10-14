@@ -15,6 +15,9 @@ import (
 //
 // We only specify a subset of the fields.
 type zoektIndexOptions struct {
+	// RepoID is the Sourcegraph Repository ID.
+	RepoID int32
+
 	// LargeFiles is a slice of glob patterns where matching file paths should
 	// be indexed regardless of their size. The pattern syntax can be found
 	// here: https://golang.org/pkg/path/filepath/#Match.
@@ -30,13 +33,21 @@ type zoektIndexOptions struct {
 	Error string `json:",omitempty"`
 }
 
+// RepoIndexOptions are the options used by GetIndexOptions for a specific
+// repository.
+type RepoIndexOptions struct {
+	// RepoID is the Sourcegraph Repository ID.
+	RepoID int32
+
+	// GetVersion is used to resolve revisions for a repo. If it fails, the
+	// error is encoded in the body. If the revision is missing, an empty
+	// string should be returned rather than an error.
+	GetVersion func(branch string) (string, error)
+}
+
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
-//
-// getVersionFunc is used to resolve revisions for a repo. If it fails, the
-// error is encoded in the body. If the revision is missing, an empty string
-// should be returned rather than an error.
-func GetIndexOptions(c *schema.SiteConfiguration, getVersionFunc func(repo string) func(string) (string, error), repos ...string) []byte {
+func GetIndexOptions(c *schema.SiteConfiguration, getRepoIndexOptions func(repo string) (*RepoIndexOptions, error), repos ...string) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
 	// future we want a more intelligent global limit based on scale.
@@ -47,7 +58,7 @@ func GetIndexOptions(c *schema.SiteConfiguration, getVersionFunc func(repo strin
 		sema <- struct{}{}
 		go func(i int) {
 			defer func() { <-sema }()
-			results[i] = getIndexOptions(c, repos[i], getVersionFunc(repos[i]))
+			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions)
 		}(i)
 	}
 
@@ -59,8 +70,14 @@ func GetIndexOptions(c *schema.SiteConfiguration, getVersionFunc func(repo strin
 	return bytes.Join(results, []byte{'\n'})
 }
 
-func getIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion func(branch string) (string, error)) []byte {
+func getIndexOptions(c *schema.SiteConfiguration, repoName string, getRepoIndexOptions func(repo string) (*RepoIndexOptions, error)) []byte {
+	opts, err := getRepoIndexOptions(repoName)
+	if err != nil {
+		return marshal(&zoektIndexOptions{Error: err.Error()})
+	}
+
 	o := &zoektIndexOptions{
+		RepoID:     opts.RepoID,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}
@@ -83,7 +100,7 @@ func getIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 	}
 
 	for branch := range branches {
-		v, err := getVersion(branch)
+		v, err := opts.GetVersion(branch)
 		if err != nil {
 			return marshal(&zoektIndexOptions{Error: err.Error()})
 		}

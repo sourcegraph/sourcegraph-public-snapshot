@@ -134,9 +134,6 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                 <thead>
                     <tr className="recent-searches-panel__results-table-row">
                         <th>
-                            <small>Count</small>
-                        </th>
-                        <th>
                             <small>Search</small>
                         </th>
                         <th>
@@ -147,11 +144,6 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                 <tbody className="recent-searches-panel__results-table-body">
                     {processedResults?.map((recentSearch, index) => (
                         <tr key={index} className="recent-searches-panel__results-table-row">
-                            <td className="recent-searches-panel__results-table-count-col">
-                                <span className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center">
-                                    {recentSearch.count}
-                                </span>
-                            </td>
                             <td>
                                 <small>
                                     <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>

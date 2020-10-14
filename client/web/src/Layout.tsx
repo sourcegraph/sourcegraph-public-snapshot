@@ -21,7 +21,6 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
-import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -200,9 +199,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 settingsCascade={props.settingsCascade}
                 history={props.history}
             />
-            {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
-                <IntegrationsToast history={props.history} />
-            )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
