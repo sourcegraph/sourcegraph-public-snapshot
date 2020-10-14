@@ -3025,11 +3025,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 sync was started for 8h0m0s_
+- _repo-updater: less than 0 sync was started for 8h0m0s_
 
 **Possible solutions:**
 
-- Check repo-updater logs for errors. Ignore this alert if only one code host connection is defined
+- Check repo-updater logs for errors.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3076,7 +3076,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 repositories synced for 8h0m0s_
+- _repo-updater: less than 0 repositories synced for 8h0m0s_
 
 **Possible solutions:**
 
@@ -3093,7 +3093,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 repositories sourced for 8h0m0s_
+- _repo-updater: less than 0 repositories sourced for 8h0m0s_
 
 **Possible solutions:**
 
@@ -3127,7 +3127,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1+ repositories purge failed for 5m0s_
+- _repo-updater: 0+ repositories purge failed for 5m0s_
 
 **Possible solutions:**
 
@@ -3144,7 +3144,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 repositories scheduled due to hitting a deadline for 8h0m0s_
+- _repo-updater: less than 0 repositories scheduled due to hitting a deadline for 8h0m0s_
 
 **Possible solutions:**
 
@@ -3161,7 +3161,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 repositories scheduled due to user traffic for 8h0m0s_
+- _repo-updater: less than 0 repositories scheduled due to user traffic for 8h0m0s_
 
 **Possible solutions:**
 
@@ -3178,7 +3178,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 repositories managed by the scheduler for 10m0s_
+- _repo-updater: less than 0 repositories managed by the scheduler for 10m0s_
 
 **Possible solutions:**
 
@@ -3212,7 +3212,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 1 scheduler loops for 8h0m0s_
+- _repo-updater: less than 0 scheduler loops for 8h0m0s_
 
 **Possible solutions:**
 

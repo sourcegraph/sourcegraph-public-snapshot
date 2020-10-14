@@ -12,11 +12,11 @@ export interface HiddenExternalChangesetNodeProps {
 
 export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
     <>
-        <span />
-        <ChangesetStatusCell changeset={node} />
-        <HiddenExternalChangesetInfoCell node={node} />
-        <span />
-        <span />
-        <span />
+        <span className="d-none d-sm-block" />
+        <ChangesetStatusCell changeset={node} className="hidden-external-changeset-node__status d-block d-sm-flex" />
+        <HiddenExternalChangesetInfoCell node={node} className="hidden-external-changeset-node__information" />
+        <span className="d-none d-sm-block" />
+        <span className="d-none d-sm-block" />
+        <span className="d-none d-sm-block" />
     </>
 )

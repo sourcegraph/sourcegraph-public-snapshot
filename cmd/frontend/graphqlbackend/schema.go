@@ -1601,6 +1601,10 @@ type ChangesetConnectionStats {
     """
     closed: Int!
     """
+    The count of externalState: DELETED changesets.
+    """
+    deleted: Int!
+    """
     The count of all changesets. Equal to totalCount of the connection.
     """
     total: Int!

@@ -65,6 +65,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                         </sup>
                     </span>
                 }
+                className="justify-content-end"
                 actions={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign

@@ -72,7 +72,6 @@ func TestRepositoryHydration(t *testing.T) {
 		hydrated.RepoFields = &types.RepoFields{
 			URI:         fmt.Sprintf("github.com/foobar/%s", name),
 			Description: "This is a description of a repository",
-			Language:    "monkey",
 			Fork:        false,
 		}
 
