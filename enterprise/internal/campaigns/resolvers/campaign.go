@@ -167,7 +167,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	opts := ee.ListChangesetsOpts{
 		CampaignID:       r.Campaign.ID,
 		PublicationState: &publishedState,
-		// Only request synced changesets, as we cannot be sure that we know all data required for computation for unsynced changesets.
+		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		OnlySynced: true,
 	}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
