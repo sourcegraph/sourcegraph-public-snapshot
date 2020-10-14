@@ -12,4 +12,5 @@ jobs:
           with:
              recipients: |
                   team/web=@joelkw
+                  team/cloud=@tsenart
 
