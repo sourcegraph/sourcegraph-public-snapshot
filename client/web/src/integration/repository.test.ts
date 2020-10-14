@@ -495,7 +495,7 @@ describe('Repository', () => {
 
         it('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
-            const repositorySourcegraphUrl = `/github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = '/github.com/my%20org/repo%20with%20spaces'
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
