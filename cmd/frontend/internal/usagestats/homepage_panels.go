@@ -16,7 +16,7 @@ SELECT
   savedSearchesPanelSearchClicked / savedSearchesPanelLoaded                   AS savedSearchesClickedPercentage,
   savedSearchesPanelCreateButtonClicked / savedSearchesPanelLoaded             AS newSavedSearchesClickedPercentage,
   recentSearchesPanelLoaded                                                    AS totalPanelViews,
-  recentFilesPanelFileClicked / uniqueRecentFilesPanelLoaded                   AS usersFilesClickedPercentage,
+  uniqueRecentFilesPanelFileClicked / uniqueRecentFilesPanelLoaded             AS usersFilesClickedPercentage,
   uniqueRecentSearchesPanelSearchClicked / uniqueRecentSearchesPanelLoaded     AS usersSearchClickedPercentage,
   uniqueRepositoriesPanelRepoFilterClicked / uniqueRepositoriesPanelLoaded     AS usersRepositoriesClickedPercentage,
   uniqueSavedSearchesPanelSearchClicked / uniqueSavedSearchesPanelLoaded       AS usersSavedSearchesClickedPercentage,
