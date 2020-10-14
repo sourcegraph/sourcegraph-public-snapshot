@@ -75,7 +75,7 @@ var _ Store = &ObservedStore{}
 func NewObserved(store Store, observationContext *observation.Context) Store {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"code_intel_store",
+		"code_intel_frontend_db_store",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)

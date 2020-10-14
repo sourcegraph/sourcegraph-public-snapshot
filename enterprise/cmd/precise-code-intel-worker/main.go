@@ -76,6 +76,7 @@ func main() {
 		workerConcurrency,
 		workerBudget,
 		workerMetrics,
+		observationContext,
 	)
 
 	go debugserver.Start()

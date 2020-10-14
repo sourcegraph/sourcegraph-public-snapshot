@@ -36,7 +36,7 @@ func NewObserved(database Database, filename string, observationContext *observa
 	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
 		return metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"bundle_database",
+			"code_intel_bundle_store",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of results returned"),
 		)

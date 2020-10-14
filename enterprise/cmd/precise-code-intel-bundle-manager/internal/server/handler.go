@@ -389,7 +389,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		payload, err := handler(ctx, db)
+		payload, err := handler(ctx, database.NewObserved(db, filename, s.observationContext))
 		if err != nil {
 			return err
 		}
@@ -404,7 +404,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		payload, err := handler(ctx, db)
+		payload, err := handler(ctx, database.NewObserved(db, filename, s.observationContext))
 		if err != nil {
 			return err
 		}
