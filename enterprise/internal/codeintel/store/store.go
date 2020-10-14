@@ -82,7 +82,7 @@ type Store interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
 	// HardDeleteUploadByID deletes the upload record with the given identifier.
-	HardDeleteUploadByID(ctx context.Context, id int) error
+	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
@@ -228,6 +228,9 @@ type Store interface {
 
 	// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error)
+
+	// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 }
 
 type store struct {

@@ -31,10 +31,7 @@ func TestRemoveOldUploadFiles(t *testing.T) {
 		maxUploadAge: time.Minute,
 		metrics:      NewJanitorMetrics(metrics.TestRegisterer),
 	}
-
-	if err := j.removeOldUploadFiles(context.Background()); err != nil {
-		t.Fatalf("unexpected error cleaning failed uploads: %s", err)
-	}
+	j.removeOldUploadFiles(context.Background())
 
 	names, err := getFilenames(filepath.Join(bundleDir, "uploads"))
 	if err != nil {
@@ -68,10 +65,7 @@ func TestRemoveOldUploadPartFiles(t *testing.T) {
 		maxUploadPartAge: time.Minute,
 		metrics:          NewJanitorMetrics(metrics.TestRegisterer),
 	}
-
-	if err := j.removeOldUploadPartFiles(context.Background()); err != nil {
-		t.Fatalf("unexpected error cleaning old upload part files: %s", err)
-	}
+	j.removeOldUploadPartFiles(context.Background())
 
 	names, err := getFilenames(filepath.Join(bundleDir, "upload-parts"))
 	if err != nil {
