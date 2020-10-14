@@ -21,8 +21,8 @@ import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import { Settings } from '../settings/settings'
-import { fromEvent, merge } from 'rxjs'
-import { filter, map, concatAll, mergeMap } from 'rxjs/operators'
+import { from, fromEvent, merge, Subscription } from 'rxjs'
+import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
@@ -130,21 +130,58 @@ export class Driver {
     /** The pages that were visited since the creation of the driver. */
     public visitedPages: Readonly<URL>[] = []
 
-    constructor(
-        public browser: puppeteer.Browser,
-        public page: puppeteer.Page,
-        public sourcegraphBaseUrl: string,
-        public keepBrowser?: boolean
-    ) {
-        browser.on('targetchanged', this.recordVisitedPage)
-        browser.on('targetcreated', this.recordVisitedPage)
-    }
+    public sourcegraphBaseUrl: string
+    private keepBrowser: boolean
+    private subscriptions = new Subscription()
 
-    private recordVisitedPage = (target: Target): void => {
-        if (target.type() !== 'page') {
-            return
+    constructor(public browser: puppeteer.Browser, public page: puppeteer.Page, options: DriverOptions) {
+        this.sourcegraphBaseUrl = options.sourcegraphBaseUrl
+        this.keepBrowser = !!options.keepBrowser
+
+        // Record visited pages
+        this.subscriptions.add(
+            merge(fromEvent<Target>(browser, 'targetchanged'), fromEvent<Target>(browser, 'targetcreated'))
+                .pipe(filter(target => target.type() === 'page'))
+                .subscribe(target => {
+                    this.visitedPages.push(new URL(target.url()))
+                })
+        )
+
+        // Log browser console
+        if (options.logBrowserConsole) {
+            this.subscriptions.add(
+                merge(
+                    from(browser.pages()).pipe(mergeAll()),
+                    fromEvent<Target>(browser, 'targetcreated').pipe(
+                        mergeMap(target => target.page()),
+                        filter(isDefined)
+                    )
+                )
+                    .pipe(
+                        mergeMap(page =>
+                            fromEvent<ConsoleMessage>(page, 'console').pipe(
+                                filter(
+                                    message =>
+                                        !message.text().includes('Download the React DevTools') &&
+                                        !message.text().includes('[HMR]') &&
+                                        !message.text().includes('[WDS]') &&
+                                        !message
+                                            .text()
+                                            .includes('Warning: componentWillReceiveProps has been renamed') &&
+                                        !message.text().includes('React-Hot-Loader') &&
+                                        // These requests are expected to fail, we use them to check if the browser extension is installed.
+                                        message.location().url !== 'chrome-extension://invalid/'
+                                ),
+                                // Immediately format remote handles to strings, but maintain order.
+                                map(message => formatPuppeteerConsoleMessage(page, message)),
+                                concatAll(),
+                                takeUntil(fromEvent(page, 'close'))
+                            )
+                        )
+                    )
+                    .subscribe(formattedLine => console.log(formattedLine))
+            )
         }
-        this.visitedPages.push(new URL(target.url()))
     }
 
     public async ensureLoggedIn({
@@ -200,6 +237,7 @@ export class Driver {
     }
 
     public async close(): Promise<void> {
+        this.subscriptions.unsubscribe()
         if (!this.keepBrowser) {
             await this.browser.close()
         }
@@ -687,7 +725,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
         ...options,
     }
 
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
+    const { loadExtension } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ignoreHTTPSErrors: true,
@@ -751,30 +789,6 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
     }
 
     const page = await browser.newPage()
-    if (logBrowserConsole) {
-        merge(
-            await browser.pages(),
-            fromEvent<Target>(browser, 'targetcreated').pipe(
-                mergeMap(target => target.page()),
-                filter(isDefined)
-            )
-        )
-            .pipe(
-                mergeMap(page => fromEvent<ConsoleMessage>(page, 'console')),
-                filter(
-                    message =>
-                        !message.text().includes('Download the React DevTools') &&
-                        !message.text().includes('[HMR]') &&
-                        !message.text().includes('[WDS]') &&
-                        !message.text().includes('Warning: componentWillReceiveProps has been renamed') &&
-                        !message.text().includes('React-Hot-Loader')
-                ),
-                // Immediately format remote handles to strings, but maintain order.
-                map(formatPuppeteerConsoleMessage),
-                concatAll()
-            )
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            .subscribe(formattedLine => console.log(formattedLine))
-    }
-    return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
+
+    return new Driver(browser, page, options)
 }

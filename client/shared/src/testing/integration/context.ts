@@ -1,5 +1,5 @@
 import { Test } from 'mocha'
-import { Subject, throwError } from 'rxjs'
+import { Subject, Subscription, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
 import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
@@ -99,6 +99,7 @@ export const createSharedIntegrationTestContext = async <
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
     }
+    const subscriptions = new Subscription()
     const cdpAdapterOptions: CdpAdapterOptions = {
         page: driver.page,
     }
@@ -127,8 +128,21 @@ export const createSharedIntegrationTestContext = async <
     })
     const { server } = polly
 
+    // Fail the test in the case a request handler threw an error,
+    // e.g. because a request had no mock defined.
+    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
+    subscriptions.add(
+        cdpAdapter.errors.subscribe(error => {
+            currentTest.emit('error', error)
+        })
+    )
+
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
+
+    // Special URL: The browser redirects to chrome-extension://invalid
+    // when requesting an extension resource that does not exist.
+    server.get('chrome-extension://invalid/').passthrough()
 
     // Avoid 404 error logs from missing favicon
     server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
@@ -240,9 +254,10 @@ export const createSharedIntegrationTestContext = async <
             return variables
         },
         dispose: async () => {
-            await polly.stop()
+            subscriptions.unsubscribe()
             await recordCoverage(driver.browser)
             await driver.page.close()
+            await polly.stop()
         },
     }
 }

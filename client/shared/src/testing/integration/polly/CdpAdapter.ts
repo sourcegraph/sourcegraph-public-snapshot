@@ -3,6 +3,7 @@ import Puppeteer from 'puppeteer'
 import Protocol from 'devtools-protocol'
 import PollyAdapter from '@pollyjs/adapter'
 import { isErrorLike } from '../../../util/errors'
+import { Observable, Subject } from 'rxjs'
 
 function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')
@@ -53,6 +54,13 @@ export class CdpAdapter extends PollyAdapter {
      * `adapterOptions` passed to Polly.
      */
     public options!: CdpAdapterOptions
+
+    private readonly _errors = new Subject<unknown>()
+
+    /**
+     * Event that can be subscribed to handle errors that occurred in request handlers.
+     */
+    public readonly errors: Observable<unknown> = this._errors.asObservable()
 
     /**
      * The puppeteer Page this adapter is attached to, obtained from
@@ -157,7 +165,7 @@ export class CdpAdapter extends PollyAdapter {
             // This function receives a value in the `error` argument if we're
             // intercepting a request with the Polly server route which throws
             // an error.
-            console.warn('Aborting request:', error)
+            this._errors.next(error)
             await this.abortPausedRequest({ requestId, errorReason: 'Failed' })
         } else {
             // Fulfill by converting the Polly response to a CDP response

@@ -169,7 +169,6 @@ describe('Blob viewer', () => {
             testContext.server
                 .get(new URL(extensionManifest.url, driver.sourcegraphBaseUrl).href)
                 .intercept((request, response) => {
-                    console.log('bundle handler called')
                     function extensionBundle(): void {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
