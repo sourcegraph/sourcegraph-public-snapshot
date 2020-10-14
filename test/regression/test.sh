@@ -16,6 +16,13 @@ ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp
 
 IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh
 
+sleep 30
+
+pushd test/regression
+go run main.go
+popd
+
+source /root/.profile
 pushd client/web
 sleep 10
 yarn run test:regression
