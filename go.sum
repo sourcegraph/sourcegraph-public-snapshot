@@ -1232,6 +1232,8 @@ github.com/sourcegraph/campaignutils v0.0.0-20200930165749-a8777d33a817 h1:mdFA7
 github.com/sourcegraph/campaignutils v0.0.0-20200930165749-a8777d33a817/go.mod h1:5P8k8KlKz78RZJ2EFk9k9ln/j/twj28z/+BvO5hHZJ8=
 github.com/sourcegraph/campaignutils v0.0.0-20201014123437-b528d0e91e0c h1:ZJMGX3/ZxzkY0TJzm5nbfBQeg0RM+hcAz2lp+/15Q5o=
 github.com/sourcegraph/campaignutils v0.0.0-20201014123437-b528d0e91e0c/go.mod h1:5P8k8KlKz78RZJ2EFk9k9ln/j/twj28z/+BvO5hHZJ8=
+github.com/sourcegraph/campaignutils v0.0.0-20201014140011-721315691938 h1:h5gOw7sMlYFSQFNdFPXNHJ4dtD0nlgClmL8SGAzlNM4=
+github.com/sourcegraph/campaignutils v0.0.0-20201014140011-721315691938/go.mod h1:5P8k8KlKz78RZJ2EFk9k9ln/j/twj28z/+BvO5hHZJ8=
 github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58 h1:Ps+U1xoZP+Zoph39YfRB6Q846ghO8pgrAgp0MiObvPs=
 github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
