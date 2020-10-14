@@ -91,8 +91,8 @@ WITH upsert AS (
     external_id           = NULLIF(BTRIM($4), ''),
     external_service_type = NULLIF(BTRIM($5), ''),
     external_service_id   = NULLIF(BTRIM($6), ''),
-    archived              = $8,
-    cloned                = $9
+    archived              = $7,
+    cloned                = $8
   WHERE name = $1 OR (
     external_id IS NOT NULL
     AND external_service_type IS NOT NULL
@@ -111,7 +111,6 @@ INSERT INTO repo (
   name,
   description,
   fork,
-  language,
   external_id,
   external_service_type,
   external_service_id,
@@ -122,12 +121,11 @@ INSERT INTO repo (
     $1 AS name,
     $2 AS description,
     $3 AS fork,
-    $7 AS language,
     NULLIF(BTRIM($4), '') AS external_id,
     NULLIF(BTRIM($5), '') AS external_service_type,
     NULLIF(BTRIM($6), '') AS external_service_id,
-    $8 AS archived,
-    $9 AS cloned
+    $7 AS archived,
+    $8 AS cloned
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
@@ -138,7 +136,6 @@ INSERT INTO repo (
 // by repo-updater.
 func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 	insert := false
-	language := ""
 
 	// We optimistically assume the repo is already in the table, so first
 	// check if it is. We then fallback to the upsert functionality. The
@@ -152,7 +149,6 @@ func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 		}
 		insert = true // missing
 	} else {
-		language = r.Language
 		insert = (op.Description != r.Description) ||
 			(op.Fork != r.Fork) ||
 			(!op.ExternalRepo.Equal(&r.ExternalRepo))
@@ -171,7 +167,6 @@ func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 		op.ExternalRepo.ID,
 		op.ExternalRepo.ServiceType,
 		op.ExternalRepo.ServiceID,
-		language,
 		op.Archived,
 		op.Cloned,
 	)
@@ -201,7 +196,6 @@ func TestRepos_Get(t *testing.T) {
 		RepoFields: &types.RepoFields{
 			URI:         "u",
 			Description: "d",
-			Language:    "l",
 			Fork:        true,
 			Archived:    true,
 			Cloned:      true,
