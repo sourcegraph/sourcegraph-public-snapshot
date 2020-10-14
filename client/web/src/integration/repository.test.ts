@@ -518,6 +518,22 @@ describe('Repository', () => {
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' my org/repo with spaces')
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
+
+            // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
+            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
+            await driver.page.waitForSelector('.test-repo-blob')
+
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, [
+                'Home',
+                'Repositories',
+                shortRepositoryName,
+                '@master',
+                'readme.md',
+            ])
         })
     })
 })
