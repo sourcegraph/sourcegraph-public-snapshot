@@ -23,6 +23,7 @@ for (const serviceType of services) {
                     <InstallBrowserExtensionAlert
                         isChrome={true}
                         onAlertDismissed={onAlertDismissed}
+                        codeHostIntegrationMessaging="browser-extension"
                         externalURLs={[
                             {
                                 __typename: 'ExternalLink',
@@ -49,6 +50,34 @@ for (const serviceType of services) {
                     <InstallBrowserExtensionAlert
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
+                        codeHostIntegrationMessaging="browser-extension"
+                        externalURLs={[
+                            {
+                                __typename: 'ExternalLink',
+                                url: '',
+                                serviceType,
+                            },
+                        ]}
+                    />
+                )}
+            </WebStory>
+        ),
+        {
+            chromatic: {
+                disable: serviceType !== 'github',
+            },
+        }
+    )
+
+    add(
+        `${serviceType} (native integration installed)`,
+        () => (
+            <WebStory>
+                {() => (
+                    <InstallBrowserExtensionAlert
+                        isChrome={false}
+                        onAlertDismissed={onAlertDismissed}
+                        codeHostIntegrationMessaging="native-integration"
                         externalURLs={[
                             {
                                 __typename: 'ExternalLink',

@@ -20,6 +20,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showDotComMarketing: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     testIsOpen?: boolean
+    codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -58,7 +59,14 @@ export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
  * authenticated viewers.
  */
 export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
-    const { location, themePreference, onThemePreferenceChange, isExtensionAlertAnimating, testIsOpen } = props
+    const {
+        location,
+        themePreference,
+        onThemePreferenceChange,
+        isExtensionAlertAnimating,
+        testIsOpen,
+        codeHostIntegrationMessaging,
+    } = props
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -197,14 +205,16 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         About Sourcegraph <OpenInNewIcon className="icon-inline" />
                     </a>
                 )}
-                <a
-                    href="https://docs.sourcegraph.com/integration/browser_extension"
-                    target="_blank"
-                    rel="noopener"
-                    className="dropdown-item"
-                >
-                    Browser extension <OpenInNewIcon className="icon-inline" />
-                </a>
+                {codeHostIntegrationMessaging === 'browser-extension' && (
+                    <a
+                        href="https://docs.sourcegraph.com/integration/browser_extension"
+                        target="_blank"
+                        rel="noopener"
+                        className="dropdown-item"
+                    >
+                        Browser extension <OpenInNewIcon className="icon-inline" />
+                    </a>
+                )}
             </DropdownMenu>
         </ButtonDropdown>
     )

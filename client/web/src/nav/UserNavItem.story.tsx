@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import { boolean } from '@storybook/addon-knobs'
+import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { ThemePreference } from '../theme'
@@ -47,6 +47,11 @@ add(
                     onThemePreferenceChange={onThemePreferenceChange}
                     showDotComMarketing={boolean('showDotComMarketing', true)}
                     isExtensionAlertAnimating={false}
+                    codeHostIntegrationMessaging={select(
+                        'codeHostIntegrationMessaging',
+                        ['browser-extension', 'native-integration'] as const,
+                        'browser-extension'
+                    )}
                 />
             )}
         </WebStory>
