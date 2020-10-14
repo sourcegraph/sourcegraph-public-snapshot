@@ -138,6 +138,11 @@ export class NavLinks extends React.PureComponent<Props> {
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
+                            codeHostIntegrationMessaging={
+                                (!isErrorLike(this.props.settingsCascade.final) &&
+                                    this.props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                'browser-extension'
+                            }
                             keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>

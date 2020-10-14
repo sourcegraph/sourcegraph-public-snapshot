@@ -35,6 +35,7 @@ exports[`UserNavItem simple 1`] = `
           "username": "alice",
         }
       }
+      codeHostIntegrationMessaging="browser-extension"
       isExtensionAlertAnimating={false}
       isLightTheme={true}
       location="[Location path=/]"

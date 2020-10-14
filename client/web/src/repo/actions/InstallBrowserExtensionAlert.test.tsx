@@ -5,15 +5,18 @@ import { noop } from 'lodash'
 
 describe('InstallBrowserExtensionAlert', () => {
     const serviceTypes = ['github', 'gitlab', 'phabricator', 'bitbucketServer'] as const
-    const browsers = ['Chrome', 'non-Chrome'] as const
+    const integrationTypes = ['Chrome', 'non-Chrome', 'native integration'] as const
     for (const serviceType of serviceTypes) {
-        for (const browser of browsers) {
-            test(`${serviceType} (${browser})`, () => {
+        for (const integrationType of integrationTypes) {
+            test(`${serviceType} (${integrationType})`, () => {
                 expect(
                     mount(
                         <InstallBrowserExtensionAlert
-                            isChrome={browser === 'Chrome'}
+                            isChrome={integrationType === 'Chrome'}
                             onAlertDismissed={noop}
+                            codeHostIntegrationMessaging={
+                                integrationType === 'native integration' ? 'native-integration' : 'browser-extension'
+                            }
                             externalURLs={[
                                 {
                                     __typename: 'ExternalLink',
