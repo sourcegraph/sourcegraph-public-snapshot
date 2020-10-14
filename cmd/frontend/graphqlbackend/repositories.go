@@ -249,7 +249,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
-	if r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit {
+	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit {
 		return graphqlutil.HasNextPage(false), nil
 	}
 

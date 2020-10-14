@@ -2,8 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -326,6 +328,70 @@ func TestRepositories_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
+			},
+		})
+	})
+
+	t.Run("With no repositories present", func(t *testing.T) {
+		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+			return nil, nil
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: mustParseGraphQLSchema(t),
+				Query: `
+				{
+					repositories(first: 1) {
+						nodes {
+							name
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [],
+						"pageInfo": {
+						  "endCursor": null
+						}
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("With an invalid cursor provided", func(t *testing.T) {
+		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+			return nil, nil
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: mustParseGraphQLSchema(t),
+				Query: `
+				{
+					repositories(first: 1, after: "invalid-cursor-value") {
+						nodes {
+							name
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: "null",
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
+						Message:       `cannot unmarshal repository cursor type: ""`,
+						Path:          []interface{}{"repositories"},
+					},
+				},
 			},
 		})
 	})

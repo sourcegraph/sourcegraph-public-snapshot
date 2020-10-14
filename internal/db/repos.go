@@ -545,25 +545,26 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 // parseCursorConds checks whether the query is using cursor-based pagination, and
 // if so performs the necessary transformations for it to be successful.
 func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
-	if opt.CursorColumn != "" && opt.CursorValue != "" {
-		var direction string
-		switch opt.CursorDirection {
-		case "next":
-			direction = ">="
-		case "prev":
-			direction = "<="
-		default:
-			err = fmt.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
-		}
+	if opt.CursorColumn == "" || opt.CursorValue == "" {
+		return nil, nil
+	}
+	var direction string
+	switch opt.CursorDirection {
+	case "next":
+		direction = ">="
+	case "prev":
+		direction = "<="
+	default:
+		err = fmt.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
+	}
 
-		switch opt.CursorColumn {
-		case string(RepoListName):
-			conds = append(conds, sqlf.Sprintf("name "+direction+" %s", opt.CursorValue))
-		case string(RepoListCreatedAt):
-			conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", opt.CursorValue))
-		default:
-			err = fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
-		}
+	switch opt.CursorColumn {
+	case string(RepoListName):
+		conds = append(conds, sqlf.Sprintf("name "+direction+" %s", opt.CursorValue))
+	case string(RepoListCreatedAt):
+		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", opt.CursorValue))
+	default:
+		err = fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
 	}
 	return
 }
