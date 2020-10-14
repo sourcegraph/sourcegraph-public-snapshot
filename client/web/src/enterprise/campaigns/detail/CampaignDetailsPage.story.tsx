@@ -80,11 +80,11 @@ const queryChangesets: typeof _queryChangesets = () =>
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                externalState: null,
                 id: 'someh1',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
-                reconcilerState: ChangesetReconcilerState.QUEUED,
+                reconcilerState: ChangesetReconcilerState.COMPLETED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
