@@ -36,7 +36,7 @@ import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
-import { FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import {
     ExternalLinkFields,
@@ -292,7 +292,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         )
     }
 
-    private queryDiffs = (args: FilteredConnectionQueryArgs): Observable<GQL.IFileDiffConnection> =>
+    private queryDiffs = (args: FilteredConnectionQueryArguments): Observable<GQL.IFileDiffConnection> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,

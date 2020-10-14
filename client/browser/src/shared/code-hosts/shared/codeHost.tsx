@@ -105,7 +105,6 @@ import {
 } from './nativeTooltips'
 import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
-
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
@@ -115,6 +114,8 @@ import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/c
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 
 registerHighlightContributions()
 
@@ -570,6 +571,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI: boolean
+    background: Pick<BackgroundPageApi, 'notifyPrivateRepository' | 'openOptionsPage'>
 }
 
 export function handleCodeHost({
@@ -582,10 +584,19 @@ export function handleCodeHost({
     telemetryService,
     render,
     minimalUI,
+    background,
 }: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
+
+    // Notify the background page that we are on a private repository
+    // This information will be used to alert the user when using Sourcegraph Cloud
+    // while on a private repository.
+    const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
+    background.notifyPrivateRepository(isPrivateRepo).catch(error => {
+        console.error('Error notifying background page of private repository:', error)
+    })
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -695,7 +706,7 @@ export function handleCodeHost({
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
             event.preventDefault()
-            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+            await background.openOptionsPage()
         }
 
         subscriptions.add(
@@ -1128,6 +1139,7 @@ export function injectCodeIntelligenceToCodeHost(
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,
+                    background,
                 })
                 subscriptions.add(codeHostSubscription)
                 console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)

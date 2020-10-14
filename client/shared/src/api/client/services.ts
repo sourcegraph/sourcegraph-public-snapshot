@@ -1,5 +1,5 @@
 import { PlatformContext } from '../../platform/context'
-import { ReferenceParams } from '../protocol'
+import { ReferenceParameters } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CommandRegistry } from './services/command'
 import { CompletionItemProviderRegistry } from './services/completion'
@@ -53,7 +53,7 @@ export class Services {
     public readonly extensions: IExtensionsService
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
-    public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
+    public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()

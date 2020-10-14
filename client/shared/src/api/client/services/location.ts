@@ -2,7 +2,7 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { Observable, of, concat } from 'rxjs'
 import { catchError, map, switchMap, defaultIfEmpty } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { TextDocumentPositionParameters, TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
 import { CodeEditorWithPartialModel } from './viewerService'
 import { DocumentFeatureProviderRegistry } from './registry'
@@ -14,16 +14,16 @@ import { finallyReleaseProxy } from '../api/common'
  * definition).
  */
 export type ProvideTextDocumentLocationSignature<
-    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    P extends TextDocumentPositionParameters = TextDocumentPositionParameters,
     L extends Location = Location
-> = (params: P) => Observable<L[] | null>
+> = (parameters: P) => Observable<L[] | null>
 
 /**
  * Provides location results from matching registered providers for definition, implementation, and type definition
  * requests.
  */
 export class TextDocumentLocationProviderRegistry<
-    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    P extends TextDocumentPositionParameters = TextDocumentPositionParameters,
     L extends Location = Location
 > extends DocumentFeatureProviderRegistry<ProvideTextDocumentLocationSignature<P, L>> {
     /**
@@ -84,7 +84,7 @@ export interface TextDocumentProviderIDRegistrationOptions extends TextDocumentR
  * @template L The result type of the text document location signature provider.
  */
 export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProviderRegistry<
-    ProvideTextDocumentLocationSignature<TextDocumentPositionParams, Location>,
+    ProvideTextDocumentLocationSignature<TextDocumentPositionParameters, Location>,
     TextDocumentProviderIDRegistrationOptions
 > {
     /**
@@ -96,7 +96,7 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
     public providersForDocumentWithID(
         id: string,
         document: TextDocumentIdentifier
-    ): Observable<ProvideTextDocumentLocationSignature<TextDocumentPositionParams, Location>[]> {
+    ): Observable<ProvideTextDocumentLocationSignature<TextDocumentPositionParameters, Location>[]> {
         return this.providersForDocument(document, registrationOptions => registrationOptions.id === id)
     }
 
@@ -114,7 +114,7 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
      */
     public getLocations(
         id: string,
-        parameters: TextDocumentPositionParams
+        parameters: TextDocumentPositionParameters
     ): Observable<MaybeLoadingResult<Location[]>> {
         return getLocationsFromProviders(this.providersForDocumentWithID(id, parameters.textDocument), parameters)
     }
@@ -123,11 +123,10 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
 /**
  * Returns the combined results of invoking multiple location providers and whether any of them are loading.
  *
- * @internal Callers should instead use the the getLocations or similarly named methods on classes
- * defined in this module.
+ * @internal
  */
 export function getLocationsFromProviders<
-    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    P extends TextDocumentPositionParameters = TextDocumentPositionParameters,
     L extends Location = Location
 >(
     providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,

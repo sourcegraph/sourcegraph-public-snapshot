@@ -9,7 +9,7 @@ export interface CommandEntry {
     run: (...args: any[]) => Promise<any>
 }
 
-export interface ExecuteCommandParams {
+export interface ExecuteCommandParameters {
     /**
      * The identifier of the actual command handler.
      */
@@ -41,7 +41,7 @@ export class CommandRegistry {
         }
     }
 
-    public executeCommand(parameters: ExecuteCommandParams): Promise<any> {
+    public executeCommand(parameters: ExecuteCommandParameters): Promise<any> {
         return executeCommand(this.commandsSnapshot, parameters)
     }
 
@@ -62,7 +62,7 @@ export class CommandRegistry {
  *
  * Most callers should use CommandRegistry's executeCommand method, which uses the registered commands.
  */
-export function executeCommand(commands: CommandEntry[], parameters: ExecuteCommandParams): Promise<any> {
+export function executeCommand(commands: CommandEntry[], parameters: ExecuteCommandParameters): Promise<any> {
     const command = commands.find(entry => entry.command === parameters.command)
     if (!command) {
         throw new Error(`command not found: ${JSON.stringify(parameters.command)}`)

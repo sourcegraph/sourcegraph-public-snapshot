@@ -12,7 +12,7 @@ import {
     SearchResult,
 } from '../graphql/schema'
 import { pretendRemote } from '../api/util'
-import { FlatExtHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI } from '../api/contract'
 
 export const RESULT = {
     __typename: 'FileMatch' as const,
@@ -253,5 +253,5 @@ const services = {
 export const extensionsController: Pick<Controller, 'executeCommand' | 'services' | 'extHostAPI'> = {
     executeCommand: () => Promise.resolve(),
     services: services as any,
-    extHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
+    extHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
 }

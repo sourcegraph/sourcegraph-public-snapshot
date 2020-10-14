@@ -41,6 +41,7 @@ describe('Expression', () => {
         'a || isnotdefined': 1, // short-circuit (if not, the use of an undefined ident would cause an error)
         'get(array, 0)': 7,
         'get(array, 1)': undefined, // out-of-bounds array index is undefined
+        'get(context, "c")': 2,
     }
     /* eslint-enable no-template-curly-in-string */
     for (const [expression, want] of Object.entries(TESTS)) {

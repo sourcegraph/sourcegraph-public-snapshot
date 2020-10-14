@@ -3,18 +3,13 @@ import 'focus-visible'
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
 import { withKnobs } from '@storybook/addon-knobs'
-import { addDecorator } from '@storybook/react'
 import { setLinkComponent, AnchorLink } from '../client/shared/src/components/Link'
 import { withDesign } from 'storybook-addon-designs'
 import isChromatic from 'chromatic/isChromatic'
 
-setLinkComponent(AnchorLink)
+export const decorators = [withKnobs, withDesign, (storyFn, context) => withConsole()(storyFn)(context)]
 
-// Don't know why this type doesn't work, but this is the correct usage
-// @ts-ignore
-addDecorator(withKnobs)
-addDecorator((storyFn, context) => withConsole()(storyFn)(context))
-addDecorator(withDesign)
+setLinkComponent(AnchorLink)
 
 if (isChromatic()) {
   const style = document.createElement('style')

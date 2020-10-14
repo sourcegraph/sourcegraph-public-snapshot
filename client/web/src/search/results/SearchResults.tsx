@@ -13,7 +13,7 @@ import {
     resolveVersionContext,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
-import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -35,7 +35,7 @@ import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
@@ -55,13 +55,13 @@ export interface SearchResultsProps
     history: H.History
     navbarSearchQueryState: QueryState
     telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: string,
         version: string,
         patternType: SearchPatternType,
         versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType

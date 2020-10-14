@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -91,6 +93,30 @@ func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore,
 		}
 		if indexer != expectedIndexer {
 			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)
+		}
+		return dumps, nil
+	})
+}
+
+func setMockStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, expectedGraph map[string][]string, dumps []store.Dump) {
+	mockStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]store.Dump, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+		if commit != expectedCommit {
+			t.Errorf("unexpected commit for FindClosestDumps. want=%s have=%s", expectedCommit, commit)
+		}
+		if file != expectedFile {
+			t.Errorf("unexpected file for FindClosestDumps. want=%s have=%s", expectedFile, file)
+		}
+		if rootMustEnclosePath != expectedrootMustEnclosePath {
+			t.Errorf("unexpected rootMustEnclosePath for FindClosestDumps. want=%v have=%v", expectedrootMustEnclosePath, rootMustEnclosePath)
+		}
+		if indexer != expectedIndexer {
+			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)
+		}
+		if diff := cmp.Diff(expectedGraph, graph); diff != "" {
+			t.Errorf("unexpected graph (-want +got):\n%s", diff)
 		}
 		return dumps, nil
 	})
@@ -327,4 +353,14 @@ func readTestFilter(t *testing.T, dirname, filename string) []byte {
 	}
 
 	return raw
+}
+
+func setMockGitserverCommitGraph(t *testing.T, mockGitserverClient *MockGitserverClient, expectedRepositoryID int, graph map[string][]string) {
+	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, s store.Store, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository identifier for CommitGraph. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+
+		return graph, nil
+	})
 }

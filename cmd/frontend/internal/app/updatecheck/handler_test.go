@@ -312,11 +312,6 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 			LSIF: &types.CodeIntelEventStatistics{
 				UsersCount:  1,
 				EventsCount: &eventsCount,
-				EventLatencies: &types.CodeIntelEventLatencies{
-					P50: 12.3,
-					P90: 23.4,
-					P99: 34.5,
-				},
 			},
 		},
 	})

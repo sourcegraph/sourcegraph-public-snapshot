@@ -126,17 +126,6 @@ type Mutation {
         repository: ID!
     ): EmptyResponse!
     """
-    DEPRECATED: All repositories are scheduled for updates periodically. This
-    mutation will be removed in 3.6.
-
-    Schedules all repositories to be updated from their original source
-    repositories. Updating occurs automatically, so this should not normally
-    be needed.
-
-    Only site admins may perform this mutation.
-    """
-    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    """
     Creates a new user account.
 
     Only site admins may perform this mutation.
@@ -6109,15 +6098,6 @@ type Site implements SettingsSubject {
     Only applies if the site does not have a valid license.
     """
     freeUsersExceeded: Boolean!
-
-    """
-    DEPRECATED: This field is always false and will be removed in future
-    releases. All repositories are enabled by default starting with
-    Sourcegraph 3.4
-    Whether the site has zero access-enabled repositories.
-    """
-    noRepositoriesEnabled: Boolean!
-        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     """
     Alerts to display to the viewer.
     """
@@ -6486,60 +6466,6 @@ type SiteUsagePeriod {
     Excludes anonymous users.
     """
     integrationUserCount: Int!
-    """
-    The user count of Sourcegraph products at each stage of the software development lifecycle.
-    """
-    stages: SiteUsageStages
-}
-
-"""
-Aggregate site usage of features by software development lifecycle stage.
-"""
-type SiteUsageStages {
-    """
-    The number of users using management stage features.
-    """
-    manage: Int!
-    """
-    The number of users using planning stage features.
-    """
-    plan: Int!
-    """
-    The number of users using coding stage features.
-    """
-    code: Int!
-    """
-    The number of users using review stage features.
-    """
-    review: Int!
-    """
-    The number of users using verification stage features.
-    """
-    verify: Int!
-    """
-    The number of users using packaging stage features.
-    """
-    package: Int!
-    """
-    The number of users using deployment stage features.
-    """
-    deploy: Int!
-    """
-    The number of users using configuration stage features.
-    """
-    configure: Int!
-    """
-    The number of users using monitoring stage features.
-    """
-    monitor: Int!
-    """
-    The number of users using security stage features.
-    """
-    secure: Int!
-    """
-    The number of users using automation stage features.
-    """
-    automate: Int!
 }
 
 """

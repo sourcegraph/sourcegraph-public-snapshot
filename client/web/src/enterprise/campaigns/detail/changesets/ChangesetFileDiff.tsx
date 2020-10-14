@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
 import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
-import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
@@ -44,7 +44,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
+        (args: FilteredConnectionQueryArguments) =>
             queryExternalChangesetWithFileDiffs({
                 after: args.after ?? null,
                 first: args.first ?? null,

@@ -162,14 +162,7 @@ const config = {
         use: [
           mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
           'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              config: {
-                path: path.resolve(__dirname, '..'),
-              },
-            },
-          },
+          'postcss-loader',
           {
             loader: 'sass-loader',
             options: {
@@ -189,7 +182,7 @@ const config = {
       },
       {
         test: extensionHostWorker,
-        use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
+        use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, babelLoader],
       },
       { test: /\.ya?ml$/, use: ['raw-loader'] },
     ],

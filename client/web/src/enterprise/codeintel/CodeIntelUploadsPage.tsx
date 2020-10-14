@@ -2,7 +2,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
 import {
     FilteredConnection,
-    FilteredConnectionQueryArgs,
+    FilteredConnectionQueryArguments,
     FilteredConnectionFilter,
 } from '../../components/FilteredConnection'
 import { Link } from '../../../../shared/src/components/Link'
@@ -197,7 +197,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
+        (args: FilteredConnectionQueryArguments) => fetchLsifUploads({ repository: repo?.id, ...args }),
         [repo?.id, fetchLsifUploads]
     )
 

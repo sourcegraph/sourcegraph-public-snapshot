@@ -58,7 +58,7 @@ const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
         type: 'figma',
         url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
     },
-    chromatic: { viewports: [769, 993, 1200] },
+    chromatic: { viewports: [544, 577, 769, 993, 1200] },
 })
 
 add('Cloud with panels', () => (
