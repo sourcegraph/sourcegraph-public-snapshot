@@ -347,7 +347,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const canShowPopover =
         !hasDismissedPopover &&
         isBrowserExtensionInstalled === false &&
-        !codeHostIntegrationMessaging &&
+        codeHostIntegrationMessaging === 'browser-extension' &&
         hoverCount >= HOVER_THRESHOLD
     const showExtensionAlert = useMemo(
         () => isBrowserExtensionInstalled === false && !hasDismissedExtensionAlert && hoverCount >= HOVER_THRESHOLD,
