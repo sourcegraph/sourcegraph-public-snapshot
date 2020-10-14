@@ -36,6 +36,7 @@ import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { HomePanels } from '../panels/HomePanels'
 import { SearchPageFooter } from './SearchPageFooter'
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -154,9 +155,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                                     '/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural'
                                                 )}
                                             >
-                                                <span className="search-keyword">lang:</span>javascript
-                                                alert(:[variable])
-                                            </Link>{' '}
+                                                <SyntaxHighlightedSearchQuery query="lang:javascript alert(:[variable])" />
+                                            </Link>
                                             <p className="mt-2">
                                                 Find usages of the alert() method that displays an alert box.
                                             </p>
@@ -169,9 +169,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                                     '/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp'
                                                 )}
                                             >
-                                                <span className="search-keyword">repogroup:</span>python from \B\.\w+
-                                                import \w+
-                                            </Link>{' '}
+                                                <SyntaxHighlightedSearchQuery query="repogroup:python from \B\.\w+ import \w+" />
+                                            </Link>
                                             <p className="mt-2">
                                                 Search for explicit imports with one or more leading dots that indicate
                                                 current and parent packages involved, across popular Python
@@ -186,10 +185,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                                     '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                                 )}
                                             >
-                                                <span className="search-keyword">repo:</span>
-                                                ^github\.com/golang/go$ <span className="search-keyword">type:</span>
-                                                diff <span className="search-keyword">after:</span>"1 week ago"
-                                            </Link>{' '}
+                                                <SyntaxHighlightedSearchQuery query='repo:^github\.com/golang/go$ type:diff after:"1 week ago"' />
+                                            </Link>
                                             <p className="mt-2">
                                                 Browse diffs for recent code changes in the 'golang/go' GitHub
                                                 repository.
@@ -203,10 +200,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                                     '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                                 )}
                                             >
-                                                <span className="search-keyword">file:</span>pod.yaml{' '}
-                                                <span className="search-keyword">content:</span>"kind:
-                                                ReplicationController"
-                                            </Link>{' '}
+                                                <SyntaxHighlightedSearchQuery query='file:pod.yaml content:"kind: ReplicationController"' />
+                                            </Link>
                                             <p className="mt-2">
                                                 Use a ReplicationController configuration to ensure specified number of
                                                 pod replicas are running at any one time.
