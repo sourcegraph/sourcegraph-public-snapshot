@@ -495,7 +495,7 @@ describe('Repository', () => {
 
         it('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
-            const repositorySourcegraphUrl = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/github.com/${shortRepositoryName}`
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
@@ -513,7 +513,7 @@ describe('Repository', () => {
                 // Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
             })
 
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositorySourcegraphUrl}`)
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
 
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' my org/repo with spaces')
