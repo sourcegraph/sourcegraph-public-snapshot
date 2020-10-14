@@ -1,5 +1,5 @@
 import { Test } from 'mocha'
-import { Subject, throwError } from 'rxjs'
+import { Subject, Subscription, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
 import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
@@ -99,6 +99,7 @@ export const createSharedIntegrationTestContext = async <
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
     }
+    const subscriptions = new Subscription()
     const cdpAdapterOptions: CdpAdapterOptions = {
         page: driver.page,
     }
@@ -126,6 +127,14 @@ export const createSharedIntegrationTestContext = async <
         logging: false,
     })
     const { server } = polly
+
+    // Fail test when there is an error
+    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
+    subscriptions.add(
+        cdpAdapter.errors.subscribe(error => {
+            currentTest.emit('error', error)
+        })
+    )
 
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
@@ -240,6 +249,7 @@ export const createSharedIntegrationTestContext = async <
             return variables
         },
         dispose: async () => {
+            subscriptions.unsubscribe()
             await polly.stop()
             await recordCoverage(driver.browser)
             await driver.page.close()
