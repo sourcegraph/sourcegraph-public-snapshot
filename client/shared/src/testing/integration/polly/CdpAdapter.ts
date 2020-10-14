@@ -58,7 +58,7 @@ export class CdpAdapter extends PollyAdapter {
     private readonly _errors = new Subject<unknown>()
 
     /**
-     * Event that can be subscribed to to handle errors that occured in request handlers.
+     * Event that can be subscribed to handle errors that occurred in request handlers.
      */
     public readonly errors: Observable<unknown> = this._errors.asObservable()
 
