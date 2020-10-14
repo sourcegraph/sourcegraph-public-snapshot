@@ -85,7 +85,7 @@ Now, follow the steps below for the browser you intend to work with.
 - Browse to any public repository on GitHub to confirm it is working.
 - After making changes it is necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
 
-![Add dist folder](readme-load-extension-asset.png)
+![File-path](https://user-images.githubusercontent.com/20326070/96001359-37ad6500-0e38-11eb-8d17-60e7c493b2b3.png)
 
 #### Updating the bundle
 
