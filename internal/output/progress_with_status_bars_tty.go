@@ -54,8 +54,9 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 type progressWithStatusBarsTTY struct {
 	*progressTTY
 
-	statusBars          []*StatusBar
-	statusBarLabelWidth int
+	statusBars           []*StatusBar
+	statusBarLabelWidth  int
+	numPrintedStatusBars int
 }
 
 func (p *progressWithStatusBarsTTY) Close() { p.Destroy() }
@@ -83,7 +84,7 @@ func (p *progressWithStatusBarsTTY) Complete() {
 	defer p.o.lock.Unlock()
 
 	// +1 because of the line between progress and status bars
-	for i := 0; i < len(p.statusBars)+1; i += 1 {
+	for i := 0; i < p.numPrintedStatusBars+1; i += 1 {
 		p.o.moveUp(1)
 		p.o.clearCurrentLine()
 	}
@@ -98,7 +99,7 @@ func (p *progressWithStatusBarsTTY) Complete() {
 }
 
 func (p *progressWithStatusBarsTTY) lines() int {
-	return len(p.bars) + len(p.statusBars) + 1
+	return len(p.bars) + p.numPrintedStatusBars + 1
 }
 
 func (p *progressWithStatusBarsTTY) SetLabel(i int, label string) {
@@ -162,12 +163,18 @@ func (p *progressWithStatusBarsTTY) draw() {
 
 	}
 
+	p.numPrintedStatusBars = 0
 	for i, statusBar := range p.statusBars {
 		if statusBar == nil {
 			continue
 		}
+		if !statusBar.initialized {
+			continue
+		}
+
 		last := i == len(p.statusBars)-1
 		p.writeStatusBar(last, statusBar)
+		p.numPrintedStatusBars += 1
 	}
 }
 

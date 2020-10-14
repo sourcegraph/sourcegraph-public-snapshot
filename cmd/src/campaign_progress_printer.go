@@ -45,7 +45,7 @@ func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStat
 
 	statusBars := make([]*output.StatusBar, 0, numStatusBars)
 	for i := 0; i < numStatusBars; i++ {
-		statusBars = append(statusBars, output.NewStatusBarWithLabel("Starting worker..."))
+		statusBars = append(statusBars, output.NewStatusBar())
 	}
 
 	p.progress = p.out.ProgressWithStatusBars([]output.ProgressBar{{

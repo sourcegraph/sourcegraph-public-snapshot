@@ -11,8 +11,9 @@ type StatusBar struct {
 	format string
 	args   []interface{}
 
-	startedAt  time.Time
-	finishedAt time.Time
+	initialized bool
+	startedAt   time.Time
+	finishedAt  time.Time
 }
 
 // Completef sets the StatusBar to completed and updates its text.
@@ -25,6 +26,7 @@ func (sb *StatusBar) Completef(format string, args ...interface{}) {
 
 // Resetf sets the status of the StatusBar to incomplete and updates its label and text.
 func (sb *StatusBar) Resetf(label, format string, args ...interface{}) {
+	sb.initialized = true
 	sb.completed = false
 	sb.label = label
 	sb.format = format
@@ -34,6 +36,7 @@ func (sb *StatusBar) Resetf(label, format string, args ...interface{}) {
 
 // Updatef updates the StatusBar's text.
 func (sb *StatusBar) Updatef(format string, args ...interface{}) {
+	sb.initialized = true
 	sb.format = format
 	sb.args = args
 }
@@ -52,3 +55,5 @@ func (sb *StatusBar) runtime() time.Duration {
 func NewStatusBarWithLabel(label string) *StatusBar {
 	return &StatusBar{label: label, startedAt: time.Now()}
 }
+
+func NewStatusBar() *StatusBar { return &StatusBar{} }
