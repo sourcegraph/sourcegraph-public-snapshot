@@ -74,12 +74,10 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 viewerCanAdminister={viewerCanAdminister}
                 className="external-changeset-close-node__information"
             />
-            <div className="d-flex d-md-none justify-content-between external-changeset-close-node__statuses">
-                <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
-                <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-                <div className="d-flex justify-content-center">
-                    {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
-                </div>
+            <div className="d-flex d-md-none justify-content-start external-changeset-close-node__statuses">
+                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />}
+                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
             <span className="d-none d-md-inline">
                 {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}

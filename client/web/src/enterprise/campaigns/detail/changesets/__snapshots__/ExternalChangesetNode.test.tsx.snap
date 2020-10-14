@@ -102,18 +102,41 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
     }
     viewerCanAdminister={true}
   />
-  <span>
+  <div
+    className="d-flex d-md-none justify-content-start external-changeset-node__statuses"
+  >
+    <ChangesetCheckStatusCell
+      checkState="FAILED"
+      className="mr-3"
+    />
+    <ChangesetReviewStatusCell
+      className="mr-3"
+      reviewState="PENDING"
+    />
+    <Memo(DiffStat)
+      added={100}
+      changed={200}
+      deleted={100}
+      expandedCounts={true}
+      separateLines={true}
+    />
+  </div>
+  <span
+    className="d-none d-md-inline"
+  >
     <ChangesetCheckStatusCell
       checkState="FAILED"
     />
   </span>
-  <span>
+  <span
+    className="d-none d-md-inline"
+  >
     <ChangesetReviewStatusCell
       reviewState="PENDING"
     />
   </span>
   <div
-    className="d-flex justify-content-center"
+    className="d-none d-md-flex justify-content-center"
   >
     <Memo(DiffStat)
       added={100}

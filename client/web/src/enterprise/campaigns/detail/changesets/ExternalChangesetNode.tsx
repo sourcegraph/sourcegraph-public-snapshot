@@ -68,9 +68,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 viewerCanAdminister={viewerCanAdminister}
                 className="external-changeset-node__information"
             />
-            <span>{node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}</span>
-            <span>{node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}</span>
-            <div className="d-flex justify-content-center">
+            <div className="d-flex d-md-none justify-content-start external-changeset-node__statuses">
+                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />}
+                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
+            </div>
+            <span className="d-none d-md-inline">
+                {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
+            </span>
+            <span className="d-none d-md-inline">
+                {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
+            </span>
+            <div className="d-none d-md-flex justify-content-center">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
             {/* The button for expanding the information used on xs devices. */}
