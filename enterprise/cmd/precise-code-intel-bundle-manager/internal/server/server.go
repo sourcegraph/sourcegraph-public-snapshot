@@ -2,8 +2,6 @@ package server
 
 import (
 	"database/sql"
-	"net/http"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -18,8 +16,6 @@ type Server struct {
 	storeCache         cache.StoreCache
 	codeIntelDB        *sql.DB
 	observationContext *observation.Context
-	server             *http.Server
-	once               sync.Once
 }
 
 func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
