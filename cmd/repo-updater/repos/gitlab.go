@@ -312,15 +312,10 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	source := git.AbbreviateRef(c.HeadRef)
 	target := git.AbbreviateRef(c.BaseRef)
 
-	title := c.Title
-	if c.Draft {
-		title = fmt.Sprintf("[Draft] %s", title)
-	}
-
 	mr, err := s.client.CreateMergeRequest(ctx, project, gitlab.CreateMergeRequestOpts{
 		SourceBranch: source,
 		TargetBranch: target,
-		Title:        title,
+		Title:        c.Title,
 		Description:  c.Body,
 	})
 	if err != nil {
@@ -521,13 +516,8 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 		return errors.New("Changeset is not a GitLab merge request")
 	}
 
-	title := c.Title
-	if c.Draft {
-		title = fmt.Sprintf("[Draft] %s", title)
-	}
-
 	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
-		Title:        title,
+		Title:        c.Title,
 		Description:  c.Body,
 		TargetBranch: git.AbbreviateRef(c.BaseRef),
 	})

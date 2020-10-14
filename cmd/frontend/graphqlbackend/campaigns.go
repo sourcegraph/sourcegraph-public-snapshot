@@ -176,7 +176,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() campaigns.Publish
+	Published() campaigns.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {

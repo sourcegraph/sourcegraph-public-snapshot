@@ -99,7 +99,7 @@ func TestReconcilerProcess(t *testing.T) {
 		"unpublished changeset stay unpublished": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/repo-1-branch-1",
-				published: campaigns.Publish{Val: false},
+				published: campaigns.PublishedValue{Val: false},
 			},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
@@ -116,7 +116,7 @@ func TestReconcilerProcess(t *testing.T) {
 		"publish changeset": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 			},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
@@ -144,7 +144,7 @@ func TestReconcilerProcess(t *testing.T) {
 			alreadyExists: true,
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 			},
 			changeset: testChangesetOpts{
 				failureMessage:   "publication failed",
@@ -173,14 +173,14 @@ func TestReconcilerProcess(t *testing.T) {
 		"update published changeset metadata": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "new title",
 				body:  "new body",
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "old title",
 				body:  "old body",
@@ -211,14 +211,14 @@ func TestReconcilerProcess(t *testing.T) {
 		"retry update published changeset metadata": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "new title",
 				body:  "new body",
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "old title",
 				body:  "old body",
@@ -251,7 +251,7 @@ func TestReconcilerProcess(t *testing.T) {
 		"update published changeset commit": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				// Title and body the same, but commit changed
 				commitDiff:    "new diff",
@@ -259,7 +259,7 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				commitDiff:    "old diff",
 				commitMessage: "old message",
@@ -290,13 +290,13 @@ func TestReconcilerProcess(t *testing.T) {
 		"retry update published changeset commit": {
 			currentSpec: &testSpecOpts{
 				headRef:       "refs/heads/head-ref-on-github",
-				published:     campaigns.Publish{Val: true},
+				published:     campaigns.PublishedValue{Val: true},
 				commitDiff:    "new diff",
 				commitMessage: "new message",
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				commitDiff:    "old diff",
 				commitMessage: "old message",
@@ -329,7 +329,7 @@ func TestReconcilerProcess(t *testing.T) {
 		"update published changeset commit author": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				// Everything the same, except author changed
 				commitAuthorName:  "Fernando the fish",
@@ -337,7 +337,7 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				// Old author data
 				commitAuthorName:  "Larry the Llama",
@@ -371,7 +371,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// Simply a reprocessing of the same changeset.
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "title",
 				body:  "body",
@@ -394,7 +394,7 @@ func TestReconcilerProcess(t *testing.T) {
 		"closing published open changeset": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "title",
 				body:  "body",
@@ -432,7 +432,7 @@ func TestReconcilerProcess(t *testing.T) {
 		"closing non-open changeset": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "title",
 				body:  "body",
@@ -463,14 +463,14 @@ func TestReconcilerProcess(t *testing.T) {
 		"reopening closed changeset without updates": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "title",
 				body:  "body",
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "title",
 				body:  "body",
@@ -504,14 +504,14 @@ func TestReconcilerProcess(t *testing.T) {
 		"reopening closed changeset with updates": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "title",
 				body:  "body",
 			},
 			previousSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",
-				published: campaigns.Publish{Val: true},
+				published: campaigns.PublishedValue{Val: true},
 
 				title: "old title",
 				body:  "old body",
@@ -712,7 +712,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		repo:         rs[0].ID,
 		campaignSpec: campaignSpec.ID,
 		headRef:      commonHeadRef,
-		published:    campaigns.Publish{Val: true},
+		published:    campaigns.PublishedValue{Val: true},
 	})
 	createChangeset(t, ctx, store, testChangesetOpts{
 		repo:             rs[0].ID,
@@ -732,7 +732,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		repo:         rs[0].ID,
 		campaignSpec: otherCampaignSpec.ID,
 		headRef:      commonHeadRef,
-		published:    campaigns.Publish{Val: true},
+		published:    campaigns.PublishedValue{Val: true},
 	})
 	otherChangeset := createChangeset(t, ctx, store, testChangesetOpts{
 		repo:             rs[0].ID,

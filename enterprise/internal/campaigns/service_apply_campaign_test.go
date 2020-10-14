@@ -224,7 +224,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				repo:         repos[1].ID,
 				campaignSpec: campaignSpec.ID,
 				headRef:      "refs/heads/my-branch",
-				published:    campaigns.Publish{Val: true},
+				published:    campaigns.PublishedValue{Val: true},
 			})
 
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec.RandID, 2)
@@ -956,7 +956,7 @@ type testSpecOpts struct {
 
 	// If this is set along with headRef, the changesetSpec will have published
 	// set.
-	published campaigns.Publish
+	published campaigns.PublishedValue
 
 	title             string
 	body              string
