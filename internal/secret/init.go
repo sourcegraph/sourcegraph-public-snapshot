@@ -52,7 +52,7 @@ func initDefaultEncryptor() error {
 	// Set the default location if none exists
 	secretFile := os.Getenv(sourcegraphsSecretFile)
 	if secretFile == "" {
-		secretFile = "/var/lib/sourcegraph/token"
+		secretFile = "/etc/sourcegraph/token"
 	}
 
 	fileInfo, err := os.Stat(secretFile)
