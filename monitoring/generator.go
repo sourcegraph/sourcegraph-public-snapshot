@@ -181,6 +181,7 @@ type Observable struct {
 	DataMayNotBeNaN bool
 
 	// Warning and Critical alert definitions. At least a Warning alert must be present.
+	// Alerts are created using the Alert() constructor.
 	//
 	// See README.md for why it is intentionally impossible to create a dashboard to monitor
 	// something without at least a warning alert being defined.
