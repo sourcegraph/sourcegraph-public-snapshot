@@ -26,28 +26,23 @@ import (
 const DefaultMonikerResultPageSize = 100
 const DefaultDiagnosticResultPageSize = 100
 
-func (s *Server) handler() http.Handler {
-	mux := mux.NewRouter()
-	mux.Path("/uploads/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUpload)
-	mux.Path("/uploads/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUpload)
-	mux.Path("/uploads/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUploadPart)
-	mux.Path("/uploads/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostUploadStitch)
-	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUpload)
-	mux.Path("/dbs/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabasePart)
-	mux.Path("/dbs/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostDatabaseStitch)
-	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
-	mux.Path("/dbs/{id:[0-9]+}/ranges").Methods("GET").HandlerFunc(s.handleRanges)
-	mux.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
-	mux.Path("/dbs/{id:[0-9]+}/references").Methods("GET").HandlerFunc(s.handleReferences)
-	mux.Path("/dbs/{id:[0-9]+}/hover").Methods("GET").HandlerFunc(s.handleHover)
-	mux.Path("/dbs/{id:[0-9]+}/diagnostics").Methods("GET").HandlerFunc(s.handleDiagnostics)
-	mux.Path("/dbs/{id:[0-9]+}/monikersByPosition").Methods("GET").HandlerFunc(s.handleMonikersByPosition)
-	mux.Path("/dbs/{id:[0-9]+}/monikerResults").Methods("GET").HandlerFunc(s.handleMonikerResults)
-	mux.Path("/dbs/{id:[0-9]+}/packageInformation").Methods("GET").HandlerFunc(s.handlePackageInformation)
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	return mux
+func (s *Server) setupRoutes(router *mux.Router) {
+	router.Path("/uploads/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUpload)
+	router.Path("/uploads/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUpload)
+	router.Path("/uploads/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUploadPart)
+	router.Path("/uploads/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostUploadStitch)
+	router.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUpload)
+	router.Path("/dbs/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabasePart)
+	router.Path("/dbs/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostDatabaseStitch)
+	router.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
+	router.Path("/dbs/{id:[0-9]+}/ranges").Methods("GET").HandlerFunc(s.handleRanges)
+	router.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
+	router.Path("/dbs/{id:[0-9]+}/references").Methods("GET").HandlerFunc(s.handleReferences)
+	router.Path("/dbs/{id:[0-9]+}/hover").Methods("GET").HandlerFunc(s.handleHover)
+	router.Path("/dbs/{id:[0-9]+}/diagnostics").Methods("GET").HandlerFunc(s.handleDiagnostics)
+	router.Path("/dbs/{id:[0-9]+}/monikersByPosition").Methods("GET").HandlerFunc(s.handleMonikersByPosition)
+	router.Path("/dbs/{id:[0-9]+}/monikerResults").Methods("GET").HandlerFunc(s.handleMonikerResults)
+	router.Path("/dbs/{id:[0-9]+}/packageInformation").Methods("GET").HandlerFunc(s.handlePackageInformation)
 }
 
 // GET /uploads/{id:[0-9]+}
