@@ -178,7 +178,7 @@ func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.Reposito
 func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
-func (r *changesetDescriptionResolver) Published() campaigns.Publish {
+func (r *changesetDescriptionResolver) Published() campaigns.PublishedValue {
 	return r.desc.Published
 }
 

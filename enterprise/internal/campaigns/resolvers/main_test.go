@@ -349,7 +349,7 @@ type testSpecOpts struct {
 
 	// If this is set along with headRef, the changesetSpec will have published
 	// set.
-	published campaigns.Publish
+	published campaigns.PublishedValue
 
 	title         string
 	body          string

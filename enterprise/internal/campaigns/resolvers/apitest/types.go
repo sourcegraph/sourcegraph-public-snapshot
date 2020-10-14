@@ -234,7 +234,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription
 
-	Published campaigns.Publish
+	Published campaigns.PublishedValue
 
 	Diff struct {
 		FileDiffs FileDiffs
