@@ -184,7 +184,7 @@ describe('Repository', () => {
                                             '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
                                         author: {
                                             person: {
-                                                avatarURL: 'https://avatars0.githubusercontent.com/u/1976?v=4',
+                                                avatarURL: '',
                                                 name: 'Quinn Slack',
                                                 email: 'qslack@qslack.com',
                                                 displayName: 'Quinn Slack',
