@@ -179,7 +179,7 @@ func (j *Janitor) hardDeleteDeletedRecords(ctx context.Context) {
 			return
 		}
 
-		var ids []int
+		ids := make([]int, 0, len(uploads))
 		for _, upload := range uploads {
 			ids = append(ids, upload.ID)
 		}
