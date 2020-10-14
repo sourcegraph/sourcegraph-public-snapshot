@@ -12,16 +12,9 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 - [Usage](user/index.md)
   - [Tour](user/tour.md)
-  - [Code intelligence](user/code_intelligence/index.md)
   - [Code search](user/search/index.md)
+  - [Code intelligence](user/code_intelligence/index.md)
   - [Campaigns](user/campaigns/index.md)
-  - [Organizations](user/organizations/index.md)
-  - [Repositories](user/repository/index.md)
-  - [Markdown](user/markdown.md)
-  - [Usage statistics](user/usage_statistics.md)
-  - [User surveys](user/user_surveys.md)
-  - [Color themes](user/themes.md)
-  - [Quick links](user/quick_links.md)
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
   - [Upgrade](admin/updates.md)
@@ -42,4 +35,4 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Background information](dev/background-information/index.md)
 - <br/>
 - [★ Quick install](index.md#quickstart-guide)
-- [★ Search query syntax](user/search/queries.md)
+- [★ Search query syntax](user/search/reference/queries.md)

@@ -125,7 +125,7 @@ export const ChangesetFilter = <T extends string>({
 }: ChangesetFilterProps<T>): React.ReactElement<ChangesetFilterProps<T>> => (
     <>
         <select
-            className={classNames('form-control', className)}
+            className={classNames('form-control changeset-filter__dropdown', className)}
             value={selected}
             onChange={event => onChange((event.target.value ?? undefined) as T | undefined)}
         >
@@ -152,25 +152,36 @@ export const ChangesetUIStateFilter: React.FunctionComponent<ChangesetUIStateFil
     onChange,
     className,
 }) => (
-    <div className={classNames('btn-group flex-wrap', className)} role="group">
-        <button
-            type="button"
-            className={classNames('btn btn-outline-secondary', selected === undefined && 'active')}
-            onClick={() => onChange(undefined)}
-        >
-            All
-        </button>
-        {values.map(value => (
+    <>
+        {/* lg and up get a button bar. */}
+        <div className={classNames('d-none d-lg-block btn-group flex-wrap', className)} role="group">
             <button
                 type="button"
-                className={classNames('btn btn-outline-secondary', selected === value && 'active')}
-                onClick={() => onChange(value)}
-                key={value}
+                className={classNames('btn btn-outline-secondary', selected === undefined && 'active')}
+                onClick={() => onChange(undefined)}
             >
-                {upperFirst(lowerCase(value))}
+                All
             </button>
-        ))}
-    </div>
+            {values.map(value => (
+                <button
+                    type="button"
+                    className={classNames('btn btn-outline-secondary', selected === value && 'active')}
+                    onClick={() => onChange(value)}
+                    key={value}
+                >
+                    {upperFirst(lowerCase(value))}
+                </button>
+            ))}
+        </div>
+        {/* Below, we just use a select, like for the other states. */}
+        <ChangesetFilter
+            className="d-block d-lg-none mr-2"
+            label="Changeset state"
+            values={values}
+            selected={selected}
+            onChange={onChange}
+        />
+    </>
 )
 
 function changesetUIStateToChangesetFilters(

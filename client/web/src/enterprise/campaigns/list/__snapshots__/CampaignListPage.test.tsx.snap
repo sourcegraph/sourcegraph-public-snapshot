@@ -14,6 +14,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
+    className="justify-content-end"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -111,6 +112,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
+    className="justify-content-end"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -208,6 +210,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
+    className="justify-content-end"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -305,6 +308,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
+    className="justify-content-end"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),

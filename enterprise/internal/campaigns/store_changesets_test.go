@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -94,7 +95,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				NumResets:       18,
 				NumFailures:     25,
 
-				Unsynced: true,
+				Unsynced: i != 0,
 				Closing:  true,
 			}
 
@@ -540,10 +541,16 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				},
 				wantCount: 1,
 			},
+			{
+				opts: ListChangesetsOpts{
+					OnlySynced: true,
+				},
+				wantCount: 1,
+			},
 		}
 
-		for _, tc := range filterCases {
-			t.Run("", func(t *testing.T) {
+		for i, tc := range filterCases {
+			t.Run(strconv.Itoa(i), func(t *testing.T) {
 				have, _, err := s.ListChangesets(ctx, tc.opts)
 				if err != nil {
 					t.Fatal(err)

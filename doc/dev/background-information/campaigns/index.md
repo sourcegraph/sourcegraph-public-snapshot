@@ -20,7 +20,7 @@ See "[Campaigns design doc](campaigns_design.md)".
 
 The campaigns feature introduces a lot of new names, GraphQL queries and mutations and database tables. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
 
-<!-- depends-on-source: ~/internal/campaigns/types.go -->
+<!-- depends-on-source: ~/internal/campaigns/campaign.go, ~/internal/campaigns/campaign_spec.go, etc -->
 
 | GraphQL type        | Go type              | Database table     | Description |
 | ------------------- | -------------------- | -------------------| ----------- |
@@ -41,10 +41,12 @@ The campaigns feature introduces a lot of new names, GraphQL queries and mutatio
 ## Diving into the code as a backend developer
 
 1. Read through `./cmd/frontend/graphqlbackend/campaigns.go` to get an overview of the campaigns GraphQL API.
-1. Read through `./internal/campaigns/types.go` to see all campaigns-related type definitions.
+1. Read through `./internal/campaigns/*.go` to see all campaigns-related type definitions.
 1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
-1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutation are implemented (look at `createPatchSetFromPatches` and `createCampaign` to see how the two main operations are implemented).
-1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`, and see how the enterprise `repo-updater` uses `campaigns.Syncer` to sync `Changesets`.
+1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutations are implemented (look at `CreateCampaign` and `ApplyCampaign` to see how the two main operations are implemented).
+1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`. `enterpriseInit()` creates two sets of campaign goroutines:
+  1. `campaigns.NewSyncRegistry` creates a pool of _syncers_ to pull changes from code hosts.
+  2. `campaigns.RunWorkers` creates a set of _reconciler_ workers to push changes to code hosts as campaigns are applied.
 
 ## GitHub testing account
 

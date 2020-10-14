@@ -70,12 +70,13 @@ func main() {
 	worker := worker.NewWorker(
 		store,
 		codeIntelDB,
-		bundles.New(bundleManagerURL),
+		bundles.New(codeIntelDB, observationContext, bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
 		workerConcurrency,
 		workerBudget,
 		workerMetrics,
+		observationContext,
 	)
 
 	go debugserver.Start()
