@@ -185,7 +185,7 @@ type Observable struct {
 	//
 	// See README.md for why it is intentionally impossible to create a dashboard to monitor
 	// something without at least a warning alert being defined.
-	Warning, Critical alert
+	Warning, Critical alertDefinition
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
 	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
@@ -250,12 +250,12 @@ func (o Observable) validate() error {
 	return nil
 }
 
-func Alert() alert {
-	return alert{}
+func Alert() alertDefinition {
+	return alertDefinition{}
 }
 
-// alert defines when an alert would be considered firing.
-type alert struct {
+// alertDefinition defines when an alert would be considered firing.
+type alertDefinition struct {
 	// GreaterOrEqual, when non-zero, indicates the alert should fire when
 	// greater or equal to this value.
 	greaterOrEqual *float64
@@ -269,26 +269,26 @@ type alert struct {
 	duration time.Duration
 }
 
-func (a alert) GreaterOrEqual(f float64) alert {
+func (a alertDefinition) GreaterOrEqual(f float64) alertDefinition {
 	a.greaterOrEqual = &f
 	return a
 }
 
-func (a alert) LessOrEqual(f float64) alert {
+func (a alertDefinition) LessOrEqual(f float64) alertDefinition {
 	a.lessOrEqual = &f
 	return a
 }
 
-func (a alert) For(d time.Duration) alert {
+func (a alertDefinition) For(d time.Duration) alertDefinition {
 	a.duration = d
 	return a
 }
 
-func (a alert) isEmpty() bool {
-	return a == alert{} || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
+func (a alertDefinition) isEmpty() bool {
+	return a == alertDefinition{} || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
 }
 
-func (a alert) validate() error {
+func (a alertDefinition) validate() error {
 	if a.isEmpty() {
 		return errors.New("empty")
 	}
@@ -636,7 +636,7 @@ func (c *Container) dashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert alert) string {
+func (c *Container) alertDescription(o Observable, alert alertDefinition) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
@@ -675,7 +675,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
-				for level, a := range map[string]alert{
+				for level, a := range map[string]alertDefinition{
 					"warning":  o.Warning,
 					"critical": o.Critical,
 				} {
@@ -691,11 +691,11 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
 							if bound == "high" {
-								description = c.alertDescription(o, alert{
+								description = c.alertDescription(o, alertDefinition{
 									greaterOrEqual: a.greaterOrEqual,
 								})
 							} else if bound == "low" {
-								description = c.alertDescription(o, alert{
+								description = c.alertDescription(o, alertDefinition{
 									lessOrEqual: a.lessOrEqual,
 								})
 							} else {
@@ -834,7 +834,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
-						threshold alert
+						threshold alertDefinition
 					}{
 						{level: "warning", threshold: o.Warning},
 						{level: "critical", threshold: o.Critical},
