@@ -119,7 +119,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             {isExpanded && (
                 <>
                     <div />
-                    <div className="visible-changeset-spec-node__expanded-section">
+                    <div className="visible-changeset-spec-node__expanded-section p-2">
                         {node.description.__typename === 'GitBranchChangesetDescription' && (
                             <>
                                 <h4>Commits</h4>

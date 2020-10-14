@@ -103,7 +103,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 {isExpanded ? 'Hide' : 'Show'} details
             </button>
             {isExpanded && (
-                <div className="external-changeset-close-node__expanded-section">
+                <div className="external-changeset-close-node__expanded-section p-2">
                     {node.error && <ErrorAlert error={node.error} history={history} />}
                     <ChangesetFileDiff
                         changesetID={node.id}

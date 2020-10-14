@@ -2,8 +2,8 @@ import React from 'react'
 
 export const CampaignsListBetaNotice: React.FunctionComponent<{}> = () => (
     <div className="col-12 col-md-8 offset-md-2">
-        <div className="card bg-1 mt-4 mb-4">
-            <div className="card-body p-3 d-flex">
+        <div className="card mt-4 mb-4">
+            <div className="card-body bg-1 p-3 d-flex">
                 <img className="p-3 mr-3 campaigns-list-beta-notice__logo" src="/.assets/img/sourcegraph-mark.svg" />
                 <div>
                     <h3>Welcome to campaigns beta!</h3>
