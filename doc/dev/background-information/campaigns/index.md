@@ -43,7 +43,7 @@ The campaigns feature introduces a lot of new names, GraphQL queries and mutatio
 1. Read through `./cmd/frontend/graphqlbackend/campaigns.go` to get an overview of the campaigns GraphQL API.
 1. Read through `./internal/campaigns/*.go` to see all campaigns-related type definitions.
 1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
-1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutation are implemented (look at `CreateCampaign` and `ApplyCampaign` to see how the two main operations are implemented).
+1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutations are implemented (look at `CreateCampaign` and `ApplyCampaign` to see how the two main operations are implemented).
 1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`, and see how `enterpriseInit()` uses `campaigns.NewSyncRegistry` to sync `Changesets`.
 
 ## GitHub testing account
