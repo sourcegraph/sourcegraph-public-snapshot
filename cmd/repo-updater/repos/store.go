@@ -1403,7 +1403,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&svc.ID,
 		&svc.Kind,
 		&svc.DisplayName,
-		&svc.Config,
+		&secret.StringValue{S: &svc.Config},
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
 		&dbutil.NullTime{Time: &svc.DeletedAt},

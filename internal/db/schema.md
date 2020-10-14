@@ -442,6 +442,8 @@ Triggers:
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
+Indexes:
+    "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 

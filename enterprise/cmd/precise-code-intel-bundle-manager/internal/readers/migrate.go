@@ -155,11 +155,17 @@ func noopHandler(store persistence.Store) error {
 }
 
 func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB) error {
+	var migrationCompleteMessage = fmt.Sprintf(
+		"Migration to Postgres has completed. All existing LSIF bundles have moved to the path %s and can be removed from the filesystem to reclaim space.",
+		paths.DBBackupsDir(bundleDir),
+	)
+
 	bundleFilenames, err := sqlitePaths(bundleDir)
 	if err != nil {
 		return err
 	}
 	if len(bundleFilenames) == 0 {
+		log15.Info(migrationCompleteMessage)
 		return nil
 	}
 
@@ -205,6 +211,7 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 	}
 
 	if len(updateIDs) == 0 {
+		log15.Info(migrationCompleteMessage)
 		return nil
 	}
 
@@ -222,6 +229,6 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 		moveFileToBackupDirectory(int64(bundleID))
 	}
 
-	log15.Info("Finished migration to Postgres")
+	log15.Info(migrationCompleteMessage)
 	return nil
 }

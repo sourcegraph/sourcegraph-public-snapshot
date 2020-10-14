@@ -107,6 +107,11 @@ type Store interface {
 	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
 
+	// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
+	// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+	// background.
+	SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
+
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
 	// the state of a processing upload to completed as there is a unique index on these four columns.

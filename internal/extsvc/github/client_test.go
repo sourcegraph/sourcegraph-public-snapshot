@@ -245,7 +245,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 		{
 			name: "non-existing-repo",
 			prs:  []*PullRequest{{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550}},
-			err:  "error in GraphQL response: Could not resolve to a Repository with the name 'sourcegraph'.",
+			err:  "error in GraphQL response: Could not resolve to a Repository with the name 'whoisthis/sourcegraph'.",
 		},
 		{
 			name: "non-existing-pr",
@@ -255,6 +255,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 		{
 			name: "success",
 			prs: []*PullRequest{
+				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 596},
 				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
 				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5834},
 				{RepoWithOwner: "tsenart/vegeta", Number: 50},
