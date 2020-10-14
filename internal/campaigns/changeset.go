@@ -184,8 +184,6 @@ type Changeset struct {
 	CurrentSpecID  int64
 	PreviousSpecID int64
 
-	// When Draft is true, the changeset will be opened in draft mode on the code host (if supported).
-	Draft            bool
 	PublicationState ChangesetPublicationState // "unpublished", "published"
 
 	// All of the following fields are used by workerutil.Worker.
