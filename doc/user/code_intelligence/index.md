@@ -7,8 +7,7 @@ Code intelligence provides advanced code navigation features that let developers
 </p>
 
 <div class="cta-group">
-<a class="btn btn-primary" href="lsif_quickstart">★ LSIF Quickstart</a>
-<a class="btn" href="explanations/introduction_to_code_intelligence">Introduction to code intelligence</a>
+<a class="btn btn-primary" href="explanations/introduction_to_code_intelligence">★ Introduction to code intelligence</a>
 </div>
 
 ## Getting started
@@ -46,6 +45,7 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## How-tos
 
+- [LSIF quickstart guide](lsif_quickstart.md)
 - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
 - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
 - [Index a Go repository](how-to/index_a_go_repository.md)
