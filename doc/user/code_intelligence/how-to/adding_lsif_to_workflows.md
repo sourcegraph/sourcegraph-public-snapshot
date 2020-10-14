@@ -1,10 +1,10 @@
 # Adding Precise Code Intelligence to CI/CD workflows
 
-## [Language-specific guides](./languages/index.md)
+## [Language-specific guides](index.md)
 
 We are working on creating language specific guides for use with LSIF indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
 
-> NOTE: First make sure to complete the steps in the [quickstart guide](./lsif_quickstart.md).
+> NOTE: First make sure to complete the steps in the [quickstart guide](../lsif_quickstart.md).
 
 ## Benefits of CI integration
 
@@ -22,7 +22,7 @@ Setting up a source code indexing job in your CI build provides you with fast co
 
 ## Using indexer containers
 
-We're working on creating containers that bundle indexers and the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli). All the languages in our [language-specific guides](languages/index.md) are supported, and this section provides a general guide to using those containers. We've pinned the containers to the `latest` tag in these samples so they stay up to date, but make sure you pin them before going live to ensure reproducibility.
+We're working on creating containers that bundle indexers and the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli). All the languages in our [language-specific guides](index.md) are supported, and this section provides a general guide to using those containers. We've pinned the containers to the `latest` tag in these samples so they stay up to date, but make sure you pin them before going live to ensure reproducibility.
 
 ### Basic usage
 
@@ -177,7 +177,7 @@ The following projects have example Travis CI configurations to generate and upl
 
 ## CI from scratch
 
-If you're indexing a language we haven't documented yet in our [language-specific guides](languages/index.md), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
+If you're indexing a language we haven't documented yet in our [language-specific guides](./index.md#language-specific-guides), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
 
 ### Set up your CI machines
 
@@ -189,7 +189,7 @@ Your CI machines will need two command-line tools installed. Depending on your b
 ### Add steps to your CI
 
 1. **Generate the LSIF file** for a project within your repository by running the LSIF indexer in the project directory (see docs for your LSIF indexer).
-1. **[Upload that generated LSIF file](./lsif_quickstart.md#upload-the-data)** to your Sourcegraph instance.
+1. **[Upload that generated LSIF file](../lsif_quickstart.md#upload-the-data)** to your Sourcegraph instance.
 
 ## Recommended upload frequency
 
