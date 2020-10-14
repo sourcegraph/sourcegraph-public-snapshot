@@ -510,7 +510,7 @@ describe('Repository', () => {
                         commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
                     },
                 }),
-                // Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
