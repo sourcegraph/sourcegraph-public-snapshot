@@ -23,6 +23,7 @@ describe('SiteInitPage', () => {
                     needsSiteInit={false}
                     authenticatedUser={null}
                     history={createMemoryHistory()}
+                    context={{ authProviders: [], sourcegraphDotComMode: false }}
                 />
             </MemoryRouter>
         )
@@ -40,6 +41,7 @@ describe('SiteInitPage', () => {
                         needsSiteInit={true}
                         authenticatedUser={{ username: 'alice' }}
                         history={createMemoryHistory()}
+                        context={{ authProviders: [], sourcegraphDotComMode: false }}
                     />
                 )
                 .toJSON()
@@ -54,6 +56,7 @@ describe('SiteInitPage', () => {
                         needsSiteInit={true}
                         authenticatedUser={null}
                         history={createMemoryHistory()}
+                        context={{ authProviders: [], sourcegraphDotComMode: false }}
                     />
                 )
                 .toJSON()

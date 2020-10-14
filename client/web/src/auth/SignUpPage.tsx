@@ -8,11 +8,13 @@ import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphIcon } from './icons'
+import { SourcegraphContext } from '../jscontext'
 
 interface SignUpPageProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
+    context: Pick<SourcegraphContext, 'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'>
 }
 
 export class SignUpPage extends React.Component<SignUpPageProps> {
@@ -26,7 +28,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
             return <Redirect to={returnTo} />
         }
 
-        if (!window.context.allowSignup) {
+        if (!this.props.context.allowSignup) {
             return <Redirect to="/sign-in" />
         }
 
@@ -35,17 +37,17 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                 <PageTitle title="Sign up" />
                 <HeroPage
                     icon={SourcegraphIcon}
-                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                    iconLinkTo={this.props.context.sourcegraphDotComMode ? '/search' : undefined}
                     iconClassName="bg-transparent"
                     title={
-                        window.context.sourcegraphDotComMode
+                        this.props.context.sourcegraphDotComMode
                             ? 'Sign up for Sourcegraph Cloud'
                             : 'Sign up for Sourcegraph Server'
                     }
                     lessPadding={true}
                     body={
                         <div className="signup-page__container pb-5">
-                            {window.context.sourcegraphDotComMode && (
+                            {this.props.context.sourcegraphDotComMode && (
                                 <p className="pt-1 pb-2">Start searching public code now</p>
                             )}
                             <SignUpForm {...this.props} doSignUp={this.doSignUp} />
@@ -65,7 +67,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
             credentials: 'same-origin',
             method: 'POST',
             headers: {
-                ...window.context.xhrHeaders,
+                ...this.props.context.xhrHeaders,
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
             },

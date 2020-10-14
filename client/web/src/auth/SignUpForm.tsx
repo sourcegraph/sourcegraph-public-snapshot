@@ -20,6 +20,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '../../../shared/src/util/useInputValidation'
+import { SourcegraphContext } from '../jscontext'
 
 export interface SignUpArguments {
     email: string
@@ -36,6 +37,7 @@ interface SignUpFormProps {
 
     buttonLabel?: string
     history: H.History
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
@@ -43,7 +45,13 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, history, buttonLabel, className }) => {
+export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
+    doSignUp,
+    history,
+    buttonLabel,
+    className,
+    context,
+}) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -105,7 +113,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         setRequestedTrial(event.target.checked)
     }, [])
 
-    const externalAuthProviders = window.context.authProviders.filter(provider => !provider.isBuiltin)
+    const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     return (
         <>
@@ -119,7 +127,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                     'test-signup-form',
                     'rounded p-4',
                     'text-left',
-                    window.context.sourcegraphDotComMode || error ? 'mt-3' : 'mt-4',
+                    context.sourcegraphDotComMode || error ? 'mt-3' : 'mt-4',
                     className
                 )}
                 onSubmit={handleSubmit}
@@ -242,7 +250,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         className="btn btn-primary btn-block"
                     />
                 </div>
-                {window.context.sourcegraphDotComMode && (
+                {context.sourcegraphDotComMode && (
                     <>
                         {externalAuthProviders.length > 0 && <OrDivider className="my-4" />}
                         {externalAuthProviders.map((provider, index) => (
