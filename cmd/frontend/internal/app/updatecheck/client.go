@@ -318,8 +318,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		Timestamp:       time.Now().UTC(),
 	})
 
-	fmt.Println(string(contents))
-
 	return bytes.NewReader(contents), err
 }
 
