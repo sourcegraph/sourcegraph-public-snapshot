@@ -39,20 +39,32 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err err
 
 	const q = `
 -- source: internal/db/default_repos.go:defaultRepos.List
-SELECT repo.id, repo.name
-FROM external_service_repos esr
-JOIN external_services es ON (
-  es.id = esr.external_service_id AND
-  es.namespace_user_id IS NOT NULL AND
-  es.deleted_at IS NULL
-)
-RIGHT JOIN default_repos dr ON (
-  dr.repo_id = esr.repo_id
-)
-JOIN repo ON (
-  repo.id = COALESCE(esr.repo_id, dr.repo_id) AND
-  repo.deleted_at IS NULL
-)`
+SELECT
+    id,
+    name
+FROM
+    repo r
+WHERE
+    EXISTS (
+        SELECT
+        FROM
+            external_service_repos sr
+            INNER JOIN external_services s ON s.id = sr.external_service_id
+        WHERE
+			s.namespace_user_id IS NOT NULL
+			AND s.deleted_at IS NULL
+			AND r.id = sr.repo_id
+            AND r.deleted_at IS NULL)
+UNION
+    SELECT
+        repo.id,
+        repo.name
+    FROM
+        default_repos
+		JOIN repo ON default_repos.repo_id = repo.id
+	WHERE
+		deleted_at IS NULL
+`
 	rows, err := dbconn.Global.QueryContext(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying default_repos table")
