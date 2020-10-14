@@ -1,4 +1,4 @@
-# Sourcegraph Search Query Language
+# Sourcegraph search query language
 
 <style>
 
@@ -172,7 +172,7 @@ img.r {
 
 This page provides a visual breakdown of our Search Query Language and a handful
 of examples to get you started. It is complementary to our [syntax
-reference](queries.md) and illustrates syntax using railroad diagrams instead of
+reference](../reference/queries.md) and illustrates syntax using railroad diagrams instead of
 tables.
 
 **How to read railroad diagrams.** Follow the lines in these railroad diagrams from left

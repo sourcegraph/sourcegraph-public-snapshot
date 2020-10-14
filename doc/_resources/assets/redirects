@@ -134,3 +134,11 @@
 /user/campaigns/examples /user/campaigns/tutorials 308
 /user/campaigns/managing_access /user/campaigns/explanations/permissions_in_campaigns 308
 /dev/automation_development /dev/campaigns_development 308
+
+/user/search/examples /user/search/tutorials/examples 308
+/user/search/queries /user/search/reference/queries 308
+/user/search/language /user/search/reference/language 308
+/user/search/structural /user/search/reference/structural 308
+/user/search/opengrok /user/search/how-to/opengrok 308
+/user/search/saved_searches /user/search/how-to/saved_searches 308
+/user/search/scopes /user/search/how-to/scopes 308

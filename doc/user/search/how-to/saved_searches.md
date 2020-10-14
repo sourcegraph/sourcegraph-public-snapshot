@@ -40,4 +40,4 @@ By default, email notifications notify the owner of the configuration (either a 
 
 ## Example saved searches
 
-See the [search examples page](examples.md) for a useful list of searches to save.
+See the [search examples page](../tutorials/examples.md) for a useful list of searches to save.

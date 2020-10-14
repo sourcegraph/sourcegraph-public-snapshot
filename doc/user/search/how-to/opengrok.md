@@ -1,13 +1,13 @@
 # Switching from Oracle OpenGrok to Sourcegraph
 
-> NOTE: This guide helps Sourcegraph users switch from using Oracle OpenGrok's search syntax to Sourcegraph's. See our [Oracle OpenGrok admin migration guide](../../admin/migration/opengrok.md) for instructions on switching from an OpenGrok deployment to Sourcegraph.
+> NOTE: This guide helps Sourcegraph users switch from using Oracle OpenGrok's search syntax to Sourcegraph's. See our [Oracle OpenGrok admin migration guide](../../../admin/migration/opengrok.md) for instructions on switching from an OpenGrok deployment to Sourcegraph.
 
 ## Related pages
 
-- [All Sourcegraph search documentation](index.md)
-  - [Sourcegraph query syntax](queries.md)
+- [All Sourcegraph search documentation](../index.md)
+  - [Sourcegraph query syntax](../reference/queries.md)
 - [Search product feature comparisons](https://about.sourcegraph.com/workflow)
-- [OpenGrok to Sourcegraph admin migration guide](../../admin/migration/opengrok.md)
+- [OpenGrok to Sourcegraph admin migration guide](../../../admin/migration/opengrok.md)
 
 ## Switching to Sourcegraph's query syntax
 
@@ -15,9 +15,9 @@
 
 Oracle OpenGrok provides wildcard support for searches. For example, to find all strings beginning with `foo`, you can use the wildcard search `foo*`. Similarly, OpenGrok provides the `?` operator for single character wildcards.
 
-Sourcegraph, [provides full regular expression search](queries.md#regexp-search), with support for the [RE2 syntax](https://golang.org/s/re2syntax). The same search above would take the form `foo.*` (or in this case, just `foo`, since Sourcegraph automatically supports partial matches). Much more powerful regexp expressions are available.
+Sourcegraph, [provides full regular expression search](../reference/queries.md#regexp-search), with support for the [RE2 syntax](https://golang.org/s/re2syntax). The same search above would take the form `foo.*` (or in this case, just `foo`, since Sourcegraph automatically supports partial matches). Much more powerful regexp expressions are available.
 
-(Note that Sourcegraph also provides a [literal search mode](queries.md#Literal-search-default) by default, in which there's no need to escape special characters. This simplifies searches such as `foo(`, which would result in an error in regexp mode.)
+(Note that Sourcegraph also provides a [literal search mode](../reference/queries.md#Literal-search-default) by default, in which there's no need to escape special characters. This simplifies searches such as `foo(`, which would result in an error in regexp mode.)
 
 ### Selecting repositories and branches
 
@@ -29,7 +29,7 @@ Sourcegraph provides a search keyword (`repo:`) that supports regexp and partial
 - To search in a distinct list of repositories, you can use a `|` character as a regexp OR operator: `pattern repo:github.com/org/repository1|github.com/org/repository2`.
   - Note this query could be simplified further using more advanced regexp matching if the two repos share part of their names, such as: `pattern repo:github.com/org/repository(1|2)`.
 
-Sourcegraph also allows site admins to create pre-defined repository groupings, using [version contexts](index.md#version-contexts-experimental).
+Sourcegraph also allows site admins to create pre-defined repository groupings, using [version contexts](../explanations/features.md#version-contexts-experimental).
 
 ### Searching in non-master (unindexed) branches, tags, and commits
 
@@ -43,7 +43,7 @@ Sourcegraph also provides the ability to search on multiple Git revisions in a s
 
 Oracle OpenGrok doesn't index most single-character strings (such as for special characters like `{`, `}`, `[`, `]`, `+`, `-`, and more), and non-alpha-numeric characters generally.
 
-Sourcegraph indexes all characters, and can search for strings of any length. Using the default [literal search mode](queries.md#Literal-search-default), any search (including those with special characters like `foo.bar`, `try {`, `i++`, `i-=1`, `foo->bar`, and more), will all be searchable without special handling. Using [regexp mode](queries.md#regexp-search) would require escaping special charactes.
+Sourcegraph indexes all characters, and can search for strings of any length. Using the default [literal search mode](../reference/queries.md#Literal-search-default), any search (including those with special characters like `foo.bar`, `try {`, `i++`, `i-=1`, `foo->bar`, and more), will all be searchable without special handling. Using [regexp mode](../reference/queries.md#regexp-search) would require escaping special charactes.
 
 The only exceptions are colon characters, which are by default used for specifying a [search keyword](#search-keywords) on Sourcegraph. Any search containing colons can be done using the `content:` keyword (for example, `content:"foo::bar"`) to explicitly mark it as the search string.
 
@@ -51,7 +51,7 @@ The only exceptions are colon characters, which are by default used for specifyi
 
 Oracle OpenGrok provides three boolean operators — `AND`, `OR`, and `NOT` — for scoping searches to files that contain strings that match multiple patterns.
 
-Sourcegraph provides [`AND` and `OR` operators](queries.md#operators).
+Sourcegraph provides [`AND` and `OR` operators](../reference/queries.md#operators).
 
 > NOTE: Operators are available as of Sourcegraph 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration. Built-in operator support is planned for an upcoming release.
 
@@ -75,12 +75,12 @@ Both Sourcegraph and OpenGrok allow users to add keywords for scoping searches. 
 | Scope searches to repositories that contain a file | Not supported | `pattern repohasfile:foo` |
 | Scope searches to recently updated repositories | Not supported | `pattern repohascommitafter:"3 months"` or `pattern repohascommitafter:"june 25 2017"` |
 
-Sourcegraph also provides keywords to [scope commit message and diff searches](queries.md#keywords-diff-and-commit-searches-only) to specific authors or timeframes in which a change was made.
+Sourcegraph also provides keywords to [scope commit message and diff searches](../reference/queries.md#keywords-diff-and-commit-searches-only) to specific authors or timeframes in which a change was made.
 
-To see an exhaustive list of Sourcegraph's search keywords, see the [search query syntax](queries.md#keywords-all-searches) page.
+To see an exhaustive list of Sourcegraph's search keywords, see the [search query syntax](../reference/queries.md#keywords-all-searches) page.
 
 **Negating search keywords**
 
 Oracle OpenGrok allows users to negate any search keyword, or to negate file results that contain a given search pattern, by appending a `-` character to the start of the term.
 
-Sourcegraph also allows users to negate search keywords by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files. Sourcegraph cannot currently exclude files based on text that they don't contain, but this will be available using [operators](queries.md#operators) soon.
+Sourcegraph also allows users to negate search keywords by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files. Sourcegraph cannot currently exclude files based on text that they don't contain, but this will be available using [operators](../reference/queries.md#operators) soon.
