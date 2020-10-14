@@ -140,6 +140,10 @@ export const createSharedIntegrationTestContext = async <
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
 
+    // Special URL: The browser redirects to chrome-extension://invalid
+    // when requesting an extension resource that does not exist.
+    server.get('chrome-extension://invalid/').passthrough()
+
     // Avoid 404 error logs from missing favicon
     server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
         response
