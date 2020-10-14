@@ -22,7 +22,7 @@ import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import { Settings } from '../settings/settings'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
-import { filter, map, concatAll, mergeMap, mergeAll } from 'rxjs/operators'
+import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
@@ -168,11 +168,14 @@ export class Driver {
                                         !message
                                             .text()
                                             .includes('Warning: componentWillReceiveProps has been renamed') &&
-                                        !message.text().includes('React-Hot-Loader')
+                                        !message.text().includes('React-Hot-Loader') &&
+                                        // These requests are expected to fail, we use them to check if the browser extension is installed.
+                                        message.location().url !== 'chrome-extension://invalid/'
                                 ),
                                 // Immediately format remote handles to strings, but maintain order.
                                 map(message => formatPuppeteerConsoleMessage(page, message)),
-                                concatAll()
+                                concatAll(),
+                                takeUntil(fromEvent(page, 'close'))
                             )
                         )
                     )
