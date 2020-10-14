@@ -339,25 +339,69 @@ func Frontend() *Container {
 					},
 					{
 						{
-							Name:        "99th_percentile_precise_code_intel_store_duration",
-							Description: "99th percentile successful precise code intel database query duration over 5m",
-							// TODO(efritz) - ensure these exclude error durations
-							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_store_duration_seconds_bucket{job="frontend"}[5m])))`,
-							DataMayNotExist: true,
-
+							Name:        "code_intel_frontend_db_store_99th_percentile_duration",
+							Description: "99th percentile successful frontend database query duration over 5m",
+							// TODO(efritz) - exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_frontend_db_store_duration_seconds_bucket{job="frontend"}[5m])))`,
+							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:            "precise_code_intel_store_errors",
-							Description:     "precise code intel database errors every 5m",
-							Query:           `sum(increase(src_code_intel_store_errors_total{job="frontend"}[5m])) / sum(increase(src_code_intel_store_total{job="frontend"}[5m])) * 100`,
-							DataMayNotExist: true,
-
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							PanelOptions:      PanelOptions().LegendFormat("store operations").Unit(Percentage),
+							Name:              "code_intel_frontend_db_store_errors",
+							Description:       "frontend database errors every 5m",
+							Query:             `increase(src_code_intel_frontend_db_store_errors_total{job="frontend"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:        "code_intel_codeintel_db_store_99th_percentile_duration",
+							Description: "99th percentile successful codeintel database query duration over 5m",
+							// TODO(efritz) - exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_codeintel_db_store_duration_seconds_bucket{job="frontend"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "code_intel_codeintel_db_store_errors",
+							Description:       "codeintel database every 5m",
+							Query:             `increase(src_code_intel_codeintel_db_store_errors_total{job="frontend"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:        "code_intel_bundle_store_99th_percentile_duration",
+							Description: "99th percentile successful bundle database store operation duration over 5m",
+							// TODO(efritz) - exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_bundle_store_duration_seconds_bucket{job="frontend"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "code_intel_bundle_store_errors",
+							Description:       "bundle store errors every 5m",
+							Query:             `increase(src_code_intel_bundle_store_errors_total{job="frontend"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},

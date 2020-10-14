@@ -411,11 +411,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## frontend: 99th_percentile_precise_code_intel_store_duration
+## frontend: code_intel_frontend_db_store_99th_percentile_duration
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful precise code intel database query duration over 5m_
+- _frontend: 20s+ 99th percentile successful frontend database query duration over 5m_
 
 **Possible solutions:**
 
@@ -423,15 +423,15 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_99th_percentile_precise_code_intel_store_duration"
+  "warning_frontend_code_intel_frontend_db_store_99th_percentile_duration"
 ]
 ```
 
-## frontend: precise_code_intel_store_errors
+## frontend: code_intel_frontend_db_store_errors
 
 **Descriptions:**
 
-- _frontend: 5%+ precise code intel database errors every 5m for 15m0s_
+- _frontend: 20+ frontend database errors every 5m_
 
 **Possible solutions:**
 
@@ -439,7 +439,71 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_precise_code_intel_store_errors"
+  "warning_frontend_code_intel_frontend_db_store_errors"
+]
+```
+
+## frontend: code_intel_codeintel_db_store_99th_percentile_duration
+
+**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful codeintel database query duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_code_intel_codeintel_db_store_99th_percentile_duration"
+]
+```
+
+## frontend: code_intel_codeintel_db_store_errors
+
+**Descriptions:**
+
+- _frontend: 20+ codeintel database every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_code_intel_codeintel_db_store_errors"
+]
+```
+
+## frontend: code_intel_bundle_store_99th_percentile_duration
+
+**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful bundle database store operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_code_intel_bundle_store_99th_percentile_duration"
+]
+```
+
+## frontend: code_intel_bundle_store_errors
+
+**Descriptions:**
+
+- _frontend: 20+ bundle store errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_code_intel_bundle_store_errors"
 ]
 ```
 
