@@ -1,6 +1,6 @@
 # LSIF quickstart guide
 
-> NOTE: We are working on creating guides by language, so first check out [language how-to documentation](how-to/index.md)! This general guide can be used when a language specific guide is not available.
+> NOTE: We are working on creating guides by language, so first check out [language documentation](how-to/index.md#language-specific-guides)! This general guide can be used when a language specific guide is not available.
 
 We'll walk you through installing and generating LSIF data locally on your machine, and then manually uploading the LSIF data to your Sourcegraph instance for your repository. This will let you experiment with the process locally, and test your generated LSIF data on your repository before you update your CI process. The steps for enabling precise code intelligence are as follows:
 

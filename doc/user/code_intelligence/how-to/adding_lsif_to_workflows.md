@@ -177,7 +177,7 @@ The following projects have example Travis CI configurations to generate and upl
 
 ## CI from scratch
 
-If you're indexing a language we haven't documented yet in our [language-specific guides](./index.md), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
+If you're indexing a language we haven't documented yet in our [language-specific guides](./index.md#language-specific-guides), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
 
 ### Set up your CI machines
 
