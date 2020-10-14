@@ -192,7 +192,7 @@ describe('Extension Registry', () => {
         })
         // Mock extension bundle
         testContext.server.get(wordCountBundleUrl).intercept((request, response) => {
-            response.type('application/javascript; charset=utf-8').send('')
+            response.type('application/javascript; charset=utf-8').send('exports.activate = () => {}')
         })
     }
 
