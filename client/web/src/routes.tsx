@@ -20,6 +20,9 @@ const SearchResults = lazyComponent(() => import('./search/results/SearchResults
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
+const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
 interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -98,12 +101,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/sign-in',
-        render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
+        render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
     },
     {
         path: '/sign-up',
-        render: lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'),
+        render: props => <SignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
@@ -126,7 +129,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage'),
+        render: props => <SiteInitPage {...props} context={window.context} />,
     },
     {
         path: '/site-admin',
