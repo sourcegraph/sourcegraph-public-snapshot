@@ -11,18 +11,17 @@ func GetHomepagePanels(ctx context.Context) (*types.HomepagePanels, error) {
 	const q = `
 	WITH sub AS (SELECT name, user_id FROM event_logs WHERE name LIKE '%Panel%' AND DATE_TRUNC('week', timestamp) = DATE_TRUNC('week', current_date))
 		SELECT
-  CAST(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelFileClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelLoaded'),0) AS recentFilesClickedPercentage,
-  CAST(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded'),0) AS recentSearchClickedPercentage,
-  CAST(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelLoaded'),0) AS recentRepositoriesClickedPercentage,
-  CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS savedSearchesClickedPercentage,
-  CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS newSavedSearchesClickedPercentage,
+   CAST(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelFileClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelLoaded'),0) AS recentFilesClickedPercentage,
+   CAST(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded'),0) AS recentSearchClickedPercentage,
+   CAST(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelLoaded'),0) AS recentRepositoriesClickedPercentage,
+   CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS savedSearchesClickedPercentage,
+   CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS newSavedSearchesClickedPercentage,
   COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded') as totalPanelViews,
-  CAST(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS newSavedSearchesClickedPercentage,
-  CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelFileClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelLoaded'),0) AS usersFilesClickedPercentage,
-  CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded'),0) AS usersSearchClickedPercentage,
-  CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelLoaded'),0) AS usersRepositoriesClickedPercentage,
-  CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS usersSavedSearchesClickedPercentage,
-  CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS usersNewSavedSearchesClickedPercentage,
+   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelFileClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelLoaded'),0) AS usersFilesClickedPercentage,
+   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded'),0) AS usersSearchClickedPercentage,
+   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelLoaded'),0) AS usersRepositoriesClickedPercentage,
+   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS usersSavedSearchesClickedPercentage,
+   CAST(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked') AS FLOAT)/NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'),0) AS usersNewSavedSearchesClickedPercentage,
   COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded') AS percentUsersShown
 FROM
   sub`
@@ -72,3 +71,4 @@ FROM
 		PercentUsersShown:                      float64(percentUsersShown),
 	}, nil
 }
+
