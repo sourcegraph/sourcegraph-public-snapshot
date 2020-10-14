@@ -566,7 +566,7 @@ func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	default:
 		return nil, fmt.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
 	}
-	return
+	return conds, nil
 }
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible
