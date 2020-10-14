@@ -13,4 +13,4 @@ jobs:
              recipients: |
                   team/web=@joelkw
                   team/cloud=@tsenart
-
+                  team/search=@lguychard
