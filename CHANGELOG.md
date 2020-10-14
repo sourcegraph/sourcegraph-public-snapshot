@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Kubernetes admins mounting [configuration files](https://docs.sourcegraph.com/admin/config/advanced_config_file#kubernetes-configmap) are encouraged to change how the ConfigMap is mounted. See the new documentation. Previously our documentation suggested using subPath. However, this lead to Kubernetes not automatically updating the files on configuration change. [#14297](https://github.com/sourcegraph/sourcegraph/pull/14297)
 - The precise code intel bundle manager will now expire any converted LSIF data that is older than `PRECISE_CODE_INTEL_MAX_DATA_AGE` (30 days by default) that is also not visible from the tip of the default branch.
 - `SRC_LOG_LEVEL=warn` is now the default in Docker Compose and Kubernetes deployments, reducing the amount of uninformative log spam. [#14458](https://github.com/sourcegraph/sourcegraph/pull/14458)
+- Permissions data that were stored in deprecated binary format are abandoned. Downgrade from 3.21 to 3.20 is OK, but to 3.19 or prior versions might experience missing/incomplete state of permissions for a short period of time. [#13740](https://github.com/sourcegraph/sourcegraph/issues/13740)
 
 ### Fixed
 
