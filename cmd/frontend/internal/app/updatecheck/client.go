@@ -258,7 +258,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalHomepagePanelsJSON failed", "error", err)
 		}
 
-
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)

@@ -26,18 +26,18 @@ func GetHomepagePanels(ctx context.Context) (*types.HomepagePanels, error) {
 FROM
   sub`
 	var (
-		recentFilesClickedPercentage              float64
-		recentSearchClickedPercentage             float64
-		recentRepositoriesClickedPercentage       float64
-		savedSearchesClickedPercentage            float64
-		newSavedSearchesClickedPercentage         float64
-		totalPanelViews                           float64
-		usersFilesClickedPercentage               float64
-		usersSearchClickedPercentage              float64
-		usersRepositoriesClickedPercentage        float64
-		usersSavedSearchesClickedPercentage       float64
-		usersNewSavedSearchesClickedPercentage    float64
-		percentUsersShown                         float64
+		recentFilesClickedPercentage           float64
+		recentSearchClickedPercentage          float64
+		recentRepositoriesClickedPercentage    float64
+		savedSearchesClickedPercentage         float64
+		newSavedSearchesClickedPercentage      float64
+		totalPanelViews                        float64
+		usersFilesClickedPercentage            float64
+		usersSearchClickedPercentage           float64
+		usersRepositoriesClickedPercentage     float64
+		usersSavedSearchesClickedPercentage    float64
+		usersNewSavedSearchesClickedPercentage float64
+		percentUsersShown                      float64
 	)
 	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
 		&recentFilesClickedPercentage,
@@ -71,4 +71,3 @@ FROM
 		PercentUsersShown:                      float64(percentUsersShown),
 	}, nil
 }
-
