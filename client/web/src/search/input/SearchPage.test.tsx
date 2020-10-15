@@ -54,7 +54,6 @@ describe('SearchPage', () => {
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,
-
         showQueryBuilder: false,
         isLightTheme: true,
         fetchSavedSearches: () => of([]),
