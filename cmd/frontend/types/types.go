@@ -27,8 +27,30 @@ type RepoFields struct {
 	// Cloned is whether this repository is cloned.
 	Cloned bool
 
+	// Language is the primary programming language used in this repository.
+	Language string
+
 	// CreatedAt indicates when the repository record was created.
 	CreatedAt time.Time
+
+	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
+	UpdatedAt time.Time
+
+	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
+	DeletedAt time.Time
+
+	// Metadata contains the raw source code host JSON metadata.
+	Metadata interface{}
+
+	// Sources identifies all the repo sources this Repo belongs to.
+	// The key is a URN created by extsvc.URN
+	Sources map[string]*SourceInfo
+}
+
+// A SourceInfo represents a source a Repo belongs to (such as an external service).
+type SourceInfo struct {
+	ID       string
+	CloneURL string
 }
 
 // Repo represents a source code repository.
