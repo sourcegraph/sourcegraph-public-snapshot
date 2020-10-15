@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsFlushEdgesIcon } from '../icons'
+import { CampaignsIconFlushLeft } from '../icons'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
@@ -59,7 +59,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
     return (
         <>
             <PageTitle title="Create campaign" />
-            <PageHeader icon={CampaignsFlushEdgesIcon} title="Create campaign" />
+            <PageHeader icon={CampaignsIconFlushLeft} title="Create campaign" />
             <div className="pt-3">
                 <h2>1. Write a campaign spec YAML file</h2>
                 <p>

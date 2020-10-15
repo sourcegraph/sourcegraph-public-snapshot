@@ -14,7 +14,7 @@ import {
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsFlushEdgesIcon } from '../icons'
+import { CampaignsIconFlushLeft } from '../icons'
 
 export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
@@ -55,7 +55,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     return (
         <>
             <PageHeader
-                icon={CampaignsFlushEdgesIcon}
+                icon={CampaignsIconFlushLeft}
                 title="Campaigns"
                 className="justify-content-end test-campaign-list-page"
                 actions={
