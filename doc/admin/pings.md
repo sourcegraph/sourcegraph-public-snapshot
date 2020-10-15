@@ -52,6 +52,11 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
+    - We count the number of `\n` appearing in the index.
+    - Not all files are in the index. For example large or binary files are excluded by default.
+    - Not all branches are indexed. By default only your default branch is indexed. This is typically called `master` or `main`.
+    - Our index deduplicates for paths that are the same across branches. We only count the newlines once per unique file.
+    - Forks are separately indexed. They are included in the count of new lines.
 - Homepage panel engagement
   - Percentage of panel clicks (out of total views)
   - Total count of unique users engaging with the panels
