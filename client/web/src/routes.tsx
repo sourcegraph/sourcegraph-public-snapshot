@@ -79,7 +79,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/query-builder',
-        render: lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage'),
+        render: props =>
+            props.showQueryBuilder ? (
+                lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage')(props)
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {
