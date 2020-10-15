@@ -225,17 +225,14 @@ const PrivateRepositoryAlert: React.FunctionComponent = () => (
             <strong>private Sourcegraph instance</strong> and connect the browser extension to it.
         </p>
         <ol>
-            <li>
+            <li className="mb-2">
                 <a href="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
                     Install and configure Sourcegraph
                 </a>
                 . Skip this step if you already have a private Sourcegraph instance.
             </li>
-            <li>
-                Click the Sourcegraph extension icon in the browser toolbar to open the settings page to bring up this
-                popup again.
-            </li>
-            <li>
+            <li className="mb-2">Click the Sourcegraph icon in the browser toolbar to bring up this popup again.</li>
+            <li className="mb-2">
                 Enter the URL (including the protocol) of your Sourcegraph instance above, e.g.{' '}
                 <q>https://sourcegraph.example.com</q>.
             </li>
