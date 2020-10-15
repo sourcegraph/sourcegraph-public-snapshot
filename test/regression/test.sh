@@ -25,6 +25,5 @@ popd
 source /root/.profile
 pushd client/web
 sleep 10
-yarn run test:regression:core
 yarn run test:regression:search
 popd
