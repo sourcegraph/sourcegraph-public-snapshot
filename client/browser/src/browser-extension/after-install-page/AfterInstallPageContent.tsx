@@ -9,27 +9,27 @@ import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
 import { ThemeProps } from '../../../../shared/src/theme'
 
-const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, isLightTheme }) => (
-    <video
-        className="embed-responsive"
-        autoPlay={true}
-        loop={true}
-        muted={true}
-        onClick={event => event.currentTarget.requestFullscreen()}
-    >
-        {isLightTheme ? (
+const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, isLightTheme }) => {
+    const suffix = isLightTheme ? 'light' : 'dark'
+    return (
+        <video
+            className="embed-responsive"
+            autoPlay={true}
+            loop={true}
+            muted={true}
+            onClick={event => event.currentTarget.requestFullscreen()}
+        >
             <source
-                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_light.mp4`}
+                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_${suffix}.webm`}
+                type="video/webm"
+            />
+            <source
+                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_${suffix}.mp4`}
                 type="video/mp4"
             />
-        ) : (
-            <source
-                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_dark.mp4`}
-                type="video/mp4"
-            />
-        )}
-    </video>
-)
+        </video>
+    )
+}
 
 export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = props => (
     <div className="web-content after-install-page-content">
@@ -50,6 +50,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
                             Enterprise, GitLab, Phabricator, and Bitbucket Server.
                         </p>
+                        <Video {...props} name="code_intelligence_on_the_code_host_installation_page" />
                     </div>
                     <div className="col-sm-6">
                         <h3>Search shortcut in the URL location bar</h3>
