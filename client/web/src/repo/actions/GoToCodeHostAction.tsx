@@ -26,7 +26,7 @@ interface GoToCodeHostPopoverProps {
     canShowPopover: boolean
 
     /**
-     * Called when the popover is dismissed in any way ("No thanks", "Remind me later" or "Install").
+     * Called when the popover is dismissed in any way ("No thanks", "Remind me another time" or "Install").
      */
     onPopoverDismissed: () => void
 }
@@ -87,7 +87,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         eventLogger.log('BrowserExtensionPopupRejected')
     }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
-    /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
+    /** This is a soft rejection. Called when user clicks 'Remind me another time', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
         onPopoverDismissed()
         setShowPopover(false)

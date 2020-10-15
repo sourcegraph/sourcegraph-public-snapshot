@@ -89,7 +89,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                                 to={url}
                                 {...linkProps}
                             >
-                                Remind me later
+                                Remind me another time
                             </ButtonLink>
 
                             <ButtonLink
