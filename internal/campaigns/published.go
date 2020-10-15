@@ -67,10 +67,7 @@ func (p PublishedValue) MarshalJSON() ([]byte, error) {
 }
 
 func (p *PublishedValue) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &p.Val); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal(b, &p.Val)
 }
 
 func (p PublishedValue) UnmarshalYAML(b []byte) error {
