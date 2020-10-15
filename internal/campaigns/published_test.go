@@ -9,15 +9,17 @@ import (
 
 func TestPublishedValue(t *testing.T) {
 	tests := []struct {
-		name  string
-		val   interface{}
-		True  bool
-		False bool
-		Draft bool
+		name    string
+		val     interface{}
+		True    bool
+		False   bool
+		Draft   bool
+		Invalid bool
 	}{
-		{name: "True", val: true, True: true, False: false, Draft: false},
-		{name: "False", val: false, True: false, False: true, Draft: false},
-		{name: "Draft", val: "draft", True: false, False: false, Draft: true},
+		{name: "True", val: true, True: true},
+		{name: "False", val: false, False: true},
+		{name: "Draft", val: "draft", Draft: true},
+		{name: "Invalid", val: "invalid", Invalid: true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -31,7 +33,7 @@ func TestPublishedValue(t *testing.T) {
 			if have, want := p.Draft(), tc.Draft; have != want {
 				t.Fatalf("invalid `draft` value: want=%t have=%t", want, have)
 			}
-			if have, want := p.Valid(), true; have != want {
+			if have, want := p.Valid(), !tc.Invalid; have != want {
 				t.Fatalf("invalid `valid` value: want=%t have=%t", want, have)
 			}
 		})

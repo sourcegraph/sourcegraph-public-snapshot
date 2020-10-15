@@ -3,7 +3,6 @@ package campaigns
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 // PublishedValue is a wrapper type that supports the triple `true`, `false`, `"draft"`.
@@ -30,7 +29,7 @@ func (p PublishedValue) False() bool {
 // Draft is true if the enclosed value is a string being "draft".
 func (p PublishedValue) Draft() bool {
 	if s, ok := p.Val.(string); ok {
-		return strings.EqualFold(s, "draft")
+		return s == "draft"
 	}
 	return false
 }
