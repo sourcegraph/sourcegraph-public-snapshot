@@ -1583,6 +1583,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		a.commonMu.Unlock()
 	}
 }
+
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
 	defer func() {
@@ -1614,6 +1615,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		a.commonMu.Unlock()
 	}
 }
+
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	defer func() {
