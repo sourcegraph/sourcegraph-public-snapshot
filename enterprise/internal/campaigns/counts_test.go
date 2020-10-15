@@ -1369,6 +1369,24 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 1, Closed: 1},
 			},
 		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			name:      "changeset approved by deleted user",
+			changesets: []*campaigns.Changeset{
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(2),
+			events: []*campaigns.ChangesetEvent{
+				// An empty author ("") usually means the user has been deleted.
+				ghReview(1, daysAgo(1), "", "APPROVED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+				// A deleted users' review doesn't have an effect on the review state.
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
