@@ -111,7 +111,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 
 	// Make sure we call ResolveRevision before we find the common merge-base, in case
 	// the commits don't exist locally.
-	_, err = git.ResolveRevision(ctx, *grepo, nil, baseRevspec, git.ResolveRevisionOptions{NoEnsureRevision: false})
+	_, err = git.ResolveRevision(ctx, *grepo, nil, baseRevspec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
