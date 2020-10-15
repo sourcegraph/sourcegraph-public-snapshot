@@ -157,7 +157,7 @@ func RepoUpdater() *Container {
 						},
 						Observable{
 							Name:            "sched_update_queue_length",
-							Description:     "derivative of update queue length over 5 minutes",
+							Description:     "rate of growth of update queue length over 5 minutes",
 							Query:           `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
 							DataMayNotExist: true,
 							// Alert if the derivative is positive for longer than 30 minutes
