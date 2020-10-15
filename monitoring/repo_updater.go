@@ -4,7 +4,8 @@ import (
 	"time"
 )
 
-var syncDurationThreshold = 9 * time.Hour
+// This is set a bit longer than maxSyncInterval in cmd/repo-updater/repos/syncer.go
+const syncDurationThreshold = 9 * time.Hour
 
 func RepoUpdater() *Container {
 	return &Container{
