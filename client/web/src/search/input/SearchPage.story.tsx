@@ -46,6 +46,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     showRepogroupHomepage: false,
     showEnterpriseHomePanels: false,
     showOnboardingTour: false,
+    showQueryBuilder: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
