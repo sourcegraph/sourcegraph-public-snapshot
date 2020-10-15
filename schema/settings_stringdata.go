@@ -76,6 +76,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "showQueryBuilder": {
+          "description": "Enables the search query builder page at search/query-builder",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"
