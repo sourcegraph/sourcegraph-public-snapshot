@@ -475,6 +475,7 @@ describe('Repository', () => {
             // TODO: find a more reliable way to get the current search query,
             // to account for the fact that it may _actually_ contain non-breaking spaces
             // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
+            // https://github.com/sourcegraph/sourcegraph/issues/14756
             const searchQuery = (
                 await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
             )?.replace(/\u00A0/g, ' ')
