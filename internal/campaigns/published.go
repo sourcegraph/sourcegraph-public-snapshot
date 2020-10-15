@@ -2,9 +2,8 @@ package campaigns
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // PublishedValue is a wrapper type that supports the triple `true`, `false`, `"draft"`.
@@ -70,10 +69,12 @@ func (p *PublishedValue) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &p.Val)
 }
 
-func (p PublishedValue) UnmarshalYAML(b []byte) error {
-	if err := json.Unmarshal(b, &p.Val); err != nil {
+// UnmarshalYAML unmarshalls a YAML value into a Publish.
+func (p *PublishedValue) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	if err := unmarshal(&p.Val); err != nil {
 		return err
 	}
+
 	return nil
 }
 
