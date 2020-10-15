@@ -105,6 +105,10 @@ The `allowOrgs` fields restricts logins to members of the specified GitHub organ
 
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
+### Troubleshooting
+
+Setting the env var `INSECURE_OAUTH2_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` deployment if you're using Kubernetes) causes all OAuth2 requests and responses to be logged.
+
 ## GitLab
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
@@ -135,6 +139,10 @@ configuration.
 
 Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
 to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+
+### Troubleshooting
+
+Setting the env var `INSECURE_OAUTH2_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` deployment if you're using Kubernetes) causes all OAuth2 requests and responses to be logged.
 
 ## OpenID Connect
 
