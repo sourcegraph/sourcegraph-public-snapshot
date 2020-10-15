@@ -156,7 +156,7 @@ func RepoUpdater() *Container {
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
 						},
 						Observable{
-							Name:            "sched_update_queue_length_derivative",
+							Name:            "sched_update_queue_length",
 							Description:     "derivative of update queue length over 5 minutes",
 							Query:           `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
 							DataMayNotExist: true,
