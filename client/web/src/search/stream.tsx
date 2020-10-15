@@ -178,7 +178,6 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
         label: toMarkdown(commit.label),
         url: commit.url,
         detail: toMarkdown(commit.detail),
-        // TODO
         matches: [match],
     }
 
