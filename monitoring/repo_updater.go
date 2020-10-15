@@ -156,14 +156,15 @@ func RepoUpdater() *Container {
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
 						},
 						Observable{
-							Name:              "sched_update_queue_length",
-							Description:       "repositories queued for update",
-							Query:             `sum(src_repoupdater_sched_update_queue_length)`,
-							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(1000).For(5 * time.Minute),
+							Name:            "sched_update_queue_length_derivative",
+							Description:     "derivative of update queue length over 5 minutes",
+							Query:           `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
+							DataMayNotExist: true,
+							// Alert if the derivative is positive for longer than 30 minutes
+							Critical:          Alert().GreaterOrEqual(0).For(30 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs. The queue should drop as items are sent to GitServer",
+							PossibleSolutions: "Check repo-updater logs. The queue length should trend downwards over time as items are sent to GitServer",
 						},
 						Observable{
 							Name:              "sched_loops",
