@@ -17,6 +17,7 @@ const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, i
             autoPlay={true}
             loop={true}
             muted={true}
+            playsInline={true}
             onClick={event => event.currentTarget.requestFullscreen()}
             // Add a key on the theme to force React to render a new <video> element when the theme changes
             key={name + suffix}
