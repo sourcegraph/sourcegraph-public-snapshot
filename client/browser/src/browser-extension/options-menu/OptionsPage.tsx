@@ -258,7 +258,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                         'bg-4': currentHost?.endsWith(host),
                     })}
                 >
-                    {Icon && <Icon />}
+                    {Icon && <Icon className="icon-inline" />}
                 </span>
             ))}
         </div>
