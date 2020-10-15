@@ -155,7 +155,7 @@ describe('Search regression test suite', () => {
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
         before(async function () {
-            this.timeout(3 * 60 * 1000 + 300 * 10000)
+            this.timeout(3 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(
                 'User',
@@ -177,7 +177,7 @@ describe('Search regression test suite', () => {
                         },
                         waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                     },
-                    { ...config, timeout: 3 * 60 * 10000, indexed: true }
+                    { ...config, timeout: 3 * 60 * 1000, indexed: true }
                 )
             )
         })
