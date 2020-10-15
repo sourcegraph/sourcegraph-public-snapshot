@@ -70,7 +70,13 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         const label = `${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`
         return (
-            <button type="button" className="nav-link" onClick={this.onClick} data-tooltip={label} aria-label={label}>
+            <button
+                type="button"
+                className="btn nav-link"
+                onClick={this.onClick}
+                data-tooltip={label}
+                aria-label={label}
+            >
                 {this.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
             </button>
         )

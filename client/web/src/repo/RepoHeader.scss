@@ -46,6 +46,7 @@
             align-items: stretch;
 
             .nav-link {
+                color: var(--link-color);
                 user-select: none;
             }
         }
