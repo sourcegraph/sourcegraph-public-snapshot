@@ -30,8 +30,4 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
         path: '/account',
         render: props => <Redirect to={`${props.url}/settings/profile`} />,
     },
-    {
-        path: '/event-log',
-        render: props => <UserEventLogsPage {...props} />,
-    },
 ]
