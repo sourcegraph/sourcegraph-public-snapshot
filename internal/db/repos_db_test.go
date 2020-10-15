@@ -40,6 +40,8 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
+	t.Helper()
+
 	op := InsertRepoOp{Name: repo.Name}
 
 	if repo.RepoFields != nil {
@@ -216,6 +218,7 @@ func TestRepos_Get(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
+		Name:    "name",
 		Private: true,
 		RepoFields: &types.RepoFields{
 			URI:         "uri",
@@ -317,6 +320,7 @@ func TestRepos_List(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
+		Name:    "name",
 		Private: true,
 		RepoFields: &types.RepoFields{
 			URI:         "uri",
