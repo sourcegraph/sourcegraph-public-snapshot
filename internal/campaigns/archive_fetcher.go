@@ -86,6 +86,10 @@ func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphq
 		return fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
 	}
 
+	if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
+		return err
+	}
+
 	f, err := os.Create(dest)
 	if err != nil {
 		return err

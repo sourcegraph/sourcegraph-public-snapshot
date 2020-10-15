@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- The cache dir used by `src campaign [preview|apply]` is now created before trying to create files in it, fixing a bug where the first run of the command could fail with a "file doesn't exist" error message. [#352](https://github.com/sourcegraph/src-cli/pull/352)
+
 ## 3.21.1
 
 ### Added
