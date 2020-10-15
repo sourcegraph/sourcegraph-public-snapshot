@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -27,7 +28,7 @@ type store struct {
 
 var _ persistence.Store = &store{}
 
-func NewStore(db *sql.DB, dumpID int) persistence.Store {
+func NewStore(db dbutil.DB, dumpID int) persistence.Store {
 	return &store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		dumpID:     dumpID,
@@ -182,20 +183,20 @@ func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme,
 	return locations[lo:hi], len(locations), nil
 }
 
-func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) error {
-	inserter := func(inserter *BatchInserter) error {
-		if err := inserter.Insert(ctx, s.dumpID, meta.NumResultChunks); err != nil {
-			return err
+func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
+	inserter := batch.NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
+
+	defer func() {
+		if flushErr := inserter.Flush(ctx); flushErr != nil {
+			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
 		}
+	}()
 
-		return nil
-	}
-
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", []string{"dump_id", "num_result_chunks"}, inserter)
+	return inserter.Insert(ctx, s.dumpID, meta.NumResultChunks)
 }
 
 func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
-	inserter := func(inserter *BatchInserter) error {
+	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
 			if err != nil {
@@ -214,7 +215,7 @@ func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.K
 }
 
 func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
-	inserter := func(inserter *BatchInserter) error {
+	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
 			if err != nil {
@@ -241,7 +242,7 @@ func (s *store) WriteReferences(ctx context.Context, monikerLocations chan types
 }
 
 func (s *store) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations chan types.MonikerLocations) error {
-	inserter := func(inserter *BatchInserter) error {
+	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
@@ -261,9 +262,9 @@ func (s *store) writeDefinitionReferences(ctx context.Context, tableName string,
 
 var numWriterRoutines = runtime.GOMAXPROCS(0)
 
-func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *BatchInserter) error) error {
+func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) error {
 	return util.InvokeN(numWriterRoutines, func() (err error) {
-		inserter := NewBatchInserter(ctx, db, tableName, columns...)
+		inserter := batch.NewBatchInserter(ctx, db, tableName, columns...)
 
 		defer func() {
 			if flushErr := inserter.Flush(ctx); flushErr != nil {

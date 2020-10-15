@@ -4,10 +4,14 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 
 To connect GitHub to Sourcegraph:
 
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Depending on whether you are a site admin or user:
+    1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
+    1. *User*: Go to **Settings > Manage repositories**.
 1. Select **GitHub**.
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
+
+**NOTE** That adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -34,7 +38,7 @@ No token scopes are required if you only want to sync public repositories and do
 
 - `repo` to sync private repositories from GitHub to Sourcegraph.
 - `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
-- `repo`, `read:org`, and `read:discussion` to use [campaigns](../../user/campaigns/index.md) with GitHub repositories. See "[Code host interactions in campaigns](../../user/campaigns/managing_access.md#code-host-interactions-in-campaigns)" for details.
+- `repo`, `read:org`, and `read:discussion` to use [campaigns](../../user/campaigns/index.md) with GitHub repositories. See "[Code host interactions in campaigns](../../user/campaigns/explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns)" for details.
 
 >NOTE: If you plan to use repository permissions with background syncing, an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
 

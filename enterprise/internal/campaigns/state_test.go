@@ -133,12 +133,20 @@ func TestComputeGithubCheckState(t *testing.T) {
 			want: cmpgn.ChangesetCheckStatePassed,
 		},
 		{
-			name: "suites with zero runs should be ignored",
+			name: "queued suites with zero runs should be ignored",
 			events: []*cmpgn.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "QUEUED", ""),
 			},
 			want: cmpgn.ChangesetCheckStatePassed,
+		},
+		{
+			name: "completed suites with zero runs should be ignored",
+			events: []*cmpgn.ChangesetEvent{
+				commitEvent(1, "ctx1", "ERROR"),
+				checkSuiteEvent(1, "cs1", "COMPLETED", ""),
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
 		},
 	}
 

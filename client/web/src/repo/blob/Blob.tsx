@@ -36,6 +36,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { HoverThresholdProps } from '../RepoContainer'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
@@ -48,6 +49,7 @@ interface BlobProps
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
     /** The raw content of the blob. */
@@ -201,15 +203,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 dom: domFunctions,
             })
         )
-        const goToDefinition = (event: MouseEvent): void => {
-            const goToDefinitionAction =
-                Array.isArray(this.state.actionsOrError) &&
-                this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
-            if (goToDefinitionAction) {
-                this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
-                event.stopPropagation()
-            }
-        }
 
         let hoveredTokenElement: HTMLElement | undefined
         this.subscriptions.add(
@@ -217,11 +210,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement) {
                     if (hoveredTokenElement) {
                         hoveredTokenElement.style.cursor = 'auto'
-                        hoveredTokenElement.removeEventListener('click', goToDefinition)
+                        hoveredTokenElement.removeEventListener('click', this.goToDefinition)
                     }
                     if (update.hoveredTokenElement) {
                         update.hoveredTokenElement.style.cursor = 'pointer'
-                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
+                        update.hoveredTokenElement.addEventListener('click', this.goToDefinition)
                     }
                     hoveredTokenElement = update.hoveredTokenElement
                 }
@@ -417,6 +410,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 }
             })
         )
+    }
+
+    private goToDefinition = (event: MouseEvent): void => {
+        const goToDefinitionAction =
+            Array.isArray(this.state.actionsOrError) &&
+            this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
+        if (goToDefinitionAction) {
+            this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
+            event.stopPropagation()
+        }
     }
 
     private getLSPTextDocumentPositionParams(

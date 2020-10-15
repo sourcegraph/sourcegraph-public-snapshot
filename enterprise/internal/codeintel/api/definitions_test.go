@@ -7,8 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
-	commitmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits/mocks"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -17,8 +15,7 @@ func TestDefinitions(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
-	mockCommitUpdater := commitmocks.NewMockUpdater()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -28,7 +25,7 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	})
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -47,11 +44,10 @@ func TestDefinitions(t *testing.T) {
 func TestDefinitionsUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
-	mockCommitUpdater := commitmocks.NewMockUpdater()
+	mockGitserverClient := NewMockGitserverClient()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	if _, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 25); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting definitions. want=%q have=%q", ErrMissingDump, err)
 	}
@@ -61,8 +57,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
-	mockCommitUpdater := commitmocks.NewMockUpdater()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -74,7 +69,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	}, 3)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -95,8 +90,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient1 := bundlemocks.NewMockBundleClient()
 	mockBundleClient2 := bundlemocks.NewMockBundleClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
-	mockCommitUpdater := commitmocks.NewMockUpdater()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
@@ -110,7 +104,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
 	}, 15)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)

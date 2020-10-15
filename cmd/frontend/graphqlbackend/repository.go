@@ -261,7 +261,7 @@ func (r *RepositoryResolver) Rev() string {
 	return r.rev
 }
 
-func (r *RepositoryResolver) Label() (*markdownResolver, error) {
+func (r *RepositoryResolver) Label() (Markdown, error) {
 	var label string
 	if r.rev != "" {
 		label = string(r.repo.Name) + "@" + r.rev
@@ -269,11 +269,11 @@ func (r *RepositoryResolver) Label() (*markdownResolver, error) {
 		label = string(r.repo.Name)
 	}
 	text := "[" + label + "](/" + label + ")"
-	return &markdownResolver{text: text}, nil
+	return Markdown(text), nil
 }
 
-func (r *RepositoryResolver) Detail() *markdownResolver {
-	return &markdownResolver{text: "Repository name match"}
+func (r *RepositoryResolver) Detail() Markdown {
+	return Markdown("Repository name match")
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {

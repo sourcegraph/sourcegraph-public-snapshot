@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useCallback, useMemo, useEffect } from 'react'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import { Form } from '../../components/Form'
+import { Form } from '../../../../branded/src/components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, OnboardingTourProps } from '..'

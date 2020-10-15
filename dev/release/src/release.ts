@@ -19,6 +19,7 @@ import * as path from 'path'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 const formatDate = (date: Date): string =>
     `${date.toLocaleString('en-US', {
         timeZone: 'America/Los_Angeles',
@@ -29,6 +30,7 @@ const formatDate = (date: Date): string =>
         dateStyle: 'medium',
         timeStyle: 'short',
     } as Intl.DateTimeFormatOptions)} (Berlin time)`
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
 
 interface Config {
     teamEmail: string
@@ -51,16 +53,18 @@ interface Config {
 }
 
 type StepID =
-    | 'add-timeline-to-calendar'
     | 'help'
-    | 'tracking-issue:announce'
-    | 'tracking-issue:create'
+    // release tracking
+    | 'tracking:release-timeline'
+    | 'tracking:release-issue'
+    | 'tracking:patch-issue'
+    // branch cut
     | 'changelog:cut'
-    | 'release-candidate:create'
-    | 'release-candidate:dev-announce'
-    | 'qa-start:dev-announce'
-    | 'patch:issue'
+    // release
+    | 'release:status'
+    | 'release:create-candidate'
     | 'release:publish'
+    // testing
     | '_test:google-calendar'
     | '_test:slack'
 
@@ -111,7 +115,7 @@ const steps: Step[] = [
         },
     },
     {
-        id: 'add-timeline-to-calendar',
+        id: 'tracking:release-timeline',
         run: async config => {
             const googleCalendar = await getClient()
             const events: EventOptions[] = [
@@ -163,13 +167,13 @@ const steps: Step[] = [
             ]
 
             for (const event of events) {
-                console.log(`Create calendar event: ${event.title}: ${event.startDateTime!}`)
+                console.log(`Create calendar event: ${event.title}: ${event.startDateTime || 'undefined'}`)
                 await ensureEvent(event, googleCalendar)
             }
         },
     },
     {
-        id: 'tracking-issue:create',
+        id: 'tracking:release-issue',
         run: async ({
             majorVersion,
             minorVersion,
@@ -178,7 +182,11 @@ const steps: Step[] = [
             oneWorkingDayBeforeRelease,
             fourWorkingDaysBeforeRelease,
             fiveWorkingDaysBeforeRelease,
+
+            captainSlackUsername,
+            slackAnnounceChannel,
         }: Config) => {
+            // Create issue
             const { url, created } = await ensureTrackingIssue({
                 majorVersion,
                 minorVersion,
@@ -189,30 +197,54 @@ const steps: Step[] = [
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
             })
             console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
+
+            // Announce issue if issue does not already exist
+            if (created) {
+                await postMessage(
+                    `:captain: ${majorVersion}.${minorVersion} Release :captain:
+
+Release captain: @${captainSlackUsername}
+Tracking issue: ${url}
+Key dates:
+- Release branch cut, testing commences: ${formatDate(new Date(fourWorkingDaysBeforeRelease))}
+- Final release tag: ${formatDate(new Date(oneWorkingDayBeforeRelease))}
+- Release: ${formatDate(new Date(releaseDateTime))}`,
+                    slackAnnounceChannel
+                )
+                console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            }
         },
     },
     {
-        id: 'tracking-issue:announce',
-        run: async config => {
-            const trackingIssueURL = await getIssueByTitle(
-                await getAuthenticatedGitHubClient(),
-                trackingIssueTitle(config.majorVersion, config.minorVersion)
-            )
-            if (!trackingIssueURL) {
-                throw new Error(
-                    `Tracking issue for version ${config.majorVersion}.${config.minorVersion} not found--has it been create yet?`
-                )
+        id: 'tracking:patch-issue',
+        run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
             }
-            await postMessage(
-                `:captain: ${config.majorVersion}.${config.minorVersion} Release :captain:
-Release captain: @${config.captainSlackUsername}
-Tracking issue: ${trackingIssueURL}
-Key dates:
-- Release branch cut, testing commences: ${formatDate(new Date(config.fourWorkingDaysBeforeRelease))}
-- Final release tag: ${formatDate(new Date(config.oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(config.releaseDateTime))}`,
-                config.slackAnnounceChannel
-            )
+            if (parsedVersion.prerelease.length > 0) {
+                throw new Error(`version ${version} is pre-release`)
+            }
+
+            // Create issue
+            const { url, created } = await ensurePatchReleaseIssue({
+                version: parsedVersion,
+                assignees: [captainGitHubUsername],
+            })
+            const existsText = created ? '' : ' (already exists)'
+            console.log(`Patch release issue URL${existsText}: ${url}`)
+            if (!created) {
+                return
+            }
+
+            // Announce issue if issue does not already exist
+            if (created) {
+                await postMessage(
+                    `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
+                    slackAnnounceChannel
+                )
+                console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            }
         },
     },
     {
@@ -262,7 +294,55 @@ Key dates:
         },
     },
     {
-        id: 'release-candidate:create',
+        id: 'release:status',
+        run: async (config, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+
+            const githubClient = await getAuthenticatedGitHubClient()
+
+            const trackingIssueURL = await getIssueByTitle(
+                githubClient,
+                trackingIssueTitle(config.majorVersion, config.minorVersion)
+            )
+            if (!trackingIssueURL) {
+                throw new Error(
+                    `Tracking issue for version ${config.majorVersion}.${config.minorVersion} not found--has it been create yet?`
+                )
+            }
+
+            const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
+            const blockingIssues = await listIssues(githubClient, blockingQuery)
+            const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
+
+            const openQuery = `is:open org:sourcegraph is:issue milestone:${config.majorVersion}.${config.minorVersion}`
+            const openIssues = await listIssues(githubClient, openQuery)
+            const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
+
+            const issueCategories = [
+                { name: 'release-blocking', issues: blockingIssues, issuesURL: blockingIssuesURL },
+                { name: 'open', issues: openIssues, issuesURL: openIssuesURL },
+            ]
+
+            const message = `:captain: ${version} release status update:
+
+- Tracking issue: ${trackingIssueURL}
+${issueCategories
+    .map(
+        category =>
+            '- ' +
+            (category.issues.length === 1
+                ? `There is 1 ${category.name} issue: ${category.issuesURL}`
+                : `There are ${category.issues.length} ${category.name} issues: ${category.issuesURL}`)
+    )
+    .join('\n')}`
+            await postMessage(message, config.slackAnnounceChannel)
+        },
+    },
+    {
+        id: 'release:create-candidate',
         argNames: ['version'],
         run: async (_config, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
@@ -280,64 +360,6 @@ Key dates:
                 ],
                 { stdio: 'inherit' }
             )
-        },
-    },
-    {
-        id: 'release-candidate:dev-announce',
-        run: async (config, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-
-            const query = `is:open is:issue milestone:${config.majorVersion}.${config.minorVersion} label:release-blocker`
-            const issues = await listIssues(await getAuthenticatedGitHubClient(), query)
-            const issuesURL = `https://github.com/issues?q=${encodeURIComponent(query)}`
-            const releaseBlockerMessage =
-                issues.length === 0
-                    ? 'There are currently ZERO release blocking issues'
-                    : issues.length === 1
-                    ? `There is 1 release-blocking issue: ${issuesURL}`
-                    : `There are ${issues.length} release-blocking issues: ${issuesURL}`
-
-            const message = `:captain: Release \`${version}\` has been cut :captain:
-
-- Please ensure \`CHANGELOG.md\` on \`main\` is up-to-date.
-- Run this release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
-- It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
-- ${releaseBlockerMessage}
-            `
-            await postMessage(message, config.slackAnnounceChannel)
-        },
-    },
-    {
-        id: 'patch:issue',
-        run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-            if (parsedVersion.prerelease.length > 0) {
-                throw new Error(`version ${version} is pre-release`)
-            }
-
-            // Create issue
-            const { url, created } = await ensurePatchReleaseIssue({
-                version: parsedVersion,
-                assignees: [captainGitHubUsername],
-            })
-            const existsText = created ? '' : ' (already exists)'
-            console.log(`Patch release issue URL${existsText}: ${url}`)
-            if (!created) {
-                return
-            }
-
-            // - Announce issue if issue does not already exist
-            await postMessage(
-                `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
-                slackAnnounceChannel
-            )
-            console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
         },
     },
     {

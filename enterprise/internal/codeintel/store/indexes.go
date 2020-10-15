@@ -319,6 +319,15 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("NULL"),
 }
 
+// SetIndexLogContents updates the log contents fo the index.
+func (s *store) SetIndexLogContents(ctx context.Context, indexID int, contents string) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_indexes
+		SET log_contents = %s
+		WHERE id = %s
+	`, contents, indexID))
+}
+
 // DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 // the index is returned along with a store instance which wraps the transaction. This transaction must be
 // closed. If there is no such unlocked index, a zero-value index and nil store will be returned along with

@@ -125,16 +125,18 @@ export const finallyReleaseProxy = <T>() => (source: Observable<T> & Partial<Pro
  */
 export function registerRemoteProvider<
     TRegistrationOptions,
-    TLocalProviderParams extends UnproxyOrClone<TProviderParams>,
-    TProviderParams,
+    TLocalProviderParameters extends UnproxyOrClone<TProviderParameters>,
+    TProviderParameters,
     TProviderResult
 >(
     registry: FeatureProviderRegistry<
         TRegistrationOptions,
-        (params: TLocalProviderParams) => Observable<TProviderResult>
+        (parameters: TLocalProviderParameters) => Observable<TProviderResult>
     >,
     registrationOptions: TRegistrationOptions,
-    remoteProviderFunction: Remote<((params: TProviderParams) => ProxySubscribable<TProviderResult>) & ProxyMarked>
+    remoteProviderFunction: Remote<
+        ((parameters: TProviderParameters) => ProxySubscribable<TProviderResult>) & ProxyMarked
+    >
 ): Unsubscribable & ProxyMarked {
     // This subscription will unregister the provider when unsubscribed.
     const subscription = new Subscription()

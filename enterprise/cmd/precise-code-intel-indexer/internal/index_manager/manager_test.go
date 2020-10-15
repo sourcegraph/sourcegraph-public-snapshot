@@ -9,18 +9,20 @@ import (
 	"github.com/efritz/glock"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
+	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
 func TestProcessSuccess(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockStore, true, nil)
-	mockStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockWorkerStore, true, nil)
+	mockWorkerStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	clock := glock.NewMockClock()
 
-	manager := newManager(mockStore, ManagerOptions{
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
 		UnreportedIndexMaxAge: time.Second,
@@ -46,26 +48,27 @@ func TestProcessSuccess(t *testing.T) {
 		t.Fatalf("expected record to be tracked: %s", err)
 	}
 
-	if callCount := len(mockStore.MarkCompleteFunc.History()); callCount != 1 {
+	if callCount := len(mockWorkerStore.MarkCompleteFunc.History()); callCount != 1 {
 		t.Errorf("unexpected mark complete call count. want=%d have=%d", 1, callCount)
-	} else if id := mockStore.MarkCompleteFunc.History()[0].Arg1; id != 42 {
+	} else if id := mockWorkerStore.MarkCompleteFunc.History()[0].Arg1; id != 42 {
 		t.Errorf("unexpected id argument to markge. want=%v have=%v", 42, id)
 	}
 
-	if callCount := len(mockStore.DoneFunc.History()); callCount != 1 {
+	if callCount := len(mockWorkerStore.DoneFunc.History()); callCount != 1 {
 		t.Errorf("unexpected done call count. want=%d have=%d", 1, callCount)
-	} else if err := mockStore.DoneFunc.History()[0].Arg0; err != nil {
+	} else if err := mockWorkerStore.DoneFunc.History()[0].Arg0; err != nil {
 		t.Errorf("unexpected error argument to done. want=%v have=%v", nil, err)
 	}
 }
 
 func TestProcessFailure(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockStore, true, nil)
-	mockStore.MarkErroredFunc.SetDefaultReturn(true, nil)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockWorkerStore, true, nil)
+	mockWorkerStore.MarkErroredFunc.SetDefaultReturn(true, nil)
 	clock := glock.NewMockClock()
 
-	manager := newManager(mockStore, ManagerOptions{
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
 		UnreportedIndexMaxAge: time.Second,
@@ -91,25 +94,87 @@ func TestProcessFailure(t *testing.T) {
 		t.Fatalf("expected record to be tracked: %s", err)
 	}
 
-	if callCount := len(mockStore.MarkErroredFunc.History()); callCount != 1 {
+	if callCount := len(mockWorkerStore.MarkErroredFunc.History()); callCount != 1 {
 		t.Errorf("unexpected mark errored call count. want=%d have=%d", 1, callCount)
-	} else if id := mockStore.MarkErroredFunc.History()[0].Arg1; id != 42 {
+	} else if id := mockWorkerStore.MarkErroredFunc.History()[0].Arg1; id != 42 {
 		t.Errorf("unexpected id argument to mark errored. want=%v have=%v", 42, id)
 	}
 
-	if callCount := len(mockStore.DoneFunc.History()); callCount != 1 {
+	if callCount := len(mockWorkerStore.DoneFunc.History()); callCount != 1 {
 		t.Errorf("unexpected done call count. want=%d have=%d", 1, callCount)
-	} else if err := mockStore.DoneFunc.History()[0].Arg0; err != nil {
+	} else if err := mockWorkerStore.DoneFunc.History()[0].Arg0; err != nil {
 		t.Errorf("unexpected error argument to done. want=%v have=%v", nil, err)
+	}
+}
+
+func TestProcessSetLogContents(t *testing.T) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.WithFunc.SetDefaultReturn(mockStore)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockWorkerStore, true, nil)
+	mockWorkerStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	clock := glock.NewMockClock()
+
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
+		MaximumTransactions:   10,
+		RequeueDelay:          time.Second,
+		UnreportedIndexMaxAge: time.Second,
+		DeathThreshold:        time.Second,
+	}, clock)
+
+	index, dequeued, err := manager.Dequeue(context.Background(), "deadbeef")
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing record: %s", err)
+	}
+	if !dequeued {
+		t.Fatalf("expected a record")
+	}
+	if index.ID != 42 {
+		t.Fatalf("unexpected record id. want=%d have=%d", 42, index.ID)
+	}
+
+	if err := manager.SetLogContents(context.Background(), "deadbeef", 42, "test payload"); err != nil {
+		t.Fatalf("unexpected error setting log contents: %s", err)
+	}
+
+	found, err := manager.Complete(context.Background(), "deadbeef", 42, "")
+	if err != nil {
+		t.Fatalf("unexpected error marking record as complete: %s", err)
+	}
+	if !found {
+		t.Fatalf("expected record to be tracked: %s", err)
+	}
+
+	if callCount := len(mockWorkerStore.MarkCompleteFunc.History()); callCount != 1 {
+		t.Errorf("unexpected mark complete call count. want=%d have=%d", 1, callCount)
+	} else if id := mockWorkerStore.MarkCompleteFunc.History()[0].Arg1; id != 42 {
+		t.Errorf("unexpected id argument to markge. want=%v have=%v", 42, id)
+	}
+
+	if callCount := len(mockWorkerStore.DoneFunc.History()); callCount != 1 {
+		t.Errorf("unexpected done call count. want=%d have=%d", 1, callCount)
+	} else if err := mockWorkerStore.DoneFunc.History()[0].Arg0; err != nil {
+		t.Errorf("unexpected error argument to done. want=%v have=%v", nil, err)
+	}
+
+	if callCount := len(mockStore.WithFunc.History()); callCount != 1 {
+		t.Errorf("unexpected with call count. want=%d have=%d", 1, callCount)
+	}
+
+	if callCount := len(mockStore.SetIndexLogContentsFunc.History()); callCount != 1 {
+		t.Errorf("unexpected set index log contents call count. want=%d have=%d", 1, callCount)
+	} else if value := mockStore.SetIndexLogContentsFunc.History()[0].Arg2; value != "test payload" {
+		t.Errorf("unexpected error argument to done. want=%v have=%v", "test payload", value)
 	}
 }
 
 func TestProcessIndexerMismatch(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockStore, true, nil)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.PushReturn(store.Index{ID: 42}, mockWorkerStore, true, nil)
 	clock := glock.NewMockClock()
 
-	manager := newManager(mockStore, ManagerOptions{
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
 		UnreportedIndexMaxAge: time.Second,
@@ -135,23 +200,24 @@ func TestProcessIndexerMismatch(t *testing.T) {
 		t.Fatalf("expected record to belong to a different indexer: %s", err)
 	}
 
-	if callCount := len(mockStore.DoneFunc.History()); callCount != 0 {
+	if callCount := len(mockWorkerStore.DoneFunc.History()); callCount != 0 {
 		t.Errorf("unexpected done call count. want=%d have=%d", 0, callCount)
 	}
 }
 
 func TestBoundedTransactions(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	clock := glock.NewMockClock()
 
 	calls := 0
-	mockStore.DequeueWithIndependentTransactionContextFunc.SetDefaultHook(func(ctx context.Context, conds []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.SetDefaultHook(func(ctx context.Context, conds []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
 		calls++
-		return store.Index{ID: calls + 10}, mockStore, true, nil
+		return store.Index{ID: calls + 10}, mockWorkerStore, true, nil
 	})
 
-	manager := newManager(mockStore, ManagerOptions{
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
 		UnreportedIndexMaxAge: time.Second,
@@ -199,16 +265,17 @@ func TestBoundedTransactions(t *testing.T) {
 
 func TestHeartbeatRemovesUnknownIndexes(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	clock := glock.NewMockClock()
 
 	calls := 0
-	mockStore.DequeueWithIndependentTransactionContextFunc.SetDefaultHook(func(ctx context.Context, conds []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.SetDefaultHook(func(ctx context.Context, conds []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
 		calls++
-		return store.Index{ID: calls + 10}, mockStore, true, nil
+		return store.Index{ID: calls + 10}, mockWorkerStore, true, nil
 	})
 
-	manager := newManager(mockStore, ManagerOptions{
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
 		UnreportedIndexMaxAge: time.Second,
@@ -232,10 +299,10 @@ func TestHeartbeatRemovesUnknownIndexes(t *testing.T) {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	}
 
-	if callCount := len(mockStore.RequeueFunc.History()); callCount != 2 {
+	if callCount := len(mockWorkerStore.RequeueFunc.History()); callCount != 2 {
 		t.Errorf("unexpected requeue call count. want=%d have=%d", 2, callCount)
 	}
-	if callCount := len(mockStore.DoneFunc.History()); callCount != 2 {
+	if callCount := len(mockWorkerStore.DoneFunc.History()); callCount != 2 {
 		t.Errorf("unexpected done call count. want=%d have=%d", 2, callCount)
 	}
 
@@ -265,16 +332,17 @@ func TestHeartbeatRemovesUnknownIndexes(t *testing.T) {
 
 func TestUnresponsiveIndexer(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	mockWorkerStore := workerstoremocks.NewMockStore()
+	mockWorkerStore.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	clock := glock.NewMockClock()
 
 	calls := 0
-	mockStore.DequeueWithIndependentTransactionContextFunc.SetDefaultHook(func(ctx context.Context, conds []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
+	mockWorkerStore.DequeueWithIndependentTransactionContextFunc.SetDefaultHook(func(ctx context.Context, conds []*sqlf.Query) (workerutil.Record, dbworkerstore.Store, bool, error) {
 		calls++
-		return store.Index{ID: calls + 10}, mockStore, true, nil
+		return store.Index{ID: calls + 10}, mockWorkerStore, true, nil
 	})
 
-	manager := newManager(mockStore, ManagerOptions{
+	manager := newManager(mockStore, mockWorkerStore, ManagerOptions{
 		MaximumTransactions:   10,
 		RequeueDelay:          time.Second,
 		UnreportedIndexMaxAge: time.Second,
@@ -313,10 +381,10 @@ func TestUnresponsiveIndexer(t *testing.T) {
 	// Perform a cleanup
 	_ = manager.Handle(context.Background())
 
-	if callCount := len(mockStore.RequeueFunc.History()); callCount != 5 {
+	if callCount := len(mockWorkerStore.RequeueFunc.History()); callCount != 5 {
 		t.Errorf("unexpected requeue call count. want=%d have=%d", 5, callCount)
 	}
-	if callCount := len(mockStore.DoneFunc.History()); callCount != 5 {
+	if callCount := len(mockWorkerStore.DoneFunc.History()); callCount != 5 {
 		t.Errorf("unexpected done call count. want=%d have=%d", 5, callCount)
 	}
 }

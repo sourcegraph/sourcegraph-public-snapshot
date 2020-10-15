@@ -442,6 +442,8 @@ Triggers:
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
+Indexes:
+    "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 
@@ -497,6 +499,8 @@ Indexes:
  scheme     | text    | not null
  identifier | text    | not null
  data       | bytea   | 
+Indexes:
+    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
 
 ```
 
@@ -507,6 +511,8 @@ Indexes:
  dump_id | integer | not null
  path    | text    | not null
  data    | bytea   | 
+Indexes:
+    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
 
 ```
 
@@ -516,6 +522,8 @@ Indexes:
 -------------------+---------+-----------
  dump_id           | integer | not null
  num_result_chunks | integer | 
+Indexes:
+    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
 
 ```
 
@@ -527,6 +535,8 @@ Indexes:
  scheme     | text    | not null
  identifier | text    | not null
  data       | bytea   | 
+Indexes:
+    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
 
 ```
 
@@ -537,6 +547,8 @@ Indexes:
  dump_id | integer | not null
  idx     | integer | not null
  data    | bytea   | 
+Indexes:
+    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
 
 ```
 
@@ -604,6 +616,7 @@ Indexes:
  indexer         | text                     | not null
  indexer_args    | text[]                   | not null
  outfile         | text                     | not null
+ log_contents    | text                     | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -613,12 +626,14 @@ Check constraints:
 
 # Table "public.lsif_nearest_uploads"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- commit        | text    | not null
- upload_id     | integer | not null
- distance      | integer | not null
+      Column      |  Type   | Modifiers 
+------------------+---------+-----------
+ repository_id    | integer | not null
+ commit           | text    | not null
+ upload_id        | integer | not null
+ distance         | integer | not null
+ ancestor_visible | boolean | not null
+ overwritten      | boolean | not null
 Indexes:
     "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
 
@@ -977,7 +992,7 @@ Triggers:
 ---------------+--------------------------+----------------------------------
  repo_id       | integer                  | not null
  permission    | text                     | not null
- user_ids      | bytea                    | not null
+ user_ids      | bytea                    | not null default '\x'::bytea
  updated_at    | timestamp with time zone | not null
  user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
@@ -991,7 +1006,7 @@ Indexes:
 ---------------+--------------------------+----------------------------------
  repo_id       | integer                  | not null
  permission    | text                     | not null
- user_ids      | bytea                    | not null
+ user_ids      | bytea                    | not null default '\x'::bytea
  updated_at    | timestamp with time zone | not null
  synced_at     | timestamp with time zone | 
  user_ids_ints | integer[]                | not null default '{}'::integer[]
@@ -1153,7 +1168,7 @@ Foreign-key constraints:
  bind_id         | text                     | not null
  permission      | text                     | not null
  object_type     | text                     | not null
- object_ids      | bytea                    | not null
+ object_ids      | bytea                    | not null default '\x'::bytea
  updated_at      | timestamp with time zone | not null
  service_type    | text                     | not null
  service_id      | text                     | not null
@@ -1170,7 +1185,7 @@ Indexes:
  user_id         | integer                  | not null
  permission      | text                     | not null
  object_type     | text                     | not null
- object_ids      | bytea                    | not null
+ object_ids      | bytea                    | not null default '\x'::bytea
  updated_at      | timestamp with time zone | not null
  synced_at       | timestamp with time zone | 
  object_ids_ints | integer[]                | not null default '{}'::integer[]

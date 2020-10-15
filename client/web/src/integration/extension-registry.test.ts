@@ -26,6 +26,8 @@ const typescriptRawManifest = JSON.stringify({
     version: '0.0.0-DEVELOPMENT',
 })
 
+const wordCountBundleUrl = 'https://sourcegraph.com/-/static/extension/sqs-word-count.js'
+
 const wordCountRawManifest = JSON.stringify({
     activationEvents: ['*'],
     browserslist: [],
@@ -40,7 +42,7 @@ const wordCountRawManifest = JSON.stringify({
     readme: '# Word count (Sourcegraph extension))\n',
     scripts: {},
     title: 'Word count',
-    url: 'https://sourcegraph.com/-/static/extension/593-sqs-word-count.js?bpf75c0smaeg--sqs-word-count',
+    url: wordCountBundleUrl,
     version: '0.0.0-DEVELOPMENT',
 })
 
@@ -187,6 +189,10 @@ describe('Extension Registry', () => {
                     },
                 },
             }),
+        })
+        // Mock extension bundle
+        testContext.server.get(wordCountBundleUrl).intercept((request, response) => {
+            response.type('application/javascript; charset=utf-8').send('exports.activate = () => {}')
         })
     }
 

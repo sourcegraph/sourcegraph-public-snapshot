@@ -24,7 +24,7 @@ func TestHandleWithDocker(t *testing.T) {
 	handler := &Handler{
 		queueClient:  queueClient,
 		indexManager: indexManager,
-		commander:    commander,
+		newCommander: func(*IndexJobLogger) Commander { return commander },
 		options: HandlerOptions{
 			FrontendURL:           "https://sourcegraph.test:1234",
 			FrontendURLFromDocker: "https://sourcegraph.test:5432",
@@ -96,7 +96,7 @@ func TestHandleWithFirecracker(t *testing.T) {
 	handler := &Handler{
 		queueClient:  queueClient,
 		indexManager: indexManager,
-		commander:    commander,
+		newCommander: func(*IndexJobLogger) Commander { return commander },
 		options: HandlerOptions{
 			FrontendURL:           "https://sourcegraph.test:1234",
 			FrontendURLFromDocker: "https://sourcegraph.test:5432",

@@ -11,7 +11,7 @@ import {
     ReferenceProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
-import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
+import { ReferenceParameters, TextDocumentPositionParameters } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtensionDocuments } from './documents'
@@ -24,7 +24,7 @@ export class ExtensionLanguageFeatures {
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
         const providerFunction: comlink.Local<
             Parameters<ClientLanguageFeaturesAPI['$registerDefinitionProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParameters) =>
             toProxyableSubscribable(
                 provider.provideDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
@@ -38,7 +38,7 @@ export class ExtensionLanguageFeatures {
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
         const providerFunction: comlink.Local<
             Parameters<ClientLanguageFeaturesAPI['$registerReferenceProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position, context }: ReferenceParams) =>
+        > = comlink.proxy(async ({ textDocument, position, context }: ReferenceParameters) =>
             toProxyableSubscribable(
                 provider.provideReferences(
                     await this.documents.getSync(textDocument.uri),
@@ -58,7 +58,7 @@ export class ExtensionLanguageFeatures {
     ): Unsubscribable {
         const providerFunction: comlink.Local<
             Parameters<ClientLanguageFeaturesAPI['$registerLocationProvider']>[2]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParameters) =>
             toProxyableSubscribable(
                 provider.provideLocations(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
@@ -79,7 +79,7 @@ export class ExtensionLanguageFeatures {
     ): Unsubscribable {
         const providerFunction: comlink.Local<
             Parameters<ClientLanguageFeaturesAPI['$registerCompletionItemProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParameters) =>
             toProxyableSubscribable(
                 provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 items => items

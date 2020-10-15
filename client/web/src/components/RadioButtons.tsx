@@ -39,7 +39,7 @@ interface Props {
     /**
      * Handler for when a radio button is selected.
      */
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
 
     /**
      * id of the currently selected RadioButtonNode.

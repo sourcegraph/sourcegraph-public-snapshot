@@ -21,7 +21,7 @@ import {
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { pluralize } from '../../../shared/src/util/strings'
-import { Form } from './Form'
+import { Form } from '../../../branded/src/components/Form'
 import { RadioButtons } from './RadioButtons'
 import { ErrorMessage } from './alerts'
 import { hasProperty } from '../../../shared/src/util/types'
@@ -342,7 +342,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
     extends ConnectionPropsCommon<N, NP>,
         FilteredConnectionDisplayProps {
     /** Called to fetch the connection data to populate this component. */
-    queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
+    queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined) => void
@@ -351,7 +351,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-export interface FilteredConnectionQueryArgs {
+export interface FilteredConnectionQueryArguments {
     first?: number
     after?: string
     query?: string

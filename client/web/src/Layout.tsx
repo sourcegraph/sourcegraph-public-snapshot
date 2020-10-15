@@ -1,12 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense } from 'react'
+import React, { Suspense, useCallback } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
-import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
-import { ResizablePanel } from '../../shared/src/panel/Panel'
+import { ResizablePanel } from '../../branded/src/components/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ErrorLike } from '../../shared/src/util/errors'
@@ -21,7 +21,6 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
-import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -58,12 +57,13 @@ import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../shared/src/api/contract'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
+import { useExtensionAlertAnimation } from './nav/UserNavItem'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -114,13 +114,13 @@ export interface LayoutProps
     // Search
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: QueryState['query'],
         version: string,
         patternType: SearchPatternType,
         versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
@@ -169,6 +169,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const breadcrumbProps = useBreadcrumbs()
 
+    // Control browser extension discoverability animation here.
+    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
+    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
+    const onExtensionAlertDismissed = useCallback(() => {
+        startExtensionAlertAnimation()
+    }, [startExtensionAlertAnimation])
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -178,6 +185,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const context = {
         ...props,
         ...breadcrumbProps,
+        onExtensionAlertDismissed,
     }
 
     return (
@@ -191,9 +199,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 settingsCascade={props.settingsCascade}
                 history={props.history}
             />
-            {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
-                <IntegrationsToast history={props.history} />
-            )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
@@ -211,6 +216,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
+                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

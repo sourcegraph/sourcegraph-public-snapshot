@@ -13,11 +13,16 @@ import { OrDivider } from './OrDivider'
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
+import { SourcegraphContext } from '../jscontext'
 
 interface SignInPageProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
+    context: Pick<
+        SourcegraphContext,
+        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+    >
 }
 
 export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
@@ -31,7 +36,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
     }
 
     const [[builtInAuthProvider], thirdPartyAuthProviders] = partition(
-        window.context.authProviders,
+        props.context.authProviders,
         provider => provider.isBuiltin
     )
 
@@ -75,7 +80,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         </div>
                     ))}
                 </div>
-                {window.context.allowSignup ? (
+                {props.context.allowSignup ? (
                     <p>
                         New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
                     </p>
@@ -90,11 +95,11 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
             <PageTitle title="Sign in" />
             <HeroPage
                 icon={SourcegraphIcon}
-                iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                iconLinkTo={props.context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
                 lessPadding={true}
                 title={
-                    window.context.sourcegraphDotComMode
+                    props.context.sourcegraphDotComMode
                         ? 'Sign in to Sourcegraph Cloud'
                         : 'Sign in to Sourcegraph Server'
                 }

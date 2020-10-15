@@ -2,7 +2,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
 import {
     FilteredConnection,
-    FilteredConnectionQueryArgs,
+    FilteredConnectionQueryArguments,
     FilteredConnectionFilter,
 } from '../../components/FilteredConnection'
 import { Link } from '../../../../shared/src/components/Link'
@@ -177,7 +177,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryIndexes = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifIndexes({ repository: repo?.id, ...args }),
+        (args: FilteredConnectionQueryArguments) => fetchLsifIndexes({ repository: repo?.id, ...args }),
         [repo?.id, fetchLsifIndexes]
     )
 
@@ -196,7 +196,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 </a>
                 . Enable precise code intelligence for non-Go code by{' '}
                 <a
-                    href="https://docs.sourcegraph.com/user/code_intelligence/precise_code_intelligence"
+                    href="https://docs.sourcegraph.com/user/code_intelligence/explanations/precise_code_intelligence"
                     target="_blank"
                     rel="noreferrer noopener"
                 >

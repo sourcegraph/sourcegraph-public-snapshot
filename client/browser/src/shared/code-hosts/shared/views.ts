@@ -108,7 +108,7 @@ export function trackViews<V extends View>(
 
 export type IntersectionObserverCallbackLike = (
     entries: Pick<IntersectionObserverEntry, 'target' | 'isIntersecting'>[],
-    obs: Pick<IntersectionObserver, 'unobserve'>
+    observer: Pick<IntersectionObserver, 'unobserve'>
 ) => void
 
 export type IntersectionObserverLike = Pick<IntersectionObserver, 'observe' | 'unobserve' | 'disconnect'>

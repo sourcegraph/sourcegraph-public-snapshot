@@ -123,7 +123,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
-	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
+	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	addRegistryRoute(base)

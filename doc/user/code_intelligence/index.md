@@ -1,33 +1,62 @@
 # Code intelligence
 
-Code intelligence provides advanced code navigation features that let developers explore source code. It displays rich metadata about functions, variables, and cross-references in the code. Visit the [features](./features.md) page to learn more or jump to a section for a specific feature:
+<p class="subtitle">Navigate code, with definitions and references</p>
 
-- [Hover tooltips](./features.md#hover-tooltips-with-documentation-and-type-signatures)
-- [Go to definition](./features.md#go-to-definition)
-- [Find references](./features.md#find-references)
-- [Symbol search](./features.md#symbol-search)
- 
-Code intelligence is enabled by [Sourcegraph extensions](../../extensions/index.md) and provides users with two different types of code intelligence; basic and precise. 
+<p class="lead">
+Code intelligence provides advanced code navigation features that let developers explore source code. It displays rich metadata about functions, variables, and cross-references in the code.
+</p>
 
-**Basic** is [search-based code intelligence](./basic_code_intelligence.md) that works out of the box with all of the most popular programming languages via [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22). 
-
-**Precise** code intelligence is an opt-in feature that is enabled in your admin settings and requires you to upload [LSIF data](./lsif_quickstart.md) for each repository to your Sourcegraph instance. Once setup is complete on Sourcegraph, precise code intelligence is available for use across popular development tools:
-
-- On the Sourcegraph web UI
-- On code files on your code host, via [integrations](../../integration/index.md)
-- On diffs in your code review tool, via integrations
-- Via the [Sourcegraph API](https://docs.sourcegraph.com/api/graphql)
-
-## Basic vs Precise
-
-Basic code intelligence is available by default on all Sourcegraph instances and provides fuzzy code intelligence using a combination of ctags and search. It is great for immediate access to code intelligence features, but due to its dependence on text-based search its results are considered imprecise. 
-
-Precise code intelligence returns metadata from a knowledge graph that is generated through code analysis. The precomputation step is used to generate the graph results in lookups that are fast and have a high degree of accuracy. 
-
-To learn more about how to work with each type of code intelligence visit the [basic](./basic_code_intelligence.md) and [precise](./precise_code_intelligence.md) sections.
+<div class="cta-group">
+<a class="btn btn-primary" href="explanations/introduction_to_code_intelligence">★ Introduction to code intelligence</a>
+</div>
 
 ## Getting started
 
-- Setup your [Sourcegraph instance](../../admin/install/index.md), then enable the [Sourcegraph extension](https://docs.sourcegraph.com/extensions) for each language you want to use. The language extensions should be on by default for a new instance.
-- To add code intelligence to your code host and/or code review tool, see the [browser extension](../../integration/browser_extension.md) documentation.
-- Interested in trying it out on public code? See [this sample file](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references) on Sourcegraph Cloud.
+<div class="getting-started">
+  <a href="../../integration/browser_extension" class="btn" alt="Install the browser extension">
+   <span>Install the browser extension</span>
+   </br>
+   Add code intelligence to your code host and/or code review tool by installing the Sourcegraph browser extension.
+  </a>
+
+  <a href="https://www.youtube.com/watch?v=kRFeSK5yCh8" class="btn" alt="Watch the code intelligence demo video">
+   <span>Demo video</span>
+   </br>
+   Watch the code intelligence demo video to see it in action on GitHub.
+  </a>
+
+  <a href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references" class="btn" alt="Try code intelligence on public code">
+   <span>Try on public code</span>
+   </br>
+   Interested in trying code intelligence out on public code? See this sample file on Sourcegraph Cloud.
+  </a>
+</div>
+
+## [Explanations](explanations/index.md)
+
+- [Basic code intelligence](explanations/basic_code_intelligence.md)
+- [Precise code intelligence](explanations/precise_code_intelligence.md)
+- [Features](explanations/features.md)
+  - [Hover tooltips](explanations/features.md#hover-tooltips-with-documentation-and-type-signatures)
+  - [Go to definition](explanations/features.md#go-to-definition)
+  - [Find references](explanations/features.md#find-references)
+  - [Symbol search](explanations/features.md#symbol-search)
+- [Writing an indexer](explanations/writing_an_indexer.md)
+
+## [How-tos](how-to/index.md)
+
+- [LSIF quickstart guide](lsif_quickstart.md)
+- [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
+- [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
+- [Index a Go repository](how-to/index_a_go_repository.md)
+- [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
+
+## [Tutorials](tutorials/index.md)
+
+- TODO: Index a popular public repository for Go
+- TODO: Index a popular public repository for TypeScript
+
+## [References](references/index.md)
+
+- [LSIF.dev](https://lsif.dev/)
+- TODO: Supported languages/indexer status

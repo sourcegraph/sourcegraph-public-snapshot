@@ -10,9 +10,13 @@ import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module)
+    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+        },
+    })
 
 const nodes: ChangesetSpecFields[] = [
     ...Object.values(visibleChangesetSpecStories),

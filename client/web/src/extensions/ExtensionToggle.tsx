@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Toggle } from '../../../shared/src/components/Toggle'
-import { ToggleBig } from '../../../shared/src/components/ToggleBig'
+import { Toggle } from '../../../branded/src/components/Toggle'
+import { ToggleBig } from '../../../branded/src/components/ToggleBig'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import {
     SettingsCascadeProps,

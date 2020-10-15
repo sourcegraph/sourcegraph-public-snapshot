@@ -65,6 +65,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                         </sup>
                     </span>
                 }
+                className="justify-content-end"
                 actions={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign
@@ -107,7 +108,7 @@ export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageP
                 userID,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,
             }),
@@ -130,7 +131,7 @@ export const OrgCampaignListPage: React.FunctionComponent<OrgCampaignListPagePro
                 orgID,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                // The types for FilteredConnectionQueryArgs don't allow access to the filter arguments.
+                // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,
             }),

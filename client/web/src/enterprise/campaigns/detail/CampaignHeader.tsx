@@ -3,6 +3,7 @@ import { CampaignsIconWithBetaBadge } from '../icons'
 import { CampaignFields } from '../../../graphql-operations'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
+import classNames from 'classnames'
 
 interface Props {
     className?: string
@@ -23,6 +24,6 @@ export const CampaignHeader: React.FunctionComponent<Props> = ({ className, name
             </>
         }
         actions={actionSection}
-        className={className}
+        className={classNames('justify-content-end', className)}
     />
 )

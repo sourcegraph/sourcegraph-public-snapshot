@@ -18,12 +18,6 @@ type RepoFields struct {
 	// Description is a brief description of the repository.
 	Description string
 
-	// DEPRECATED: this field is always empty for new repositories as of
-	// https://github.com/sourcegraph/sourcegraph/issues/2586. Do not use it.
-	//
-	// Language is the primary programming language used in this repository.
-	Language string
-
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 
@@ -32,6 +26,9 @@ type RepoFields struct {
 
 	// Cloned is whether this repository is cloned.
 	Cloned bool
+
+	// CreatedAt indicates when the repository record was created.
+	CreatedAt time.Time
 }
 
 // Repo represents a source code repository.
@@ -167,24 +164,6 @@ type SiteActivityPeriod struct {
 	RegisteredUserCount  int32
 	AnonymousUserCount   int32
 	IntegrationUserCount int32
-	Stages               *Stages
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type Stages struct {
-	Manage    int32 `json:"mng"`
-	Plan      int32 `json:"plan"`
-	Code      int32 `json:"code"`
-	Review    int32 `json:"rev"`
-	Verify    int32 `json:"ver"`
-	Package   int32 `json:"pkg"`
-	Deploy    int32 `json:"depl"`
-	Configure int32 `json:"conf"`
-	Monitor   int32 `json:"mtr"`
-	Secure    int32 `json:"sec"`
-	Automate  int32 `json:"auto"`
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -230,18 +209,8 @@ type CodeIntelEventCategoryStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodeIntelEventStatistics struct {
-	UsersCount     int32
-	EventsCount    *int32
-	EventLatencies *CodeIntelEventLatencies
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventLatencies struct {
-	P50 float64
-	P90 float64
-	P99 float64
+	UsersCount  int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -399,6 +368,24 @@ type SavedSearches struct {
 	NotificationsSent    int32
 	NotificationsClicked int32
 	UniqueUserPageViews  int32
+	OrgSavedSearches     int32
+}
+
+// Panel homepage represents interaction data on the
+// enterprise homepage panels.
+type HomepagePanels struct {
+	RecentFilesClickedPercentage           float64
+	RecentSearchClickedPercentage          float64
+	RecentRepositoriesClickedPercentage    float64
+	SavedSearchesClickedPercentage         float64
+	NewSavedSearchesClickedPercentage      float64
+	TotalPanelViews                        float64
+	UsersFilesClickedPercentage            float64
+	UsersSearchClickedPercentage           float64
+	UsersRepositoriesClickedPercentage     float64
+	UsersSavedSearchesClickedPercentage    float64
+	UsersNewSavedSearchesClickedPercentage float64
+	PercentUsersShown                      float64
 }
 
 // Secret represents the secrets table

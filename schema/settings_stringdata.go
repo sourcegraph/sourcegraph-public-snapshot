@@ -62,7 +62,7 @@ const SettingsSchemaJSON = `{
         "showOnboardingTour": {
           "description": "Enables the onboarding tour.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": { "pointer": true }
         },
         "showEnterpriseHomePanels": {
@@ -206,6 +206,12 @@ const SettingsSchemaJSON = `{
       "type": "boolean",
       "default": true,
       "!go": { "pointer": true }
+    },
+    "alerts.codeHostIntegrationMessaging": {
+      "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
+      "type": "string",
+      "enum": ["browser-extension", "native-integration"],
+      "default": "browser-extension"
     },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",

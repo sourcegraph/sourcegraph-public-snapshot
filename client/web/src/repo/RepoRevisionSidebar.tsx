@@ -10,7 +10,7 @@ import {
     Tab,
     TabBorderClassName,
     TabsWithLocalStorageViewStatePersistence,
-} from '../../../shared/src/components/Tabs'
+} from '../../../branded/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { AbsoluteRepoFile } from '../../../shared/src/util/url'

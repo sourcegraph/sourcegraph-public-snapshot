@@ -82,7 +82,7 @@ type Store interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
 	// HardDeleteUploadByID deletes the upload record with the given identifier.
-	HardDeleteUploadByID(ctx context.Context, id int) error
+	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
@@ -98,10 +98,19 @@ type Store interface {
 	// any dump with a root intersecting the given path is returned.
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
+	// FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
+	// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error)
+
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
 	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
+
+	// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
+	// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+	// background.
+	SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
@@ -178,7 +187,10 @@ type Store interface {
 	MarkIndexComplete(ctx context.Context, id int) (err error)
 
 	// MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
-	MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error)
+	MarkIndexErrored(ctx context.Context, id int, failureMessage string) error
+
+	// SetIndexLogContents updates the log contents fo the index.
+	SetIndexLogContents(ctx context.Context, indexID int, contents string) error
 
 	// DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 	// the index is returned along with a store instance which wraps the transaction. This transaction must be
@@ -216,6 +228,9 @@ type Store interface {
 
 	// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error)
+
+	// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 }
 
 type store struct {

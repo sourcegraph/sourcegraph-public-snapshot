@@ -18,7 +18,7 @@ import {
 
 interface Props extends RouteComponentProps<{}> {}
 
-interface FilterParams {
+interface FilterParameters {
     user?: GQL.ID
     serviceType?: string
     serviceID?: string
@@ -79,7 +79,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
     private queryExternalAccounts = (
         args: {
             first?: number
-        } & FilterParams
+        } & FilterParameters
     ): Observable<GQL.IExternalAccountConnection> =>
         queryGraphQL(
             gql`

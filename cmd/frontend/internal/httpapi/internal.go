@@ -157,25 +157,43 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 // Additionally, it only cares about certain search specific settings so this
 // search specific endpoint is used rather than serving the entire site settings
 // from /.internal/configuration.
+//
+// This endpoint also supports batch requests to avoid managing concurrency in
+// zoekt. On vertically scaled instances we have observed zoekt requesting
+// this endpoint concurrently leading to socket starvation.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	repo := r.URL.Query().Get("repo")
-	getVersion := func(branch string) (string, error) {
-		// Do not to trigger a repo-updater lookup since this is a batch job.
-		commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: api.RepoName(repo)}, nil, branch, git.ResolveRevisionOptions{})
-		if err != nil && errcode.HTTP(err) == http.StatusNotFound {
-			// GetIndexOptions wants an empty rev for a missing rev or empty
-			// repo.
-			return "", nil
+	ctx := r.Context()
+	siteConfig := conf.Get().SiteConfiguration
+	getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
+		repo, err := db.Repos.GetByName(ctx, api.RepoName(repoName))
+		if err != nil {
+			return nil, err
 		}
-		return string(commitID), err
+
+		getVersion := func(branch string) (string, error) {
+			// Do not to trigger a repo-updater lookup since this is a batch job.
+			commitID, err := git.ResolveRevision(ctx, gitserver.Repo{Name: repo.Name}, nil, branch, git.ResolveRevisionOptions{})
+			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+				// GetIndexOptions wants an empty rev for a missing rev or empty
+				// repo.
+				return "", nil
+			}
+			return string(commitID), err
+		}
+
+		return &searchbackend.RepoIndexOptions{
+			RepoID:     int32(repo.ID),
+			GetVersion: getVersion,
+		}, nil
 	}
 
-	b, err := searchbackend.GetIndexOptions(&conf.Get().SiteConfiguration, repo, getVersion)
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		return err
 	}
-	_, err = w.Write(b)
-	return err
+
+	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, r.Form["repo"]...)
+	_, _ = w.Write(b)
+	return nil
 }
 
 type reposListServer struct {
