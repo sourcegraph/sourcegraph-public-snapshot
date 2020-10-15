@@ -194,6 +194,12 @@ function changesetUIStateToChangesetFilters(
                 reconcilerState: [ChangesetReconcilerState.COMPLETED],
                 publicationState: ChangesetPublicationState.PUBLISHED,
             }
+        case ChangesetUIState.DRAFT:
+            return {
+                externalState: ChangesetExternalState.DRAFT,
+                reconcilerState: [ChangesetReconcilerState.COMPLETED],
+                publicationState: ChangesetPublicationState.PUBLISHED,
+            }
         case ChangesetUIState.CLOSED:
             return {
                 externalState: ChangesetExternalState.CLOSED,

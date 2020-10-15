@@ -379,6 +379,7 @@ const changesetCountsOverTimeFragment = gql`
         date
         merged
         closed
+        draft
         openApproved
         openChangesRequested
         openPending

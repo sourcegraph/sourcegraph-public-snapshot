@@ -1200,6 +1200,10 @@ type ChangesetCounts {
     """
     closed: Int!
     """
+    The number of draft changesets (independent of review state).
+    """
+    draft: Int!
+    """
     The number of open changesets (independent of review state).
     """
     open: Int!
@@ -1283,6 +1287,7 @@ enum ChangesetReconcilerState {
 The state of a changeset on the code host on which it's hosted.
 """
 enum ChangesetExternalState {
+    DRAFT
     OPEN
     CLOSED
     MERGED

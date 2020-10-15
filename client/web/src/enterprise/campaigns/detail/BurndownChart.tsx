@@ -55,10 +55,11 @@ interface StateDefinition {
 
 type DisplayableChangesetCounts = Pick<
     ChangesetCountsOverTimeFields,
-    'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged'
+    'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged' | 'draft'
 >
 
 const states: Record<keyof DisplayableChangesetCounts, StateDefinition> = {
+    draft: { fill: 'var(--text-muted)', label: 'Draft', sortOrder: 5 },
     openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
     openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
     openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
