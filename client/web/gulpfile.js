@@ -41,6 +41,24 @@ async function webpack() {
   }
 }
 
+/**
+ * Watch files and update the webpack bundle on disk without starting a dev server.
+ */
+async function watchWebpack() {
+  const compiler = createWebpackCompiler(webpackConfig)
+  compiler.hooks.watchRun.tap('Notify', () => log('Webpack compiling...'))
+  await new Promise(() => {
+    compiler.watch({ aggregateTimeout: 300 }, (error, stats) => {
+      logWebpackStats(stats)
+      if (error || stats.hasErrors()) {
+        log.error('Webpack compilation error')
+      } else {
+        log('Webpack compilation done')
+      }
+    })
+  })
+}
+
 async function webpackDevelopmentServer() {
   const sockHost = process.env.SOURCEGRAPH_HTTPS_DOMAIN || 'sourcegraph.test'
   const sockPort = Number(process.env.SOURCEGRAPH_HTTPS_PORT || 3443)
@@ -82,12 +100,29 @@ async function webpackDevelopmentServer() {
 const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), gulp.parallel(webpack))
 
 /**
- * Watches everything and rebuilds on file changes.
+ * Starts a development server, watches everything and rebuilds on file changes.
  */
-const watch = gulp.series(
+const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
   gulp.parallel(schema, graphQlSchema),
   gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, webpackDevelopmentServer)
 )
 
-module.exports = { build, watch, webpackDevServer: webpackDevelopmentServer, webpack }
+/**
+ * Watches everything, rebuilds on file changes and writes the bundle to disk.
+ * Useful to running integration tests.
+ */
+const watch = gulp.series(
+  // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
+  gulp.parallel(schema, graphQlSchema),
+  gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchWebpack)
+)
+
+module.exports = {
+  build,
+  watch,
+  dev: development,
+  webpackDevServer: webpackDevelopmentServer,
+  webpack,
+  watchWebpack,
+}
