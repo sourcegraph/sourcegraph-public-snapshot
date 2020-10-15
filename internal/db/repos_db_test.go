@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -61,14 +60,6 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 		createdRepos = append(createdRepos, repo)
 	}
 	return createdRepos
-}
-
-// Delete the repository row from the repo table. It exists for testing
-// purposes only. Repository mutations are managed by repo-updater.
-func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
-	q := sqlf.Sprintf("DELETE FROM repo WHERE id=%d", repo)
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
 }
 
 // InsertRepoOp represents an operation to insert a repository.
@@ -236,7 +227,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 		t.Fatalf("got %d repos, but want 1", len(repos))
 	}
 
-	// We don't need the RepoFields to indentify a repository.
+	// We don't need the RepoFields to identify a repository.
 	want[0].RepoFields = nil
 	if !jsonEqual(t, repos[0], want[0]) {
 		t.Errorf("got %v, want %v", repos[0], want[0])

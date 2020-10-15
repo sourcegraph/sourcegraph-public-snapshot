@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -389,6 +390,43 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
+
+// Delete deletes repos associated with the given ids and their associated sources.
+func (s *repos) Delete(ctx context.Context, ids ...api.RepoID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// The number of deleted repos can potentially be higher
+	// than the maximum number of arguments we can pass to postgres.
+	// We pass them as a json array instead to overcome this limitation.
+	encodedIds, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(deleteReposQuery, string(encodedIds))
+
+	_, err = dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "delete")
+	}
+
+	return nil
+}
+
+const deleteReposQuery = `
+WITH repo_ids AS (
+  SELECT jsonb_array_elements_text(%s) AS id
+)
+UPDATE repo
+SET
+  name = soft_deleted_repository_name(name),
+  deleted_at = transaction_timestamp()
+FROM repo_ids
+WHERE deleted_at IS NULL
+AND repo.id = repo_ids.id::int
+`
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
 // requested information by other services (repo-updater and
