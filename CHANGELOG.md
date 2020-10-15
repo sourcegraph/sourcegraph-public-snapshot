@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
-:warning: WARNING :warning: For users of single-image Sourcegraph instance, please be sure to delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
+:warning: WARNING :warning: For users of single-image Sourcegraph instance, please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
 
 ### Added
 
