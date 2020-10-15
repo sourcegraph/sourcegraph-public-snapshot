@@ -82,6 +82,16 @@ add('Cloud with repogroups', () => (
 
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
+add('Server without panels, with query builder', () => (
+    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showQueryBuilder={true} />}</WebStory>
+))
+
 add('Server with panels', () => (
     <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} />}</WebStory>
+))
+
+add('Server with panels and query builder', () => (
+    <WebStory>
+        {webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} showQueryBuilder={true} />}
+    </WebStory>
 ))
