@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -102,42 +104,53 @@ type loggingRoundTripper struct {
 	underlying http.RoundTripper
 }
 
-func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	var body string
-	if req.Body != nil {
-		if bodyBytes, err := ioutil.ReadAll(req.Body); err == nil {
-			req.Body.Close()
-			req.Body = ioutil.NopCloser(strings.NewReader(string(bodyBytes)))
-			body = string(bodyBytes)
-		} else {
-			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading request body", "error", err)
-		}
+func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReader io.ReadCloser, err error) {
+	if reader == nil {
+		return "", reader, nil
 	}
-	if len(body) > 1000 {
-		body = body[:1000]
-	}
-	log.Printf(">>>>> HTTP Request: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), req.Header, body)
-
-	resp, err := l.underlying.RoundTrip(req)
+	defer reader.Close()
+	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
-		log.Printf("<<<<< Error getting HTTP response: %s", err)
-	} else {
-		var respBody string
-		if resp.Body != nil {
-			if respBodyBytes, err := ioutil.ReadAll(resp.Body); err == nil {
-				resp.Body.Close()
-				resp.Body = ioutil.NopCloser(strings.NewReader(string(respBodyBytes)))
-				respBody = string(respBodyBytes)
-			} else {
-				log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading response body", "error", err)
-			}
-		}
-		if len(respBody) > 1000 {
-			respBody = respBody[:1000]
-		}
-		log.Printf("<<<<< HTTP Response: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), resp.Header, string(respBody))
+		return "", nil, err
 	}
-	return resp, err
+	preview = string(bytes)
+	if len(preview) > 1000 {
+		preview = preview[:1000]
+	}
+	return preview, ioutil.NopCloser(bytes.NewReader(bytes)), nil
+}
+
+func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	{
+		var err error
+		var preview string
+		preview, req.Body, err = previewAndDuplicateReader(req.Body)
+		if err != nil {
+			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading request body", "error", err)
+			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading request body")
+		}
+		log.Printf(">>>>> HTTP Request: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), req.Header, preview)
+	}
+
+	{
+		resp, err := l.underlying.RoundTrip(req)
+		if err != nil {
+			log.Printf("<<<<< Error getting HTTP response: %s", err)
+			return resp, err
+		}
+	}
+
+	{
+		var err error
+		var preview string
+		preview, resp.Body, err = previewAndDuplicateReader(resp.Body)
+		if err != nil {
+			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading response body", "error", err)
+			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading response body")
+		}
+		log.Printf("<<<<< HTTP Response: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), resp.Header, preview)
+		return resp, err
+	}
 }
 
 func getExactlyOneOAuthProvider() *Provider {
