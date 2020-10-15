@@ -7,8 +7,9 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
+import { ThemeProps } from '../../../../shared/src/theme'
 
-export const AfterInstallPageContent: React.FunctionComponent = () => (
+export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = ({ isLightTheme }) => (
     <div className="web-content after-install-page-content">
         <SourcegraphIcon className="after-install-page-content__sourcegraph-logo" />
 
@@ -23,19 +24,43 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                 <div className="row">
                     <div className="col-sm-6">
                         <h3>Code intelligence on your code host</h3>
-                        <p className="m-0">
+                        <p>
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
                             Enterprise, GitLab, Phabricator, and Bitbucket Server.
                         </p>
-                        {/* Video placeholder */}
+                        <video className="embed-responsive" autoPlay={true} loop={true} muted={true}>
+                            {isLightTheme ? (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_light.mp4"
+                                    type="video/mp4"
+                                />
+                            ) : (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_dark.mp4"
+                                    type="video/mp4"
+                                />
+                            )}
+                        </video>
                     </div>
                     <div className="col-sm-6">
                         <h3>Search shortcut in the URL location bar</h3>
-                        <p className="m-0">
+                        <p>
                             Type <code>src</code>
                             <kbd>space</kbd> in the address bar of your browser to search for queries on Sourcegraph.
                         </p>
-                        {/* Video placeholder */}
+                        <video className="embed-responsive" autoPlay={true} loop={true} muted={true}>
+                            {isLightTheme ? (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_light.mp4"
+                                    type="video/mp4"
+                                />
+                            ) : (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_dark.mp4"
+                                    type="video/mp4"
+                                />
+                            )}
+                        </video>
                     </div>
                 </div>
             </div>
@@ -95,7 +120,21 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             </ol>
                         </div>
                     </div>
-                    <div className="col-sm-6">{/* Video placeholder */}</div>
+                    <div className="col-sm-6">
+                        <video className="embed-responsive" autoPlay={true} loop={true} muted={true}>
+                            {isLightTheme ? (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_light.mp4"
+                                    type="video/mp4"
+                                />
+                            ) : (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_dark.mp4"
+                                    type="video/mp4"
+                                />
+                            )}
+                        </video>
+                    </div>
                 </div>
             </div>
         </section>
@@ -140,7 +179,21 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             </ol>
                         </div>
                     </div>
-                    <div className="col-sm-6">{/* Video placeholder */}</div>
+                    <div className="col-sm-6">
+                        <video className="embed-responsive" autoPlay={true} loop={true} muted={true}>
+                            {isLightTheme ? (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_light.mp4"
+                                    type="video/mp4"
+                                />
+                            ) : (
+                                <source
+                                    src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/code_intelligence_on_the_code_host_installation_page_dark.mp4"
+                                    type="video/mp4"
+                                />
+                            )}
+                        </video>
+                    </div>
                 </div>
             </div>
         </section>
