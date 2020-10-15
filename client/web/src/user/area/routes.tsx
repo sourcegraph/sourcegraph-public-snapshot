@@ -5,7 +5,6 @@ import { lazyComponent } from '../../util/lazyComponent'
 import { UserAreaRoute } from './UserArea'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
-const UserEventLogsPage = lazyComponent(() => import('../UserEventLogsPage'), 'UserEventLogsPage')
 
 export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
