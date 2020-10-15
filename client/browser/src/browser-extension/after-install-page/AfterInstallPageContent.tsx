@@ -13,7 +13,7 @@ const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, i
     const suffix = isLightTheme ? 'light' : 'dark'
     return (
         <video
-            className="embed-responsive"
+            className="embed-responsive cursor-pointer"
             autoPlay={true}
             loop={true}
             muted={true}
