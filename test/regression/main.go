@@ -52,6 +52,18 @@ func main() {
 		log.Fatal("Failed to create token: ", err)
 	}
 
+	siteConfig, err := client.SiteConfiguration()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	siteConfig.ExternalURL = "http://127.0.0.1:7080"
+
+	err = client.UpdateSiteConfiguration(siteConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
 
 	file, err := os.OpenFile("/root/.profile", os.O_APPEND|os.O_WRONLY, 0755)

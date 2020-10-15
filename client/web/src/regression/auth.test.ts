@@ -49,11 +49,11 @@ async function testLogin(
 
     await driver.page.waitForSelector('.test-user-nav-item-toggle')
     await driver.page.click('.test-user-nav-item-toggle')
-    await driver.findElementWithText('Sign out', { action: 'click', wait: { timeout: 2000 } })
-    await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
+    await driver.findElementWithText('Sign out', { action: 'click', wait: { timeout: 20000 } })
+    await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 20000 } })
     await driver.page.goto(sourcegraphBaseUrl)
-    await driver.findElementWithText('Sign in', { wait: { timeout: 5000 } })
-    await driver.findElementWithText('Forgot password?', { wait: { timeout: 5000 } })
+    await driver.findElementWithText('Sign in', { wait: { timeout: 50000 } })
+    await driver.findElementWithText('Forgot password?', { wait: { timeout: 50000 } })
 }
 
 describe('Auth regression test suite', () => {
