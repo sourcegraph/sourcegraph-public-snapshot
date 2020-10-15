@@ -195,7 +195,7 @@ func TestRepos_Get(t *testing.T) {
 	service := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -296,7 +296,7 @@ func TestRepos_List(t *testing.T) {
 	service := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
