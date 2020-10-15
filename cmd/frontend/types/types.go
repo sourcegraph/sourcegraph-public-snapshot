@@ -27,9 +27,6 @@ type RepoFields struct {
 	// Cloned is whether this repository is cloned.
 	Cloned bool
 
-	// Language is the primary programming language used in this repository.
-	Language string
-
 	// CreatedAt indicates when the repository record was created.
 	CreatedAt time.Time
 
