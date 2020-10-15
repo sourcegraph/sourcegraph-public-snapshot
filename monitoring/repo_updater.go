@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+var syncDurationThreshold = 9 * time.Hour
+
 func RepoUpdater() *Container {
 	return &Container{
 		Name:        "repo-updater",
@@ -37,7 +39,7 @@ func RepoUpdater() *Container {
 							Description:       "time since oldest sync",
 							Query:             `max(src_repoupdater_max_sync_backoff)`,
 							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(8 * time.Hour.Seconds()).For(10 * time.Minute),
+							Critical:          Alert().GreaterOrEqual(syncDurationThreshold.Seconds()).For(10 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Make sure there are external services added with valid tokens",
@@ -49,7 +51,7 @@ func RepoUpdater() *Container {
 							Description:       "sync was started",
 							Query:             `sum by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().LegendFormat("{{family}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for errors.",
@@ -81,7 +83,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories synced",
 							Query:             `sum by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().LegendFormat("{{state}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check network connectivity to code hosts",
@@ -91,7 +93,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories sourced",
 							Query:             `sum(rate(src_repoupdater_source_repos_total[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check network connectivity to code hosts",
@@ -126,7 +128,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories scheduled due to hitting a deadline",
 							Query:             `sum(rate(src_repoupdater_sched_auto_fetch[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
@@ -136,7 +138,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories scheduled due to user traffic",
 							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
@@ -168,7 +170,7 @@ func RepoUpdater() *Container {
 							Description:       "scheduler loops",
 							Query:             `sum(rate(src_repoupdater_sched_loops[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts",
