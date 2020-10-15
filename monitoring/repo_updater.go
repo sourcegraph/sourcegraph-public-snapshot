@@ -35,7 +35,7 @@ func RepoUpdater() *Container {
 						Observable{
 							Name:              "src_repoupdater_max_sync_backoff",
 							Description:       "time since oldest sync",
-							Query:             `sum(src_repoupdater_max_sync_backoff)`,
+							Query:             `max(src_repoupdater_max_sync_backoff)`,
 							DataMayNotExist:   true,
 							Critical:          Alert().GreaterOrEqual(8 * time.Hour.Seconds()).For(10 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Seconds),
