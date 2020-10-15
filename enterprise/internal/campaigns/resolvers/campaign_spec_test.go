@@ -58,7 +58,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetSpec, err := campaigns.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "deadb33f", campaigns.PublishedValue{Val: false}))
+	changesetSpec, err := campaigns.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "deadb33f"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -66,7 +66,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}{
 		{
 			name:    "GitBranchChangesetDescription",
-			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: false}),
+			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
@@ -121,7 +121,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		},
 		{
 			name:    "GitBranchChangesetDescription Draft",
-			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
+			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
