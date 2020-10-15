@@ -1,7 +1,7 @@
 name: Scan latest container
 on:
-  push:
-    branches: [ck-13557]
+  schedule:
+  - cron: '5 5 * * *'
 
 jobs:
   scan:
