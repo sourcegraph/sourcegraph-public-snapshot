@@ -283,7 +283,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				BaseRef: "refs/heads/master",
 				Changeset: &campaigns.Changeset{
 					Metadata: &github.PullRequest{
-						ID: "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
+						ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDU4Njg1",
 					},
 				},
 			},
