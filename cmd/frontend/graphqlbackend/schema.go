@@ -1599,6 +1599,10 @@ type ChangesetConnectionStats {
     """
     unpublished: Int!
     """
+    The count of externalState: DRAFT changesets.
+    """
+    draft: Int!
+    """
     The count of externalState: OPEN changesets.
     """
     open: Int!

@@ -231,6 +231,7 @@ type CampaignsConnectionResolver interface {
 
 type ChangesetsConnectionStatsResolver interface {
 	Unpublished() int32
+	Draft() int32
 	Open() int32
 	Merged() int32
 	Closed() int32

@@ -27,6 +27,7 @@ const changesetStatsFragment = gql`
         total
         closed
         deleted
+        draft
         merged
         open
         unpublished

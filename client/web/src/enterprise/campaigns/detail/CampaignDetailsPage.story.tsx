@@ -37,8 +37,9 @@ const campaignDefaults: CampaignFields = {
         stats: {
             closed: 1,
             deleted: 1,
+            draft: 1,
             merged: 2,
-            open: 3,
+            open: 2,
             total: 10,
             unpublished: 4,
         },

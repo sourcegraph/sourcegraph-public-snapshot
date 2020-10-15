@@ -249,7 +249,9 @@ function mockCommonGraphQLResponses(
             campaign: {
                 __typename: 'Campaign',
                 id: 'campaign123',
-                changesets: { stats: { closed: 2, deleted: 1, merged: 3, open: 10, total: 19, unpublished: 3 } },
+                changesets: {
+                    stats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
+                },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),
