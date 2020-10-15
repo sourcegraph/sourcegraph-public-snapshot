@@ -2,7 +2,7 @@ env:
   VAGRANT_RUN_ENV: "CI"
 
 steps:
-- artifact_paths: ./puppeteer/*.png;./e2e.mp4;./ffmpeg.log
+- artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
   # setting to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
   command:
     - .buildkite/test.sh sourcegraph-regression || true
