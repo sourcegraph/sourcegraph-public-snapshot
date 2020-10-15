@@ -20,6 +20,14 @@
       },
     },
     {
+      "label": "Watch web app",
+      "detail": "Watch files and build the JavaScript bundle (no development server).",
+      "type": "npm",
+      "script": "watch-web",
+      "problemMatcher": [],
+      "isBackground": true,
+    },
+    {
       "label": "Watch code generation",
       "detail": "Watch files and generate types when files are changed",
       "type": "npm",
