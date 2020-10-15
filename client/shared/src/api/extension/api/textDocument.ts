@@ -107,10 +107,10 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
 
     public getText(range?: sourcegraph.Range): string | undefined {
         this.throwIfNoModelText()
+        range = range ? this.validateRange(range) : undefined
         if (!range) {
             return undefined
         }
-        range = this.validateRange(range)
         const { start, end } = range
 
         if (start.line === end.line) {
