@@ -315,6 +315,18 @@ export async function loginToGitHub(driver: Driver, username: string, password: 
         enterTextMethod: 'paste',
     })
     await driver.page.keyboard.press('Enter')
+
+    // 2fa screen: we have 2fa for the GitHub Account because otherwise they force every device
+    // accessing the account to be verified through the email address first.
+    await driver.page.waitForNavigation({ timeout: 5000 })
+    await driver.page.waitForSelector('#otp')
+    await driver.replaceText({
+        selector: '#otp',
+        newText: '<requires manual entry>',
+        selectMethod: 'keyboard',
+        enterTextMethod: 'paste',
+    })
+    await driver.page.waitForNavigation({ timeout: 15000 })
 }
 
 export async function loginToGitLab(driver: Driver, username: string, password: string): Promise<void> {
