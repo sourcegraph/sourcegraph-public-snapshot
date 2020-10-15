@@ -29,7 +29,7 @@ import webExt from 'web-ext'
 import { isDefined } from '../util/types'
 import { getConfig } from './config'
 import { ExternalServiceKind } from '../graphql-operations'
-import delay from 'delay';
+import delay from 'delay'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
