@@ -164,7 +164,7 @@ func RepoUpdater() *Container {
 							Critical:          Alert().GreaterOrEqual(0).For(30 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs. The queue length should trend downwards over time as items are sent to GitServer",
+							PossibleSolutions: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",
 						},
 						Observable{
 							Name:              "sched_loops",
