@@ -3191,20 +3191,20 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]
 ```
 
-## repo-updater: sched_update_queue_length_derivative
+## repo-updater: sched_update_queue_length
 
 **Descriptions:**
 
-- _repo-updater: 0+ derivative of update queue length over 5 minutes for 30m0s_
+- _repo-updater: 0+ rate of growth of update queue length over 5 minutes for 30m0s_
 
 **Possible solutions:**
 
-- Check repo-updater logs. The queue length should trend downwards over time as items are sent to GitServer
+- Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "critical_repo-updater_sched_update_queue_length_derivative"
+  "critical_repo-updater_sched_update_queue_length"
 ]
 ```
 
