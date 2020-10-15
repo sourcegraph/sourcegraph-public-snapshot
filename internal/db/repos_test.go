@@ -150,6 +150,39 @@ func TestRepos_Count(t *testing.T) {
 	}
 }
 
+func TestRepos_Delete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if want := 1; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	repos, err := Repos.List(ctx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Repos.Delete(ctx, repos[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
 func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

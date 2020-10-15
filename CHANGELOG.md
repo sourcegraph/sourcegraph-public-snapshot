@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+:warning: WARNING :warning: For users of single-image Sourcegraph instance, please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
+
 ### Added
 
 -
@@ -23,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- The `file:` added to the search field when navigating to a tree or file view will now behave correctly when the file path contains spaces. [#12296](https://github.com/sourcegraph/sourcegraph/issues/12296).
 
 ### Removed
 

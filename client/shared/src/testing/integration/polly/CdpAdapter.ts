@@ -212,6 +212,7 @@ export class CdpAdapter extends PollyAdapter {
             if (
                 isErrorLike(error) &&
                 (error.message.endsWith('Session closed. Most likely the page has been closed.') ||
+                    error.message.endsWith('Target closed.') ||
                     // Invalid interceptionId probably means the request has been aborted.
                     error.message.includes('Invalid InterceptionId'))
             ) {

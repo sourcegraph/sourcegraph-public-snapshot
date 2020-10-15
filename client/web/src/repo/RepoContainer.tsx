@@ -27,6 +27,7 @@ import {
     InteractiveSearchProps,
     repoFilterForRepoRevision,
     CopyQueryButtonProps,
+    quoteIfNeeded,
 } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -316,7 +317,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         } else {
             let query = searchQueryForRepoRevision(repoName, globbing, revision)
             if (filePath) {
-                query = `${query.trimEnd()} file:${globbing ? filePath : '^' + escapeRegExp(filePath)}`
+                query = `${query.trimEnd()} file:${quoteIfNeeded(globbing ? filePath : '^' + escapeRegExp(filePath))}`
             }
             onNavbarQueryChange({
                 query,
