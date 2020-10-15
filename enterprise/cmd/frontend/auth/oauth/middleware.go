@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"io/ioutil"
@@ -109,15 +110,15 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 		return "", reader, nil
 	}
 	defer reader.Close()
-	bytes, err := ioutil.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return "", nil, err
 	}
-	preview = string(bytes)
+	preview = string(b)
 	if len(preview) > 1000 {
 		preview = preview[:1000]
 	}
-	return preview, ioutil.NopCloser(bytes.NewReader(bytes)), nil
+	return preview, ioutil.NopCloser(bytes.NewReader(b)), nil
 }
 
 func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -132,12 +133,10 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		log.Printf(">>>>> HTTP Request: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), req.Header, preview)
 	}
 
-	{
-		resp, err := l.underlying.RoundTrip(req)
-		if err != nil {
-			log.Printf("<<<<< Error getting HTTP response: %s", err)
-			return resp, err
-		}
+	resp, err := l.underlying.RoundTrip(req)
+	if err != nil {
+		log.Printf("<<<<< Error getting HTTP response: %s", err)
+		return resp, err
 	}
 
 	{

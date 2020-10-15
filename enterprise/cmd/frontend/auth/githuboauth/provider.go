@@ -62,7 +62,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 	}), messages
 }
 
-var clientIDSecretValidator = lazyregexp.MustCompile("^[a-z0-9]*$")
+var clientIDSecretValidator = lazyregexp.New("^[a-z0-9]*$")
 
 func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
