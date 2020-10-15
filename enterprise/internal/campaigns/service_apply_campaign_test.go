@@ -955,7 +955,7 @@ type testSpecOpts struct {
 
 	// If this is set along with headRef, the changesetSpec will have published
 	// set.
-	published bool
+	published interface{}
 
 	title             string
 	body              string
@@ -975,6 +975,15 @@ func createChangesetSpec(
 ) *campaigns.ChangesetSpec {
 	t.Helper()
 
+	published := campaigns.PublishedValue{Val: opts.published}
+	if opts.published == nil {
+		// Set false as the default.
+		published.Val = false
+	}
+	if !published.Valid() {
+		t.Fatalf("invalid value for published passed, got %v (%T)", opts.published, opts.published)
+	}
+
 	spec := &campaigns.ChangesetSpec{
 		UserID:         opts.user,
 		RepoID:         opts.repo,
@@ -984,7 +993,7 @@ func createChangesetSpec(
 
 			ExternalID: opts.externalID,
 			HeadRef:    opts.headRef,
-			Published:  opts.published,
+			Published:  published,
 
 			Title: opts.title,
 			Body:  opts.body,

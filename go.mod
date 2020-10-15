@@ -151,7 +151,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
-	github.com/sourcegraph/campaignutils v0.0.0-20200930165749-a8777d33a817
+	github.com/sourcegraph/campaignutils v0.0.0-20201014140011-721315691938
 	github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-ctags v0.0.0-20200922223002-071e508aa451
