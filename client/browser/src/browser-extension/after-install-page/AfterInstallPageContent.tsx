@@ -18,6 +18,8 @@ const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, i
             loop={true}
             muted={true}
             onClick={event => event.currentTarget.requestFullscreen()}
+            // Add a key on the theme to force React to render a new <video> element when the theme changes
+            key={name + suffix}
         >
             <source
                 src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_${suffix}.webm`}
