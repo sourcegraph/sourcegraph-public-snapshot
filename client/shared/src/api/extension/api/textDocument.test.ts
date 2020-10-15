@@ -33,6 +33,7 @@ describe('ExtensionDocument', () => {
             end: { line: 0, character: 5 },
         }))
 
+    // No need to test invalid ranges for `getText` since that is handled by `validateRange` and `validatePosition`
     test('getText (one line)', () => {
         const document = textDocument('aa bb cc')
         expect(document.getText(document.getWordRangeAtPosition(new Position(0, 3)))).toEqual('bb')

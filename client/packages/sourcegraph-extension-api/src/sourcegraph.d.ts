@@ -378,7 +378,7 @@ declare module 'sourcegraph' {
          * Get the substring of text content from the provided range.
          *
          * @param range A range
-         * @returns The text inside the provided range, or `undefined`
+         * @returns The text inside the provided range, or the whole text if no range is provided
          */
         getText(range?: Range): string | undefined
     }
@@ -723,6 +723,8 @@ declare module 'sourcegraph' {
         /**
          * Display the results of the location provider (with the given ID) in this panel below the
          * {@link PanelView#contents}.
+         *
+         * Experimental. Subject to change or removal without notice.
          *
          * @internal
          */
