@@ -52,7 +52,7 @@ func (p PublishedValue) MarshalJSON() ([]byte, error) {
 			v := "null"
 			return []byte(v), nil
 		}
-		return nil, errors.New("invalid value")
+		return nil, fmt.Errorf("invalid PublishedValue: %s (%T)", p.Val, p.Val)
 	}
 	if p.True() {
 		v := "true"
