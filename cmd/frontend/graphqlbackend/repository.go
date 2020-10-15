@@ -282,7 +282,7 @@ func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
 
 func (r *RepositoryResolver) ToRepository() (*RepositoryResolver, bool) { return r, true }
 func (r *RepositoryResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
-func (r *RepositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
 	return nil, false
 }
 
