@@ -893,10 +893,6 @@ INSERT INTO external_service_repos (
 FROM inserted_sources_list
 `
 
-// DefaultSetClonedReposStep is used to determine the number of repos per page
-// the SetClonedRepos function must update.
-var DefaultSetClonedReposStep = 400_000
-
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.
@@ -918,7 +914,7 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 
 	sort.Strings(repoNames)
 
-	step := DefaultSetClonedReposStep
+	step := ConfRepoSetClonedBatchSize()
 
 	for i := 0; i < len(repoNames); i += step {
 		firstIdx := i
