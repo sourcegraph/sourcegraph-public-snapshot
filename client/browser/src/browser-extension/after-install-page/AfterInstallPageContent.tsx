@@ -201,7 +201,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             rel="noopener"
                             target="_blank"
                         >
-                            Sourcegraph Documentation
+                            Sourcegraph docs
                         </a>{' '}
                         to learn more about how we respect your privacy, troubleshooting and extension features.
                     </p>
