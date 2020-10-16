@@ -180,3 +180,10 @@ html {
 .cursor-pointer {
     cursor: pointer;
 }
+
+.embed-responsive {
+    // Set this to allow setting width and height attributs in HTML/TSX
+    // according to https://web.dev/optimize-cls/#modern-best-practice
+    // which gives the browser aspect-ratio hints.
+    height: auto;
+}
