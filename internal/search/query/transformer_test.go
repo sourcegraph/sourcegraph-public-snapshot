@@ -402,7 +402,7 @@ func TestExpandOr(t *testing.T) {
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			queries := dnf(query)
+			queries := Dnf(query)
 			var queriesStr []string
 			for _, q := range queries {
 				queriesStr = append(queriesStr, prettyPrint(q))
@@ -876,11 +876,11 @@ func TestConcatRevFilters(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			queries := dnf(query)
+			queries := Dnf(query)
 
 			var queriesStr []string
 			for _, q := range queries {
-				qConcat := concatRevFilters(q)
+				qConcat := ConcatRevFilters(q)
 				queriesStr = append(queriesStr, prettyPrint(qConcat))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
@@ -912,7 +912,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			qConcat := concatRevFilters(query)
+			qConcat := ConcatRevFilters(query)
 			if diff := cmp.Diff(c.want, prettyPrint(qConcat)); diff != "" {
 				t.Error(diff)
 			}
