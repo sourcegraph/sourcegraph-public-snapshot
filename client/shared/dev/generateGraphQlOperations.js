@@ -2,6 +2,7 @@
 
 const { generate } = require('@graphql-codegen/cli')
 const path = require('path')
+const isInputNewer = require('./isInputNewer')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
@@ -32,6 +33,50 @@ const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`,
  * @param {{ watch?: boolean }} [options]
  */
 async function generateGraphQlOperations({ watch } = {}) {
+  const allGenerateOperations = {
+    [path.join(BROWSER_FOLDER, './src/graphql-operations.ts')]: {
+      documents: BROWSER_DOCUMENTS_GLOB,
+      config: {
+        onlyOperationTypes: true,
+        noExport: false,
+        enumValues: '../../shared/src/graphql-operations',
+        interfaceNameForOperations: 'BrowserGraphQlOperations',
+      },
+      plugins,
+    },
+    [path.join(WEB_FOLDER, './src/graphql-operations.ts')]: {
+      documents: WEB_DOCUMENTS_GLOB,
+      config: {
+        onlyOperationTypes: true,
+        noExport: false,
+        enumValues: '../../shared/src/graphql-operations',
+        interfaceNameForOperations: 'WebGraphQlOperations',
+      },
+      plugins,
+    },
+    [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
+      documents: SHARED_DOCUMENTS_GLOB,
+      config: {
+        onlyOperationTypes: true,
+        noExport: false,
+        interfaceNameForOperations: 'SharedGraphQlOperations',
+      },
+      plugins,
+    },
+  }
+  const generateOperations = {}
+  for (const outfile of Object.keys(allGenerateOperations)) {
+    const inputs = allGenerateOperations[outfile].documents
+    if (watch || (await isInputNewer(inputs, outfile))) {
+      generateOperations[outfile] = allGenerateOperations[outfile]
+    } else {
+      console.log(`skipping generation of ${outfile}, because all inputs were older`)
+    }
+  }
+  if (Object.keys(generateOperations).length === 0) {
+    return
+  }
+
   await generate(
     {
       watch,
@@ -64,39 +109,7 @@ async function generateGraphQlOperations({ watch } = {}) {
           PublishedValue: "boolean | 'draft'",
         },
       },
-      generates: {
-        [path.join(BROWSER_FOLDER, './src/graphql-operations.ts')]: {
-          documents: BROWSER_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '../../shared/src/graphql-operations',
-            interfaceNameForOperations: 'BrowserGraphQlOperations',
-          },
-          plugins,
-        },
-
-        [path.join(WEB_FOLDER, './src/graphql-operations.ts')]: {
-          documents: WEB_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            enumValues: '../../shared/src/graphql-operations',
-            interfaceNameForOperations: 'WebGraphQlOperations',
-          },
-          plugins,
-        },
-
-        [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
-          documents: SHARED_DOCUMENTS_GLOB,
-          config: {
-            onlyOperationTypes: true,
-            noExport: false,
-            interfaceNameForOperations: 'SharedGraphQlOperations',
-          },
-          plugins,
-        },
-      },
+      generates: generateOperations,
     },
     true
   )
