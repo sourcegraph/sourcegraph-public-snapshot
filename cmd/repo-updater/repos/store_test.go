@@ -1195,6 +1195,13 @@ func isCloned(r *repos.Repo) bool {
 func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
+	// setting the step to a small number to test the pagination system used by SetClonedRepos
+	oldValue := repos.DefaultSetClonedReposStep
+	repos.DefaultSetClonedReposStep = 3
+	defer func() {
+		repos.DefaultSetClonedReposStep = oldValue
+	}()
+
 	return func(t *testing.T) {
 		var repositories repos.Repos
 		for i := 0; i < 3; i++ {

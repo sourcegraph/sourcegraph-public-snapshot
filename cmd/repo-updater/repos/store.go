@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"sort"
 	"strings"
 	"time"
 
@@ -892,30 +893,58 @@ INSERT INTO external_service_repos (
 FROM inserted_sources_list
 `
 
+// DefaultSetClonedReposStep is used to determine the number of repos per page
+// the SetClonedRepos function must update.
+var DefaultSetClonedReposStep = 100_000
+
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.
+// Note: This method must be called from within a transaction.
 func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
 	if len(repoNames) == 0 {
 		return nil
 	}
 
-	names, err := json.Marshal(repoNames)
-	if err != nil {
-		return nil
+	if _, ok := s.db.(*sql.Tx); !ok {
+		return errors.New("SetClonedRepos: not in transaction")
 	}
 
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)))
+	sort.Strings(repoNames)
 
-	_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	step := DefaultSetClonedReposStep
+
+	for i := 0; i < len(repoNames); i += step {
+		firstIdx := i
+		lastIdx := i + step
+		if lastIdx >= len(repoNames) {
+			lastIdx = len(repoNames) - 1
+		}
+
+		first := repoNames[firstIdx]
+		last := repoNames[lastIdx]
+
+		names, err := json.Marshal(repoNames[firstIdx : lastIdx+1])
+		if err != nil {
+			return nil
+		}
+
+		q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)), first, last)
+
+		_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
 --
 -- This query generates a diff by selecting only
--- the repos that need to be updated.
+-- the repos that need to be updated for the selected page.
 -- Selected repos will have their cloned column reversed if
 -- their cloned column is true but they are not in cloned_repos
 -- or they are in cloned_repos but their cloned column is false.
@@ -928,10 +957,14 @@ diff AS (
     cloned
   FROM repo
   WHERE
-    NOT cloned
-      AND name IN (SELECT name::citext FROM cloned_repos)
-    OR cloned
-      AND name NOT IN (SELECT name::citext FROM cloned_repos)
+	  name BETWEEN %s AND %s
+	AND
+    (
+		NOT cloned
+		  AND name IN (SELECT name::citext FROM cloned_repos)
+		OR cloned
+		  AND name NOT IN (SELECT name::citext FROM cloned_repos)
+	)
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
