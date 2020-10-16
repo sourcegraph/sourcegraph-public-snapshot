@@ -159,3 +159,8 @@
 /user/repository/badges /user/personalization/badges 308
 /user/quick_links   /user/personalization/quick_links 308
 /user/themes    /user/personalization/themes 308
+
+/user/search /code_search 308
+/user/campaigns /campaigns 308
+/user/code_intelligence /code_intelligence 308
+/user /getting-started 308
