@@ -16,7 +16,7 @@ const Video: React.FunctionComponent<
     const suffix = isLightTheme ? 'Light' : 'Dark'
     return (
         <video
-            className="embed-responsive cursor-pointer"
+            className="w-100 h-auto cursor-pointer"
             width={width}
             height={height}
             autoPlay={true}
