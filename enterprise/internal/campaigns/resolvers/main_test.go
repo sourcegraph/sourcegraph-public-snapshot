@@ -216,14 +216,6 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != baseRev {
-			t.Fatalf("git.Mocks.ResolveRevision received unknown rev spec: %s", spec)
-		}
-		return api.CommitID(baseRev), nil
-	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
-
 	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
 		if string(id) != baseRev && string(id) != headRev {
 			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
