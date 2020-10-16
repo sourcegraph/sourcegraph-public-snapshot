@@ -5,5 +5,5 @@ import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
 import brandedStyles from '../../branded.scss'
 
 storiesOf('browser/AfterInstallPage', module).add('Default', () => (
-    <BrandedStory styles={brandedStyles}>{() => <AfterInstallPageContent />}</BrandedStory>
+    <BrandedStory styles={brandedStyles}>{AfterInstallPageContent}</BrandedStory>
 ))
