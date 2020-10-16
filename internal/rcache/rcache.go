@@ -217,30 +217,23 @@ func SetupForTest(t TB) {
 // is determined by the Lua config LUAI_MAXCSTACK
 // which is 8000 by default.
 // See https://www.lua.org/source/5.1/luaconf.h.html
-// Increase or decrease this value if the Redis configuration changes.
-var deleteBatchSize = 8000
+var deleteBatchSize = 5000
 
 func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
 	const script = `
 redis.replicate_commands()
 local cursor = "0"
-local keys = {}
-repeat
-	local result = redis.call('SCAN', cursor, 'MATCH', ARGV[1])
-	for _, v in ipairs(result[2]) do
-		keys[#keys+1] = v
-	end
-	cursor = result[1]
-until cursor == "0"
-
-local i = 0
 local batchSize = ARGV[2]
-
 local result = ''
-while i < #keys do
-	result = redis.call('del', unpack(keys, i + 1, math.min(i + batchSize, #keys)))
-	i = i + batchSize
-end
+repeat
+	local keys = redis.call('SCAN', cursor, 'MATCH', ARGV[1], 'COUNT', batchSize)
+	if #keys[2] > 0
+	then
+		result = redis.call('DEL', unpack(keys[2]))
+	end
+
+	cursor = keys[1]
+until cursor == "0"
 return result
 `
 
