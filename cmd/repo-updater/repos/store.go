@@ -909,7 +909,7 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 	if !ok {
 		txstore, err := s.Transact(ctx)
 		if err != nil {
-			return errors.Wrap(err, "scanRepo: failed to create a transaction")
+			return errors.Wrap(err, "SetClonedRepos: failed to create a transaction")
 		}
 		defer txstore.Done(&err)
 		err = txstore.SetClonedRepos(ctx, repoNames...)
