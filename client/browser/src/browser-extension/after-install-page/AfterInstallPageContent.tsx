@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { VideoHTMLAttributes } from 'react'
 import LockIcon from 'mdi-react/LockIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
@@ -9,11 +9,15 @@ import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
 import { ThemeProps } from '../../../../shared/src/theme'
 
-const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, isLightTheme }) => {
-    const suffix = isLightTheme ? 'light' : 'dark'
+const Video: React.FunctionComponent<
+    { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
+> = ({ name, isLightTheme, width, height }) => {
+    const suffix = isLightTheme ? 'Light' : 'Dark'
     return (
         <video
             className="embed-responsive cursor-pointer"
+            width={width}
+            height={height}
             autoPlay={true}
             loop={true}
             muted={true}
@@ -23,11 +27,11 @@ const Video: React.FunctionComponent<{ name: string } & ThemeProps> = ({ name, i
             key={name + suffix}
         >
             <source
-                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_${suffix}.webm`}
+                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}${suffix}.webm`}
                 type="video/webm"
             />
             <source
-                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}_${suffix}.mp4`}
+                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}${suffix}.mp4`}
                 type="video/mp4"
             />
         </video>
@@ -53,7 +57,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
                             Enterprise, GitLab, Phabricator, and Bitbucket Server.
                         </p>
-                        <Video {...props} name="CodeIntelligenceOnCodeHost" />
+                        <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
                     </div>
                     <div className="col-sm-6">
                         <h3>Search shortcut in the URL location bar</h3>
@@ -61,7 +65,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             Type <code>src</code>
                             <kbd>space</kbd> in the address bar of your browser to search for queries on Sourcegraph.
                         </p>
-                        <Video {...props} name="BrowserShortcut" />
+                        <Video {...props} name="BrowserShortcut" width={1196} height={720} />
                     </div>
                 </div>
             </div>
@@ -69,10 +73,10 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
 
         <section className="border-bottom py-5">
             <div className="container">
-                <h2 className="mb-4">Make it work on your codehost</h2>
                 <div className="row">
-                    <div className="col-sm-6">
-                        <div className="bg-2 rounded p-3 mb-3">
+                    <div className="col-sm-6 d-flex flex-column">
+                        <h2 className="mb-4">Make it work on your codehost</h2>
+                        <div className="bg-2 rounded p-3 mb-3 flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="mb-3 after-install-page-content__code-host-titles">
                                 <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
                                 github.com
@@ -82,7 +86,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 default.
                             </p>
                         </div>
-                        <div className="bg-2 rounded p-3">
+                        <div className="bg-2 rounded p-3 flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
                                 <div className="mr-5 mb-3">
                                     <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
@@ -122,7 +126,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         </div>
                     </div>
                     <div className="col-sm-6">
-                        <Video {...props} name="GrantPermissions" />
+                        <Video {...props} name="GrantPermissions" width={1762} height={1384} />
                     </div>
                 </div>
             </div>
@@ -130,11 +134,11 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
 
         <section className="border-bottom py-5">
             <div className="container">
-                <h2 className="mb-4">Make it work for private code</h2>
                 <div className="row">
-                    <div className="col-sm-6">
+                    <div className="col-sm-6 d-flex flex-column">
+                        <h2 className="mb-4">Make it work for private code</h2>
                         <p>By default, the browser extension works only for public code.</p>
-                        <div className="d-flex w-100 align-items-center">
+                        <div className="flex-grow-1 d-flex align-items-center">
                             <div className="bg-3 rounded-circle p-2">
                                 <LockIcon className="icon-inline" />
                             </div>
@@ -143,9 +147,9 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 <strong>private Sourcegraph instance</strong> and connect the extension to it.
                             </p>
                         </div>
-                        <div className="bg-2 rounded p-3 mt-4">
+                        <div className="flex-grow-1 bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
                             <p>Follow these instructions:</p>
-                            <ol className="m-0">
+                            <ol className="m-0 flex-grow-1 d-flex flex-column justify-content-around">
                                 <li>
                                     <strong>Install Sourcegraph</strong> (
                                     <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener">
@@ -169,7 +173,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         </div>
                     </div>
                     <div className="col-sm-6">
-                        <Video {...props} name="PrivateInstance" />
+                        <Video {...props} name="PrivateInstance" width={1764} height={1390} />
                     </div>
                 </div>
             </div>
