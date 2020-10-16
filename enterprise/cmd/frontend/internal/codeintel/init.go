@@ -2,7 +2,9 @@ package codeintel
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -13,12 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -44,10 +46,11 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	codeIntelDB := mustInitializeCodeIntelDatabase()
+
 	store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-	bundleManagerClient := bundles.New(bundleManagerURL)
-	commitUpdater := commits.NewUpdater(store, codeintelgitserver.DefaultClient)
-	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient, commitUpdater), observationContext)
+	bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL)
+	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
 	if err != nil {
 		return fmt.Errorf("failed to initialize hunk cache: %s", err)
@@ -73,4 +76,24 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 
 	enterpriseServices.NewCodeIntelInternalProxyHandler = h
 	return nil
+}
+
+func mustInitializeCodeIntelDatabase() *sql.DB {
+	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	conf.Watch(func() {
+		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+		}
+	})
+
+	db, err := dbconn.New(postgresDSN, "_codeintel")
+	if err != nil {
+		log.Fatalf("failed to connect to codeintel database: %s", err)
+	}
+
+	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+		log.Fatalf("failed to perform codeintel database migration: %s", err)
+	}
+
+	return db
 }

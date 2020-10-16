@@ -59,7 +59,7 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
 		// Proxy only the known routes in the index queue API
-		base.Path("/index-queue/{rest:(?:dequeue|complete|heartbeat)}").Handler(reverseProxy(indexerOrigin))
+		base.Path("/index-queue/{rest:(?:dequeue|setlog|complete|heartbeat)}").Handler(reverseProxy(indexerOrigin))
 
 		// Upload LSIF indexes without a sudo access token or github tokens
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)

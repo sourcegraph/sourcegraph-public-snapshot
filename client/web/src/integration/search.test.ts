@@ -8,6 +8,7 @@ import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/scr
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
+import { createTreeEntriesResult } from './graphQlResponseHelpers'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -85,6 +86,7 @@ describe('Search', () => {
 
     describe('Interactive search mode', () => {
         const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
+            ...commonWebGraphQlResults,
             ViewerSettings: () => ({
                 viewerSettings: {
                     subjects: [
@@ -259,6 +261,23 @@ describe('Search', () => {
                         defaultBranch: { abbrevName: 'master' },
                     },
                 }),
+                TreeEntries: () =>
+                    createTreeEntriesResult('github.com/sourcegraph/jsonrpc2', [
+                        '.travis.yml',
+                        'LICENSE',
+                        'README.md',
+                        'async.go',
+                        'call_opt.go',
+                        'codec_test.go',
+                        'conn_opt.go',
+                        'go.mod',
+                        'go.sum',
+                        'handler_with_error.go',
+                        'jsonrpc2.go',
+                        'jsonrpc2_test.go',
+                        'object_test.go',
+                        'stream.go',
+                    ]),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
             await driver.page.waitForSelector('.filter-input')

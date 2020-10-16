@@ -169,7 +169,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                         <div className={classNames('hover-overlay__hover-error', this.props.errorAlertClassName)}>
                             {upperFirst(hoverOrError.message)}
                         </div>
-                    ) : hoverOrError === null ? (
+                    ) : hoverOrError === null || (!hoverOrError?.contents.length && hoverOrError?.alerts?.length) ? (
                         // Show some content to give the close button space
                         // and communicate to the user we couldn't find a hover.
                         <em>No hover information available.</em>
@@ -296,7 +296,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
         )
     }
 
-    private onAlertDismissedCallback(alertType: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
+    private onAlertDismissedCallback(alertType: string): (event: React.MouseEvent<HTMLAnchorElement>) => void {
         return event => {
             event.preventDefault()
             if (this.props.onAlertDismissed) {

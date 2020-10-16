@@ -12,6 +12,8 @@ import { SearchPatternType } from '../graphql-operations'
 type SearchEvent =
     | { type: 'filematches'; matches: FileMatch[] }
     | { type: 'repomatches'; matches: RepositoryMatch[] }
+    | { type: 'commitmatches'; matches: CommitMatch[] }
+    | { type: 'symbolmatches'; matches: FileSymbolMatch[] }
     | { type: 'filters'; filters: Filter[] }
 
 interface FileMatch extends RepositoryMatch {
@@ -25,7 +27,36 @@ interface FileMatch extends RepositoryMatch {
 interface LineMatch {
     line: string
     lineNumber: number
-    offsetAndLengths: [[number]]
+    offsetAndLengths: number[][]
+}
+
+interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches'> {
+    symbols: SymbolMatch[]
+}
+
+interface SymbolMatch {
+    url: string
+    name: string
+    containerName: string
+    kind: string
+}
+
+type MarkdownText = string
+
+/**
+ * Our batch based client requests generic fields from GraphQL to represent repo and commit/diff matches.
+ * We currently are only using it for commit. To simplify the PoC we are keeping this interface for commits.
+ *
+ * @see GQL.IGenericSearchResultInterface
+ */
+interface CommitMatch {
+    icon: string
+    label: MarkdownText
+    url: string
+    detail: MarkdownText
+
+    content: MarkdownText
+    ranges: number[][]
 }
 
 type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
@@ -46,7 +77,7 @@ const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
     preview: line.line,
 })
 
-function toGQLFileMatch(fm: FileMatch): GQL.IFileMatch {
+function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches'>): GQL.IFileMatch {
     let revision = ''
     if (fm.branches) {
         const branch = fm.branches[0]
@@ -78,13 +109,35 @@ function toGQLFileMatch(fm: FileMatch): GQL.IFileMatch {
         revSpec: null,
         resource: fm.name,
         symbols: [],
-        lineMatches: fm.lineMatches.map(toGQLLineMatch),
+        lineMatches: [],
         limitHit: false,
     }
 }
 
+const toGQLFileMatch = (fm: FileMatch): GQL.IFileMatch => ({
+    ...toGQLFileMatchBase(fm),
+    lineMatches: fm.lineMatches.map(toGQLLineMatch),
+})
+
+function toGQLSymbol(symbol: SymbolMatch): GQL.ISymbol {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    return {
+        __typename: 'Symbol',
+        ...symbol,
+    } as GQL.ISymbol
+}
+
+const toGQLSymbolMatch = (fm: FileSymbolMatch): GQL.IFileMatch => ({
+    ...toGQLFileMatchBase(fm),
+    symbols: fm.symbols.map(toGQLSymbol),
+})
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-const toMarkdown = (text: string): GQL.IMarkdown => ({ __typename: 'Markdown', text } as GQL.IMarkdown)
+const toMarkdown = (text: string | MarkdownText): GQL.IMarkdown => ({ __typename: 'Markdown', text } as GQL.IMarkdown)
+
+// copy-paste from search_repositories.go. When we move away from GQL types this shouldn't be part of the API.
+const repoIcon =
+    'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K'
 
 function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     const branch = repo?.branches?.[0]
@@ -94,9 +147,7 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     // We only need to return the subset defined in IGenericSearchResultInterface
     const gqlRepo: unknown = {
         __typename: 'Repository',
-        // copy-pasta from repositories.go :'(
-        icon:
-            'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K',
+        icon: repoIcon,
         label: toMarkdown(`[${label}](/${label})`),
         url: '/' + label,
         detail: toMarkdown('Repository name match'),
@@ -104,6 +155,33 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     }
 
     return gqlRepo as GQL.IRepository
+}
+
+//
+function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
+    const match = {
+        __typename: 'SearchResultMatch',
+        url: commit.url,
+        body: toMarkdown(commit.content),
+        highlights: commit.ranges.map(([line, character, length]) => ({
+            __typename: 'IHighlight',
+            line,
+            character,
+            length,
+        })),
+    }
+
+    // We only need to return the subset defined in IGenericSearchResultInterface
+    const gqlCommit: unknown = {
+        __typename: 'CommitSearchResult',
+        icon: commit.icon,
+        label: toMarkdown(commit.label),
+        url: commit.url,
+        detail: toMarkdown(commit.detail),
+        matches: [match],
+    }
+
+    return gqlCommit as GQL.ICommitSearchResult
 }
 
 const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => ({
@@ -151,6 +229,20 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
                     ...results,
                     // Repository matches are additive
                     results: results.results.concat(newEvent.matches.map(toGQLRepositoryMatch)),
+                }
+
+            case 'commitmatches':
+                return {
+                    ...results,
+                    // Generic matches are additive
+                    results: results.results.concat(newEvent.matches.map(toGQLCommitMatch)),
+                }
+
+            case 'symbolmatches':
+                return {
+                    ...results,
+                    // symbol matches are additive
+                    results: results.results.concat(newEvent.matches.map(toGQLSymbolMatch)),
                 }
 
             case 'filters':
@@ -210,8 +302,18 @@ export function search(
                 .subscribe(observer)
         )
         subscriptions.add(
+            observeMessages<FileSymbolMatch[]>(eventSource, 'symbolmatches')
+                .pipe(map(matches => ({ type: 'symbolmatches' as const, matches })))
+                .subscribe(observer)
+        )
+        subscriptions.add(
             observeMessages<RepositoryMatch[]>(eventSource, 'repomatches')
                 .pipe(map(matches => ({ type: 'repomatches' as const, matches })))
+                .subscribe(observer)
+        )
+        subscriptions.add(
+            observeMessages<CommitMatch[]>(eventSource, 'commitmatches')
+                .pipe(map(matches => ({ type: 'commitmatches' as const, matches })))
                 .subscribe(observer)
         )
         subscriptions.add(

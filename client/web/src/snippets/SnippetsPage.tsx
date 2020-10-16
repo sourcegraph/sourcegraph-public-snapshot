@@ -14,7 +14,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { WebEditorCompletionWidget } from '../components/shared'
-import { setElementTooltip } from '../components/tooltip/Tooltip'
+import { setElementTooltip } from '../../../branded/src/components/tooltip/Tooltip'
 
 interface Props extends ExtensionsControllerProps {
     location: H.Location

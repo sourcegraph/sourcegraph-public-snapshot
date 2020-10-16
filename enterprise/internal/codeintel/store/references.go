@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 )
 
 // scanPackageReferences scans a slice of package references from the return value of `*store.query`.
@@ -47,7 +48,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		sqlf.Sprintf("r.scheme = %s", scheme),
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
-		sqlf.Sprintf("r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit = %s)", repositoryID, commit),
+		sqlf.Sprintf("r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit = %s AND NOT overwritten)", repositoryID, commit),
 	}
 
 	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
@@ -118,13 +119,12 @@ func (s *store) UpdatePackageReferences(ctx context.Context, references []types.
 		return nil
 	}
 
-	var values []*sqlf.Query
+	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_references", "dump_id", "scheme", "name", "version", "filter")
 	for _, r := range references {
-		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s, %s)", r.DumpID, r.Scheme, r.Name, r.Version, r.Filter))
+		if err := inserter.Insert(ctx, r.DumpID, r.Scheme, r.Name, r.Version, r.Filter); err != nil {
+			return err
+		}
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
-		VALUES %s
-	`, sqlf.Join(values, ",")))
+	return inserter.Flush(ctx)
 }

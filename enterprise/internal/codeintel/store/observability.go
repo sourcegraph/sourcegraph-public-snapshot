@@ -32,7 +32,9 @@ type ObservedStore struct {
 	resetStalledOperation                          *observation.Operation
 	getDumpByIDOperation                           *observation.Operation
 	findClosestDumpsOperation                      *observation.Operation
+	findClosestDumpsFromGraphFragmentOperation     *observation.Operation
 	deleteOldestDumpOperation                      *observation.Operation
+	softDeleteOldDumpsOperation                    *observation.Operation
 	deleteOverlappingDumpsOperation                *observation.Operation
 	getPackageOperation                            *observation.Operation
 	updatePackagesOperation                        *observation.Operation
@@ -54,6 +56,7 @@ type ObservedStore struct {
 	insertIndexOperation                           *observation.Operation
 	markIndexCompleteOperation                     *observation.Operation
 	markIndexErroredOperation                      *observation.Operation
+	setIndexLogContentsOperation                   *observation.Operation
 	dequeueIndexOperation                          *observation.Operation
 	requeueIndexOperation                          *observation.Operation
 	deleteIndexByIdOperation                       *observation.Operation
@@ -63,6 +66,7 @@ type ObservedStore struct {
 	repoNameOperation                              *observation.Operation
 	getRepositoriesWithIndexConfigurationOperation *observation.Operation
 	getIndexConfigurationByRepositoryIDOperation   *observation.Operation
+	deleteUploadsStuckUploadingOperation           *observation.Operation
 }
 
 var _ Store = &ObservedStore{}
@@ -71,7 +75,7 @@ var _ Store = &ObservedStore{}
 func NewObserved(store Store, observationContext *observation.Context) Store {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"code_intel_store",
+		"code_intel_frontend_db_store",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
@@ -173,9 +177,19 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"find_closest_dumps"},
 			Metrics:      metrics,
 		}),
+		findClosestDumpsFromGraphFragmentOperation: observationContext.Operation(observation.Op{
+			Name:         "store.FindClosestDumpsFromGraphFragment",
+			MetricLabels: []string{"find_closest_dumps_from_graph_fragment"},
+			Metrics:      metrics,
+		}),
 		deleteOldestDumpOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteOldestDump",
 			MetricLabels: []string{"delete_oldest_dump"},
+			Metrics:      metrics,
+		}),
+		softDeleteOldDumpsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.SoftDeleteOldDumps",
+			MetricLabels: []string{"soft_delete_old_dumps"},
 			Metrics:      metrics,
 		}),
 		deleteOverlappingDumpsOperation: observationContext.Operation(observation.Op{
@@ -283,6 +297,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"mark_index_errored"},
 			Metrics:      metrics,
 		}),
+		setIndexLogContentsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.SetIndexLogContents",
+			MetricLabels: []string{"set_index_log_contents"},
+			Metrics:      metrics,
+		}),
 		dequeueIndexOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DequeueIndex",
 			MetricLabels: []string{"dequeue_index"},
@@ -328,6 +347,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"get_index_configuration_by_repository_id"},
 			Metrics:      metrics,
 		}),
+		deleteUploadsStuckUploadingOperation: observationContext.Operation(observation.Op{
+			Name:         "store.DeleteUploadsStuckUploading",
+			MetricLabels: []string{"delete_uploads_stuck_uploading"},
+			Metrics:      metrics,
+		}),
 	}
 }
 
@@ -358,7 +382,9 @@ func (s *ObservedStore) wrap(other Store) Store {
 		resetStalledOperation:                          s.resetStalledOperation,
 		getDumpByIDOperation:                           s.getDumpByIDOperation,
 		findClosestDumpsOperation:                      s.findClosestDumpsOperation,
+		findClosestDumpsFromGraphFragmentOperation:     s.findClosestDumpsFromGraphFragmentOperation,
 		deleteOldestDumpOperation:                      s.deleteOldestDumpOperation,
+		softDeleteOldDumpsOperation:                    s.softDeleteOldDumpsOperation,
 		deleteOverlappingDumpsOperation:                s.deleteOverlappingDumpsOperation,
 		getPackageOperation:                            s.getPackageOperation,
 		updatePackagesOperation:                        s.updatePackagesOperation,
@@ -380,6 +406,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		insertIndexOperation:                           s.insertIndexOperation,
 		markIndexCompleteOperation:                     s.markIndexCompleteOperation,
 		markIndexErroredOperation:                      s.markIndexErroredOperation,
+		setIndexLogContentsOperation:                   s.setIndexLogContentsOperation,
 		dequeueIndexOperation:                          s.dequeueIndexOperation,
 		requeueIndexOperation:                          s.requeueIndexOperation,
 		deleteIndexByIdOperation:                       s.deleteIndexByIdOperation,
@@ -389,6 +416,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		repoNameOperation:                              s.repoNameOperation,
 		getRepositoriesWithIndexConfigurationOperation: s.getRepositoriesWithIndexConfigurationOperation,
 		getIndexConfigurationByRepositoryIDOperation:   s.getIndexConfigurationByRepositoryIDOperation,
+		deleteUploadsStuckUploadingOperation:           s.deleteUploadsStuckUploadingOperation,
 	}
 }
 
@@ -534,10 +562,10 @@ func (s *ObservedStore) DeleteUploadsWithoutRepository(ctx context.Context, now 
 }
 
 // HardDeleteUploadByID calls into the inner store and registers the observed results.
-func (s *ObservedStore) HardDeleteUploadByID(ctx context.Context, id int) (err error) {
+func (s *ObservedStore) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
 	ctx, endObservation := s.hardDeleteUploadByIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.HardDeleteUploadByID(ctx, id)
+	return s.store.HardDeleteUploadByID(ctx, ids...)
 }
 
 // ResetStalled calls into the inner store and registers the observed results.
@@ -561,11 +589,25 @@ func (s *ObservedStore) FindClosestDumps(ctx context.Context, repositoryID int, 
 	return s.store.FindClosestDumps(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer)
 }
 
+// FindClosestDumpsFromGraphFragment calls into the inner store and registers the observed results.
+func (s *ObservedStore) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) (dumps []Dump, err error) {
+	ctx, endObservation := s.findClosestDumpsFromGraphFragmentOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
+	return s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer, graph)
+}
+
 // DeleteOldestDump calls into the inner store and registers the observed results.
 func (s *ObservedStore) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error) {
 	ctx, endObservation := s.deleteOldestDumpOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.DeleteOldestDump(ctx)
+}
+
+// SoftDeleteOldDumps calls into the inner store and registers the observed results.
+func (s *ObservedStore) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, endObservation := s.softDeleteOldDumpsOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(count), observation.Args{}) }()
+	return s.store.SoftDeleteOldDumps(ctx, maxAge, now)
 }
 
 // DeleteOverlappingDumps calls into the inner store and registers the observed results.
@@ -715,6 +757,13 @@ func (s *ObservedStore) MarkIndexErrored(ctx context.Context, id int, failureMes
 	return s.store.MarkIndexErrored(ctx, id, failureMessage)
 }
 
+// SetIndexLogContents calls into the inner store and registers the observed results.
+func (s *ObservedStore) SetIndexLogContents(ctx context.Context, id int, contents string) (err error) {
+	ctx, endObservation := s.setIndexLogContentsOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.SetIndexLogContents(ctx, id, contents)
+}
+
 // DequeueIndex calls into the inner store and registers the observed results.
 func (s *ObservedStore) DequeueIndex(ctx context.Context) (_ Index, _ Store, _ bool, err error) {
 	ctx, endObservation := s.dequeueIndexOperation.With(ctx, &err, observation.Args{})
@@ -783,4 +832,11 @@ func (s *ObservedStore) GetIndexConfigurationByRepositoryID(ctx context.Context,
 	ctx, endObservation := s.getIndexConfigurationByRepositoryIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
+}
+
+// DeleteUploadsStuckUploading calls into the inner store and registers the observed results.
+func (s *ObservedStore) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+	ctx, endObservation := s.deleteUploadsStuckUploadingOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
 }

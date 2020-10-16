@@ -438,7 +438,7 @@ func substituteOrForRegexp(nodes []Node) []Node {
 		}
 		return false
 	}
-	new := []Node{}
+	newNode := []Node{}
 	for _, node := range nodes {
 		switch v := node.(type) {
 		case Operator:
@@ -449,19 +449,19 @@ func substituteOrForRegexp(nodes []Node) []Node {
 					values = append(values, node.(Pattern).Value)
 				}
 				valueString := "(" + strings.Join(values, ")|(") + ")"
-				new = append(new, Pattern{Value: valueString})
+				newNode = append(newNode, Pattern{Value: valueString})
 				if len(rest) > 0 {
 					rest = substituteOrForRegexp(rest)
-					new = newOperator(append(new, rest...), Or)
+					newNode = newOperator(append(newNode, rest...), Or)
 				}
 			} else {
-				new = append(new, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
+				newNode = append(newNode, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}
 		case Parameter, Pattern:
-			new = append(new, node)
+			newNode = append(newNode, node)
 		}
 	}
-	return new
+	return newNode
 }
 
 func fuzzyRegexp(patterns []Pattern) Pattern {
@@ -495,10 +495,11 @@ func space(patterns []Pattern) Pattern {
 	}
 }
 
-// substituteConcat calls the callback function for all contiguous patterns in
-// the tree, rooted by a concat operator. The return value of callback is
+// substituteConcat returns a function that concatenates all contiguous patterns
+// in the tree, rooted by a concat operator. The callback parameter defines how
+// the function concatenates patterns. The return value of callback is
 // substituted in-place in the tree.
-func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
+func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
@@ -537,7 +538,6 @@ func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
 					}
 					if len(ps) > 0 {
 						newNode = append(newNode, callback(ps))
-						ps = []Pattern{}
 					}
 				} else {
 					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
@@ -546,7 +546,7 @@ func substituteConcat(nodes []Node, callback func([]Pattern) Pattern) []Node {
 		}
 		return newNode
 	}
-	return substituteNodes(nodes)
+	return substituteNodes
 }
 
 // escapeParens is a heuristic used in the context of regular expression search.
@@ -658,6 +658,21 @@ func concatRevFilters(nodes []Node) []Node {
 			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
 		}
 		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+	})
+}
+
+// labelStructural converts Literal labels to Structural labels. Structural
+// queries are parsed the same as literal queries, we just convert the labels as
+// a postprocessing step to keep the parser lean.
+func labelStructural(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		annotation.Labels.unset(Literal)
+		annotation.Labels.set(Structural)
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
 	})
 }
 

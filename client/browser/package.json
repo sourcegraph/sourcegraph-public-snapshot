@@ -43,6 +43,9 @@
     },
     {
       "path": "./build/dist/css/style.bundle.css"
+    },
+    {
+      "path": "./build/dist/css/branded-style.bundle.css"
     }
   ]
 }

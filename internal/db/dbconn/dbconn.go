@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -166,19 +167,52 @@ func Open(dataSource string) (*sql.DB, error) {
 // be used by health checks.
 func Ping(ctx context.Context) error { return Global.PingContext(ctx) }
 
+type key int
+
+const bulkInsertionKey key = iota
+
+// BulkInsertion returns true if the bulkInsertionKey context value is true.
+func BulkInsertion(ctx context.Context) bool {
+	v, ok := ctx.Value(bulkInsertionKey).(bool)
+	if !ok {
+		return false
+	}
+	return v
+}
+
+// WithBulkInsertion sets the bulkInsertionKey context value.
+func WithBulkInsertion(ctx context.Context, bulkInsertion bool) context.Context {
+	return context.WithValue(ctx, bulkInsertionKey, bulkInsertion)
+}
+
 type hook struct{}
+
+// postgresBulkInsertRowPattern matches `($1, $2, $3), ($4, $5, $6), ...` which
+// we use to cut out the row payloads from bulk insertion tracing data. We don't
+// need all the parameter data for such requests, which are too big to fit into
+// Jaeger spans.
+var postgresBulkInsertRowPattern = lazyregexp.New(`(\([$\d,\s]+\)[,\s]*)+`)
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+	if BulkInsertion(ctx) {
+		query = string(postgresBulkInsertRowPattern.ReplaceAll([]byte(query), []byte("...")))
+	}
+
 	tr, ctx := trace.New(ctx, "sql", query,
 		trace.Tag{Key: "span.kind", Value: "client"},
 		trace.Tag{Key: "db.type", Value: "sql"},
 	)
-	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
-		for i, arg := range args {
-			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%v", arg))
-		}
-	}))
+
+	if !BulkInsertion(ctx) {
+		tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
+			for i, arg := range args {
+				fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%v", arg))
+			}
+		}))
+	} else {
+		tr.LogFields(otlog.Bool("bulk_insert", true), otlog.Int("num_args", len(args)))
+	}
 
 	return ctx, nil
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -105,7 +106,7 @@ func getTotalReposCount(ctx context.Context) (_ int, err error) {
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestats.GetUsersActiveTodayCount(ctx)
+	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
 }
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
@@ -141,6 +142,16 @@ func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err
 		return nil, err
 	}
 	return json.Marshal(savedSearches)
+}
+
+func getAndMarshalHomepagePanelsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
+
+	homepagePanels, err := usagestats.GetHomepagePanels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(homepagePanels)
 }
 
 func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
@@ -190,6 +201,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
+		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
 	}
 
@@ -240,6 +252,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
+		}
+
+		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalHomepagePanelsJSON failed", "error", err)
 		}
 
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
@@ -300,6 +317,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		Argument:        json.RawMessage(contents),
 		Timestamp:       time.Now().UTC(),
 	})
+
 	return bytes.NewReader(contents), err
 }
 

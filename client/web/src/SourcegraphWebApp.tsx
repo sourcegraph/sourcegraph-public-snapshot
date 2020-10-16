@@ -21,7 +21,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
-import { Tooltip } from './components/tooltip/Tooltip'
+import { Tooltip } from '../../branded/src/components/tooltip/Tooltip'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -185,6 +185,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether we show the mulitiline editor at /search/console
      */
     showMultilineSearchConsole: boolean
+
+    /**
+     * Whether we show the mulitiline editor at /search/query-builder
+     */
+    showQueryBuilder: boolean
 }
 
 const notificationClassNames = {
@@ -269,6 +274,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
+            showQueryBuilder: false,
         }
     }
 
@@ -450,6 +456,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                    showQueryBuilder={this.state.showQueryBuilder}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}

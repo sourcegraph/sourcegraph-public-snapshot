@@ -118,7 +118,7 @@ func ExternalDoer() Doer {
 // NOTE: Use this for legacy code. New code should generally take in a
 // httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
 // and passed down.
-func ExternalHTTPClient() Doer {
+func ExternalHTTPClient() *http.Client {
 	externalInit()
 	return externalHTTPClient
 }

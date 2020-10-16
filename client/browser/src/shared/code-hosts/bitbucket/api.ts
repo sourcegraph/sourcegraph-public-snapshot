@@ -4,7 +4,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { DiffResolvedRevSpec } from '../../repo'
+import { DiffResolvedRevisionSpec } from '../../repo'
 import { BitbucketRepoInfo } from './scrape'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
 
@@ -34,7 +34,7 @@ interface Repo {
     public: boolean
 }
 
-interface Ref {
+interface Reference {
     /**
      * The branch name.
      */
@@ -48,8 +48,8 @@ interface Ref {
 }
 
 interface PRResponse {
-    fromRef: Ref
-    toRef: Ref
+    fromRef: Reference
+    toRef: Reference
 }
 
 /**
@@ -57,7 +57,7 @@ interface PRResponse {
  */
 export const getCommitsForPR: (
     info: BitbucketRepoInfo & { prID: number }
-) => Observable<DiffResolvedRevSpec> = memoizeObservable(
+) => Observable<DiffResolvedRevisionSpec> = memoizeObservable(
     ({ project, repoSlug, prID }) =>
         get<PRResponse>(buildURL(project, repoSlug, `/pull-requests/${prID}`)).pipe(
             map(({ fromRef, toRef }) => ({ baseCommitID: toRef.latestCommit, headCommitID: fromRef.latestCommit }))

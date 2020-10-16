@@ -21,6 +21,9 @@ type Manager interface {
 	// locks that record to the given indexer.
 	Dequeue(ctx context.Context, indexerName string) (store.Index, bool, error)
 
+	// SetLogContents updates a currently processing index record with the given log contents.
+	SetLogContents(ctx context.Context, indexerName string, indexID int, contents string) error
+
 	// Complete marks the target index record as complete or errored depending on the existence of
 	// an error message, then finalizes the transaction that locks that record.
 	Complete(ctx context.Context, indexerName string, indexID int, errorMessage string) (bool, error)
@@ -58,7 +61,8 @@ type ManagerWithHandler interface {
 }
 
 type manager struct {
-	store            dbworkerstore.Store
+	store            store.Store
+	workerStore      dbworkerstore.Store
 	options          ManagerOptions
 	clock            glock.Clock
 	indexers         map[string]*indexerMeta
@@ -83,11 +87,11 @@ type indexMeta struct {
 }
 
 // New creates a new manager with the given store and options.
-func New(store dbworkerstore.Store, options ManagerOptions) ManagerWithHandler {
-	return newManager(store, options, glock.NewRealClock())
+func New(store store.Store, workerStore dbworkerstore.Store, options ManagerOptions) ManagerWithHandler {
+	return newManager(store, workerStore, options, glock.NewRealClock())
 }
 
-func newManager(store dbworkerstore.Store, options ManagerOptions, clock glock.Clock) ManagerWithHandler {
+func newManager(store store.Store, workerStore dbworkerstore.Store, options ManagerOptions, clock glock.Clock) ManagerWithHandler {
 	dequeueSemaphore := make(chan struct{}, options.MaximumTransactions)
 	for i := 0; i < options.MaximumTransactions; i++ {
 		dequeueSemaphore <- struct{}{}
@@ -95,6 +99,7 @@ func newManager(store dbworkerstore.Store, options ManagerOptions, clock glock.C
 
 	return &manager{
 		store:            store,
+		workerStore:      workerStore,
 		options:          options,
 		clock:            clock,
 		dequeueSemaphore: dequeueSemaphore,
@@ -162,7 +167,7 @@ func (m *manager) Dequeue(ctx context.Context, indexerName string) (_ store.Inde
 		}
 	}()
 
-	record, tx, dequeued, err := m.store.DequeueWithIndependentTransactionContext(ctx, nil)
+	record, tx, dequeued, err := m.workerStore.DequeueWithIndependentTransactionContext(ctx, nil)
 	if err != nil {
 		return store.Index{}, false, err
 	}
@@ -193,10 +198,27 @@ func (m *manager) addMeta(indexerName string, meta indexMeta) {
 	indexer.lastUpdate = now
 }
 
+// SetLogContents updates a currently processing index record with the given log contents.
+func (m *manager) SetLogContents(ctx context.Context, indexerName string, indexID int, contents string) error {
+	index, ok := m.findMeta(indexerName, indexID, false)
+	if !ok {
+		return nil
+	}
+
+	// We're holding the index in a transaction, so if we want to modify that record we
+	// need to do it in the same transaction. Here, we call the SetIndexLogContents method
+	// on the codeintel store using the transaction attached to the processing index record.
+	if err := m.store.With(index.tx).SetIndexLogContents(ctx, indexID, contents); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Complete marks the target index record as complete or errored depending on the existence of
 // an error message, then finalizes the transaction that locks that record.
 func (m *manager) Complete(ctx context.Context, indexerName string, indexID int, errorMessage string) (bool, error) {
-	index, ok := m.findMeta(indexerName, indexID)
+	index, ok := m.findMeta(indexerName, indexID, true)
 	if !ok {
 		return false, nil
 	}
@@ -208,9 +230,9 @@ func (m *manager) Complete(ctx context.Context, indexerName string, indexID int,
 	return true, nil
 }
 
-// findMeta finds and returns an index meta value matching the given index identifier. If found,
-// the meta value is removed from the indexer.
-func (m *manager) findMeta(indexerName string, indexID int) (indexMeta, bool) {
+// findMeta finds and returns an index meta value matching the given index identifier. If remove is
+// true and the meta value is found, it is removed from the manager.
+func (m *manager) findMeta(indexerName string, indexID int, remove bool) (indexMeta, bool) {
 	m.m.Lock()
 	defer m.m.Unlock()
 
@@ -220,14 +242,15 @@ func (m *manager) findMeta(indexerName string, indexID int) (indexMeta, bool) {
 	}
 
 	for i, meta := range indexer.metas {
-		if meta.index.ID != indexID {
-			continue
-		}
+		if meta.index.ID == indexID {
+			if remove {
+				l := len(indexer.metas) - 1
+				indexer.metas[i] = indexer.metas[l]
+				indexer.metas = indexer.metas[:l]
+			}
 
-		l := len(indexer.metas) - 1
-		indexer.metas[i] = indexer.metas[l]
-		indexer.metas = indexer.metas[:l]
-		return meta, true
+			return meta, true
+		}
 	}
 
 	return indexMeta{}, false

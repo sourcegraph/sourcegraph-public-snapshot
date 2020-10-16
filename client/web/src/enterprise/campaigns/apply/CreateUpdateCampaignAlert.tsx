@@ -38,35 +38,39 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
     }, [specID, setIsLoading, history, campaignID])
     return (
         <>
-            <div className="alert alert-info p-3 mb-3 d-flex align-items-center body-lead">
-                <h2 className="m-0 mr-3">
+            <div className="alert alert-info p-3 mb-3 d-block d-md-flex align-items-center body-lead">
+                <h2 className="m-0 mr-3 create-update-campaign-alert__badge">
                     <span className="badge badge-info text-uppercase mb-0">Preview</span>
                 </h2>
                 {!campaign && (
-                    <p className="mb-0 flex-grow-1 mr-3">
+                    <p className="mb-0 flex-grow-1 mr-3 create-update-campaign-alert__copy">
                         Review the proposed changesets below. Click 'Apply spec' or run 'src campaigns apply' against
                         your campaign spec to create the campaign and perform the indicated action on each changeset.
                     </p>
                 )}
                 {campaign && (
-                    <p className="mb-0 flex-grow-1 mr-3">
+                    <p className="mb-0 flex-grow-1 mr-3 create-update-campaign-alert__copy">
                         This operation will update the existing campaign <Link to={campaign.url}>{campaign.name}</Link>.
                         Click 'Apply spec' or run 'src campaigns apply' against your campaign spec to update the
                         campaign and perform the indicated action on each changeset.
                     </p>
                 )}
-                <button
-                    type="button"
-                    className={classNames(
-                        'btn btn-primary test-campaigns-confirm-apply-btn text-nowrap',
-                        isLoading === true || (!viewerCanAdminister && 'disabled')
-                    )}
-                    onClick={onApply}
-                    disabled={isLoading === true || !viewerCanAdminister}
-                    data-tooltip={!viewerCanAdminister ? 'You have no permission to apply this campaign.' : undefined}
-                >
-                    Apply spec
-                </button>
+                <div className="create-update-campaign-alert__btn">
+                    <button
+                        type="button"
+                        className={classNames(
+                            'btn btn-primary test-campaigns-confirm-apply-btn text-nowrap',
+                            isLoading === true || (!viewerCanAdminister && 'disabled')
+                        )}
+                        onClick={onApply}
+                        disabled={isLoading === true || !viewerCanAdminister}
+                        data-tooltip={
+                            !viewerCanAdminister ? 'You have no permission to apply this campaign.' : undefined
+                        }
+                    >
+                        Apply spec
+                    </button>
+                </div>
             </div>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
         </>

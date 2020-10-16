@@ -498,7 +498,7 @@ loop:
 		case *RepositoryResolver:
 			// We don't care about repo results here.
 			continue
-		case *commitSearchResultResolver:
+		case *CommitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
 			addPoint(m.commit.author.date)
 		case *FileMatchResolver:
@@ -1583,6 +1583,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		a.commonMu.Unlock()
 	}
 }
+
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
 	defer func() {
@@ -1614,6 +1615,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		a.commonMu.Unlock()
 	}
 }
+
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	defer func() {
@@ -2035,7 +2037,7 @@ type SearchResultResolver interface {
 
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
-	ToCommitSearchResult() (*commitSearchResultResolver, bool)
+	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
 
 	resultCount() int32
 }

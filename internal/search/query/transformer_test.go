@@ -275,7 +275,7 @@ func TestSubstituteConcat(t *testing.T) {
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := prettyPrint(substituteConcat(query, c.concat))
+			got := prettyPrint(Map(query, substituteConcat(c.concat)))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}

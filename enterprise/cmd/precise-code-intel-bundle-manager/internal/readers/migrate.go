@@ -155,14 +155,19 @@ func noopHandler(store persistence.Store) error {
 }
 
 func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB) error {
-	paths, err := sqlitePaths(bundleDir)
+	var migrationCompleteMessage = fmt.Sprintf(
+		"Migration to Postgres has completed. All existing LSIF bundles have moved to the path %s and can be removed from the filesystem to reclaim space.",
+		paths.DBBackupsDir(bundleDir),
+	)
+
+	bundleFilenames, err := sqlitePaths(bundleDir)
 	if err != nil {
 		return err
 	}
-	if len(paths) == 0 {
+	if len(bundleFilenames) == 0 {
+		log15.Info(migrationCompleteMessage)
 		return nil
 	}
-	bundleFilenames := paths
 
 	ctx := context.Background()
 
@@ -176,6 +181,19 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 		bundleIDMap[bundleID] = struct{}{}
 	}
 
+	moveFileToBackupDirectory := func(bundleID int64) {
+		filename := paths.SQLiteDBFilename(bundleDir, bundleID)
+
+		if err := os.Rename(filename, paths.DBBackupFilename(bundleDir, bundleID)); err != nil {
+			log15.Error("Failed to move bundle to backups directory", "err", err, "filename", filename)
+			return
+		}
+
+		if err := os.RemoveAll(filepath.Dir(filename)); err != nil {
+			log15.Error("Failed to remove outer directory", "err", err, "directory", filepath.Dir(filename))
+		}
+	}
+
 	updateIDs := map[string]int{}
 	for _, filename := range bundleFilenames {
 		bundleID, err := strconv.Atoi(filepath.Base(filepath.Dir(filename)))
@@ -185,6 +203,7 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 		}
 
 		if _, ok := bundleIDMap[bundleID]; ok {
+			moveFileToBackupDirectory(int64(bundleID))
 			continue
 		}
 
@@ -192,6 +211,7 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 	}
 
 	if len(updateIDs) == 0 {
+		log15.Info(migrationCompleteMessage)
 		return nil
 	}
 
@@ -203,9 +223,12 @@ func migrateToPostgres(bundleDir string, storeCache cache.StoreCache, db *sql.DB
 	for filename, bundleID := range updateIDs {
 		if err := postgres.MigrateBundleToPostgres(ctx, bundleID, filename, db); err != nil {
 			log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
+			continue
 		}
+
+		moveFileToBackupDirectory(int64(bundleID))
 	}
 
-	log15.Info("Finished migration to Postgres")
+	log15.Info(migrationCompleteMessage)
 	return nil
 }

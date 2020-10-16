@@ -9,7 +9,7 @@ import combySample from './samples/comby.campaign.yaml'
 import goImportsSample from './samples/go-imports.campaign.yaml'
 import minimalSample from './samples/minimal.campaign.yaml'
 import classNames from 'classnames'
-import { CodeSnippet } from '../../../components/CodeSnippet'
+import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
 
 interface SampleTabHeaderProps {
     sample: Sample

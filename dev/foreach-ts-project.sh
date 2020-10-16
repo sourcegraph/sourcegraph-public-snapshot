@@ -13,6 +13,7 @@ export ARGS=$*
 DIRS=(
   client/web
   client/shared
+  client/branded
   client/browser
   client/packages/sourcegraph-extension-api
   client/packages/@sourcegraph/extension-api-types

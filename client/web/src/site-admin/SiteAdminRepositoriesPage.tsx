@@ -10,7 +10,7 @@ import { RepoLink } from '../../../shared/src/components/RepoLink'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
-    FilteredConnectionQueryArgs,
+    FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
@@ -114,7 +114,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
         }
     }, [])
     const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArgs): Observable<RepositoriesResult['repositories']> =>
+        (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
         []
     )

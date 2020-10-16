@@ -289,11 +289,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	})
 
 	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
-	// when the owner of the token only has READ access. However, we don't want to fail entirely
-	// so the scheduler won't keep trying to fetch permissions of this same repository.
+	// when the owner of the token only has READ access. However, we don't want to fail
+	// so the scheduler won't keep trying to fetch permissions of this same repository, so we
+	// return a nil error and log a warning message.
 	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
-		log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
-		err = nil
+		log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
+		return nil
 	}
 
 	if err != nil {

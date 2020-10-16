@@ -45,10 +45,15 @@ type CheckFunc func(ctx context.Context) (bool, error)
 
 type updater struct {
 	store           store.Store
-	gitserverClient gitserver.Client
+	gitserverClient gitserverClient
 }
 
-func NewUpdater(store store.Store, gitserverClient gitserver.Client) Updater {
+type gitserverClient interface {
+	Head(ctx context.Context, store store.Store, repositoryID int) (string, error)
+	CommitGraph(ctx context.Context, store store.Store, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
+}
+
+func NewUpdater(store store.Store, gitserverClient gitserverClient) Updater {
 	return &updater{
 		store:           store,
 		gitserverClient: gitserverClient,
@@ -107,7 +112,7 @@ func (u *updater) TryUpdate(ctx context.Context, repositoryID, dirtyToken int) e
 }
 
 func (u *updater) update(ctx context.Context, repositoryID, dirtyToken int) error {
-	graph, err := u.gitserverClient.CommitGraph(ctx, u.store, repositoryID)
+	graph, err := u.gitserverClient.CommitGraph(ctx, u.store, repositoryID, gitserver.CommitGraphOptions{})
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitGraph")
 	}

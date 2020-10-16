@@ -1,4 +1,4 @@
-import { GraphQLResult, requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { GraphQLResult, requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -57,21 +57,21 @@ export const createGraphQLClient = ({
           }
     return {
         mutateGraphQL: (request, variables) =>
-            requestGraphQL({
+            requestGraphQLCommon({
                 request,
                 variables,
                 headers,
                 baseUrl,
             }),
         queryGraphQL: (request, variables) =>
-            requestGraphQL({
+            requestGraphQLCommon({
                 request,
                 variables,
                 headers,
                 baseUrl,
             }),
         requestGraphQL: ({ request, variables }) =>
-            requestGraphQL({
+            requestGraphQLCommon({
                 request,
                 variables,
                 headers,

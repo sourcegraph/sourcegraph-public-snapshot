@@ -29,6 +29,9 @@ type Client interface {
 	// the record must appear in all heartbeat requests.
 	Dequeue(ctx context.Context) (index store.Index, _ bool, _ error)
 
+	// SetLogContents updates a currently processing index record with the given log contents.
+	SetLogContents(ctx context.Context, indexID int, contents string) error
+
 	// Complete marks the target index record as complete or errored depending on the existence of an
 	// error message.
 	Complete(ctx context.Context, indexID int, indexErr error) error
@@ -106,6 +109,25 @@ func (c *client) Dequeue(ctx context.Context) (index store.Index, _ bool, _ erro
 	return index, true, nil
 }
 
+// SetLogContents updates a currently processing index record with the given log contents.
+func (c *client) SetLogContents(ctx context.Context, indexID int, contents string) error {
+	url, err := makeIndexManagerURL(c.frontendURL, c.authToken, "setlog")
+	if err != nil {
+		return err
+	}
+
+	payload, err := marshalPayload(types.SetLogRequest{
+		IndexerName: c.indexerName,
+		IndexID:     indexID,
+		Contents:    contents,
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.doAndDrop(ctx, "POST", url, payload)
+}
+
 // Complete marks the target index record as complete or errored depending on the existence of an
 // error message.
 func (c *client) Complete(ctx context.Context, indexID int, indexErr error) error {
@@ -163,7 +185,7 @@ func (c *client) doAndDrop(ctx context.Context, method string, url *url.URL, pay
 
 // do performs an HTTP request to the frontend and returns the body content as a reader.
 func (c *client) do(ctx context.Context, method string, url *url.URL, body io.Reader) (hasContent bool, _ io.ReadCloser, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, ".do")
+	span, ctx := ot.StartSpanFromContext(ctx, "do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

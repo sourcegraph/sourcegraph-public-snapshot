@@ -508,7 +508,7 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
-		if curr.Spec.Published {
+		if curr.Spec.Published.True() {
 			action.actionType = actionPublish
 		}
 

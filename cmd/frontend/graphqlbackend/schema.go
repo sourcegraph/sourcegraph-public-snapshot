@@ -126,17 +126,6 @@ type Mutation {
         repository: ID!
     ): EmptyResponse!
     """
-    DEPRECATED: All repositories are scheduled for updates periodically. This
-    mutation will be removed in 3.6.
-
-    Schedules all repositories to be updated from their original source
-    repositories. Updating occurs automatically, so this should not normally
-    be needed.
-
-    Only site admins may perform this mutation.
-    """
-    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    """
     Creates a new user account.
 
     Only site admins may perform this mutation.
@@ -806,6 +795,11 @@ type ExistingChangesetReference {
 }
 
 """
+A triple that represents all possible states of the published value: true, false or 'draft'.
+"""
+scalar PublishedValue
+
+"""
 A description of a changeset that represents the proposal to merge one branch into another.
 This is used to describe a pull request (on GitHub and Bitbucket Server).
 """
@@ -887,7 +881,7 @@ type GitBranchChangesetDescription {
     Another ChangesetSpec with the same description, but "published: true",
     can later be applied publish the changeset.
     """
-    published: Boolean!
+    published: PublishedValue!
 }
 
 """
@@ -1612,6 +1606,10 @@ type ChangesetConnectionStats {
     """
     closed: Int!
     """
+    The count of externalState: DELETED changesets.
+    """
+    deleted: Int!
+    """
     The count of all changesets. Equal to totalCount of the connection.
     """
     total: Int!
@@ -2064,6 +2062,10 @@ type Query {
         Return repositories whose names match the query.
         """
         query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
         """
         Return repositories whose names are in the list.
         """
@@ -6109,15 +6111,6 @@ type Site implements SettingsSubject {
     Only applies if the site does not have a valid license.
     """
     freeUsersExceeded: Boolean!
-
-    """
-    DEPRECATED: This field is always false and will be removed in future
-    releases. All repositories are enabled by default starting with
-    Sourcegraph 3.4
-    Whether the site has zero access-enabled repositories.
-    """
-    noRepositoriesEnabled: Boolean!
-        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     """
     Alerts to display to the viewer.
     """
@@ -6486,60 +6479,6 @@ type SiteUsagePeriod {
     Excludes anonymous users.
     """
     integrationUserCount: Int!
-    """
-    The user count of Sourcegraph products at each stage of the software development lifecycle.
-    """
-    stages: SiteUsageStages
-}
-
-"""
-Aggregate site usage of features by software development lifecycle stage.
-"""
-type SiteUsageStages {
-    """
-    The number of users using management stage features.
-    """
-    manage: Int!
-    """
-    The number of users using planning stage features.
-    """
-    plan: Int!
-    """
-    The number of users using coding stage features.
-    """
-    code: Int!
-    """
-    The number of users using review stage features.
-    """
-    review: Int!
-    """
-    The number of users using verification stage features.
-    """
-    verify: Int!
-    """
-    The number of users using packaging stage features.
-    """
-    package: Int!
-    """
-    The number of users using deployment stage features.
-    """
-    deploy: Int!
-    """
-    The number of users using configuration stage features.
-    """
-    configure: Int!
-    """
-    The number of users using monitoring stage features.
-    """
-    monitor: Int!
-    """
-    The number of users using security stage features.
-    """
-    secure: Int!
-    """
-    The number of users using automation stage features.
-    """
-    automate: Int!
 }
 
 """

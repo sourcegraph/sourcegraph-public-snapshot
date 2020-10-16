@@ -11,7 +11,7 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { ThemeProps } from '../../../shared/src/theme'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { UserNavItem } from './UserNavItem'
+import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 import { ThemePreferenceProps } from '../theme'
 import {
@@ -33,6 +33,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
+        ExtensionAlertAnimationProps,
         TelemetryProps,
         ActivationProps {
     location: H.Location
@@ -137,6 +138,11 @@ export class NavLinks extends React.PureComponent<Props> {
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
+                            codeHostIntegrationMessaging={
+                                (!isErrorLike(this.props.settingsCascade.final) &&
+                                    this.props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                'browser-extension'
+                            }
                             keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>

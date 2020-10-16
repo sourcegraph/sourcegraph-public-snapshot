@@ -8,7 +8,7 @@ import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
 
-export interface FetchFileCtx {
+export interface FetchFileParameters {
     repoName: string
     commitID: string
     filePath: string
@@ -26,7 +26,7 @@ interface Props extends Repo {
     className?: string
     /** How many extra lines to show in the excerpt before/after the ref.  */
     context?: number
-    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
 }
 
 interface HighlightRange {

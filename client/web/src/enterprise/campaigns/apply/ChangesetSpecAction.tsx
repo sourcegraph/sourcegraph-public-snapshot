@@ -1,46 +1,48 @@
 import React from 'react'
 import { ChangesetSpecType, ChangesetSpecFields } from '../../../graphql-operations'
-import ClipboardCheckOutlineIcon from 'mdi-react/ClipboardCheckOutlineIcon'
-import ClipboardAlertOutlineIcon from 'mdi-react/ClipboardAlertOutlineIcon'
-import ClipboardArrowUpOutlineIcon from 'mdi-react/ClipboardArrowUpOutlineIcon'
+import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
+import ImportIcon from 'mdi-react/ImportIcon'
+import UploadIcon from 'mdi-react/UploadIcon'
+import classNames from 'classnames'
 
 export interface ChangesetSpecActionProps {
     spec: ChangesetSpecFields
+    className?: string
 }
 
-export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ spec }) => {
+export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ spec, className }) => {
     if (spec.__typename === 'HiddenChangesetSpec') {
         if (spec.type === ChangesetSpecType.BRANCH) {
-            return <ChangesetSpecActionNoPublish />
+            return <ChangesetSpecActionNoPublish className={className} />
         }
-        return <ChangesetSpecActionImport />
+        return <ChangesetSpecActionImport className={className} />
     }
     if (spec.description.__typename === 'ExistingChangesetReference') {
-        return <ChangesetSpecActionImport />
+        return <ChangesetSpecActionImport className={className} />
     }
     if (spec.description.published) {
-        return <ChangesetSpecActionPublish />
+        return <ChangesetSpecActionPublish className={className} />
     }
-    return <ChangesetSpecActionNoPublish />
+    return <ChangesetSpecActionNoPublish className={className} />
 }
 
-const iconClassNames = 'm-0 text-nowrap d-flex flex-column align-items-center justify-content-center'
+const iconClassNames = 'm-0 text-nowrap d-block d-sm-flex flex-column align-items-center justify-content-center'
 
-export const ChangesetSpecActionPublish: React.FunctionComponent<{}> = () => (
-    <div className={iconClassNames}>
-        <ClipboardCheckOutlineIcon data-tooltip="This changeset will be published on the code host when the spec is applied." />
-        <span className="text-muted">Will publish</span>
+export const ChangesetSpecActionPublish: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <UploadIcon data-tooltip="This changeset will be published to its code host" />
+        <span>Publish</span>
     </div>
 )
-export const ChangesetSpecActionNoPublish: React.FunctionComponent<{}> = () => (
-    <div className={iconClassNames}>
-        <ClipboardAlertOutlineIcon data-tooltip="This changeset will NOT be published on the code host when the spec is applied." />
-        <span className="text-muted">Won't publish</span>
+export const ChangesetSpecActionNoPublish: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <div className={classNames(className, iconClassNames, 'text-muted')}>
+        <BlankCircleIcon data-tooltip="Set publish: true in the changeset template to publish to the code host" />
+        <span>Won't publish</span>
     </div>
 )
-export const ChangesetSpecActionImport: React.FunctionComponent<{}> = () => (
-    <div className={iconClassNames}>
-        <ClipboardArrowUpOutlineIcon data-tooltip="This changeset will be imported from the code host." />
-        <span className="text-muted">Will import</span>
+export const ChangesetSpecActionImport: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <ImportIcon data-tooltip="This changeset will be imported and tracked in this campaign" />
+        <span>Import</span>
     </div>
 )

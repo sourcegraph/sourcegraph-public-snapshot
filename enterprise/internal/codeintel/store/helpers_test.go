@@ -217,12 +217,12 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	var rows []*sqlf.Query
 	for commit, metas := range uploads {
 		for _, meta := range metas {
-			rows = append(rows, sqlf.Sprintf("(%s, %s, %s, %s)", repositoryID, commit, meta.UploadID, meta.Distance))
+			rows = append(rows, sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)", repositoryID, commit, meta.UploadID, meta.Distance, meta.AncestorVisible, meta.Overwritten))
 		}
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance) VALUES %s`,
+		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -273,7 +273,7 @@ func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMe
 
 func getVisibleUploads(t *testing.T, db *sql.DB, repositoryID int) map[string][]UploadMeta {
 	query := sqlf.Sprintf(
-		`SELECT commit, upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s ORDER BY upload_id`,
+		`SELECT commit, upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s AND NOT overwritten ORDER BY upload_id`,
 		repositoryID,
 	)
 	uploads, err := scanVisibleUploads(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
@@ -298,12 +298,21 @@ func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
 	return ids
 }
 
-func normalizeVisibleUploads(uploads map[string][]UploadMeta) map[string][]UploadMeta {
-	for _, metas := range uploads {
-		sort.Slice(metas, func(i, j int) bool {
-			return metas[i].UploadID-metas[j].UploadID < 0
+func normalizeVisibleUploads(uploadMetas map[string][]UploadMeta) map[string][]UploadMeta {
+	for commit, uploads := range uploadMetas {
+		var filtered []UploadMeta
+		for _, upload := range uploads {
+			if !upload.Overwritten {
+				filtered = append(filtered, upload)
+			}
+		}
+
+		sort.Slice(filtered, func(i, j int) bool {
+			return filtered[i].UploadID-filtered[j].UploadID < 0
 		})
+
+		uploadMetas[commit] = filtered
 	}
 
-	return uploads
+	return uploadMetas
 }

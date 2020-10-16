@@ -1,4 +1,4 @@
-@import '../../../shared/src/components/Toggle.scss';
+@import '../../../branded/src/components/Toggle.scss';
 
 .extension-card {
     &__icon {
@@ -30,10 +30,6 @@
 
     &__shadow--show {
         opacity: 1;
-    }
-
-    &__link {
-        color: var(--body-color);
     }
 
     &__logo {

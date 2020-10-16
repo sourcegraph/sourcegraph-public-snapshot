@@ -171,10 +171,6 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 }
 
 func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
-	MockStageUniques = func(_ time.Time, _ *UsageDuration, _ []string) (*types.Stages, error) {
-		return nil, nil
-	}
-
 	defer func() {
 		timeNow = time.Now
 	}()

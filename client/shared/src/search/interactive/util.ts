@@ -45,6 +45,7 @@ export enum FilterType {
     rev = 'rev',
 }
 
+/* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     r = 'repo',
     g = 'repogroup',
@@ -54,9 +55,10 @@ export enum AliasedFilterType {
     until = 'before',
     since = 'after',
     m = 'message',
-    'msg' = 'message',
+    msg = 'message',
     revision = 'rev',
 }
+/* eslint-enable unicorn/prevent-abbreviations */
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
 export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType

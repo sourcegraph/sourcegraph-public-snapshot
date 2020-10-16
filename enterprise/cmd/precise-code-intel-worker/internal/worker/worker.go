@@ -9,9 +9,9 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
@@ -20,11 +20,12 @@ func NewWorker(
 	s store.Store,
 	codeIntelDB *sql.DB,
 	bundleManagerClient bundles.BundleManagerClient,
-	gitserverClient gitserver.Client,
+	gitserverClient gitserverClient,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	budgetMax int64,
 	metrics metrics.WorkerMetrics,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
@@ -36,7 +37,7 @@ func NewWorker(
 		enableBudget:        budgetMax > 0,
 		budgetRemaining:     budgetMax,
 		createStore: func(id int) persistence.Store {
-			return postgres.NewStore(codeIntelDB, id)
+			return persistence.NewObserved(postgres.NewStore(codeIntelDB, id), observationContext)
 		},
 	}
 
