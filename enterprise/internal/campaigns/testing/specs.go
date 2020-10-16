@@ -1,10 +1,12 @@
 package testing
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 const TestRawCampaignSpec = `{
@@ -57,9 +59,7 @@ changesetTemplate:
 var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
-
-func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
-	diff := `diff --git INSTALL.md INSTALL.md
+const ChangesetSpecDiff = `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
@@ -78,25 +78,52 @@ index e5af166..d44c3fc 100644
  Line 9
  Line 10
 `
-	tmpl := `{
 
-		"baseRepository": %q,
-		"baseRev": %q,
-		"baseRef":"refs/heads/master",
+var baseChangesetSpecGitBranch = campaigns.ChangesetSpecDescription{
+	BaseRef: "refs/heads/master",
 
-		"headRepository": %q,
-		"headRef":"refs/heads/my-branch",
+	HeadRef: "refs/heads/my-branch",
+	Title:   "the title",
+	Body:    "the body of the PR",
 
-		"title": "the title",
-		"body": "the body of the PR",
+	Published: campaigns.PublishedValue{Val: false},
 
-		"published": false,
+	Commits: []campaigns.GitCommitDescription{
+		{
+			Message:     "git commit message\n\nand some more content in a second paragraph.",
+			Diff:        ChangesetSpecDiff,
+			AuthorName:  "Mary McButtons",
+			AuthorEmail: ChangesetSpecAuthorEmail,
+		},
+	},
+}
 
-		"commits": [
-		  {"message": "git commit message\n\nand some more content in a second paragraph.", "diff": %q, "authorName": "Mary McButtons", "authorEmail": %q}]
-	}`
+func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
+	spec := baseChangesetSpecGitBranch
+	spec.BaseRepository = repo
+	spec.BaseRev = baseRev
+	spec.HeadRepository = repo
 
-	return fmt.Sprintf(tmpl, repo, baseRev, repo, diff, ChangesetSpecAuthorEmail)
+	rawSpec, err := json.Marshal(spec)
+	if err != nil {
+		panic(err)
+	}
+	return string(rawSpec)
+}
+
+func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published campaigns.PublishedValue) string {
+	spec := baseChangesetSpecGitBranch
+	spec.BaseRepository = repo
+	spec.BaseRev = baseRev
+	spec.HeadRepository = repo
+
+	spec.Published = published
+
+	rawSpec, err := json.Marshal(spec)
+	if err != nil {
+		panic(err)
+	}
+	return string(rawSpec)
 }
 
 func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {

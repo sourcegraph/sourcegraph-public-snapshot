@@ -3008,7 +3008,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 28800s+ time since oldest sync for 10m0s_
+- _repo-updater: 32400s+ time since oldest sync for 10m0s_
 
 **Possible solutions:**
 
@@ -3025,7 +3025,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 0 sync was started for 8h0m0s_
+- _repo-updater: less than 0 sync was started for 9h0m0s_
 
 **Possible solutions:**
 
@@ -3076,7 +3076,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 0 repositories synced for 8h0m0s_
+- _repo-updater: less than 0 repositories synced for 9h0m0s_
 
 **Possible solutions:**
 
@@ -3093,7 +3093,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 0 repositories sourced for 8h0m0s_
+- _repo-updater: less than 0 repositories sourced for 9h0m0s_
 
 **Possible solutions:**
 
@@ -3144,7 +3144,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 0 repositories scheduled due to hitting a deadline for 8h0m0s_
+- _repo-updater: less than 0 repositories scheduled due to hitting a deadline for 9h0m0s_
 
 **Possible solutions:**
 
@@ -3161,7 +3161,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 0 repositories scheduled due to user traffic for 8h0m0s_
+- _repo-updater: less than 0 repositories scheduled due to user traffic for 9h0m0s_
 
 **Possible solutions:**
 
@@ -3195,11 +3195,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: 1000+ repositories queued for update for 5m0s_
+- _repo-updater: 0+ rate of growth of update queue length over 5 minutes for 30m0s_
 
 **Possible solutions:**
 
-- Check repo-updater logs. The queue should drop as items are sent to GitServer
+- Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3212,7 +3212,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Descriptions:**
 
-- _repo-updater: less than 0 scheduler loops for 8h0m0s_
+- _repo-updater: less than 0 scheduler loops for 9h0m0s_
 
 **Possible solutions:**
 

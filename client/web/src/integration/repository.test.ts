@@ -184,7 +184,7 @@ describe('Repository', () => {
                                             '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
                                         author: {
                                             person: {
-                                                avatarURL: 'https://avatars0.githubusercontent.com/u/1976?v=4',
+                                                avatarURL: '',
                                                 name: 'Quinn Slack',
                                                 email: 'qslack@qslack.com',
                                                 displayName: 'Quinn Slack',
@@ -471,15 +471,18 @@ describe('Repository', () => {
             )
             assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
 
-            // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
-            // await driver.page.waitForSelector('#monaco-query-input .view-lines')
-            // const searchQuery = await driver.page.evaluate(
-            //     () => document.querySelector('#monaco-query-input .view-lines')?.textContent
-            // )
-            // assert.strictEqual(
-            //     searchQuery,
-            //     'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\.32r242442bf/% token\\.4288249258\\.sql$"'
-            // )
+            await driver.page.waitForSelector('#monaco-query-input .view-lines')
+            // TODO: find a more reliable way to get the current search query,
+            // to account for the fact that it may _actually_ contain non-breaking spaces
+            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
+            // https://github.com/sourcegraph/sourcegraph/issues/14756
+            const searchQuery = (
+                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
+            )?.replace(/\u00A0/g, ' ')
+            assert.strictEqual(
+                searchQuery,
+                'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\\\.32r242442bf/% token\\\\.4288249258\\\\.sql"'
+            )
 
             await driver.page.waitForSelector('.test-go-to-code-host')
             assert.strictEqual(
@@ -491,6 +494,49 @@ describe('Repository', () => {
 
             const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
             assert.strictEqual(blobContent, `content for: ${filePath}`)
+        })
+
+        it('works with spaces in the repository name', async () => {
+            const shortRepositoryName = 'my org/repo with spaces'
+            const repositorySourcegraphUrl = '/github.com/my%20org/repo%20with%20spaces'
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
+
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
+            await driver.page.waitForSelector('h2.tree-page__title')
+            await assertSelectorHasText('h2.tree-page__title', ' my org/repo with spaces')
+            await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
+
+            // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
+            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
+            await driver.page.waitForSelector('.test-repo-blob')
+
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+            )
+            assert.deepStrictEqual(breadcrumbTexts, [
+                'Home',
+                'Repositories',
+                shortRepositoryName,
+                '@master',
+                'readme.md',
+            ])
         })
     })
 })

@@ -32,10 +32,6 @@
         opacity: 1;
     }
 
-    &__link {
-        color: var(--body-color);
-    }
-
     &__logo {
         margin-left: calc(0.5rem - 2px); /* stylelint-disable-line */
         flex: 0 0 auto;

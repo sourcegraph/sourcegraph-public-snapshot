@@ -1,4 +1,4 @@
-import { ConsoleMessage, ConsoleMessageType } from 'puppeteer'
+import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
 import chalk, { Chalk } from 'chalk'
 import * as util from 'util'
 import terminalSize from 'term-size'
@@ -21,7 +21,7 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
  * Formats a console message that was logged in a Puppeteer Chrome instance for output on the NodeJS terminal.
  * Tries to mirror Chrome's console output as closely as possible and makes sense.
  */
-export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Promise<string> {
+export async function formatPuppeteerConsoleMessage(page: Page, message: ConsoleMessage): Promise<string> {
     const color = colors[message.type()] ?? identity
     const icon = icons[message.type()] ?? ''
     const formattedLocation =
@@ -30,7 +30,8 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
             [message.location().url, message.location().lineNumber, message.location().columnNumber]
                 .filter(Boolean)
                 .join(':')
-        )
+        ) +
+        ` from page ${chalk.underline(page.url())}`
 
     // Right-align location, like in Chrome dev tools
     const locationLine = chalk.dim(

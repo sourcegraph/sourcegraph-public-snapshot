@@ -3,6 +3,7 @@ package apitest
 import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 type GitTarget struct {
@@ -233,7 +234,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription
 
-	Published bool
+	Published campaigns.PublishedValue
 
 	Diff struct {
 		FileDiffs FileDiffs

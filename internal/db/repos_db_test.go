@@ -6,15 +6,18 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/query"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 /*
@@ -36,6 +39,8 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
+	t.Helper()
+
 	op := InsertRepoOp{Name: repo.Name}
 
 	if repo.RepoFields != nil {
@@ -61,14 +66,6 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 		createdRepos = append(createdRepos, repo)
 	}
 	return createdRepos
-}
-
-// Delete the repository row from the repo table. It exists for testing
-// purposes only. Repository mutations are managed by repo-updater.
-func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
-	q := sqlf.Sprintf("DELETE FROM repo WHERE id=%d", repo)
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
 }
 
 // InsertRepoOp represents an operation to insert a repository.
@@ -186,19 +183,49 @@ func TestRepos_Get(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
+	now := time.Now()
+
+	service := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	err := ExternalServices.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	want := mustCreate(ctx, t, &types.Repo{
-		Name: "r",
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "a",
-			ServiceType: "b",
-			ServiceID:   "c",
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
 		},
+		Name:    "name",
+		Private: true,
 		RepoFields: &types.RepoFields{
-			URI:         "u",
-			Description: "d",
+			URI:         "uri",
+			Description: "description",
 			Fork:        true,
 			Archived:    true,
 			Cloned:      true,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				service.URN(): {
+					ID:       service.URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
 		},
 	})
 
@@ -236,7 +263,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 		t.Fatalf("got %d repos, but want 1", len(repos))
 	}
 
-	// We don't need the RepoFields to indentify a repository.
+	// We don't need the RepoFields to identify a repository.
 	want[0].RepoFields = nil
 	if !jsonEqual(t, repos[0], want[0]) {
 		t.Errorf("got %v, want %v", repos[0], want[0])
@@ -257,7 +284,51 @@ func TestRepos_List(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	want := mustCreate(ctx, t, &types.Repo{Name: "r"})
+	now := time.Now()
+
+	service := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	err := ExternalServices.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := mustCreate(ctx, t, &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:    "name",
+		Private: true,
+		RepoFields: &types.RepoFields{
+			URI:         "uri",
+			Description: "description",
+			Fork:        true,
+			Archived:    true,
+			Cloned:      true,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				service.URN(): {
+					ID:       service.URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+		},
+	})
 
 	repos, err := Repos.List(ctx, ReposListOptions{})
 	if err != nil {

@@ -62,6 +62,9 @@ Tips:
   have to scroll up--the first error is often the real one.
 - When debugging test failures, you can insert the line `await new Promise(() => {})` to halt execution. Also read the [Puppeteer debugging
   docs](https://github.com/GoogleChrome/puppeteer#debugging-tips)
+- When debugging you can also insert delays like so: `await new Promise( resolve => setTimeout(resolve, 1000));`. The unit
+  of time is millis, so in that example it would wait for 1 second. This is useful if you want to open up the browser
+  debugging tools before it proceeds.
 - The `SLOWMO` environment variable will slow down Puppeteer execution by the specified number of
   milliseconds. `HEADLESS` will cause Puppeteer to run in headless mode (no visible browser window).
 - Tests can be flakey. For the search tests, at least the following are known to be flakey:

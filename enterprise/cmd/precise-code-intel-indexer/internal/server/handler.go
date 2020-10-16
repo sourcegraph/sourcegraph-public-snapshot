@@ -9,16 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/types"
 )
 
-func (s *Server) handler() http.Handler {
-	mux := mux.NewRouter()
-	mux.Path("/dequeue").Methods("POST").HandlerFunc(s.handleDequeue)
-	mux.Path("/setlog").Methods("POST").HandlerFunc(s.handleSetLogContents)
-	mux.Path("/complete").Methods("POST").HandlerFunc(s.handleComplete)
-	mux.Path("/heartbeat").Methods("POST").HandlerFunc(s.handleHeartbeat)
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	return mux
+func (s *Server) setupRoutes(router *mux.Router) {
+	router.Path("/dequeue").Methods("POST").HandlerFunc(s.handleDequeue)
+	router.Path("/setlog").Methods("POST").HandlerFunc(s.handleSetLogContents)
+	router.Path("/complete").Methods("POST").HandlerFunc(s.handleComplete)
+	router.Path("/heartbeat").Methods("POST").HandlerFunc(s.handleHeartbeat)
 }
 
 // POST /dequeue

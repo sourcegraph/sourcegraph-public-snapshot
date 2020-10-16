@@ -28,7 +28,7 @@ There are three fields for configuring which projects are mirrored/synchronized:
 
 ### Troubleshooting
 
-You can test your access token's permissions by running a cURL command against the GitLab API. This is the same API and the same project list used by Sourcegraph. 
+You can test your access token's permissions by running a cURL command against the GitLab API. This is the same API and the same project list used by Sourcegraph.
 
 Replace `$ACCESS_TOKEN` with the access token you are providing to Sourcegraph, and `$GITLAB_HOSTNAME` with your GitLab hostname:
 
@@ -49,7 +49,7 @@ To configure GitLab as an authentication provider (which will enable sign-in via
 
 ## Internal rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab. 
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
 
 If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 
@@ -70,6 +70,16 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
   // ...
   "corsOrigin":
     "https://my-gitlab.example.com"
+  // ...
+}
+```
+
+The site admin should also set `alerts.codeHostIntegrationMessaging` in [global settings](../config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
+
+```json
+{
+  // ...
+  "alerts.codeHostIntegrationMessaging": "native-integration"
   // ...
 }
 ```

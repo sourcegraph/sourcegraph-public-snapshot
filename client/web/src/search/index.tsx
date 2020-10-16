@@ -166,6 +166,10 @@ export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
 
+export interface ShowQueryBuilderProps {
+    showQueryBuilder: boolean
+}
+
 export interface HomePanelsProps {
     showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>

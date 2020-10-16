@@ -61,7 +61,9 @@ UNION
         repo.name
     FROM
         default_repos
-        JOIN repo ON default_repos.repo_id = repo.id;
+		JOIN repo ON default_repos.repo_id = repo.id
+	WHERE
+		deleted_at IS NULL
 `
 	rows, err := dbconn.Global.QueryContext(ctx, q)
 	if err != nil {
