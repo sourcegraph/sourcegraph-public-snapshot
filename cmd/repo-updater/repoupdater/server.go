@@ -404,9 +404,6 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-// time waited before deleting a repository that is no longer accessible
-var deleteUnaccessibleRepoAfter time.Duration = 5 * time.Second
-
 func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
 	// Sourcegraph.com: this is on the user path, do not block for ever if codehost is being
 	// bad. Ideally block before cloudflare 504s the request (1min).
@@ -465,13 +462,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				// we can safely assume that when a repository stored in the database is not accessible anymore,
 				// no other external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					// There is a high chance the UI is already trying to display the repository,
-					// deleting the repository right away would make some requests (GraphQL ResolveRev, TreeEntries and TreeCommits APIs) fail and display an error page.
-					// This is a best effort to improve the UX without changing the UI error handling, by waiting for the whole page
-					// to load before deleting the repo.
-					// TODO: make these API calls redirect to the not found page on error
-					time.Sleep(deleteUnaccessibleRepoAfter)
-
 					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
 						r.DeletedAt = s.Now()
 					}))

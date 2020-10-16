@@ -873,12 +873,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			clock := repos.NewFakeClock(time.Now(), 0)
 			now := clock.Now()
 
-			oldD := deleteUnaccessibleRepoAfter
-			deleteUnaccessibleRepoAfter = 0
-			defer func() {
-				deleteUnaccessibleRepoAfter = oldD
-			}()
-
 			githubSource := repos.ExternalService{
 				Kind:   extsvc.KindGitHub,
 				Config: `{}`,
