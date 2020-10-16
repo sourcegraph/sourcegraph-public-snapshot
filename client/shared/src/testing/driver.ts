@@ -29,6 +29,7 @@ import webExt from 'web-ext'
 import { isDefined } from '../util/types'
 import { getConfig } from './config'
 import { ExternalServiceKind } from '../graphql-operations'
+import delay from 'delay'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -208,12 +209,19 @@ export class Driver {
             await this.page.type('input[name=username]', username)
             await this.page.type('input[name=password]', password)
             await this.page.waitForSelector('button[type=submit]:not(:disabled)')
+            // TODO(uwedeportivo): investigate race condition between puppeteer clicking this very fast and
+            // background gql client request fetching ViewerSettings. this race condition results in the gql request
+            // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
+            // you back to the login page
+            await delay(1000)
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 10000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
+            // TODO(uwedeportivo): see comment above, same reason
+            await delay(1000)
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 10000 })
         }
