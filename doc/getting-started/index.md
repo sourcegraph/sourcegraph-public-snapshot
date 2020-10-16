@@ -64,7 +64,7 @@ Sourcegraph gives you code intelligence in:
 
 - **code files in Sourcegraph's web UI**
 
-![Hover tooltip](../user/code_intelligence/img/hover-tooltip.png)
+![Hover tooltip](../code_intelligence/img/hover-tooltip.png)
 
 - **diffs in your code review tool**, via [integrations](../integration/index.md)
 
@@ -74,7 +74,7 @@ Sourcegraph gives you code intelligence in:
 
 ![GitHub file integration](img/GitHubFile.png)
 
-Read the [code intelligence documentation](../user/code_intelligence/index.md) to learn more and to set it up.
+Read the [code intelligence documentation](../code_intelligence/index.md) to learn more and to set it up.
 
 ---
 
