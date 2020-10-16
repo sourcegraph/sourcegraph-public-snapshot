@@ -16,7 +16,7 @@ const Video: React.FunctionComponent<
     const suffix = isLightTheme ? 'Light' : 'Dark'
     return (
         <video
-            className="w-100 h-auto cursor-pointer"
+            className="w-100 h-auto cursor-pointer bg-2"
             width={width}
             height={height}
             autoPlay={true}
