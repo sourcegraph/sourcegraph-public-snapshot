@@ -208,7 +208,7 @@ const toGQLSearchAlert = (alert: Alert): GQL.ISearchAlert => ({
     proposedQueries:
         alert.proposedQueries?.map(pq => ({
             __typename: 'SearchQueryDescription',
-            description: pq.description ? pq.description : null,
+            description: pq.description || null,
             query: pq.query,
         })) || null,
 })
