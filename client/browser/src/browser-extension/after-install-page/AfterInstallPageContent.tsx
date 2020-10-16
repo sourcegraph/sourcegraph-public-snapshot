@@ -4,9 +4,9 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
-import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
 
@@ -41,9 +41,16 @@ const Video: React.FunctionComponent<
 
 export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = props => (
     <div className="web-content after-install-page-content">
-        <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />
+        <div className="d-flex w-100 p-3 justify-content-between align-items-center">
+            <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">
+                <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />
+            </a>
+            <a href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
+                Browser extension docs <ExternalLinkIcon className="icon-inline" />
+            </a>
+        </div>
 
-        <div className="container">
+        <div className="container mt-2">
             <h1 className="mt-5">🎉 You’ve just installed the Sourcegraph browser extension!</h1>
             <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
         </div>
