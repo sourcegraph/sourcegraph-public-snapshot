@@ -223,7 +223,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		return api.CommitID(baseRev), nil
 	}
 	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
-	
+
 	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
 		if string(id) != baseRev && string(id) != headRev {
 			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
