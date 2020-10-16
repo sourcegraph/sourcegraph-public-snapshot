@@ -353,6 +353,13 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
+// HasDiff returns true when the changeset is in an open state. That is because
+// currently we do not support diff rendering for historic branches, because we
+// can't guarantee that we have the refs on gitserver.
+func (c *Changeset) HasDiff() bool {
+	return c.ExternalState == ChangesetExternalStateDraft || c.ExternalState == ChangesetExternalStateOpen
+}
+
 // URL of a Changeset.
 func (c *Changeset) URL() (s string, err error) {
 	switch m := c.Metadata.(type) {

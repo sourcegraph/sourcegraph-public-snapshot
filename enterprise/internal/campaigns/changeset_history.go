@@ -234,11 +234,11 @@ func reduceReviewStates(statesByAuthor map[string]campaigns.ChangesetReviewState
 // initialExternalState infers from the changeset state and the list of events in which
 // ChangesetExternalState the changeset must have been when it has been created.
 func initialExternalState(ch *campaigns.Changeset, ce ChangesetEvents) campaigns.ChangesetExternalState {
-	readyForReview := true
+	open := true
 	switch m := ch.Metadata.(type) {
 	case *github.PullRequest:
 		if m.IsDraft {
-			readyForReview = false
+			open = false
 		}
 	default:
 		// TODO: Support for non-GitHub changesets.
@@ -249,12 +249,12 @@ func initialExternalState(ch *campaigns.Changeset, ce ChangesetEvents) campaigns
 		e := ce[i]
 		switch e.Metadata.(type) {
 		case *github.ReadyForReviewEvent:
-			readyForReview = false
+			open = false
 		case *github.ConvertToDraftEvent:
-			readyForReview = true
+			open = true
 		}
 	}
-	if readyForReview {
+	if open {
 		return campaigns.ChangesetExternalStateOpen
 	}
 	return campaigns.ChangesetExternalStateDraft
