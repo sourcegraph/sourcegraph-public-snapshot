@@ -1,3 +1,4 @@
+import * as H from 'history'
 import {
     getSearchTypeFromQuery,
     toggleSearchType,
@@ -8,11 +9,15 @@ import {
     formatQueryForFuzzySearch,
     filterAliasForSearch,
     toggleSearchFilter,
+    submitSearch,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
 import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
 import assert from 'assert'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
+
+jest.mock('../tracking/eventLogger', () => ({ eventLogger: { log: () => undefined } }))
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -27,6 +32,39 @@ describe('search/helpers', () => {
         })
         test.skip('should return the -1 if the scope is contained as a substring of another scope', () => {
             /* noop */
+        })
+    })
+
+    describe('submitSearch()', () => {
+        test('should update history', () => {
+            const history = H.createMemoryHistory({})
+            submitSearch({
+                history,
+                query: 'querystring',
+                patternType: SearchPatternType.literal,
+                caseSensitive: false,
+                versionContext: undefined,
+                activation: undefined,
+                filtersInQuery: undefined,
+                source: 'home',
+                searchParameters: undefined,
+            })
+            expect(history.location.search).toEqual('?q=querystring&patternType=literal')
+        })
+        test('should keep trace param when updating history', () => {
+            const history = H.createMemoryHistory({ initialEntries: ['/?trace=1'] })
+            submitSearch({
+                history,
+                query: 'querystring',
+                patternType: SearchPatternType.literal,
+                caseSensitive: false,
+                versionContext: undefined,
+                activation: undefined,
+                filtersInQuery: undefined,
+                source: 'home',
+                searchParameters: undefined,
+            })
+            expect(history.location.search).toEqual('?q=querystring&patternType=literal&trace=1')
         })
     })
 
