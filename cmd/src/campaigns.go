@@ -17,6 +17,7 @@ Usage:
 The commands are:
 
 	apply                 applies a campaign spec to create or update a campaign
+	new                   creates a new campaign spec YAML file
 	preview               creates a campaign spec to be previewed or applied
 	repos,repositories    queries the exact repositories that a campaign spec
 	                      will apply to
