@@ -202,7 +202,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store.(repos.Transactor))
+	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -335,7 +335,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
-func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Transactor) {
+func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
@@ -345,14 +345,7 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 
 		sched.SetCloned(cloned)
 
-		tx, err := store.Transact(ctx)
-		if err != nil {
-			log15.Warn("failed to create transaction from store", "error", err)
-			return
-		}
-		defer tx.Done(&err)
-
-		err = tx.SetClonedRepos(ctx, cloned...)
+		err = store.SetClonedRepos(ctx, cloned...)
 		if err != nil {
 			log15.Warn("failed to set cloned repository list", "error", err)
 			return

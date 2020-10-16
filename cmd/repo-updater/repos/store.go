@@ -900,14 +900,20 @@ var DefaultSetClonedReposStep = 400_000
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.
-// Note: This method must be called from within a transaction.
 func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
 	if len(repoNames) == 0 {
 		return nil
 	}
 
-	if _, ok := s.db.(*sql.Tx); !ok {
-		return errors.New("SetClonedRepos: not in transaction")
+	tx, ok := s.db.(*sql.Tx)
+	if !ok {
+		txstore, err := s.Transact(ctx)
+		if err != nil {
+			return errors.Wrap(err, "scanRepo: failed to create a transaction")
+		}
+		defer txstore.Done(&err)
+		err = txstore.SetClonedRepos(ctx, repoNames...)
+		return err
 	}
 
 	sort.Strings(repoNames)
@@ -931,7 +937,7 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 
 		q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)), first, last)
 
-		_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			return err
 		}
