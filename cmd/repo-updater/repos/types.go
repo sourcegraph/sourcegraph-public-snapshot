@@ -567,8 +567,6 @@ type Repo struct {
 	URI string
 	// Description is a brief description of the repository.
 	Description string
-	// Language is the primary programming language used in this repository.
-	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 	// Archived is whether the repository has been archived.
@@ -652,10 +650,6 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Description != n.Description {
 		r.Description, modified = n.Description, true
-	}
-
-	if r.Language != n.Language {
-		r.Language, modified = n.Language, true
 	}
 
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&

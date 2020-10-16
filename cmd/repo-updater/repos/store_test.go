@@ -492,7 +492,6 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -516,7 +515,6 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -576,7 +574,6 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -600,7 +597,6 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -671,7 +667,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -691,7 +686,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -711,7 +705,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "bitbucketserver.mycorp.com/foo/bar",
 			URI:         "bitbucketserver.mycorp.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -731,7 +724,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			URI:         "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -831,7 +823,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 				r.Name += suffix
 				r.URI += suffix
 				r.Description += suffix
-				r.Language += suffix
 				r.UpdatedAt = now
 				r.CreatedAt = now
 				r.Archived = !r.Archived
@@ -998,7 +989,6 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -1018,7 +1008,6 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -1754,7 +1743,6 @@ func testStoreListReposPagination(t *testing.T, store repos.Store) func(*testing
 		Name:        "foo/bar",
 		URI:         "github.com/foo/bar",
 		Description: "The description",
-		Language:    "barlang",
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",
@@ -1816,13 +1804,13 @@ func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore rep
 
 			// Insert test repositories
 			_, err := db.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, language, fork, external_id, external_service_type, external_service_id, deleted_at)
+INSERT INTO repo (id, name, description, fork, external_id, external_service_type, external_service_id, deleted_at)
 VALUES
-	(1, 'github.com/user/repo1', '', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
-	(2, 'github.com/user/repo2', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
-	(3, 'github.com/user/repo3', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
-	(4, 'github.com/user/repo4', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
-	(5, 'github.com/user/repo5', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
+	(1, 'github.com/user/repo1', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
+	(2, 'github.com/user/repo2', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
+	(3, 'github.com/user/repo3', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
+	(4, 'github.com/user/repo4', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
+	(5, 'github.com/user/repo5', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
 `)
 			if err != nil {
 				t.Fatal(err)

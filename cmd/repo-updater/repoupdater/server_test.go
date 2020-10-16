@@ -893,7 +893,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			githubRepository := &repos.Repo{
 				Name:        "github.com/foo/bar",
 				Description: "The description",
-				Language:    "barlang",
 				Archived:    false,
 				Fork:        false,
 				CreatedAt:   now,
@@ -921,7 +920,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			awsCodeCommitRepository := &repos.Repo{
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 				Description: "The stripe-go lib",
-				Language:    "barlang",
 				Archived:    false,
 				Fork:        false,
 				CreatedAt:   now,
