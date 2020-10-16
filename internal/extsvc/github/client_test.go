@@ -337,6 +337,17 @@ func TestClient_CreatePullRequest(t *testing.T) {
 			},
 			err: "error in GraphQL response: Head sha can't be blank, Base sha can't be blank, No commits between master and this-head-ref-should-not-exist, Head ref must be a branch",
 		},
+		{
+			name: "draft-pr",
+			input: &CreatePullRequestInput{
+				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				BaseRefName:  "master",
+				HeadRefName:  "test-pr-4",
+				Title:        "This is a test PR, feel free to ignore",
+				Body:         "I'm opening this PR to test something. Please ignore.",
+				Draft:        true,
+			},
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

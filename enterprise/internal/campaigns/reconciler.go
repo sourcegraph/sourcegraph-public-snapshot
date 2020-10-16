@@ -74,7 +74,10 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return r.syncChangeset(ctx, tx, ch)
 
 	case actionPublish:
-		return r.publishChangeset(ctx, tx, ch, action.spec)
+		return r.publishChangeset(ctx, tx, ch, action.spec, false)
+
+	case actionPublishDraft:
+		return r.publishChangeset(ctx, tx, ch, action.spec, true)
 
 	case actionReopen:
 		return r.reopenChangeset(ctx, tx, ch)
@@ -111,16 +114,18 @@ func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns
 var ErrPublishSameBranch = errors.New("cannot create changeset on the same branch in multiple campaigns")
 
 // publishChangeset creates the given changeset on its code host.
-func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec) (err error) {
+func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, asDraft bool) (err error) {
 	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
 	}
 
+	description := spec.Spec
+
 	existingSameBranch, err := tx.GetChangeset(ctx, GetChangesetOpts{
 		ExternalServiceType: ch.ExternalServiceType,
 		RepoID:              ch.RepoID,
-		ExternalBranch:      git.AbbreviateRef(spec.Spec.HeadRef),
+		ExternalBranch:      git.AbbreviateRef(description.HeadRef),
 	})
 	if err != nil && err != ErrNoResults {
 		return err
@@ -148,9 +153,9 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 
 	// Now create the actual pull request on the code host
 	cs := &repos.Changeset{
-		Title:     spec.Spec.Title,
-		Body:      spec.Spec.Body,
-		BaseRef:   spec.Spec.BaseRef,
+		Title:     description.Title,
+		Body:      description.Body,
+		BaseRef:   description.BaseRef,
 		HeadRef:   git.EnsureRefPrefix(ref),
 		Repo:      repo,
 		Changeset: ch,
@@ -162,11 +167,22 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
 	}
 
-	// If we're running this method a second time, because we failed due to an
-	// ephemeral error, there's a race condition here.
-	// It's possible that `CreateChangeset` doesn't return the newest head ref
-	// commit yet, because the API of the codehost doesn't return it yet.
-	exists, err := ccs.CreateChangeset(ctx, cs)
+	var exists bool
+	if asDraft {
+		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
+		draftCcs, ok := ccs.(repos.DraftChangesetSource)
+		if !ok {
+			log15.Warn("Changeset action is publish-draft, but changeset source doesn't implement DraftChangesetSource")
+		} else {
+			exists, err = draftCcs.CreateDraftChangeset(ctx, cs)
+		}
+	} else {
+		// If we're running this method a second time, because we failed due to an
+		// ephemeral error, there's a race condition here.
+		// It's possible that `CreateChangeset` doesn't return the newest head ref
+		// commit yet, because the API of the codehost doesn't return it yet.
+		exists, err = ccs.CreateChangeset(ctx, cs)
+	}
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
@@ -445,6 +461,7 @@ const (
 	actionNone         actionType = "none"
 	actionUpdate       actionType = "update"
 	actionPublish      actionType = "publish"
+	actionPublishDraft actionType = "publish-draft"
 	actionSync         actionType = "sync"
 	actionClose        actionType = "close"
 	actionReopen       actionType = "reopen"
@@ -510,6 +527,10 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 	case campaigns.ChangesetPublicationStateUnpublished:
 		if curr.Spec.Published.True() {
 			action.actionType = actionPublish
+		} else if curr.Spec.Published.Draft() && ch.SupportsDraft() {
+			// If configured to be opened as draft, and the changeset supports
+			// draft mode, publish as draft. Otherwise, take no action.
+			action.actionType = actionPublishDraft
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:

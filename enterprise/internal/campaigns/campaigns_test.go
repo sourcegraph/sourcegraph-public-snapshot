@@ -8,17 +8,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func testRepo(t *testing.T, store repos.Store, serviceType string) *repos.Repo {
+func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 	t.Helper()
 
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svc := repos.ExternalService{
-		Kind:        serviceType,
-		DisplayName: serviceType + " - Test",
+		Kind:        serviceKind,
+		DisplayName: serviceKind + " - Test",
 		Config:      `{"url": "https://github.com"}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -34,7 +35,7 @@ func testRepo(t *testing.T, store repos.Store, serviceType string) *repos.Repo {
 		URI:  fmt.Sprintf("repo-%d", svc.ID),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
-			ServiceType: serviceType,
+			ServiceType: extsvc.KindToType(serviceKind),
 			ServiceID:   "https://example.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{

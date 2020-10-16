@@ -15,14 +15,26 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
+type CodehostCapability string
+
+const (
+	CodehostCapabilityLabels          CodehostCapability = "Labels"
+	CodehostCapabilityDraftChangesets CodehostCapability = "DraftChangesets"
+)
+
+type CodehostCapabilities struct {
+	Labels          bool
+	DraftChangesets bool
+}
+
 // SupportedExternalServices are the external service types currently supported
 // by the campaigns feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
-var SupportedExternalServices = map[string]struct{}{
-	extsvc.TypeGitHub:          {},
+var SupportedExternalServices = map[string]CodehostCapabilities{
+	extsvc.TypeGitHub:          {Labels: true, DraftChangesets: true},
 	extsvc.TypeBitbucketServer: {},
-	extsvc.TypeGitLab:          {},
+	extsvc.TypeGitLab:          {Labels: true},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -37,6 +49,18 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 func IsKindSupported(extSvcKind string) bool {
 	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
 	return ok
+}
+
+func HasCodehostCapability(extSvcType string, capability CodehostCapability) bool {
+	if es, ok := SupportedExternalServices[extSvcType]; ok {
+		switch capability {
+		case CodehostCapabilityDraftChangesets:
+			return es.DraftChangesets
+		case CodehostCapabilityLabels:
+			return es.Labels
+		}
+	}
+	return false
 }
 
 // Keyer represents items that return a unique key

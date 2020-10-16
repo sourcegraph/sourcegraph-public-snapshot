@@ -48,8 +48,9 @@ func TestReconcilerProcess(t *testing.T) {
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
 
-	githubPR := buildGithubPR(clock(), "OPEN")
-	closedGitHubPR := buildGithubPR(clock(), "CLOSED")
+	githubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateOpen)
+	draftGithubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateDraft)
+	closedGitHubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateClosed)
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
@@ -63,11 +64,12 @@ func TestReconcilerProcess(t *testing.T) {
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool
 
-		wantCreateOnHostCode bool
-		wantUpdateOnCodeHost bool
-		wantCloseOnCodeHost  bool
-		wantLoadFromCodeHost bool
-		wantReopenOnCodeHost bool
+		wantCreateOnCodeHost      bool
+		wantCreateDraftOnCodeHost bool
+		wantUpdateOnCodeHost      bool
+		wantCloseOnCodeHost       bool
+		wantLoadFromCodeHost      bool
+		wantReopenOnCodeHost      bool
 
 		wantGitserverCommit bool
 
@@ -124,7 +126,7 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
-			wantCreateOnHostCode: true,
+			wantCreateOnCodeHost: true,
 			wantGitserverCommit:  true,
 
 			wantChangeset: changesetAssertions{
@@ -155,7 +157,7 @@ func TestReconcilerProcess(t *testing.T) {
 
 			// We first do a create and since that fails with "already exists"
 			// we update.
-			wantCreateOnHostCode: true,
+			wantCreateOnCodeHost: true,
 			wantUpdateOnCodeHost: true,
 			wantGitserverCommit:  true,
 
@@ -550,6 +552,36 @@ func TestReconcilerProcess(t *testing.T) {
 				diffStat: state.DiffStat,
 			},
 		},
+
+		"publish as draft mode for supported codehost": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: "draft",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ownedByCampaign:  campaign.ID,
+			},
+			sourcerMetadata: draftGithubPR,
+
+			// Update the commit
+			wantGitserverCommit:       true,
+			wantCreateDraftOnCodeHost: true,
+
+			wantLoadFromCodeHost: false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     draftGithubPR.ID,
+				externalBranch: draftGithubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateDraft,
+
+				title:    draftGithubPR.Title,
+				body:     draftGithubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -631,7 +663,11 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong CreateCommitFromPatch call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
-			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnHostCode; have != want {
+			if have, want := fakeSource.CreateDraftChangesetCalled, tc.wantCreateDraftOnCodeHost; have != want {
+				t.Fatalf("wrong CreateDraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnCodeHost; have != want {
 				t.Fatalf("wrong CreateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
@@ -668,7 +704,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// we're just looking for a basic marker here that _something_
 			// happened.
 			var rcs *repos.Changeset
-			if tc.wantCreateOnHostCode && fakeSource.CreateChangesetCalled {
+			if tc.wantCreateOnCodeHost && fakeSource.CreateChangesetCalled {
 				rcs = fakeSource.CreatedChangesets[0]
 			} else if tc.wantUpdateOnCodeHost && fakeSource.UpdateChangesetCalled {
 				rcs = fakeSource.UpdatedChangesets[0]
@@ -678,6 +714,105 @@ func TestReconcilerProcess(t *testing.T) {
 				if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
 					t.Errorf("did not find backlink in body: %q", rcs.Body)
 				}
+			}
+		})
+	}
+}
+
+func TestDetermineAction(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	githubRepo := rs[0]
+
+	rs, _ = createBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepo := rs[0]
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatalf("admin is not site admin")
+	}
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "test-action", admin.ID)
+	createCampaign(t, ctx, store, "test-action", admin.ID, campaignSpec.ID)
+
+	tcs := []struct {
+		name           string
+		spec           testSpecOpts
+		changeset      testChangesetOpts
+		wantActionType actionType
+	}{
+		{
+			name: "GitHub publish",
+			spec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantActionType: actionPublish,
+		},
+		{
+			name: "GitHub publish as draft",
+			spec: testSpecOpts{
+				published: "draft",
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantActionType: actionPublishDraft,
+		},
+		{
+			name: "GitHub publish false",
+			spec: testSpecOpts{
+				published: false,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantActionType: actionNone,
+		},
+		{
+			name: "set to draft but unsupported",
+			spec: testSpecOpts{
+				published: "draft",
+				repo:      bbsRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				externalServiceType: extsvc.TypeBitbucketServer,
+				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
+				repo:                bbsRepo.ID,
+			},
+			wantActionType: actionNone,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			tx, err := store.Transact(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer tx.Done(errors.New("fail tx purposefully"))
+			tc.spec.campaignSpec = campaignSpec.ID
+			spec := createChangesetSpec(t, ctx, tx, tc.spec)
+			tc.changeset.currentSpec = spec.ID
+			cs := createChangeset(t, ctx, tx, tc.changeset)
+			action, err := determineAction(ctx, tx, cs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := action.actionType, tc.wantActionType; have != want {
+				t.Fatalf("incorrect action determined, want=%q have=%q", want, have)
 			}
 		})
 	}
@@ -749,7 +884,16 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
-func buildGithubPR(now time.Time, state string) *github.PullRequest {
+func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState) *github.PullRequest {
+	isDraft := false
+	var state string
+	switch externalState {
+	case campaigns.ChangesetExternalStateDraft:
+		state = "OPEN"
+		isDraft = true
+	default:
+		state = string(externalState)
+	}
 	pr := &github.PullRequest{
 		ID:          "12345",
 		Number:      12345,
@@ -757,6 +901,7 @@ func buildGithubPR(now time.Time, state string) *github.PullRequest {
 		Body:        state + " GitHub PR",
 		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
 		State:       state,
+		IsDraft:     isDraft,
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
@@ -770,8 +915,7 @@ func buildGithubPR(now time.Time, state string) *github.PullRequest {
 		UpdatedAt: now,
 	}
 
-	if strings.ToLower(state) == "closed" {
-		pr.State = "CLOSED"
+	if externalState == campaigns.ChangesetExternalStateClosed {
 		// We add a "ClosedEvent" so that the SyncChangesets call that happens after closing
 		// the PR has the "correct" state to set the ExternalState
 		pr.TimelineItems = append(pr.TimelineItems, github.TimelineItem{

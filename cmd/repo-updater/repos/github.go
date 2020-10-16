@@ -151,25 +151,41 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
+// Type guards.
 var _ ChangesetSource = GithubSource{}
+var _ DraftChangesetSource = GithubSource{}
 
-// CreateChangeset creates the given *Changeset in the code host.
+// CreateChangeset creates the given changeset on the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	var exists bool
-	repo := c.Repo.Metadata.(*github.Repository)
+	input := buildCreatePullRequestInput(c)
+	return s.createChangeset(ctx, c, input)
+}
 
-	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
-		RepositoryID: repo.ID,
+// CreateDraftChangeset creates the given changeset on the code host in draft mode.
+func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	input := buildCreatePullRequestInput(c)
+	input.Draft = true
+	return s.createChangeset(ctx, c, input)
+}
+
+func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
+	return &github.CreatePullRequestInput{
+		RepositoryID: c.Repo.Metadata.(*github.Repository).ID,
 		Title:        c.Title,
 		Body:         c.Body,
 		HeadRefName:  git.AbbreviateRef(c.HeadRef),
 		BaseRefName:  git.AbbreviateRef(c.BaseRef),
-	})
+	}
+}
 
+func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
+	var exists bool
+	pr, err := s.client.CreatePullRequest(ctx, prInput)
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
 			return exists, err
 		}
+		repo := c.Repo.Metadata.(*github.Repository)
 		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
 		if err != nil {
 			return exists, errors.Wrap(err, "getting repo owner and name")

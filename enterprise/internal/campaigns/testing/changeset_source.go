@@ -14,13 +14,14 @@ import (
 type FakeChangesetSource struct {
 	Svc *repos.ExternalService
 
-	CreateChangesetCalled  bool
-	UpdateChangesetCalled  bool
-	ListReposCalled        bool
-	ExternalServicesCalled bool
-	LoadChangesetsCalled   bool
-	CloseChangesetCalled   bool
-	ReopenChangesetCalled  bool
+	CreateDraftChangesetCalled bool
+	CreateChangesetCalled      bool
+	UpdateChangesetCalled      bool
+	ListReposCalled            bool
+	ExternalServicesCalled     bool
+	LoadChangesetsCalled       bool
+	CloseChangesetCalled       bool
+	ReopenChangesetCalled      bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -54,6 +55,36 @@ type FakeChangesetSource struct {
 
 	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
 	ReopenedChangesets []*repos.Changeset
+}
+
+var _ repos.ChangesetSource = &FakeChangesetSource{}
+var _ repos.DraftChangesetSource = &FakeChangesetSource{}
+
+func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+	s.CreateDraftChangesetCalled = true
+
+	if s.Err != nil {
+		return s.ChangesetExists, s.Err
+	}
+
+	if c.Repo == nil {
+		return false, NoReposErr
+	}
+
+	if c.HeadRef != s.WantHeadRef {
+		return s.ChangesetExists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
+	}
+
+	if c.BaseRef != s.WantBaseRef {
+		return s.ChangesetExists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
+	}
+
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return s.ChangesetExists, err
+	}
+
+	s.CreatedChangesets = append(s.CreatedChangesets, c)
+	return s.ChangesetExists, s.Err
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
