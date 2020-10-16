@@ -222,6 +222,7 @@ var deleteBatchSize = 8000
 
 func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
 	const script = `
+redis.replicate_commands()
 local cursor = "0"
 local keys = {}
 repeat
