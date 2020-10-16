@@ -53,7 +53,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
                             Enterprise, GitLab, Phabricator, and Bitbucket Server.
                         </p>
-                        <Video {...props} name="code_intelligence_on_the_code_host_installation_page" />
+                        <Video {...props} name="CodeIntelligenceOnCodeHost" />
                     </div>
                     <div className="col-sm-6">
                         <h3>Search shortcut in the URL location bar</h3>
@@ -61,7 +61,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             Type <code>src</code>
                             <kbd>space</kbd> in the address bar of your browser to search for queries on Sourcegraph.
                         </p>
-                        <Video {...props} name="code_intelligence_on_the_code_host_installation_page" />
+                        <Video {...props} name="BrowserShortcut" />
                     </div>
                 </div>
             </div>
@@ -122,7 +122,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         </div>
                     </div>
                     <div className="col-sm-6">
-                        <Video {...props} name="code_intelligence_on_the_code_host_installation_page" />
+                        <Video {...props} name="GrantPermissions" />
                     </div>
                 </div>
             </div>
@@ -169,7 +169,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         </div>
                     </div>
                     <div className="col-sm-6">
-                        <Video {...props} name="code_intelligence_on_the_code_host_installation_page" />
+                        <Video {...props} name="PrivateInstance" />
                     </div>
                 </div>
             </div>
