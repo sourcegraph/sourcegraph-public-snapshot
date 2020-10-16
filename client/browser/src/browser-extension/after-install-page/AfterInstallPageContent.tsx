@@ -51,7 +51,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
             <div className="container">
                 <h2 className="mb-4">How do I use the extension?</h2>
                 <div className="row">
-                    <div className="col-sm-6">
+                    <div className="col-md-6">
                         <h3>Code intelligence on your code host</h3>
                         <p>
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
@@ -59,7 +59,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         </p>
                         <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
                     </div>
-                    <div className="col-sm-6">
+                    <div className="col-md-6 mt-4 mt-md-0">
                         <h3>Search shortcut in the URL location bar</h3>
                         <p>
                             Type <code>src</code>
@@ -74,7 +74,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
         <section className="border-bottom py-5">
             <div className="container">
                 <div className="row">
-                    <div className="col-sm-6 d-flex flex-column">
+                    <div className="col-md-6 d-flex flex-column">
                         <h2 className="mb-4">Make it work on your codehost</h2>
                         <div className="bg-2 rounded p-3 mb-3 flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="mb-3 after-install-page-content__code-host-titles">
@@ -125,7 +125,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             </ol>
                         </div>
                     </div>
-                    <div className="col-sm-6">
+                    <div className="col-md-6 mt-4 mt-md-0">
                         <Video {...props} name="GrantPermissions" width={1762} height={1384} />
                     </div>
                 </div>
@@ -135,7 +135,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
         <section className="border-bottom py-5">
             <div className="container">
                 <div className="row">
-                    <div className="col-sm-6 d-flex flex-column">
+                    <div className="col-md-6 d-flex flex-column">
                         <h2 className="mb-4">Make it work for private code</h2>
                         <p>By default, the browser extension works only for public code.</p>
                         <div className="flex-grow-1 d-flex align-items-center">
@@ -172,7 +172,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             </ol>
                         </div>
                     </div>
-                    <div className="col-sm-6">
+                    <div className="col-md-6 mt-4 mt-md-0">
                         <Video {...props} name="PrivateInstance" width={1764} height={1390} />
                     </div>
                 </div>
