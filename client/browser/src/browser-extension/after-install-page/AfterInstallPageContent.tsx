@@ -8,6 +8,7 @@ import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
 
 const Video: React.FunctionComponent<
     { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
@@ -40,7 +41,7 @@ const Video: React.FunctionComponent<
 
 export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = props => (
     <div className="web-content after-install-page-content">
-        <SourcegraphIcon className="after-install-page-content__sourcegraph-logo" />
+        <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />
 
         <div className="container">
             <h1 className="mt-5">🎉 You’ve just installed the Sourcegraph browser extension!</h1>
