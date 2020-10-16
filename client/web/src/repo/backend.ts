@@ -7,7 +7,7 @@ import {
     RevisionNotFoundError,
 } from '../../../shared/src/backend/errors'
 import { FetchFileParameters } from '../../../shared/src/components/CodeExcerpt'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
@@ -188,9 +188,10 @@ const fetchHighlightedFile = memoizeObservable(
             `,
             context
         ).pipe(
-            map(({ data, errors }) => {
-                if (!data?.repository?.commit?.file?.highlight) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository) {
+                    throw new RepoNotFoundError(context.repoName)
                 }
                 const file = data.repository.commit.file
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
@@ -242,6 +243,7 @@ export const fetchFileExternalLinks = memoizeObservable(
             `,
             context
         ).pipe(
+            map(dataOrThrowErrors),
             map(({ data, errors }) => {
                 if (!data?.repository?.commit?.file?.externalURLs) {
                     throw createAggregateError(errors)
@@ -292,9 +294,16 @@ export const fetchTreeEntries = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (errors || !data?.repository?.commit?.tree) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository) {
+                    throw new RepoNotFoundError(args.repoName)
+                }
+                if (!data.repository.commit) {
+                    throw new RevisionNotFoundError(args.revision)
+                }
+                if (!data.repository.commit.tree) {
+                    throw new Error('Tree not found')
                 }
                 return data.repository.commit.tree
             })

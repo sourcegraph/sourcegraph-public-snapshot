@@ -143,10 +143,29 @@ export interface ExtensionAlertProps {
     onExtensionAlertDismissed: () => void
 }
 
+export class RepoPage extends React.Component<RepoContainerProps, { error: unknown }> {
+    constructor(props) {
+        super(props)
+        this.state = {}
+    }
+    static getDerivedStateFromError(error: unknown) {
+        if (isRepoNotFoundErrorLike(error)) {
+            return { error }
+        }
+        return null
+    }
+    render() {
+        if (isRepoNotFoundErrorLike(this.state.error)) {
+            return <RepositoryNotFoundPage repo={this.props.repoName} viewerCanAdminister={false} />
+        }
+        return <RepoContainer {...this.props} />
+    }
+}
+
 /**
  * Renders a horizontal bar and content for a repository page.
  */
-export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
+const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
