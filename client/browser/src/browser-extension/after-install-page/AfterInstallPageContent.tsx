@@ -50,8 +50,8 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
             </a>
         </div>
 
-        <div className="container mt-2">
-            <h1 className="mt-5">🎉 You’ve just installed the Sourcegraph browser extension!</h1>
+        <div className="container mt-3">
+            <h1>🎉 You’ve just installed the Sourcegraph browser extension!</h1>
             <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
         </div>
 
