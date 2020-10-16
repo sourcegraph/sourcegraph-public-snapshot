@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/campaignutils/overridable"
+	"github.com/sourcegraph/campaignutils/yaml"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,7 +39,7 @@ func (cs *CampaignSpec) Clone() *CampaignSpec {
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the CampaignSpec schema and does additional semantic validation.
 func (cs *CampaignSpec) UnmarshalValidate() error {
-	return unmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+	return yaml.UnmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
 // CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
