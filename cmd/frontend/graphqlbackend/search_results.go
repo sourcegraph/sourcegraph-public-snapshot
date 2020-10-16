@@ -1026,14 +1026,6 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	return result, nil
 }
 
-func prettyPrint(nodes []query.Node) string {
-	var resultStr []string
-	for _, node := range nodes {
-		resultStr = append(resultStr, node.String())
-	}
-	return strings.Join(resultStr, " ")
-}
-
 // setQuery sets a new query in the search resolver, for potentially repeated
 // calls in the search pipeline. The important part is it takes care of
 // invalidating cached repo info.
@@ -1041,7 +1033,6 @@ func (r *searchResolver) setQuery(q []query.Node) {
 	r.resolved.repoRevs = nil
 	r.resolved.missingRepoRevs = nil
 	r.repoErr = nil
-	log15.Info("q", prettyPrint(q))
 	r.query.(*query.AndOrQuery).Query = q
 }
 
