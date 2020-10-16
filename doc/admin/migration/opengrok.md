@@ -31,9 +31,9 @@ Every organization's needs are different. [Install and use Sourcegraph for free]
 
 For more information about Sourcegraph, see:
 
-- "[What is Sourcegraph?](../../user/index.md#what-is-sourcegraph)"
+- "[What is Sourcegraph?](../../getting-started/index.md#what-is-sourcegraph)"
 - "[Code search overview](../../code_search/index.md)"
-- Live examples on public code: [Sourcegraph tour](../../user/tour.md)
+- Live examples on public code: [Sourcegraph tour](../../getting-started/tour.md)
 
 ## Migration guide
 
@@ -105,7 +105,7 @@ After you've set Sourcegraph up, it's time to share it with your organization. S
   >
   > Post feedback at https://github.com/sourcegraph/sourcegraph [change if needed]
 
-- Create an internal document based on the [Sourcegraph tour](../../user/tour.md), substituting links to and names of your organization's code. This explains how Sourcegraph helps developers perform common tasks better.
+- Create an internal document based on the [Sourcegraph tour](../../getting-started/tour.md), substituting links to and names of your organization's code. This explains how Sourcegraph helps developers perform common tasks better.
 - Encourage installation of the [browser extension](../../integration/browser_extension.md) to get Sourcegraph code intelligence and search in your organization's existing code host.
 - Roll out the Chrome extension using [Google Workspace automatic installation](../../integration/google_workspace.md) to everyone in your organization.
 - Check the access logs for OpenGrok to see what users search for. Try searching for the same things on Sourcegraph, and ensure that you get the expected results. (Note: Sourcegraph's [search query syntax](../../code_search/reference/queries.md) differs from OpenGrok's.)
