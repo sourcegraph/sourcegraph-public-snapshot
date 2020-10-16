@@ -55,7 +55,7 @@ export function getProviders(
         tokens: {
             getInitialState: () => PARSER_STATE,
             tokenize: line => {
-                const result = parseSearchQuery(line)
+                const result = parseSearchQuery(line, options.interpretComments ?? false)
                 if (result.type === 'success') {
                     return {
                         tokens: getMonacoTokens(result.token),
