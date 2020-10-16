@@ -133,7 +133,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             </ol>
                         </div>
                     </div>
-                    <div className="col-md-6 mt-4 mt-md-0">
+                    <div className="col-md-6 mt-4 mt-md-0 d-flex">
                         <Video {...props} name="GrantPermissions" width={1762} height={1384} />
                     </div>
                 </div>
@@ -180,7 +180,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             </ol>
                         </div>
                     </div>
-                    <div className="col-md-6 mt-4 mt-md-0">
+                    <div className="col-md-6 mt-4 mt-md-0 d-flex">
                         <Video {...props} name="PrivateInstance" width={1764} height={1390} />
                     </div>
                 </div>
