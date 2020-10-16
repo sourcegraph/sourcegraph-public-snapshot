@@ -222,9 +222,18 @@ var deleteBatchSize = 8000
 
 func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
 	const script = `
-local keys = redis.call('keys', ARGV[1])
-local batchSize = ARGV[2]
+local cursor = "0"
+local keys = {}
+repeat
+	local result = redis.call('SCAN', cursor, 'MATCH', ARGV[1])
+	for _, v in ipairs(result[2]) do
+		keys[#keys+1] = v
+	end
+	cursor = result[1]
+until cursor == "0"
+
 local i = 0
+local batchSize = ARGV[2]
 
 local result = ''
 while i < #keys do
