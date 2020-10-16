@@ -19,7 +19,7 @@ exports[`CampaignsDotComPage renders 1`] = `
         title={
           <React.Fragment>
             Campaigns
-
+             
             <sup>
               <span
                 className="badge badge-merged text-uppercase"
@@ -39,9 +39,9 @@ exports[`CampaignsDotComPage renders 1`] = `
             <Memo(CampaignsFlushEdgesIcon)
               className="icon-inline page-header__icon"
             />
-
+             
             Campaigns
-
+             
             <sup>
               <span
                 className="badge badge-merged text-uppercase"
@@ -89,7 +89,7 @@ exports[`CampaignsDotComPage renders 1`] = `
         <ol>
           <li>
             Install a private Sourcegraph instance using the
-
+             
             <a
               href="https://docs.sourcegraph.com/#quickstart-guide"
               rel="noopener"
@@ -107,20 +107,20 @@ exports[`CampaignsDotComPage renders 1`] = `
           </li>
           <li>
             Follow the
-
+             
             <a
               href="https://docs.sourcegraph.com/campaigns/getting_started"
               rel="noopener"
             >
               Getting started with campaigns
             </a>
-
+             
             guide to enable campaigns on your instance and start using them.
           </li>
         </ol>
         <p>
           Learn more about campaigns
-
+           
           <a
             href="https://docs.sourcegraph.com/user/campaigns"
             rel="noopener"
@@ -136,19 +136,19 @@ exports[`CampaignsDotComPage renders 1`] = `
             Ask questions and share feedback
           </h2>
           <p>
-            Get in touch on Twitter
+            Get in touch on Twitter 
             <a
               href="https://twitter.com/srcgraph"
             >
               @srcgraph
             </a>
-            , file an issue in our
+            , file an issue in our 
             <a
               href="https://github.com/sourcegraph/sourcegraph/issues"
             >
               public issue tracker
             </a>
-            , or email
+            , or email 
             <a
               href="mailto:feedback@sourcegraph.com"
             >
