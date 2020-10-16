@@ -706,7 +706,9 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		ev.AddField("status", status)
 		ev.AddField("alert_type", alertType)
 		ev.AddField("duration_ms", time.Since(start).Milliseconds())
-		ev.AddField("result_size", len(rr.SearchResults))
+		if rr != nil {
+			ev.AddField("result_size", len(rr.SearchResults))
+		}
 
 		if honey.Enabled() {
 			_ = ev.Send()
