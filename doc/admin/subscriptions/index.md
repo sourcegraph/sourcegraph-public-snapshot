@@ -36,6 +36,12 @@ Some customers have contracts based on **total user accounts**, rather than on m
 
 A Sourcegraph user account is created when a user signs up or signs in for the first time. Sourcegraph user accounts can be deleted by administrators via the **Site admin > Users** page, or using the GraphQL API (including with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli), if needed).
 
+## How lines of code are counted
+
+We count the number of newlines (`\n`) appearing in the text search index. Our text search index contains the working copy of your default branch in all repositories synchronized by Sourcegraph. The default branch is typically called `master` or `main`. Additional branches can be configured to be indexed by site administrators. These will also be part of the newlines count.
+
+Our text search index deduplicates for paths that are the same across branches. We only count the newlines once per unique file. Forks are separately indexed. They are included in the count of new lines.
+
 ## Updating your license key
 
 - Navigate to Site admin > Configuration and update the `licenseKey` field with the new value and save.
