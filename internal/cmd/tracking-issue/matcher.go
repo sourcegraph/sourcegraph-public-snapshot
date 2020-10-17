@@ -69,7 +69,7 @@ func (m *Matcher) testLabels(labels []string) bool {
 // was configured with, if the given labels contains a planned/{milestone} label, or
 // the milestone on the tracking issue is not restricted.
 func (m *Matcher) testMilestone(milestone string, labels []string) bool {
-	return m.milestone == "" || milestone == m.milestone || contains(labels, fmt.Sprintf("planned/%s", milestone))
+	return m.milestone == "" || milestone == m.milestone || contains(labels, fmt.Sprintf("planned/%s", m.milestone))
 }
 
 // testAll returns true if all of the given values are true.
