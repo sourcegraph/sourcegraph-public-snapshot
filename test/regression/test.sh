@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -exo pipefail
+set -x
 
 # shellcheck disable=SC1091
 source /root/.profile 
@@ -24,6 +24,8 @@ popd
 
 source /root/.profile
 pushd client/web
-sleep 10
-yarn run test:regression:search
+yarn run test:regression
 popd
+
+PID=$(pgrep ffmpeg)
+kill "$PID"
