@@ -1032,9 +1032,11 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 // calls in the search pipeline. The important part is it takes care of
 // invalidating cached repo info.
 func (r *searchResolver) setQuery(q []query.Node) {
-	r.resolved.repoRevs = nil
-	r.resolved.missingRepoRevs = nil
-	r.repoErr = nil
+	if r.invalidateRepoCache {
+		r.resolved.repoRevs = nil
+		r.resolved.missingRepoRevs = nil
+		r.repoErr = nil
+	}
 	r.query.(*query.AndOrQuery).Query = q
 }
 
@@ -1075,6 +1077,23 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	}
 	r.sortResults(ctx, result.SearchResults)
 	return result, nil
+}
+
+// setRepoCacheInvalidation sets whether resolved repos should be invalidated when
+// evaluating subexpressions. If a query contains more than one repo or repogroup
+// field, we should invalidate resolved repos, since multiple repo or repogroups
+// imply that different repos may need to be resolved.
+func (r *searchResolver) setRepoCacheInvalidation() {
+	var seenRepo, seenRepoGroup int
+	query.VisitField(r.query.(*query.AndOrQuery).Query, "repo", func(_ string, _ bool, _ query.Annotation) {
+		seenRepo += 1
+	})
+	query.VisitField(r.query.(*query.AndOrQuery).Query, "repogroup", func(_ string, _ bool, _ query.Annotation) {
+		seenRepo += 1
+	})
+	if seenRepo+seenRepoGroup > 1 {
+		r.invalidateRepoCache = true
+	}
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
