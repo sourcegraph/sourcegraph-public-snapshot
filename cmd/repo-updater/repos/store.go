@@ -1146,7 +1146,21 @@ SELECT id from due EXCEPT SELECT id from busy
 
 // ListSyncJobs returns all sync jobs.
 func (s *DBStore) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT * FROM external_service_sync_jobs_with_next_sync_at")
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT
+			id,
+			state,
+			failure_message,
+			started_at,
+			finished_at,
+			process_after,
+			num_resets,
+			num_failures,
+			log_contents,
+			external_service_id,
+			next_sync_at
+		 FROM external_service_sync_jobs_with_next_sync_at
+	`)
 	if err != nil {
 		return nil, err
 	}
@@ -1158,6 +1172,10 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
+		// required field for the sync worker, but
+		// the value is thrown out here
+		var logContents *string
+
 		var job SyncJob
 		if err := rows.Scan(
 			&job.ID,
@@ -1168,6 +1186,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
+			&logContents,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
 		); err != nil {

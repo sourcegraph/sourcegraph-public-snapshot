@@ -42,6 +42,9 @@ type MockStore struct {
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *StoreResetStalledFunc
+	// SetLogContentsFunc is an instance of a mock function object
+	// controlling the behavior of the method SetLogContents.
+	SetLogContentsFunc *StoreSetLogContentsFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -88,6 +91,11 @@ func NewMockStore() *MockStore {
 				return nil, nil, nil
 			},
 		},
+		SetLogContentsFunc: &StoreSetLogContentsFunc{
+			defaultHook: func(context.Context, int, string) error {
+				return nil
+			},
+		},
 	}
 }
 
@@ -118,6 +126,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		ResetStalledFunc: &StoreResetStalledFunc{
 			defaultHook: i.ResetStalled,
+		},
+		SetLogContentsFunc: &StoreSetLogContentsFunc{
+			defaultHook: i.SetLogContents,
 		},
 	}
 }
