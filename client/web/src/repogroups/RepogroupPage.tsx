@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
+    ShowQueryBuilderProps,
 } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -45,7 +46,8 @@ export interface RepogroupPageProps
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -112,7 +114,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                         hiddenQueryPrefix={repogroupQuery}
                         source="repogroupPage"
                         hideVersionContexts={true}
-                        hideQueryBuilder={true}
+                        showQueryBuilder={false}
                     />
                 ) : (
                     <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />

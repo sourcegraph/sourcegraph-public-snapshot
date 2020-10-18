@@ -1109,6 +1109,8 @@ type SettingsExperimentalFeatures struct {
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// ShowOnboardingTour description: Enables the onboarding tour.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
+	// ShowQueryBuilder description: Enables the search query builder page at search/query-builder
+	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.

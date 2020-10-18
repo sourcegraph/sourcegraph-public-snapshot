@@ -43,7 +43,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Homepage panels are now enabled by default. [#14287](https://github.com/sourcegraph/sourcegraph/issues/14287)
 - The most recent ping data is now available to site admins via the Site-admin > Pings page. [#13956](https://github.com/sourcegraph/sourcegraph/issues/13956)
 - Homepage panel engagement metrics will be sent back in pings. [#14589](https://github.com/sourcegraph/sourcegraph/pull/14589)
-- Added an onboarding tour of Sourcegraph for new users. [#14636](https://github.com/sourcegraph/sourcegraph/pull/14636)
+- Homepage now has a footer with links to different extensibility features. [#14638](https://github.com/sourcegraph/sourcegraph/issues/14638)
+- Added an onboarding tour of Sourcegraph for new users. It can be enabled in user settings with `experimentalFeatures.showOnboardingTour` [#14636](https://github.com/sourcegraph/sourcegraph/pull/14636)
 - Repository GraphQL queries now support an `after` parameter that permits cursor-based pagination. [#13715](https://github.com/sourcegraph/sourcegraph/issues/13715)
 
 ### Changed
@@ -56,6 +57,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The precise code intel bundle manager will now expire any converted LSIF data that is older than `PRECISE_CODE_INTEL_MAX_DATA_AGE` (30 days by default) that is also not visible from the tip of the default branch.
 - `SRC_LOG_LEVEL=warn` is now the default in Docker Compose and Kubernetes deployments, reducing the amount of uninformative log spam. [#14458](https://github.com/sourcegraph/sourcegraph/pull/14458)
 - Permissions data that were stored in deprecated binary format are abandoned. Downgrade from 3.21 to 3.20 is OK, but to 3.19 or prior versions might experience missing/incomplete state of permissions for a short period of time. [#13740](https://github.com/sourcegraph/sourcegraph/issues/13740)
+- The query builder page is now disabled by default. To reenable it, add `{ "experimentalFeatures": { "showQueryBuilder": true } }` in user settings.
 
 ### Fixed
 

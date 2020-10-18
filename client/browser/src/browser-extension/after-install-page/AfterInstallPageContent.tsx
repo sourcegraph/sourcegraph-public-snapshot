@@ -1,19 +1,57 @@
-import React from 'react'
+import React, { VideoHTMLAttributes } from 'react'
 import LockIcon from 'mdi-react/LockIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
-import { SourcegraphIcon } from '../../shared/components/SourcegraphIcon'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
 
-export const AfterInstallPageContent: React.FunctionComponent = () => (
+const Video: React.FunctionComponent<
+    { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
+> = ({ name, isLightTheme, width, height }) => {
+    const suffix = isLightTheme ? 'Light' : 'Dark'
+    return (
+        <video
+            className="w-100 h-auto cursor-pointer"
+            width={width}
+            height={height}
+            autoPlay={true}
+            loop={true}
+            muted={true}
+            playsInline={true}
+            onClick={event => event.currentTarget.requestFullscreen()}
+            // Add a key on the theme to force React to render a new <video> element when the theme changes
+            key={name + suffix}
+        >
+            <source
+                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}${suffix}.webm`}
+                type="video/webm"
+            />
+            <source
+                src={`https://storage.googleapis.com/sourcegraph-assets/code-host-integration/${name}${suffix}.mp4`}
+                type="video/mp4"
+            />
+        </video>
+    )
+}
+
+export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = props => (
     <div className="web-content after-install-page-content">
-        <SourcegraphIcon className="after-install-page-content__sourcegraph-logo" />
+        <div className="d-flex w-100 p-3 justify-content-between align-items-center">
+            <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">
+                <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />
+            </a>
+            <a href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
+                Browser extension docs <ExternalLinkIcon className="icon-inline" />
+            </a>
+        </div>
 
-        <div className="container">
-            <h1 className="mt-5">🎉 You’ve just installed the Sourcegraph browser extension!</h1>
+        <div className="container mt-3">
+            <h1>🎉 You’ve just installed the Sourcegraph browser extension!</h1>
             <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
         </div>
 
@@ -21,21 +59,21 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
             <div className="container">
                 <h2 className="mb-4">How do I use the extension?</h2>
                 <div className="row">
-                    <div className="col-sm-6">
+                    <div className="col-md-6">
                         <h3>Code intelligence on your code host</h3>
-                        <p className="m-0">
+                        <p>
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
                             Enterprise, GitLab, Phabricator, and Bitbucket Server.
                         </p>
-                        {/* Video placeholder */}
+                        <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
                     </div>
-                    <div className="col-sm-6">
+                    <div className="col-md-6 mt-4 mt-md-0">
                         <h3>Search shortcut in the URL location bar</h3>
-                        <p className="m-0">
+                        <p>
                             Type <code>src</code>
                             <kbd>space</kbd> in the address bar of your browser to search for queries on Sourcegraph.
                         </p>
-                        {/* Video placeholder */}
+                        <Video {...props} name="BrowserShortcut" width={1196} height={720} />
                     </div>
                 </div>
             </div>
@@ -43,10 +81,10 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
 
         <section className="border-bottom py-5">
             <div className="container">
-                <h2 className="mb-4">Make it work on your codehost</h2>
                 <div className="row">
-                    <div className="col-sm-6">
-                        <div className="bg-2 rounded p-3 mb-3">
+                    <div className="col-md-6 d-flex flex-column">
+                        <h2 className="mb-4">Make it work on your codehost</h2>
+                        <div className="bg-2 rounded p-3 mb-3 flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="mb-3 after-install-page-content__code-host-titles">
                                 <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
                                 github.com
@@ -56,7 +94,7 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                                 default.
                             </p>
                         </div>
-                        <div className="bg-2 rounded p-3">
+                        <div className="bg-2 rounded p-3 flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
                                 <div className="mr-5 mb-3">
                                     <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
@@ -95,18 +133,20 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             </ol>
                         </div>
                     </div>
-                    <div className="col-sm-6">{/* Video placeholder */}</div>
+                    <div className="col-md-6 mt-4 mt-md-0 d-flex">
+                        <Video {...props} name="GrantPermissions" width={1762} height={1384} />
+                    </div>
                 </div>
             </div>
         </section>
 
         <section className="border-bottom py-5">
             <div className="container">
-                <h2 className="mb-4">Make it work for private code</h2>
                 <div className="row">
-                    <div className="col-sm-6">
+                    <div className="col-md-6 d-flex flex-column">
+                        <h2 className="mb-4">Make it work for private code</h2>
                         <p>By default, the browser extension works only for public code.</p>
-                        <div className="d-flex w-100 align-items-center">
+                        <div className="flex-grow-1 d-flex align-items-center">
                             <div className="bg-3 rounded-circle p-2">
                                 <LockIcon className="icon-inline" />
                             </div>
@@ -115,9 +155,9 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                                 <strong>private Sourcegraph instance</strong> and connect the extension to it.
                             </p>
                         </div>
-                        <div className="bg-2 rounded p-3 mt-4">
+                        <div className="flex-grow-1 bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
                             <p>Follow these instructions:</p>
-                            <ol className="m-0">
+                            <ol className="m-0 flex-grow-1 d-flex flex-column justify-content-around">
                                 <li>
                                     <strong>Install Sourcegraph</strong> (
                                     <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener">
@@ -140,7 +180,9 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             </ol>
                         </div>
                     </div>
-                    <div className="col-sm-6">{/* Video placeholder */}</div>
+                    <div className="col-md-6 mt-4 mt-md-0 d-flex">
+                        <Video {...props} name="PrivateInstance" width={1764} height={1390} />
+                    </div>
                 </div>
             </div>
         </section>
@@ -159,7 +201,7 @@ export const AfterInstallPageContent: React.FunctionComponent = () => (
                             rel="noopener"
                             target="_blank"
                         >
-                            Sourcegraph Documentation
+                            Sourcegraph docs
                         </a>{' '}
                         to learn more about how we respect your privacy, troubleshooting and extension features.
                     </p>

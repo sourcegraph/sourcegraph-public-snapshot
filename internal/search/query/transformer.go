@@ -414,7 +414,7 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 	return prefixes
 }
 
-// dnf returns the Disjunctive Normal Form of a query (a flat sequence of
+// Dnf returns the Disjunctive Normal Form of a query (a flat sequence of
 // or-expressions) by applying the distributive property on (possibly nested)
 // or-expressions. For example, the query:
 //
@@ -427,7 +427,7 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 // the results. Note that various optimizations are possible
 // during evaluation, but those are separate query pre- or postprocessing steps
 // separate from this general transformation.
-func dnf(query []Node) [][]Node {
+func Dnf(query []Node) [][]Node {
 	return distribute([][]Node{}, query)
 }
 
@@ -644,7 +644,7 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 
 // concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
 // Invariant: Guaranteed to succeed on a validated and DNF query.
-func concatRevFilters(nodes []Node) []Node {
+func ConcatRevFilters(nodes []Node) []Node {
 	var revision string
 	nodes = MapField(nodes, FieldRev, func(value string, _ bool) Node {
 		revision = value

@@ -164,6 +164,23 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if alert := resultsResolver.Alert(); alert != nil {
+		var pqs []proposedQuery
+		if proposed := alert.ProposedQueries(); proposed != nil {
+			for _, pq := range *proposed {
+				pqs = append(pqs, proposedQuery{
+					Description: fromStrPtr(pq.Description()),
+					Query:       pq.Query(),
+				})
+			}
+		}
+		_ = eventWriter.Event("alert", eventAlert{
+			Title:           alert.Title(),
+			Description:     fromStrPtr(alert.Description()),
+			ProposedQueries: pqs,
+		})
+	}
+
 	// TODO stats
 	_ = eventWriter.Event("done", map[string]interface{}{})
 }
@@ -401,4 +418,18 @@ type eventFilter struct {
 	Count    int    `json:"count"`
 	LimitHit bool   `json:"limitHit"`
 	Kind     string `json:"kind"`
+}
+
+// eventAlert is GQL.SearchAlert. It replaces when sent to match existing
+// behaviour.
+type eventAlert struct {
+	Title           string          `json:"title"`
+	Description     string          `json:"description,omitempty"`
+	ProposedQueries []proposedQuery `json:"proposedQueries"`
+}
+
+// proposedQuery is a suggested query to run when we emit an alert.
+type proposedQuery struct {
+	Description string `json:"description,omitempty"`
+	Query       string `json:"query"`
 }

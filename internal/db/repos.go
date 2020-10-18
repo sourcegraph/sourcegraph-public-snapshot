@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -16,6 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/db/query"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -167,6 +176,25 @@ FROM repo
 WHERE deleted_at IS NULL
 AND %%s`
 
+const getSourcesByRepoQueryStr = `
+(
+	SELECT
+		json_agg(
+		json_build_object(
+			'CloneURL', esr.clone_url,
+			'ID', esr.external_service_id,
+			'Kind', LOWER(svcs.kind)
+		)
+		)
+	FROM external_service_repos AS esr
+	JOIN external_services AS svcs ON esr.external_service_id = svcs.id
+	WHERE
+		esr.repo_id = repo.id
+		AND
+		svcs.deleted_at IS NULL
+)
+`
+
 var getBySQLColumns = []string{
 	"id",
 	"name",
@@ -180,6 +208,10 @@ var getBySQLColumns = []string{
 	"archived",
 	"cloned",
 	"created_at",
+	"updated_at",
+	"deleted_at",
+	"metadata",
+	getSourcesByRepoQueryStr,
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
@@ -236,7 +268,10 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		)
 	}
 
-	return rows.Scan(
+	var sources dbutil.NullJSONRawMessage
+	var metadata json.RawMessage
+
+	err = rows.Scan(
 		&r.ID,
 		&r.Name,
 		&r.Private,
@@ -244,12 +279,67 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
 		&dbutil.NullString{S: &r.URI},
-		&r.Description,
+		&dbutil.NullString{S: &r.Description},
 		&r.Fork,
 		&r.Archived,
 		&r.Cloned,
 		&r.CreatedAt,
+		&dbutil.NullTime{Time: &r.UpdatedAt},
+		&dbutil.NullTime{Time: &r.DeletedAt},
+		&metadata,
+		&sources,
 	)
+	if err != nil {
+		return err
+	}
+
+	type sourceInfo struct {
+		ID       int64
+		CloneURL secret.StringValue
+		Kind     string
+	}
+	r.Sources = make(map[string]*types.SourceInfo)
+
+	if sources.Raw != nil {
+		var srcs []sourceInfo
+		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
+			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+		}
+		for _, src := range srcs {
+			urn := extsvc.URN(src.Kind, src.ID)
+			r.Sources[urn] = &types.SourceInfo{
+				ID:       urn,
+				CloneURL: *src.CloneURL.S,
+			}
+		}
+	}
+
+	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	if !ok {
+		return nil
+	}
+	switch typ {
+	case extsvc.TypeGitHub:
+		r.Metadata = new(github.Repository)
+	case extsvc.TypeGitLab:
+		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeBitbucketServer:
+		r.Metadata = new(bitbucketserver.Repo)
+	case extsvc.TypeBitbucketCloud:
+		r.Metadata = new(bitbucketcloud.Repo)
+	case extsvc.TypeAWSCodeCommit:
+		r.Metadata = new(awscodecommit.Repository)
+	case extsvc.TypeGitolite:
+		r.Metadata = new(gitolite.Repo)
+	default:
+		return nil
+	}
+
+	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
+		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
+	}
+
+	return nil
 }
 
 // ReposListOptions specifies the options for listing repositories.
@@ -389,6 +479,43 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
+
+// Delete deletes repos associated with the given ids and their associated sources.
+func (s *repos) Delete(ctx context.Context, ids ...api.RepoID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// The number of deleted repos can potentially be higher
+	// than the maximum number of arguments we can pass to postgres.
+	// We pass them as a json array instead to overcome this limitation.
+	encodedIds, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(deleteReposQuery, string(encodedIds))
+
+	_, err = dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "delete")
+	}
+
+	return nil
+}
+
+const deleteReposQuery = `
+WITH repo_ids AS (
+  SELECT jsonb_array_elements_text(%s) AS id
+)
+UPDATE repo
+SET
+  name = soft_deleted_repository_name(name),
+  deleted_at = transaction_timestamp()
+FROM repo_ids
+WHERE deleted_at IS NULL
+AND repo.id = repo_ids.id::int
+`
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
 // requested information by other services (repo-updater and

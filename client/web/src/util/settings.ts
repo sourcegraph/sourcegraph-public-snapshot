@@ -54,6 +54,7 @@ export function experimentalFeaturesFromSettings(
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
+    showQueryBuilder: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -64,9 +65,10 @@ export function experimentalFeaturesFromSettings(
         copyQueryButton = false,
         searchStreaming = false,
         showRepogroupHomepage = false,
-        showOnboardingTour = true, // Default to true if not set
+        showOnboardingTour = false,
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
+        showQueryBuilder = false,
     } = experimentalFeatures
 
     return {
@@ -77,5 +79,6 @@ export function experimentalFeaturesFromSettings(
         showOnboardingTour,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
+        showQueryBuilder,
     }
 }

@@ -62,7 +62,7 @@ const SettingsSchemaJSON = `{
         "showOnboardingTour": {
           "description": "Enables the onboarding tour.",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": { "pointer": true }
         },
         "showEnterpriseHomePanels": {
@@ -73,6 +73,12 @@ const SettingsSchemaJSON = `{
         },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "showQueryBuilder": {
+          "description": "Enables the search query builder page at search/query-builder",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }

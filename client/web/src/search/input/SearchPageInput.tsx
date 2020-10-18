@@ -66,14 +66,14 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
+    /** Show the query builder link. */
+    showQueryBuilder: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
-    /** Don't show the query builder link. */
-    hideQueryBuilder?: boolean
     autoFocus?: boolean
 }
 
@@ -293,7 +293,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             />
                             <SearchButton />
                         </div>
-                        {!props.hideQueryBuilder && !props.splitSearchModes && (
+                        {props.showQueryBuilder && !props.splitSearchModes && (
                             <div className="search-page__input-sub-container">
                                 <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
                                     Query builder

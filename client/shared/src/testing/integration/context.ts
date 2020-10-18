@@ -1,6 +1,7 @@
 import { Test } from 'mocha'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
+import pTimeout from 'p-timeout'
 import { Driver } from '../driver'
 import { recordCoverage } from '../coverage'
 import { readFile, mkdir } from 'mz/fs'
@@ -82,6 +83,8 @@ export interface IntegrationTestOptions {
      */
     directory: string
 }
+
+const DISPOSE_ACTION_TIMEOUT = 5 * 1000
 
 /**
  * Should be called in a `beforeEach()` and saved into a local variable.
@@ -255,9 +258,9 @@ export const createSharedIntegrationTestContext = async <
         },
         dispose: async () => {
             subscriptions.unsubscribe()
-            await recordCoverage(driver.browser)
-            await driver.page.close()
-            await polly.stop()
+            await pTimeout(recordCoverage(driver.browser), DISPOSE_ACTION_TIMEOUT)
+            await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT)
+            await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT)
         },
     }
 }

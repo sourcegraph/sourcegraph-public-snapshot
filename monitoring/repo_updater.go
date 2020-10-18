@@ -4,6 +4,9 @@ import (
 	"time"
 )
 
+// This is set a bit longer than maxSyncInterval in cmd/repo-updater/repos/syncer.go
+const syncDurationThreshold = 9 * time.Hour
+
 func RepoUpdater() *Container {
 	return &Container{
 		Name:        "repo-updater",
@@ -35,9 +38,9 @@ func RepoUpdater() *Container {
 						Observable{
 							Name:              "src_repoupdater_max_sync_backoff",
 							Description:       "time since oldest sync",
-							Query:             `sum(src_repoupdater_max_sync_backoff)`,
+							Query:             `max(src_repoupdater_max_sync_backoff)`,
 							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(8 * time.Hour.Seconds()).For(10 * time.Minute),
+							Critical:          Alert().GreaterOrEqual(syncDurationThreshold.Seconds()).For(10 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Make sure there are external services added with valid tokens",
@@ -49,7 +52,7 @@ func RepoUpdater() *Container {
 							Description:       "sync was started",
 							Query:             `sum by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().LegendFormat("{{family}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for errors.",
@@ -81,7 +84,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories synced",
 							Query:             `sum by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().LegendFormat("{{state}}").Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check network connectivity to code hosts",
@@ -91,7 +94,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories sourced",
 							Query:             `sum(rate(src_repoupdater_source_repos_total[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check network connectivity to code hosts",
@@ -126,7 +129,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories scheduled due to hitting a deadline",
 							Query:             `sum(rate(src_repoupdater_sched_auto_fetch[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
@@ -136,7 +139,7 @@ func RepoUpdater() *Container {
 							Description:       "repositories scheduled due to user traffic",
 							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
@@ -154,21 +157,22 @@ func RepoUpdater() *Container {
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
 						},
 						Observable{
-							Name:              "sched_update_queue_length",
-							Description:       "repositories queued for update",
-							Query:             `sum(src_repoupdater_sched_update_queue_length)`,
-							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(1000).For(5 * time.Minute),
+							Name:            "sched_update_queue_length",
+							Description:     "rate of growth of update queue length over 5 minutes",
+							Query:           `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
+							DataMayNotExist: true,
+							// Alert if the derivative is positive for longer than 30 minutes
+							Critical:          Alert().GreaterOrEqual(0).For(30 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs. The queue should drop as items are sent to GitServer",
+							PossibleSolutions: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",
 						},
 						Observable{
 							Name:              "sched_loops",
 							Description:       "scheduler loops",
 							Query:             `sum(rate(src_repoupdater_sched_loops[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(8 * time.Hour),
+							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts",

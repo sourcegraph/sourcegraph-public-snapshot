@@ -1,15 +1,22 @@
 package oauth
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
@@ -82,8 +89,67 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 // golang.org/x/oauth2 package will use our http client which is configured
 // with proxy and TLS settings/etc.
 func withOAuthExternalHTTPClient(r *http.Request) *http.Request {
-	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalHTTPClient())
+	client := httpcli.ExternalHTTPClient()
+	if traceLogEnabled {
+		loggingClient := *client
+		loggingClient.Transport = &loggingRoundTripper{underlying: client.Transport}
+		client = &loggingClient
+	}
+	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, client)
 	return r.WithContext(ctx)
+}
+
+var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_OAUTH2_LOG_TRACES", "false", "Log all OAuth2-related HTTP requests and responses. Only use during testing because the log messages will contain sensitive data."))
+
+type loggingRoundTripper struct {
+	underlying http.RoundTripper
+}
+
+func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReader io.ReadCloser, err error) {
+	if reader == nil {
+		return "", reader, nil
+	}
+	defer reader.Close()
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", nil, err
+	}
+	preview = string(b)
+	if len(preview) > 1000 {
+		preview = preview[:1000]
+	}
+	return preview, ioutil.NopCloser(bytes.NewReader(b)), nil
+}
+
+func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	{
+		var err error
+		var preview string
+		preview, req.Body, err = previewAndDuplicateReader(req.Body)
+		if err != nil {
+			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading request body", "error", err)
+			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading request body")
+		}
+		log.Printf(">>>>> HTTP Request: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), req.Header, preview)
+	}
+
+	resp, err := l.underlying.RoundTrip(req)
+	if err != nil {
+		log.Printf("<<<<< Error getting HTTP response: %s", err)
+		return resp, err
+	}
+
+	{
+		var err error
+		var preview string
+		preview, resp.Body, err = previewAndDuplicateReader(resp.Body)
+		if err != nil {
+			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading response body", "error", err)
+			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading response body")
+		}
+		log.Printf("<<<<< HTTP Response: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), resp.Header, preview)
+		return resp, err
+	}
 }
 
 func getExactlyOneOAuthProvider() *Provider {
