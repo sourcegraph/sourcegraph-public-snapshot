@@ -10,7 +10,7 @@
     }
 
     &__jump-to-top {
-        color: $color-light-text-1;
+        color: var(--body-color);
         background-color: $color-light-bg-2;
         padding: 0.25rem 0.5rem;
         text-align: center;
@@ -39,7 +39,6 @@
 .theme-dark {
     .search-results-list {
         &__jump-to-top {
-            color: $color-text-2;
             background-color: $color-bg-2;
         }
     }

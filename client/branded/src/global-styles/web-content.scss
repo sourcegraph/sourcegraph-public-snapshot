@@ -60,19 +60,11 @@
 
     // Search examples that link to the results page should use this class.
     .search-query-link {
-        color: $white;
-
-        .theme-light & {
-            color: $body-color-light;
-        }
+        color: var(--body-color);
     }
 
     .extension-area-link {
-        color: $gray-07;
-
-        .theme-light & {
-            color: $gray-13;
-        }
+        color: var(--link-color);
 
         &.active {
             color: var(--body-color);

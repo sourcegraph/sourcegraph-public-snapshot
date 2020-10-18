@@ -76,7 +76,7 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                     onClick={this.onSidebarToggle}
                     data-tooltip="Show sidebar (Alt+S/Opt+S)"
                 >
-                    <FormatListBulletedIcon />
+                    <FormatListBulletedIcon className="icon-inline" />
                 </button>
             )
         }

@@ -14,12 +14,12 @@
             color: $secondary;
             &--active,
             &:hover {
-                background-color: $color-bg-2;
+                background-color: var(--color-bg-3);
             }
         }
 
         &__name {
-            color: $color-text-2;
+            color: var(--body-color);
         }
 
         &__container-name {
@@ -36,24 +36,6 @@
         &__path {
             .theme-dark & {
                 color: #566e9f;
-            }
-        }
-    }
-}
-
-.theme-light {
-    .repo-revision-sidebar-symbols {
-        &-node {
-            &__link {
-                color: $color-light-text-2;
-                &--active,
-                &:hover {
-                    background-color: $color-light-bg-3;
-                }
-            }
-
-            &__name {
-                color: $color-light-text-1;
             }
         }
     }

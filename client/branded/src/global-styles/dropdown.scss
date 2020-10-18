@@ -7,8 +7,8 @@
 .theme-dark {
     --dropdown-bg: #0e121b;
     --dropdown-border-color: var(--border-color);
-    --dropdown-link-hover-bg: #{$color-bg-2};
-    --dropdown-header-color: #{$color-text-1};
+    --dropdown-link-hover-bg: var(--color-bg-2);
+    --dropdown-header-color: var(--text-muted);
     .dropdown-menu {
         border-radius: 4px;
         box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
@@ -18,8 +18,8 @@
 .theme-light {
     --dropdown-bg: #ffffff;
     --dropdown-border-color: var(--border-color);
-    --dropdown-link-hover-bg: #{$color-light-bg-2};
-    --dropdown-header-color: #{$color-light-text-2};
+    --dropdown-link-hover-bg: var(--color-bg-2);
+    --dropdown-header-color: var(--text-muted);
     .dropdown-menu {
         border-radius: 4px;
         box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);

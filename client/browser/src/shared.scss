@@ -14,12 +14,9 @@ $body-bg-color-light: #ffffff;
 @import '../../shared/src/notifications/NotificationItem';
 @import '../../shared/src/notifications/Notifications';
 
-$body-color-light: #2b3750;
-$body-color-dark: #f2f4f8;
-
 :root {
     --body-bg: #ffffff;
-    --text-muted: #{$color-light-text-2};
+    --text-muted: #888888;
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
     --dropdown-bg: #{$color-light-bg-1};

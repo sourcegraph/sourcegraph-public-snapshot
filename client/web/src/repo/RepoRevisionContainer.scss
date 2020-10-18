@@ -19,7 +19,8 @@
         background: #1c2736;
 
         &-toggle {
-            background: #1c2736;
+            background: var(--color-bg-3);
+            color: var(--text-muted);
 
             position: absolute;
             top: 0;
@@ -52,14 +53,6 @@
     .repo-revision-container {
         &__sidebar {
             background: $color-light-bg-2;
-
-            &-toggle {
-                background: $color-light-bg-2;
-
-                &:hover {
-                    color: $color-light-text-5;
-                }
-            }
         }
 
         &__content {
