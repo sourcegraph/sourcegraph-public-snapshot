@@ -36,6 +36,9 @@ type MockStore struct {
 	// MarkErroredFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkErrored.
 	MarkErroredFunc *StoreMarkErroredFunc
+	// QueuedCountFunc is an instance of a mock function object controlling
+	// the behavior of the method QueuedCount.
+	QueuedCountFunc *StoreQueuedCountFunc
 	// RequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Requeue.
 	RequeueFunc *StoreRequeueFunc
@@ -78,6 +81,11 @@ func NewMockStore() *MockStore {
 				return false, nil
 			},
 		},
+		QueuedCountFunc: &StoreQueuedCountFunc{
+			defaultHook: func(context.Context, []*sqlf.Query) (int, error) {
+				return 0, nil
+			},
+		},
 		RequeueFunc: &StoreRequeueFunc{
 			defaultHook: func(context.Context, int, time.Time) error {
 				return nil
@@ -112,6 +120,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		MarkErroredFunc: &StoreMarkErroredFunc{
 			defaultHook: i.MarkErrored,
+		},
+		QueuedCountFunc: &StoreQueuedCountFunc{
+			defaultHook: i.QueuedCount,
 		},
 		RequeueFunc: &StoreRequeueFunc{
 			defaultHook: i.Requeue,
