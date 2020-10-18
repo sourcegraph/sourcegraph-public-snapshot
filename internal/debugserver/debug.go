@@ -11,11 +11,10 @@ import (
 	"strings"
 
 	"github.com/felixge/fgprof"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-
-	"golang.org/x/net/trace"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"golang.org/x/net/trace"
 )
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
@@ -121,4 +120,13 @@ func Start(extra ...Endpoint) {
 type Dumper interface {
 	// DebugDump returns a snapshot of the current state.
 	DebugDump() interface{}
+}
+
+type routine struct{ extra []Endpoint }
+
+func (r routine) Start() { Start(r.extra...) }
+func (r routine) Stop()  {}
+
+func NewBackgroundRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
+	return &routine{extra: extra}
 }

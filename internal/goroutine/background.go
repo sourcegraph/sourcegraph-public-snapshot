@@ -75,3 +75,16 @@ func waitForSignal(signals <-chan os.Signal) {
 		exiter()
 	}()
 }
+
+type combinedRoutine struct {
+	routines []BackgroundRoutine
+}
+
+// Combine creates a background routine that wraps the given routines. The start
+// and stop methods will call the same method on all routines concurrently.
+func Combine(routines ...BackgroundRoutine) BackgroundRoutine {
+	return &combinedRoutine{routines: routines}
+}
+
+func (r *combinedRoutine) Start() { var wg sync.WaitGroup; startAll(&wg, r.routines...); wg.Wait() }
+func (r *combinedRoutine) Stop()  { var wg sync.WaitGroup; stopAll(&wg, r.routines...); wg.Wait() }
