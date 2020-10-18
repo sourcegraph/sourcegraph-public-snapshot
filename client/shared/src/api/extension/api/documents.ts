@@ -1,5 +1,5 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
-import { Subject } from 'rxjs'
+import { ReplaySubject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModelUpdate } from '../../client/services/modelService'
 import { ExtensionDocument } from './textDocument'
@@ -65,7 +65,7 @@ export class ExtensionDocuments implements ExtensionDocumentsAPI, ProxyMarked {
         return [...this.documents.values()]
     }
 
-    public openedTextDocuments = new Subject<TextDocument>()
+    public openedTextDocuments = new ReplaySubject<TextDocument>(1)
 
     public $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void {
         for (const update of modelUpdates) {
