@@ -2,10 +2,13 @@ import { Unsubscribable } from 'rxjs'
 import { parseContributionExpressions } from '../../../../../shared/src/api/client/services/contribution'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 
-export function registerPanelToolbarContributions({
-    extensionsController,
-}: ExtensionsControllerProps<'services'>): Unsubscribable {
-    return extensionsController.services.contribution.registerContributions({
+export function registerPanelToolbarContributions(
+    contributionService: Pick<
+        ExtensionsControllerProps['extensionsController']['services']['contribution'],
+        'registerContributions'
+    >
+): Unsubscribable {
+    return contributionService.registerContributions({
         contributions: parseContributionExpressions({
             actions: [
                 {
