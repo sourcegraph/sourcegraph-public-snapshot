@@ -86,5 +86,14 @@ func Combine(routines ...BackgroundRoutine) BackgroundRoutine {
 	return &combinedRoutine{routines: routines}
 }
 
-func (r *combinedRoutine) Start() { var wg sync.WaitGroup; startAll(&wg, r.routines...); wg.Wait() }
-func (r *combinedRoutine) Stop()  { var wg sync.WaitGroup; stopAll(&wg, r.routines...); wg.Wait() }
+func (r *combinedRoutine) Start() {
+	var wg sync.WaitGroup
+	startAll(&wg, r.routines...)
+	wg.Wait()
+}
+
+func (r *combinedRoutine) Stop()  {
+	var wg sync.WaitGroup
+	stopAll(&wg, r.routines...)
+	wg.Wait()
+}
