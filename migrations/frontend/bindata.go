@@ -100,6 +100,8 @@
 // 1528395732_add_external_services_sync_jobs_state_index.up.sql (120B)
 // 1528395733_add_permissions_object_ids_default.down.sql (297B)
 // 1528395733_add_permissions_object_ids_default.up.sql (313B)
+// 1528395734_add_index_to_repo_created_at.down.sql (153B)
+// 1528395734_add_index_to_repo_created_at.up.sql (125B)
 
 package migrations
 
@@ -2168,6 +2170,46 @@ func _1528395733_add_permissions_object_ids_defaultUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395734_add_index_to_repo_created_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\x31\xaa\x02\x31\x10\x06\xe0\x3e\xa7\xf8\xcb\xf7\x8a\xbd\x80\x56\x12\x23\x04\x64\x02\xd9\x08\x6b\xb5\x8c\xd9\x14\x41\x99\x48\x32\xde\xdf\xc2\xc2\xca\xf6\x2b\xbe\x69\x02\x35\x2d\x3b\xd8\xe8\x0e\xc9\xc1\xd3\xd1\x2d\xb0\x81\xec\x25\x46\x47\xe9\x7c\x45\x66\x91\xa6\xe8\x2f\x41\x95\x51\xb7\x02\x86\x76\x96\xc1\x59\x6b\x13\xdc\x1e\x2d\xdf\x8d\xf9\x1d\xf8\x13\x28\x24\xb8\xc5\xcf\x69\x46\x2f\xcf\x36\xd6\xdc\x0b\x6b\xd9\x56\x56\x04\xfa\xd8\xdf\xd7\xfe\xf7\xe6\x1d\x00\x00\xff\xff\x17\x7a\x5d\x0c\x99\x00\x00\x00")
+
+func _1528395734_add_index_to_repo_created_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395734_add_index_to_repo_created_atDownSql,
+		"1528395734_add_index_to_repo_created_at.down.sql",
+	)
+}
+
+func _1528395734_add_index_to_repo_created_atDownSql() (*asset, error) {
+	bytes, err := _1528395734_add_index_to_repo_created_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395734_add_index_to_repo_created_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x62, 0x68, 0xe4, 0xcf, 0xc6, 0x7c, 0xcd, 0xac, 0x89, 0xa0, 0xe7, 0x1a, 0x92, 0x7d, 0xd4, 0x7, 0xa7, 0xc4, 0xe7, 0x0, 0xb0, 0xf1, 0xa2, 0xa5, 0x6a, 0xdb, 0xd, 0xd8, 0x57, 0x65, 0xb3, 0xd3}}
+	return a, nil
+}
+
+var __1528395734_add_index_to_repo_created_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xd1\x09\xc2\x30\x10\x06\xe0\xf7\x4c\xf1\x2f\xd0\x05\xf4\xb1\x8d\x10\x90\x54\xd2\x0a\xf5\xa9\x9c\xe9\x3d\x04\xe5\x4e\x2e\xe7\xfe\x4e\xe0\x00\xdf\x30\x20\xab\xf3\x09\x53\x99\x6f\x48\x79\x8a\x1b\xc6\x39\x8f\xf7\x52\x62\x5e\xaf\x0f\x54\x12\x51\x87\x7d\x05\x4d\x7a\x3b\x18\x04\x37\x92\x4e\xd5\x9b\x0a\x9e\x6f\xad\xaf\x10\xfe\xf1\x74\x41\xdc\xd2\xb2\x2e\x30\xfe\x68\xdf\xab\x31\x39\x1f\x3b\xf9\x39\x84\x5f\x00\x00\x00\xff\xff\x04\xb9\xb2\xbb\x7d\x00\x00\x00")
+
+func _1528395734_add_index_to_repo_created_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395734_add_index_to_repo_created_atUpSql,
+		"1528395734_add_index_to_repo_created_at.up.sql",
+	)
+}
+
+func _1528395734_add_index_to_repo_created_atUpSql() (*asset, error) {
+	bytes, err := _1528395734_add_index_to_repo_created_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395734_add_index_to_repo_created_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2c, 0x70, 0x5a, 0xf5, 0x4d, 0xed, 0xcc, 0x84, 0xe1, 0xda, 0x42, 0x6c, 0xaf, 0xfd, 0xec, 0x6, 0x19, 0x5b, 0xe2, 0xc6, 0x0, 0x4b, 0x1d, 0x95, 0x25, 0x9a, 0x97, 0x65, 0xb0, 0xdb, 0x0, 0x67}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2359,6 +2401,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                _1528395732_add_external_services_sync_jobs_state_indexUpSql,
 	"1528395733_add_permissions_object_ids_default.down.sql":                       _1528395733_add_permissions_object_ids_defaultDownSql,
 	"1528395733_add_permissions_object_ids_default.up.sql":                         _1528395733_add_permissions_object_ids_defaultUpSql,
+	"1528395734_add_index_to_repo_created_at.down.sql":                             _1528395734_add_index_to_repo_created_atDownSql,
+	"1528395734_add_index_to_repo_created_at.up.sql":                               _1528395734_add_index_to_repo_created_atUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2505,6 +2549,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                {_1528395732_add_external_services_sync_jobs_state_indexUpSql, map[string]*bintree{}},
 	"1528395733_add_permissions_object_ids_default.down.sql":                       {_1528395733_add_permissions_object_ids_defaultDownSql, map[string]*bintree{}},
 	"1528395733_add_permissions_object_ids_default.up.sql":                         {_1528395733_add_permissions_object_ids_defaultUpSql, map[string]*bintree{}},
+	"1528395734_add_index_to_repo_created_at.down.sql":                             {_1528395734_add_index_to_repo_created_atDownSql, map[string]*bintree{}},
+	"1528395734_add_index_to_repo_created_at.up.sql":                               {_1528395734_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
