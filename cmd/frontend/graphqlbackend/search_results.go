@@ -1087,6 +1087,15 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	case *query.OrdinaryQuery:
 		srr, err = r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
+		var countStr string
+		wantCount := defaultMaxSearchResults
+		query.VisitField(q.Query, "count", func(value string, _ bool, _ query.Annotation) {
+			countStr = value
+		})
+		if countStr != "" {
+			wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+		}
+
 		for _, disjunct := range query.Dnf(q.Query) {
 			disjunct = query.ConcatRevFilters(disjunct)
 			newResult, err := r.evaluate(ctx, disjunct)
@@ -1094,8 +1103,19 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 				// Fail if any subquery fails.
 				return nil, err
 			}
+			if len(newResult.SearchResults) > wantCount {
+				newResult.SearchResults = newResult.SearchResults[:wantCount]
+				newResult.searchResultsCommon.resultCount = int32(wantCount)
+				break
+			}
 			if newResult != nil {
 				srr = union(srr, newResult)
+				if len(srr.SearchResults) > wantCount {
+					srr.SearchResults = srr.SearchResults[:wantCount]
+					srr.searchResultsCommon.resultCount = int32(wantCount)
+					break
+				}
+
 			}
 		}
 		if srr != nil {
