@@ -25,7 +25,6 @@ import (
 //         c.Age = c.GetInterval("SRC_AGE", "10s", "The service's age (wat).")
 //     }
 //
-//
 //     func applicationInit() {
 //         config := &Config{}
 //         config.Load()
