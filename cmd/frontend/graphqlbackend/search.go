@@ -286,7 +286,7 @@ type searchResolver struct {
 	patternType         query.SearchType
 	versionContext      *string
 	userSettings        *schema.Settings
-	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating a search subexpresions.
+	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex
