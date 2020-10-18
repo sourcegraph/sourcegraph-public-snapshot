@@ -104,7 +104,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     // eslint-disable-next-line react/jsx-no-target-blank
                     target="_blank"
                     rel="noopener"
-                    href={`${documentationUrlPrefix}/user/search/reference/queries`}
+                    href={`${documentationUrlPrefix}/code_search/reference/queries`}
                     className="dropdown-item"
                     onClick={toggleIsOpen}
                 >

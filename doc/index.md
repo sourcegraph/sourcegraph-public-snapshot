@@ -59,17 +59,17 @@ running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 an
 ### Core documentation
 
 - [Install](admin/install/index.md) or [update](admin/updates.md) Sourcegraph 
-- [Using Sourcegraph](user/index.md)
+- [Using Sourcegraph](getting-started/index.md)
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)
 
 ### Features and tutorials
 
-- [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
 - [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
-- [Query syntax reference](user/search/reference/queries.md)
+- [Query syntax reference](code_search/reference/queries.md)
 - [GraphQL API](api/graphql/index.md)
 
 ## Sourcegraph subscriptions
