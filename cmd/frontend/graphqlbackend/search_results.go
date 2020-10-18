@@ -1122,11 +1122,6 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 				// Fail if any subquery fails.
 				return nil, err
 			}
-			if len(newResult.SearchResults) > wantCount {
-				newResult.SearchResults = newResult.SearchResults[:wantCount]
-				newResult.searchResultsCommon.resultCount = int32(wantCount)
-				break
-			}
 			if newResult != nil {
 				srr = union(srr, newResult)
 				if len(srr.SearchResults) > wantCount {
