@@ -27,14 +27,7 @@ $body-bg: var(--body-bg);
 
 $text-muted: var(--text-muted);
 
-// Borders
 $border-color: var(--border-color);
-.theme-dark {
-    --border-color: #{$color-border};
-}
-.theme-light {
-    --border-color: #{$color-light-border};
-}
 
 // Links
 
@@ -107,10 +100,9 @@ $dropdown-padding-y: $dropdown-item-padding-y;
 
 $table-cell-padding: 0.625rem;
 $table-hover-bg: #0e121b;
-$table-border-color: #2b3750;
+$table-border-color: var(--border-color);
 
 $table-hover-bg-light: #f2f4f8;
-$table-border-color-light: #e4e9f1;
 
 // Progress
 $progress-height: auto;

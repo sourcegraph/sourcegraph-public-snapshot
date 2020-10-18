@@ -144,7 +144,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
                 <Tooltip
                     labelFormatter={tooltipLabelFormatter as LabelFormatter}
                     isAnimationActive={false}
-                    wrapperStyle={{ border: '1px solid var(--color-border)' }}
+                    wrapperStyle={{ border: '1px solid var(--border-color)' }}
                     contentStyle={tooltipStyle}
                     labelStyle={{ fontWeight: 'bold' }}
                     itemStyle={tooltipStyle}

@@ -22,7 +22,7 @@ $popover-item-padding-v: 0.325rem;
     }
 
     &__node {
-        border-bottom: solid 1px $color-border;
+        border-bottom: solid 1px var(--border-color);
         &:last-child {
             border-bottom: none;
         }
@@ -47,19 +47,5 @@ $popover-item-padding-v: 0.325rem;
         text-align: left;
         font-size: 12px;
         padding: $popover-item-padding-v $popover-item-padding-h;
-    }
-}
-
-.theme-light {
-    .connection-popover {
-        &__node {
-            border-color: $color-light-border;
-        }
-
-        .filtered-connection {
-            &__summary {
-                border-top-color: $color-light-border;
-            }
-        }
     }
 }

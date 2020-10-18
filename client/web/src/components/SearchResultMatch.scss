@@ -109,9 +109,10 @@
         left: 50%;
     }
 
+    border-top: 1px solid var(--border-color);
+
     .theme-light & {
         background-color: $color-light-bg-1;
-        border-top: 1px solid $color-light-border;
 
         &:hover {
             background-color: $color-light-bg-4;

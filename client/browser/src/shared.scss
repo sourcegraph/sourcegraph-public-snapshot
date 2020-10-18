@@ -23,7 +23,7 @@ $body-color-dark: #f2f4f8;
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
     --dropdown-bg: #{$color-light-bg-1};
-    --dropdown-border-color: #{$color-light-border};
+    --dropdown-border-color: var(--border-color);
 }
 
 .command-palette-button {

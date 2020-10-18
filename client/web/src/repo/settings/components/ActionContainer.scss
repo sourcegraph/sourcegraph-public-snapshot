@@ -2,7 +2,7 @@
     margin: 1.5rem 0;
     padding: 1rem;
 
-    border: 1px solid #2b3750;
+    border: 1px solid var(--border-color);
     border-radius: 0.125rem;
 
     &__row {
@@ -48,11 +48,5 @@
         width: 100%;
         flex: 1;
         margin-top: 1rem;
-    }
-}
-
-.theme-light {
-    .action-container {
-        border-color: $color-light-border;
     }
 }
