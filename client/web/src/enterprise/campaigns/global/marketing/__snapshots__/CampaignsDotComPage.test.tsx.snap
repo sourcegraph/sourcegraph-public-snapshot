@@ -109,7 +109,7 @@ exports[`CampaignsDotComPage renders 1`] = `
             Follow the
              
             <a
-              href="https://docs.sourcegraph.com/user/campaigns/getting_started"
+              href="https://docs.sourcegraph.com/campaigns/getting_started"
               rel="noopener"
             >
               Getting started with campaigns

@@ -130,11 +130,6 @@
 /dev/documentation	/dev/how-to/documentation_implementation 308
 /dev/zoekt	/dev/how-to/zoekt_local_dev 308
 
-/user/automation    /user/campaigns 308
-/user/campaigns/examples    /user/campaigns/tutorials 308
-/user/campaigns/managing_access /user/campaigns/explanations/permissions_in_campaigns 308
-/dev/automation_development /dev/campaigns_development 308
-
 /user/search/examples   /user/search/tutorials/examples 308
 /user/search/queries    /user/search/reference/queries 308
 /user/search/language   /user/search/reference/language 308
@@ -159,3 +154,13 @@
 /user/repository/badges /user/personalization/badges 308
 /user/quick_links   /user/personalization/quick_links 308
 /user/themes    /user/personalization/themes 308
+
+/user/automation    /user/campaigns 308
+/user/campaigns/examples    /campaigns/tutorials 308
+/user/campaigns/managing_access /campaigns/explanations/permissions_in_campaigns 308
+/dev/automation_development /dev/background-information/campaigns/index 308
+
+/user/search /code_search 308
+/user/campaigns /campaigns 308
+/user/code_intelligence /code_intelligence 308
+/user /getting-started 308

@@ -31,7 +31,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 
 ## Features
 
-- [Code intelligence and language servers](../user/code_intelligence/index.md)
+- [Code intelligence and language servers](../code_intelligence/index.md)
 - [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Search](search.md)
 - [Federation](federation/index.md)

@@ -76,7 +76,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                             {!viewerCanAdminister && (
                                 <p className="text-warning">
                                     You don't have permission to close this campaign. See{' '}
-                                    <a href="https://docs.sourcegraph.com/user/campaigns/explanations/permissions_in_campaigns">
+                                    <a href="https://docs.sourcegraph.com/campaigns/explanations/permissions_in_campaigns">
                                         Permissions in campaigns
                                     </a>{' '}
                                     for more information about the campaigns permission model.

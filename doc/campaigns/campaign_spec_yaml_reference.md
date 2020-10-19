@@ -57,7 +57,7 @@ on:
 
 A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
 
-See "[Code search](../search/index.md)" for more information on Sourcegraph search queries.
+See "[Code search](../code_search/index.md)" for more information on Sourcegraph search queries.
 
 ### Examples
 

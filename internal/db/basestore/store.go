@@ -33,7 +33,7 @@ import (
 //
 //     func (s *SprocketStore) Transact(ctx context.Context) (*SprocketStore, error) {
 //         txBase, err := s.Store.Transact(ctx)
-//         return &SprocketStore{Store: txBase}, nil
+//         return &SprocketStore{Store: txBase}, err
 //     }
 type Store struct {
 	handle *TransactableHandle

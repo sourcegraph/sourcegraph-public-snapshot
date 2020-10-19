@@ -118,7 +118,7 @@ export const renderMarkdown = (
                     'class',
                     { name: 'rel', values: ['noopener', 'noreferrer'] },
                 ],
-                img: [...sanitize.defaults.allowedAttributes.img, 'alt'],
+                img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
                 // Support SVGs for code insights.

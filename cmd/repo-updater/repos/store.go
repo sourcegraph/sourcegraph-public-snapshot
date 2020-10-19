@@ -127,7 +127,6 @@ type repoRecord struct {
 	Name                string          `json:"name"`
 	URI                 *string         `json:"uri,omitempty"`
 	Description         string          `json:"description"`
-	Language            string          `json:"language"`
 	CreatedAt           time.Time       `json:"created_at"`
 	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
 	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
@@ -157,7 +156,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		Name:                r.Name,
 		URI:                 nullStringColumn(r.URI),
 		Description:         r.Description,
-		Language:            r.Language,
 		CreatedAt:           r.CreatedAt.UTC(),
 		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
 		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
@@ -469,7 +467,6 @@ WITH repos_list AS (
 		name                  citext,
 		uri                   citext,
 		description           text,
-		language              text,
 		created_at            timestamptz,
 		updated_at            timestamptz,
 		deleted_at            timestamptz,
@@ -490,7 +487,6 @@ inserted_repos AS (
 	name,
 	uri,
 	description,
-	language,
 	created_at,
 	updated_at,
 	deleted_at,
@@ -506,7 +502,6 @@ inserted_repos AS (
 	name,
 	NULLIF(BTRIM(uri), ''),
 	description,
-	language,
 	created_at,
 	updated_at,
 	deleted_at,
@@ -624,7 +619,6 @@ SELECT
   name,
   uri,
   description,
-  language,
   created_at,
   updated_at,
   deleted_at,
@@ -1146,7 +1140,21 @@ SELECT id from due EXCEPT SELECT id from busy
 
 // ListSyncJobs returns all sync jobs.
 func (s *DBStore) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT * FROM external_service_sync_jobs_with_next_sync_at")
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT
+			id,
+			state,
+			failure_message,
+			started_at,
+			finished_at,
+			process_after,
+			num_resets,
+			num_failures,
+			log_contents,
+			external_service_id,
+			next_sync_at
+		 FROM external_service_sync_jobs_with_next_sync_at
+	`)
 	if err != nil {
 		return nil, err
 	}
@@ -1158,6 +1166,10 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
+		// required field for the sync worker, but
+		// the value is thrown out here
+		var logContents *string
+
 		var job SyncJob
 		if err := rows.Scan(
 			&job.ID,
@@ -1168,6 +1180,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
+			&logContents,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
 		); err != nil {
@@ -1223,7 +1236,6 @@ WITH batch AS (
       name                  citext,
       uri                   citext,
       description           text,
-      language              text,
       created_at            timestamptz,
       updated_at            timestamptz,
       deleted_at            timestamptz,
@@ -1245,7 +1257,6 @@ SET
   name                  = batch.name,
   uri                   = batch.uri,
   description           = batch.description,
-  language              = batch.language,
   created_at            = batch.created_at,
   updated_at            = batch.updated_at,
   deleted_at            = batch.deleted_at,
@@ -1281,7 +1292,6 @@ INSERT INTO repo (
   name,
   uri,
   description,
-  language,
   created_at,
   updated_at,
   deleted_at,
@@ -1297,7 +1307,6 @@ SELECT
   name,
   NULLIF(BTRIM(uri), ''),
   description,
-  language,
   created_at,
   updated_at,
   deleted_at,
@@ -1421,7 +1430,6 @@ func scanRepo(r *Repo, s scanner) error {
 		&r.Name,
 		&dbutil.NullString{S: &r.URI},
 		&r.Description,
-		&r.Language,
 		&r.CreatedAt,
 		&dbutil.NullTime{Time: &r.UpdatedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
