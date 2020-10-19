@@ -49,7 +49,7 @@ type BaseClientOptions struct {
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
 
-	// TraceOperationName is the name supply to the open tracing span.
+	// TraceOperationName is the name supplied to the open tracing span.
 	TraceOperationName string
 
 	// Transport is a configurable round tripper, which can include things like
