@@ -16,6 +16,8 @@ ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp
 
 IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh
 
+
+
 sleep 15
 
 pushd test/regression
@@ -24,8 +26,8 @@ popd
 
 source /root/.profile
 pushd client/web
+E2E_INIT=true yarn run test:regression:core
 yarn run test:regression:core
 popd
-
 PID=$(pgrep ffmpeg)
 kill "$PID"
