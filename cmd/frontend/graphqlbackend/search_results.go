@@ -1089,7 +1089,7 @@ func (r *searchResolver) setRepoCacheInvalidation() {
 		seenRepo += 1
 	})
 	query.VisitField(r.query.(*query.AndOrQuery).Query, "repogroup", func(_ string, _ bool, _ query.Annotation) {
-		seenRepo += 1
+		seenRepoGroup += 1
 	})
 	if seenRepo+seenRepoGroup > 1 {
 		r.invalidateRepoCache = true
