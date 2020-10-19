@@ -67,6 +67,7 @@ func NewBaseClient(options BaseClientOptions) *BaseClient {
 
 // Do performs the given HTTP request and returns the body. If there is no content
 // to be read due to a 204 response, then a false-valued flag is returned.
+// NOTE: The body needs to be closed by the caller, except if `err != nil`.
 func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool, _ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "do")
 	defer func() {
