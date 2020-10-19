@@ -12,6 +12,79 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
+func TestStoreQueuedCount(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, uploaded_at)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval),
+			(2, 'queued', NOW() - '2 minute'::interval),
+			(3, 'state2', NOW() - '3 minute'::interval),
+			(4, 'queued', NOW() - '4 minute'::interval),
+			(5, 'state2', NOW() - '5 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error getting queued count: %s", err)
+	}
+	if count != 3 {
+		t.Errorf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
+func TestStoreQueuedCountFailed(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, uploaded_at, num_failures)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval, 0),
+			(2, 'errored', NOW() - '2 minute'::interval, 2),
+			(3, 'state2', NOW() - '3 minute'::interval, 0),
+			(4, 'errored', NOW() - '4 minute'::interval, 3),
+			(5, 'state2', NOW() - '5 minute'::interval, 0)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error getting queued count: %s", err)
+	}
+	if count != 2 {
+		t.Errorf("unexpected count. want=%d have=%d", 2, count)
+	}
+}
+
+func TestStoreQueuedCountConditions(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, uploaded_at)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval),
+			(2, 'queued', NOW() - '2 minute'::interval),
+			(3, 'state2', NOW() - '3 minute'::interval),
+			(4, 'queued', NOW() - '4 minute'::interval),
+			(5, 'state2', NOW() - '5 minute'::interval)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
+	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), conditions)
+	if err != nil {
+		t.Fatalf("unexpected error getting queued count: %s", err)
+	}
+	if count != 2 {
+		t.Errorf("unexpected count. want=%d have=%d", 2, count)
+	}
+}
+
 func TestStoreDequeueState(t *testing.T) {
 	setupStoreTest(t)
 

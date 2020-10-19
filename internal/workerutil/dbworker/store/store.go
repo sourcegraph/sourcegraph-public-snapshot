@@ -21,6 +21,9 @@ type Store interface {
 	// returned from the Dequeue method. See basestore.Store#Done for additional documentation.
 	Done(err error) error
 
+	// QueuedCount returns the number of records in the queued state matching the given conditions.
+	QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
+
 	// Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
 	// should be held by the worker process. If there is such a record, it is returned along with a new store instance
 	// that wraps the transaction. The resulting transaction must be closed by the caller, and the transaction should
@@ -220,6 +223,26 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 
 	return &store{Store: txBase, options: s.options, columnReplacer: s.columnReplacer}, nil
 }
+
+// QueuedCount returns the number of records in the queued state matching the given conditions.
+func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
+		queuedCountQuery,
+		quote(s.options.ViewName),
+		s.options.MaxNumRetries,
+		makeConditionSuffix(conditions),
+	)))
+
+	return count, err
+}
+
+const queuedCountQuery = `
+-- source: internal/workerutil/store.go:QueuedCount
+SELECT COUNT(*) FROM %s WHERE (
+	{state} = 'queued' OR
+	({state} = 'errored' AND {num_failures} < %s)
+) %s
+`
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
 // should be held by the worker process. If there is such a record, it is returned along with a new store instance
