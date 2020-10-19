@@ -2,6 +2,7 @@ import { Driver } from './driver'
 import { writeFile, mkdir } from 'mz/fs'
 import { Browser } from 'puppeteer'
 import * as uuid from 'uuid'
+import pTimeout from 'p-timeout'
 
 declare global {
     interface FileCoverage {
@@ -30,14 +31,18 @@ export function afterEachRecordCoverage(getDriver: () => Driver): void {
 export async function recordCoverage(browser: Browser): Promise<void> {
     await mkdir('.nyc_output', { recursive: true })
     // Get pages, web workers, background pages, etc.
-    const targets = await browser.targets()
+    const targets = await pTimeout(browser.targets(), 2000, new Error('Timeout getting browser targets for coverage'))
     await Promise.all(
         targets.map(async target => {
             const executionContext = (await target.worker()) ?? (await target.page())
             if (!executionContext) {
                 return
             }
-            const coverage: typeof __coverage__ = await executionContext.evaluate(() => globalThis.__coverage__)
+            const coverage: typeof __coverage__ = await pTimeout(
+                executionContext.evaluate(() => globalThis.__coverage__),
+                2000,
+                new Error(`Timeout getting coverage from ${target.url()}`)
+            )
             if (!coverage) {
                 if (!warnedNoCoverage && target.url() !== 'about:blank') {
                     console.error(
@@ -48,14 +53,18 @@ export async function recordCoverage(browser: Browser): Promise<void> {
                 }
                 return
             }
-            await Promise.all(
-                Object.values(coverage).map(async fileCoverage => {
-                    await writeFile(
-                        `.nyc_output/${uuid.v4()}.json`,
-                        JSON.stringify({ [fileCoverage.path]: fileCoverage }),
-                        { flag: 'wx' }
-                    )
-                })
+            await pTimeout(
+                Promise.all(
+                    Object.values(coverage).map(async fileCoverage => {
+                        await writeFile(
+                            `.nyc_output/${uuid.v4()}.json`,
+                            JSON.stringify({ [fileCoverage.path]: fileCoverage }),
+                            { flag: 'wx' }
+                        )
+                    })
+                ),
+                2000,
+                new Error(`Timeout writing coverage files for ${target.url()}`)
             )
         })
     )
