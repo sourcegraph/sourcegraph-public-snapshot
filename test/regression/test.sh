@@ -25,6 +25,7 @@ popd
 source /root/.profile
 pushd client/web
 yarn run test:regression:core
+yarn run test:regression:codeintel
 popd
 PID=$(pgrep ffmpeg)
 kill "$PID"
