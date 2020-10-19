@@ -88,10 +88,15 @@ func TestExecutor_Integration(t *testing.T) {
 				{repo: srcCLIRepo, files: map[string]string{"README.md": "line 1"}},
 			},
 			steps: []Step{
-				{Run: `sleep 1`, Container: "alpine:13"},
+				// This needs to be a loop, because when a process goes to sleep
+				// it's not interruptible, meaning that while it will receive SIGKILL
+				// it won't exit until it had its full night of sleep.
+				// So.
+				// Instead we take short powernaps.
+				{Run: `while true; do echo "zZzzZ" && sleep 0.05; done`, Container: "alpine:13"},
 			},
-			executorTimeout: 20 * time.Millisecond,
-			wantErrInclude:  "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 20ms.",
+			executorTimeout: 100 * time.Millisecond,
+			wantErrInclude:  "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 100ms.",
 		},
 	}
 
