@@ -34,12 +34,15 @@ describe('Documents (integration)', () => {
             } = await integrationTestContext()
 
             const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
-            expect(values).toEqual([] as TextDocument[])
+            assertToJSON(values, [{ uri: 'file:///f', languageId: 'l', text: 't' }] as TextDocument[])
 
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
             await from(extensionAPI.workspace.openedTextDocuments).pipe(take(1)).toPromise()
 
-            assertToJSON(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
+            assertToJSON(values, [
+                { uri: 'file:///f', languageId: 'l', text: 't' },
+                { uri: 'file:///f2', languageId: 'l2', text: 't2' },
+            ] as TextDocument[])
         })
     })
 })
