@@ -31,7 +31,11 @@ export function afterEachRecordCoverage(getDriver: () => Driver): void {
 export async function recordCoverage(browser: Browser): Promise<void> {
     await mkdir('.nyc_output', { recursive: true })
     // Get pages, web workers, background pages, etc.
-    const targets = await pTimeout(browser.targets(), 2000, new Error('Timeout getting browser targets for coverage'))
+    const targets = await pTimeout(
+        Promise.resolve(browser.targets()),
+        2000,
+        new Error('Timeout getting browser targets for coverage')
+    )
     await Promise.all(
         targets.map(async target => {
             const executionContext = (await target.worker()) ?? (await target.page())
