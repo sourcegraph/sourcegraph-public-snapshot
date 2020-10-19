@@ -259,6 +259,7 @@ Yarn,err-code,1.1.2,MIT,http://indigounited.com,Approved
 Yarn,errno,0.1.7,MIT,Unknown,Approved
 Yarn,error-ex,1.3.2,MIT,Unknown,Approved
 Yarn,es-abstract,1.17.5,MIT,http://ljharb.codes,Approved
+Yarn,es-abstract,1.18.0-next.1,MIT,http://ljharb.codes,Approved
 Yarn,es-to-primitive,1.2.1,MIT,Unknown,Approved
 Yarn,es6-promise,4.2.5,MIT,Conversion to ES6 API by Jake Archibald,Approved
 Yarn,es6-promisify,5.0.0,MIT,Unknown,Approved
@@ -438,7 +439,7 @@ Go,github.com/shurcooL/httpgzip,v0.0.0-20190720172056-320755c1c1b0,MIT,"",Approv
 Go,github.com/shurcooL/octicon,v0.0.0-20191102190552-cbb32d6a785c,MIT,"",Approved
 Go,github.com/shurcooL/sanitized_anchor_name,v1.0.0,MIT,"",Approved
 Go,github.com/sourcegraph/annotate,v0.0.0-20160123013949-f4cad6c6324d,New BSD,"",Approved
-Go,github.com/sourcegraph/campaignutils,v0.0.0-20200930165749-a8777d33a817,Apache 2.0,"",Approved
+Go,github.com/sourcegraph/campaignutils,v0.0.0-20201014140011-721315691938,Apache 2.0,"",Approved
 Go,github.com/sourcegraph/codeintelutils,v0.0.0-20200824140252-1db3aed5cf58,MIT,"",Approved
 Go,github.com/sourcegraph/ctxvfs,v0.0.0-20180418081416-2b65f1b1ea81,MIT,"",Approved
 Go,github.com/sourcegraph/go-ctags,v0.0.0-20200922223002-071e508aa451,Apache 2.0,"",Approved
@@ -452,10 +453,10 @@ Go,github.com/sourcegraph/gosaml2,v0.3.2-0.20200109173551-5cfddeb48b17,Apache 2.
 Go,github.com/sourcegraph/gosyntect,v0.0.0-20200429204402-842ed26129d0,MIT,"",Approved
 Go,github.com/sourcegraph/graphql-go,v0.0.0-20201007040903-ec61a5417d66,Simplified BSD,"",Approved
 Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approved
-Go,github.com/sourcegraph/oauth2,v1.0.0,New BSD,"",Approved
+Go,github.com/sourcegraph/oauth2,v0.0.0-20201011192344-605770292164,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20201009114607-dae494155990,Apache 2.0,"",Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20201016122840-58ac958bfd1d,Apache 2.0,"",Approved
 Go,github.com/src-d/enry/v2,v2.1.0,Apache 2.0,"",Approved
 Go,github.com/src-d/gcfg,v1.4.0,New BSD,"",Approved
 Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
@@ -554,7 +555,7 @@ Yarn,is-absolute-url,3.0.3,MIT,sindresorhus.com,Approved
 Yarn,is-arguments,1.0.4,MIT,https://github.com/ljharb/is-arguments,Approved
 Yarn,is-arrayish,0.2.1,MIT,http://github.com/qix-,Approved
 Yarn,is-arrayish,0.3.2,MIT,http://github.com/qix-,Approved
-Yarn,is-callable,1.1.5,MIT,http://ljharb.codes,Approved
+Yarn,is-callable,1.2.2,MIT,http://ljharb.codes,Approved
 Yarn,is-ci,1.2.1,MIT,https://github.com/watson/is-ci,Approved
 Yarn,is-cidr,3.1.0,Simplified BSD,Unknown,Approved
 Yarn,is-color-stop,1.1.0,MIT,https://github.com/pigcan/is-color-stop#readme,Approved
@@ -562,6 +563,7 @@ Yarn,is-date-object,1.0.1,MIT,Unknown,Approved
 Yarn,is-fullwidth-code-point,1.0.0,MIT,sindresorhus.com,Approved
 Yarn,is-fullwidth-code-point,2.0.0,MIT,sindresorhus.com,Approved
 Yarn,is-installed-globally,0.1.0,MIT,sindresorhus.com,Approved
+Yarn,is-negative-zero,2.0.0,MIT,https://github.com/ljharb/is-negative-zero,Approved
 Yarn,is-npm,1.0.0,MIT,http://sindresorhus.com,Approved
 Yarn,is-obj,1.0.1,MIT,sindresorhus.com,Approved
 Yarn,is-obj,2.0.0,MIT,sindresorhus.com,Approved
@@ -685,10 +687,10 @@ Yarn,nth-check,1.0.2,Simplified BSD,https://github.com/fb55/nth-check,Approved
 Yarn,number-is-nan,1.0.1,MIT,sindresorhus.com,Approved
 Yarn,oauth-sign,0.9.0,Apache 2.0,http://www.futurealoof.com,Approved
 Yarn,object-assign,4.1.1,MIT,sindresorhus.com,Approved
-Yarn,object-inspect,1.7.0,MIT,https://github.com/substack/object-inspect,Approved
+Yarn,object-inspect,1.8.0,MIT,https://github.com/inspect-js/object-inspect,Approved
 Yarn,object-is,1.1.2,MIT,https://github.com/es-shims/object-is,Approved
 Yarn,object-keys,1.1.1,MIT,http://ljharb.codes,Approved
-Yarn,object.assign,4.1.0,MIT,Unknown,Approved
+Yarn,object.assign,4.1.1,MIT,Unknown,Approved
 Yarn,object.getownpropertydescriptors,2.0.3,MIT,Unknown,Approved
 Yarn,object.values,1.1.1,MIT,Unknown,Approved
 Yarn,once,1.4.0,ISC,http://blog.izs.me/,Approved
@@ -881,8 +883,10 @@ Yarn,strict-uri-encode,2.0.0,MIT,github.com/kevva,Approved
 Yarn,string-score,1.0.1,MIT,https://github.com/KenPowers/string-score,Approved
 Yarn,string-width,1.0.2,MIT,sindresorhus.com,Approved
 Yarn,string-width,2.1.1,MIT,sindresorhus.com,Approved
+Yarn,string.prototype.trimend,1.0.1,MIT,Unknown,Approved
 Yarn,string.prototype.trimleft,2.1.1,MIT,Unknown,Approved
 Yarn,string.prototype.trimright,2.1.1,MIT,Unknown,Approved
+Yarn,string.prototype.trimstart,1.0.1,MIT,Unknown,Approved
 Yarn,string_decoder,0.10.31,MIT,https://github.com/rvagg/string_decoder,Approved
 Yarn,string_decoder,1.1.1,MIT,https://github.com/nodejs/string_decoder,Approved
 Yarn,stringify-package,1.0.1,ISC,https://github.com/npm/stringify-package,Approved
