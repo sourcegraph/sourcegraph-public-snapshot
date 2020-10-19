@@ -487,6 +487,59 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 	}
 }
 
+func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
+	cli, save := newClient(t, "MarkPullRequestReadyForReview")
+	defer save()
+
+	// Repository used: sourcegraph/automation-testing
+	// The requests here cannot be easily rerun with `-update` since you can
+	// only get the success response if the changeset is in draft mode.
+	for i, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   *PullRequest
+		err  string
+	}{
+		{
+			name: "success",
+			// https://github.com/sourcegraph/automation-testing/pull/361
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDczNDU1"},
+		},
+		{
+			name: "already ready for review",
+			// https://github.com/sourcegraph/automation-testing/pull/362
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2"},
+			// Doesn't return an error
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err := cli.MarkPullRequestReadyForReview(tc.ctx, tc.pr)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			testutil.AssertGolden(t,
+				"testdata/golden/MarkPullRequestReadyForReview-"+strconv.Itoa(i),
+				update("MarkPullRequestReadyForReview"),
+				tc.pr,
+			)
+		})
+	}
+}
+
 func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 	cli, save := newClient(t, "GetAuthenticatedUserOrgs")
 	defer save()

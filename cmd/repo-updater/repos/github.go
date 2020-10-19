@@ -222,6 +222,23 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
+// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
+func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.client.MarkPullRequestReadyForReview(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+
+	return nil
+}
+
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
 func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
 	prs := make([]*github.PullRequest, len(cs))

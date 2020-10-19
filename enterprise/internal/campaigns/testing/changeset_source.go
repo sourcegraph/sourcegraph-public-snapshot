@@ -15,6 +15,7 @@ type FakeChangesetSource struct {
 	Svc *repos.ExternalService
 
 	CreateDraftChangesetCalled bool
+	UndraftedChangesetsCalled  bool
 	CreateChangesetCalled      bool
 	UpdateChangesetCalled      bool
 	ListReposCalled            bool
@@ -55,6 +56,9 @@ type FakeChangesetSource struct {
 
 	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
 	ReopenedChangesets []*repos.Changeset
+
+	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
+	UndraftedChangesets []*repos.Changeset
 }
 
 var _ repos.ChangesetSource = &FakeChangesetSource{}
@@ -85,6 +89,22 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos
 
 	s.CreatedChangesets = append(s.CreatedChangesets, c)
 	return s.ChangesetExists, s.Err
+}
+
+func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.UndraftedChangesetsCalled = true
+
+	if s.Err != nil {
+		return s.Err
+	}
+
+	if c.Repo == nil {
+		return NoReposErr
+	}
+
+	s.UndraftedChangesets = append(s.UndraftedChangesets, c)
+
+	return c.SetMetadata(s.FakeMetadata)
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {

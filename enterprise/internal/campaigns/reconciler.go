@@ -83,10 +83,13 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return r.reopenChangeset(ctx, tx, ch)
 
 	case actionUpdate:
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, false)
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, updateChangesetOpts{})
+
+	case actionUndraftUpdate:
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, updateChangesetOpts{undraft: true})
 
 	case actionReopenUpdate:
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, true)
+		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, updateChangesetOpts{reopen: true})
 
 	case actionClose:
 		return r.closeChangeset(ctx, tx, ch)
@@ -213,13 +216,22 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 	return tx.UpdateChangeset(ctx, ch)
 }
 
+type updateChangesetOpts struct {
+	reopen  bool
+	undraft bool
+}
+
+func (o updateChangesetOpts) NeedsOperation() bool {
+	return o.reopen || o.undraft
+}
+
 // updateChangeset updates the given changeset's attribute on the code host
 // according to its ChangesetSpec and the delta previously computed.
 // If the delta includes only changes to the commit, updateChangeset will only
 // create and force push a new commit.
 // If the delta requires updates to the changeset on the code host, it will
 // update the changeset there.
-func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta, reopen bool) (err error) {
+func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta, opts updateChangesetOpts) (err error) {
 	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
 	if err != nil {
 		return errors.Wrap(err, "failed to load associations")
@@ -245,7 +257,7 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 	// If we only need to update the diff and we didn't reopen the changeset,
 	// we're done, because we already pushed the commit. We don't need to
 	// update anything on the codehost.
-	if !delta.NeedCodeHostUpdate() && !reopen {
+	if !delta.NeedCodeHostUpdate() && !opts.NeedsOperation() {
 		ch.FailureMessage = nil
 		// But we need to sync the changeset so that it has the new commit.
 		//
@@ -273,9 +285,18 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		Changeset: ch,
 	}
 
-	if reopen {
+	if opts.reopen {
 		if err := ccs.ReopenChangeset(ctx, &cs); err != nil {
 			return errors.Wrap(err, "reopening changeset")
+		}
+	}
+	if opts.undraft {
+		draftCcs, ok := ccs.(repos.DraftChangesetSource)
+		if !ok {
+			return errors.New("Changeset action is undraft-update, but changeset source doesn't implement DraftChangesetSource")
+		}
+		if err := draftCcs.UndraftChangeset(ctx, &cs); err != nil {
+			return errors.Wrap(err, "undrafting changeset")
 		}
 	}
 
@@ -458,14 +479,15 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 type actionType string
 
 const (
-	actionNone         actionType = "none"
-	actionUpdate       actionType = "update"
-	actionPublish      actionType = "publish"
-	actionPublishDraft actionType = "publish-draft"
-	actionSync         actionType = "sync"
-	actionClose        actionType = "close"
-	actionReopen       actionType = "reopen"
-	actionReopenUpdate actionType = "reopen-update"
+	actionNone          actionType = "none"
+	actionUpdate        actionType = "update"
+	actionUndraftUpdate actionType = "undraft-update"
+	actionPublish       actionType = "publish"
+	actionPublishDraft  actionType = "publish-draft"
+	actionSync          actionType = "sync"
+	actionClose         actionType = "close"
+	actionReopen        actionType = "reopen"
+	actionReopenUpdate  actionType = "reopen-update"
 )
 
 // reconcilerAction represents the possible actions the reconciler can take for
@@ -549,7 +571,11 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 			if reopen {
 				action.actionType = actionReopenUpdate
 			} else {
-				action.actionType = actionUpdate
+				if delta.draftChanged {
+					action.actionType = actionUndraftUpdate
+				} else {
+					action.actionType = actionUpdate
+				}
 			}
 		}
 	default:
@@ -770,6 +796,10 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		delta.baseRefChanged = true
 	}
 
+	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
+		delta.draftChanged = true
+	}
+
 	// Diff
 	currentDiff, err := current.Spec.Diff()
 	if err != nil {
@@ -828,6 +858,7 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 type changesetSpecDelta struct {
 	titleChanged         bool
 	bodyChanged          bool
+	draftChanged         bool
 	baseRefChanged       bool
 	diffChanged          bool
 	commitMessageChanged bool
@@ -842,7 +873,7 @@ func (d *changesetSpecDelta) NeedCommitUpdate() bool {
 }
 
 func (d *changesetSpecDelta) NeedCodeHostUpdate() bool {
-	return d.titleChanged || d.bodyChanged || d.baseRefChanged
+	return d.titleChanged || d.bodyChanged || d.baseRefChanged || d.draftChanged
 }
 
 func (d *changesetSpecDelta) AttributesChanged() bool {

@@ -66,6 +66,7 @@ func TestReconcilerProcess(t *testing.T) {
 
 		wantCreateOnCodeHost      bool
 		wantCreateDraftOnCodeHost bool
+		wantUndraftOnCodeHost     bool
 		wantUpdateOnCodeHost      bool
 		wantCloseOnCodeHost       bool
 		wantLoadFromCodeHost      bool
@@ -582,6 +583,40 @@ func TestReconcilerProcess(t *testing.T) {
 				diffStat: state.DiffStat,
 			},
 		},
+
+		"undraft a changeset": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+			},
+			previousSpec: &testSpecOpts{
+				published: "draft",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalState:    campaigns.ChangesetExternalStateDraft,
+				ownedByCampaign:  campaign.ID,
+			},
+			sourcerMetadata: githubPR,
+
+			// Update the commit
+			wantUndraftOnCodeHost: true,
+			wantUpdateOnCodeHost:  true,
+
+			wantLoadFromCodeHost: false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     githubPR.ID,
+				externalBranch: githubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+
+				title:    githubPR.Title,
+				body:     githubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -667,6 +702,10 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong CreateDraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
+			if have, want := fakeSource.UndraftedChangesetsCalled, tc.wantUndraftOnCodeHost; have != want {
+				t.Fatalf("wrong UndraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
 			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnCodeHost; have != want {
 				t.Fatalf("wrong CreateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
@@ -741,13 +780,14 @@ func TestDetermineAction(t *testing.T) {
 
 	tcs := []struct {
 		name           string
-		spec           testSpecOpts
+		previousSpec   testSpecOpts
+		currentSpec    testSpecOpts
 		changeset      testChangesetOpts
 		wantActionType actionType
 	}{
 		{
 			name: "GitHub publish",
-			spec: testSpecOpts{
+			currentSpec: testSpecOpts{
 				published: true,
 				repo:      githubRepo.ID,
 			},
@@ -759,7 +799,7 @@ func TestDetermineAction(t *testing.T) {
 		},
 		{
 			name: "GitHub publish as draft",
-			spec: testSpecOpts{
+			currentSpec: testSpecOpts{
 				published: "draft",
 				repo:      githubRepo.ID,
 			},
@@ -771,7 +811,7 @@ func TestDetermineAction(t *testing.T) {
 		},
 		{
 			name: "GitHub publish false",
-			spec: testSpecOpts{
+			currentSpec: testSpecOpts{
 				published: false,
 				repo:      githubRepo.ID,
 			},
@@ -783,7 +823,7 @@ func TestDetermineAction(t *testing.T) {
 		},
 		{
 			name: "set to draft but unsupported",
-			spec: testSpecOpts{
+			currentSpec: testSpecOpts{
 				published: "draft",
 				repo:      bbsRepo.ID,
 			},
@@ -794,6 +834,38 @@ func TestDetermineAction(t *testing.T) {
 			},
 			wantActionType: actionNone,
 		},
+		{
+			name: "set from draft to publish true",
+			previousSpec: testSpecOpts{
+				published: "draft",
+				repo:      githubRepo.ID,
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				repo:             githubRepo.ID,
+			},
+			wantActionType: actionUndraftUpdate,
+		},
+		{
+			name: "set from draft to publish true on unpublished",
+			previousSpec: testSpecOpts{
+				published: "draft",
+				repo:      githubRepo.ID,
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantActionType: actionPublish,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -803,9 +875,14 @@ func TestDetermineAction(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer tx.Done(errors.New("fail tx purposefully"))
-			tc.spec.campaignSpec = campaignSpec.ID
-			spec := createChangesetSpec(t, ctx, tx, tc.spec)
-			tc.changeset.currentSpec = spec.ID
+			tc.currentSpec.campaignSpec = campaignSpec.ID
+			createPreviousSpec := tc.previousSpec != testSpecOpts{}
+			if createPreviousSpec {
+				previousSpec := createChangesetSpec(t, ctx, tx, tc.previousSpec)
+				tc.changeset.previousSpec = previousSpec.ID
+			}
+			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
+			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
 			action, err := determineAction(ctx, tx, cs)
 			if err != nil {
