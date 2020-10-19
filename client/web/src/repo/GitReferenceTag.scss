@@ -21,13 +21,7 @@
 }
 
 .git-ref-tag-2 {
-    background-color: $color-bg-3;
+    background-color: var(--color-bg-3);
     padding: 0.125rem 0.25rem;
     font-weight: bold;
-}
-
-.theme-light {
-    .git-ref-tag-2 {
-        background-color: saturate(lighten($color-light-bg-5, 48.5%), 50%);
-    }
 }
