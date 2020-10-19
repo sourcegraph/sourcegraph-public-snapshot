@@ -12,8 +12,6 @@ RUN mkdir -p /etc/docker/ && echo '{"registry-mirrors": ["http://localhost:5000"
 ENV SRC_CLI_VERSION=3.21.2
 
 RUN set -ex && \
-    curl -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz" && \
-    tar -xvzf src-cli.tar.gz src && \
+    curl -L -o src "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64" && \
     mv src /usr/local/bin/src && \
-    chmod +x /usr/local/bin/src && \
-    rm -rf src-cli.tar.gz
+    chmod +x /usr/local/bin/src
