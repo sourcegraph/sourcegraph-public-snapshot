@@ -13,7 +13,6 @@ import (
 	"github.com/felixge/fgprof"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"golang.org/x/net/trace"
 )
 
@@ -122,11 +121,16 @@ type Dumper interface {
 	DebugDump() interface{}
 }
 
-type routine struct{ extra []Endpoint }
+// ServerRoutine is a type wrapping the `Start` method so it can be used
+// easily by the goroutine package.
+type ServerRoutine struct {
+	extra []Endpoint
+}
 
-func (r routine) Start() { Start(r.extra...) }
-func (r routine) Stop()  {}
+func NewServerRoutine(extra ...Endpoint) *ServerRoutine {
+	return &ServerRoutine{extra: extra}
+}
 
-func NewBackgroundRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
-	return &routine{extra: extra}
+func (r *ServerRoutine) Start() {
+	Start(r.extra...)
 }

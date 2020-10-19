@@ -7,12 +7,18 @@ import (
 	"syscall"
 )
 
-// BackgroundRoutine represents a component of a binary that consists of a long
-// running process and a graceful shutdown mechanism.
-type BackgroundRoutine interface {
+// StartableRoutine represents a component of a binary that consists of a long
+// running process.
+type StartableRoutine interface {
 	// Start begins the long-running process. The Stop method should signal to
 	// this process that that application is beginnign to shut down.
 	Start()
+}
+
+// BackgroundRoutine represents a component of a binary that consists of a long
+// running process and a graceful shutdown mechanism.
+type BackgroundRoutine interface {
+	StartableRoutine
 
 	// Stop signals the Start method to stop accepting new work and complete its
 	// current work. This method can but is not required to block until Start has
@@ -76,24 +82,18 @@ func waitForSignal(signals <-chan os.Signal) {
 	}()
 }
 
-type combinedRoutine struct {
-	routines []BackgroundRoutine
-}
+// CombinedRoutine is a list of background routines which are stopped and
+// started in unison.
+type CombinedRoutine []BackgroundRoutine
 
-// Combine creates a background routine that wraps the given routines. The start
-// and stop methods will call the same method on all routines concurrently.
-func Combine(routines ...BackgroundRoutine) BackgroundRoutine {
-	return &combinedRoutine{routines: routines}
-}
-
-func (r *combinedRoutine) Start() {
+func (r CombinedRoutine) Start() {
 	var wg sync.WaitGroup
-	startAll(&wg, r.routines...)
+	startAll(&wg, r...)
 	wg.Wait()
 }
 
-func (r *combinedRoutine) Stop()  {
+func (r CombinedRoutine) Stop() {
 	var wg sync.WaitGroup
-	stopAll(&wg, r.routines...)
+	stopAll(&wg, r...)
 	wg.Wait()
 }
