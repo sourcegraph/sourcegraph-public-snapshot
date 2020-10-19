@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -42,7 +41,6 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		ctx := context.Background()
 
-		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
 		truncateTables(t, db, "changeset_events", "changesets")
