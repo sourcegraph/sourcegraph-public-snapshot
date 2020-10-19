@@ -31,11 +31,8 @@ export function afterEachRecordCoverage(getDriver: () => Driver): void {
 export async function recordCoverage(browser: Browser): Promise<void> {
     await mkdir('.nyc_output', { recursive: true })
     // Get pages, web workers, background pages, etc.
-    const targets = await pTimeout(
-        Promise.resolve(browser.targets()),
-        2000,
-        new Error('Timeout getting browser targets for coverage')
-    )
+    const targets = await browser.targets()
+
     await Promise.all(
         targets.map(async target => {
             if (target.url() === 'about:blank') {
@@ -60,18 +57,14 @@ export async function recordCoverage(browser: Browser): Promise<void> {
                 }
                 return
             }
-            await pTimeout(
-                Promise.all(
-                    Object.values(coverage).map(async fileCoverage => {
-                        await writeFile(
-                            `.nyc_output/${uuid.v4()}.json`,
-                            JSON.stringify({ [fileCoverage.path]: fileCoverage }),
-                            { flag: 'wx' }
-                        )
-                    })
-                ),
-                2000,
-                new Error(`Timeout writing coverage files for ${target.url()}`)
+            await Promise.all(
+                Object.values(coverage).map(async fileCoverage => {
+                    await writeFile(
+                        `.nyc_output/${uuid.v4()}.json`,
+                        JSON.stringify({ [fileCoverage.path]: fileCoverage }),
+                        { flag: 'wx' }
+                    )
+                })
             )
         })
     )
