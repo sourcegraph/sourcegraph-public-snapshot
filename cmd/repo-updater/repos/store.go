@@ -127,7 +127,6 @@ type repoRecord struct {
 	Name                string          `json:"name"`
 	URI                 *string         `json:"uri,omitempty"`
 	Description         string          `json:"description"`
-	Language            string          `json:"language"`
 	CreatedAt           time.Time       `json:"created_at"`
 	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
 	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
@@ -157,7 +156,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		Name:                r.Name,
 		URI:                 nullStringColumn(r.URI),
 		Description:         r.Description,
-		Language:            r.Language,
 		CreatedAt:           r.CreatedAt.UTC(),
 		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
 		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
@@ -469,7 +467,6 @@ WITH repos_list AS (
 		name                  citext,
 		uri                   citext,
 		description           text,
-		language              text,
 		created_at            timestamptz,
 		updated_at            timestamptz,
 		deleted_at            timestamptz,
@@ -490,7 +487,6 @@ inserted_repos AS (
 	name,
 	uri,
 	description,
-	language,
 	created_at,
 	updated_at,
 	deleted_at,
@@ -506,7 +502,6 @@ inserted_repos AS (
 	name,
 	NULLIF(BTRIM(uri), ''),
 	description,
-	language,
 	created_at,
 	updated_at,
 	deleted_at,
@@ -624,7 +619,6 @@ SELECT
   name,
   uri,
   description,
-  language,
   created_at,
   updated_at,
   deleted_at,
@@ -1223,7 +1217,6 @@ WITH batch AS (
       name                  citext,
       uri                   citext,
       description           text,
-      language              text,
       created_at            timestamptz,
       updated_at            timestamptz,
       deleted_at            timestamptz,
@@ -1245,7 +1238,6 @@ SET
   name                  = batch.name,
   uri                   = batch.uri,
   description           = batch.description,
-  language              = batch.language,
   created_at            = batch.created_at,
   updated_at            = batch.updated_at,
   deleted_at            = batch.deleted_at,
@@ -1281,7 +1273,6 @@ INSERT INTO repo (
   name,
   uri,
   description,
-  language,
   created_at,
   updated_at,
   deleted_at,
@@ -1297,7 +1288,6 @@ SELECT
   name,
   NULLIF(BTRIM(uri), ''),
   description,
-  language,
   created_at,
   updated_at,
   deleted_at,
@@ -1421,7 +1411,6 @@ func scanRepo(r *Repo, s scanner) error {
 		&r.Name,
 		&dbutil.NullString{S: &r.URI},
 		&r.Description,
-		&r.Language,
 		&r.CreatedAt,
 		&dbutil.NullTime{Time: &r.UpdatedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
