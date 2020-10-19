@@ -50,7 +50,7 @@ func (f HandlerFunc) Handle(ctx context.Context) error {
 
 type simpleHandler struct {
 	name    string
-	handler func(ctx context.Context) error
+	handler HandlerFunc
 }
 
 // NewHandlerWithErrorMessage wraps the given function to be used as a handler, and
