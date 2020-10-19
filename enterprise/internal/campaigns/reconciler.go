@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -47,6 +48,17 @@ func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 	}
 }
 
+type processContext struct {
+	repo     *repos.Repo
+	extSvc   *repos.ExternalService
+	campaign *campaigns.Campaign
+	ccs      repos.ChangesetSource
+	tx       *Store
+	ch       *campaigns.Changeset
+	spec     *campaigns.ChangesetSpec
+	delta    *changesetSpecDelta
+}
+
 // process is the main entry point of the reconciler and processes changesets
 // that were marked as queued in the database.
 //
@@ -67,39 +79,94 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return err
 	}
 
-	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "action", action.actionType)
+	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "actions", action.actionTypes)
 
-	switch action.actionType {
-	case actionSync:
-		return r.syncChangeset(ctx, tx, ch)
+	// Reset the error message.
+	ch.FailureMessage = nil
 
-	case actionPublish:
-		return r.publishChangeset(ctx, tx, ch, action.spec, false)
-
-	case actionPublishDraft:
-		return r.publishChangeset(ctx, tx, ch, action.spec, true)
-
-	case actionReopen:
-		return r.reopenChangeset(ctx, tx, ch)
-
-	case actionUpdate:
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, updateChangesetOpts{})
-
-	case actionUndraftUpdate:
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, updateChangesetOpts{undraft: true})
-
-	case actionReopenUpdate:
-		return r.updateChangeset(ctx, tx, ch, action.spec, action.delta, updateChangesetOpts{reopen: true})
-
-	case actionClose:
-		return r.closeChangeset(ctx, tx, ch)
-
-	case actionNone:
+	if action.actionTypes.IsNone() {
 		return nil
-
-	default:
-		return fmt.Errorf("Reconciler action %q not implemented", action.actionType)
 	}
+	if action.actionTypes.IsSyncOnly() {
+		// If we sync anyways, no need to upsert our DB twice, just do the sync and return.
+		return r.syncChangeset(ctx, tx, ch)
+	}
+
+	processCtx := &processContext{
+		tx:    tx,
+		ch:    ch,
+		spec:  action.spec,
+		delta: action.delta,
+	}
+
+	processCtx.repo, processCtx.extSvc, processCtx.campaign, err = loadAssociations(ctx, tx, ch)
+	if err != nil {
+		return errors.Wrap(err, "failed to load associations")
+	}
+	// Set up a source with which we can modify the changeset.
+	processCtx.ccs, err = r.buildChangesetSource(processCtx.repo, processCtx.extSvc)
+	if err != nil {
+		return err
+	}
+
+	eo := action.actionTypes.ExecutionOrder()
+
+	syncChangeset := false
+
+	for _, actionType := range eo {
+		switch actionType {
+		case actionSync:
+			syncChangeset = true
+
+		case actionPublish:
+			if err := r.publishChangeset(ctx, processCtx, false); err != nil {
+				return err
+			}
+
+		case actionPublishDraft:
+			if err := r.publishChangeset(ctx, processCtx, true); err != nil {
+				return err
+			}
+
+		case actionReopen:
+			if err := r.reopenChangeset(ctx, processCtx); err != nil {
+				return err
+			}
+
+		case actionUpdate:
+			if shouldSync, err := r.updateChangeset(ctx, processCtx); err != nil {
+				return err
+			} else if shouldSync {
+				syncChangeset = true
+			}
+
+		case actionUndraft:
+			if err := r.undraftChangeset(ctx, processCtx); err != nil {
+				return err
+			}
+
+		case actionClose:
+			if err := r.closeChangeset(ctx, processCtx); err != nil {
+				return err
+			}
+
+		default:
+			return fmt.Errorf("reconciler action %q not implemented", actionType)
+		}
+	}
+
+	if syncChangeset {
+		// If we sync anyways, no need to upsert our DB twice, just do the sync and return.
+		return r.syncChangeset(ctx, tx, ch)
+	}
+	events := ch.Events()
+	SetDerivedState(ctx, ch, events)
+
+	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
+		return err
+	}
+	return tx.UpdateChangeset(ctx, ch)
 }
 
 func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
@@ -117,35 +184,22 @@ func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns
 var ErrPublishSameBranch = errors.New("cannot create changeset on the same branch in multiple campaigns")
 
 // publishChangeset creates the given changeset on its code host.
-func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, asDraft bool) (err error) {
-	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
-	if err != nil {
-		return errors.Wrap(err, "failed to load associations")
-	}
-
-	description := spec.Spec
-
-	existingSameBranch, err := tx.GetChangeset(ctx, GetChangesetOpts{
-		ExternalServiceType: ch.ExternalServiceType,
-		RepoID:              ch.RepoID,
-		ExternalBranch:      git.AbbreviateRef(description.HeadRef),
+func (r *reconciler) publishChangeset(ctx context.Context, processCtx *processContext, asDraft bool) (err error) {
+	existingSameBranch, err := processCtx.tx.GetChangeset(ctx, GetChangesetOpts{
+		ExternalServiceType: processCtx.ch.ExternalServiceType,
+		RepoID:              processCtx.ch.RepoID,
+		ExternalBranch:      git.AbbreviateRef(processCtx.spec.Spec.HeadRef),
 	})
 	if err != nil && err != ErrNoResults {
 		return err
 	}
 
-	if existingSameBranch != nil && existingSameBranch.ID != ch.ID {
+	if existingSameBranch != nil && existingSameBranch.ID != processCtx.ch.ID {
 		return ErrPublishSameBranch
 	}
 
-	// Set up a source with which we can create a changeset
-	ccs, err := r.buildChangesetSource(repo, extSvc)
-	if err != nil {
-		return err
-	}
-
 	// Create a commit and push it
-	opts, err := buildCommitOpts(repo, spec)
+	opts, err := buildCommitOpts(processCtx.repo, processCtx.spec)
 	if err != nil {
 		return err
 	}
@@ -156,35 +210,34 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 
 	// Now create the actual pull request on the code host
 	cs := &repos.Changeset{
-		Title:     description.Title,
-		Body:      description.Body,
-		BaseRef:   description.BaseRef,
+		Title:     processCtx.spec.Spec.Title,
+		Body:      processCtx.spec.Spec.Body,
+		BaseRef:   processCtx.spec.Spec.BaseRef,
 		HeadRef:   git.EnsureRefPrefix(ref),
-		Repo:      repo,
-		Changeset: ch,
+		Repo:      processCtx.repo,
+		Changeset: processCtx.ch,
 	}
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, tx, cs, campaign); err != nil {
-		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
+	if err := decorateChangesetBody(ctx, processCtx.tx, cs, processCtx.campaign); err != nil {
+		return errors.Wrapf(err, "decorating body for changeset %d", processCtx.ch.ID)
 	}
 
 	var exists bool
 	if asDraft {
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
-		draftCcs, ok := ccs.(repos.DraftChangesetSource)
+		draftCcs, ok := processCtx.ccs.(repos.DraftChangesetSource)
 		if !ok {
-			log15.Warn("Changeset action is publish-draft, but changeset source doesn't implement DraftChangesetSource")
-		} else {
-			exists, err = draftCcs.CreateDraftChangeset(ctx, cs)
+			return errors.New("changeset action is publish-draft, but changeset source doesn't implement DraftChangesetSource")
 		}
+		exists, err = draftCcs.CreateDraftChangeset(ctx, cs)
 	} else {
 		// If we're running this method a second time, because we failed due to an
 		// ephemeral error, there's a race condition here.
 		// It's possible that `CreateChangeset` doesn't return the newest head ref
 		// commit yet, because the API of the codehost doesn't return it yet.
-		exists, err = ccs.CreateChangeset(ctx, cs)
+		exists, err = processCtx.ccs.CreateChangeset(ctx, cs)
 	}
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
@@ -197,32 +250,14 @@ func (r *reconciler) publishChangeset(ctx context.Context, tx *Store, ch *campai
 		}
 
 		if outdated {
-			if err := ccs.UpdateChangeset(ctx, cs); err != nil {
+			if err := processCtx.ccs.UpdateChangeset(ctx, cs); err != nil {
 				return errors.Wrap(err, "updating changeset")
 			}
 		}
 	}
-
-	events := ch.Events()
-	SetDerivedState(ctx, ch, events)
-
-	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
-	}
-
-	ch.PublicationState = campaigns.ChangesetPublicationStatePublished
-	ch.FailureMessage = nil
-	return tx.UpdateChangeset(ctx, ch)
-}
-
-type updateChangesetOpts struct {
-	reopen  bool
-	undraft bool
-}
-
-func (o updateChangesetOpts) NeedsOperation() bool {
-	return o.reopen || o.undraft
+	// Set the changeset to published.
+	processCtx.ch.PublicationState = campaigns.ChangesetPublicationStatePublished
+	return nil
 }
 
 // updateChangeset updates the given changeset's attribute on the code host
@@ -231,34 +266,22 @@ func (o updateChangesetOpts) NeedsOperation() bool {
 // create and force push a new commit.
 // If the delta requires updates to the changeset on the code host, it will
 // update the changeset there.
-func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset, spec *campaigns.ChangesetSpec, delta *changesetSpecDelta, opts updateChangesetOpts) (err error) {
-	repo, extSvc, campaign, err := loadAssociations(ctx, tx, ch)
-	if err != nil {
-		return errors.Wrap(err, "failed to load associations")
-	}
-
-	// Set up a source with which we can update the changeset on the code host.
-	ccs, err := r.buildChangesetSource(repo, extSvc)
-	if err != nil {
-		return err
-	}
-
-	if delta.NeedCommitUpdate() {
-		opts, err := buildCommitOpts(repo, spec)
+func (r *reconciler) updateChangeset(ctx context.Context, processCtx *processContext) (shouldSync bool, err error) {
+	if processCtx.delta.NeedCommitUpdate() {
+		opts, err := buildCommitOpts(processCtx.repo, processCtx.spec)
 		if err != nil {
-			return err
+			return shouldSync, err
 		}
 
 		if _, err = r.pushCommit(ctx, opts); err != nil {
-			return err
+			return shouldSync, err
 		}
 	}
 
-	// If we only need to update the diff and we didn't reopen the changeset,
+	// If we only need to update the diff and we didn't change the state of the changeset,
 	// we're done, because we already pushed the commit. We don't need to
 	// update anything on the codehost.
-	if !delta.NeedCodeHostUpdate() && !opts.NeedsOperation() {
-		ch.FailureMessage = nil
+	if !processCtx.delta.NeedCodeHostUpdate() {
 		// But we need to sync the changeset so that it has the new commit.
 		//
 		// The problem: the code host might not have updated the changeset to
@@ -271,118 +294,70 @@ func (r *reconciler) updateChangeset(ctx context.Context, tx *Store, ch *campaig
 		if !r.noSleepBeforeSync {
 			time.Sleep(3 * time.Second)
 		}
-		return r.syncChangeset(ctx, tx, ch)
+		return true, nil
 	}
 
 	// Otherwise, we need to update the pull request on the code host or, if we
 	// need to reopen it, update it to make sure it has the newest state.
 	cs := repos.Changeset{
-		Title:     spec.Spec.Title,
-		Body:      spec.Spec.Body,
-		BaseRef:   spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(spec.Spec.HeadRef),
-		Repo:      repo,
-		Changeset: ch,
-	}
-
-	if opts.reopen {
-		if err := ccs.ReopenChangeset(ctx, &cs); err != nil {
-			return errors.Wrap(err, "reopening changeset")
-		}
-	}
-	if opts.undraft {
-		draftCcs, ok := ccs.(repos.DraftChangesetSource)
-		if !ok {
-			return errors.New("Changeset action is undraft-update, but changeset source doesn't implement DraftChangesetSource")
-		}
-		if err := draftCcs.UndraftChangeset(ctx, &cs); err != nil {
-			return errors.Wrap(err, "undrafting changeset")
-		}
+		Title:     processCtx.spec.Spec.Title,
+		Body:      processCtx.spec.Spec.Body,
+		BaseRef:   processCtx.spec.Spec.BaseRef,
+		HeadRef:   git.EnsureRefPrefix(processCtx.spec.Spec.HeadRef),
+		Repo:      processCtx.repo,
+		Changeset: processCtx.ch,
 	}
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, tx, &cs, campaign); err != nil {
-		return errors.Wrapf(err, "decorating body for changeset %d", ch.ID)
+	if err := decorateChangesetBody(ctx, processCtx.tx, &cs, processCtx.campaign); err != nil {
+		return shouldSync, errors.Wrapf(err, "decorating body for changeset %d", processCtx.ch.ID)
 	}
 
-	if err := ccs.UpdateChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
+	if err := processCtx.ccs.UpdateChangeset(ctx, &cs); err != nil {
+		return shouldSync, errors.Wrap(err, "updating changeset")
 	}
-
-	// We extract the events, compute derived state and upsert events because
-	// the update of the pull request might have changed the changeset on the
-	// code host.
-	events := ch.Events()
-	SetDerivedState(ctx, ch, events)
-	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
-	}
-
-	ch.FailureMessage = nil
-	return tx.UpdateChangeset(ctx, ch)
+	return shouldSync, nil
 }
 
 // reopenChangeset reopens the given changeset attribute on the code host.
-func (r *reconciler) reopenChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
-	repo, extSvc, _, err := loadAssociations(ctx, tx, ch)
-	if err != nil {
-		return errors.Wrap(err, "failed to load associations")
-	}
-
-	// Set up a source with which we can update the changeset on the code host.
-	ccs, err := r.buildChangesetSource(repo, extSvc)
-	if err != nil {
-		return err
-	}
-
-	cs := repos.Changeset{Repo: repo, Changeset: ch}
-	if err := ccs.ReopenChangeset(ctx, &cs); err != nil {
+func (r *reconciler) reopenChangeset(ctx context.Context, processCtx *processContext) (err error) {
+	cs := repos.Changeset{Repo: processCtx.repo, Changeset: processCtx.ch}
+	if err := processCtx.ccs.ReopenChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
-
-	// We extract the events, compute derived state and upsert events because
-	// the reopening has updated the changeset on the code host.
-	events := ch.Events()
-	SetDerivedState(ctx, ch, events)
-	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
-	}
-
-	ch.FailureMessage = nil
-	return tx.UpdateChangeset(ctx, ch)
+	return nil
 }
 
-// closeChangeset closes the given changeset on its code host if its ExternalState is OPEN.
-func (r *reconciler) closeChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) (err error) {
-	ch.Closing = false
-	ch.FailureMessage = nil
+// closeChangeset closes the given changeset on its code host if its ExternalState is OPEN or DRAFT.
+func (r *reconciler) closeChangeset(ctx context.Context, processCtx *processContext) (err error) {
+	processCtx.ch.Closing = false
 
-	if ch.ExternalState != campaigns.ChangesetExternalStateOpen {
-		return tx.UpdateChangeset(ctx, ch)
+	if processCtx.ch.ExternalState != campaigns.ChangesetExternalStateDraft && processCtx.ch.ExternalState != campaigns.ChangesetExternalStateOpen {
+		return nil
 	}
 
-	repo, extSvc, _, err := loadAssociations(ctx, tx, ch)
-	if err != nil {
-		return errors.Wrap(err, "failed to load associations")
+	cs := &repos.Changeset{Changeset: processCtx.ch, Repo: processCtx.repo}
+
+	if err := processCtx.ccs.CloseChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "closing changeset")
+	}
+	return nil
+}
+
+// undraftChangeset marks the given changeset on its code host as ready for review.
+func (r *reconciler) undraftChangeset(ctx context.Context, processCtx *processContext) (err error) {
+	draftCcs, ok := processCtx.ccs.(repos.DraftChangesetSource)
+	if !ok {
+		return errors.New("Changeset action is undraft, but changeset source doesn't implement DraftChangesetSource")
 	}
 
-	// Set up a source with which we can close the changeset
-	ccs, err := r.buildChangesetSource(repo, extSvc)
-	if err != nil {
-		return err
+	cs := &repos.Changeset{Changeset: processCtx.ch, Repo: processCtx.repo}
+
+	if err := draftCcs.UndraftChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "undrafting changeset")
 	}
-
-	cs := &repos.Changeset{Changeset: ch, Repo: repo}
-
-	if err := ccs.CloseChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "creating changeset")
-	}
-
-	// syncChangeset updates the changeset in the same transaction
-	return r.syncChangeset(ctx, tx, ch)
+	return nil
 }
 
 func (r *reconciler) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (string, error) {
@@ -479,22 +454,75 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 type actionType string
 
 const (
-	actionNone          actionType = "none"
-	actionUpdate        actionType = "update"
-	actionUndraftUpdate actionType = "undraft-update"
-	actionPublish       actionType = "publish"
-	actionPublishDraft  actionType = "publish-draft"
-	actionSync          actionType = "sync"
-	actionClose         actionType = "close"
-	actionReopen        actionType = "reopen"
-	actionReopenUpdate  actionType = "reopen-update"
+	actionUpdate       actionType = "update"
+	actionUndraft      actionType = "undraft"
+	actionPublish      actionType = "publish"
+	actionPublishDraft actionType = "publish-draft"
+	actionSync         actionType = "sync"
+	actionClose        actionType = "close"
+	actionReopen       actionType = "reopen"
 )
+
+type actionTypes []actionType
+
+func (a actionTypes) IsNone() bool {
+	return len(a) == 0
+}
+
+func (a actionTypes) IsSyncOnly() bool {
+	return len(a) == 1 && a[0] == actionSync
+}
+
+func (a actionTypes) Equal(b actionTypes) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	bEntries := make(map[actionType]struct{})
+	for _, e := range b {
+		bEntries[e] = struct{}{}
+	}
+	for _, at := range a {
+		if _, ok := bEntries[at]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+var actionPrecedence = map[actionType]int{
+	actionPublish:      0,
+	actionPublishDraft: 0,
+	actionClose:        0,
+	actionReopen:       1,
+	actionUndraft:      2,
+	actionUpdate:       3,
+	actionSync:         4,
+}
+
+func (a actionTypes) ExecutionOrder() []actionType {
+	at := make([]actionType, len(a))
+	// Make sure actions are unique.
+	seenActions := make(map[actionType]struct{})
+	for _, action := range a {
+		if _, ok := seenActions[action]; ok {
+			panic(fmt.Sprintf("duplicate action in action types, have %v", a))
+		}
+		seenActions[action] = struct{}{}
+	}
+	for i, action := range a {
+		at[i] = action
+	}
+	sort.Slice(at, func(i, j int) bool {
+		return actionPrecedence[at[i]] < actionPrecedence[at[j]]
+	})
+	return at
+}
 
 // reconcilerAction represents the possible actions the reconciler can take for
 // a given changeset.
 type reconcilerAction struct {
 	// The type of actionType.
-	actionType actionType
+	actionTypes actionTypes
 
 	// The current spec of the changeset.
 	spec *campaigns.ChangesetSpec
@@ -510,20 +538,20 @@ type reconcilerAction struct {
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
 func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (reconcilerAction, error) {
-	action := reconcilerAction{actionType: actionNone}
+	action := reconcilerAction{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
 	if ch.CurrentSpecID == 0 {
 		if ch.Unsynced {
-			action.actionType = actionSync
+			action.actionTypes = actionTypes{actionSync}
 		}
 		return action, nil
 	}
 
 	// If it's marked as closing, we don't need to look at the specs.
 	if ch.Closing {
-		action.actionType = actionClose
+		action.actionTypes = actionTypes{actionClose}
 		return action, nil
 	}
 
@@ -545,38 +573,34 @@ func determineAction(ctx context.Context, tx *Store, ch *campaigns.Changeset) (r
 		}
 	}
 
+	delta, err := CompareChangesetSpecs(prev, curr)
+	if err != nil {
+		return action, nil
+	}
+	action.delta = delta
+
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
 		if curr.Spec.Published.True() {
-			action.actionType = actionPublish
+			action.actionTypes = actionTypes{actionPublish}
 		} else if curr.Spec.Published.Draft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
-			action.actionType = actionPublishDraft
+			action.actionTypes = actionTypes{actionPublishDraft}
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
 		reopen := reopenAfterDetach(ch)
 		if reopen {
-			action.actionType = actionReopen
+			action.actionTypes = actionTypes{actionReopen}
 		}
 
-		delta, err := CompareChangesetSpecs(prev, curr)
-		if err != nil {
-			return action, nil
+		if delta.draftChanged {
+			action.actionTypes = append(action.actionTypes, actionUndraft)
 		}
 
 		if delta.AttributesChanged() {
-			action.delta = delta
-			if reopen {
-				action.actionType = actionReopenUpdate
-			} else {
-				if delta.draftChanged {
-					action.actionType = actionUndraftUpdate
-				} else {
-					action.actionType = actionUpdate
-				}
-			}
+			action.actionTypes = append(action.actionTypes, actionUpdate)
 		}
 	default:
 		return action, fmt.Errorf("unknown changeset publication state: %s", ch.PublicationState)
@@ -796,6 +820,8 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		delta.baseRefChanged = true
 	}
 
+	// If was set to draft and now true, need to undraft the changeset.
+	// We currently ignore changes from true => "undraft" or "false" => "draft".
 	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
 		delta.draftChanged = true
 	}
@@ -873,7 +899,7 @@ func (d *changesetSpecDelta) NeedCommitUpdate() bool {
 }
 
 func (d *changesetSpecDelta) NeedCodeHostUpdate() bool {
-	return d.titleChanged || d.bodyChanged || d.baseRefChanged || d.draftChanged
+	return d.titleChanged || d.bodyChanged || d.baseRefChanged
 }
 
 func (d *changesetSpecDelta) AttributesChanged() bool {

@@ -414,8 +414,6 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcerMetadata: closedGitHubPR,
 
 			wantCloseOnCodeHost: true,
-			// We want to also sync the changeset after closing it
-			wantLoadFromCodeHost: true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
@@ -446,6 +444,7 @@ func TestReconcilerProcess(t *testing.T) {
 				externalBranch:   githubPR.HeadRefName,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				closing:          true,
+				ownedByCampaign:  campaign.ID,
 			},
 			// We return a closed GitHub PR here, but since it's a noop, we
 			// don't sync and thus don't set its attributes on the changeset.
@@ -599,11 +598,7 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
-			// Update the commit
 			wantUndraftOnCodeHost: true,
-			wantUpdateOnCodeHost:  true,
-
-			wantLoadFromCodeHost: false,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
@@ -779,11 +774,11 @@ func TestDetermineAction(t *testing.T) {
 	createCampaign(t, ctx, store, "test-action", admin.ID, campaignSpec.ID)
 
 	tcs := []struct {
-		name           string
-		previousSpec   testSpecOpts
-		currentSpec    testSpecOpts
-		changeset      testChangesetOpts
-		wantActionType actionType
+		name            string
+		previousSpec    testSpecOpts
+		currentSpec     testSpecOpts
+		changeset       testChangesetOpts
+		wantActionTypes actionTypes
 	}{
 		{
 			name: "GitHub publish",
@@ -795,7 +790,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionType: actionPublish,
+			wantActionTypes: actionTypes{actionPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -807,7 +802,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionType: actionPublishDraft,
+			wantActionTypes: actionTypes{actionPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -819,7 +814,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionType: actionNone,
+			wantActionTypes: actionTypes{},
 		},
 		{
 			name: "set to draft but unsupported",
@@ -832,7 +827,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 				repo:                bbsRepo.ID,
 			},
-			wantActionType: actionNone,
+			wantActionTypes: actionTypes{},
 		},
 		{
 			name: "set from draft to publish true",
@@ -848,7 +843,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionType: actionUndraftUpdate,
+			wantActionTypes: actionTypes{actionUndraft},
 		},
 		{
 			name: "set from draft to publish true on unpublished",
@@ -864,7 +859,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionType: actionPublish,
+			wantActionTypes: actionTypes{actionPublish},
 		},
 	}
 
@@ -888,8 +883,8 @@ func TestDetermineAction(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := action.actionType, tc.wantActionType; have != want {
-				t.Fatalf("incorrect action determined, want=%q have=%q", want, have)
+			if have, want := action.actionTypes, tc.wantActionTypes; !have.Equal(want) {
+				t.Fatalf("incorrect actions determined, want=%v have=%v", want, have)
 			}
 		})
 	}
@@ -954,7 +949,11 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 
 	// Run the reconciler
-	rec := reconciler{store: store}
+	rec := reconciler{
+		noSleepBeforeSync: true,
+		sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
+		store:             store,
+	}
 	haveErr := rec.process(ctx, store, otherChangeset)
 	if !errors.Is(haveErr, ErrPublishSameBranch) {
 		t.Fatalf("reconciler process failed with wrong error: %s", haveErr)
