@@ -16,9 +16,10 @@ add('All states', () => (
                     closed: 10,
                     deleted: 10,
                     merged: 10,
+                    draft: 5,
                     open: 10,
                     total: 100,
-                    unpublished: 60,
+                    unpublished: 55,
                 }}
                 closedAt={null}
             />
@@ -34,6 +35,7 @@ add('Campaign closed', () => (
                     closed: 10,
                     deleted: 10,
                     merged: 10,
+                    draft: 0,
                     open: 10,
                     total: 100,
                     unpublished: 60,
@@ -52,6 +54,7 @@ add('Campaign done', () => (
                     deleted: 10,
                     closed: 10,
                     merged: 80,
+                    draft: 0,
                     open: 0,
                     total: 100,
                     unpublished: 0,

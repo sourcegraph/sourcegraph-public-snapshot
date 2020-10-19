@@ -162,6 +162,7 @@ type ChangesetConnection struct {
 
 type ChangesetConnectionStats struct {
 	Unpublished int
+	Draft       int
 	Open        int
 	Merged      int
 	Closed      int

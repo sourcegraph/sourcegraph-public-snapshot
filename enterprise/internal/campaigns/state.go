@@ -423,7 +423,11 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		s = campaigns.ChangesetExternalState(m.State)
+		if m.IsDraft {
+			s = campaigns.ChangesetExternalStateDraft
+		} else {
+			s = campaigns.ChangesetExternalState(m.State)
+		}
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
 			s = campaigns.ChangesetExternalStateClosed

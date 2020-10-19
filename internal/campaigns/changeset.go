@@ -78,6 +78,7 @@ type ChangesetExternalState string
 
 // ChangesetExternalState constants.
 const (
+	ChangesetExternalStateDraft   ChangesetExternalState = "DRAFT"
 	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
 	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
 	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
@@ -88,6 +89,7 @@ const (
 func (s ChangesetExternalState) Valid() bool {
 	switch s {
 	case ChangesetExternalStateOpen,
+		ChangesetExternalStateDraft,
 		ChangesetExternalStateClosed,
 		ChangesetExternalStateMerged,
 		ChangesetExternalStateDeleted:
@@ -351,42 +353,11 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// externalState of a Changeset based on the metadata.
-// It does NOT reflect the final calculated externalState, use `ExternalState` instead.
-func (c *Changeset) externalState() (s ChangesetExternalState, err error) {
-	if !c.ExternalDeletedAt.IsZero() {
-		return ChangesetExternalStateDeleted, nil
-	}
-
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		s = ChangesetExternalState(m.State)
-	case *bitbucketserver.PullRequest:
-		if m.State == "DECLINED" {
-			s = ChangesetExternalStateClosed
-		} else {
-			s = ChangesetExternalState(m.State)
-		}
-	case *gitlab.MergeRequest:
-		switch m.State {
-		case gitlab.MergeRequestStateOpened:
-			s = ChangesetExternalStateOpen
-		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = ChangesetExternalStateClosed
-		case gitlab.MergeRequestStateMerged:
-			s = ChangesetExternalStateMerged
-		default:
-			return "", errors.Errorf("unknown merge request state: %s", m.State)
-		}
-	default:
-		return "", errors.New("unknown changeset type")
-	}
-
-	if !s.Valid() {
-		return "", errors.Errorf("changeset state %q invalid", s)
-	}
-
-	return s, nil
+// HasDiff returns true when the changeset is in an open state. That is because
+// currently we do not support diff rendering for historic branches, because we
+// can't guarantee that we have the refs on gitserver.
+func (c *Changeset) HasDiff() bool {
+	return c.ExternalState == ChangesetExternalStateDraft || c.ExternalState == ChangesetExternalStateOpen
 }
 
 // URL of a Changeset.
@@ -688,6 +659,10 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequestRemoved
 	case *github.ReviewRequestedEvent:
 		return ChangesetEventKindGitHubReviewRequested
+	case *github.ReadyForReviewEvent:
+		return ChangesetEventKindGitHubReadyForReview
+	case *github.ConvertToDraftEvent:
+		return ChangesetEventKindGitHubConvertToDraft
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
 	case *github.PullRequestCommit:
@@ -763,6 +738,10 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(github.ReviewRequestRemovedEvent), nil
 		case ChangesetEventKindGitHubReviewRequested:
 			return new(github.ReviewRequestedEvent), nil
+		case ChangesetEventKindGitHubReadyForReview:
+			return new(github.ReadyForReviewEvent), nil
+		case ChangesetEventKindGitHubConvertToDraft:
+			return new(github.ConvertToDraftEvent), nil
 		case ChangesetEventKindGitHubUnassigned:
 			return new(github.UnassignedEvent), nil
 		case ChangesetEventKindGitHubCommit:

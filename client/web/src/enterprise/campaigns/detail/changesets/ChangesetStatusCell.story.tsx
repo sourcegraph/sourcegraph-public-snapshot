@@ -9,6 +9,7 @@ import {
     ChangesetStatusOpen,
     ChangesetStatusDeleted,
     ChangesetStatusError,
+    ChangesetStatusDraft,
 } from './ChangesetStatusCell'
 
 const { add } = storiesOf('web/campaigns/ChangesetStatusCell', module).addDecorator(story => (
@@ -21,6 +22,7 @@ add('Unpublished', () => (
 add('Closed', () => <EnterpriseWebStory>{() => <ChangesetStatusClosed className="d-flex" />}</EnterpriseWebStory>)
 add('Merged', () => <EnterpriseWebStory>{() => <ChangesetStatusMerged className="d-flex" />}</EnterpriseWebStory>)
 add('Open', () => <EnterpriseWebStory>{() => <ChangesetStatusOpen className="d-flex" />}</EnterpriseWebStory>)
+add('Draft', () => <EnterpriseWebStory>{() => <ChangesetStatusDraft className="d-flex" />}</EnterpriseWebStory>)
 add('Deleted', () => <EnterpriseWebStory>{() => <ChangesetStatusDeleted className="d-flex" />}</EnterpriseWebStory>)
 add('Error', () => <EnterpriseWebStory>{() => <ChangesetStatusError className="d-flex" />}</EnterpriseWebStory>)
 add('Processing', () => (

@@ -1201,6 +1201,73 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			name:      "single changeset opened as draft",
+			changesets: []*campaigns.Changeset{
+				setIsDraft(ghChangeset(1, daysAgo(2))),
+			},
+			start:  daysAgo(1),
+			events: []*campaigns.ChangesetEvent{},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Draft: 1},
+				{Time: daysAgo(0), Total: 1, Draft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			name:      "single changeset opened as draft then opened for review",
+			changesets: []*campaigns.Changeset{
+				// Not setAsDraft, because the current state is "not in draft anymore".
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(1),
+			events: []*campaigns.ChangesetEvent{
+				ghReadyForReview(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Draft: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			name:      "single changeset opened as draft then opened for review and converted back",
+			changesets: []*campaigns.Changeset{
+				// Not setAsDraft, because the current state is "not in draft anymore".
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(2),
+			events: []*campaigns.ChangesetEvent{
+				ghReadyForReview(1, daysAgo(1), "user1"),
+				ghConvertToDraft(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Draft: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(0), Total: 1, Draft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			name:      "single changeset opened as draft then opened for review, converted back and opened for review again",
+			changesets: []*campaigns.Changeset{
+				// Not setAsDraft, because the current state is "not in draft anymore".
+				ghChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(3),
+			events: []*campaigns.ChangesetEvent{
+				ghReadyForReview(1, daysAgo(2), "user1"),
+				ghConvertToDraft(1, daysAgo(1), "user1"),
+				ghReadyForReview(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(3), Total: 1, Draft: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(1), Total: 1, Draft: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -1238,6 +1305,11 @@ func bbsChangeset(id int64, t time.Time) *campaigns.Changeset {
 func setExternalDeletedAt(c *campaigns.Changeset, t time.Time) *campaigns.Changeset {
 	c.SetDeleted()
 	c.ExternalDeletedAt = t
+	return c
+}
+
+func setIsDraft(c *campaigns.Changeset) *campaigns.Changeset {
+	c.Metadata.(*github.PullRequest).IsDraft = true
 	return c
 }
 
@@ -1301,6 +1373,32 @@ func ghReviewDismissed(id int64, t time.Time, login, reviewer string) *campaigns
 				Author: github.Actor{
 					Login: reviewer,
 				},
+			},
+		},
+	}
+}
+
+func ghReadyForReview(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitHubReadyForReview,
+		Metadata: &github.ReadyForReviewEvent{
+			CreatedAt: t,
+			Actor: github.Actor{
+				Login: login,
+			},
+		},
+	}
+}
+
+func ghConvertToDraft(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitHubConvertToDraft,
+		Metadata: &github.ConvertToDraftEvent{
+			CreatedAt: t,
+			Actor: github.Actor{
+				Login: login,
 			},
 		},
 	}

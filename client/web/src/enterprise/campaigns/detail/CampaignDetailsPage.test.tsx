@@ -38,7 +38,7 @@ describe('CampaignDetailsPage', () => {
                     initialApplier: { username: 'alice', url: '/users/alice' },
                     changesets: {
                         totalCount: 0,
-                        stats: { total: 10, closed: 0, merged: 0, open: 8, unpublished: 2, deleted: 1 },
+                        stats: { total: 10, closed: 0, merged: 0, open: 8, unpublished: 2, deleted: 1, draft: 0 },
                     },
                     viewerCanAdminister,
                     branch: 'awesome-branch',
