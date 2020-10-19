@@ -9,11 +9,11 @@ name: track-important-milestone
 description: Track all changesets related to our important milestone
 
 importChangesets:
-- repo: github.com/sourcegraph/sourcegraph
+- repository: github.com/sourcegraph/sourcegraph
   externalIDs: [12374, 11675]
-- repo: bitbucket.sgdev.org/SOUR/vegeta
+- repository: bitbucket.sgdev.org/SOUR/vegeta
   externalIDs: [8]
-- repo: gitlab.sgdev.org/sourcegraph/src-cli
+- repository: gitlab.sgdev.org/sourcegraph/src-cli
   externalIDs: [113, 119]
 ```
 

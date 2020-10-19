@@ -117,6 +117,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                             onChange={nextUrlFieldChange}
                             ref={urlInputReference}
                             spellCheck={false}
+                            required={true}
                         />
                     </LoaderInput>
                     {urlState.kind === 'LOADING' ? (
@@ -257,7 +258,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                         'bg-4': currentHost?.endsWith(host),
                     })}
                 >
-                    {Icon && <Icon />}
+                    {Icon && <Icon className="icon-inline" />}
                 </span>
             ))}
         </div>

@@ -657,10 +657,12 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		})
 	}
 
-	if q, err = updateUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute update user pending permissions batch query")
+	if len(updatedPerms) > 0 {
+		if q, err = updateUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute update user pending permissions batch query")
+		}
 	}
 
 	if q, err = upsertRepoPendingPermissionsBatchQuery(p); err != nil {

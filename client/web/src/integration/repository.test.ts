@@ -471,15 +471,18 @@ describe('Repository', () => {
             )
             assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
 
-            // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
-            // await driver.page.waitForSelector('#monaco-query-input .view-lines')
-            // const searchQuery = await driver.page.evaluate(
-            //     () => document.querySelector('#monaco-query-input .view-lines')?.textContent
-            // )
-            // assert.strictEqual(
-            //     searchQuery,
-            //     'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\.32r242442bf/% token\\.4288249258\\.sql$"'
-            // )
+            await driver.page.waitForSelector('#monaco-query-input .view-lines')
+            // TODO: find a more reliable way to get the current search query,
+            // to account for the fact that it may _actually_ contain non-breaking spaces
+            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
+            // https://github.com/sourcegraph/sourcegraph/issues/14756
+            const searchQuery = (
+                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
+            )?.replace(/\u00A0/g, ' ')
+            assert.strictEqual(
+                searchQuery,
+                'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\\\.32r242442bf/% token\\\\.4288249258\\\\.sql"'
+            )
 
             await driver.page.waitForSelector('.test-go-to-code-host')
             assert.strictEqual(

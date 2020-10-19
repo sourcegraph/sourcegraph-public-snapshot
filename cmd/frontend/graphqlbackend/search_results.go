@@ -498,7 +498,7 @@ loop:
 		case *RepositoryResolver:
 			// We don't care about repo results here.
 			continue
-		case *commitSearchResultResolver:
+		case *CommitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
 			addPoint(m.commit.author.date)
 		case *FileMatchResolver:
@@ -2035,7 +2035,7 @@ type SearchResultResolver interface {
 
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
-	ToCommitSearchResult() (*commitSearchResultResolver, bool)
+	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
 
 	resultCount() int32
 }
