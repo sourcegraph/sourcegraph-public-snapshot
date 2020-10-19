@@ -105,6 +105,32 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         return undefined
     }
 
+    public getText(range?: sourcegraph.Range): string | undefined {
+        this.throwIfNoModelText()
+        range = range ? this.validateRange(range) : undefined
+        if (!range) {
+            return this.text
+        }
+        const { start, end } = range
+
+        if (start.line === end.line) {
+            return this._lines[start.line].slice(start.character, end.character)
+        }
+
+        let text = ''
+        for (let line = start.line; line <= end.line; line++) {
+            if (line === start.line) {
+                text += this._lines[line].slice(start.character)
+            } else if (line === end.line) {
+                text += this._lines[line].slice(0, end.character)
+            } else {
+                text += this._lines[line]
+            }
+        }
+
+        return text
+    }
+
     // Memoize computation of line starts.
     private _lineStarts: PrefixSumComputer | null = null
     private get lineStarts(): PrefixSumComputer {

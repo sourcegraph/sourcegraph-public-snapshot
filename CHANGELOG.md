@@ -39,7 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Changesets created by campaigns will now include a link back to the campaign in their body text. [#14033](https://github.com/sourcegraph/sourcegraph/issues/14033)
 - Users can now preview commits that are going to be created in their repositories in the campaign preview UI. [#14181](https://github.com/sourcegraph/sourcegraph/pull/14181)
 - If emails are configured, the user will be sent an email when important account information is changed. This currently encompasses changing/resetting the password, adding/removing emails, and adding/removing access tokens. [#14320](https://github.com/sourcegraph/sourcegraph/pull/14320)
-- A subset of changesets can now be published by setting the `published` flag in campaign specs [to an array](https://docs.sourcegraph.com/@main/user/campaigns/campaign_spec_yaml_reference#publishing-only-specific-changesets), which allows only specific changesets within a campaign to be published based on the repository name. [#13476](https://github.com/sourcegraph/sourcegraph/pull/13476)
+- A subset of changesets can now be published by setting the `published` flag in campaign specs [to an array](https://docs.sourcegraph.com/@main/campaigns/campaign_spec_yaml_reference#publishing-only-specific-changesets), which allows only specific changesets within a campaign to be published based on the repository name. [#13476](https://github.com/sourcegraph/sourcegraph/pull/13476)
 - Homepage panels are now enabled by default. [#14287](https://github.com/sourcegraph/sourcegraph/issues/14287)
 - The most recent ping data is now available to site admins via the Site-admin > Pings page. [#13956](https://github.com/sourcegraph/sourcegraph/issues/13956)
 - Homepage panel engagement metrics will be sent back in pings. [#14589](https://github.com/sourcegraph/sourcegraph/pull/14589)
@@ -101,7 +101,7 @@ All notable changes to Sourcegraph are documented in this file.
 - To define repository groups (`search.repositoryGroups` in global, org, or user settings), you can now specify regular expressions in addition to single repository names. [#13730](https://github.com/sourcegraph/sourcegraph/pull/13730)
 - The new site configuration property `search.limits` configures the maximum search timeout and the maximum number of repositories to search for various types of searches. [#13448](https://github.com/sourcegraph/sourcegraph/pull/13448)
 - Files and directories can now be excluded from search by adding the file `.sourcegraph/ignore` to the root directory of a repository. Each line in the _ignore_ file is interpreted as a globbing pattern. [#13690](https://github.com/sourcegraph/sourcegraph/pull/13690)
-- Structural search syntax now allows regular expressions in patterns. Also, `...` can now be used in place of `:[_]`. See the [documentation](https://docs.sourcegraph.com/@main/user/search/structural) for example syntax. [#13809](https://github.com/sourcegraph/sourcegraph/pull/13809)
+- Structural search syntax now allows regular expressions in patterns. Also, `...` can now be used in place of `:[_]`. See the [documentation](https://docs.sourcegraph.com/@main/code_search/reference/structural) for example syntax. [#13809](https://github.com/sourcegraph/sourcegraph/pull/13809)
 - The total size of all Git repositories and the lines of code for indexed branches will be sent back in pings. [#13764](https://github.com/sourcegraph/sourcegraph/pull/13764)
 - Experimental: A new homepage UI for Sourcegraph Server shows the user their recent searches, repositories, files, and saved searches. It can be enabled with `experimentalFeatures.showEnterpriseHomePanels`. [#13407](https://github.com/sourcegraph/sourcegraph/issues/13407)
 
@@ -277,7 +277,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Notifications about Sourcegraph being out of date will now be shown to site admins and users (depending on how out-of-date it is).
 - Alerts are now configured using `observability.alerts` in the site configuration, instead of via the Grafana web UI. This does not yet support all Grafana notification channel types, and is not yet supported on `sourcegraph/server` ([#11473](https://github.com/sourcegraph/sourcegraph/issues/11473)). For more details, please refer to the [Sourcegraph alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 - Experimental basic support for detecting if your Sourcegraph instance is over or under-provisioned has been added through a set of dashboards and warning-level alerts based on container utilization.
-- Query [operators](https://docs.sourcegraph.com/user/search/reference/queries#operators) `and` and `or` are now enabled by default in all search modes for searching file content. [#11521](https://github.com/sourcegraph/sourcegraph/pull/11521)
+- Query [operators](https://docs.sourcegraph.com/code_search/reference/queries#operators) `and` and `or` are now enabled by default in all search modes for searching file content. [#11521](https://github.com/sourcegraph/sourcegraph/pull/11521)
 
 ### Changed
 
@@ -690,7 +690,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 
 ### Added
 
-- Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/user/search/reference/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
+- Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/code_search/reference/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
 - Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
 - The new `allowOrgs` site config setting in GitHub `auth.providers` enables admins to restrict GitHub logins to members of specific GitHub organizations. [#4195](https://github.com/sourcegraph/sourcegraph/issues/4195)
 - Support case field in repository search. [#7671](https://github.com/sourcegraph/sourcegraph/issues/7671)
@@ -753,7 +753,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 - Logging for GraphQL API requests not issued by Sourcegraph is now much more verbose, allowing for easier debugging of problematic queries and where they originate from. [#5706](https://github.com/sourcegraph/sourcegraph/issues/5706)
 - A new campaign type finds and removes leaked NPM credentials. [#6893](https://github.com/sourcegraph/sourcegraph/pull/6893)
 - Campaigns can now be retried to create failed changesets due to ephemeral errors (e.g. network problems when creating a pull request on GitHub). [#6718](https://github.com/sourcegraph/sourcegraph/issues/6718)
-- The initial release of [structural code search](https://docs.sourcegraph.com/user/search/structural).
+- The initial release of [structural code search](https://docs.sourcegraph.com/code_search/reference/structural).
 
 ### Changed
 

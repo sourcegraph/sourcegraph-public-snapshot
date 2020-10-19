@@ -1,4 +1,4 @@
-import { Position } from '@sourcegraph/extension-api-classes'
+import { Position, Range } from '@sourcegraph/extension-api-classes'
 import { OFFSET_TO_POSITION_TESTS, POSITION_TO_OFFSET_TESTS } from '../../client/types/textDocument.test'
 import { ExtensionDocument, getEOL } from './textDocument'
 
@@ -32,6 +32,24 @@ describe('ExtensionDocument', () => {
             start: { line: 0, character: 3 },
             end: { line: 0, character: 5 },
         }))
+
+    // No need to test invalid ranges for `getText` since that is handled by `validateRange` and `validatePosition`
+    test('getText (one line)', () => {
+        const document = textDocument('aa bb cc')
+        expect(document.getText(document.getWordRangeAtPosition(new Position(0, 3)))).toEqual('bb')
+    })
+
+    test('getText (two lines)', () => {
+        const document = textDocument('aa bb\nbbb ccccc')
+        expect(document.getText(new Range(new Position(0, 3), new Position(1, 3)))).toEqual('bbbbb')
+    })
+
+    test('getText (several lines)', () => {
+        const document = textDocument('this text\ndocument spans\nmultiple \nlines ')
+        expect(document.getText(new Range(new Position(0, 5), new Position(3, 2)))).toEqual(
+            'textdocument spansmultiple li'
+        )
+    })
 })
 
 describe('getEOL', () => {
