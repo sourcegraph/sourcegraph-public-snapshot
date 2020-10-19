@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestStoreQueuedCount(t *testing.T) {
@@ -33,6 +34,30 @@ func TestStoreQueuedCount(t *testing.T) {
 	}
 	if count != 3 {
 		t.Errorf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
+func TestStoreQueuedCountFailed(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, uploaded_at, num_failures)
+		VALUES
+			(1, 'queued', NOW() - '1 minute'::interval, 0),
+			(2, 'errored', NOW() - '2 minute'::interval, 2),
+			(3, 'state2', NOW() - '3 minute'::interval, 0),
+			(4, 'errored', NOW() - '4 minute'::interval, 3),
+			(5, 'state2', NOW() - '5 minute'::interval, 0)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error getting queued count: %s", err)
+	}
+	if count != 2 {
+		t.Errorf("unexpected count. want=%d have=%d", 2, count)
 	}
 }
 
