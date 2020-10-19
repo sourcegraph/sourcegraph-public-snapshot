@@ -944,7 +944,7 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 		return err
 	}
 
-	// manually truncate the temporaty table as SetClonedRepos might be used multiple times during the same transaction
+	// manually truncate the temporary table as SetClonedRepos might be used multiple times during the same transaction
 	_, err = tx.ExecContext(ctx, "TRUNCATE TABLE cloned_repos")
 	return err
 }
@@ -964,7 +964,7 @@ const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
 --
 -- This query generates a diff by selecting only
--- the repos that need to be updated for the selected page.
+-- the repos that need to be updated.
 -- Selected repos will have their cloned column reversed if
 -- their cloned column is true but they are not in cloned_repos
 -- or they are in cloned_repos but their cloned column is false.
