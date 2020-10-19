@@ -38,6 +38,9 @@ export async function recordCoverage(browser: Browser): Promise<void> {
     )
     await Promise.all(
         targets.map(async target => {
+            if (target.url() === 'about:blank') {
+                return
+            }
             const executionContext = (await target.worker()) ?? (await target.page())
             if (!executionContext) {
                 return
@@ -48,7 +51,7 @@ export async function recordCoverage(browser: Browser): Promise<void> {
                 new Error(`Timeout getting coverage from ${target.url()}`)
             )
             if (!coverage) {
-                if (!warnedNoCoverage && target.url() !== 'about:blank') {
+                if (!warnedNoCoverage) {
                     console.error(
                         `No coverage found in target ${target.url()}\n` +
                             'Run the dev Sourcegraph instance with COVERAGE_INSTRUMENT=true to track coverage.'
