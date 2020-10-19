@@ -1,9 +1,6 @@
 .after-install-page-content {
     &__sourcegraph-logo {
-        width: 1.5rem;
-        position: absolute;
-        top: 0.5rem;
-        left: 0.5rem;
+        height: 1.5rem;
     }
     &__code-host-logo {
         height: 2rem !important;

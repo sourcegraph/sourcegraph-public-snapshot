@@ -31,7 +31,7 @@ RUN apk update && apk add --no-cache \
     'redis=5.0.9-r0' \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
-    'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)

@@ -29,7 +29,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 						Commit: campaigns.CommitTemplate{
 							Message: "commit message",
 						},
-						Published: overridable.FromBool(false),
+						Published: overridable.FromBoolOrString(false),
 					},
 				},
 				UserID: int32(i + 1234),

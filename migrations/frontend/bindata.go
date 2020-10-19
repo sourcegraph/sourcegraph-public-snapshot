@@ -100,6 +100,8 @@
 // 1528395732_add_external_services_sync_jobs_state_index.up.sql (120B)
 // 1528395733_add_permissions_object_ids_default.down.sql (297B)
 // 1528395733_add_permissions_object_ids_default.up.sql (313B)
+// 1528395734_repo_updater_log_contents.down.sql (544B)
+// 1528395734_repo_updater_log_contents.up.sql (565B)
 
 package migrations
 
@@ -2168,6 +2170,46 @@ func _1528395733_add_permissions_object_ids_defaultUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395734_repo_updater_log_contentsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\xd1\x4e\xb4\x30\x14\x84\xef\xfb\x14\xe7\x01\xfe\xf0\x02\xe4\xbf\x60\xb1\x1a\x0c\xd0\x4d\x17\xf5\xb2\xa9\xe5\x2c\x94\xb0\xc5\xf4\x9c\xd5\xf5\xed\x4d\x56\xd9\xa0\x6b\x48\xbc\xec\x97\x69\x67\xa6\xb3\x91\x77\x45\x9d\x0a\x71\xa3\xd5\x16\x1e\x0b\xf9\x04\x78\x62\x8c\xc1\x8e\x86\x30\xbe\x7a\x87\x86\xde\x83\x33\xc3\xf4\x4c\xe6\xcd\x73\x6f\x02\x9e\xf8\x93\x59\x4e\x85\xc8\xca\x46\x6a\x68\xb2\x4d\x29\x57\xae\xc2\xf9\xfd\x5c\x95\x0f\x55\x0d\xe3\xd4\x19\x37\x05\xc6\xc0\x94\x0a\x91\x6b\x99\x35\x12\x94\x06\x2d\xb7\x65\x96\xcb\xbf\xe7\x80\x6c\x07\x3b\x59\xca\xbc\x81\x21\xf1\xed\x3f\x01\x00\x30\x24\xc4\x96\x71\x3e\xec\xad\x1f\x8f\x11\xcd\x01\x89\x6c\x87\x0b\x4d\x64\x6c\x8d\xe5\x8b\xd0\x07\x4f\xfd\x37\xf4\x12\x27\x87\x44\xc6\xee\x19\xe3\x0c\xc3\xf1\x60\x22\x12\x32\x2d\xc9\x97\xcd\x85\x5d\xd5\x98\xe3\x61\xb2\x6c\x20\x6e\xb5\xaa\xae\x3a\x13\x20\xdc\xab\xa2\x5e\xfb\xd9\x01\x54\x0d\x98\xf8\x16\xfe\xff\x6e\xf7\x63\x24\xd7\xdb\xd0\x9d\x63\xaf\x8e\xa2\xaa\xaa\x68\x52\xf1\x11\x00\x00\xff\xff\xd3\xbe\xee\x49\x20\x02\x00\x00")
+
+func _1528395734_repo_updater_log_contentsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395734_repo_updater_log_contentsDownSql,
+		"1528395734_repo_updater_log_contents.down.sql",
+	)
+}
+
+func _1528395734_repo_updater_log_contentsDownSql() (*asset, error) {
+	bytes, err := _1528395734_repo_updater_log_contentsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395734_repo_updater_log_contents.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xae, 0xc6, 0xae, 0xab, 0xd2, 0xb9, 0xaa, 0x1, 0x6c, 0xcc, 0xc9, 0xaf, 0x88, 0xf5, 0xf7, 0xfa, 0xa8, 0x28, 0xa9, 0x35, 0x61, 0xc6, 0xc2, 0x98, 0x5e, 0x44, 0xf1, 0x87, 0xf8, 0x2f, 0x70, 0x84}}
+	return a, nil
+}
+
+var __1528395734_repo_updater_log_contentsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\xd1\x4e\xac\x30\x10\x86\xef\xfb\x14\xf3\x00\x27\xbc\x00\x39\x17\x2c\x54\x83\x01\x6a\x58\xd4\xcb\xa6\x96\x59\x28\x61\x8b\xe9\xcc\x2a\xbe\xbd\x51\x97\x0d\xba\x66\x8d\x77\xed\x97\x69\x67\xbe\xf9\x37\xf2\x3a\xaf\x62\x21\xb2\x5a\xdd\xc2\x7d\x2e\x1f\x00\x67\xc6\xe0\xcd\xa8\x09\xc3\xb3\xb3\xa8\xe9\xd5\x5b\x3d\x4c\x8f\xa4\x5f\x1c\xf7\xda\xe3\xcc\x9f\xcc\x70\x2c\x44\x52\x34\xb2\x86\x26\xd9\x14\xf2\xc2\x53\x48\xb2\x0c\x52\x55\xdc\x95\x15\x8c\x53\xa7\xed\xe4\x19\x3d\x13\x30\xce\xef\xbf\xa4\xb5\x4c\x1a\xf9\xf7\x01\x20\xd9\xc2\x56\x16\x32\x6d\x04\x00\xc0\x10\xb9\xf6\xdf\xf1\x44\x6c\x18\x97\xcb\xce\xb8\xf1\x10\x50\xef\x91\xc8\x74\xb8\xaa\x09\x8c\xad\x36\x7c\x2a\x74\xde\x51\xff\x05\x3d\x85\xc9\x22\x91\x36\x3b\xc6\xb0\x40\x7f\xd8\xeb\x80\x84\x4c\x6b\x72\x6c\x73\x62\x6b\xd5\x85\x9d\xe9\x2d\x23\x63\xb4\x36\x13\x57\xb5\x2a\xcf\x76\x41\x80\x70\xa3\xf2\xea\xd2\xaa\x07\x50\x15\x60\xe4\x5a\xf8\xff\x73\xbb\x6f\xa9\xd9\xde\xf8\xee\x43\xe5\xd7\x94\x54\x59\xe6\x4d\x2c\xde\x02\x00\x00\xff\xff\x34\x28\x46\xbc\x35\x02\x00\x00")
+
+func _1528395734_repo_updater_log_contentsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395734_repo_updater_log_contentsUpSql,
+		"1528395734_repo_updater_log_contents.up.sql",
+	)
+}
+
+func _1528395734_repo_updater_log_contentsUpSql() (*asset, error) {
+	bytes, err := _1528395734_repo_updater_log_contentsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395734_repo_updater_log_contents.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa3, 0x61, 0xd2, 0xdb, 0x3a, 0x17, 0x61, 0x29, 0x2b, 0xd9, 0x1a, 0x6d, 0xda, 0x20, 0xe7, 0x24, 0x6f, 0x61, 0x3b, 0x92, 0x77, 0x7c, 0xea, 0x7b, 0x40, 0xc3, 0x56, 0xd6, 0xfb, 0xed, 0x7f, 0xca}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2359,6 +2401,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                _1528395732_add_external_services_sync_jobs_state_indexUpSql,
 	"1528395733_add_permissions_object_ids_default.down.sql":                       _1528395733_add_permissions_object_ids_defaultDownSql,
 	"1528395733_add_permissions_object_ids_default.up.sql":                         _1528395733_add_permissions_object_ids_defaultUpSql,
+	"1528395734_repo_updater_log_contents.down.sql":                                _1528395734_repo_updater_log_contentsDownSql,
+	"1528395734_repo_updater_log_contents.up.sql":                                  _1528395734_repo_updater_log_contentsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2505,6 +2549,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                {_1528395732_add_external_services_sync_jobs_state_indexUpSql, map[string]*bintree{}},
 	"1528395733_add_permissions_object_ids_default.down.sql":                       {_1528395733_add_permissions_object_ids_defaultDownSql, map[string]*bintree{}},
 	"1528395733_add_permissions_object_ids_default.up.sql":                         {_1528395733_add_permissions_object_ids_defaultUpSql, map[string]*bintree{}},
+	"1528395734_repo_updater_log_contents.down.sql":                                {_1528395734_repo_updater_log_contentsDownSql, map[string]*bintree{}},
+	"1528395734_repo_updater_log_contents.up.sql":                                  {_1528395734_repo_updater_log_contentsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

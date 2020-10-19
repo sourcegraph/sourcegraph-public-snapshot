@@ -26,6 +26,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1082,5 +1083,49 @@ func TestContainsRefGlobs(t *testing.T) {
 				t.Errorf("got %t, expected %t", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestContextWithoutDeadline(t *testing.T) {
+	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
+	defer cancelWithDeadline()
+
+	tr, ctxWithDeadline := trace.New(ctxWithDeadline, "", "")
+
+	if _, ok := ctxWithDeadline.Deadline(); !ok {
+		t.Fatal("expected context to have deadline")
+	}
+
+	ctxNoDeadline, cancelNoDeadline := contextWithoutDeadline(ctxWithDeadline)
+	defer cancelNoDeadline()
+
+	if _, ok := ctxNoDeadline.Deadline(); ok {
+		t.Fatal("expected context to not have deadline")
+	}
+
+	// We want to keep trace info
+	if tr2 := trace.TraceFromContext(ctxNoDeadline); tr != tr2 {
+		t.Error("trace information not propogated")
+	}
+
+	// Calling cancelWithDeadline should cancel ctxNoDeadline
+	cancelWithDeadline()
+	select {
+	case <-ctxNoDeadline.Done():
+	case <-time.After(10 * time.Second):
+		t.Fatal("expected context to be done")
+	}
+}
+
+func TestContextWithoutDeadline_cancel(t *testing.T) {
+	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
+	defer cancelWithDeadline()
+	ctxNoDeadline, cancelNoDeadline := contextWithoutDeadline(ctxWithDeadline)
+
+	cancelNoDeadline()
+	select {
+	case <-ctxNoDeadline.Done():
+	case <-time.After(10 * time.Second):
+		t.Fatal("expected context to be done")
 	}
 }

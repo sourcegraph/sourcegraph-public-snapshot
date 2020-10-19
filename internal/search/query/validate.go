@@ -56,6 +56,16 @@ func containsPattern(node Node) bool {
 	})
 }
 
+// containsField returns true if the field exists in the query.
+func containsField(nodes []Node, field string) bool {
+	return exists(nodes, func(node Node) bool {
+		if p, ok := node.(Parameter); ok && p.Field == field {
+			return true
+		}
+		return false
+	})
+}
+
 // ContainsAndOrKeyword returns true if this query contains or- or and-
 // keywords. It is a temporary signal to determine whether we can fallback to
 // the older existing search functionality.
@@ -302,7 +312,7 @@ func validateRepoRevPair(nodes []Node) error {
 }
 
 // Queries containing commit parameters without type:diff or type:commit are not
-// valid. cf. https://docs.sourcegraph.com/user/search/language#commit-parameter
+// valid. cf. https://docs.sourcegraph.com/code_search/reference/language#commit-parameter
 func validateCommitParameters(nodes []Node) error {
 	var seenCommitParam string
 	var typeCommitExists bool

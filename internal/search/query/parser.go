@@ -1232,11 +1232,11 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		}
 	}
 
-	err = validate(query)
-	if err != nil {
-		return nil, err
+	for _, disjunct := range Dnf(query) {
+		err = validate(disjunct)
+		if err != nil {
+			return nil, err
+		}
 	}
-	query = concatRevFilters(query)
-
 	return &AndOrQuery{Query: query}, nil
 }

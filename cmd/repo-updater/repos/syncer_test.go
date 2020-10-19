@@ -644,7 +644,6 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 		ID:          0, // explicitly make default value for sourced repo
 		Name:        "github.com/foo/bar",
 		Description: "The description",
-		Language:    "barlang",
 		Archived:    false,
 		Fork:        false,
 		ExternalRepo: api.ExternalRepoSpec{

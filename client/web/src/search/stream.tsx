@@ -15,6 +15,7 @@ type SearchEvent =
     | { type: 'commitmatches'; matches: CommitMatch[] }
     | { type: 'symbolmatches'; matches: FileSymbolMatch[] }
     | { type: 'filters'; filters: Filter[] }
+    | { type: 'alert'; alert: Alert }
 
 interface FileMatch extends RepositoryMatch {
     name: string
@@ -67,6 +68,17 @@ interface Filter {
     count: number
     limitHit: boolean
     kind: string
+}
+
+interface Alert {
+    title: string
+    description?: string
+    proposedQueries: ProposedQuery[]
+}
+
+interface ProposedQuery {
+    description?: string
+    query: string
 }
 
 const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
@@ -189,6 +201,18 @@ const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => (
     ...filter,
 })
 
+const toGQLSearchAlert = (alert: Alert): GQL.ISearchAlert => ({
+    __typename: 'SearchAlert',
+    title: alert.title,
+    description: alert.description || null,
+    proposedQueries:
+        alert.proposedQueries?.map(pq => ({
+            __typename: 'SearchQueryDescription',
+            description: pq.description || null,
+            query: pq.query,
+        })) || null,
+})
+
 const emptyGQLSearchResults: GQL.ISearchResults = {
     __typename: 'SearchResults',
     matchCount: 0,
@@ -250,6 +274,12 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
                     ...results,
                     // New filter results replace all previous ones
                     dynamicFilters: newEvent.filters.map(toGQLSearchFilter),
+                }
+
+            case 'alert':
+                return {
+                    ...results,
+                    alert: toGQLSearchAlert(newEvent.alert),
                 }
         }
     }, emptyGQLSearchResults),
@@ -319,6 +349,11 @@ export function search(
         subscriptions.add(
             observeMessages<Filter[]>(eventSource, 'filters')
                 .pipe(map(filters => ({ type: 'filters' as const, filters })))
+                .subscribe(observer)
+        )
+        subscriptions.add(
+            observeMessages<Alert>(eventSource, 'alert')
+                .pipe(map(alert => ({ type: 'alert' as const, alert })))
                 .subscribe(observer)
         )
         subscriptions.add(

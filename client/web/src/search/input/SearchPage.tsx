@@ -8,6 +8,7 @@ import {
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
+    ShowQueryBuilderProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -52,7 +53,8 @@ export interface SearchPageProps
         VersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
-        HomePanelsProps {
+        HomePanelsProps,
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

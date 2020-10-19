@@ -104,37 +104,24 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		return nil, err
 	}
 
-	var (
-		wg               sync.WaitGroup
-		base, head       *GitCommitResolver
-		baseErr, headErr error
-	)
-
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		// Find the common merge-base for the diff. That's the revision the diff applies to,
-		// not the baseRevspec.
-		mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
-		if err != nil {
-			baseErr = err
-			return
-		}
-		// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
-		// applicable to the file from that revision.
-		commitString := strings.TrimSpace(string(mergeBaseCommit))
-		base, baseErr = getCommit(ctx, *grepo, commitString)
-	}()
-	go func() {
-		defer wg.Done()
-		head, headErr = getCommit(ctx, *grepo, headRevspec)
-	}()
-	wg.Wait()
-	if baseErr != nil {
-		return nil, baseErr
+	head, err := getCommit(ctx, *grepo, headRevspec)
+	if err != nil {
+		return nil, err
 	}
-	if headErr != nil {
-		return nil, headErr
+
+	// Find the common merge-base for the diff. That's the revision the diff applies to,
+	// not the baseRevspec.
+	mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	if err != nil {
+		return nil, err
+	}
+
+	// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+	// applicable to the file from that revision.
+	commitString := strings.TrimSpace(string(mergeBaseCommit))
+	base, err := getCommit(ctx, *grepo, commitString)
+	if err != nil {
+		return nil, err
 	}
 
 	return &RepositoryComparisonResolver{

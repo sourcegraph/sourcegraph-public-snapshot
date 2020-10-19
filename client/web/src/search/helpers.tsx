@@ -39,7 +39,7 @@ export function submitSearch({
     source,
     searchParameters,
 }: SubmitSearchParameters): void {
-    const searchQueryParameter = buildSearchURLQuery(
+    let searchQueryParameter = buildSearchURLQuery(
         query,
         patternType,
         caseSensitive,
@@ -47,6 +47,15 @@ export function submitSearch({
         filtersInQuery,
         searchParameters
     )
+
+    // Check if `trace` is set in the query parameters, and retain it if present.
+    const existingParameters = new URLSearchParams(history.location.search)
+    const traceParameter = existingParameters.get('trace')
+    if (traceParameter !== null) {
+        const parameters = new URLSearchParams(searchQueryParameter)
+        parameters.set('trace', traceParameter)
+        searchQueryParameter = parameters.toString()
+    }
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter

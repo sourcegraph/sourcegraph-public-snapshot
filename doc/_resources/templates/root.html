@@ -96,13 +96,39 @@
 {{define "fallbackSidebar"}}
     {{/* The fallback sidebar for revisions before the sidebar.md file existed. */}}
     <ul>
-        <li class="expand"><a href="/user">Usage</a>
+        <li class="expand"><a href="/getting-started">Getting started</a>
             <ul>
-                <li><a href="/user/tour">Tour</a></li>
-                <li class="expand"><a href="/user/search">Code search</a></li>
-                <li><a href="/user/code_intelligence">Code intelligence</a></li>
-                <li><a href="/user/campaigns">Campaigns</a></li>
-            </ul></li>
+                <li><a href="/getting-started/tour">Product tour</a></li>
+                <li><a href="/getting-started/personalization">Personalization</a></li>
+            </ul>
+        </li>
+        <li class="expand"><a href="/code_search">Code search</a>
+            <ul>
+                <li><a href="code_search/tutorials">Tutorials</a></li>
+                <li><a href="code_search/how-to">How-to guides</a></li>
+                <li><a href="code_search/explanations">Explanations</a></li>
+                <li><a href="code_search/reference">Reference</a></li>
+            </ul>
+        </li>
+        <li><a href="/code_intelligence">Code intelligence</a>
+            <ul>
+                <li><a href="code_intelligence/tutorials">Tutorials</a></li>
+                <li><a href="code_intelligence/how-to">How-to guides</a></li>
+                <li><a href="code_intelligence/explanations">Explanations</a></li>
+                <li><a href="code_intelligence/reference">Reference</a></li>
+            </ul>
+        </li>
+        <li><a href="/campaigns">Campaigns</a>
+            <ul>
+                <li><a href="campaigns/tutorials">Tutorials</a></li>
+                <li><a href="campaigns/how-to">How-to guides</a></li>
+                <li><a href="campaigns/explanations">Explanations</a></li>
+                <li><a href="campaigns/reference">Reference</a></li>
+            </ul>
+        </li>
+        <li><a href="/integration">Integrations</a></li>
+        <li><a href="/extensions">Extensions</a></li>
+        <li><a href="/adopt">Adopting</a></li>
         <li><a href="/admin">Administration</a>
             <ul>
                 <li><a href="/admin/install">Install</a></li>
@@ -115,10 +141,6 @@
                 <li><a href="/admin/faq">FAQ</a></li>
                 <li><a href="/admin/troubleshooting">Troubleshooting</a></li>
             </ul></li>
-        <li><a href="/integration">Integrations</a></li>
-        <li><a href="/extensions">Extensions</a></li>
-        <li><a href="/api/graphql">GraphQL API</a></li>
-        <li><a href="/adopt">Adopting</a></li>
         <li><a href="/dev">Development</a></li>
             <ul>
                 <li><a href="dev/getting-started">Getting started</a></li>
@@ -127,6 +149,7 @@
             </ul>
         <li><br></li>
         <li><a href="/#quickstart-guide">★ Quick install</a></li>
-        <li><a href="/user/search/reference/queries">★ Search query syntax</a></li>
+        <li><a href="/code_search/reference/queries">★ Search query syntax</a></li>
+        <li><a href="/api/graphql">★ GraphQL API</a></li>
     </ul>
 {{end}}

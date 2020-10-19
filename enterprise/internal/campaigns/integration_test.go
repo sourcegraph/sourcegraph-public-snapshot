@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
@@ -18,6 +19,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
+	dbtesting.SetupGlobalTestDB(t)
 	db := dbtest.NewDB(t, *dsn)
 
 	userID := insertTestUser(t, db)

@@ -41,8 +41,7 @@ func NewWorker(
 		},
 	}
 
-	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(s), dbworker.WorkerOptions{
-		Handler:     handler,
+	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(s), handler, workerutil.WorkerOptions{
 		NumHandlers: numProcessorRoutines,
 		Interval:    pollInterval,
 		Metrics: workerutil.WorkerMetrics{
