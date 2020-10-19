@@ -402,7 +402,7 @@ func (s *store) SetLogContents(ctx context.Context, id int, logContents string) 
 }
 
 const setLogContentsQuery = `
--- source: internal/workerutil/store.go:Requeue
+-- source: internal/workerutil/store.go:SetLogContents
 UPDATE %s
 SET {log_contents} = %s
 WHERE {id} = %s
