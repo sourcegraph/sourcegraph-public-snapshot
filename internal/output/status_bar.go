@@ -6,6 +6,7 @@ import "time"
 // of a process.
 type StatusBar struct {
 	completed bool
+	failed    bool
 
 	label  string
 	format string
@@ -24,10 +25,17 @@ func (sb *StatusBar) Completef(format string, args ...interface{}) {
 	sb.finishedAt = time.Now()
 }
 
+// Failf sets the StatusBar to completed and failed and updates its text.
+func (sb *StatusBar) Failf(format string, args ...interface{}) {
+	sb.Completef(format, args...)
+	sb.failed = true
+}
+
 // Resetf sets the status of the StatusBar to incomplete and updates its label and text.
 func (sb *StatusBar) Resetf(label, format string, args ...interface{}) {
 	sb.initialized = true
 	sb.completed = false
+	sb.failed = false
 	sb.label = label
 	sb.format = format
 	sb.args = args

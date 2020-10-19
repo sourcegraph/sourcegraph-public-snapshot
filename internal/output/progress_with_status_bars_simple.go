@@ -32,6 +32,16 @@ func (p *progressWithStatusBarsSimple) StatusBarCompletef(i int, format string, 
 	}
 }
 
+func (p *progressWithStatusBarsSimple) StatusBarFailf(i int, format string, args ...interface{}) {
+	if p.statusBars[i] != nil {
+		wasCompleted := p.statusBars[i].completed
+		p.statusBars[i].Failf(format, args...)
+		if !wasCompleted {
+			writeStatusBar(p.Output, p.statusBars[i])
+		}
+	}
+}
+
 func (p *progressWithStatusBarsSimple) StatusBarResetf(i int, label, format string, args ...interface{}) {
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Resetf(label, format, args...)

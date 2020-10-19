@@ -32,6 +32,13 @@ func (e TaskExecutionErr) Error() string {
 	)
 }
 
+func (e TaskExecutionErr) StatusText() string {
+	if stepErr, ok := e.Err.(stepFailedErr); ok {
+		return stepErr.SingleLineError()
+	}
+	return e.Err.Error()
+}
+
 type Executor interface {
 	AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus
 	LogFiles() []string

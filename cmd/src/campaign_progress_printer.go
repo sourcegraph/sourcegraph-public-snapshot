@@ -134,7 +134,11 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 			// Log that this task completed, but only if there is no
 			// currently executing one in this bar, to avoid flicker.
 			if _, ok := p.statusBarRepo[idx]; !ok {
-				p.progress.StatusBarCompletef(idx, statusText)
+				if ts.Err != nil {
+					p.progress.StatusBarFailf(idx, statusText)
+				} else {
+					p.progress.StatusBarCompletef(idx, statusText)
+				}
 			}
 			delete(p.repoStatusBar, ts.RepoName)
 		}
@@ -161,12 +165,24 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 	}
 }
 
+type statusTexter interface {
+	StatusText() string
+}
+
 func taskStatusText(ts *campaigns.TaskStatus) (string, error) {
 	var statusText string
 
 	if ts.IsCompleted() {
 		if ts.ChangesetSpec == nil {
-			statusText = "No changes"
+			if ts.Err != nil {
+				if texter, ok := ts.Err.(statusTexter); ok {
+					statusText = texter.StatusText()
+				} else {
+					statusText = ts.Err.Error()
+				}
+			} else {
+				statusText = "No changes"
+			}
 		} else {
 			fileDiffs, err := diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
 			if err != nil {

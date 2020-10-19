@@ -153,6 +153,17 @@ func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, arg
 	p.drawInSitu()
 }
 
+func (p *progressWithStatusBarsTTY) StatusBarFailf(i int, format string, args ...interface{}) {
+	p.o.lock.Lock()
+	defer p.o.lock.Unlock()
+
+	if p.statusBars[i] != nil {
+		p.statusBars[i].Failf(format, args...)
+	}
+
+	p.drawInSitu()
+}
+
 func (p *progressWithStatusBarsTTY) draw() {
 	for _, bar := range p.bars {
 		p.writeBar(bar)
@@ -205,8 +216,13 @@ func (p *progressWithStatusBarsTTY) determineStatusBarLabelWidth() {
 func (p *progressWithStatusBarsTTY) writeStatusBar(last bool, statusBar *StatusBar) {
 	style := StylePending
 	if statusBar.completed {
-		style = StyleSuccess
+		if statusBar.failed {
+			style = StyleWarning
+		} else {
+			style = StyleSuccess
+		}
 	}
+
 	box := "├── "
 	if last {
 		box = "└── "

@@ -262,3 +262,12 @@ func (e stepFailedErr) Error() string {
 
 	return out.String()
 }
+
+func (e stepFailedErr) SingleLineError() string {
+	out := e.Err.Error()
+	if len(e.Stderr) > 0 {
+		out = e.Stderr
+	}
+
+	return strings.Split(out, "\n")[0]
+}

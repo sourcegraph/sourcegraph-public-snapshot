@@ -5,6 +5,7 @@ type ProgressWithStatusBars interface {
 
 	StatusBarUpdatef(i int, format string, args ...interface{})
 	StatusBarCompletef(i int, format string, args ...interface{})
+	StatusBarFailf(i int, format string, args ...interface{})
 	StatusBarResetf(i int, label, format string, args ...interface{})
 }
 
