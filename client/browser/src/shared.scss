@@ -46,6 +46,7 @@ $body-color-dark: #f2f4f8;
 }
 
 .command-list-popover {
+    isolation: isolate;
     z-index: 1100; // high enough to prevent most things from obscuring it
     border: 1px solid var(--dropdown-border-color);
     border-radius: 3px;

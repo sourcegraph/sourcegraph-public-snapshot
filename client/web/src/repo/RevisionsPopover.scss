@@ -1,6 +1,7 @@
 @import '../components/ConnectionPopover';
 
 .revisions-popover {
+    isolation: isolate;
     width: 35rem;
 
     &-git-commit-node {
