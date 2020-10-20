@@ -838,8 +838,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 			for _, r := range g.Rows {
 				for _, o := range r {
 					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
+					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
 
-					fmt.Fprintf(&b, "**Descriptions:**\n")
+					// Render descriptions of various levels of this alert
+					fmt.Fprintf(&b, "**Descriptions:**\n\n")
 					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
@@ -851,12 +853,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 						if alert.threshold.isEmpty() {
 							continue
 						}
-						fmt.Fprintf(&b, "\n- _%s_\n", c.alertDescription(o, alert.threshold))
+						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert.threshold))
 						prometheusAlertNames = append(prometheusAlertNames,
 							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 					}
 					fmt.Fprint(&b, "\n")
 
+					// Render solutions for dealing with this alert
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
 					if o.PossibleSolutions != "none" {
 						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
@@ -867,6 +870,9 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
+
+					// Render break for readability
+					fmt.Fprint(&b, "<br />\n")
 				}
 			}
 		}
