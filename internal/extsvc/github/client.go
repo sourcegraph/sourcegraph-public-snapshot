@@ -128,7 +128,7 @@ func newRepoCache(apiURL *url.URL, token string) *rcache.Cache {
 func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
-		cli = disabledClient{}
+		cli = httpcli.ExternalDoer()
 	}
 	if cli == nil {
 		cli = http.DefaultClient

@@ -91,7 +91,7 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	}
 
 	if httpClient == nil {
-		httpClient = http.DefaultClient
+		httpClient = httpcli.ExternalDoer()
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
