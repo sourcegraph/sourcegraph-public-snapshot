@@ -27,6 +27,8 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
             return <ChangesetStatusUnpublished className={className} />
         case ChangesetUIState.OPEN:
             return <ChangesetStatusOpen className={className} />
+        case ChangesetUIState.DRAFT:
+            return <ChangesetStatusDraft className={className} />
         case ChangesetUIState.CLOSED:
             return <ChangesetStatusClosed className={className} />
         case ChangesetUIState.MERGED:
@@ -73,6 +75,15 @@ export const ChangesetStatusOpen: React.FunctionComponent<{ label?: JSX.Element;
     className,
 }) => (
     <div className={classNames(iconClassNames, 'text-success', className)}>
+        <SourcePullIcon />
+        {label}
+    </div>
+)
+export const ChangesetStatusDraft: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+    label = <span className="text-muted">Draft</span>,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, 'text-muted', className)}>
         <SourcePullIcon />
         {label}
     </div>

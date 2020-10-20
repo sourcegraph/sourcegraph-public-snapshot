@@ -15,6 +15,11 @@ type storeShim struct {
 
 var _ workerutil.Store = &storeShim{}
 
+// QueuedCount calls into the inner client.
+func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
+	return 0, errors.New("unimplemented")
+}
+
 // Dequeue calls into the inner client.
 func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, workerutil.Store, bool, error) {
 	index, dequeued, err := s.queueClient.Dequeue(ctx)

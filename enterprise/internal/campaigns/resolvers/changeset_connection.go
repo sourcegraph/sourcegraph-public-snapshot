@@ -170,6 +170,8 @@ func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectio
 		switch c.ExternalState {
 		case campaigns.ChangesetExternalStateClosed:
 			stats.closed++
+		case campaigns.ChangesetExternalStateDraft:
+			stats.draft++
 		case campaigns.ChangesetExternalStateMerged:
 			stats.merged++
 		case campaigns.ChangesetExternalStateOpen:
@@ -183,11 +185,14 @@ func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectio
 }
 
 type changesetsConnectionStatsResolver struct {
-	unpublished, open, merged, closed, deleted, total int32
+	unpublished, draft, open, merged, closed, deleted, total int32
 }
 
 func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
 	return r.unpublished
+}
+func (r *changesetsConnectionStatsResolver) Draft() int32 {
+	return r.draft
 }
 func (r *changesetsConnectionStatsResolver) Open() int32 {
 	return r.open

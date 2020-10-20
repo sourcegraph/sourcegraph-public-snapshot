@@ -15,6 +15,7 @@ type ChangesetCounts struct {
 	Total                int32
 	Merged               int32
 	Closed               int32
+	Draft                int32
 	Open                 int32
 	OpenApproved         int32
 	OpenChangesRequested int32
@@ -22,11 +23,12 @@ type ChangesetCounts struct {
 }
 
 func (cc *ChangesetCounts) String() string {
-	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d)",
+	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Draft: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d)",
 		cc.Time.String(),
 		cc.Total,
 		cc.Merged,
 		cc.Closed,
+		cc.Draft,
 		cc.Open,
 		cc.OpenApproved,
 		cc.OpenChangesRequested,
@@ -81,6 +83,8 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 
 			c.Total++
 			switch states.externalState {
+			case campaigns.ChangesetExternalStateDraft:
+				c.Draft++
 			case campaigns.ChangesetExternalStateOpen:
 				c.Open++
 				switch states.reviewState {

@@ -27,7 +27,8 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 0,
                                 total: 10,
-                                open: 10,
+                                draft: 10,
+                                open: 0,
                             },
                             {
                                 __typename: 'ChangesetCounts',
@@ -38,7 +39,8 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 2,
                                 total: 10,
-                                open: 10,
+                                draft: 5,
+                                open: 5,
                             },
                             {
                                 __typename: 'ChangesetCounts',
@@ -49,6 +51,7 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 3,
                                 total: 10,
+                                draft: 0,
                                 open: 8,
                             },
                             {
@@ -60,6 +63,7 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 3,
                                 total: 10,
+                                draft: 0,
                                 open: 7,
                             },
                             {
@@ -71,6 +75,7 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 5,
                                 total: 10,
+                                draft: 0,
                                 open: 6,
                             },
                             {
@@ -82,6 +87,7 @@ add('All states', () => (
                                 openChangesRequested: 2,
                                 openPending: 2,
                                 total: 10,
+                                draft: 0,
                                 open: 4,
                             },
                             {
@@ -93,6 +99,7 @@ add('All states', () => (
                                 openChangesRequested: 2,
                                 openPending: 2,
                                 total: 10,
+                                draft: 0,
                                 open: 4,
                             },
                             {
@@ -104,6 +111,7 @@ add('All states', () => (
                                 openChangesRequested: 2,
                                 openPending: 2,
                                 total: 10,
+                                draft: 0,
                                 open: 4,
                             },
                             {
@@ -115,6 +123,7 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 0,
                                 total: 10,
+                                draft: 0,
                                 open: 3,
                             },
                             {
@@ -126,6 +135,7 @@ add('All states', () => (
                                 openChangesRequested: 0,
                                 openPending: 0,
                                 total: 10,
+                                draft: 0,
                                 open: 0,
                             },
                         ].slice(0, select('Days of data', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 10))

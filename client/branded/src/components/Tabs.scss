@@ -27,7 +27,7 @@
     }
     &:not(&--empty) &__spacer,
     &:not(&--empty) &__end-fragment-other-element {
-        border-bottom-color: $color-border;
+        border-bottom-color: var(--border-color);
     }
 
     &__spacer,
@@ -41,18 +41,19 @@
             flex: 1;
         }
 
-        border-bottom-color: $color-bg-3;
-
+        &--inactive {
+            border-bottom-color: var(--border-color);
+        }
         &,
         &:hover {
             text-decoration: none !important; // override .btn-link:focus
         }
         &:hover {
             opacity: 1;
-            border-bottom-color: $color-border-hover;
+            border-bottom-color: var(--link-color);
         }
         &--active {
-            border-bottom-color: $color-border-active !important; // override .btn-link:focus
+            border-bottom-color: var(--primary) !important; // override .btn-link:focus
         }
 
         &--h5like {
@@ -71,22 +72,9 @@
 
 .theme-light {
     .tab-bar {
-        &__tab,
-        &:not(.tab-bar--empty) .tab-bar__spacer,
-        &:not(.tab-bar--empty) .tab-bar__end-fragment-other-element {
-            border-bottom-color: $color-light-border;
-        }
         &__tab {
-            &--active {
-                border-bottom-color: $primary;
-            }
             &--h5like {
                 color: $color-light-text-1 !important;
-            }
-        }
-        &__close-button {
-            &:hover {
-                color: $color-light-text-5;
             }
         }
     }

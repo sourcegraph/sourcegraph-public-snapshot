@@ -17,11 +17,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- GraphQL syntax highlighting is now back (special thanks to @rvantonder) [#13935](https://github.com/sourcegraph/sourcegraph/issues/13935)
 
 ### Changed
 
--
+- Improved contrast / visibility in comment syntax highlighting. [#14546](https://github.com/sourcegraph/sourcegraph/issues/14546)
 
 ### Fixed
 

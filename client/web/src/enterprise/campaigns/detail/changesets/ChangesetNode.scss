@@ -2,18 +2,10 @@
     &__separator {
         // Make it full width in the current row.
         grid-column: 1 / -1;
-        border-top: 1px solid $color-light-bg-2;
+        border-top: 1px solid var(--border-color-2);
         @include media-breakpoint-down(xs) {
             margin-top: 1rem;
             padding-bottom: 1rem;
-        }
-    }
-}
-
-.theme-dark {
-    .changeset-node {
-        &__separator {
-            border-color: $color-light-bg-5;
         }
     }
 }

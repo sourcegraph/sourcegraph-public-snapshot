@@ -3,7 +3,7 @@ $filter-input-padding: 0.25rem;
 
 .filter-input {
     margin: $filter-input-margin-y 0.25rem $filter-input-margin-y 0;
-    border: 1px solid $color-border;
+    border: 1px solid var(--border-color);
     padding: $filter-input-padding;
     border-radius: 2px;
     background-color: $color-bg-2;
@@ -82,7 +82,7 @@ $filter-input-padding: 0.25rem;
         margin-right: 0.25rem;
 
         &--active {
-            border: 1px solid $color-border-active;
+            border: 1px solid var(--primary);
             border-radius: 2px;
             .theme-dark & {
                 background: $color-bg-5;
@@ -97,6 +97,5 @@ $filter-input-padding: 0.25rem;
 .theme-light {
     .filter-input {
         background-color: $color-light-bg-2;
-        border: 1px solid $color-light-border;
     }
 }

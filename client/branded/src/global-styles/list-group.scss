@@ -1,5 +1,5 @@
 $list-group-bg: transparent;
-$list-group-border-color: $color-border;
+$list-group-border-color: var(--border-color);
 $list-group-item-padding-y: 0.25rem;
 $list-group-item-padding-x: 0.5rem;
 $list-group-action-color: $color-text-1;
@@ -11,9 +11,6 @@ $list-group-action-active-bg: $color-bg-5;
 @import 'bootstrap/scss/list-group';
 
 .theme-light {
-    .list-group-item {
-        border-color: $color-light-border;
-    }
     .list-group-item-action {
         color: $color-light-text-1;
         &:hover,
