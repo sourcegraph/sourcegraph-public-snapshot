@@ -54,13 +54,9 @@ Examples:
 			return err
 		}
 
-		spec, _, err := svc.ParseCampaignSpec(specFile)
-		if err != nil {
-			return errors.Wrap(err, "parsing campaign spec")
-		}
-
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		if err := campaignsValidateSpec(out, spec); err != nil {
+		spec, _, err := campaignsParseSpec(out, svc, specFile)
+		if err != nil {
 			return err
 		}
 

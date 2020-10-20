@@ -3,12 +3,9 @@ package campaigns
 import (
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/campaignutils/overridable"
+	"github.com/sourcegraph/campaignutils/yaml"
 	"github.com/sourcegraph/src-cli/schema"
-	"github.com/xeipuuv/gojsonschema"
-	"gopkg.in/yaml.v2"
 )
 
 // Some general notes about the struct definitions below.
@@ -75,39 +72,11 @@ type Step struct {
 
 func ParseCampaignSpec(data []byte) (*CampaignSpec, error) {
 	var spec CampaignSpec
-	if err := yaml.Unmarshal(data, &spec); err != nil {
+	if err := yaml.UnmarshalValidate(schema.CampaignSpecJSON, data, &spec); err != nil {
 		return nil, err
 	}
 
 	return &spec, nil
-}
-
-var campaignSpecSchema *gojsonschema.Schema
-
-func (spec *CampaignSpec) Validate() error {
-	if campaignSpecSchema == nil {
-		var err error
-		campaignSpecSchema, err = gojsonschema.NewSchemaLoader().Compile(gojsonschema.NewStringLoader(schema.CampaignSpecJSON))
-		if err != nil {
-			return errors.Wrap(err, "parsing campaign spec schema")
-		}
-	}
-
-	result, err := campaignSpecSchema.Validate(gojsonschema.NewGoLoader(spec))
-	if err != nil {
-		return errors.Wrapf(err, "validating campaign spec")
-	}
-	if result.Valid() {
-		return nil
-	}
-
-	var errs *multierror.Error
-	for _, verr := range result.Errors() {
-		// ResultError instances don't actually implement error, so we need to
-		// wrap them as best we can before adding them to the multierror.
-		errs = multierror.Append(errs, errors.New(verr.String()))
-	}
-	return errs
 }
 
 func (on *OnQueryOrRepository) String() string {

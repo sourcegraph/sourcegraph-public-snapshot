@@ -193,12 +193,8 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	}
 
 	pending := campaignsCreatePending(out, "Parsing campaign spec")
-	campaignSpec, rawSpec, err := svc.ParseCampaignSpec(specFile)
+	campaignSpec, rawSpec, err := campaignsParseSpec(out, svc, specFile)
 	if err != nil {
-		return "", "", errors.Wrap(err, "parsing campaign spec")
-	}
-
-	if err := campaignsValidateSpec(out, campaignSpec); err != nil {
 		return "", "", err
 	}
 	campaignsCompletePending(pending, "Parsing campaign spec")
@@ -288,6 +284,34 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	campaignsCompletePending(pending, "Creating campaign spec on Sourcegraph")
 
 	return id, url, nil
+}
+
+// campaignsParseSpec parses and validates the given campaign spec. If the spec
+// has validation errors, the errors are output in a human readable form and an
+// exitCodeError is returned.
+func campaignsParseSpec(out *output.Output, svc *campaigns.Service, input io.ReadCloser) (*campaigns.CampaignSpec, string, error) {
+	spec, raw, err := svc.ParseCampaignSpec(input)
+	if err != nil {
+		if merr, ok := err.(*multierror.Error); ok {
+			block := out.Block(output.Line("\u274c", output.StyleWarning, "Campaign spec failed validation."))
+			defer block.Close()
+
+			for i, err := range merr.Errors {
+				block.Writef("%d. %s", i+1, err)
+			}
+
+			return nil, "", &exitCodeError{
+				error:    nil,
+				exitCode: 2,
+			}
+		} else {
+			// This shouldn't happen; let's just punt and let the normal
+			// rendering occur.
+			return nil, "", err
+		}
+	}
+
+	return spec, raw, nil
 }
 
 // printExecutionError is used to print the possible error returned by
