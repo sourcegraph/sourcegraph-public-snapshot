@@ -3,14 +3,13 @@
     border-radius: 2px;
     margin: 0.25rem 0.5rem 0.25rem 0;
 
+    color: var(--body-color);
     border-color: var(--border-color-2);
 
     .theme-dark & {
         background: $color-bg-2;
-        color: $color-text-1;
     }
     .theme-light & {
-        color: $color-light-text-1;
         background: transparent;
     }
 
@@ -18,11 +17,9 @@
         border-color: var(--border-color);
         .theme-dark & {
             background: $color-bg-3;
-            color: #ffffff;
         }
         .theme-light & {
             background: $color-light-bg-4;
-            color: $color-light-text-6;
         }
     }
 
@@ -33,7 +30,6 @@
 
         .theme-light & {
             background: $color-light-bg-2;
-            color: $color-light-text-2;
         }
 
         .theme-dark & {
@@ -57,7 +53,6 @@
     &--selected {
         border-color: var(--border-color);
         .theme-dark & {
-            color: $color-text;
             background: $color-bg-5;
         }
         .theme-light & {

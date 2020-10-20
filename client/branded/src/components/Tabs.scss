@@ -61,21 +61,11 @@
             font-size: 12px;
             letter-spacing: 1px;
             text-transform: uppercase;
-            color: $color-text !important;
+            color: var(--body-color);
         }
     }
 
     &__spacer {
         flex: 1;
-    }
-}
-
-.theme-light {
-    .tab-bar {
-        &__tab {
-            &--h5like {
-                color: $color-light-text-1 !important;
-            }
-        }
     }
 }

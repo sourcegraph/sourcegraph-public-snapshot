@@ -29,13 +29,12 @@
     }
 
     &__action-item--pressed {
+        color: var(--body-color);
         .theme-dark & {
             background-color: $color-bg-2;
-            color: $color-text-3;
         }
         .theme-light & {
             background-color: $color-light-bg-4;
-            color: $color-light-text-1;
         }
     }
 
