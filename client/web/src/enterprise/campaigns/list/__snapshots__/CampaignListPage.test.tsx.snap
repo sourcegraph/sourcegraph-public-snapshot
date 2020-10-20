@@ -14,7 +14,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
+    className="justify-content-end test-campaign-list-page"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -22,13 +22,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
         "type": [Function],
       }
     }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-      </span>
-    }
+    title="Campaigns"
   />
   <FilteredConnection
     className="mb-3"
@@ -103,7 +97,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
+    className="justify-content-end test-campaign-list-page"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -111,13 +105,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
         "type": [Function],
       }
     }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-      </span>
-    }
+    title="Campaigns"
   />
   <FilteredConnection
     className="mb-3"
@@ -192,7 +180,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
+    className="justify-content-end test-campaign-list-page"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -200,13 +188,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
         "type": [Function],
       }
     }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-      </span>
-    }
+    title="Campaigns"
   />
   <FilteredConnection
     className="mb-3"
@@ -281,7 +263,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
+    className="justify-content-end test-campaign-list-page"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -289,13 +271,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
         "type": [Function],
       }
     }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-      </span>
-    }
+    title="Campaigns"
   />
   <FilteredConnection
     className="mb-3"
