@@ -855,16 +855,64 @@ func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error
 		return nil
 	}
 
-	names, err := json.Marshal(repoNames)
-	if err != nil {
-		return nil
+	if !s.InTransaction() {
+		tx, err := s.Transact(ctx)
+		if err != nil {
+			return errors.Wrap(err, "SetClonedRepos: failed to create a transaction")
+		}
+		txs := tx.(*DBStore)
+		defer txs.Done(err)
+		err = txs.SetClonedRepos(ctx, repoNames...)
+		return err
 	}
 
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)))
+	err := s.Exec(ctx, sqlf.Sprintf(setClonedReposCreateTempTable))
+	if err != nil {
+		return err
+	}
 
-	err = s.Exec(ctx, q)
+	step := ConfRepoSetClonedBatchSize()
+
+	for i := 0; i < len(repoNames); i += step {
+		firstIdx := i
+		lastIdx := i + step
+
+		if lastIdx >= len(repoNames) {
+			lastIdx = len(repoNames) - 1
+		}
+
+		names, err := json.Marshal(repoNames[firstIdx : lastIdx+1])
+		if err != nil {
+			return nil
+		}
+
+		q := sqlf.Sprintf(setClonedReposInsertToTempTableFmtstr, sqlf.Sprintf("%s", string(names)))
+		err = s.Exec(ctx, q)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = s.Exec(ctx, sqlf.Sprintf(setClonedReposQueryFmtstr))
+	if err != nil {
+		return err
+	}
+
+	// manually truncate the temporary table as SetClonedRepos might be used multiple times during the same transaction
+	err = s.Exec(ctx, sqlf.Sprintf("TRUNCATE TABLE cloned_repos"))
 	return err
 }
+
+const setClonedReposCreateTempTable = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
+CREATE TEMPORARY TABLE IF NOT EXISTS cloned_repos (name CITEXT) ON COMMIT DROP;
+CREATE INDEX ON cloned_repos(name);
+`
+
+const setClonedReposInsertToTempTableFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
+INSERT INTO cloned_repos SELECT jsonb_array_elements_text(%s) AS name
+`
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
@@ -875,18 +923,14 @@ const setClonedReposQueryFmtstr = `
 -- their cloned column is true but they are not in cloned_repos
 -- or they are in cloned_repos but their cloned column is false.
 --
-WITH cloned_repos AS (
-  SELECT jsonb_array_elements_text(%s) AS name
-),
-diff AS (
-  SELECT id,
-    cloned
+WITH diff AS (
+  SELECT id, cloned
   FROM repo
   WHERE
-    NOT cloned
-      AND name IN (SELECT name::citext FROM cloned_repos)
-    OR cloned
-      AND name NOT IN (SELECT name::citext FROM cloned_repos)
+  NOT cloned
+    AND name IN (SELECT name FROM cloned_repos)
+  OR cloned
+    AND name NOT IN (SELECT name FROM cloned_repos)
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
