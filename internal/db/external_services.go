@@ -34,6 +34,10 @@ type ExternalServicesStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
+
+	// PreCreateCodeHost (if set) is invoked as a hook prior to creating a new
+	// code host in the database.
+	PreCreateCodeHost func(context.Context) error
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -56,6 +60,10 @@ type ExternalServiceKind struct {
 
 	JSONSchema string // JSON Schema for the external service's configuration
 }
+
+// This type alias exists to help us begin to move away from "external service" language
+// and toward "code host" across the code base.
+type CodeHostsListOptions = ExternalServicesListOptions
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
@@ -357,6 +365,13 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 
 	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	es.UpdatedAt = es.CreatedAt
+
+	// Prior to saving the record, run a validation hook.
+	if e.PreCreateCodeHost != nil {
+		if err := e.PreCreateCodeHost(ctx); err != nil {
+			return err
+		}
+	}
 
 	return dbconn.Global.QueryRowContext(
 		ctx,
