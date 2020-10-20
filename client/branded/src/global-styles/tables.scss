@@ -1,11 +1,1 @@
 @import 'bootstrap/scss/tables';
-
-.theme-light {
-    .table-hover {
-        tbody tr {
-            @include hover {
-                background-color: $table-hover-bg-light;
-            }
-        }
-    }
-}
