@@ -78,9 +78,9 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     }
 
     return (
-        <div className="extensions-area web-content">
+        <div className="extensions-area">
             <Breadcrumbs breadcrumbs={breadcrumbs} location={props.location} />
-            <div className="">
+            <div className="web-content">
                 <ExtensionsAreaHeader
                     {...props}
                     {...context}
