@@ -433,7 +433,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (
 		if txs, err = tr.Transact(ctx); err != nil {
 			return errors.Wrap(err, "Syncer.SyncRepo.transact")
 		}
-		defer txs.Done(&err)
+		defer txs.Done(err)
 		store = txs
 	}
 
