@@ -185,7 +185,7 @@ type updateUserArgs struct {
 	AvatarURL   *string
 }
 
-func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*EmptyResponse, error) {
+func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*E
 	if err := db.Users.Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, nil
+	return UserByIDInt32(ctx, userID)
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
