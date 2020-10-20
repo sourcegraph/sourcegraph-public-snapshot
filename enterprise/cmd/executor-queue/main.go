@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -50,6 +51,7 @@ func main() {
 
 	queueOptions := map[string]apiserver.QueueOptions{
 		"codeintel": codeintel.QueueOptions(db, codeintelConfig),
+		"campaigns": campaigns.QueueOptions(db),
 	}
 
 	for queueName, options := range queueOptions {
