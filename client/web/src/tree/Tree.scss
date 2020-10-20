@@ -27,11 +27,11 @@
         }
 
         &--selected {
-            background-color: var(--color-bg-5);
+            background-color: var(--color-bg-3);
             cursor: pointer;
 
             &:hover {
-                background-color: var(--color-bg-5);
+                background-color: var(--color-bg-3);
             }
         }
 
@@ -39,9 +39,7 @@
             width: 100%;
             display: table;
             background-color: var(--primary) !important;
-        }
-        &--active &-contents {
-            color: #ffffff !important;
+            color: $white !important;
         }
     }
 
@@ -53,14 +51,14 @@
     }
 
     &__row-icon {
-        color: var(--body-color) !important; // override link color
+        color: inherit;
         // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1.1em;
     }
 
     &__row-contents {
         display: flex;
-        color: var(--body-color);
+        color: inherit;
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
@@ -78,7 +76,11 @@
 
     &__row-label {
         margin-left: 0.25rem;
-        color: var(--body-color) !important; // override link color
+        color: inherit;
+    }
+
+    a {
+        color: inherit !important;
     }
 }
 
