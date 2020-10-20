@@ -753,7 +753,7 @@ func TestReconcilerProcess(t *testing.T) {
 	}
 }
 
-func TestDetermineAction(t *testing.T) {
+func TestDeterminePlan(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
@@ -770,15 +770,15 @@ func TestDetermineAction(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	campaignSpec := createCampaignSpec(t, ctx, store, "test-action", admin.ID)
-	createCampaign(t, ctx, store, "test-action", admin.ID, campaignSpec.ID)
+	campaignSpec := createCampaignSpec(t, ctx, store, "test-plan", admin.ID)
+	createCampaign(t, ctx, store, "test-plan", admin.ID, campaignSpec.ID)
 
 	tcs := []struct {
-		name            string
-		previousSpec    testSpecOpts
-		currentSpec     testSpecOpts
-		changeset       testChangesetOpts
-		wantActionTypes actionTypes
+		name           string
+		previousSpec   testSpecOpts
+		currentSpec    testSpecOpts
+		changeset      testChangesetOpts
+		wantOperations operations
 	}{
 		{
 			name: "GitHub publish",
@@ -790,7 +790,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionTypes: actionTypes{actionPublish},
+			wantOperations: operations{operationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -802,7 +802,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionTypes: actionTypes{actionPublishDraft},
+			wantOperations: operations{operationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -814,7 +814,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionTypes: actionTypes{},
+			wantOperations: operations{},
 		},
 		{
 			name: "set to draft but unsupported",
@@ -827,7 +827,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 				repo:                bbsRepo.ID,
 			},
-			wantActionTypes: actionTypes{},
+			wantOperations: operations{},
 		},
 		{
 			name: "set from draft to publish true",
@@ -843,7 +843,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionTypes: actionTypes{actionUndraft},
+			wantOperations: operations{operationUndraft},
 		},
 		{
 			name: "set from draft to publish true on unpublished",
@@ -859,7 +859,7 @@ func TestDetermineAction(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantActionTypes: actionTypes{actionPublish},
+			wantOperations: operations{operationPublish},
 		},
 	}
 
@@ -879,12 +879,12 @@ func TestDetermineAction(t *testing.T) {
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			action, err := determineAction(ctx, tx, cs)
+			plan, err := determinePlan(ctx, tx, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := action.actionTypes, tc.wantActionTypes; !have.Equal(want) {
-				t.Fatalf("incorrect actions determined, want=%v have=%v", want, have)
+			if have, want := plan.ops, tc.wantOperations; !have.Equal(want) {
+				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
 			}
 		})
 	}
