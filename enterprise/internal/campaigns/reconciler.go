@@ -51,7 +51,7 @@ func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 // process is the main entry point of the reconciler and processes changesets
 // that were marked as queued in the database.
 //
-// For each changeset, the reconciler computes an action to take to reconcile a
+// For each changeset, the reconciler computes an execution plan to run to reconcile a
 // possible divergence between the changeset's current state and the desired
 // state (for example expressed in a changeset spec).
 //
@@ -86,10 +86,6 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	}
 
 	return e.ExecutePlan(ctx, plan)
-}
-
-func (r *reconciler) syncChangeset(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
-	return nil
 }
 
 // ErrPublishSameBranch is returned by publish changeset if a changeset with the same external branch
@@ -376,7 +372,7 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	draftCcs, ok := e.ccs.(repos.DraftChangesetSource)
 	if !ok {
-		return errors.New("Changeset operation is undraft, but changeset source doesn't implement DraftChangesetSource")
+		return errors.New("changeset operation is undraft, but changeset source doesn't implement DraftChangesetSource")
 	}
 
 	cs := &repos.Changeset{Changeset: e.ch, Repo: e.repo}

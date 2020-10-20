@@ -893,6 +893,42 @@ func TestDeterminePlan(t *testing.T) {
 			},
 			wantOperations: operations{operationPublish},
 		},
+		{
+			name: "changeset spec changed attribute, needs update",
+			previousSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+				title:     "Before",
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+				title:     "After",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationUpdate},
+		},
+		{
+			name: "changeset spec changed, needs new commit but no update",
+			previousSpec: testSpecOpts{
+				published:  true,
+				repo:       githubRepo.ID,
+				commitDiff: "testDiff",
+			},
+			currentSpec: testSpecOpts{
+				published:  true,
+				repo:       githubRepo.ID,
+				commitDiff: "newTestDiff",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationUpdate, operationSync},
+		},
 	}
 
 	for _, tc := range tcs {
