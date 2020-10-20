@@ -9,13 +9,7 @@ exports[`CampaignsDotComPage renders 1`] = `
       className="mt-3 mb-5"
     >
       <PageHeader
-        icon={
-          Object {
-            "$$typeof": Symbol(react.memo),
-            "compare": null,
-            "type": [Function],
-          }
-        }
+        icon={[Function]}
         title="Campaigns"
       >
         <div
@@ -24,9 +18,14 @@ exports[`CampaignsDotComPage renders 1`] = `
           <h1
             className="flex-grow-1"
           >
-            <Memo(CampaignsFlushEdgesIcon)
+            <CampaignsIconFlushLeft
               className="icon-inline page-header__icon"
-            />
+            >
+              <Memo(BaseCampaignsIcon)
+                className="icon-inline page-header__icon"
+                viewBox="2 0 20 20"
+              />
+            </CampaignsIconFlushLeft>
              
             Campaigns
           </h1>

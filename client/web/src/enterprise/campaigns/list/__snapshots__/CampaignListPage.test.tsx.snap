@@ -15,13 +15,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
       </AnchorLink>
     }
     className="justify-content-end test-campaign-list-page"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
+    icon={[Function]}
     title="Campaigns"
   />
   <FilteredConnection
@@ -98,13 +92,7 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
       </AnchorLink>
     }
     className="justify-content-end test-campaign-list-page"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
+    icon={[Function]}
     title="Campaigns"
   />
   <FilteredConnection
@@ -181,13 +169,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
       </AnchorLink>
     }
     className="justify-content-end test-campaign-list-page"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
+    icon={[Function]}
     title="Campaigns"
   />
   <FilteredConnection
@@ -264,13 +246,7 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
       </AnchorLink>
     }
     className="justify-content-end test-campaign-list-page"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
+    icon={[Function]}
     title="Campaigns"
   />
   <FilteredConnection
