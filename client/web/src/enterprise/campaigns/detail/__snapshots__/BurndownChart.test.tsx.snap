@@ -4277,7 +4277,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             }
             wrapperStyle={
               Object {
-                "border": "1px solid var(--color-border)",
+                "border": "1px solid var(--border-color)",
               }
             }
           >
@@ -4288,7 +4288,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   "MozTransform": "translate(undefinedpx, undefinedpx)",
                   "OTransform": "translate(undefinedpx, undefinedpx)",
                   "WebkitTransform": "translate(undefinedpx, undefinedpx)",
-                  "border": "1px solid var(--color-border)",
+                  "border": "1px solid var(--border-color)",
                   "msTransform": "translate(undefinedpx, undefinedpx)",
                   "pointerEvents": "none",
                   "position": "absolute",
@@ -4358,7 +4358,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 }
                 wrapperStyle={
                   Object {
-                    "border": "1px solid var(--color-border)",
+                    "border": "1px solid var(--border-color)",
                   }
                 }
               >

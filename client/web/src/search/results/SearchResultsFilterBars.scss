@@ -9,11 +9,10 @@
 
         color: #93a9c8;
         background: $color-bg-1;
-        border-bottom: 1px solid $color-border;
+        border-bottom: 1px solid var(--border-color);
         .theme-light & {
             color: $color-light-text-2;
             background: $color-light-bg-1;
-            border-bottom: 1px solid $color-light-border;
         }
     }
 

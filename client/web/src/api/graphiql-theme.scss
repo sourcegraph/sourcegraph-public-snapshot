@@ -24,7 +24,7 @@
     .topBar {
         background: var(--body-bg);
         height: 3rem;
-        border-color: $color-border;
+        border-color: var(--border-color);
         .title {
             white-space: nowrap;
         }
@@ -39,7 +39,7 @@
     .history-contents p,
     .doc-explorer-contents,
     .doc-category-title {
-        border-color: $color-border;
+        border-color: var(--border-color);
     }
     .variable-editor-title,
     .result-window .CodeMirror-gutters,
@@ -90,7 +90,7 @@
         .field-short-description {
             font-family: var(--sans-serif);
             color: $color-text-1;
-            border-left: 3px solid $color-border;
+            border-left: 3px solid var(--border-color);
             padding-left: 0.5rem;
             margin-top: 0.5rem;
             > p {
@@ -102,12 +102,12 @@
             font-family: var(--sans-serif);
             background: rgba(42, 58, 81, 0.7);
             box-shadow: none;
-            border: 1px solid $color-border;
+            border: 1px solid var(--border-color);
             color: inherit;
         }
         .doc-category-item {
             color: inherit;
-            border-bottom: 1px solid $color-border;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 1rem;
             .field-name:first-of-type {
                 font-weight: bold;
@@ -209,18 +209,6 @@
 .theme-light {
     .graphiql-container {
         color: $color-light-text-1;
-        .topBar,
-        .variable-editor-title,
-        .resultWrap,
-        .history-contents,
-        .history-contents p,
-        .doc-explorer-contents,
-        .doc-category-title,
-        .doc-explorer-contents .doc-deprecation,
-        .doc-explorer-contents .doc-category-item,
-        .doc-explorer-contents .field-short-description {
-            border-color: $color-light-border;
-        }
         .variable-editor-title,
         .result-window .CodeMirror-gutters,
         .historyPaneWrap,
@@ -266,10 +254,10 @@ body > .CodeMirror-hints {
         color: $color-text;
     }
     .CodeMirror-hint {
-        border-color: $color-border;
+        border-color: var(--border-color);
         color: $color-text;
         &-information {
-            border-color: $color-border;
+            border-color: var(--border-color);
             > .content {
                 color: $color-text;
                 p:nth-child(odd) {
@@ -292,10 +280,8 @@ body.theme-light > .CodeMirror-hints {
         color: $color-light-text-1;
     }
     .CodeMirror-hint {
-        border-color: $color-light-border;
         color: $color-light-text-1;
         &-information {
-            border-color: $color-light-border;
             > .content {
                 color: $color-light-text-1;
             }

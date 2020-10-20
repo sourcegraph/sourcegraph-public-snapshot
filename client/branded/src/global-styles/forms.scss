@@ -5,7 +5,7 @@
 .theme-dark {
     --input-bg: #0e121b;
     --input-disabled-bg: #2b3750;
-    --input-border-color: #2b3750;
+    --input-border-color: var(--border-color);
     --input-color: #f2f4f8;
     --input-placeholder-color: #{rgba($color-text, 0.5)};
     --input-group-addon-color: #{$color-text-1};
@@ -16,7 +16,7 @@
 .theme-light {
     --input-bg: #ffffff;
     --input-disabled-bg: #e4e9f1;
-    --input-border-color: #e4e9f1;
+    --input-border-color: var(--border-color);
     --input-color: #2b3750;
     --input-placeholder-color: #{rgba($color-light-text-1, 0.7)};
     --input-group-addon-color: #{$color-light-text-1};
