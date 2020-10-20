@@ -993,23 +993,15 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 }
 
 func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState) *github.PullRequest {
-	isDraft := false
-	var state string
-	switch externalState {
-	case campaigns.ChangesetExternalStateDraft:
-		state = "OPEN"
-		isDraft = true
-	default:
-		state = string(externalState)
-	}
+	state := string(externalState)
+
 	pr := &github.PullRequest{
 		ID:          "12345",
 		Number:      12345,
 		Title:       state + " GitHub PR",
 		Body:        state + " GitHub PR",
-		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
 		State:       state,
-		IsDraft:     isDraft,
+		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
@@ -1021,6 +1013,11 @@ func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
+	}
+
+	if externalState == campaigns.ChangesetExternalStateDraft {
+		pr.State = "OPEN"
+		pr.IsDraft = true
 	}
 
 	if externalState == campaigns.ChangesetExternalStateClosed {
