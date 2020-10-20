@@ -41,6 +41,7 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
+
 	log.Println("# License info (encoded and signed in license key)")
 	info := license.Info{
 		Tags:      license.ParseTagsInput(*tags),
@@ -55,9 +56,15 @@ func main() {
 	log.Println()
 
 	log.Println("# License key")
+	if *privateKeyFile == "" {
+		log.Fatal("A private key file must be explicitly indicated, but was not.")
+	}
 	b, err = ioutil.ReadFile(*privateKeyFile)
 	if err != nil {
-		log.Fatal(err)
+		fatalErrMsg := fmt.Sprintf(
+			"A problem occurred while reading the private key file \"%s\"\n",
+			*privateKeyFile)
+		log.Fatal(fatalErrMsg, err)
 	}
 	privateKey, err := ssh.ParsePrivateKey(b)
 	if err != nil {
