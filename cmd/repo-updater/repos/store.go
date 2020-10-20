@@ -861,7 +861,7 @@ func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error
 			return errors.Wrap(err, "SetClonedRepos: failed to create a transaction")
 		}
 		txs := tx.(*DBStore)
-		defer txs.Done(err)
+		defer func() { txs.Done(err) }()
 		err = txs.SetClonedRepos(ctx, repoNames...)
 		return err
 	}
