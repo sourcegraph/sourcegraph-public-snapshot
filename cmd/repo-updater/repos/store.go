@@ -193,8 +193,6 @@ func (s *DBStore) With(other basestore.ShareableStore) *DBStore {
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
-// This method will return an error if the underlying DB cannot be interface upgraded
-// to a TxBeginner.
 func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	if err != nil {
