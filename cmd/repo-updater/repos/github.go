@@ -217,9 +217,7 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
@@ -234,9 +232,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
@@ -287,9 +283,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
-	c.Changeset.Metadata = updated
-
-	return nil
+	return c.Changeset.SetMetadata(updated)
 }
 
 // ReopenChangeset reopens the given *Changeset on the code host.
@@ -304,9 +298,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
 // GetRepo returns the Github repository with the given name and owner

@@ -507,6 +507,17 @@ func (ops operations) Equal(b operations) bool {
 	return true
 }
 
+func (ops operations) String() string {
+	if ops.IsNone() {
+		return "No operations required"
+	}
+	ss := make([]string, len(ops))
+	for i, val := range ops {
+		ss[i] = string(val)
+	}
+	return strings.Join(ss, " => ")
+}
+
 func (ops operations) ExecutionOrder() []operation {
 	uniqueOps := []operation{}
 
