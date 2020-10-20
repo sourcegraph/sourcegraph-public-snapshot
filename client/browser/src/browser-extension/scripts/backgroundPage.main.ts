@@ -15,7 +15,6 @@ import {
     concatMap,
     mapTo,
     catchError,
-    tap,
     distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
