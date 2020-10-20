@@ -69,17 +69,10 @@ digraph architecture {
             label="Internal (non-exposed) services"
             graph [style="dotted"]
 
-            syntect_server [
-                label="syntect\nserver"
-                fillcolor="#cc0085"
-                URL="https://github.com/sourcegraph/syntect_server"
-            ]
-
             subgraph cluster_search {
                 label="Search"
                 graph [style="dotted"]
                 node [fillcolor="#ccaaff"]
-
 
                 subgraph cluster_zoekt {
                     label="Indexed search"
@@ -168,6 +161,18 @@ digraph architecture {
                     URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"
                 ]
             }
+
+            executor_queue [
+                label="executor-queue"
+                fillcolor="#0e918c"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/executor-queue"
+            ]
+
+            syntect_server [
+                label="syntect\nserver"
+                fillcolor="#cc0085"
+                URL="https://github.com/sourcegraph/syntect_server"
+            ]
         }
 
         subgraph cluster_third_party {
@@ -197,11 +202,11 @@ digraph architecture {
         label="External services (on raw compute nodes)"
         graph [style="dotted"]
 
-        indexer_vm [
-            label="precise-code-intel-indexer-vm"
+        executor [
+            label="executor"
             shape="box3d"
             fillcolor="#0dc9b6"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-indexer-vm"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/executor"
         ]
     }
 
@@ -234,13 +239,14 @@ digraph architecture {
     worker -> {postgres} [lhead=cluster_databases, fillcolor="#eac1c1"]
 
     /* Internal routes */
-    frontend -> {searcher, symbols, query_runner, bundle_manager, indexer, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
+    frontend -> {searcher, symbols, query_runner, bundle_manager, executor_queue, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
     searcher -> gitserver [fillcolor="#e2a8fd"]
     symbols -> gitserver [fillcolor="#c1eaea"]
     zoekt_indexserver -> {frontend, gitserver} [fillcolor="#aaccff"]
     worker -> {gitserver} [fillcolor="#eac1c1"]
     indexer -> {postgres, gitserver} [fillcolor="#22ffff"]
-    indexer_vm -> frontend [fillcolor="#0dc9b6"]
+    executor_queue -> {postgres} [fillcolor="#0e918c"]
+    executor -> frontend [fillcolor="#0dc9b6"]
 
     github_proxy -> github_dot_com [fillcolor="#aaaaff"]
 

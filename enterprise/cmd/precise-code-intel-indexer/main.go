@@ -1,30 +1,30 @@
 package main
 
 import (
-	"context"
 	"log"
-	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/index_manager"
 	indexabilityupdater "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/indexability_updater"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/scheduler"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/server"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
+
+const Port = 3189
 
 func main() {
 	env.Lock()
@@ -44,10 +44,6 @@ func main() {
 		indexMinimumSearchRatio          = mustParsePercent(rawIndexMinimumSearchRatio, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO")
 		indexMinimumPreciseCount         = mustParseInt(rawIndexMinimumPreciseCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT")
 		disableJanitor                   = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
-		maximumTransactions              = mustParseInt(rawMaxTransactions, "PRECISE_CODE_INTEL_MAXIMUM_TRANSACTIONS")
-		requeueDelay                     = mustParseInterval(rawRequeueDelay, "PRECISE_CODE_INTEL_REQUEUE_DELAY")
-		cleanupInterval                  = mustParseInterval(rawCleanupInterval, "PRECISE_CODE_INTEL_CLEANUP_INTERVAL")
-		maximumMissedHeartbeats          = mustParseInt(rawMissedHeartbeats, "PRECISE_CODE_INTEL_MAXIMUM_MISSED_HEARTBEATS")
 	)
 
 	observationContext := &observation.Context{
@@ -57,17 +53,10 @@ func main() {
 	}
 
 	s := store.NewObserved(mustInitializeStore(), observationContext)
-	MustRegisterQueueMonitor(observationContext.Registerer, s)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexManager := indexmanager.New(s, store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
-		MaximumTransactions:   maximumTransactions,
-		RequeueDelay:          requeueDelay,
-		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
-		DeathThreshold:        cleanupInterval * time.Duration(maximumMissedHeartbeats),
-	})
-	server := server.New(indexManager)
+	server := httpserver.New(Port, func(router *mux.Router) {})
 	indexResetter := resetter.NewIndexResetter(s, resetInterval, resetterMetrics)
 
 	indexabilityUpdater := indexabilityupdater.NewUpdater(
@@ -94,10 +83,8 @@ func main() {
 
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
-	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), cleanupInterval, indexManager)
 
 	routines := []goroutine.BackgroundRoutine{
-		managerRoutine,
 		server,
 		indexResetter,
 		indexabilityUpdater,

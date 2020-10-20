@@ -24,6 +24,10 @@ type server struct {
 // port with a router configured with the given function. All servers will respond 200
 // to requests to /healthz.
 func New(port int, setupRoutes func(router *mux.Router)) goroutine.BackgroundRoutine {
+	if setupRoutes == nil {
+		setupRoutes = noopSetup
+	}
+
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -57,3 +61,6 @@ func (s *server) Stop() {
 		}
 	})
 }
+
+// noopSetup is a setup function that installs no routes.
+func noopSetup(router *mux.Router) {}

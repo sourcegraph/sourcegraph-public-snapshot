@@ -21,6 +21,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.campaign_apply_jobs"
+```
+     Column      |           Type           |                      Modifiers                      
+-----------------+--------------------------+-----------------------------------------------------
+ id              | bigint                   | not null
+ queued_at       | timestamp with time zone | not null default now()
+ state           | campaign_apply_job_state | not null default 'queued'::campaign_apply_job_state
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ yaml            | text                     | not null
+ log_contents    | text                     | 
+Indexes:
+    "campaign_apply_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.campaign_specs"
 ```
       Column       |           Type           |                          Modifiers                          

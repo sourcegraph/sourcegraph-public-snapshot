@@ -1,6 +1,8 @@
 package workerutil
 
-import "context"
+import (
+	"context"
+)
 
 // Record is a generic interface for record conforming to the requirements of the store.
 type Record interface {

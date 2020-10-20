@@ -50,10 +50,15 @@
     # precise-code-intel-indexer
     - host.docker.internal:6089
 - labels:
-    job: precise-code-intel-indexer-vm
+    job: executor
   targets:
-    # precise-code-intel-indexer-vm
+    # executor
     - host.docker.internal:6090
+- labels:
+    job: executor-queue
+  targets:
+    # executor-queue
+    - host.docker.internal:6091
 - labels:
     job: postgres_exporter
   targets:
