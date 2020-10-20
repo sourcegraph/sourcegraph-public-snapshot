@@ -21,6 +21,9 @@ type Store interface {
 	// returned from the Dequeue method. See basestore.Store#Done for additional documentation.
 	Done(err error) error
 
+	// QueuedCount returns the number of records in the queued state matching the given conditions.
+	QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
+
 	// Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
 	// should be held by the worker process. If there is such a record, it is returned along with a new store instance
 	// that wraps the transaction. The resulting transaction must be closed by the caller, and the transaction should
@@ -39,6 +42,9 @@ type Store interface {
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
+
+	// SetLogContents updates the log contents of the record.
+	SetLogContents(ctx context.Context, id int, logContents string) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -80,6 +86,7 @@ type StoreOptions struct {
 	//   - process_after: timestamp with time zone
 	//   - num_resets: integer not null
 	//   - num_failures: integer not null
+	//   - log_contents: text
 	//
 	// The names of these columns may be customized based on the table name by adding a replacement
 	// pair in the AlternateColumnNames mapping.
@@ -196,6 +203,7 @@ var columnNames = []string{
 	"process_after",
 	"num_resets",
 	"num_failures",
+	"log_contents",
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
@@ -215,6 +223,26 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 
 	return &store{Store: txBase, options: s.options, columnReplacer: s.columnReplacer}, nil
 }
+
+// QueuedCount returns the number of records in the queued state matching the given conditions.
+func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error) {
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
+		queuedCountQuery,
+		quote(s.options.ViewName),
+		s.options.MaxNumRetries,
+		makeConditionSuffix(conditions),
+	)))
+
+	return count, err
+}
+
+const queuedCountQuery = `
+-- source: internal/workerutil/store.go:QueuedCount
+SELECT COUNT(*) FROM %s WHERE (
+	{state} = 'queued' OR
+	({state} = 'errored' AND {num_failures} < %s)
+) %s
+`
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
 // should be held by the worker process. If there is such a record, it is returned along with a new store instance
@@ -383,6 +411,23 @@ const requeueQuery = `
 -- source: internal/workerutil/store.go:Requeue
 UPDATE %s
 SET {state} = 'queued', {process_after} = %s
+WHERE {id} = %s
+`
+
+// SetLogContents updates the log contents of the record.
+func (s *store) SetLogContents(ctx context.Context, id int, logContents string) error {
+	return s.Exec(ctx, s.formatQuery(
+		setLogContentsQuery,
+		quote(s.options.TableName),
+		logContents,
+		id,
+	))
+}
+
+const setLogContentsQuery = `
+-- source: internal/workerutil/store.go:SetLogContents
+UPDATE %s
+SET {log_contents} = %s
 WHERE {id} = %s
 `
 

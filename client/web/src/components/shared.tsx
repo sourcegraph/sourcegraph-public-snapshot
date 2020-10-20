@@ -99,7 +99,7 @@ export const WebEditorCompletionWidget: React.FunctionComponent<EditorCompletion
         {...props}
         listClassName="completion-widget-dropdown d-block list-unstyled rounded p-0 m-0 mt-3"
         listItemClassName={completionWidgetListItemClassName}
-        selectedListItemClassName="completion-widget-dropdown__item--selected bg-primary"
+        selectedListItemClassName="completion-widget-dropdown__item--selected"
         loadingClassName={completionWidgetListItemClassName}
         noResultsClassName={completionWidgetListItemClassName}
     />

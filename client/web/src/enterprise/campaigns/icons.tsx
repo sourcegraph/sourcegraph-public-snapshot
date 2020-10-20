@@ -24,12 +24,3 @@ export const CampaignsFlushEdgesIcon: React.FunctionComponent<{ className?: stri
         )
     }
 )
-
-export const CampaignsIconWithBetaBadge: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
-    <>
-        <CampaignsFlushEdgesIcon className={className} />{' '}
-        <sup>
-            <span className="badge badge-merged text-uppercase">Beta</span>
-        </sup>
-    </>
-)

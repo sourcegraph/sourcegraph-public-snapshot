@@ -27,6 +27,7 @@ const changesetStatsFragment = gql`
         total
         closed
         deleted
+        draft
         merged
         open
         unpublished
@@ -379,6 +380,7 @@ const changesetCountsOverTimeFragment = gql`
         date
         merged
         closed
+        draft
         openApproved
         openChangesRequested
         openPending

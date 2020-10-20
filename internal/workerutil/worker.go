@@ -15,6 +15,7 @@ import (
 // Worker is a generic consumer of records from the workerutil store.
 type Worker struct {
 	store            Store
+	handler          Handler
 	options          WorkerOptions
 	clock            glock.Clock
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -25,22 +26,30 @@ type Worker struct {
 }
 
 type WorkerOptions struct {
-	Name        string
-	Handler     Handler
+	// Name denotes the name of the worker used to distinguish log messages.
+	Name string
+
+	// NumHandlers is the maximum number of handlers that can be invoked
+	// concurrently. The underlying store will not be queried while the current
+	// number of handlers exceeds this value.
 	NumHandlers int
-	Interval    time.Duration
-	Metrics     WorkerMetrics
+
+	// Interval is the frequency to poll the underlying store for new work.
+	Interval time.Duration
+
+	// Metrics configures logging, tracing, and metrics for the work loop.
+	Metrics WorkerMetrics
 }
 
 type WorkerMetrics struct {
 	HandleOperation *observation.Operation
 }
 
-func NewWorker(ctx context.Context, store Store, options WorkerOptions) *Worker {
-	return newWorker(ctx, store, options, glock.NewRealClock())
+func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
+	return newWorker(ctx, store, handler, options, glock.NewRealClock())
 }
 
-func newWorker(ctx context.Context, store Store, options WorkerOptions, clock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, clock glock.Clock) *Worker {
 	ctx, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)
@@ -50,6 +59,7 @@ func newWorker(ctx context.Context, store Store, options WorkerOptions, clock gl
 
 	return &Worker{
 		store:            store,
+		handler:          handler,
 		options:          options,
 		clock:            clock,
 		handlerSemaphore: handlerSemaphore,
@@ -145,7 +155,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
-	if hook, ok := w.options.Handler.(WithHooks); ok {
+	if hook, ok := w.handler.(WithHooks); ok {
 		hook.PreHandle(w.ctx, record)
 	}
 
@@ -153,7 +163,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	go func() {
 		defer func() {
-			if hook, ok := w.options.Handler.(WithHooks); ok {
+			if hook, ok := w.handler.(WithHooks); ok {
 				hook.PostHandle(w.ctx, record)
 			}
 
@@ -187,7 +197,7 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 		err = tx.Done(err)
 	}()
 
-	if handleErr := w.options.Handler.Handle(ctx, tx, record); handleErr != nil {
+	if handleErr := w.handler.Handle(ctx, tx, record); handleErr != nil {
 		if marked, markErr := tx.MarkErrored(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
@@ -207,7 +217,7 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
 func (w *Worker) preDequeueHook() (dequeueable bool, extraDequeueArguments interface{}, err error) {
-	if o, ok := w.options.Handler.(WithPreDequeue); ok {
+	if o, ok := w.handler.(WithPreDequeue); ok {
 		return o.PreDequeue(w.ctx)
 	}
 

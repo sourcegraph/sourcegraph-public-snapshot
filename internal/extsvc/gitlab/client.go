@@ -16,13 +16,14 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"golang.org/x/time/rate"
 )
 
 var (
@@ -78,7 +79,7 @@ type CommonOp struct {
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
-		cli = http.DefaultClient
+		cli = httpcli.ExternalDoer()
 	}
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API

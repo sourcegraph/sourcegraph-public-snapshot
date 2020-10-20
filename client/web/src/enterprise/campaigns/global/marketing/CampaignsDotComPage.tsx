@@ -10,17 +10,7 @@ export interface CampaignsDotComPageProps {
 export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPageProps> = () => (
     <div className="container web-content mt-3">
         <section className="mt-3 mb-5">
-            <PageHeader
-                icon={CampaignsFlushEdgesIcon}
-                title={
-                    <>
-                        Campaigns{' '}
-                        <sup>
-                            <span className="badge badge-merged text-uppercase">Beta</span>
-                        </sup>
-                    </>
-                }
-            />
+            <PageHeader icon={CampaignsFlushEdgesIcon} title="Campaigns" />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
             <div className="text-center">

@@ -139,6 +139,7 @@
     }
    ]
   },
+  "IsDraft": false,
   "CreatedAt": "2020-09-17T11:53:51Z",
   "UpdatedAt": "2020-09-24T08:18:30Z"
  }

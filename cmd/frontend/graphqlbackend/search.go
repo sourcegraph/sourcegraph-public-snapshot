@@ -280,12 +280,13 @@ type resolvedRepositories struct {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery  string                // the raw string of the original search query
-	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType    query.SearchType
-	versionContext *string
-	userSettings   *schema.Settings
+	query               query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery       string                // the raw string of the original search query
+	pagination          *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType         query.SearchType
+	versionContext      *string
+	userSettings        *schema.Settings
+	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex

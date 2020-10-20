@@ -42,8 +42,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
-	otherRepo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	repo := testRepo(t, reposStore, extsvc.KindGitHub)
+	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
 
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
 		t.Fatal(err)
@@ -1033,7 +1033,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	repo := testRepo(t, reposStore, extsvc.KindGitHub)
 	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

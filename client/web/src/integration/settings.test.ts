@@ -50,7 +50,7 @@ describe('Settings', () => {
                         },
                     },
                 }),
-                User: () => ({
+                UserArea: () => ({
                     user: {
                         __typename: 'User',
                         id: testUserID,
@@ -60,6 +60,7 @@ describe('Settings', () => {
                         settingsURL: '/users/test/settings',
                         avatarURL: null,
                         viewerCanAdminister: true,
+                        viewerCanChangeUsername: true,
                         siteAdmin: true,
                         builtinAuth: true,
                         createdAt: '2020-03-02T11:52:15Z',

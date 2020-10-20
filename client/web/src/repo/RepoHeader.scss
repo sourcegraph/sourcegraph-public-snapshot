@@ -5,6 +5,7 @@
     flex: none;
     padding: 0;
     align-items: stretch;
+    border-color: var(--border-color);
     border-style: solid;
     border-width: 0 0 1px;
 
@@ -18,24 +19,13 @@
         margin-left: 1px;
 
         &:hover {
-            .theme-dark & {
-                background: $color-bg-1;
-            }
-            .theme-light & {
-                background: $color-light-bg-2;
-            }
+            background: var(--color-bg-1);
         }
     }
 
     &__action-item--pressed {
-        .theme-dark & {
-            background-color: $color-bg-2;
-            color: $color-text-3;
-        }
-        .theme-light & {
-            background-color: $color-light-bg-4;
-            color: $color-light-text-1;
-        }
+        color: var(--body-color);
+        background-color: var(--color-bg-2);
     }
 
     .navbar-nav {
@@ -75,13 +65,5 @@
 
     &__spacer {
         flex: 1 1 0;
-    }
-
-    .theme-dark & {
-        border-color: #233043;
-    }
-
-    .theme-light & {
-        border-color: $color-light-border;
     }
 }

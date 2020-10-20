@@ -37,3 +37,11 @@ func ConfUserReposMaxPerSite() int {
 	}
 	return v
 }
+
+func ConfRepoSetClonedBatchSize() int {
+	v := conf.Get().RepoSetClonedBatchSize
+	if v == 0 {
+		return 100_000
+	}
+	return v
+}

@@ -9,7 +9,7 @@ import {
     ChangesetStatusOpen,
     ChangesetStatusClosed,
     ChangesetStatusMerged,
-    ChangesetStatusDeleted,
+    ChangesetStatusDraft,
 } from './changesets/ChangesetStatusCell'
 import { pluralize } from '../../../../../shared/src/util/strings'
 
@@ -53,8 +53,8 @@ export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> 
                                 label={<span className="text-muted">{stats.unpublished} unpublished</span>}
                                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                             />
-                            <ChangesetStatusDeleted
-                                label={<span className="text-muted">{stats.deleted} deleted</span>}
+                            <ChangesetStatusDraft
+                                label={<span className="text-muted">{stats.draft} draft</span>}
                                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                             />
                             <ChangesetStatusOpen

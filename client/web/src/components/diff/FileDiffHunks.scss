@@ -23,9 +23,9 @@
         vertical-align: top;
 
         font-family: $code-font-family;
-        color: $color-text-1;
+        color: var(--text-muted);
         &:hover {
-            color: $color-text-2;
+            color: var(--body-color);
         }
 
         &::before {
@@ -67,7 +67,7 @@
     }
     &__line--both &__num,
     &__num--both {
-        background-color: $color-bg-2;
+        background-color: var(--color-bg-2);
     }
 }
 
@@ -83,20 +83,5 @@
 
     &__table {
         width: 100%;
-    }
-}
-
-.theme-light {
-    .diff-hunk {
-        &__num {
-            color: $color-light-text-2;
-            &:hover {
-                color: $color-light-text-1;
-            }
-        }
-        &__line--both .diff-hunk__num,
-        &__num--both {
-            background-color: rgba($color-light-bg-2, 0.5);
-        }
     }
 }

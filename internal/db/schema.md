@@ -194,6 +194,7 @@ Referenced by:
  unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
+ log_contents          | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -442,6 +443,7 @@ Triggers:
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
+ log_contents        | text                     | 
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:

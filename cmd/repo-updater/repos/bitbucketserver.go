@@ -139,9 +139,7 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
@@ -164,7 +162,9 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			if bitbucketserver.IsNotFound(err) {
 				notFound = append(notFound, cs[i])
 				if cs[i].Changeset.Metadata == nil {
-					cs[i].Changeset.Metadata = pr
+					if err := cs[i].Changeset.SetMetadata(pr); err != nil {
+						return err
+					}
 				}
 				continue
 			}
@@ -225,8 +225,7 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 		return err
 	}
 
-	c.Changeset.Metadata = updated
-	return nil
+	return c.Changeset.SetMetadata(updated)
 }
 
 // ReopenChangeset reopens the *Changeset on the code host and updates the
@@ -241,9 +240,7 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
 // ExternalServices returns a singleton slice containing the external service.

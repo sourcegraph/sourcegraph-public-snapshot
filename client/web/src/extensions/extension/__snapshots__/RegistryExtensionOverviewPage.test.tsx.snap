@@ -24,19 +24,17 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
     <div
       className="mb-3"
     >
-      <h3
-        className="mb-0"
-      >
+      <h3>
         Categories
       </h3>
       <ul
-        className="list-inline registry-extension-overview-page__categories"
+        className="list-inline test-registry-extension-categories"
       >
         <li
-          className="list-inline-item mb-2 small"
+          className="list-inline-item mb-2"
         >
           <a
-            className="rounded border p-1 btm-sm btn-outline extension-area-link"
+            className="btn btn-outline-secondary btn-sm"
             href="/extensions?query=category%3AOther"
             onClick={[Function]}
           >
@@ -44,10 +42,10 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           </a>
         </li>
         <li
-          className="list-inline-item mb-2 small"
+          className="list-inline-item mb-2"
         >
           <a
-            className="rounded border p-1 btm-sm btn-outline extension-area-link"
+            className="btn btn-outline-secondary btn-sm"
             href="/extensions?query=category%3A%22Programming+languages%22"
             onClick={[Function]}
           >
@@ -59,19 +57,17 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
     <div
       className="mb-3"
     >
-      <h3
-        className="mb-0"
-      >
+      <h3>
         Tags
       </h3>
       <ul
-        className="list-inline registry-extension-overview-page__tags"
+        className="list-inline"
       >
         <li
-          className="list-inline-item mb-2 small"
+          className="list-inline-item mb-2"
         >
           <a
-            className="rounded border p-1 btn-outline btn-sm extension-area-link"
+            className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
             href="/extensions?query=tag%3AT1"
             onClick={[Function]}
           >
@@ -79,10 +75,10 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           </a>
         </li>
         <li
-          className="list-inline-item mb-2 small"
+          className="list-inline-item mb-2"
         >
           <a
-            className="rounded border p-1 btn-outline btn-sm extension-area-link"
+            className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
             href="/extensions?query=tag%3AT2"
             onClick={[Function]}
           >

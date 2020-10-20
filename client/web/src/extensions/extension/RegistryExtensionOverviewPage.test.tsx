@@ -66,7 +66,7 @@ describe('RegistryExtensionOverviewPage', () => {
             expect(
                 toText(
                     output.findAll(({ props: { className } }) =>
-                        className?.includes('registry-extension-overview-page__categories')
+                        className?.includes('test-registry-extension-categories')
                     )
                 )
             ).toEqual(['Other', 'Programming languages' /* no 'invalid' */])

@@ -159,11 +159,11 @@ describe('Core functionality regression test suite', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__display-name',
+            selector: '.test-UserProfileFormFields__displayName',
             newText: displayName,
         })
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__avatar_url',
+            selector: '.test-UserProfileFormFields__avatarURL',
             newText: aviURL,
             enterTextMethod: 'paste',
         })

@@ -59,17 +59,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
     return (
         <>
             <PageTitle title="Create campaign" />
-            <PageHeader
-                icon={CampaignsFlushEdgesIcon}
-                title={
-                    <>
-                        Create campaign{' '}
-                        <sup>
-                            <span className="badge badge-merged text-uppercase">Beta</span>
-                        </sup>
-                    </>
-                }
-            />
+            <PageHeader icon={CampaignsFlushEdgesIcon} title="Create campaign" />
             <div className="pt-3">
                 <h2>1. Write a campaign spec YAML file</h2>
                 <p>
