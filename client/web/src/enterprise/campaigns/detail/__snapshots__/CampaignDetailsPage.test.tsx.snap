@@ -53,7 +53,13 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         />
       }
       className="justify-content-end test-campaign-details-page"
-      icon={[Function]}
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
       title={
         <React.Fragment>
           <AnchorLink
@@ -72,21 +78,9 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <CampaignsIconWithBetaBadge
+          <Memo(CampaignsFlushEdgesIcon)
             className="icon-inline page-header__icon"
-          >
-            <Memo(CampaignsFlushEdgesIcon)
-              className="icon-inline page-header__icon"
-            />
-             
-            <sup>
-              <span
-                className="badge badge-merged text-uppercase"
-              >
-                Beta
-              </span>
-            </sup>
-          </CampaignsIconWithBetaBadge>
+          />
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -1043,7 +1037,13 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         />
       }
       className="justify-content-end test-campaign-details-page"
-      icon={[Function]}
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
       title={
         <React.Fragment>
           <AnchorLink
@@ -1062,21 +1062,9 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <CampaignsIconWithBetaBadge
+          <Memo(CampaignsFlushEdgesIcon)
             className="icon-inline page-header__icon"
-          >
-            <Memo(CampaignsFlushEdgesIcon)
-              className="icon-inline page-header__icon"
-            />
-             
-            <sup>
-              <span
-                className="badge badge-merged text-uppercase"
-              >
-                Beta
-              </span>
-            </sup>
-          </CampaignsIconWithBetaBadge>
+          />
            
           <AnchorLink
             to="/users/alice/campaigns"

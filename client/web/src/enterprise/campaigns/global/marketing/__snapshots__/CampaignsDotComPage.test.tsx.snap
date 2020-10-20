@@ -16,19 +16,7 @@ exports[`CampaignsDotComPage renders 1`] = `
             "type": [Function],
           }
         }
-        title={
-          <React.Fragment>
-            Campaigns
-             
-            <sup>
-              <span
-                className="badge badge-merged text-uppercase"
-              >
-                Beta
-              </span>
-            </sup>
-          </React.Fragment>
-        }
+        title="Campaigns"
       >
         <div
           className="page-header d-flex flex-wrap align-items-center"
@@ -41,14 +29,6 @@ exports[`CampaignsDotComPage renders 1`] = `
             />
              
             Campaigns
-             
-            <sup>
-              <span
-                className="badge badge-merged text-uppercase"
-              >
-                Beta
-              </span>
-            </sup>
           </h1>
         </div>
       </PageHeader>
