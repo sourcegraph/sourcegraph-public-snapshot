@@ -337,6 +337,17 @@ func TestClient_CreatePullRequest(t *testing.T) {
 			},
 			err: "error in GraphQL response: Head sha can't be blank, Base sha can't be blank, No commits between master and this-head-ref-should-not-exist, Head ref must be a branch",
 		},
+		{
+			name: "draft-pr",
+			input: &CreatePullRequestInput{
+				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				BaseRefName:  "master",
+				HeadRefName:  "test-pr-4",
+				Title:        "This is a test PR, feel free to ignore",
+				Body:         "I'm opening this PR to test something. Please ignore.",
+				Draft:        true,
+			},
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -434,7 +445,6 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 		name string
 		ctx  context.Context
 		pr   *PullRequest
-		err  string
 	}{
 		{
 			name: "success",
@@ -445,7 +455,6 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 			name: "already open",
 			// https://github.com/sourcegraph/automation-testing/pull/355
 			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NDg4NjA0NTQ5"},
-			// Doesn't return an error
 		},
 	} {
 		tc := tc
@@ -454,22 +463,57 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 				tc.ctx = context.Background()
 			}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
 			err := cli.ReopenPullRequest(tc.ctx, tc.pr)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
 			if err != nil {
-				return
+				t.Fatalf("ReopenPullRequest returned unexpected error: %s", err)
 			}
 
 			testutil.AssertGolden(t,
 				"testdata/golden/ReopenPullRequest-"+strconv.Itoa(i),
 				update("ReopenPullRequest"),
+				tc.pr,
+			)
+		})
+	}
+}
+
+func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
+	cli, save := newClient(t, "MarkPullRequestReadyForReview")
+	defer save()
+
+	// Repository used: sourcegraph/automation-testing
+	// The requests here cannot be easily rerun with `-update` since you can
+	// only get the success response if the changeset is in draft mode.
+	for i, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   *PullRequest
+	}{
+		{
+			name: "success",
+			// https://github.com/sourcegraph/automation-testing/pull/361
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDczNDU1"},
+		},
+		{
+			name: "already ready for review",
+			// https://github.com/sourcegraph/automation-testing/pull/362
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2"},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			err := cli.MarkPullRequestReadyForReview(tc.ctx, tc.pr)
+			if err != nil {
+				t.Fatalf("MarkPullRequestReadyForReview returned unexpected error: %s", err)
+			}
+
+			testutil.AssertGolden(t,
+				"testdata/golden/MarkPullRequestReadyForReview-"+strconv.Itoa(i),
+				update("MarkPullRequestReadyForReview"),
 				tc.pr,
 			)
 		})

@@ -84,6 +84,16 @@ type Source interface {
 	ExternalServices() ExternalServices
 }
 
+// A DraftChangesetSource can create draft changesets and undraft them.
+type DraftChangesetSource interface {
+	// CreateDraftChangeset will create the Changeset on the source. If it already
+	// exists, *Changeset will be populated and the return value will be
+	// true.
+	CreateDraftChangeset(context.Context, *Changeset) (bool, error)
+	// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
+	UndraftChangeset(context.Context, *Changeset) error
+}
+
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
 	// LoadChangesets loads the given Changesets from the sources and updates

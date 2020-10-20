@@ -525,12 +525,13 @@ func (c *Changeset) BaseRef() (string, error) {
 // hosted supports labels and whether it's safe to call the
 // (*Changeset).Labels() method.
 func (c *Changeset) SupportsLabels() bool {
-	switch c.Metadata.(type) {
-	case *github.PullRequest, *gitlab.MergeRequest:
-		return true
-	default:
-		return false
-	}
+	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityLabels)
+}
+
+// SupportsDraft returns whether the code host on which the changeset is
+// hosted supports draft changesets.
+func (c *Changeset) SupportsDraft() bool {
+	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityDraftChangesets)
 }
 
 func (c *Changeset) Labels() []ChangesetLabel {

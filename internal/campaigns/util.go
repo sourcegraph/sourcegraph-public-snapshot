@@ -7,14 +7,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+type CodehostCapability string
+
+const (
+	CodehostCapabilityLabels          CodehostCapability = "Labels"
+	CodehostCapabilityDraftChangesets CodehostCapability = "DraftChangesets"
+)
+
+type CodehostCapabilities map[CodehostCapability]bool
+
 // SupportedExternalServices are the external service types currently supported
 // by the campaigns feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
-var SupportedExternalServices = map[string]struct{}{
-	extsvc.TypeGitHub:          {},
+var SupportedExternalServices = map[string]CodehostCapabilities{
+	extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
 	extsvc.TypeBitbucketServer: {},
-	extsvc.TypeGitLab:          {},
+	extsvc.TypeGitLab:          {CodehostCapabilityLabels: true},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -29,6 +38,14 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 func IsKindSupported(extSvcKind string) bool {
 	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
 	return ok
+}
+
+func ExternalServiceSupports(extSvcType string, capability CodehostCapability) bool {
+	if es, ok := SupportedExternalServices[extSvcType]; ok {
+		val, ok := es[capability]
+		return ok && val
+	}
+	return false
 }
 
 // Keyer represents items that return a unique key

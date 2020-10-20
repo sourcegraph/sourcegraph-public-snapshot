@@ -507,6 +507,8 @@ type CreatePullRequestInput struct {
 	Title string `json:"title"`
 	// The body of the pull request (optional).
 	Body string `json:"body"`
+	// When true the PR will be in draft mode initially.
+	Draft bool `json:"draft"`
 }
 
 // CreatePullRequest creates a PullRequest on Github.
@@ -615,6 +617,50 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return pr, nil
+}
+
+// MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
+func (c *Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
+  markPullRequestReadyForReview(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		MarkPullRequestReadyForReview struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			} `json:"pullRequest"`
+		} `json:"markPullRequestReadyForReview"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	if err != nil {
+		return err
+	}
+
+	ti := result.MarkPullRequestReadyForReview.PullRequest.TimelineItems
+	*pr = result.MarkPullRequestReadyForReview.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.MarkPullRequestReadyForReview.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
+	return nil
 }
 
 // ClosePullRequest closes the PullRequest on Github.
