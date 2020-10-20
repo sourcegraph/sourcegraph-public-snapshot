@@ -11,7 +11,6 @@ import {
     CampaignsByUserVariables,
     CampaignsByOrgVariables,
 } from '../../../graphql-operations'
-import { CampaignsListBetaNotice } from './CampaignsListBetaNotice'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
@@ -57,14 +56,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
         <>
             <PageHeader
                 icon={CampaignsFlushEdgesIcon}
-                title={
-                    <span className="test-campaign-list-page">
-                        Campaigns{' '}
-                        <sup>
-                            <span className="badge badge-merged text-uppercase">Beta</span>
-                        </sup>
-                    </span>
-                }
+                title={<span className="test-campaign-list-page">Campaigns</span>}
                 className="justify-content-end"
                 actions={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
@@ -72,7 +64,6 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                     </Link>
                 }
             />
-            <CampaignsListBetaNotice />
             <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
                 location={location}
