@@ -583,6 +583,38 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 		},
 
+		"published false to published draft": {
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: false,
+			},
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: "draft",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ownedByCampaign:  campaign.ID,
+			},
+			sourcerMetadata: draftGithubPR,
+
+			// Update the commit
+			wantGitserverCommit:       true,
+			wantCreateDraftOnCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     draftGithubPR.ID,
+				externalBranch: draftGithubPR.HeadRefName,
+				externalState:  campaigns.ChangesetExternalStateDraft,
+
+				title:    draftGithubPR.Title,
+				body:     draftGithubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
+
 		"undraft a changeset": {
 			currentSpec: &testSpecOpts{
 				headRef:   "refs/heads/head-ref-on-github",

@@ -842,8 +842,8 @@ func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		delta.baseRefChanged = true
 	}
 
-	// If was set to draft and now true, need to undraft the changeset.
-	// We currently ignore changes from true => "undraft" or "false" => "draft".
+	// If was set to "draft" and now "true", need to undraft the changeset.
+	// We currently ignore going from "true" to "draft".
 	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
 		delta.draftChanged = true
 	}
