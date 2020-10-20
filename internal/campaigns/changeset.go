@@ -525,13 +525,13 @@ func (c *Changeset) BaseRef() (string, error) {
 // hosted supports labels and whether it's safe to call the
 // (*Changeset).Labels() method.
 func (c *Changeset) SupportsLabels() bool {
-	return HasCodehostCapability(c.ExternalServiceType, CodehostCapabilityLabels)
+	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityLabels)
 }
 
 // SupportsDraft returns whether the code host on which the changeset is
 // hosted supports draft changesets.
 func (c *Changeset) SupportsDraft() bool {
-	return HasCodehostCapability(c.ExternalServiceType, CodehostCapabilityDraftChangesets)
+	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityDraftChangesets)
 }
 
 func (c *Changeset) Labels() []ChangesetLabel {

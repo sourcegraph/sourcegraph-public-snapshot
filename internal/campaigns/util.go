@@ -22,19 +22,16 @@ const (
 	CodehostCapabilityDraftChangesets CodehostCapability = "DraftChangesets"
 )
 
-type CodehostCapabilities struct {
-	Labels          bool
-	DraftChangesets bool
-}
+type CodehostCapabilities map[CodehostCapability]bool
 
 // SupportedExternalServices are the external service types currently supported
 // by the campaigns feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]CodehostCapabilities{
-	extsvc.TypeGitHub:          {Labels: true, DraftChangesets: true},
+	extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
 	extsvc.TypeBitbucketServer: {},
-	extsvc.TypeGitLab:          {Labels: true},
+	extsvc.TypeGitLab:          {CodehostCapabilityLabels: true},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -51,14 +48,10 @@ func IsKindSupported(extSvcKind string) bool {
 	return ok
 }
 
-func HasCodehostCapability(extSvcType string, capability CodehostCapability) bool {
+func ExternalServiceSupports(extSvcType string, capability CodehostCapability) bool {
 	if es, ok := SupportedExternalServices[extSvcType]; ok {
-		switch capability {
-		case CodehostCapabilityDraftChangesets:
-			return es.DraftChangesets
-		case CodehostCapabilityLabels:
-			return es.Labels
-		}
+		val, ok := es[capability]
+		return ok && val
 	}
 	return false
 }
