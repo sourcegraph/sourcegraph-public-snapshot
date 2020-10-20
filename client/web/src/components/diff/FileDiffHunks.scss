@@ -67,7 +67,7 @@
     }
     &__line--both &__num,
     &__num--both {
-        background-color: $color-bg-2;
+        background-color: var(--color-bg-2);
     }
 }
 
@@ -83,14 +83,5 @@
 
     &__table {
         width: 100%;
-    }
-}
-
-.theme-light {
-    .diff-hunk {
-        &__line--both .diff-hunk__num,
-        &__num--both {
-            background-color: rgba($color-light-bg-2, 0.5);
-        }
     }
 }

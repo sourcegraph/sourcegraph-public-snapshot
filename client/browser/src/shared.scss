@@ -19,7 +19,7 @@ $body-bg-color-light: #ffffff;
     --text-muted: #888888;
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
-    --dropdown-bg: #{$color-light-bg-1};
+    --dropdown-bg: var(--body-bg);
     --dropdown-border-color: var(--border-color);
 }
 

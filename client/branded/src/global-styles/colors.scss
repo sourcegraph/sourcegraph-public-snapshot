@@ -30,28 +30,6 @@ $gray-22: #151c28;
 $gray-23: #0e121b;
 $black: #07090d;
 
-// Dark Theme
-
-$color-bg-1: #151c28;
-$color-bg-2: #1d2535;
-$color-bg-3: #2b3750;
-$color-bg-4: $gray-23;
-$color-bg-5: #39496a;
-
-// TODO add Basics color standards to Dark Theme
-
-// Light Theme
-// Basics
-$color-light-bg-1: #ffffff;
-$color-light-bg-2: #f2f4f8;
-$color-light-bg-3: #cad2e2;
-$color-light-bg-4: $gray-02;
-$color-light-bg-5: #566e9f;
-$color-light-bg-6: #070a0d;
-
-$color-light-border: #cad2e2;
-$color-light-border-2: #e4e9f1;
-
 // Tell Bootstrap to use colors from OpenColor
 $blue: $oc-blue-7;
 $indigo: $oc-indigo-7;
@@ -87,9 +65,6 @@ $body-bg: var(--body-bg);
 
 $text-muted: var(--text-muted);
 
-$body-bg-color-light: #fbfdff;
-$body-bg-color-dark: #04070e;
-
 :root {
     --primary: #{$primary};
     --secondary: #{$secondary-light};
@@ -101,30 +76,32 @@ $body-bg-color-dark: #04070e;
 }
 .theme-light {
     --body-color: #{$gray-19};
-    --body-bg: #{$body-bg-color-light};
-    --color-bg-1: #{$color-light-bg-1};
-    --color-bg-2: #{$color-light-bg-2};
-    --color-bg-3: #{$color-light-bg-3};
-    --color-bg-4: #{$color-light-bg-4};
+    --body-bg: #fbfdff;
+    --color-bg-1: #ffffff;
+    --color-bg-2: #{$gray-01};
+    --color-bg-3: #{$gray-04};
+    --color-bg-4: #{$gray-02};
+    --color-bg-5: #{$gray-13};
     --text-muted: #6d727c;
     --link-color: #{$gray-13};
     --link-active-color: #{$gray-18};
     --link-hover-color: #{$gray-21};
-    --border-color: #{$color-light-border};
-    --border-color-2: #{$color-light-border-2};
+    --border-color: #{$gray-04};
+    --border-color-2: #{$gray-02};
     --sourcegraph-logo-text-color: #242427;
 }
 .theme-dark {
     --secondary: #{$secondary};
-    --border-color: #{$color-bg-3};
-    --border-color-2: #{$color-bg-3};
+    --border-color: #{$gray-19};
+    --border-color-2: #1b1730;
     --body-color: #ffffff;
-    --body-bg: #{$body-bg-color-dark};
-    --color-bg-1: #{$color-bg-1};
-    --color-bg-2: #{$color-bg-2};
-    --color-bg-3: #{$color-bg-3};
-    --color-bg-4: #{$color-bg-4};
-    --text-muted: #a2b0cd;
+    --body-bg: #04070e;
+    --color-bg-1: #{$gray-22};
+    --color-bg-2: #{$gray-21};
+    --color-bg-3: #{$gray-19};
+    --color-bg-4: #{$gray-23};
+    --color-bg-5: #{$gray-17};
+    --text-muted: #{$gray-07};
     --link-color: #{$gray-07};
     --link-active-color: #{$gray-02};
     --link-hover-color: #ffffff;

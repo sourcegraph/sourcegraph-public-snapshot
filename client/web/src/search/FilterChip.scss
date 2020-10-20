@@ -5,22 +5,11 @@
 
     color: var(--body-color);
     border-color: var(--border-color-2);
-
-    .theme-dark & {
-        background: $color-bg-2;
-    }
-    .theme-light & {
-        background: transparent;
-    }
+    background: var(--color-bg-2);
 
     &:hover:not(&--selected) {
         border-color: var(--border-color);
-        .theme-dark & {
-            background: $color-bg-3;
-        }
-        .theme-light & {
-            background: $color-light-bg-4;
-        }
+        background: var(--color-bg-3);
     }
 
     &__count {
@@ -28,22 +17,7 @@
         margin-left: 0.25rem;
         padding: 0 0.2rem;
 
-        .theme-light & {
-            background: $color-light-bg-2;
-        }
-
-        .theme-dark & {
-            background: $color-bg-3;
-        }
-
-        &--selected {
-            .theme-dark & {
-                background: $color-bg-2;
-            }
-            .theme-light & {
-                background: $color-light-bg-1;
-            }
-        }
+        background: var(--color-bg-2);
     }
 
     &-repo {
@@ -52,11 +26,6 @@
 
     &--selected {
         border-color: var(--border-color);
-        .theme-dark & {
-            background: $color-bg-5;
-        }
-        .theme-light & {
-            background: $color-light-bg-3;
-        }
+        background: var(--color-bg-3);
     }
 }
