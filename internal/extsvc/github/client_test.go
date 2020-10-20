@@ -445,7 +445,6 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 		name string
 		ctx  context.Context
 		pr   *PullRequest
-		err  string
 	}{
 		{
 			name: "success",
@@ -456,7 +455,6 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 			name: "already open",
 			// https://github.com/sourcegraph/automation-testing/pull/355
 			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NDg4NjA0NTQ5"},
-			// Doesn't return an error
 		},
 	} {
 		tc := tc
@@ -465,17 +463,9 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 				tc.ctx = context.Background()
 			}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
 			err := cli.ReopenPullRequest(tc.ctx, tc.pr)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
 			if err != nil {
-				return
+				t.Fatalf("ReopenPullRequest returned unexpected error: %s", err)
 			}
 
 			testutil.AssertGolden(t,
@@ -498,7 +488,6 @@ func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
 		name string
 		ctx  context.Context
 		pr   *PullRequest
-		err  string
 	}{
 		{
 			name: "success",
@@ -509,7 +498,6 @@ func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
 			name: "already ready for review",
 			// https://github.com/sourcegraph/automation-testing/pull/362
 			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2"},
-			// Doesn't return an error
 		},
 	} {
 		tc := tc
@@ -518,17 +506,9 @@ func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
 				tc.ctx = context.Background()
 			}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
 			err := cli.MarkPullRequestReadyForReview(tc.ctx, tc.pr)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
 			if err != nil {
-				return
+				t.Fatalf("MarkPullRequestReadyForReview returned unexpected error: %s", err)
 			}
 
 			testutil.AssertGolden(t,
