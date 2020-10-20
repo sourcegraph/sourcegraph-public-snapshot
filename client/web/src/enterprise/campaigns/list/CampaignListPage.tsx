@@ -56,8 +56,8 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
         <>
             <PageHeader
                 icon={CampaignsFlushEdgesIcon}
-                title={<span className="test-campaign-list-page">Campaigns</span>}
-                className="justify-content-end"
+                title="Campaigns"
+                className="justify-content-end test-campaign-list-page"
                 actions={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign
