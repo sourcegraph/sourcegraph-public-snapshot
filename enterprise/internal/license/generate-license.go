@@ -41,7 +41,6 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-
 	log.Println("# License info (encoded and signed in license key)")
 	info := license.Info{
 		Tags:      license.ParseTagsInput(*tags),
