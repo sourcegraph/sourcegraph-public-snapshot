@@ -247,7 +247,7 @@ describe('Search', () => {
 
         test('Updates query when searching from directory page', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...viewerSettingsWithSplitSearchModes,
                 RepositoryRedirect: () => ({
                     repositoryRedirect: {
