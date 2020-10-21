@@ -9,6 +9,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // gatherKeys splits the comma-separated encryption data into its potential two components:
@@ -49,6 +51,14 @@ func MockDefaultEncryptor() {
 const sourcegraphsSecretFile = "SOURCEGRAPH_SECRET_FILE"
 
 func initDefaultEncryptor() error {
+	// NOTE: Previously in 3.20, we auto-generated this file for single-image instances.
+	// Now we clean this up and it is OK to do this on every start as we haven't advertised
+	// the secrets encryption feature to any customer.
+	// TODO(jchen): Delete this once 3.22 is released.
+	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+		_ = os.Remove("/var/lib/sourcegraph/token")
+	}
+
 	// Set the default location if none exists
 	secretFile := os.Getenv(sourcegraphsSecretFile)
 	if secretFile == "" {
