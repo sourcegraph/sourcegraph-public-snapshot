@@ -339,34 +339,24 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 	}
 }
 
-func TestGithubSource_LoadChangesets(t *testing.T) {
+func TestGithubSource_LoadChangeset(t *testing.T) {
 	testCases := []struct {
 		name string
-		cs   []*Changeset
+		cs   *Changeset
 		err  string
 	}{
 		{
 			name: "found",
-			cs: []*Changeset{
-				{
-					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &campaigns.Changeset{ExternalID: "5550"},
-				},
-				{
-					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
-					Changeset: &campaigns.Changeset{ExternalID: "50"},
-				},
-				{
-					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &campaigns.Changeset{ExternalID: "5834"},
-				},
+			cs: &Changeset{
+				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Changeset: &campaigns.Changeset{ExternalID: "5550"},
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_LoadChangesets_" + tc.name
+		tc.name = "GithubSource_LoadChangeset_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -398,7 +388,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err = githubSrc.LoadChangesets(ctx, tc.cs...)
+			err = githubSrc.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -407,11 +397,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				return
 			}
 
-			meta := make([]*github.PullRequest, 0, len(tc.cs))
-			for _, cs := range tc.cs {
-				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
-			}
-
+			meta := tc.cs.Changeset.Metadata.(*github.PullRequest)
 			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}

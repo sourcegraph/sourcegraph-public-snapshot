@@ -235,31 +235,25 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 	return c.Changeset.SetMetadata(pr)
 }
 
-// LoadChangesets loads the latest state of the given Changesets from the codehost.
-func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
-	prs := make([]*github.PullRequest, len(cs))
-	for i := range cs {
-		repo := cs[i].Repo.Metadata.(*github.Repository)
-		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
-		if err != nil {
-			return errors.Wrap(err, "parsing changeset external id")
-		}
-
-		prs[i] = &github.PullRequest{
-			RepoWithOwner: repo.NameWithOwner,
-			Number:        number,
-		}
+// LoadChangeset loads the latest state of the given Changeset from the codehost.
+func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+	repo := cs.Repo.Metadata.(*github.Repository)
+	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
+	if err != nil {
+		return errors.Wrap(err, "parsing changeset external id")
 	}
 
-	err := s.client.LoadPullRequests(ctx, prs...)
-	if err != nil {
+	pr := &github.PullRequest{
+		RepoWithOwner: repo.NameWithOwner,
+		Number:        number,
+	}
+
+	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
 		return err
 	}
 
-	for i := range cs {
-		if err := cs[i].SetMetadata(prs[i]); err != nil {
-			return errors.Wrap(err, "setting changeset metadata")
-		}
+	if err := cs.SetMetadata(pr); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
 	}
 
 	return nil

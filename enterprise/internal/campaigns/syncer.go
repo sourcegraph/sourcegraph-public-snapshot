@@ -513,187 +513,98 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	}
 
 	sourcer := repos.NewSourcer(s.HTTPFactory)
-	return syncChangesets(ctx, s.ReposStore, s.SyncStore, sourcer, cs)
+	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, sourcer, cs)
 }
 
-// SyncChangesets refreshes the metadata of the given changesets and
+// SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, sourcer repos.Sourcer, cs ...*campaigns.Changeset) (err error) {
-	return syncChangesets(ctx, repoStore, syncStore, sourcer, cs...)
-}
-
-func syncChangesets(
-	ctx context.Context,
-	repoStore RepoStore,
-	syncStore SyncStore,
-	sourcer repos.Sourcer,
-	cs ...*campaigns.Changeset,
-) (err error) {
-	if len(cs) == 0 {
-		return nil
-	}
-
-	bySource, err := groupChangesetsBySource(ctx, repoStore, sourcer, cs...)
+func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, sourcer repos.Sourcer, c *campaigns.Changeset) (err error) {
+	s, err := buildChangesetSource(ctx, repoStore, sourcer, c)
 	if err != nil {
 		return err
 	}
 
-	return syncChangesetsWithSources(ctx, syncStore, bySource)
-}
+	rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
+		IDs: []api.RepoID{c.RepoID},
+	})
+	if err != nil {
+		return err
+	}
+	repo := rs[0]
 
-// syncChangesetsWithSources refreshes the metadata of the given changesets
-// with the given ChangesetSources and updates them in the database.
-func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
-	var (
-		events []*campaigns.ChangesetEvent
-		cs     []*campaigns.Changeset
-	)
-
-	for _, s := range bySource {
-		var notFound []*repos.Changeset
-
-		err := s.LoadChangesets(ctx, s.Changesets...)
-		if err != nil {
-			notFoundErr, ok := err.(repos.ChangesetsNotFoundError)
-			if !ok {
-				return err
-			}
-			notFound = notFoundErr.Changesets
+	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
+	if err := s.LoadChangeset(ctx, repoChangeset); err != nil {
+		_, ok := err.(repos.ChangesetNotFoundError)
+		if !ok {
+			return err
 		}
 
-		notFoundById := make(map[int64]*repos.Changeset, len(notFound))
-		for _, c := range notFound {
-			notFoundById[c.Changeset.ID] = c
-		}
-
-		for _, c := range s.Changesets {
-			_, notFound := notFoundById[c.Changeset.ID]
-			if notFound && !c.Changeset.IsDeleted() {
-				c.Changeset.SetDeleted()
-			}
-
-			csEvents := c.Events()
-			SetDerivedState(ctx, c.Changeset, csEvents)
-
-			// Deduplicate events per changeset based on their Kind+Key to avoid
-			// conflicts when inserting into database.
-			uniqueEvents := make(map[string]struct{}, len(csEvents))
-			for _, e := range csEvents {
-				k := string(e.Kind) + e.Key
-				if _, ok := uniqueEvents[k]; ok {
-					log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
-					continue
-				}
-				uniqueEvents[k] = struct{}{}
-				events = append(events, e)
-			}
-
-			cs = append(cs, c.Changeset)
+		if !c.IsDeleted() {
+			c.SetDeleted()
 		}
 	}
 
-	tx, err := store.Transact(ctx)
+	csEvents := c.Events()
+	SetDerivedState(ctx, c, csEvents)
+
+	// Deduplicate events per changeset based on their Kind+Key to avoid
+	// conflicts when inserting into database.
+	uniqueEvents := make(map[string]struct{}, len(csEvents))
+	var events []*campaigns.ChangesetEvent
+
+	for _, e := range csEvents {
+		k := string(e.Kind) + e.Key
+		if _, ok := uniqueEvents[k]; ok {
+			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+			continue
+		}
+		uniqueEvents[k] = struct{}{}
+		events = append(events, e)
+	}
+
+	tx, err := syncStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, c := range cs {
-		c.Unsynced = false
-		if err = tx.UpdateChangeset(ctx, c); err != nil {
-			return err
-		}
+	c.Unsynced = false
+	if err := tx.UpdateChangeset(ctx, c); err != nil {
+		return err
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-// groupChangesetsBySource returns a slice of SourceChangesets in which the
+// buildChangesetSource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
 // rlr is optional
-func groupChangesetsBySource(
+func buildChangesetSource(
 	ctx context.Context,
 	reposStore RepoStore,
 	sourcer repos.Sourcer,
-	cs ...*campaigns.Changeset,
-) ([]*SourceChangesets, error) {
-	var repoIDs []api.RepoID
-	repoSet := map[api.RepoID]*repos.Repo{}
-
-	for _, c := range cs {
-		id := c.RepoID
-		if _, ok := repoSet[id]; !ok {
-			repoSet[id] = nil
-			repoIDs = append(repoIDs, id)
-		}
+	c *campaigns.Changeset,
+) (repos.ChangesetSource, error) {
+	es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		RepoIDs: []api.RepoID{c.RepoID},
+	})
+	if err != nil {
+		return nil, err
 	}
+	extSvc := es[0]
 
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	sources, err := sourcer(extSvc)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, r := range rs {
-		repoSet[r.ID] = r
+	css, ok := sources[0].(repos.ChangesetSource)
+	if !ok {
+		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", extSvc.Kind)
 	}
 
-	for _, c := range cs {
-		repo := repoSet[c.RepoID]
-		if repo == nil {
-			log15.Warn("changeset not synced, repo not in database", "changeset_id", c.ID, "repo_id", c.RepoID)
-		}
-	}
-
-	es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
-	if err != nil {
-		return nil, err
-	}
-
-	byRepo := make(map[api.RepoID]int64, len(rs))
-	for _, r := range rs {
-		eids := r.ExternalServiceIDs()
-		for _, id := range eids {
-			if _, ok := byRepo[r.ID]; !ok {
-				byRepo[r.ID] = id
-				break
-			}
-		}
-	}
-
-	bySource := make(map[int64]*SourceChangesets, len(es))
-	for _, e := range es {
-		sources, err := sourcer(e)
-		if err != nil {
-			return nil, err
-		}
-
-		css, ok := sources[0].(repos.ChangesetSource)
-		if !ok {
-			return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
-		}
-
-		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}
-	}
-
-	for _, c := range cs {
-		repoID := c.RepoID
-		s := bySource[byRepo[repoID]]
-		if s == nil {
-			continue
-		}
-		s.Changesets = append(s.Changesets, &repos.Changeset{
-			Changeset: c,
-			Repo:      repoSet[repoID],
-		})
-	}
-
-	res := make([]*SourceChangesets, 0, len(bySource))
-	for _, s := range bySource {
-		res = append(res, s)
-	}
-
-	return res, nil
+	return css, nil
 }
 
 // filterSyncData filters to changesets belonging to repositories on codeHostURL.
