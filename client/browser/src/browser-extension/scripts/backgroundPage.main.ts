@@ -47,7 +47,6 @@ initSentry('background')
 
 let customServerOrigins: string[] = []
 
-
 /**
  * For each tab, we store a flag if we know that we are on a private
  * repository. The content script notifies the background page if it's on a
@@ -190,7 +189,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private repository flag.
-            setTabIsPrivateRepository(tabId, false)
+            tabPrivateRepositoryCache.setTabIsPrivateRepository(tabId, false)
             return
         }
 
@@ -232,7 +231,7 @@ async function main(): Promise<void> {
         ): Promise<void> {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                setTabIsPrivateRepository(tabId, isPrivateRepository)
+                tabPrivateRepositoryCache.setTabIsPrivateRepository(tabId, isPrivateRepository)
             }
             return Promise.resolve()
         },
@@ -415,7 +414,7 @@ function observeCurrentTabId(): Observable<number> {
  * private repository.
  */
 function observeCurrentTabPrivateRepository(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), privateRepositoryCacheSubject]).pipe(
+    return combineLatest([observeCurrentTabId(), tabPrivateRepositoryCache.observable]).pipe(
         map(([tabId, privateRepositoryCache]) => !!privateRepositoryCache.get(tabId)),
         distinctUntilChanged()
     )
