@@ -2,7 +2,7 @@
 name: Design debt
 about: Describes the problem that needs attention because of design debt 
 title: ''
-labels: 'design-deb'
+labels: 'design-debt'
 assignees: ''
 ---
 <!-- Add this issue to the 'Design debt' column of the 'Design priorities' GitHub project -->
