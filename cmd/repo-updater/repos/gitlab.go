@@ -361,12 +361,8 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
-// LoadChangeset loads the given merge requests from GitLab and updates them.
-// Note that this is an O(n) operation due to limitations in the GitLab REST
-// API.
+// LoadChangeset loads the given merge request from GitLab and updates it.
 func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
-	// will allow us to query multiple MRs at once.
 	project := cs.Repo.Metadata.(*gitlab.Project)
 
 	iid, err := strconv.ParseInt(cs.ExternalID, 10, 64)
@@ -379,8 +375,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrapf(err, "retrieving merge request %d", iid)
 	}
 
-	// As above, these additional API calls can go away once we can use
-	// GraphQL.
+	// These additional API calls can go away once we can use the GraphQL API.
 	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
 		return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
 	}

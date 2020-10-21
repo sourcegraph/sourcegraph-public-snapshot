@@ -235,7 +235,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 	return c.Changeset.SetMetadata(pr)
 }
 
-// LoadChangeset loads the latest state of the given Changesets from the codehost.
+// LoadChangeset loads the latest state of the given Changeset from the codehost.
 func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.Repo.Metadata.(*github.Repository)
 	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)

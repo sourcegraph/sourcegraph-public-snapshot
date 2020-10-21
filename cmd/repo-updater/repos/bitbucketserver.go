@@ -157,7 +157,7 @@ func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset)
 	err = s.client.LoadPullRequest(ctx, pr)
 	if err != nil {
 		if bitbucketserver.IsNotFound(err) {
-			return ChangesetsNotFoundError{Changesets: []*Changeset{cs}}
+			return ChangesetNotFoundError{Changeset: cs}
 		}
 
 		return err

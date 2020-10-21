@@ -534,7 +534,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
 	if err := s.LoadChangeset(ctx, repoChangeset); err != nil {
-		_, ok := err.(repos.ChangesetsNotFoundError)
+		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
 			return err
 		}
