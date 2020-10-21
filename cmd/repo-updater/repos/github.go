@@ -248,8 +248,7 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		Number:        number,
 	}
 
-	fmt.Printf("pr=%+v\n", pr)
-	if err := s.client.LoadPullRequests(ctx, pr); err != nil {
+	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
 		return err
 	}
 
