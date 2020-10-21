@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var databases = map[string]string{
@@ -99,11 +100,15 @@ func postgresProcfile() (string, error) {
 		e.Command("chown", "-R", "postgres", path)
 
 		// If upgrading from a version with a different set of databases, we
-		// must ensure that we create the ones that have been introduced.
+		// must ensure that we create the ones that have been introduced. For
+		// each database in the list, we try to create the database and ignore
+		// an error that occurs because the database already exists.
 		for _, database := range databases {
-			e.Command("su-exec", "postgres", "createdb", database)
-			// Remove the last error if the database already exists
-			e.FilterError(fmt.Sprintf(`database "%s" already exists`, database))
+			filter := func(err error, out string) bool {
+				return strings.Contains(out, fmt.Sprintf(`database "%s" already exists`, database))
+			}
+
+			e.CommandWithErrorFilter(filter, "su-exec", "postgres", "createdb", database)
 		}
 
 		if err := e.Error(); err != nil {
