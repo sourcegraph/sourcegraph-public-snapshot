@@ -1,6 +1,5 @@
 env:
   VAGRANT_RUN_ENV: "CI"
-  VAGRANT_DOTFILE_PATH: "/var/lib/buildkite/builds/$BUILDKITE_AGENT_NAME/vagrant.d"
 steps:
 - artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
   # setting to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
@@ -9,3 +8,6 @@ steps:
   label: ':docker::arrow_right::chromium:'
   agents:
     queue: 'baremetal'
+  env:
+    VAGRANT_DOTFILE_PATH: "/var/lib/buildkite/builds/$BUILDKITE_AGENT_NAME/vagrant.d"
+
