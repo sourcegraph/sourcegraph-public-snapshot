@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )

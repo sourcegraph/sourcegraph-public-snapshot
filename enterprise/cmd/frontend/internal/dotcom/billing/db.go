@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
