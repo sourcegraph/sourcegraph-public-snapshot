@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"sort"
 	"strings"
 	"time"
 
@@ -900,15 +901,46 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 		return nil
 	}
 
-	names, err := json.Marshal(repoNames)
-	if err != nil {
-		return nil
+	if !s.InTransaction() {
+		tx, err := s.Transact(ctx)
+		if err != nil {
+			return errors.Wrap(err, "SetClonedRepos: failed to create a transaction")
+		}
+		txs := tx.(*DBStore)
+		defer func() { txs.Done(err) }()
+		err = txs.SetClonedRepos(ctx, repoNames...)
+		return err
 	}
 
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)))
+	sort.Strings(repoNames)
 
-	_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	step := ConfRepoSetClonedBatchSize()
+
+	for i := 0; i < len(repoNames); i += step {
+		firstIdx := i
+		lastIdx := i + step
+
+		if lastIdx >= len(repoNames) {
+			lastIdx = len(repoNames) - 1
+		}
+
+		first := repoNames[firstIdx]
+		last := repoNames[lastIdx]
+
+		names, err := json.Marshal(repoNames[firstIdx : lastIdx+1])
+		if err != nil {
+			return nil
+		}
+
+		q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)), first, last)
+
+		err = s.Exec(ctx, q)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 const setClonedReposQueryFmtstr = `
@@ -924,14 +956,17 @@ WITH cloned_repos AS (
   SELECT jsonb_array_elements_text(%s) AS name
 ),
 diff AS (
-  SELECT id,
-    cloned
+  SELECT id, cloned
   FROM repo
   WHERE
-    NOT cloned
-      AND name IN (SELECT name::citext FROM cloned_repos)
-    OR cloned
-      AND name NOT IN (SELECT name::citext FROM cloned_repos)
+    name BETWEEN %s AND %s
+    AND
+    (
+      NOT cloned
+        AND name IN (SELECT name::citext FROM cloned_repos)
+      OR cloned
+        AND name NOT IN (SELECT name::citext FROM cloned_repos)
+    )
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
