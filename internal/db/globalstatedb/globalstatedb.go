@@ -109,13 +109,11 @@ func tryInsertNew(ctx context.Context, dbh interface {
 		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state LIMIT 1), '')),
 		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
 	);`, siteID)
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Constraint == "global_state_pkey" {
-				// The row we were trying to insert already exists.
-				// Don't treat this as an error.
-				err = nil
-			}
+	if pqErr, ok := err.(*pq.Error); ok {
+		if pqErr.Constraint == "global_state_pkey" {
+			// The row we were trying to insert already exists.
+			// Don't treat this as an error.
+			err = nil
 		}
 	}
 	return err
