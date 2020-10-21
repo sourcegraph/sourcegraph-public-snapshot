@@ -22,9 +22,10 @@ import (
 
 type validationSpec struct {
 	FirstAdmin struct {
-		Email    string
-		Username string
-		Password string
+		Email             string
+		Username          string
+		Password          string
+		CreateAccessToken bool
 	}
 	WaitRepoCloned struct {
 		Repo                     string
@@ -68,9 +69,9 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 	var (
 		contextFlag = flagSet.String("context", "", `Comma-separated list of key=value pairs to add to the script execution context`)
 		secretsFlag = flagSet.String("secrets", "", "Path to a file containing key=value lines. The key value pairs will be added to the script context")
-		apiFlags        = api.NewFlags(flagSet)
+		apiFlags    = api.NewFlags(flagSet)
 	)
-	
+
 	handler := func(args []string) error {
 		flagSet.Parse(args)
 
@@ -117,8 +118,8 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 	}
 
 	commands = append(commands, &command{
-		flagSet: flagSet,
-		handler: handler,
+		flagSet:   flagSet,
+		handler:   handler,
 		usageFunc: usageFunc,
 	})
 }
@@ -173,6 +174,14 @@ func (vd *validator) validate(script []byte, scriptContext map[string]string, is
 		err = vd.createFirstAdmin(&vspec)
 		if err != nil {
 			return err
+		}
+
+		if vspec.FirstAdmin.CreateAccessToken {
+			token, err := vd.createAccessToken(vspec.FirstAdmin.Username)
+			if err != nil {
+				return err
+			}
+			fmt.Println(token)
 		}
 	}
 
@@ -303,7 +312,7 @@ func (vd *validator) listClonedRepos(fs []string) ([]string, error) {
 	var resp struct {
 		Repositories struct {
 			Nodes []struct {
-				Name string `json:"name"`
+				Name       string `json:"name"`
 				MirrorInfo struct {
 					Cloned bool `json:"cloned"`
 				} `json:"mirrorInfo"`
@@ -312,7 +321,7 @@ func (vd *validator) listClonedRepos(fs []string) ([]string, error) {
 	}
 
 	err := vd.graphQL(vdListRepos, map[string]interface{}{
-		"names":           fs,
+		"names": fs,
 	}, &resp)
 
 	names := make([]string, 0, len(resp.Repositories.Nodes))
@@ -339,6 +348,60 @@ func (vd *validator) waitRepoCloned(repoName string, sleepSeconds int, maxTries 
 		time.Sleep(time.Second * time.Duration(sleepSeconds))
 	}
 	return false, nil
+}
+
+const vdUserQuery = `
+query User($username: String) {
+  user(username: $username) {
+      id
+  }
+}`
+
+func (vd *validator) userID(username string) (string, error) {
+	var resp struct {
+		User struct {
+			ID string `json:"id"`
+		} `json:"user"`
+	}
+
+	err := vd.graphQL(vdUserQuery, map[string]interface{}{
+		"username": username,
+	}, &resp)
+
+	return resp.User.ID, err
+}
+
+const vdCreateAccessTokenMutation = `
+mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
+  createAccessToken(
+    user:$user,
+    scopes:$scopes,
+    note: $note
+  )
+  {
+    token
+  }
+}`
+
+func (vd *validator) createAccessToken(username string) (string, error) {
+	userID, err := vd.userID(username)
+	if err != nil {
+		return "", err
+	}
+
+	var resp struct {
+		CreateAccessToken struct {
+			Token string `json:"token"`
+		} `json:"createAccessToken"`
+	}
+
+	err = vd.graphQL(vdCreateAccessTokenMutation, map[string]interface{}{
+		"user":   userID,
+		"scopes": []string{"user:all", "site-admin:sudo"},
+		"note":   "src_cli_validate",
+	}, &resp)
+
+	return resp.CreateAccessToken.Token, err
 }
 
 // SiteAdminInit initializes the instance with given admin account.
