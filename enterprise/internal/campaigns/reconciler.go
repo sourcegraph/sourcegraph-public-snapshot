@@ -127,16 +127,13 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return errors.Wrap(err, "failed to load external service")
 	}
 
-	if !e.ch.Unsynced {
-	}
-
 	// Set up a source with which we can modify the changeset.
 	e.ccs, err = e.buildChangesetSource(e.repo, e.extSvc)
 	if err != nil {
 		return err
 	}
 
-	upsertChangesetEvents := true
+	upsertChangeset := true
 	for _, op := range plan.ops.ExecutionOrder() {
 		switch op {
 		case operationSync:
@@ -146,7 +143,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 			var notFound bool
 			notFound, err = e.importChangeset(ctx)
 			if notFound {
-				upsertChangesetEvents = false
+				upsertChangeset = false
 			}
 
 		case operationPublish:
@@ -176,7 +173,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		}
 	}
 
-	if upsertChangesetEvents {
+	if upsertChangeset {
 		events := e.ch.Events()
 		SetDerivedState(ctx, e.ch, events)
 

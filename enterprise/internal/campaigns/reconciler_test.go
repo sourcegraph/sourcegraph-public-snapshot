@@ -52,9 +52,9 @@ func TestReconcilerProcess(t *testing.T) {
 	draftGithubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateDraft)
 	closedGitHubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateClosed)
 
-	notFoundErr := repos.ChangesetsNotFoundError{
-		Changesets: []*repos.Changeset{
-			{Changeset: &campaigns.Changeset{ExternalID: "100000"}},
+	notFoundErr := repos.ChangesetNotFoundError{
+		Changeset: &repos.Changeset{
+			Changeset: &campaigns.Changeset{ExternalID: "100000"},
 		},
 	}
 	notFoundErrMsg := notFoundErr.Error()
@@ -667,8 +667,8 @@ func TestReconcilerProcess(t *testing.T) {
 				failureMessage:   &notFoundErrMsg,
 				externalID:       "100000",
 				reconcilerState:  campaigns.ReconcilerStateErrored,
-				numFailures:      reconcilerMaxNumRetries + 1,
-				unsynced:         false,
+				numFailures:      reconcilerMaxNumRetries + 999,
+				unsynced:         true,
 			},
 		},
 	}
