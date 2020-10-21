@@ -625,7 +625,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		//	- This is not purchased with the current license
 		if globals.PermissionsUserMapping().Enabled ||
 			len(s.providersByServiceID()) == 0 ||
-			(licensing.EnforceTiers && licensing.CheckFeature(licensing.FeatureACLs) != nil) {
+			(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) {
 			continue
 		}
 

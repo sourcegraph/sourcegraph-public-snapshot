@@ -36,7 +36,7 @@ func registryExtensionByIDInt32(ctx context.Context, id int32) (graphqlbackend.R
 }
 
 func extensionRegistryCreateExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
-	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
+	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func extensionRegistryDeleteExtension(ctx context.Context, args *graphqlbackend.
 }
 
 func extensionRegistryPublishExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
-	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
+	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
 		return nil, err
 	}
 
