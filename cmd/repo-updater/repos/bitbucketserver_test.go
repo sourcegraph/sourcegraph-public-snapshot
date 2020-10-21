@@ -157,7 +157,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 	}
 }
 
-func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
+func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -174,29 +174,28 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 
 	changesets := []*Changeset{
 		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "2"}},
-		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "4"}},
 		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "999"}},
 	}
 
 	testCases := []struct {
 		name string
-		cs   []*Changeset
+		cs   *Changeset
 		err  string
 	}{
 		{
 			name: "found",
-			cs:   []*Changeset{changesets[0], changesets[1]},
+			cs:   changesets[0],
 		},
 		{
-			name: "subset-not-found",
-			cs:   []*Changeset{changesets[0], changesets[2]},
+			name: "not-found",
+			cs:   changesets[1],
 			err:  `Changeset with external ID "999" not found`,
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "BitbucketServerSource_LoadChangesets_" + tc.name
+		tc.name = "BitbucketServerSource_LoadChangeset_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
@@ -225,7 +224,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
-			err = bbsSrc.LoadChangesets(ctx, tc.cs...)
+			err = bbsSrc.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -234,12 +233,12 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				return
 			}
 
-			meta := make([]*bitbucketserver.PullRequest, 0, len(tc.cs))
-			for _, cs := range tc.cs {
-				meta = append(meta, cs.Changeset.Metadata.(*bitbucketserver.PullRequest))
-			}
-
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
+			testutil.AssertGolden(
+				t,
+				"testdata/golden/"+tc.name,
+				update(tc.name),
+				tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest),
+			)
 		})
 	}
 }

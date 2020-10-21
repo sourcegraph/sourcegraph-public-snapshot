@@ -745,8 +745,8 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong ReopenChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
-			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
-				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
+			if have, want := fakeSource.LoadChangesetCalled, tc.wantLoadFromCodeHost; have != want {
+				t.Fatalf("wrong LoadChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
 			if have, want := fakeSource.CloseChangesetCalled, tc.wantCloseOnCodeHost; have != want {

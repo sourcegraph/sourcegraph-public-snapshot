@@ -96,10 +96,10 @@ type DraftChangesetSource interface {
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
-	// LoadChangesets loads the given Changesets from the sources and updates
+	// LoadChangeset loads the given Changesets from the sources and updates
 	// them. If a Changeset could not be found on the source, it's included in
 	// the returned slice.
-	LoadChangesets(context.Context, ...*Changeset) error
+	LoadChangeset(context.Context, *Changeset) error
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated and the return value will be
 	// true.
@@ -115,7 +115,7 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 }
 
-// ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
+// ChangesetsNotFoundError is returned by LoadChangeset if any of the passed
 // Changesets could not be found on the codehost.
 type ChangesetsNotFoundError struct {
 	Changesets []*Changeset
