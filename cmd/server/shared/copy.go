@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -78,26 +77,12 @@ type execer struct {
 	err error
 }
 
-type errorFilter func(err error, out string) bool
-
-func defaultErrorFilter(err error, out string) bool {
-	return true
-}
-
 // Command creates an exec.Command connected to stdout/stderr and runs it.
 func (e *execer) Command(name string, arg ...string) {
-	e.CommandWithErrorFilter(defaultErrorFilter, name, arg...)
+	e.Run(exec.Command(name, arg...))
 }
 
 func (e *execer) Run(cmd *exec.Cmd) {
-	e.RunWithErrorFilter(defaultErrorFilter, cmd)
-}
-
-func (e *execer) CommandWithErrorFilter(errorFilter errorFilter, name string, arg ...string) {
-	e.RunWithErrorFilter(errorFilter, exec.Command(name, arg...))
-}
-
-func (e *execer) RunWithErrorFilter(errorFilter errorFilter, cmd *exec.Cmd) {
 	if e.err != nil {
 		return
 	}
@@ -129,13 +114,7 @@ func (e *execer) RunWithErrorFilter(errorFilter errorFilter, cmd *exec.Cmd) {
 		}
 	}
 
-	out := &bytes.Buffer{}
-	cmd.Stdout = io.MultiWriter(cmd.Stdout, out)
-	cmd.Stderr = io.MultiWriter(cmd.Stderr, out)
-
-	if err := cmd.Run(); errorFilter(err, out.String()) {
-		e.err = err
-	}
+	e.err = cmd.Run()
 }
 
 // Error returns the first error encountered.
