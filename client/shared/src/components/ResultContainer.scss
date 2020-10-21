@@ -43,13 +43,15 @@
         display: flex;
     }
 
+    // Custom icons are <img src> URLs. We can't use .icon-inline for these, because CSS can't style
+    // SVGs included with <img src>. So, use CSS filters to make the icons light (in dark themes) and
+    // dark (in light themes).
     .icon-inline__filtered {
-        filter: contrast(0) saturate(700%) grayscale(100%) sepia(70%) hue-rotate(180deg) brightness(120%);
-    }
-}
-
-.theme-light {
-    .icon-inline__filtered {
-        filter: brightness(0%);
+        .theme-dark & {
+            filter: contrast(0) saturate(700%) grayscale(100%) sepia(70%) hue-rotate(180deg) brightness(120%);
+        }
+        .theme-light & {
+            filter: brightness(0%);
+        }
     }
 }
