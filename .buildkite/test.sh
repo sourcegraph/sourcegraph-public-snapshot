@@ -16,6 +16,9 @@ for i in "${plugins[@]}"; do
   fi
 done
 
+# Destroy dangling vagrant box from previous run if the previous run didn't exit cleanly
+vagrant destroy -f "$box"
+
 vagrant up "$box" --provider=google || exit_code=$?
 vagrant scp "$box":/sourcegraph/puppeteer/*.png ../
 vagrant scp "$box":/sourcegraph/e2e.mp4 ../
