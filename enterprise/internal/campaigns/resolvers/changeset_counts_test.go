@@ -202,7 +202,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	wantCounts := []apitest.ChangesetCounts{
 		{Date: marshalDateTime(t, daysBeforeEnd(5)), Total: 0, Open: 0, OpenPending: 0},
-		{Date: marshalDateTime(t, daysBeforeEnd(4)), Total: 1, Open: 0, OpenPending: 0},
+		{Date: marshalDateTime(t, daysBeforeEnd(4)), Total: 1, Draft: 1},
 		{Date: marshalDateTime(t, daysBeforeEnd(3)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 		{Date: marshalDateTime(t, daysBeforeEnd(2)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 		{Date: marshalDateTime(t, daysBeforeEnd(1)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
@@ -222,6 +222,7 @@ query($campaign: ID!, $from: DateTime!, $to: DateTime!) {
         date
         total
         merged
+        draft
         closed
         open
         openApproved
