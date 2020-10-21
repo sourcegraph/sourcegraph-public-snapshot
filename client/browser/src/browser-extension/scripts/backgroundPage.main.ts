@@ -47,29 +47,34 @@ initSentry('background')
 
 let customServerOrigins: string[] = []
 
+
 /**
  * For each tab, we store a flag if we know that we are on a private
  * repository. The content script notifies the background page if it's on a
  * private repository by `notifyPrivateRepository` message.
  */
-const tabPrivateRepositoryCache = new Map<number, boolean>()
-const privateRepositoryCacheSubject = new Subject<typeof tabPrivateRepositoryCache>()
+const tabPrivateRepositoryCache = (() => {
+    const cache = new Map<number, boolean>()
+    const subject = new Subject<ReadonlyMap<number, boolean>>()
+    return {
+        observable: subject.asObservable(),
+        /**
+         * Update the background page's cache of which tabs currently contain a private
+         * repository.
+         */
+        setTabIsPrivateRepository(tabId: number, isPrivate: boolean): void {
+            if (!isPrivate) {
+                // An absent value is equivalent to being false; so we can delete it.
+                cache.delete(tabId)
+            }
+            cache.set(tabId, isPrivate)
 
-/**
- * Update the background page's cache of which tabs currently contain a private
- * repository.
- */
-function setTabIsPrivateRepository(tabId: number, isPrivate: boolean): void {
-    if (!isPrivate) {
-        // An absent value is equivalent to being false; so we can delete it.
-        tabPrivateRepositoryCache.delete(tabId)
+            // Emit the updated repository cache when it changes, so that consumers can
+            // observe the value.
+            subject.next(cache)
+        },
     }
-    tabPrivateRepositoryCache.set(tabId, isPrivate)
-
-    // Emit the updated repository cache when it changes, so that consumers can
-    // observe the value.
-    privateRepositoryCacheSubject.next(tabPrivateRepositoryCache)
-}
+})()
 
 const contentScripts = browser.runtime.getManifest().content_scripts
 
