@@ -2,6 +2,7 @@ $popover-item-padding-h: 0.75rem;
 $popover-item-padding-v: 0.325rem;
 
 .connection-popover {
+    isolation: isolate;
     display: flex;
     flex-direction: column;
 

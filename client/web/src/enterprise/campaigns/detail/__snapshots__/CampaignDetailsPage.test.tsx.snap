@@ -53,13 +53,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         />
       }
       className="justify-content-end test-campaign-details-page"
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           <AnchorLink
@@ -78,9 +72,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(CampaignsFlushEdgesIcon)
+          <CampaignsIconFlushLeft
             className="icon-inline page-header__icon"
-          />
+          >
+            <Memo(BaseCampaignsIcon)
+              className="icon-inline page-header__icon"
+              viewBox="2 0 20 20"
+            />
+          </CampaignsIconFlushLeft>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -1037,13 +1036,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         />
       }
       className="justify-content-end test-campaign-details-page"
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           <AnchorLink
@@ -1062,9 +1055,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(CampaignsFlushEdgesIcon)
+          <CampaignsIconFlushLeft
             className="icon-inline page-header__icon"
-          />
+          >
+            <Memo(BaseCampaignsIcon)
+              className="icon-inline page-header__icon"
+              viewBox="2 0 20 20"
+            />
+          </CampaignsIconFlushLeft>
            
           <AnchorLink
             to="/users/alice/campaigns"

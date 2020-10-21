@@ -11,13 +11,7 @@ exports[`CampaignsNavItem renders 1`] = `
       <LinkWithIconOnlyTooltip
         activeClassName="active"
         className="nav-link btn btn-link px-1 text-decoration-none 123"
-        icon={
-          Object {
-            "$$typeof": Symbol(react.memo),
-            "compare": null,
-            "type": [Function],
-          }
-        }
+        icon={[Function]}
         text="Campaigns"
         to="/campaigns"
       >
@@ -51,13 +45,21 @@ exports[`CampaignsNavItem renders 1`] = `
                 href="/campaigns"
                 onClick={[Function]}
               >
-                <Memo(ImageAutoAdjustIcon)
+                <CampaignsIcon
                   className="icon-inline d-lg-none"
                   data-tooltip="Campaigns"
-                />
-                <Memo(ImageAutoAdjustIcon)
+                >
+                  <Memo(BaseCampaignsIcon)
+                    className="icon-inline d-lg-none"
+                  />
+                </CampaignsIcon>
+                <CampaignsIcon
                   className="icon-inline d-none d-lg-inline-block"
-                />
+                >
+                  <Memo(BaseCampaignsIcon)
+                    className="icon-inline d-none d-lg-inline-block"
+                  />
+                </CampaignsIcon>
                 <span
                   className="d-none d-lg-inline-block ml-1"
                 >

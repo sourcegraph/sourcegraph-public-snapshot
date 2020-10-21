@@ -38,6 +38,7 @@
     }
 
     &__content {
+        isolation: isolate;
         flex: 1 1 auto;
 
         display: flex;

@@ -1,5 +1,12 @@
 @import '../../../../shared/src/components/Resizable';
 
+.resizable-panel {
+    isolation: isolate;
+    min-height: 6rem;
+    max-height: calc(100% - 3rem);
+    width: 100%;
+}
+
 .panel {
     flex: 1 1 50%;
     min-height: 0;
@@ -12,12 +19,6 @@
     background-color: var(--color-bg-1);
     border-top: 1px solid var(--border-color);
     width: 100%;
-
-    &--resizable {
-        min-height: 6rem;
-        max-height: calc(100% - 3rem);
-        width: 100%;
-    }
 
     &__empty {
         flex: 1;

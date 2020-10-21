@@ -15,13 +15,12 @@
     }
 
     &__logo {
+        flex: 0;
         height: 5rem;
         z-index: 9;
     }
-    .btn {
-        z-index: 9;
-    }
     .card-footer {
+        flex: 0;
         z-index: 0;
     }
 }
