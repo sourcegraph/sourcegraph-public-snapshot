@@ -519,7 +519,6 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
 func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, sourcer repos.Sourcer, c *campaigns.Changeset) (err error) {
-	fmt.Printf("c = %#v\n", c)
 	s, err := buildChangesetSource(ctx, repoStore, sourcer, c)
 	if err != nil {
 		return err
@@ -534,7 +533,6 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 	repo := rs[0]
 
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
-	fmt.Printf("repoChangeset=%+v\n", repoChangeset)
 	if err := s.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetsNotFoundError)
 		if !ok {
