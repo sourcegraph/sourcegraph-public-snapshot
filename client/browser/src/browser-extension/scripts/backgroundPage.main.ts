@@ -72,6 +72,9 @@ const tabPrivateRepositoryCache = (() => {
             // observe the value.
             subject.next(cache)
         },
+        getTabIsPrivateRepository(tabId: number): boolean {
+            return !!cache.get(tabId)
+        },
     }
 })()
 
@@ -237,7 +240,7 @@ async function main(): Promise<void> {
         },
 
         async checkPrivateRepository(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabPrivateRepositoryCache.get(tabId))
+            return Promise.resolve(!!tabPrivateRepositoryCache.getTabIsPrivateRepository(tabId))
         },
     }
 
