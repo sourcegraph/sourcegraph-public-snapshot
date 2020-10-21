@@ -52,6 +52,13 @@ func TestReconcilerProcess(t *testing.T) {
 	draftGithubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateDraft)
 	closedGitHubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateClosed)
 
+	notFoundErr := repos.ChangesetsNotFoundError{
+		Changesets: []*repos.Changeset{
+			{Changeset: &campaigns.Changeset{ExternalID: "100000"}},
+		},
+	}
+	notFoundErrMsg := notFoundErr.Error()
+
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
 
@@ -61,6 +68,7 @@ func TestReconcilerProcess(t *testing.T) {
 		previousSpec *testSpecOpts
 
 		sourcerMetadata interface{}
+		sourcerErr      error
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool
 
@@ -644,6 +652,25 @@ func TestReconcilerProcess(t *testing.T) {
 				diffStat: state.DiffStat,
 			},
 		},
+		"syncing not found changeset": {
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "100000",
+				unsynced:         true,
+			},
+			sourcerErr: notFoundErr,
+
+			wantLoadFromCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				failureMessage:   &notFoundErrMsg,
+				externalID:       "100000",
+				reconcilerState:  campaigns.ReconcilerStateErrored,
+				numFailures:      reconcilerMaxNumRetries + 1,
+				unsynced:         false,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -698,7 +725,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// to create/update a changeset.
 			fakeSource := &ct.FakeChangesetSource{
 				Svc:             extSvc,
-				Err:             nil,
+				Err:             tc.sourcerErr,
 				ChangesetExists: tc.alreadyExists,
 				FakeMetadata:    tc.sourcerMetadata,
 			}

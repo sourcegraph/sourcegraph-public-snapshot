@@ -777,6 +777,22 @@ query($owner: String!, $name: String!, $number: Int!) {
 
 	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
 	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound && len(err2.Path) >= 1 {
+					if repoPath, ok := err2.Path[0].(string); !ok || repoPath != "repository" {
+						continue
+					}
+					if len(err2.Path) == 1 {
+						return ErrNotFound
+					}
+					if prPath, ok := err2.Path[1].(string); !ok || prPath != "pullRequest" {
+						continue
+					}
+					return ErrPullRequestNotFound(pr.Number)
+				}
+			}
+		}
 		return err
 	}
 
