@@ -288,7 +288,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     public componentDidMount(): void {
         updateUserSessionStores()
 
-        document.body.classList.add('theme')
+        document.documentElement.classList.add('theme')
 
         this.subscriptions.add(
             combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
@@ -343,15 +343,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-        document.body.classList.remove('theme')
-        document.body.classList.remove('theme-light')
-        document.body.classList.remove('theme-dark')
+        document.documentElement.classList.remove('theme', 'theme-light', 'theme-dark')
     }
 
     public componentDidUpdate(): void {
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
-        document.body.classList.toggle('theme-light', this.isLightTheme())
-        document.body.classList.toggle('theme-dark', !this.isLightTheme())
+        document.documentElement.classList.toggle('theme-light', this.isLightTheme())
+        document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
     }
 
     private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
