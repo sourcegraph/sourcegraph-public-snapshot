@@ -136,14 +136,18 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return err
 	}
 
-	var notFound bool
+	upsertChangesetEvents := true
 	for _, op := range plan.ops.ExecutionOrder() {
 		switch op {
 		case operationSync:
 			err = e.syncChangeset(ctx)
 
 		case operationImport:
+			var notFound bool
 			notFound, err = e.importChangeset(ctx)
+			if notFound {
+				upsertChangesetEvents = false
+			}
 
 		case operationPublish:
 			err = e.publishChangeset(ctx, false)
@@ -172,7 +176,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		}
 	}
 
-	if !notFound {
+	if upsertChangesetEvents {
 		events := e.ch.Events()
 		SetDerivedState(ctx, e.ch, events)
 
