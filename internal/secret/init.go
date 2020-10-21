@@ -48,7 +48,7 @@ func MockDefaultEncryptor() {
 	defaultEncryptor = newAESGCMEncodedEncryptor(mustGenerateRandomAESKey(), nil)
 }
 
-const sourcegraphsSecretFile = "SOURCEGRAPH_SECRET_FILE"
+const sourcegraphSecretFile = "SOURCEGRAPH_SECRET_FILE"
 
 func initDefaultEncryptor() error {
 	// NOTE: Previously in 3.20, we auto-generated this file for single-image instances.
@@ -59,17 +59,16 @@ func initDefaultEncryptor() error {
 		_ = os.Remove("/var/lib/sourcegraph/token")
 	}
 
-	// Set the default location if none exists
-	secretFile := os.Getenv(sourcegraphsSecretFile)
+	secretFile := os.Getenv(sourcegraphSecretFile)
 	if secretFile == "" {
-		secretFile = "/etc/sourcegraph/token"
+		defaultEncryptor = noOpEncryptor{}
+		log15.Warn("No encryption initialized")
+		return nil
 	}
 
 	fileInfo, err := os.Stat(secretFile)
 	if err != nil {
-		defaultEncryptor = noOpEncryptor{}
-		log15.Warn("No encryption initialized")
-		return nil
+		return errors.Wrapf(err, "stat file %q", secretFile)
 	}
 
 	perm := fileInfo.Mode().Perm()
@@ -79,7 +78,7 @@ func initDefaultEncryptor() error {
 
 	encryptionKey, err := ioutil.ReadFile(secretFile)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't read file %s", sourcegraphsSecretFile)
+		return errors.Wrapf(err, "read file %q", secretFile)
 	}
 	if len(encryptionKey) < requiredKeyLength {
 		return errors.Errorf("key length of %d characters is required", requiredKeyLength)
