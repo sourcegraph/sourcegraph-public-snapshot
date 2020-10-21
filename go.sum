@@ -17,6 +17,8 @@ github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/hashicorp/errwrap v1.0.0 h1:hLrqtEDnRye3+sgx6z4qVLNuviH3MR5aQ0ykNJa/UYA=
 github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
+github.com/hashicorp/errwrap v1.1.0 h1:OxrOeh75EUXMY8TBjag2fzXGZ40LB6IKw45YeGUDY2I=
+github.com/hashicorp/errwrap v1.1.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
 github.com/hashicorp/go-multierror v1.1.0 h1:B9UzwGQJehnUY1yNrnwREHc3fGbC2xefo8g4TbElacI=
 github.com/hashicorp/go-multierror v1.1.0/go.mod h1:spPvp8C1qA32ftKqdAHm4hHTbPw+vmowP0z+KUhOZdA=
 github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05 h1:dSwwtWuwMyarzsbVWOq4QJ8xVy9wgcNomvWyGtrKe+E=
@@ -50,8 +52,8 @@ github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e/go.mod h1:TDJrrUr11Vxr
 github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041/go.mod h1:N5mDOmsrJOB+vfqUK+7DmDyjhSLIIBnXo9lvZJj3MWQ=
 github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad h1:HeSWFpxau4Jqk0s4yEhOdep+KYrJDm0497uhb/hnsgU=
 github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad/go.mod h1:xm6i78Mk2t4DBLQDqEFc/3x6IPf7yYZCgbNaTQGhJHA=
-github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58 h1:Ps+U1xoZP+Zoph39YfRB6Q846ghO8pgrAgp0MiObvPs=
-github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
+github.com/sourcegraph/codeintelutils v0.0.0-20201021190916-9622286ad906 h1:QrFRo45noesSAPUWDaE2KWJvtzM4KKLYzkbK7QkpLUA=
+github.com/sourcegraph/codeintelutils v0.0.0-20201021190916-9622286ad906/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
 github.com/sourcegraph/go-diff v0.6.0 h1:WbN9e/jD8ujU+o0vd9IFN5AEwtfB0rn/zM/AANaClqQ=
 github.com/sourcegraph/go-diff v0.6.0/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=

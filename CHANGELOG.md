@@ -15,7 +15,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+### Fixed
+
+## 3.21.3
+
+### Added
+
+### Changed
+
 - The progress bar in `src campaign [preview|apply]` now shows when executing a step failed in a repository by styling the line red and displaying standard error output. [#355](https://github.com/sourcegraph/src-cli/pull/355)
+- The `src lsif upload` command will give more informative output when an unexpected payload (non-JSON or non-unmarshallable) is received from the target endpoint.
 
 ### Fixed
 
