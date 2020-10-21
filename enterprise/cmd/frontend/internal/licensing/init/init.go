@@ -6,14 +6,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
@@ -26,6 +27,40 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
+
+	conf.Branding = func() *schema.Branding {
+		if !licensing.EnforceTiers ||
+			licensing.CheckFeature(licensing.FeatureBranding) == nil {
+			branding := conf.Get().Branding
+			if branding != nil && branding.BrandName == "" {
+				bcopy := *branding
+				bcopy.BrandName = "Sourcegraph"
+				branding = &bcopy
+			}
+			return branding
+		}
+		return nil
+	}
+
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+		if !licensing.EnforceTiers {
+			return nil
+		}
+
+		// Only site admins can act on this alert, so only show it to site admins.
+		if !args.IsSiteAdmin {
+			return nil
+		}
+
+		if licensing.IsFeatureEnabledLenient(licensing.FeatureBranding) {
+			return nil
+		}
+
+		return []*graphqlbackend.Alert{{
+			TypeValue:    graphqlbackend.AlertTypeError,
+			MessageValue: "A Sourcegraph license is required to custom branding for the instance. [**Get a license.**](/site-admin/license)",
+		}}
+	})
 
 	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
 	// GraphQL fields return the proper max user count and timestamp on the current license.

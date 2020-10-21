@@ -249,14 +249,9 @@ func IsBuiltinSignupAllowed() bool {
 	return false
 }
 
-func Branding() *schema.Branding {
-	branding := Get().Branding
-	if branding != nil && branding.BrandName == "" {
-		bcopy := *branding
-		bcopy.BrandName = "Sourcegraph"
-		branding = &bcopy
-	}
-	return branding
+// Branding is called to obtain the branding information.
+var Branding = func() *schema.Branding {
+	return nil
 }
 
 func BrandName() string {
