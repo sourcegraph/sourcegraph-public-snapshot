@@ -75,6 +75,9 @@ $text-muted: var(--text-muted);
     --merged: #{$merged};
 }
 .theme-light {
+    // Affects default browser styles
+    color-scheme: light;
+
     --body-color: #{$gray-19};
     --body-bg: #fbfdff;
     --color-bg-1: #ffffff;
@@ -91,6 +94,9 @@ $text-muted: var(--text-muted);
     --sourcegraph-logo-text-color: #242427;
 }
 .theme-dark {
+    // Affects default browser styles
+    color-scheme: dark;
+
     --secondary: #{$secondary};
     --border-color: #{$gray-19};
     --border-color-2: #1b1730;
