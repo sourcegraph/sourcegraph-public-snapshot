@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -eu
+pushd "$(dirname "${BASH_SOURCE[0]}")"/../../test
+
+vagrant destroy -f
+
+popd
