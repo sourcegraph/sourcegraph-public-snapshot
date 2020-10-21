@@ -372,6 +372,9 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 	mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
 	if err != nil {
+		if gitlab.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
+		}
 		return errors.Wrapf(err, "retrieving merge request %d", iid)
 	}
 
