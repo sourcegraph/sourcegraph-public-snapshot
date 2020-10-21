@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/stripe/stripe-go"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
 // productSubscriptionEvent implements the GraphQL type ProductSubscriptionEvent.
