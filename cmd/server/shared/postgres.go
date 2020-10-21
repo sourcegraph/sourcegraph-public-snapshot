@@ -97,6 +97,15 @@ func postgresProcfile() (string, error) {
 		var output bytes.Buffer
 		e := execer{Out: &output}
 		e.Command("chown", "-R", "postgres", path)
+
+		// If upgrading from a version with a different set of databases, we
+		// must ensure that we create the ones that have been introduced.
+		for _, database := range databases {
+			e.Command("su-exec", "postgres", "createdb", database)
+			// Remove the last error if the database already exists
+			e.FilterError(fmt.Sprintf(`database "%s" already exists`, database))
+		}
+
 		if err := e.Error(); err != nil {
 			l("Adjusting fs owners for postgres failed:\n%s", output.String())
 			return "", err

@@ -117,6 +117,12 @@ func (e *execer) Run(cmd *exec.Cmd) {
 	e.err = cmd.Run()
 }
 
+func (e *execer) FilterError(match string) {
+	if e.err != nil && strings.Contains(e.err.Error(), match) {
+		e.err = nil
+	}
+}
+
 // Error returns the first error encountered.
 func (e execer) Error() error {
 	return e.err
