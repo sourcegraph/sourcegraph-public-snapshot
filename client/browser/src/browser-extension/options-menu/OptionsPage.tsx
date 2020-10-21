@@ -252,7 +252,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                     key={host}
                     className={classNames('code-hosts-section__icon', {
                         // Use `endsWith` in order to match subdomains.
-                        'bg-4': currentHost?.endsWith(host),
+                        'bg-3': currentHost?.endsWith(host),
                     })}
                 >
                     {Icon && <Icon className="icon-inline" />}
