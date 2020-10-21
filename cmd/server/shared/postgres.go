@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var databases = map[string]string{
@@ -63,12 +64,26 @@ func postgresProcfile() (string, error) {
 
 	dataDir := os.Getenv("DATA_DIR")
 	path := filepath.Join(dataDir, "postgresql")
+	markersPath := filepath.Join(dataDir, "postgresql-markers")
 
-	if _, err := os.Stat(path); err != nil {
-		if !os.IsNotExist(err) {
+	if ok, err := fileExists(markersPath); err != nil {
+		return "", err
+	} else if !ok {
+		var output bytes.Buffer
+		e := execer{Out: &output}
+		e.Command("mkdir", "-p", markersPath)
+		e.Command("touch", filepath.Join(markersPath, "sourcegraph"))
+
+		if err := e.Error(); err != nil {
+			l("Failed to set up postgres database marker files:\n%s", output.String())
+			os.RemoveAll(path)
 			return "", err
 		}
+	}
 
+	if ok, err := fileExists(path); err != nil {
+		return "", err
+	} else if !ok {
 		if verbose {
 			l("Setting up PostgreSQL at %s", path)
 		}
@@ -84,6 +99,7 @@ func postgresProcfile() (string, error) {
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
 		for _, database := range databases {
 			e.Command("su-exec", "postgres", "createdb", database)
+			e.Command("touch", filepath.Join(markersPath, database))
 		}
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
 		if err := e.Error(); err != nil {
@@ -101,9 +117,45 @@ func postgresProcfile() (string, error) {
 			l("Adjusting fs owners for postgres failed:\n%s", output.String())
 			return "", err
 		}
+
+		var missingDatabases []string
+		for _, database := range databases {
+			ok, err := fileExists(filepath.Join(markersPath, database))
+			if err != nil {
+				return "", err
+			} else if !ok {
+				missingDatabases = append(missingDatabases, database)
+			}
+		}
+		if len(missingDatabases) > 0 {
+			l("Sourcegraph is creating missing databases %s... (may take 15-20 seconds)", strings.Join(missingDatabases, ", "))
+
+			e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
+			for _, database := range missingDatabases {
+				e.Command("su-exec", "postgres", "createdb", database)
+				e.Command("touch", filepath.Join(markersPath, database))
+			}
+			e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
+			if err := e.Error(); err != nil {
+				l("Setting up postgres failed:\n%s", output.String())
+				return "", err
+			}
+		}
 	}
 
 	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
+}
+
+func fileExists(path string) (bool, error) {
+	if _, err := os.Stat(path); err != nil {
+		if !os.IsNotExist(err) {
+			return false, err
+		}
+
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func isPostgresConfigured(prefix string) bool {
