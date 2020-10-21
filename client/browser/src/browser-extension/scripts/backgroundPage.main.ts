@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, timer } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
@@ -15,6 +15,7 @@ import {
     concatMap,
     mapTo,
     catchError,
+    distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
@@ -45,6 +46,37 @@ assertEnvironment('BACKGROUND')
 initSentry('background')
 
 let customServerOrigins: string[] = []
+
+/**
+ * For each tab, we store a flag if we know that we are on a private
+ * repository. The content script notifies the background page if it's on a
+ * private repository by `notifyPrivateRepository` message.
+ */
+const tabPrivateRepositoryCache = (() => {
+    const cache = new Map<number, boolean>()
+    const subject = new Subject<ReadonlyMap<number, boolean>>()
+    return {
+        observable: subject.asObservable(),
+        /**
+         * Update the background page's cache of which tabs currently contain a private
+         * repository.
+         */
+        setTabIsPrivateRepository(tabId: number, isPrivate: boolean): void {
+            if (!isPrivate) {
+                // An absent value is equivalent to being false; so we can delete it.
+                cache.delete(tabId)
+            }
+            cache.set(tabId, isPrivate)
+
+            // Emit the updated repository cache when it changes, so that consumers can
+            // observe the value.
+            subject.next(cache)
+        },
+        getTabIsPrivateRepository(tabId: number): boolean {
+            return !!cache.get(tabId)
+        },
+    }
+})()
 
 const contentScripts = browser.runtime.getManifest().content_scripts
 
@@ -93,12 +125,6 @@ initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
-    /**
-     * For each tab, we store a flag if we know that we are on a private
-     * repository. The content script notifies the background page if it's on a
-     * private repository by `notifyPrivateRepository` message.
-     */
-    const tabPrivateRepositoryCache = new Map<number, boolean>()
 
     // Open installation page after the extension was installed
     browser.runtime.onInstalled.addListener(event => {
@@ -166,7 +192,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private repository flag.
-            tabPrivateRepositoryCache.delete(tabId)
+            tabPrivateRepositoryCache.setTabIsPrivateRepository(tabId, false)
             return
         }
 
@@ -208,13 +234,13 @@ async function main(): Promise<void> {
         ): Promise<void> {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabPrivateRepositoryCache.set(tabId, isPrivateRepository)
+                tabPrivateRepositoryCache.setTabIsPrivateRepository(tabId, isPrivateRepository)
             }
             return Promise.resolve()
         },
 
         async checkPrivateRepository(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabPrivateRepositoryCache.get(tabId))
+            return Promise.resolve(!!tabPrivateRepositoryCache.getTabIsPrivateRepository(tabId))
         },
     }
 
@@ -378,6 +404,25 @@ function validateSite(): Observable<boolean> {
     )
 }
 
+/**
+ * Return an observable of the currently active tab id, which changes every time
+ * the user opens or switches to a different tab.
+ */
+function observeCurrentTabId(): Observable<number> {
+    return fromBrowserEvent(browser.tabs.onActivated).pipe(map(([event]) => event.tabId))
+}
+
+/**
+ * Returns an observable that indicates whether the current tab contains a
+ * private repository.
+ */
+function observeCurrentTabPrivateRepository(): Observable<boolean> {
+    return combineLatest([observeCurrentTabId(), tabPrivateRepositoryCache.observable]).pipe(
+        map(([tabId, privateRepositoryCache]) => !!privateRepositoryCache.get(tabId)),
+        distinctUntilChanged()
+    )
+}
+
 function observeSourcegraphUrlValidation(): Observable<boolean> {
     return merge(
         // Whenever the URL was persisted to storage, we can assume it was validated before-hand
@@ -387,17 +432,22 @@ function observeSourcegraphUrlValidation(): Observable<boolean> {
 }
 
 function observeBrowserActionState(): Observable<BrowserActionIconState> {
-    return combineLatest([observeStorageKey('sync', 'disableExtension'), observeSourcegraphUrlValidation()]).pipe(
-        map(([isDisabled, isSourcegraphUrlValid]) => {
+    return combineLatest([
+        observeStorageKey('sync', 'disableExtension'),
+        observeSourcegraphUrlValidation(),
+        observeCurrentTabPrivateRepository(),
+    ]).pipe(
+        map(([isDisabled, isSourcegraphUrlValid, isPrivateRepository]) => {
             if (isDisabled) {
                 return 'inactive'
             }
 
-            if (!isSourcegraphUrlValid) {
+            if (!isSourcegraphUrlValid || isPrivateRepository) {
                 return 'active-with-alert'
             }
 
             return 'active'
-        })
+        }),
+        distinctUntilChanged()
     )
 }
