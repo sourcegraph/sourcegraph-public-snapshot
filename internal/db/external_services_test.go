@@ -290,10 +290,10 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	//  - ID=1 is expected to be deleted along with deletion of the external service.
 	//  - ID=2 remains untouched because it is not associated with the external service.
 	_, err = dbconn.Global.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, language, fork)
-VALUES (1, 'github.com/user/repo', '', '', FALSE);
-INSERT INTO repo (id, name, description, language, fork)
-VALUES (2, 'github.com/user/repo2', '', '', FALSE);
+INSERT INTO repo (id, name, description, fork)
+VALUES (1, 'github.com/user/repo', '', FALSE);
+INSERT INTO repo (id, name, description, fork)
+VALUES (2, 'github.com/user/repo2', '', FALSE);
 `)
 	if err != nil {
 		t.Fatal(err)
