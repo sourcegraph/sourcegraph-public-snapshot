@@ -40,8 +40,9 @@
 
 .code-hosts-section {
     &__icon {
-        display: inline-block;
-        padding: 0.4rem;
+        display: inline-flex;
+        place-items: center;
+        padding: 0.5rem;
         border-radius: 100%;
     }
 }
