@@ -99,6 +99,7 @@ func postgresProcfile() (string, error) {
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
 		for _, database := range databases {
 			e.Command("su-exec", "postgres", "createdb", database)
+			e.Command("touch", filepath.Join(markersPath, database))
 		}
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
 		if err := e.Error(); err != nil {
@@ -132,6 +133,7 @@ func postgresProcfile() (string, error) {
 			e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
 			for _, database := range missingDatabases {
 				e.Command("su-exec", "postgres", "createdb", database)
+				e.Command("touch", filepath.Join(markersPath, database))
 			}
 			e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
 			if err := e.Error(); err != nil {
