@@ -948,7 +948,6 @@ Referenced by:
  id                    | integer                  | not null default nextval('repo_id_seq'::regclass)
  name                  | citext                   | not null
  description           | text                     | 
- language              | text                     | 
  fork                  | boolean                  | 
  created_at            | timestamp with time zone | not null default now()
  updated_at            | timestamp with time zone | 
