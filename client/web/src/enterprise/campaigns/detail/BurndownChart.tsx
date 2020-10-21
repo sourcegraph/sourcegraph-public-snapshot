@@ -55,10 +55,11 @@ interface StateDefinition {
 
 type DisplayableChangesetCounts = Pick<
     ChangesetCountsOverTimeFields,
-    'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged'
+    'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged' | 'draft'
 >
 
 const states: Record<keyof DisplayableChangesetCounts, StateDefinition> = {
+    draft: { fill: 'var(--text-muted)', label: 'Draft', sortOrder: 5 },
     openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
     openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
     openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
@@ -144,7 +145,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
                 <Tooltip
                     labelFormatter={tooltipLabelFormatter as LabelFormatter}
                     isAnimationActive={false}
-                    wrapperStyle={{ border: '1px solid var(--color-border)' }}
+                    wrapperStyle={{ border: '1px solid var(--border-color)' }}
                     contentStyle={tooltipStyle}
                     labelStyle={{ fontWeight: 'bold' }}
                     itemStyle={tooltipStyle}

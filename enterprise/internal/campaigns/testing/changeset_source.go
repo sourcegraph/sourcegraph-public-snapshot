@@ -14,13 +14,15 @@ import (
 type FakeChangesetSource struct {
 	Svc *repos.ExternalService
 
-	CreateChangesetCalled  bool
-	UpdateChangesetCalled  bool
-	ListReposCalled        bool
-	ExternalServicesCalled bool
-	LoadChangesetsCalled   bool
-	CloseChangesetCalled   bool
-	ReopenChangesetCalled  bool
+	CreateDraftChangesetCalled bool
+	UndraftedChangesetsCalled  bool
+	CreateChangesetCalled      bool
+	UpdateChangesetCalled      bool
+	ListReposCalled            bool
+	ExternalServicesCalled     bool
+	LoadChangesetCalled        bool
+	CloseChangesetCalled       bool
+	ReopenChangesetCalled      bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -45,7 +47,7 @@ type FakeChangesetSource struct {
 	// CreateChangeset
 	CreatedChangesets []*repos.Changeset
 
-	// LoadedChangesets contains the changesets that were passed to LoadChangesets
+	// LoadedChangesets contains the changesets that were passed to LoadChangeset
 	LoadedChangesets []*repos.Changeset
 
 	// UpdateChangesets contains the changesets that were passed to
@@ -54,6 +56,55 @@ type FakeChangesetSource struct {
 
 	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
 	ReopenedChangesets []*repos.Changeset
+
+	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
+	UndraftedChangesets []*repos.Changeset
+}
+
+var _ repos.ChangesetSource = &FakeChangesetSource{}
+var _ repos.DraftChangesetSource = &FakeChangesetSource{}
+
+func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+	s.CreateDraftChangesetCalled = true
+
+	if s.Err != nil {
+		return s.ChangesetExists, s.Err
+	}
+
+	if c.Repo == nil {
+		return false, NoReposErr
+	}
+
+	if c.HeadRef != s.WantHeadRef {
+		return s.ChangesetExists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
+	}
+
+	if c.BaseRef != s.WantBaseRef {
+		return s.ChangesetExists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
+	}
+
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return s.ChangesetExists, err
+	}
+
+	s.CreatedChangesets = append(s.CreatedChangesets, c)
+	return s.ChangesetExists, s.Err
+}
+
+func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.UndraftedChangesetsCalled = true
+
+	if s.Err != nil {
+		return s.Err
+	}
+
+	if c.Repo == nil {
+		return NoReposErr
+	}
+
+	s.UndraftedChangesets = append(s.UndraftedChangesets, c)
+
+	return c.SetMetadata(s.FakeMetadata)
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
@@ -114,24 +165,22 @@ func (s *FakeChangesetSource) ExternalServices() repos.ExternalServices {
 
 	return repos.ExternalServices{s.Svc}
 }
-func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
-	s.LoadChangesetsCalled = true
+func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.LoadChangesetCalled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 
-	for _, c := range cs {
-		if c.Repo == nil {
-			return NoReposErr
-		}
-
-		if err := c.SetMetadata(s.FakeMetadata); err != nil {
-			return err
-		}
+	if c.Repo == nil {
+		return NoReposErr
 	}
 
-	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return err
+	}
+
+	s.LoadedChangesets = append(s.LoadedChangesets, c)
 	return nil
 }
 

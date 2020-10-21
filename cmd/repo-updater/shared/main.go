@@ -339,7 +339,7 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
-			log15.Warn("failed to update git fetch scheduler with list of cloned repositories", "error", err)
+			log15.Warn("failed to fetch list of cloned repositories", "error", err)
 			return
 		}
 
@@ -356,7 +356,7 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		doSync()
 		select {
 		case <-ctx.Done():
-		case <-time.After(10 * time.Second):
+		case <-time.After(30 * time.Second):
 		}
 	}
 }

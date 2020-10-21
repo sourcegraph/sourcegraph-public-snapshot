@@ -14,7 +14,7 @@ import (
 )
 
 // timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
-const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT`
+const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT`
 
 // PageInfo contains the paging information based on the Redux conventions.
 type PageInfo struct {
@@ -151,6 +151,7 @@ type PullRequest struct {
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
 	Commits       struct{ Nodes []CommitWithChecks }
+	IsDraft       bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -366,6 +367,30 @@ func (e ReviewRequestedEvent) ReviewerDeleted() bool {
 	return e.RequestedReviewer.Login == "" && e.RequestedTeam.Name == ""
 }
 
+// ReadyForReviewEvent represents a 'ready_for_review' event on a
+// pull request.
+type ReadyForReviewEvent struct {
+	Actor     Actor
+	CreatedAt time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ReadyForReviewEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+}
+
+// ConvertToDraftEvent represents a 'convert_to_draft' event on a
+// pull request.
+type ConvertToDraftEvent struct {
+	Actor     Actor
+	CreatedAt time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ConvertToDraftEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+}
+
 // UnassignedEvent represents an 'unassigned' event on a pull request.
 type UnassignedEvent struct {
 	Actor     Actor
@@ -449,6 +474,10 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(ReviewRequestRemovedEvent)
 	case "ReviewRequestedEvent":
 		i.Item = new(ReviewRequestedEvent)
+	case "ReadyForReviewEvent":
+		i.Item = new(ReadyForReviewEvent)
+	case "ConvertToDraftEvent":
+		i.Item = new(ConvertToDraftEvent)
 	case "UnassignedEvent":
 		i.Item = new(UnassignedEvent)
 	case "LabeledEvent":
@@ -478,6 +507,8 @@ type CreatePullRequestInput struct {
 	Title string `json:"title"`
 	// The body of the pull request (optional).
 	Body string `json:"body"`
+	// When true the PR will be in draft mode initially.
+	Draft bool `json:"draft"`
 }
 
 // CreatePullRequest creates a PullRequest on Github.
@@ -588,6 +619,50 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	return pr, nil
 }
 
+// MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
+func (c *Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
+  markPullRequestReadyForReview(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		MarkPullRequestReadyForReview struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			} `json:"pullRequest"`
+		} `json:"markPullRequestReadyForReview"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	if err != nil {
+		return err
+	}
+
+	ti := result.MarkPullRequestReadyForReview.PullRequest.TimelineItems
+	*pr = result.MarkPullRequestReadyForReview.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.MarkPullRequestReadyForReview.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
+	return nil
+}
+
 // ClosePullRequest closes the PullRequest on Github.
 func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	var q strings.Builder
@@ -676,93 +751,45 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
-// LoadPullRequests loads a list of PullRequests from Github.
-func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	const batchSize = 15
-	// We load prs in batches to avoid hitting Github's GraphQL node limit
-	for i := 0; i < len(prs); i += batchSize {
-		j := i + batchSize
-		if j > len(prs) {
-			j = len(prs)
-		}
-		if err := c.loadPullRequests(ctx, prs[i:j]...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	type repository struct {
-		Owner string
-		Name  string
-		PRs   map[string]*PullRequest
-	}
-
-	labeled := map[string]*repository{}
-	for i, pr := range prs {
-		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
-		if err != nil {
-			return err
-		}
-
-		repoLabel := fmt.Sprintf("repo_%d", i)
-		r, ok := labeled[repoLabel]
-		if !ok {
-			r = &repository{
-				Owner: owner,
-				Name:  repo,
-				PRs:   map[string]*PullRequest{},
-			}
-			labeled[repoLabel] = r
-		}
-
-		prLabel := repoLabel + "_" + strconv.FormatInt(pr.Number, 10)
-		r.PRs[prLabel] = pr
-	}
-
-	var q strings.Builder
-	q.WriteString(pullRequestFragments)
-	q.WriteString("query {\n")
-
-	for repoLabel, r := range labeled {
-		q.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) {\n",
-			repoLabel, r.Owner, r.Name))
-
-		for prLabel, pr := range r.PRs {
-			q.WriteString(fmt.Sprintf("%s: pullRequest(number: %d) { ...pr }\n",
-				prLabel, pr.Number,
-			))
-		}
-
-		q.WriteString("}\n")
-	}
-
-	q.WriteString("}")
-
-	var results map[string]map[string]*struct {
-		PullRequest
-		Participants  struct{ Nodes []Actor }
-		TimelineItems TimelineItemConnection
-	}
-
-	err := c.requestGraphQL(ctx, q.String(), nil, &results)
+// LoadPullRequest loads a PullRequest from Github.
+func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+	owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
 	if err != nil {
 		return err
 	}
 
-	for repoLabel, prs := range results {
-		for prLabel, pr := range prs {
-			pr.PullRequest.Participants = pr.Participants.Nodes
-			pr.PullRequest.TimelineItems = pr.TimelineItems.Nodes
-			items, err := c.loadRemainingTimelineItems(ctx, pr.ID, pr.TimelineItems.PageInfo)
-			if err != nil {
-				return err
+	q := pullRequestFragments + `
+query($owner: String!, $name: String!, $number: Int!) {
+	repository(owner: $owner, name: $name) {
+		pullRequest(number: $number) { ...pr }
+	}
+}`
+
+	var result struct {
+		Repository struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
 			}
-			pr.PullRequest.TimelineItems = append(pr.PullRequest.TimelineItems, items...)
-			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
 		}
 	}
+
+	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	if err != nil {
+		return err
+	}
+
+	ti := result.Repository.PullRequest.TimelineItems
+	*pr = result.Repository.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.Repository.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -1045,6 +1072,18 @@ fragment timelineItems on PullRequestTimelineItems {
     }
     createdAt
   }
+  ... on ReadyForReviewEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+  }
+  ... on ConvertToDraftEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+  }
   ... on UnassignedEvent {
     actor {
       ...actor
@@ -1130,6 +1169,7 @@ fragment pr on PullRequest {
   baseRefOid
   headRefName
   baseRefName
+  isDraft
   author {
     ...actor
   }

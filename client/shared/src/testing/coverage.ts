@@ -2,6 +2,7 @@ import { Driver } from './driver'
 import { writeFile, mkdir } from 'mz/fs'
 import { Browser } from 'puppeteer'
 import * as uuid from 'uuid'
+import pTimeout from 'p-timeout'
 
 declare global {
     interface FileCoverage {
@@ -31,15 +32,23 @@ export async function recordCoverage(browser: Browser): Promise<void> {
     await mkdir('.nyc_output', { recursive: true })
     // Get pages, web workers, background pages, etc.
     const targets = await browser.targets()
+
     await Promise.all(
         targets.map(async target => {
+            if (target.url() === 'about:blank') {
+                return
+            }
             const executionContext = (await target.worker()) ?? (await target.page())
             if (!executionContext) {
                 return
             }
-            const coverage: typeof __coverage__ = await executionContext.evaluate(() => globalThis.__coverage__)
+            const coverage: typeof __coverage__ = await pTimeout(
+                executionContext.evaluate(() => globalThis.__coverage__),
+                2000,
+                new Error(`Timeout getting coverage from ${target.url()}`)
+            )
             if (!coverage) {
-                if (!warnedNoCoverage && target.url() !== 'about:blank') {
+                if (!warnedNoCoverage) {
                     console.error(
                         `No coverage found in target ${target.url()}\n` +
                             'Run the dev Sourcegraph instance with COVERAGE_INSTRUMENT=true to track coverage.'

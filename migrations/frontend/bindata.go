@@ -102,6 +102,8 @@
 // 1528395733_add_permissions_object_ids_default.up.sql (313B)
 // 1528395734_repo_updater_log_contents.down.sql (544B)
 // 1528395734_repo_updater_log_contents.up.sql (565B)
+// 1528395735_drop_language_from_repo.down.sql (74B)
+// 1528395735_drop_language_from_repo.up.sql (66B)
 
 package migrations
 
@@ -2210,6 +2212,46 @@ func _1528395734_repo_updater_log_contentsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395735_drop_language_from_repoDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x39\x0a\xc3\x30\x10\x05\xd0\x7e\x4e\xf1\xef\xa1\x4a\xcb\x24\x0c\x68\x81\xe8\x07\xd4\xaa\x10\x6a\x42\x6c\x0c\xbe\xbf\x5f\xd0\xb7\x55\x27\xe2\x33\xf5\x03\xfa\x90\x15\xd7\x3a\x0f\xf8\x94\x10\x5b\xfe\x96\x0a\x7b\xa1\x36\x42\x87\x75\x76\xfc\xe6\x7f\xdf\x73\x2f\x50\x07\x9d\x48\x6c\xa5\x18\x9d\x3c\x01\x00\x00\xff\xff\xb1\xd0\xb9\xe6\x4a\x00\x00\x00")
+
+func _1528395735_drop_language_from_repoDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395735_drop_language_from_repoDownSql,
+		"1528395735_drop_language_from_repo.down.sql",
+	)
+}
+
+func _1528395735_drop_language_from_repoDownSql() (*asset, error) {
+	bytes, err := _1528395735_drop_language_from_repoDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395735_drop_language_from_repo.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x43, 0x58, 0xf, 0x2a, 0x9d, 0x3d, 0xc2, 0xc6, 0x6e, 0xf9, 0x51, 0x65, 0x27, 0x10, 0xe0, 0x74, 0x76, 0xe3, 0xfc, 0xa, 0xe9, 0x3f, 0x18, 0xcf, 0xfd, 0xea, 0x4, 0xb9, 0x34, 0xba, 0x92, 0x0}}
+	return a, nil
+}
+
+var __1528395735_drop_language_from_repoUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x49\xcc\x4b\x2f\x4d\x4c\x4f\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd7\x04\x64\xf9\x42\x00\x00\x00")
+
+func _1528395735_drop_language_from_repoUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395735_drop_language_from_repoUpSql,
+		"1528395735_drop_language_from_repo.up.sql",
+	)
+}
+
+func _1528395735_drop_language_from_repoUpSql() (*asset, error) {
+	bytes, err := _1528395735_drop_language_from_repoUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395735_drop_language_from_repo.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4d, 0xd7, 0x13, 0x7c, 0x41, 0xf, 0xec, 0x7f, 0xc7, 0x0, 0x91, 0xbd, 0xb3, 0xb2, 0xee, 0xb2, 0xf, 0xad, 0xe8, 0x48, 0x22, 0xa1, 0xa6, 0x6, 0x4a, 0x0, 0xc6, 0x85, 0x95, 0xd9, 0xe6, 0xac}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2403,6 +2445,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395733_add_permissions_object_ids_default.up.sql":                         _1528395733_add_permissions_object_ids_defaultUpSql,
 	"1528395734_repo_updater_log_contents.down.sql":                                _1528395734_repo_updater_log_contentsDownSql,
 	"1528395734_repo_updater_log_contents.up.sql":                                  _1528395734_repo_updater_log_contentsUpSql,
+	"1528395735_drop_language_from_repo.down.sql":                                  _1528395735_drop_language_from_repoDownSql,
+	"1528395735_drop_language_from_repo.up.sql":                                    _1528395735_drop_language_from_repoUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2551,6 +2595,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395733_add_permissions_object_ids_default.up.sql":                         {_1528395733_add_permissions_object_ids_defaultUpSql, map[string]*bintree{}},
 	"1528395734_repo_updater_log_contents.down.sql":                                {_1528395734_repo_updater_log_contentsDownSql, map[string]*bintree{}},
 	"1528395734_repo_updater_log_contents.up.sql":                                  {_1528395734_repo_updater_log_contentsUpSql, map[string]*bintree{}},
+	"1528395735_drop_language_from_repo.down.sql":                                  {_1528395735_drop_language_from_repoDownSql, map[string]*bintree{}},
+	"1528395735_drop_language_from_repo.up.sql":                                    {_1528395735_drop_language_from_repoUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

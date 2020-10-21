@@ -127,8 +127,9 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
                 merged: 10,
                 openApproved: 3,
                 openChangesRequested: 1,
-                openPending: 91,
+                openPending: 81,
                 total: 130,
+                draft: 10,
             },
             {
                 closed: 12,
@@ -136,8 +137,9 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
                 merged: 10,
                 openApproved: 23,
                 openChangesRequested: 1,
-                openPending: 71,
+                openPending: 66,
                 total: 130,
+                draft: 5,
             },
         ],
     },
@@ -224,7 +226,7 @@ function mockCommonGraphQLResponses(
                 viewerPendingInvitation: null,
             },
         }),
-        User: () => ({
+        UserArea: () => ({
             user: {
                 __typename: 'User',
                 id: 'user123',
@@ -234,6 +236,7 @@ function mockCommonGraphQLResponses(
                 settingsURL: `${namespaceURL}/settings`,
                 avatarURL: '',
                 viewerCanAdminister: true,
+                viewerCanChangeUsername: true,
                 siteAdmin: true,
                 builtinAuth: true,
                 createdAt: '2020-04-10T21:11:42Z',
@@ -247,7 +250,9 @@ function mockCommonGraphQLResponses(
             campaign: {
                 __typename: 'Campaign',
                 id: 'campaign123',
-                changesets: { stats: { closed: 2, deleted: 1, merged: 3, open: 10, total: 19, unpublished: 3 } },
+                changesets: {
+                    stats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
+                },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),

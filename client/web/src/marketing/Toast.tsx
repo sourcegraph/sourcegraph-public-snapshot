@@ -10,22 +10,23 @@ interface Props {
 }
 
 export const Toast: React.FunctionComponent<Props> = props => (
-    <div className="toast">
-        <div className="toast__contents">
-            <div className="d-flex">
+    <div className="toast card">
+        <div className="card-body px-3 pb-3 pt-2">
+            <header className="card-title d-flex align-items-center">
                 <span className="toast__logo icon-inline">{props.icon}</span>
-                <h2 className="toast__contents-title">{props.title}</h2>
-            </div>
+                <h2 className="mb-0">{props.title}</h2>
+                <div className="flex-1" />
+                <button
+                    type="button"
+                    onClick={props.onDismiss}
+                    className="toast__close-button btn btn-icon test-close-toast"
+                    aria-label="Close"
+                >
+                    <CloseIcon className="icon-inline" />
+                </button>
+            </header>
             {props.subtitle}
             {props.cta && <div className="toast__contents-cta">{props.cta}</div>}
         </div>
-        <button
-            type="button"
-            onClick={props.onDismiss}
-            className="toast__close-button btn btn-icon test-close-toast"
-            aria-label="Close"
-        >
-            <CloseIcon className="icon-inline" />
-        </button>
     </div>
 )

@@ -16,6 +16,10 @@ for i in "${plugins[@]}"; do
   fi
 done
 
+
+# Destroy any previous boxes from cancelled or failed tests
+vagrant destroy -f "$box"
+
 vagrant up "$box" --provider=google || exit_code=$?
 vagrant scp "$box":/sourcegraph/puppeteer/*.png ../
 vagrant scp "$box":/sourcegraph/e2e.mp4 ../

@@ -8,7 +8,7 @@
 
     &__list {
         flex: 1;
-        border-right: 1px solid $color-border;
+        border-right: 1px solid var(--border-color);
         width: 100%; // necessary to prevent border-right from shrinking as width narrows
         overflow-y: auto;
     }
@@ -45,13 +45,5 @@
     &__content {
         flex: 1;
         width: 100%;
-    }
-}
-
-.theme-light {
-    .hierarchical-locations-view {
-        &__list {
-            border-right: 1px solid $color-light-border;
-        }
     }
 }

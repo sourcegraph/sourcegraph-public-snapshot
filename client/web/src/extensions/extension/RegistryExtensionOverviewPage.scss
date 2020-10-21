@@ -6,4 +6,9 @@
     &__sidebar {
         width: 16rem;
     }
+    &__tag {
+        max-width: 24ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }

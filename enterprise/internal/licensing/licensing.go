@@ -6,10 +6,11 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"golang.org/x/crypto/ssh"
 )
 
 // Info wraps the lower-level license.Info and exposes plan and feature information.

@@ -585,6 +585,28 @@ func TestComputeExternalState(t *testing.T) {
 			want: cmpgn.ChangesetExternalStateDeleted,
 		},
 		{
+			name:      "github draft - no events",
+			changeset: setIsDraft(githubChangeset(daysAgo(10), "OPEN")),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft - changeset newer than events",
+			changeset: setIsDraft(githubChangeset(daysAgo(0), "OPEN")),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},

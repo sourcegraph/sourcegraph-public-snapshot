@@ -63,8 +63,7 @@ describe('Repository', () => {
                             ancestors: {
                                 nodes: [
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiIxNWMyMjkwZGNiMzc3MzFjYzRlZTVhMmExYzFlNWEyNWI0YzI4ZjgxIn0=',
+                                        id: 'CommitID1',
                                         oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                         abbreviatedOID: '15c2290',
                                         message: 'update LSIF indexing CI workflow\n',
@@ -121,8 +120,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiI5ZTYxNWIxYzMyY2M1MTkxMzA1NzVlOGQxMGQwZDBmZWU4YTVlYjZjIn0=',
+                                        id: 'CommitID2',
                                         oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         abbreviatedOID: '9e615b1',
                                         message: 'LSIF Indexing Campaign',
@@ -173,8 +171,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiI5NmM0ZWZhYjdlZTI4ZjNkMWNmMWQyNDhhMDEzOWNlYTM3MzY4YjE4In0=',
+                                        id: 'CommitID3',
                                         oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         abbreviatedOID: '96c4efa',
                                         message:
@@ -242,8 +239,7 @@ describe('Repository', () => {
                         __typename: 'Repository',
                         commit: {
                             __typename: 'GitCommit',
-                            id:
-                                'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiIxNWMyMjkwZGNiMzc3MzFjYzRlZTVhMmExYzFlNWEyNWI0YzI4ZjgxIn0=',
+                            id: 'CommitID1',
                             oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             abbreviatedOID: '15c2290',
                             message: 'update LSIF indexing CI workflow\n',

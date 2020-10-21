@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -1184,6 +1185,12 @@ func isCloned(r *repos.Repo) bool {
 func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
+	// setting the step to a small number to test the pagination system used by SetClonedRepos
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		RepoSetClonedBatchSize: 3,
+	}})
+	defer conf.Mock(nil)
+
 	return func(t *testing.T) {
 		var repositories repos.Repos
 		for i := 0; i < 3; i++ {
@@ -2003,25 +2010,6 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 	}
 }
 
-func testDBStoreTransact(store *repos.DBStore) func(*testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
-
-		txstore, err := store.Transact(ctx)
-		if err != nil {
-			t.Fatal("expected DBStore to support transactions", err)
-		}
-		defer txstore.Done()
-
-		_, err = txstore.(repos.Transactor).Transact(ctx)
-		have := fmt.Sprintf("%s", err)
-		want := "dbstore: already in a transaction"
-		if have != want {
-			t.Errorf("error:\nhave: %v\nwant: %v", have, want)
-		}
-	}
-}
-
 func mkRepos(n int, base ...*repos.Repo) repos.Repos {
 	if len(base) == 0 {
 		return nil
@@ -2063,7 +2051,7 @@ func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.St
 			if err != nil {
 				t.Fatalf("failed to start transaction: %v", err)
 			}
-			defer txstore.Done(&errRollback)
+			defer txstore.Done(errRollback)
 			s = &noopTxStore{TB: t, Store: txstore}
 		}
 
@@ -2086,16 +2074,18 @@ func (tx *noopTxStore) Transact(context.Context) (repos.TxStore, error) {
 	return tx, nil
 }
 
-func (tx *noopTxStore) Done(errs ...*error) {
+func (tx *noopTxStore) Done(err error) error {
 	tx.Helper()
 
 	if tx.count != 1 {
 		tx.Fatal("no current transactions")
 	}
-	if len(errs) > 0 && *errs[0] != nil {
-		tx.Fatal(fmt.Sprintf("unexpected error in noopTxStore: %v", *errs[0]))
+	if err != nil {
+		tx.Fatal(fmt.Sprintf("unexpected error in noopTxStore: %v", err))
 	}
 	tx.count--
+
+	return nil
 }
 
 func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.ExternalService {

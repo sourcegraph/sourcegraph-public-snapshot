@@ -50,11 +50,7 @@
     }
 
     &:hover:not(:disabled):not(.disabled) {
-        color: #ffffff;
-
-        .theme-light & {
-            color: $color-light-text-2;
-        }
+        color: var(--body-color);
     }
 }
 

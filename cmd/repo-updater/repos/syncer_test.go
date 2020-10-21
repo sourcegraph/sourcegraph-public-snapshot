@@ -1543,13 +1543,13 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}()
 
 			<-upsertCalledCh
-			tx1.Done()
+			tx1.Done(nil)
 
 			err = <-errChan
 			if err != nil {
 				t.Fatalf("Error in syncer2: %v", err)
 			}
-			tx2.Done()
+			tx2.Done(nil)
 
 			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
 			if len(fromDB) != 1 {

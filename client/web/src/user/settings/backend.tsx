@@ -7,38 +7,6 @@ import { mutateGraphQL } from '../../backend/graphql'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserEvent, EventSource } from '../../../../shared/src/graphql-operations'
 
-interface UpdateUserOptions {
-    username: string | null
-    /** The user's display name */
-    displayName: string | null
-    /** The user's avatar URL */
-    avatarURL: string | null
-}
-
-/**
- * Sends a GraphQL mutation to update a user's profile
- */
-export function updateUser(user: GQL.ID, args: UpdateUserOptions): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation updateUser($user: ID!, $username: String, $displayName: String, $avatarURL: String) {
-                updateUser(user: $user, username: $username, displayName: $displayName, avatarURL: $avatarURL) {
-                    alwaysNil
-                }
-            }
-        `,
-        { ...args, user }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.updateUser) {
-                eventLogger.log('UpdateUserFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('UserProfileUpdated')
-        })
-    )
-}
-
 export function updatePassword(args: { oldPassword: string; newPassword: string }): Observable<void> {
     return mutateGraphQL(
         gql`

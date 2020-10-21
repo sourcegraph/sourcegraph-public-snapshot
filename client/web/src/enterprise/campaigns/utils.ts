@@ -47,6 +47,7 @@ export enum ChangesetUIState {
     ERRORED = 'ERRORED',
     PROCESSING = 'PROCESSING',
     OPEN = 'OPEN',
+    DRAFT = 'DRAFT',
     CLOSED = 'CLOSED',
     MERGED = 'MERGED',
     DELETED = 'DELETED',
@@ -71,6 +72,8 @@ export function computeChangesetUIState(
     // Must be set, because changesetPublicationState !== UNPUBLISHED.
     const externalState = changeset.externalState!
     switch (externalState) {
+        case ChangesetExternalState.DRAFT:
+            return ChangesetUIState.DRAFT
         case ChangesetExternalState.OPEN:
             return ChangesetUIState.OPEN
         case ChangesetExternalState.CLOSED:

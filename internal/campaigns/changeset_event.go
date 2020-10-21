@@ -42,6 +42,8 @@ const (
 	ChangesetEventKindGitHubReviewRequestRemoved ChangesetEventKind = "github:review_request_removed"
 	ChangesetEventKindGitHubReviewRequested      ChangesetEventKind = "github:review_requested"
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
+	ChangesetEventKindGitHubReadyForReview       ChangesetEventKind = "github:ready_for_review"
+	ChangesetEventKindGitHubConvertToDraft       ChangesetEventKind = "github:convert_to_draft"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
 	ChangesetEventKindGitHubCommit               ChangesetEventKind = "github:commit"
 	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
@@ -216,6 +218,10 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *github.ReviewRequestRemovedEvent:
 		t = ev.CreatedAt
 	case *github.ReviewRequestedEvent:
+		t = ev.CreatedAt
+	case *github.ReadyForReviewEvent:
+		t = ev.CreatedAt
+	case *github.ConvertToDraftEvent:
 		t = ev.CreatedAt
 	case *github.UnassignedEvent:
 		t = ev.CreatedAt
@@ -510,6 +516,28 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 
 		if e.RequestedTeam == (github.Team{}) {
 			e.RequestedTeam = o.RequestedTeam
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.ReadyForReviewEvent:
+		o := o.Metadata.(*github.ReadyForReviewEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.ConvertToDraftEvent:
+		o := o.Metadata.(*github.ConvertToDraftEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
 		}
 
 		if e.CreatedAt.IsZero() {

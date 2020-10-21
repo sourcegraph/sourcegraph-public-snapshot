@@ -4,6 +4,7 @@
         display: flex;
         align-items: center;
         padding: 0.25rem 0.5rem;
+        background-color: var(--body-bg);
 
         &-clickable {
             cursor: pointer;
@@ -26,22 +27,6 @@
             top: 0;
             right: 0;
             text-align: right;
-        }
-    }
-}
-
-.theme-dark {
-    .file-match-children {
-        &__item {
-            background-color: $color-bg-4;
-        }
-    }
-}
-
-.theme-light {
-    .file-match-children {
-        &__item {
-            background-color: $color-light-bg-1;
         }
     }
 }

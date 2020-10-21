@@ -1,5 +1,12 @@
 @import '../../../../shared/src/components/Resizable';
 
+.resizable-panel {
+    isolation: isolate;
+    min-height: 6rem;
+    max-height: calc(100% - 3rem);
+    width: 100%;
+}
+
 .panel {
     flex: 1 1 50%;
     min-height: 0;
@@ -9,15 +16,9 @@
     display: flex;
     flex-direction: column;
 
-    background-color: $color-bg-4;
-    border-top: 1px solid $color-border;
+    background-color: var(--color-bg-1);
+    border-top: 1px solid var(--border-color);
     width: 100%;
-
-    &--resizable {
-        min-height: 6rem;
-        max-height: calc(100% - 3rem);
-        width: 100%;
-    }
 
     &__empty {
         flex: 1;
@@ -48,12 +49,5 @@
                 overflow: auto;
             }
         }
-    }
-}
-
-.theme-light {
-    .panel {
-        background-color: $color-light-bg-2;
-        border-top-color: $color-light-border;
     }
 }
