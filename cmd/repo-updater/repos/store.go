@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"sort"
 	"strings"
 	"time"
 
@@ -866,10 +867,7 @@ func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error
 		return err
 	}
 
-	err := s.Exec(ctx, sqlf.Sprintf(setClonedReposCreateTempTable))
-	if err != nil {
-		return err
-	}
+	sort.Strings(repoNames)
 
 	step := ConfRepoSetClonedBatchSize()
 
@@ -881,38 +879,24 @@ func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error
 			lastIdx = len(repoNames) - 1
 		}
 
+		first := repoNames[firstIdx]
+		last := repoNames[lastIdx]
+
 		names, err := json.Marshal(repoNames[firstIdx : lastIdx+1])
 		if err != nil {
 			return nil
 		}
 
-		q := sqlf.Sprintf(setClonedReposInsertToTempTableFmtstr, sqlf.Sprintf("%s", string(names)))
+		q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)), first, last)
+
 		err = s.Exec(ctx, q)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.Exec(ctx, sqlf.Sprintf(setClonedReposQueryFmtstr))
-	if err != nil {
-		return err
-	}
-
-	// manually truncate the temporary table as SetClonedRepos might be used multiple times during the same transaction
-	err = s.Exec(ctx, sqlf.Sprintf("TRUNCATE TABLE cloned_repos"))
-	return err
+	return nil
 }
-
-const setClonedReposCreateTempTable = `
--- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-CREATE TEMPORARY TABLE IF NOT EXISTS cloned_repos (name CITEXT) ON COMMIT DROP;
-CREATE INDEX ON cloned_repos(name);
-`
-
-const setClonedReposInsertToTempTableFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-INSERT INTO cloned_repos SELECT jsonb_array_elements_text(%s) AS name
-`
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
@@ -923,14 +907,21 @@ const setClonedReposQueryFmtstr = `
 -- their cloned column is true but they are not in cloned_repos
 -- or they are in cloned_repos but their cloned column is false.
 --
-WITH diff AS (
+WITH cloned_repos AS (
+  SELECT jsonb_array_elements_text(%s) AS name
+),
+diff AS (
   SELECT id, cloned
   FROM repo
   WHERE
-  NOT cloned
-    AND name IN (SELECT name FROM cloned_repos)
-  OR cloned
-    AND name NOT IN (SELECT name FROM cloned_repos)
+    name BETWEEN %s AND %s
+    AND
+    (
+      NOT cloned
+        AND name IN (SELECT name::citext FROM cloned_repos)
+      OR cloned
+        AND name NOT IN (SELECT name::citext FROM cloned_repos)
+    )
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
