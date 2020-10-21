@@ -16,7 +16,7 @@ assignees: ''
 - Visual - focused on inconsistent graphical aspects of the interface like shapes, colors, etc. -->
 
 #### Estimated amount of work
-<!-- Include all product, design and engeneering effort. Use t-shirt sizes:
+<!-- Include all product, design and engineering effort. Use t-shirt sizes:
 - XS -  1 day,
 - S - up to 1 week
 - M - up to a month
