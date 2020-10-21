@@ -356,7 +356,7 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		doSync()
 		select {
 		case <-ctx.Done():
-		case <-time.After(10 * time.Second):
+		case <-time.After(30 * time.Second):
 		}
 	}
 }
