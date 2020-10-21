@@ -7,6 +7,8 @@ env:
   TAG: '${BUILDKITE_BUILD_NUMBER}_${BUILDKITE_RETRY_COUNT}'
   COVERAGE_INSTRUMENT: 'true'
   VAGRANT_RUN_ENV: 'CI'
+  VAGRANT_DOTFILE_PATH: "/var/lib"
+  VAGRANT_DOTFILE_PATH: "/var/lib/buildkite/builds/$BUILDKITE_AGENT_NAME/vagrant.d"
 
 steps:
 - artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
