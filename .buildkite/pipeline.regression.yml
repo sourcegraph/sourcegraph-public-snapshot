@@ -9,5 +9,5 @@ steps:
   agents:
     queue: 'baremetal'
   env:
-    VAGRANT_DOTFILE_PATH: "/var/lib/buildkite/builds/$BUILDKITE_AGENT_NAME/vagrant.d"
+    VAGRANT_DOTFILE_PATH: "/var/lib/buildkite/builds/$BUILDKITE_AGENT_NAME/.vagrant"
 
