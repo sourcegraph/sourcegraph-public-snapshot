@@ -135,7 +135,7 @@ func (e *execer) RunWithFilter(errorFilter errorFilter, cmd *exec.Cmd) {
 		}
 	}
 
-	var out *bytes.Buffer
+	out := &bytes.Buffer{}
 	cmd.Stdout = io.MultiWriter(cmd.Stdout, out)
 	cmd.Stderr = io.MultiWriter(cmd.Stderr, out)
 
