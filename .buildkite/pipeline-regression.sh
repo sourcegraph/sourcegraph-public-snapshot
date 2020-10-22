@@ -16,7 +16,7 @@
 # .buildkite/pipeline.sh | buildkite-agent pipeline upload
 #
 
-name=$(buildkite-agent meta-data keys)
+name=$(echo $BUILDKITE_AGENT_NAME)
 
 cat << EOF
 
