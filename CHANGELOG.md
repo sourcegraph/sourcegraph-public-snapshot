@@ -17,6 +17,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+## 3.21.4
+
+### Added
+
+### Changed
+
+### Fixed
+
+- The `src lsif upload` command now respects `SRC_HEADER_` environment variables for multipart uploads. These environment variables are described [here](AUTH_PROXY.md). [#360](https://github.com/sourcegraph/src-cli/pull/360)
+
 ## 3.21.3
 
 ### Added
@@ -24,7 +34,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Changed
 
 - The progress bar in `src campaign [preview|apply]` now shows when executing a step failed in a repository by styling the line red and displaying standard error output. [#355](https://github.com/sourcegraph/src-cli/pull/355)
-- The `src lsif upload` command will give more informative output when an unexpected payload (non-JSON or non-unmarshallable) is received from the target endpoint.
+- The `src lsif upload` command will give more informative output when an unexpected payload (non-JSON or non-unmarshallable) is received from the target endpoint. [#359](https://github.com/sourcegraph/src-cli/pull/359)
 
 ### Fixed
 
