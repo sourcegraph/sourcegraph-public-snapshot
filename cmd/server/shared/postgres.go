@@ -132,7 +132,18 @@ func postgresProcfile() (string, error) {
 
 			e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
 			for _, database := range missingDatabases {
-				e.Command("su-exec", "postgres", "createdb", database)
+				alreadyExistsFilter := func(err error, out string) bool {
+					return !strings.Contains(out, fmt.Sprintf(`ERROR:  database "%s" already exists`, database))
+				}
+
+				// Ignore errors about the databse already existing. This can happen on the
+				// upgrade path from 3.21.0 -> 3.21.1 (or later), as both databases were created
+				// for fresh installs of 3.21.0 but no files were created. This means that we can't
+				// differentiate between a codeintel database being created on 3.21.0 and it not
+				// existing at all. We need to at least try to create it here, and in the worst case
+				// we start up postgres and shut it down without modification for one startup until
+				// we touch the marker file.
+				e.CommandWithFilter(alreadyExistsFilter, "su-exec", "postgres", "createdb", database)
 				e.Command("touch", filepath.Join(markersPath, database))
 			}
 			e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
