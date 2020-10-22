@@ -869,7 +869,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		}
 
 		removeBadRefs(ctx, tmp)
-		ensureHead(ctx, tmp)
+		ensureHead(tmp)
 
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
@@ -1182,7 +1182,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 // ensureHead verifies that there is a HEAD file within the repo, and that
 // it is of non-zero length. If either condition is met, we configure a
 // best-effort default.
-func ensureHead(_ context.Context, dir GitDir) {
+func ensureHead(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
 		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
@@ -1391,7 +1391,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	removeBadRefs(ctx, dir)
-	ensureHead(ctx, dir)
+	ensureHead(dir)
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
