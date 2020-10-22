@@ -676,6 +676,28 @@ func TestComputeExternalState(t *testing.T) {
 			},
 			want: cmpgn.ChangesetExternalStateMerged,
 		},
+		{
+			name:      "gitlab draft - no events",
+			changeset: setIsWip(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "gitlab draft - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "gitlab draft - changeset newer than events",
+			changeset: setIsWip(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
 	}
 
 	for i, tc := range tests {

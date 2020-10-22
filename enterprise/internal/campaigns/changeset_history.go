@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 // changesetHistory is a collection of external changeset states
@@ -96,7 +97,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			currentExtState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
-		case campaigns.ChangesetEventKindGitHubConvertToDraft:
+		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress,
+			campaigns.ChangesetEventKindGitHubConvertToDraft:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateDraft
@@ -106,7 +108,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		case campaigns.ChangesetEventKindGitHubReopened,
 			campaigns.ChangesetEventKindBitbucketServerReopened,
 			campaigns.ChangesetEventKindGitLabReopened,
-			campaigns.ChangesetEventKindGitHubReadyForReview:
+			campaigns.ChangesetEventKindGitHubReadyForReview,
+			campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateOpen
@@ -240,17 +243,21 @@ func initialExternalState(ch *campaigns.Changeset, ce ChangesetEvents) campaigns
 		if m.IsDraft {
 			open = false
 		}
+
+	case *gitlab.MergeRequest:
+		if m.WorkInProgress {
+			open = false
+		}
 	default:
-		// TODO: Support for non-GitHub changesets.
 		return campaigns.ChangesetExternalStateOpen
 	}
 	// Walk the events backwards, since we need to look from the current time to the past.
 	for i := len(ce) - 1; i >= 0; i-- {
 		e := ce[i]
 		switch e.Metadata.(type) {
-		case *github.ReadyForReviewEvent:
+		case *gitlab.UnmarkWorkInProgressEvent, *github.ReadyForReviewEvent:
 			open = false
-		case *github.ConvertToDraftEvent:
+		case *gitlab.MarkWorkInProgressEvent, *github.ConvertToDraftEvent:
 			open = true
 		}
 	}
