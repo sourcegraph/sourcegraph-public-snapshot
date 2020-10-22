@@ -518,7 +518,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		cmd("git", "init", ".")
-		cmd("sh", "-c", "truncate --size 0 .git/HEAD")
+		cmd("sh", "-c", ": > .git/HEAD")
 
 		server := &Server{
 			ReposDir:         reposDir,
@@ -600,7 +600,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			cloneableLimiter: mutablelimiter.New(1),
 		}
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
-			cmd("sh", "-c", fmt.Sprintf("truncate --size 0 %s/HEAD", tmpDir))
+			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
