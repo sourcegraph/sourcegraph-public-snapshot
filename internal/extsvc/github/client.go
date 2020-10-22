@@ -17,9 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/parser"
-	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
@@ -332,103 +329,6 @@ func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-// estimateGraphQLCost estimates the cost of the query as described here:
-// https://developer.github.com/v4/guides/resource-limitations/#calculating-a-rate-limit-score-before-running-the-call
-func estimateGraphQLCost(query string) (int, error) {
-	doc, err := parser.Parse(parser.ParseParams{
-		Source: query,
-	})
-	if err != nil {
-		return 0, errors.Wrap(err, "parsing query")
-	}
-
-	var totalCost int
-	for _, def := range doc.Definitions {
-		cost := calcDefinitionCost(def)
-		totalCost += cost
-	}
-
-	// As per the calculation spec, cost should be divided by 100
-	totalCost = totalCost / 100
-	if totalCost < 1 {
-		return 1, nil
-	}
-	return totalCost, nil
-}
-
-type limitDepth struct {
-	// The 'first' or 'last' limit
-	limit int
-	// The depth at which it was added
-	depth int
-}
-
-func calcDefinitionCost(def ast.Node) int {
-	var cost int
-	limitStack := make([]limitDepth, 0)
-
-	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
-			switch node := p.Node.(type) {
-			case *ast.IntValue:
-				// We're looking for a 'first' or 'last' param indicating a limit
-				parent, ok := p.Parent.(*ast.Argument)
-				if !ok {
-					return visitor.ActionNoChange, nil
-				}
-				if parent.Name == nil {
-					return visitor.ActionNoChange, nil
-				}
-				if parent.Name.Value != "first" && parent.Name.Value != "last" {
-					return visitor.ActionNoChange, nil
-				}
-
-				// Prune anything above our current depth as we may have started walking
-				// back down the tree
-				currentDepth := len(p.Ancestors)
-				limitStack = filterInPlace(limitStack, currentDepth)
-
-				limit, err := strconv.Atoi(node.Value)
-				if err != nil {
-					return "", errors.Wrap(err, "parsing limit")
-				}
-				limitStack = append(limitStack, limitDepth{limit: limit, depth: currentDepth})
-				// The first item in the tree is always worth 1
-				if len(limitStack) == 1 {
-					cost++
-					return visitor.ActionNoChange, nil
-				}
-				// The cost of the current item is calculated using the limits of
-				// its children
-				children := limitStack[:len(limitStack)-1]
-				product := 1
-				// Multiply them all together
-				for _, n := range children {
-					product = n.limit * product
-				}
-				cost += product
-			}
-			return visitor.ActionNoChange, nil
-		},
-	}
-
-	_ = visitor.Visit(def, v, nil)
-
-	return cost
-}
-
-func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
-	n := 0
-	for _, x := range limitStack {
-		if depth > x.depth {
-			limitStack[n] = x
-			n++
-		}
-	}
-	limitStack = limitStack[:n]
-	return limitStack
-}
-
 // unmarshal wraps json.Unmarshal, but includes extra context in the case of
 // json.UnmarshalTypeError
 func unmarshal(data []byte, v interface{}) error {
@@ -507,24 +407,6 @@ func IsRateLimitExceeded(err error) bool {
 	return false
 }
 
-// graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
-type graphqlErrors []struct {
-	Message   string        `json:"message"`
-	Type      string        `json:"type"`
-	Path      []interface{} `json:"path"`
-	Locations []struct {
-		Line   int `json:"line"`
-		Column int `json:"column"`
-	} `json:"locations,omitempty"`
-}
-
-const graphqlErrTypeNotFound = "NOT_FOUND"
-
-func (e graphqlErrors) Error() string {
-	return fmt.Sprintf("error in GraphQL response: %s", e[0].Message)
-}
-
 type disabledClient struct{}
 
 func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
@@ -546,13 +428,3 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 
 // ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response
 var ErrIncompleteResults = errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")
-
-// ErrPullRequestAlreadyExists is when the requested GitHub Pull Request already exists.
-var ErrPullRequestAlreadyExists = errors.New("GitHub pull request already exists")
-
-// ErrPullRequestNotFound is when the requested GitHub Pull Request doesn't exist.
-type ErrPullRequestNotFound int
-
-func (e ErrPullRequestNotFound) Error() string {
-	return fmt.Sprintf("GitHub pull requests not found: %d", e)
-}

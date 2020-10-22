@@ -1,6 +1,8 @@
 package ratelimit
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -22,7 +24,7 @@ type Monitor struct {
 	known     bool
 	limit     int       // last RateLimit-Limit HTTP response header value
 	remaining int       // last RateLimit-Remaining HTTP response header value
-	reset     time.Time // last RateLimit-Remaining HTTP response header value
+	reset     time.Time // last RateLimit-Reset HTTP response header value
 	retry     time.Time // deadline based on Retry-After HTTP response header value
 
 	clock func() time.Time
@@ -86,7 +88,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	}
 
 	// Be conservative.
-	limitRemaining = float64(limitRemaining) * 0.8
+	limitRemaining = limitRemaining * 0.8
 	timeRemaining := resetAt.Sub(now) + 3*time.Minute
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
@@ -104,6 +106,44 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	// an integer type, and drops fractions. We get more accurate
 	// calculations computing this the other way around:
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
+}
+
+func (c *Monitor) SleepRecommendedTimeForBackgroundOp(ctx context.Context, cost int) error {
+	waitTime := c.RecommendedWaitForBackgroundOp(cost)
+
+	fmt.Printf("I want to wait for %s\n", waitTime)
+
+	if waitTime.Milliseconds() == 0 {
+		return nil
+	}
+
+	c.Reserve(cost)
+	t := time.NewTimer(waitTime)
+	defer t.Stop()
+	select {
+	case <-t.C:
+		// We can proceed.
+		return nil
+	case <-ctx.Done():
+		// Context was canceled before we could proceed. Revert the
+		// reservation, which may permit other events to proceed sooner.
+		c.Release(cost)
+		return ctx.Err()
+	}
+}
+
+func (c *Monitor) Reserve(cost int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.remaining -= cost
+}
+
+func (c *Monitor) Release(cost int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.remaining += cost
 }
 
 // Update updates the monitor's rate limit information based on the HTTP response headers.
@@ -141,6 +181,8 @@ func (c *Monitor) Update(h http.Header) {
 	c.limit = limit
 	c.remaining = remaining
 	c.reset = time.Unix(resetAtSeconds, 0)
+
+	fmt.Printf("Status update: Limit: %d, Remaining: %d. Resets at %s", c.limit, c.remaining, c.reset.Format(time.RFC3339))
 }
 
 func (c *Monitor) now() time.Time {
@@ -212,4 +254,56 @@ func (r *Registry) Count() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return len(r.rateLimiters)
+}
+
+/////////////////// Monitor registry.
+
+// DefaultMonitorRegistry is the default global rate limit registry. It will hold rate limit mappings
+// for each instance of our services.
+var DefaultMonitorRegistry = NewMonitorRegistry()
+
+// NewMonitorRegistry creates a new empty registry.
+func NewMonitorRegistry() *MonitorRegistry {
+	return &MonitorRegistry{
+		rateLimitMonitors: make(map[string]*Monitor),
+	}
+}
+
+// MonitorRegistry keeps a mapping of external service URL to *rate.Limiter.
+// By default an infinite limiter is returned.
+type MonitorRegistry struct {
+	mu sync.Mutex
+	// Rate limiter per code host, keys are the normalized base URL for a
+	// code host.
+	rateLimitMonitors map[string]*Monitor
+}
+
+// Get fetches the rate limiter associated with the given code host. If none has been
+// configured an infinite limiter is returned.
+func (r *MonitorRegistry) Get(baseURL string) *Monitor {
+	return r.GetOrSet(baseURL, nil)
+}
+
+// GetOrSet fetches the rate limiter associated with the given code host. If none has been configured
+// yet, the provided limiter will be set. A nil limiter will fall back to an infinite limiter.
+func (r *MonitorRegistry) GetOrSet(baseURL string, fallback *Monitor) *Monitor {
+	baseURL = normaliseURL(baseURL)
+	if fallback == nil {
+		fallback = &Monitor{}
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l := r.rateLimitMonitors[baseURL]
+	if l == nil {
+		l = fallback
+		r.rateLimitMonitors[baseURL] = l
+	}
+	return l
+}
+
+// Count returns the total number of rate limiters in the registry
+func (r *MonitorRegistry) Count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.rateLimitMonitors)
 }

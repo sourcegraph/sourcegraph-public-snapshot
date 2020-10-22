@@ -532,8 +532,12 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 	}
 	repo := rs[0]
 
+	fmt.Printf("SYNCER: Syncing changeset %s\n", c.ExternalID)
+
+	loadCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
-	if err := s.LoadChangeset(ctx, repoChangeset); err != nil {
+	if err := s.LoadChangeset(loadCtx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
 			return err

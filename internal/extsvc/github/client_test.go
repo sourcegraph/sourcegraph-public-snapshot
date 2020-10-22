@@ -232,8 +232,8 @@ func TestClient_ListAffiliatedRepositories(t *testing.T) {
 	}
 }
 
-func TestClient_LoadPullRequest(t *testing.T) {
-	cli, save := newClient(t, "LoadPullRequest")
+func TestV4Client_LoadPullRequest(t *testing.T) {
+	cli, save := newV4Client(t, "LoadPullRequest")
 	defer save()
 
 	for i, tc := range []struct {
@@ -250,7 +250,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		{
 			name: "non-existing-pr",
 			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0},
-			err:  "GitHub pull requests not found: 0",
+			err:  "GitHub pull request not found: 0",
 		},
 		{
 			name: "success",
@@ -289,8 +289,8 @@ func TestClient_LoadPullRequest(t *testing.T) {
 	}
 }
 
-func TestClient_CreatePullRequest(t *testing.T) {
-	cli, save := newClient(t, "CreatePullRequest")
+func TestV4Client_CreatePullRequest(t *testing.T) {
+	cli, save := newV4Client(t, "CreatePullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -375,8 +375,8 @@ func TestClient_CreatePullRequest(t *testing.T) {
 	}
 }
 
-func TestClient_ClosePullRequest(t *testing.T) {
-	cli, save := newClient(t, "ClosePullRequest")
+func TestV4Client_ClosePullRequest(t *testing.T) {
+	cli, save := newV4Client(t, "ClosePullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -430,8 +430,8 @@ func TestClient_ClosePullRequest(t *testing.T) {
 	}
 }
 
-func TestClient_ReopenPullRequest(t *testing.T) {
-	cli, save := newClient(t, "ReopenPullRequest")
+func TestV4Client_ReopenPullRequest(t *testing.T) {
+	cli, save := newV4Client(t, "ReopenPullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -475,8 +475,8 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 	}
 }
 
-func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
-	cli, save := newClient(t, "MarkPullRequestReadyForReview")
+func TestV4Client_MarkPullRequestReadyForReview(t *testing.T) {
+	cli, save := newV4Client(t, "MarkPullRequestReadyForReview")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -550,6 +550,25 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 	}
 
 	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer)
+
+	return cli, save
+}
+
+func newV4Client(t testing.TB, name string) (*V4Client, func()) {
+	t.Helper()
+
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+	uri, err := url.Parse("https://github.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cli := NewV4Client(uri, os.Getenv("GITHUB_TOKEN"), doer)
 
 	return cli, save
 }

@@ -33,6 +33,7 @@ type GithubSource struct {
 	githubDotCom    bool
 	baseURL         *url.URL
 	client          *github.Client
+	v4Client        *github.V4Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
 	searchClient *github.Client
@@ -114,6 +115,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
+		v4Client:         github.NewV4Client(apiURL, c.Token, cli),
 		searchClient:     github.NewClient(apiURL, c.Token, cli),
 		originalHostname: originalHostname,
 	}, nil
@@ -180,7 +182,7 @@ func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
 
 func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
 	var exists bool
-	pr, err := s.client.CreatePullRequest(ctx, prInput)
+	pr, err := s.v4Client.CreatePullRequest(ctx, prInput)
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
 			return exists, err
@@ -190,7 +192,7 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 		if err != nil {
 			return exists, errors.Wrap(err, "getting repo owner and name")
 		}
-		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		pr, err = s.v4Client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
 		if err != nil {
 			return exists, errors.Wrap(err, "fetching existing PR")
 		}
@@ -212,7 +214,7 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.client.ClosePullRequest(ctx, pr)
+	err := s.v4Client.ClosePullRequest(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -227,7 +229,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.client.MarkPullRequestReadyForReview(ctx, pr)
+	err := s.v4Client.MarkPullRequestReadyForReview(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -248,7 +250,7 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		Number:        number,
 	}
 
-	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
+	if err := s.v4Client.LoadPullRequest(ctx, pr); err != nil {
 		if github.IsNotFound(err) {
 			return ChangesetNotFoundError{Changeset: cs}
 		}
@@ -269,7 +271,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+	updated, err := s.v4Client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
@@ -290,7 +292,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.client.ReopenPullRequest(ctx, pr)
+	err := s.v4Client.ReopenPullRequest(ctx, pr)
 	if err != nil {
 		return err
 	}

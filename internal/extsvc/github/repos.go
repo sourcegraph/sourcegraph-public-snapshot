@@ -55,7 +55,7 @@ fragment RepositoryFields on Repository {
 	isArchived
 	viewerPermission
 }
-	`
+`
 	}
 	// Some fields are not yet available on GitHub Enterprise yet
 	// or are available but too new to expect our customers to have updated:
@@ -71,7 +71,7 @@ fragment RepositoryFields on Repository {
 	isFork
 	isArchived
 }
-	`
+`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
@@ -428,25 +428,4 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		Repos:       repos,
 		HasNextPage: page*100 < response.TotalCount,
 	}, nil
-}
-
-type restTopicsResponse struct {
-	Names []string `json:"names"`
-}
-
-// ListTopicsOnRepository lists topics on the given repository.
-func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
-	owner, name, err := SplitRepositoryNameWithOwner(ownerAndName)
-	if err != nil {
-		return nil, err
-	}
-
-	var result restTopicsResponse
-	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s/topics", owner, name), &result); err != nil {
-		if HTTPErrorCode(err) == http.StatusNotFound {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-	return result.Names, nil
 }
