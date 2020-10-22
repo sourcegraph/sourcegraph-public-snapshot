@@ -115,24 +115,36 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return nil
 	}
 
-	if !plan.ops.IsSyncOnly() {
-		e.repo, e.extSvc, e.campaign, err = loadAssociations(ctx, e.tx, e.ch)
-		if err != nil {
-			return errors.Wrap(err, "failed to load associations")
-		}
-		// Set up a source with which we can modify the changeset.
-		e.ccs, err = e.buildChangesetSource(e.repo, e.extSvc)
-		if err != nil {
-			return err
-		}
+	reposStore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
+
+	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
+	if err != nil {
+		return errors.Wrap(err, "failed to load repository")
 	}
 
-	synced := false
+	e.extSvc, err = loadExternalService(ctx, reposStore, e.repo)
+	if err != nil {
+		return errors.Wrap(err, "failed to load external service")
+	}
+
+	// Set up a source with which we can modify the changeset.
+	e.ccs, err = e.buildChangesetSource(e.repo, e.extSvc)
+	if err != nil {
+		return err
+	}
+
+	upsertChangesetEvents := true
 	for _, op := range plan.ops.ExecutionOrder() {
 		switch op {
 		case operationSync:
 			err = e.syncChangeset(ctx)
-			synced = true
+
+		case operationImport:
+			var notFound bool
+			notFound, err = e.importChangeset(ctx)
+			if notFound {
+				upsertChangesetEvents = false
+			}
 
 		case operationPublish:
 			err = e.publishChangeset(ctx, false)
@@ -161,18 +173,14 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		}
 	}
 
-	if synced {
-		// Since we synced, the changeset and its events have already been
-		// upserted into the database. No need to do it twice.
-		return nil
-	}
+	if upsertChangesetEvents {
+		events := e.ch.Events()
+		SetDerivedState(ctx, e.ch, events)
 
-	events := e.ch.Events()
-	SetDerivedState(ctx, e.ch, events)
-
-	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
+		if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
+			log15.Error("UpsertChangesetEvents", "err", err)
+			return err
+		}
 	}
 
 	return e.tx.UpdateChangeset(ctx, e.ch)
@@ -232,7 +240,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, e.tx, cs, e.campaign); err != nil {
+	if err := decorateChangesetBody(ctx, e.tx, cs); err != nil {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
@@ -273,12 +281,47 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 }
 
 func (e *executor) syncChangeset(ctx context.Context) error {
-	rstore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
+	if err := e.loadChangeset(ctx); err != nil {
+		_, ok := err.(repos.ChangesetNotFoundError)
+		if !ok {
+			return err
+		}
 
-	if err := SyncChangeset(ctx, rstore, e.tx, e.sourcer, e.ch); err != nil {
-		return errors.Wrapf(err, "syncing changeset with external ID %q failed", e.ch.ExternalID)
+		// If we're syncing a changeset and it can't be found anymore, we mark
+		// it as deleted.
+		if !e.ch.IsDeleted() {
+			e.ch.SetDeleted()
+		}
 	}
+
 	return nil
+}
+
+func (e *executor) importChangeset(ctx context.Context) (bool, error) {
+	if err := e.loadChangeset(ctx); err != nil {
+		_, ok := err.(repos.ChangesetNotFoundError)
+		if !ok {
+			return false, err
+		}
+
+		// If we're importing and it can't be found, we want to mark the
+		// changeset as "dead" and never retry:
+
+		msg := err.Error()
+		e.ch.FailureMessage = &msg
+		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
+		e.ch.NumFailures = reconcilerMaxNumRetries + 999
+		return true, nil
+	}
+
+	e.ch.Unsynced = false
+
+	return false, nil
+}
+
+func (e *executor) loadChangeset(ctx context.Context) error {
+	repoChangeset := &repos.Changeset{Repo: e.repo, Changeset: e.ch}
+	return e.ccs.LoadChangeset(ctx, repoChangeset)
 }
 
 // updateChangeset updates the given changeset's attribute on the code host
@@ -331,7 +374,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, e.tx, &cs, e.campaign); err != nil {
+	if err := decorateChangesetBody(ctx, e.tx, &cs); err != nil {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
@@ -464,11 +507,13 @@ const (
 	operationPublish      operation = "publish"
 	operationPublishDraft operation = "publish-draft"
 	operationSync         operation = "sync"
+	operationImport       operation = "import"
 	operationClose        operation = "close"
 	operationReopen       operation = "reopen"
 )
 
 var operationPrecedence = map[operation]int{
+	operationImport:       0,
 	operationPublish:      0,
 	operationPublishDraft: 0,
 	operationClose:        0,
@@ -567,7 +612,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 	// anything.
 	if ch.CurrentSpecID == 0 {
 		if ch.Unsynced {
-			pl.SetOp(operationSync)
+			pl.SetOp(operationImport)
 		}
 		return pl, nil
 	}
@@ -596,7 +641,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		}
 	}
 
-	delta, err := CompareChangesetSpecs(prev, curr)
+	delta, err := compareChangesetSpecs(prev, curr)
 	if err != nil {
 		return pl, nil
 	}
@@ -613,8 +658,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
-		reopen := reopenAfterDetach(ch)
-		if reopen {
+		if reopenAfterDetach(ch) {
 			pl.SetOp(operationReopen)
 		}
 
@@ -683,27 +727,6 @@ func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.
 	}
 
 	return nil
-}
-
-func loadAssociations(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*repos.Repo, *repos.ExternalService, *campaigns.Campaign, error) {
-	reposStore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
-
-	repo, err := loadRepo(ctx, reposStore, ch.RepoID)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load repository")
-	}
-
-	extSvc, err := loadExternalService(ctx, reposStore, repo)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load external service")
-	}
-
-	campaign, err := loadCampaign(ctx, tx, ch.OwnedByCampaignID)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load campaign")
-	}
-
-	return repo, extSvc, campaign, nil
 }
 
 func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
@@ -775,7 +798,12 @@ func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign
 	return campaign, nil
 }
 
-func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset, campaign *campaigns.Campaign) error {
+func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
+	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
+	if err != nil {
+		return errors.Wrap(err, "failed to load campaign")
+	}
+
 	// We need to get the namespace, since external campaign URLs are
 	// namespaced.
 	ns, err := db.Namespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
@@ -831,7 +859,7 @@ func namespaceURL(ns *db.Namespace) string {
 	return prefix + ns.Name
 }
 
-func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {
+func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {
 	delta := &changesetSpecDelta{}
 
 	if previous == nil {
