@@ -1391,6 +1391,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	removeBadRefs(ctx, dir)
+	ensureHead(ctx, dir)
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
