@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
@@ -14,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
@@ -28,19 +28,12 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
 
-	conf.Branding = func() *schema.Branding {
-		if !licensing.EnforceTiers ||
-			licensing.CheckFeature(licensing.FeatureBranding) == nil {
-			branding := conf.Get().Branding
-			if branding != nil && branding.BrandName == "" {
-				bcopy := *branding
-				bcopy.BrandName = "Sourcegraph"
-				branding = &bcopy
-			}
-			return branding
+	globals.WatchBranding(func() error {
+		if !licensing.EnforceTiers {
+			return nil
 		}
-		return nil
-	}
+		return licensing.Check(licensing.FeatureBranding)
+	})
 
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		if !licensing.EnforceTiers {
@@ -53,6 +46,10 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		}
 
 		if licensing.IsFeatureEnabledLenient(licensing.FeatureBranding) {
+			return nil
+		}
+
+		if conf.Get().Branding == nil {
 			return nil
 		}
 

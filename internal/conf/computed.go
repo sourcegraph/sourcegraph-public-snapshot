@@ -249,19 +249,6 @@ func IsBuiltinSignupAllowed() bool {
 	return false
 }
 
-// Branding is called to obtain the branding information.
-var Branding = func() *schema.Branding {
-	return nil
-}
-
-func BrandName() string {
-	branding := Branding()
-	if branding == nil || branding.BrandName == "" {
-		return "Sourcegraph"
-	}
-	return branding.BrandName
-}
-
 // SearchSymbolsParallelism returns 20, or the site config
 // "debug.search.symbolsParallelism" value if configured.
 func SearchSymbolsParallelism() int {
