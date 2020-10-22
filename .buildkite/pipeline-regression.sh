@@ -16,7 +16,7 @@
 # .buildkite/pipeline.sh | buildkite-agent pipeline upload
 #
 
-name=$(buildkite-agent meta-data get name)
+name=$(buildkite-agent meta-data keys)
 
 cat << EOF
 
@@ -31,6 +31,6 @@ steps:
     - .buildkite/test.sh sourcegraph-e2e || true
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
-    agents:
-      name: "$name"
+  agents:
+    name: "$name"
 EOF
