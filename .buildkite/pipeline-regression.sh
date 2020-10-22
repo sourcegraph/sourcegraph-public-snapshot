@@ -16,7 +16,7 @@
 # .buildkite/pipeline.sh | buildkite-agent pipeline upload
 #
 
-buildkite-agent meta-data set name="$BUILDKITE_AGENT_NAME"
+buildkite-agent meta-data set name "$BUILDKITE_AGENT_NAME"
 
 name=$(echo $BUILDKITE_AGENT_NAME)
 
@@ -34,5 +34,5 @@ steps:
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
   agents:
-    name: $name
+    queue: baremetal
 EOF
