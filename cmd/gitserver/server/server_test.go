@@ -480,6 +480,9 @@ func TestRemoveBadRefs(t *testing.T) {
 }
 
 func TestCloneRepo_EnsureValidity(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	t.Run("with no remote HEAD file", func(t *testing.T) {
 		var (
 			remote   = tmpDir(t)
@@ -495,12 +498,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		server := &Server{
 			ReposDir:         reposDir,
-			ctx:              context.TODO(),
+			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
 			cloneableLimiter: mutablelimiter.New(1),
 		}
-		if _, err := server.cloneRepo(context.TODO(), "example.com/foo/bar", remote, nil); err == nil {
+		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -519,12 +522,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		server := &Server{
 			ReposDir:         reposDir,
-			ctx:              context.TODO(),
+			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
 			cloneableLimiter: mutablelimiter.New(1),
 		}
-		if _, err := server.cloneRepo(context.TODO(), "example.com/foo/bar", remote, nil); err == nil {
+		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -545,7 +548,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		s := &Server{
 			ReposDir:         reposDir,
-			ctx:              context.TODO(),
+			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
 			cloneableLimiter: mutablelimiter.New(1),
@@ -553,7 +556,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
 		}
-		if _, err := s.cloneRepo(context.TODO(), "example.com/foo/bar", remote, nil); err != nil {
+		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
@@ -591,7 +594,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		s := &Server{
 			ReposDir:         reposDir,
-			ctx:              context.TODO(),
+			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
 			cloneableLimiter: mutablelimiter.New(1),
@@ -599,7 +602,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf("truncate --size 0 %s/HEAD", tmpDir))
 		}
-		if _, err := s.cloneRepo(context.TODO(), "example.com/foo/bar", remote, nil); err != nil {
+		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
