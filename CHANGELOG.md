@@ -45,7 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fix server upgrade where codeintel database does not exist [#14953](https://github.com/sourcegraph/sourcegraph/pull/14953)
 - CVE-2019-18218 in postgres docker image [#14954](https://github.com/sourcegraph/sourcegraph/pull/14954)
 - Fix an issue where .git/HEAD in invalid [#14962](https://github.com/sourcegraph/sourcegraph/pull/14962)
-- Repository syncing will not happen more frequently than the repoListUpdateInterval config value [#14983](https://github.com/sourcegraph/sourcegraph/pull/14983)
+- Repository syncing will not happen more frequently than the repoListUpdateInterval config value [#14901](https://github.com/sourcegraph/sourcegraph/pull/14901) [#14983](https://github.com/sourcegraph/sourcegraph/pull/14983)
 
 ## 3.21.0
 
