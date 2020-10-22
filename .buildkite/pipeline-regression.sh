@@ -16,9 +16,8 @@
 # .buildkite/pipeline.sh | buildkite-agent pipeline upload
 #
 
-buildkite-agent meta-data set name "$BUILDKITE_AGENT_NAME"
 
-name=$(echo $BUILDKITE_AGENT_NAME)
+name=$(buildkite-agent meta-data set name "$BUILDKITE_AGENT_NAME" && echo $BUILDKITE_AGENT_NAME)
 
 cat << EOF
 
@@ -30,9 +29,9 @@ steps:
 - artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
   # setting to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
   command:
-    - echo $name && echo $VAGRANT_DOTFILE_PATH
+    -  env
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
   agents:
-    queue: baremetal
+    name: buildkite-agent-ntrk-1
 EOF
