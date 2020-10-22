@@ -133,7 +133,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return err
 	}
 
-	upsertChangeset := true
+	upsertChangesetEvents := true
 	for _, op := range plan.ops.ExecutionOrder() {
 		switch op {
 		case operationSync:
@@ -143,7 +143,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 			var notFound bool
 			notFound, err = e.importChangeset(ctx)
 			if notFound {
-				upsertChangeset = false
+				upsertChangesetEvents = false
 			}
 
 		case operationPublish:
@@ -173,7 +173,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		}
 	}
 
-	if upsertChangeset {
+	if upsertChangesetEvents {
 		events := e.ch.Events()
 		SetDerivedState(ctx, e.ch, events)
 
@@ -641,7 +641,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		}
 	}
 
-	delta, err := CompareChangesetSpecs(prev, curr)
+	delta, err := compareChangesetSpecs(prev, curr)
 	if err != nil {
 		return pl, nil
 	}
@@ -859,7 +859,7 @@ func namespaceURL(ns *db.Namespace) string {
 	return prefix + ns.Name
 }
 
-func CompareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {
+func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {
 	delta := &changesetSpecDelta{}
 
 	if previous == nil {
