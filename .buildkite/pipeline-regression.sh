@@ -28,10 +28,9 @@ steps:
 - artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
   # setting to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
   command:
-    - echo $name
-    # - .buildkite/test.sh sourcegraph-e2e || true
+    - echo $name && echo $VAGRANT_DOTFILE_PATH
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
   agents:
-    queue: baremetal
+    name: $name
 EOF
