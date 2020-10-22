@@ -283,16 +283,6 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 				Env:     env,
 			}),
 		)
-		pipeline.AddTrigger(":arrow-double-up:",
-			bk.Trigger("sourcegraph-upgrade"),
-			bk.Async(async),
-			bk.Build(bk.BuildOptions{
-				Message: os.Getenv("BUILDKITE_MESSAGE"),
-				Commit:  c.commit,
-				Branch:  c.branch,
-				Env:     env,
-			}),
-		)
 	}
 }
 

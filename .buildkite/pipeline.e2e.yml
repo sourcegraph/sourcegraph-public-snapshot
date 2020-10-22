@@ -10,12 +10,18 @@ env:
   VAGRANT_DOTFILE_PATH: "/var/lib"
   VAGRANT_DOTFILE_PATH: "/var/lib/buildkite/builds/$BUILDKITE_AGENT_NAME/vagrant.d"
 
+# set commands to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
 steps:
 - artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
-  # setting to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
   command:
     - .buildkite/test.sh sourcegraph-e2e || true
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
+  agents:
+    queue: 'baremetal'
+- command:
+    - .buildkite/test.sh sourcegraph-upgrade || true
+  timeout_in_minutes: 20
+  label: ':docker::arrow-double-up:'
   agents:
     queue: 'baremetal'
