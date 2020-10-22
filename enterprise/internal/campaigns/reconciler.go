@@ -11,6 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -946,4 +947,21 @@ func (d *changesetSpecDelta) NeedCodeHostUpdate() bool {
 
 func (d *changesetSpecDelta) AttributesChanged() bool {
 	return d.NeedCommitUpdate() || d.NeedCodeHostUpdate()
+}
+
+func getUserToken(ctx context.Context, userID int32, repo *types.Repo) (string, error) {
+	accounts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
+		UserID: userID,
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "listing external accounts")
+	}
+
+	for _, account := range accounts {
+		if account.ServiceType == repo.ExternalRepo.ServiceType && account.ServiceID == repo.ExternalRepo.ServiceID {
+			return account.AuthData, nil
+		}
+	}
+
+	return "", nil
 }
