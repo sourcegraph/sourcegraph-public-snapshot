@@ -275,11 +275,10 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 func (e *executor) syncChangeset(ctx context.Context) error {
 	rstore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
 
-	if err := SyncChangesets(ctx, rstore, e.tx, e.sourcer, e.ch); err != nil {
+	if err := SyncChangeset(ctx, rstore, e.tx, e.sourcer, e.ch); err != nil {
 		return errors.Wrapf(err, "syncing changeset with external ID %q failed", e.ch.ExternalID)
 	}
 	return nil
-
 }
 
 // updateChangeset updates the given changeset's attribute on the code host

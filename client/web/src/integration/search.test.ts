@@ -2,13 +2,14 @@ import assert from 'assert'
 import expect from 'expect'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
-import { SearchResult, WebGraphQlOperations } from '../graphql-operations'
+import { RepoGroupsResult, SearchResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
 import { createTreeEntriesResult } from './graphQlResponseHelpers'
+import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -67,6 +68,19 @@ const searchResults = (): SearchResult => ({
     },
 })
 
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+    ...commonWebGraphQlResults,
+    Search: searchResults,
+    SearchSuggestions: (): SearchSuggestionsResult => ({
+        search: {
+            suggestions: [],
+        },
+    }),
+    RepoGroups: (): RepoGroupsResult => ({
+        repoGroups: [],
+    }),
+}
+
 describe('Search', () => {
     let driver: Driver
     before(async () => {
@@ -86,7 +100,6 @@ describe('Search', () => {
 
     describe('Interactive search mode', () => {
         const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
-            ...commonWebGraphQlResults,
             ViewerSettings: () => ({
                 viewerSettings: {
                     subjects: [
@@ -117,7 +130,7 @@ describe('Search', () => {
         }
 
         test('Search mode component appears', async () => {
-            testContext.overrideGraphQL({ ...viewerSettingsWithSplitSearchModes })
+            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithSplitSearchModes })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-search-mode-toggle')
             expect(await driver.page.evaluate(() => document.querySelectorAll('.test-search-mode-toggle').length)).toBe(
@@ -127,7 +140,7 @@ describe('Search', () => {
 
         test('Filter buttons', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...viewerSettingsWithSplitSearchModes,
                 SearchSuggestions: () => ({
                     search: {
@@ -140,7 +153,6 @@ describe('Search', () => {
                         ],
                     },
                 }),
-                Search: searchResults,
                 RepoGroups: () => ({
                     repoGroups: [
                         { __typename: 'RepoGroup', name: 'go2generics' },
@@ -235,7 +247,7 @@ describe('Search', () => {
 
         test('Updates query when searching from directory page', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...viewerSettingsWithSplitSearchModes,
                 RepositoryRedirect: () => ({
                     repositoryRedirect: {
@@ -291,9 +303,8 @@ describe('Search', () => {
 
         test('Filter dropdown and finite-option filter inputs', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...viewerSettingsWithSplitSearchModes,
-                Search: searchResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
@@ -342,7 +353,7 @@ describe('Search', () => {
             }
 
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...viewerSettingsWithSplitSearchModes,
                 Search: () => searchResultsWithAlert,
             })
@@ -380,6 +391,9 @@ describe('Search', () => {
 
     describe('Case sensitivity toggle', () => {
         test('Clicking toggle turns on case sensitivity', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
@@ -390,8 +404,7 @@ describe('Search', () => {
 
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                Search: searchResults,
+                ...commonSearchGraphQLResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
@@ -404,8 +417,7 @@ describe('Search', () => {
     describe('Structural search toggle', () => {
         test('Clicking toggle turns on structural search', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                Search: searchResults,
+                ...commonSearchGraphQLResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
@@ -417,8 +429,7 @@ describe('Search', () => {
 
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                Search: searchResults,
+                ...commonSearchGraphQLResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
@@ -429,8 +440,7 @@ describe('Search', () => {
 
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                Search: searchResults,
+                ...commonSearchGraphQLResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
@@ -443,8 +453,7 @@ describe('Search', () => {
     describe('Search button', () => {
         test('Clicking search button executes search', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
-                Search: searchResults,
+                ...commonSearchGraphQLResults,
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')

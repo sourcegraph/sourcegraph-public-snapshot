@@ -232,35 +232,33 @@ func TestClient_ListAffiliatedRepositories(t *testing.T) {
 	}
 }
 
-func TestClient_LoadPullRequests(t *testing.T) {
-	cli, save := newClient(t, "LoadPullRequests")
+func TestClient_LoadPullRequest(t *testing.T) {
+	cli, save := newClient(t, "LoadPullRequest")
 	defer save()
 
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
-		prs  []*PullRequest
+		pr   *PullRequest
 		err  string
 	}{
 		{
 			name: "non-existing-repo",
-			prs:  []*PullRequest{{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550}},
+			pr:   &PullRequest{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550},
 			err:  "error in GraphQL response: Could not resolve to a Repository with the name 'whoisthis/sourcegraph'.",
 		},
 		{
 			name: "non-existing-pr",
-			prs:  []*PullRequest{{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0}},
+			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0},
 			err:  "error in GraphQL response: Could not resolve to a PullRequest with the number of 0.",
 		},
 		{
 			name: "success",
-			prs: []*PullRequest{
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 596},
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5834},
-				{RepoWithOwner: "tsenart/vegeta", Number: 50},
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 7352},
-			},
+			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
+		},
+		{
+			name: "with more than 250 events",
+			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 596},
 		},
 	} {
 		tc := tc
@@ -273,7 +271,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err := cli.LoadPullRequests(tc.ctx, tc.prs...)
+			err := cli.LoadPullRequest(tc.ctx, tc.pr)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -283,9 +281,9 @@ func TestClient_LoadPullRequests(t *testing.T) {
 			}
 
 			testutil.AssertGolden(t,
-				"testdata/golden/LoadPullRequests-"+strconv.Itoa(i),
-				update("LoadPullRequests"),
-				tc.prs,
+				"testdata/golden/LoadPullRequest-"+strconv.Itoa(i),
+				update("LoadPullRequest"),
+				tc.pr,
 			)
 		})
 	}

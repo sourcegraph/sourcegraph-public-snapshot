@@ -128,7 +128,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangesets(ctx, repoStore, store, repos.NewSourcer(cf), changeset)
+		err = SyncChangeset(ctx, repoStore, store, repos.NewSourcer(cf), changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -295,12 +295,6 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			},
 		}
 
-		for _, ch := range changesets {
-			if err = store.CreateChangeset(ctx, ch); err != nil {
-				t.Fatal(err)
-			}
-		}
-
 		// Set up mocks to prevent the diffstat computation from trying to
 		// use a real gitserver, and so we can control what diff is used to
 		// create the diffstat.
@@ -310,9 +304,15 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangesets(ctx, repoStore, store, repos.NewSourcer(cf), changesets...)
-		if err != nil {
-			t.Fatal(err)
+		for _, ch := range changesets {
+			if err := store.CreateChangeset(ctx, ch); err != nil {
+				t.Fatal(err)
+			}
+
+			err = SyncChangeset(ctx, repoStore, store, repos.NewSourcer(cf), ch)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		hook := NewBitbucketServerWebhook(store, repoStore, clock, "testhook")

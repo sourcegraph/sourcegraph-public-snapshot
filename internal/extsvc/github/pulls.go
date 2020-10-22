@@ -751,93 +751,45 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
-// LoadPullRequests loads a list of PullRequests from Github.
-func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	const batchSize = 15
-	// We load prs in batches to avoid hitting Github's GraphQL node limit
-	for i := 0; i < len(prs); i += batchSize {
-		j := i + batchSize
-		if j > len(prs) {
-			j = len(prs)
-		}
-		if err := c.loadPullRequests(ctx, prs[i:j]...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	type repository struct {
-		Owner string
-		Name  string
-		PRs   map[string]*PullRequest
-	}
-
-	labeled := map[string]*repository{}
-	for i, pr := range prs {
-		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
-		if err != nil {
-			return err
-		}
-
-		repoLabel := fmt.Sprintf("repo_%d", i)
-		r, ok := labeled[repoLabel]
-		if !ok {
-			r = &repository{
-				Owner: owner,
-				Name:  repo,
-				PRs:   map[string]*PullRequest{},
-			}
-			labeled[repoLabel] = r
-		}
-
-		prLabel := repoLabel + "_" + strconv.FormatInt(pr.Number, 10)
-		r.PRs[prLabel] = pr
-	}
-
-	var q strings.Builder
-	q.WriteString(pullRequestFragments)
-	q.WriteString("query {\n")
-
-	for repoLabel, r := range labeled {
-		q.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) {\n",
-			repoLabel, r.Owner, r.Name))
-
-		for prLabel, pr := range r.PRs {
-			q.WriteString(fmt.Sprintf("%s: pullRequest(number: %d) { ...pr }\n",
-				prLabel, pr.Number,
-			))
-		}
-
-		q.WriteString("}\n")
-	}
-
-	q.WriteString("}")
-
-	var results map[string]map[string]*struct {
-		PullRequest
-		Participants  struct{ Nodes []Actor }
-		TimelineItems TimelineItemConnection
-	}
-
-	err := c.requestGraphQL(ctx, q.String(), nil, &results)
+// LoadPullRequest loads a PullRequest from Github.
+func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+	owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
 	if err != nil {
 		return err
 	}
 
-	for repoLabel, prs := range results {
-		for prLabel, pr := range prs {
-			pr.PullRequest.Participants = pr.Participants.Nodes
-			pr.PullRequest.TimelineItems = pr.TimelineItems.Nodes
-			items, err := c.loadRemainingTimelineItems(ctx, pr.ID, pr.TimelineItems.PageInfo)
-			if err != nil {
-				return err
+	q := pullRequestFragments + `
+query($owner: String!, $name: String!, $number: Int!) {
+	repository(owner: $owner, name: $name) {
+		pullRequest(number: $number) { ...pr }
+	}
+}`
+
+	var result struct {
+		Repository struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
 			}
-			pr.PullRequest.TimelineItems = append(pr.PullRequest.TimelineItems, items...)
-			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
 		}
 	}
+
+	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	if err != nil {
+		return err
+	}
+
+	ti := result.Repository.PullRequest.TimelineItems
+	*pr = result.Repository.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.Repository.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
