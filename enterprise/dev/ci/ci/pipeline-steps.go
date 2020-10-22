@@ -244,7 +244,8 @@ func wait(pipeline *bk.Pipeline) {
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// Run e2e tests on release, patch and main branches
-	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" ||
+		c.branch == "ci/sourcegraph-upgrade" // TODO: remove
 
 	var async bool
 	if c.branch == "main" {
@@ -263,6 +264,10 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VERSION"] = commonEnv["VERSION"]
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
+	// for sourcegraph-upgrade
+	env["TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION"] = "3.20.0"
+	env["TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"] = candidateImageTag(c)
+
 	return func(pipeline *bk.Pipeline) {
 		if !runE2E {
 			return
@@ -270,6 +275,16 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
+			bk.Async(async),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env:     env,
+			}),
+		)
+		pipeline.AddTrigger(":arrow-double-up:",
+			bk.Trigger("sourcegraph-upgrade"),
 			bk.Async(async),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
