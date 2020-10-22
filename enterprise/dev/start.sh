@@ -44,7 +44,6 @@ export EXECUTOR_FRONTEND_USERNAME=executor
 export EXECUTOR_FRONTEND_PASSWORD=hunter2
 export EXECUTOR_QUEUE_URL=http://localhost:3191
 export EXECUTOR_USE_FIRECRACKER=false
-export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 
 export PRECISE_CODE_INTEL_EXTERNAL_URL=http://localhost:3080
 export PRECISE_CODE_INTEL_EXTERNAL_URL_FROM_DOCKER=http://host.docker.internal:3080

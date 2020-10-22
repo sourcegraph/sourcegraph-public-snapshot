@@ -2,10 +2,12 @@ package apiworker
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -60,8 +62,17 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}()
 
 	// Copy the file contents from the job record into the working directory
-	for path, content := range job.VirtualMachineFiles {
-		if err := ioutil.WriteFile(filepath.Join(workingDirectory, path), []byte(content), os.ModePerm); err != nil {
+	for relativePath, content := range job.VirtualMachineFiles {
+		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
+		if err != nil {
+			return err
+		}
+
+		if !strings.HasPrefix(path, workingDirectory) {
+			return fmt.Errorf("refusing to write outside of working directory")
+		}
+
+		if err := ioutil.WriteFile(path, []byte(content), os.ModePerm); err != nil {
 			return err
 		}
 	}
