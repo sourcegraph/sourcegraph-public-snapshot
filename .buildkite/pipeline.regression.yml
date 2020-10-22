@@ -1,12 +1,10 @@
 env:
   VAGRANT_RUN_ENV: "CI"
-  VAGRANT_DOTFILE_PATH: "$(pwd)/../../.vagrant"
-
 steps:
 - artifact_paths: ./*.png;./e2e.mp4;./ffmpeg.log
   # setting to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
   command:
-    -  echo "this is my dotfile $VAGRANT_DOTFILE_PATH" && .buiildkite/test.sh sourcegraph-regression || true
+    -  VAGRANT_DOTFILE_PATH=/var/lib/buildite-agent/builds/$BUILDKITE_AGENT_NAME/sourcegraph/.vagrant .buiildkite/test.sh sourcegraph-regression || true
   label: ':docker::arrow_right::chromium:'
   agents:
     queue: 'baremetal'
