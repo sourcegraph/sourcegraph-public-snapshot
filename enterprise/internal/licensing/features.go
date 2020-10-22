@@ -2,21 +2,27 @@ package licensing
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
+
+// EnforceTiers is a temporary flag to indicate whether to enforce new license tier constraints defined in
+// RFC 167 to incrementally merge changes into main branch, we'll remove it once fully implemented the RFC.
+var EnforceTiers, _ = strconv.ParseBool(env.Get("SRC_ENFORCE_TIERS", "false", "Enforce license tier constraints defined in RFC 167"))
 
 // Feature is a product feature that is selectively activated based on the current license key.
 type Feature string
 
-// CheckFeature checks whether the feature is activated based on the current license. If it is
+// Check checks whether the feature is activated based on the current license. If it is
 // disabled, it returns a non-nil error.
 //
 // The returned error may implement errcode.PresentationError to indicate that it can be displayed
 // directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.
-func CheckFeature(feature Feature) error {
+func Check(feature Feature) error {
 	if MockCheckFeature != nil {
 		return MockCheckFeature(feature)
 	}
@@ -48,10 +54,10 @@ func checkFeature(info *Info, feature Feature) error {
 	return nil // feature is activated for current license
 }
 
-// MockCheckFeature is for mocking CheckFeature in tests.
+// MockCheckFeature is for mocking Check in tests.
 var MockCheckFeature func(feature Feature) error
 
-// TestingSkipFeatureChecks is for tests that want to mock CheckFeature to always return nil (i.e.,
+// TestingSkipFeatureChecks is for tests that want to mock Check to always return nil (i.e.,
 // behave as though the current license enables all features).
 //
 // It returns a cleanup func so callers can use `defer TestingSkipFeatureChecks()()` in a test body.
@@ -70,7 +76,7 @@ type featureNotActivatedError struct{ errcode.PresentationError }
 // IsFeatureNotActivated reports whether err indicates that the license is valid but does not
 // activate the feature.
 //
-// It is used to distinguish between the multiple reasons for errors from CheckFeature: either
+// It is used to distinguish between the multiple reasons for errors from Check: either
 // failed license verification, or a valid license that does not activate a feature (e.g.,
 // Enterprise Starter not including an Enterprise-only feature).
 func IsFeatureNotActivated(err error) bool {
@@ -92,5 +98,5 @@ func IsFeatureNotActivated(err error) bool {
 // prevented from getting to this point if license verification had failed, so it's not necessary to
 // handle license verification errors here).
 func IsFeatureEnabledLenient(feature Feature) bool {
-	return !IsFeatureNotActivated(CheckFeature(feature))
+	return !IsFeatureNotActivated(Check(feature))
 }

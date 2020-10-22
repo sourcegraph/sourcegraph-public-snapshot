@@ -1,12 +1,24 @@
 $code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
 $code-font-size: 12px;
 
+.theme-dark {
+    --code-bg: var(--color-bg-2);
+}
+
+.theme-light {
+    --code-bg: var(--color-bg-2);
+}
+
 code,
 .code {
     font-family: $code-font-family;
     font-size: $code-font-size;
     line-height: 16px;
     white-space: pre;
+}
+
+.bg-code {
+    background-color: var(--code-bg);
 }
 
 kbd {

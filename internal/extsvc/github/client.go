@@ -468,6 +468,9 @@ func IsNotFound(err error) bool {
 	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
 		return true
 	}
+	if _, ok := err.(ErrPullRequestNotFound); ok {
+		return true
+	}
 	if HTTPErrorCode(err) == http.StatusNotFound {
 		return true
 	}
@@ -546,3 +549,10 @@ var ErrIncompleteResults = errors.New("github repository search returned incompl
 
 // ErrPullRequestAlreadyExists is when the requested GitHub Pull Request already exists.
 var ErrPullRequestAlreadyExists = errors.New("GitHub pull request already exists")
+
+// ErrPullRequestNotFound is when the requested GitHub Pull Request doesn't exist.
+type ErrPullRequestNotFound int
+
+func (e ErrPullRequestNotFound) Error() string {
+	return fmt.Sprintf("GitHub pull requests not found: %d", e)
+}

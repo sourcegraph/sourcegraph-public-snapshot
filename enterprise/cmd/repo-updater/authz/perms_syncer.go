@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -618,9 +619,13 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		// Skip if permissions user mapping is enabled or no authz provider is configured
+		// Skip if:
+		// 	- Permissions user mapping is enabled
+		// 	- No authz provider is configured
+		//	- This is not purchased with the current license
 		if globals.PermissionsUserMapping().Enabled ||
-			len(s.providersByServiceID()) == 0 {
+			len(s.providersByServiceID()) == 0 ||
+			(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) {
 			continue
 		}
 

@@ -20,7 +20,7 @@ type FakeChangesetSource struct {
 	UpdateChangesetCalled      bool
 	ListReposCalled            bool
 	ExternalServicesCalled     bool
-	LoadChangesetsCalled       bool
+	LoadChangesetCalled        bool
 	CloseChangesetCalled       bool
 	ReopenChangesetCalled      bool
 
@@ -47,7 +47,7 @@ type FakeChangesetSource struct {
 	// CreateChangeset
 	CreatedChangesets []*repos.Changeset
 
-	// LoadedChangesets contains the changesets that were passed to LoadChangesets
+	// LoadedChangesets contains the changesets that were passed to LoadChangeset
 	LoadedChangesets []*repos.Changeset
 
 	// UpdateChangesets contains the changesets that were passed to
@@ -165,24 +165,22 @@ func (s *FakeChangesetSource) ExternalServices() repos.ExternalServices {
 
 	return repos.ExternalServices{s.Svc}
 }
-func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
-	s.LoadChangesetsCalled = true
+func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.LoadChangesetCalled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 
-	for _, c := range cs {
-		if c.Repo == nil {
-			return NoReposErr
-		}
-
-		if err := c.SetMetadata(s.FakeMetadata); err != nil {
-			return err
-		}
+	if c.Repo == nil {
+		return NoReposErr
 	}
 
-	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return err
+	}
+
+	s.LoadedChangesets = append(s.LoadedChangesets, c)
 	return nil
 }
 

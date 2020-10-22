@@ -22,7 +22,7 @@ func init() {
 func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.RegistryPublisher, error) {
 	// The feature check here makes it so the any "New extension" form will show an error, so the
 	// user finds out before trying to submit the form that the feature is disabled.
-	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
+	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
 		return nil, err
 	}
 
