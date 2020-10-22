@@ -1,5 +1,5 @@
 .page-header {
     &__icon {
-        opacity: 0.65; // slightly faded relative to header text
+        color: var(--header-icon-color);
     }
 }
