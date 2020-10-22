@@ -37,13 +37,12 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     rel="noopener noreferrer"
                     className="mr-2"
                 >
-                    {isImporting(node) && (
+                    {(isImporting(node) || importingFailed(node)) && (
                         <>
                             Importing changeset
                             {node.externalID && <> #{node.externalID} </>}
                         </>
                     )}
-                    {importingFailed(node) && <>#{node.externalID}</>}
                     {!isImporting(node) && !importingFailed(node) && (
                         <>
                             {node.title}
@@ -86,6 +85,6 @@ function isImporting(node: ExternalChangesetFields): boolean {
     )
 }
 
-export function importingFailed(node: ExternalChangesetFields): boolean {
+function importingFailed(node: ExternalChangesetFields): boolean {
     return node.reconcilerState === ChangesetReconcilerState.ERRORED && !node.title
 }
