@@ -16,11 +16,6 @@ for i in "${plugins[@]}"; do
   fi
 done
 
-
-VAGRANT_DOTFILE_PATH="$(dirname "${BASH_SOURCE[0]}")/../.."
-# Destroy any previous boxes from cancelled or failed tests
-vagrant destroy -f
-
 vagrant up "$box" --provider=google || exit_code=$?
 vagrant scp "$box":/sourcegraph/puppeteer/*.png ../
 vagrant scp "$box":/sourcegraph/e2e.mp4 ../
