@@ -498,7 +498,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.ExternalID = "43"
 			p.changeset.Changeset.Metadata = p.mr
-			p.mockGetMergeRequest(43, nil, gitlab.HttpError(404))
+			p.mockGetMergeRequest(43, nil, gitlab.HTTPError(404))
 
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err == nil {
 				t.Fatal("unexpectedly no error for not found changeset")
