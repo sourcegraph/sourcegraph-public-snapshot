@@ -486,6 +486,49 @@ DO UPDATE SET
 	), nil
 }
 
+// TouchRepoPermissions only updates the value of both `updated_at` and `synced_at` columns of the
+// `repo_permissions` table without modifying the permissions bits. The use case is to trick the
+// scheduler to skip the repository for syncing permissions when we can't sync permissions for the
+// repository (e.g. due to insufficient permissions of the access token).
+//
+// This method starts its own transaction for update consistency if the caller hasn't started one already.
+func (s *PermsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (err error) {
+	if Mocks.Perms.TouchRepoPermissions != nil {
+		return Mocks.Perms.TouchRepoPermissions(ctx, repoID)
+	}
+
+	ctx, save := s.observe(ctx, "TouchRepoPermissions", "")
+	defer func() { save(&err, otlog.Int32("repoID", repoID)) }()
+
+	var txs *PermsStore
+	if s.inTx() {
+		txs = s
+	} else {
+		txs, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer txs.Done(&err)
+	}
+
+	touchedAt := txs.clock().UTC()
+	perm := authz.Read.String() // Note: We currently only support read for repository permissions.
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/db/perms_store.go:TouchRepoPermissions
+UPDATE repo_permissions
+SET
+	updated_at = %s,
+	synced_at = %s
+WHERE
+	repo_id = %s
+AND	permission = %s
+`, touchedAt, touchedAt, repoID, perm)
+	if err = txs.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute update repo permissions query")
+	}
+	return nil
+}
+
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
 // An ErrPermsNotFound is returned when there are no pending permissions available.
 func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions) (err error) {
