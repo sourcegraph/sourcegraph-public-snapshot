@@ -36,6 +36,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.21.1
+
+### Fixed
+
+- Fix alerting for native integration condition [#14775](https://github.com/sourcegraph/sourcegraph/pull/14775)
+- Fix query with large repo count hanging [#14944](https://github.com/sourcegraph/sourcegraph/pull/14944)
+- Fix server upgrade where codeintel database does not exist [#14953](https://github.com/sourcegraph/sourcegraph/pull/14953)
+- CVE-2019-18218 in postgres docker image [#14954](https://github.com/sourcegraph/sourcegraph/pull/14954)
+- Fix an issue where .git/HEAD in invalid [#14962](https://github.com/sourcegraph/sourcegraph/pull/14962)
+- Repository syncing will not happen more frequently than the repoListUpdateInterval config value [#14983](https://github.com/sourcegraph/sourcegraph/pull/14983)
+
 ## 3.21.0
 
 ### Added
