@@ -635,6 +635,7 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
         >
           <svg
             className="phabricator-icon mdi-icon install-browser-extension-alert__icon"
+            fill="currentColor"
             height={24}
             viewBox="0 0 64 64"
             width={24}
@@ -727,6 +728,7 @@ exports[`InstallBrowserExtensionAlert phabricator (native integration) 1`] = `
         >
           <svg
             className="phabricator-icon mdi-icon install-browser-extension-alert__icon"
+            fill="currentColor"
             height={24}
             viewBox="0 0 64 64"
             width={24}
@@ -828,6 +830,7 @@ exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
         >
           <svg
             className="phabricator-icon mdi-icon install-browser-extension-alert__icon"
+            fill="currentColor"
             height={24}
             viewBox="0 0 64 64"
             width={24}
