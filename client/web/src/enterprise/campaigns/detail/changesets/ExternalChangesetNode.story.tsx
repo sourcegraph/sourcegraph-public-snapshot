@@ -172,6 +172,7 @@ add('Importing', () => {
                                 url: 'http://test.test/sourcegraph/sourcegraph',
                             },
                             reviewState: null,
+                            currentSpec: null,
                         }}
                         viewerCanAdminister={boolean('viewerCanAdminister', true)}
                         queryExternalChangesetWithFileDiffs={() =>
@@ -216,6 +217,7 @@ add('Importing', () => {
                                 url: 'http://test.test/sourcegraph/sourcegraph',
                             },
                             reviewState: null,
+                            currentSpec: null,
                         }}
                         viewerCanAdminister={boolean('viewerCanAdminister', true)}
                         queryExternalChangesetWithFileDiffs={() =>
