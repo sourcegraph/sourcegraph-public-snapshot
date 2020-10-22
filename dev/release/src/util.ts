@@ -2,6 +2,20 @@ import * as readline from 'readline'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import * as path from 'path'
 
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
+export function formatDate(date: Date): string {
+    return `${date.toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (PT/PST) / ${date.toLocaleString('en-US', {
+        timeZone: 'Europe/Berlin',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (CET/CEST)`
+}
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
+
 export async function readLine(prompt: string, cacheFile?: string): Promise<string> {
     if (!cacheFile) {
         return readLineNoCache(prompt)

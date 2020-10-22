@@ -14,6 +14,7 @@
   "slackAnnounceChannel": "dev-announce",
 
   "dryRun": {
-    "changesets": false
+    "changesets": false,
+    "trackingIssues": false
   }
 }
