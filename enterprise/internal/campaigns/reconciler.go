@@ -658,8 +658,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
-		reopen := reopenAfterDetach(ch)
-		if reopen {
+		if reopenAfterDetach(ch) {
 			pl.SetOp(operationReopen)
 		}
 
@@ -728,27 +727,6 @@ func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.
 	}
 
 	return nil
-}
-
-func loadAssociations(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*repos.Repo, *repos.ExternalService, *campaigns.Campaign, error) {
-	reposStore := repos.NewDBStore(tx.Handle().DB(), sql.TxOptions{})
-
-	repo, err := loadRepo(ctx, reposStore, ch.RepoID)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load repository")
-	}
-
-	extSvc, err := loadExternalService(ctx, reposStore, repo)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load external service")
-	}
-
-	campaign, err := loadCampaign(ctx, tx, ch.OwnedByCampaignID)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load campaign")
-	}
-
-	return repo, extSvc, campaign, nil
 }
 
 func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
