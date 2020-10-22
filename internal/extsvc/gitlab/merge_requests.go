@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -48,6 +49,18 @@ type MergeRequest struct {
 	// to do it the old fashioned way with lots of REST requests.
 	Notes     []*Note
 	Pipelines []*Pipeline
+}
+
+func SetWIP(title *string) {
+	if !strings.HasPrefix(*title, "WIP:") {
+		*title = "WIP: " + *title
+	}
+}
+
+func UnsetWIP(title *string) {
+	if strings.HasPrefix(*title, "WIP: ") {
+		*title = strings.TrimPrefix(*title, "WIP: ")
+	}
 }
 
 type DiffRefs struct {
