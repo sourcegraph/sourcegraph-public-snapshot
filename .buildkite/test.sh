@@ -16,6 +16,7 @@ for i in "${plugins[@]}"; do
   fi
 done
 
+echo "$VAGRANT_DOTFILE_PATH"
 
 # Destroy any previous boxes from cancelled or failed tests
 vagrant destroy -f
