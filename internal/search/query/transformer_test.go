@@ -232,30 +232,50 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 
 func TestSubstituteConcat(t *testing.T) {
 	cases := []struct {
-		input string
-		want  string
+		input  string
+		concat func([]Pattern) Pattern
+		want   string
 	}{
 		{
-			input: "a b c d e f",
-			want:  `"a b c d e f"`,
+			input:  "a b c d e f",
+			concat: space,
+			want:   `"a b c d e f"`,
 		},
 		{
-			input: "a (b and c) d",
-			want:  `"a" (and "b" "c") "d"`,
+			input:  "a (b and c) d",
+			concat: space,
+			want:   `"a" (and "b" "c") "d"`,
 		},
 		{
-			input: "a b (c and d) e f (g or h) (i j k)",
-			want:  `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
+			input:  "a b (c and d) e f (g or h) (i j k)",
+			concat: space,
+			want:   `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
 		},
 		{
-			input: "(((a b c))) and d",
-			want:  `(and "(((a b c)))" "d")`,
+			input:  "(((a b c))) and d",
+			concat: space,
+			want:   `(and "(((a b c)))" "d")`,
+		},
+		{
+			input:  `foo\d "bar*"`,
+			concat: fuzzyRegexp,
+			want:   `"(foo\\d).*?(bar\\*)"`,
+		},
+		{
+			input:  `"bar*" foo\d "bar*" foo\d`,
+			concat: fuzzyRegexp,
+			want:   `"(bar\\*).*?(foo\\d).*?(bar\\*).*?(foo\\d)"`,
+		},
+		{
+			input:  "a b (c and d) e f (g or h) (i j k)",
+			concat: fuzzyRegexp,
+			want:   `"(a).*?(b)" (and "c" "d") "(e).*?(f)" (or "g" "h") "(i j k)"`,
 		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := prettyPrint(substituteConcat(query, " "))
+			got := prettyPrint(Map(query, substituteConcat(c.concat)))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -278,21 +298,62 @@ func TestEllipsesForHoles(t *testing.T) {
 func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	cases := []struct {
 		input      string
+		want       string
 		wantLabels labels
 	}{
 		{
 			input:      "func()",
-			wantLabels: HeuristicParensAsPatterns | Literal,
+			want:       `"func\\(\\)"`,
+			wantLabels: Regexp,
 		},
 		{
 			input:      "func(.*)",
+			want:       `"func(.*)"`,
 			wantLabels: Regexp,
+		},
+		{
+			input:      `(search\()`,
+			want:       `"(search\\()"`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `()search\(()`,
+			want:       `"\\(\\)search\\(\\(\\)"`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `search\(`,
+			want:       `"search\\("`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `\`,
+			want:       `"\\"`,
+			wantLabels: Regexp,
+		},
+		{
+			input:      `search(`,
+			want:       `"search\\("`,
+			wantLabels: Regexp | HeuristicDanglingParens,
+		},
+		{
+			input:      `"search("`,
+			want:       `"search("`,
+			wantLabels: Quoted | Literal,
+		},
+		{
+			input:      `"search()"`,
+			want:       `"search()"`,
+			wantLabels: Quoted | Literal,
 		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := EmptyGroupsToLiteral(query)[0].(Pattern)
+			got := escapeParensHeuristic(query)[0].(Pattern)
+			if diff := cmp.Diff(c.want, prettyPrint([]Node{got})); diff != "" {
+				t.Error(diff)
+			}
 			if diff := cmp.Diff(c.wantLabels, got.Annotation.Labels); diff != "" {
 				t.Fatal(diff)
 			}
@@ -341,7 +402,7 @@ func TestExpandOr(t *testing.T) {
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			queries := dnf(query)
+			queries := Dnf(query)
 			var queriesStr []string
 			for _, q := range queries {
 				queriesStr = append(queriesStr, prettyPrint(q))
@@ -815,11 +876,11 @@ func TestConcatRevFilters(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			queries := dnf(query)
+			queries := Dnf(query)
 
 			var queriesStr []string
 			for _, q := range queries {
-				qConcat := concatRevFilters(q)
+				qConcat := ConcatRevFilters(q)
 				queriesStr = append(queriesStr, prettyPrint(qConcat))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
@@ -851,7 +912,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			qConcat := concatRevFilters(query)
+			qConcat := ConcatRevFilters(query)
 			if diff := cmp.Diff(c.want, prettyPrint(qConcat)); diff != "" {
 				t.Error(diff)
 			}

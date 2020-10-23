@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -41,8 +42,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
-	otherRepo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	repo := testRepo(t, reposStore, extsvc.KindGitHub)
+	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
 
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
 		t.Fatal(err)
@@ -94,7 +95,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				NumResets:       18,
 				NumFailures:     25,
 
-				Unsynced: true,
+				Unsynced: i != 0,
 				Closing:  true,
 			}
 
@@ -274,7 +275,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		t.Run("ReconcilerState", func(t *testing.T) {
 			completed := campaigns.ReconcilerStateCompleted
-			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &completed})
+			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{completed}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -284,7 +285,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 
 			processing := campaigns.ReconcilerStateProcessing
-			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerState: &processing})
+			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []campaigns.ReconcilerState{processing}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -474,13 +475,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateQueued,
+					ReconcilerStates: []campaigns.ReconcilerState{stateQueued},
 				},
 				wantCount: 0,
 			},
 			{
 				opts: ListChangesetsOpts{
-					ReconcilerState: &stateCompleted,
+					ReconcilerStates: []campaigns.ReconcilerState{stateCompleted},
 				},
 				wantCount: 3,
 			},
@@ -540,10 +541,16 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				},
 				wantCount: 1,
 			},
+			{
+				opts: ListChangesetsOpts{
+					OnlySynced: true,
+				},
+				wantCount: 1,
+			},
 		}
 
-		for _, tc := range filterCases {
-			t.Run("", func(t *testing.T) {
+		for i, tc := range filterCases {
+			t.Run(strconv.Itoa(i), func(t *testing.T) {
 				have, _, err := s.ListChangesets(ctx, tc.opts)
 				if err != nil {
 					t.Fatal(err)
@@ -952,6 +959,44 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reloadAndAssertChangeset(t, ctx, s, changeset, want)
 		}
 	})
+
+	t.Run("ListChangesetsAttachedOrOwnedByCampaign", func(t *testing.T) {
+		var campaignID int64 = 191918
+
+		baseOpts := testChangesetOpts{repo: repo.ID}
+
+		opts1 := baseOpts
+		opts1.campaign = campaignID
+		opts1.ownedByCampaign = campaignID
+		c1 := createChangeset(t, ctx, s, opts1)
+
+		opts2 := baseOpts
+		opts2.campaign = campaignID
+		opts2.ownedByCampaign = 0
+		c2 := createChangeset(t, ctx, s, opts2)
+
+		opts3 := baseOpts
+		opts3.campaign = campaignID + 999
+		opts3.ownedByCampaign = campaignID + 999
+		createChangeset(t, ctx, s, opts3)
+
+		opts4 := baseOpts
+		opts4.repo = deletedRepo.ID
+		opts4.campaign = campaignID
+		opts4.ownedByCampaign = 0
+		createChangeset(t, ctx, s, opts4)
+
+		cs, err := s.ListChangesetsAttachedOrOwnedByCampaign(ctx, campaignID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantIDs := []int64{c1.ID, c2.ID}
+		haveIDs := cs.IDs()
+		if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
+			t.Fatalf("wrong changesets returned. diff=%s", diff)
+		}
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -988,7 +1033,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	repo := testRepo(t, reposStore, extsvc.TypeGitHub)
+	repo := testRepo(t, reposStore, extsvc.KindGitHub)
 	if err := reposStore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

@@ -332,7 +332,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, inner)
+			p.mockUpdateMergeRequest(mr, nil, gitlab.UpdateMergeRequestStateEventClose, inner)
 
 			have := p.source.CloseChangeset(p.ctx, p.changeset)
 			if !errors.Is(have, inner) {
@@ -346,7 +346,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, want, nil)
+			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
 
 			if err := p.source.CloseChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -354,27 +354,68 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 	})
 
-	t.Run("LoadChangesets", func(t *testing.T) {
+	t.Run("ReopenChangeset", func(t *testing.T) {
+		t.Run("invalid metadata", func(t *testing.T) {
+			defer func() { _ = recover() }()
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
+				Repo: &Repo{
+					Metadata: struct{}{},
+				},
+			})
+			t.Error("invalid metadata did not panic")
+		})
+
+		t.Run("error from UpdateMergeRequest", func(t *testing.T) {
+			inner := errors.New("foo")
+			mr := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockUpdateMergeRequest(mr, nil, gitlab.UpdateMergeRequestStateEventReopen, inner)
+
+			have := p.source.ReopenChangeset(p.ctx, p.changeset)
+			if !errors.Is(have, inner) {
+				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			want := &gitlab.MergeRequest{}
+			mr := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventReopen, nil)
+
+			if err := p.source.ReopenChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+		})
+	})
+
+	t.Run("LoadChangeset", func(t *testing.T) {
 		t.Run("invalid metadata", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
 
-			_ = p.source.LoadChangesets(p.ctx, []*Changeset{{
+			_ = p.source.LoadChangeset(p.ctx, &Changeset{
 				Repo: &Repo{Metadata: struct{}{}},
-			}}...)
+			})
 			t.Error("invalid metadata did not panic")
 		})
 
 		t.Run("error from ParseInt", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
-			if err := p.source.LoadChangesets(p.ctx, []*Changeset{{
+			if err := p.source.LoadChangeset(p.ctx, &Changeset{
 				Changeset: &campaigns.Changeset{
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
 				Repo: &Repo{Metadata: &gitlab.Project{}},
-			}}...); err == nil {
+			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
 		})
@@ -389,7 +430,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(42, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(42, nil, 20, nil)
 
-			if have := p.source.LoadChangesets(p.ctx, p.changeset); !errors.Is(have, inner) {
+			if have := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(have, inner) {
 				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
 			}
 		})
@@ -406,7 +447,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, inner)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if p.changeset.Changeset.Metadata != p.mr {
@@ -426,7 +467,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, inner)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if p.changeset.Changeset.Metadata != p.mr {
@@ -445,11 +486,24 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if have := p.changeset.Changeset.Metadata.(*gitlab.MergeRequest); have != mr {
 				t.Errorf("merge request metadata not updated: have %p; want %p", have, mr)
+			}
+		})
+
+		t.Run("not found", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.ExternalID = "43"
+			p.changeset.Changeset.Metadata = p.mr
+			p.mockGetMergeRequest(43, nil, gitlab.HTTPError(404))
+
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err == nil {
+				t.Fatal("unexpectedly no error for not found changeset")
+			} else if err.Error() != (ChangesetNotFoundError{Changeset: &Changeset{Changeset: &campaigns.Changeset{ExternalID: "43"}}}).Error() {
+				t.Fatalf("unexpected error: %+v", err)
 			}
 		})
 
@@ -473,7 +527,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, notes, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Notes, notes[0:2]); diff != "" {
@@ -484,7 +538,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			// changed the IID in the merge request, we do need to change the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Notes, notes[0:2]); diff != "" {
@@ -508,7 +562,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, pipelines, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Pipelines, pipelines); diff != "" {
@@ -519,7 +573,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			// changed the IID in the merge request, we do need to change the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Pipelines, pipelines); diff != "" {
@@ -546,7 +600,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, inner)
+			p.mockUpdateMergeRequest(mr, nil, "", inner)
 
 			have := p.source.UpdateChangeset(p.ctx, p.changeset)
 			if !errors.Is(have, inner) {
@@ -563,7 +617,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = in
-			p.mockUpdateMergeRequest(in, out, nil)
+			p.mockUpdateMergeRequest(in, out, "", nil)
 
 			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)
@@ -583,11 +637,21 @@ func TestReadNotesUntilSeen(t *testing.T) {
 		{ID: 4, System: true},
 	}
 
+	t.Run("reads all notes", func(t *testing.T) {
+		notes, err := readSystemNotes(paginatedNoteIterator(commonNotes, 2))
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+		if diff := cmp.Diff(notes, commonNotes); diff != "" {
+			t.Errorf("unexpected notes: %s", diff)
+		}
+	})
+
 	t.Run("error from iterator", func(t *testing.T) {
 		want := errors.New("foo")
-		notes, err := readNotesUntilSeen(func() ([]*gitlab.Note, error) {
+		notes, err := readSystemNotes(func() ([]*gitlab.Note, error) {
 			return nil, want
-		}, make(idSet))
+		})
 		if notes != nil {
 			t.Errorf("unexpected non-nil notes: %+v", notes)
 		}
@@ -597,65 +661,27 @@ func TestReadNotesUntilSeen(t *testing.T) {
 	})
 
 	t.Run("no system notes", func(t *testing.T) {
-		notes, err := readNotesUntilSeen(paginatedNoteIterator([]*gitlab.Note{
+		notes, err := readSystemNotes(paginatedNoteIterator([]*gitlab.Note{
 			{ID: 1, System: false},
 			{ID: 2, System: false},
 			{ID: 3, System: false},
 			{ID: 4, System: false},
-		}, 2), make(idSet))
+		}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 		if len(notes) > 0 {
 			t.Errorf("unexpected notes: %+v", notes)
-		}
-	})
-
-	t.Run("empty extant notes", func(t *testing.T) {
-		notes, err := readNotesUntilSeen(paginatedNoteIterator(commonNotes, 2), make(idSet))
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(notes, commonNotes); diff != "" {
-			t.Errorf("unexpected notes: %s", diff)
-		}
-	})
-
-	t.Run("no overlap with extant notes", func(t *testing.T) {
-		set := make(idSet)
-		set.add(5)
-		set.add(6)
-
-		notes, err := readNotesUntilSeen(paginatedNoteIterator(commonNotes, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(notes, commonNotes); diff != "" {
-			t.Errorf("unexpected notes: %s", diff)
 		}
 	})
 
 	t.Run("no pages", func(t *testing.T) {
-		notes, err := readNotesUntilSeen(paginatedNoteIterator([]*gitlab.Note{}, 2), make(idSet))
+		notes, err := readSystemNotes(paginatedNoteIterator([]*gitlab.Note{}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 		if len(notes) > 0 {
 			t.Errorf("unexpected notes: %+v", notes)
-		}
-	})
-
-	t.Run("early end", func(t *testing.T) {
-		set := make(idSet)
-		set.add(3)
-		set.add(4)
-
-		notes, err := readNotesUntilSeen(paginatedNoteIterator(commonNotes, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(notes, commonNotes[0:2]); diff != "" {
-			t.Errorf("unexpected notes: %s", diff)
 		}
 	})
 }
@@ -668,11 +694,21 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 		{ID: 4},
 	}
 
+	t.Run("reads all pipelines", func(t *testing.T) {
+		notes, err := readPipelines(paginatedPipelineIterator(commonPipelines, 2))
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+		if diff := cmp.Diff(notes, commonPipelines); diff != "" {
+			t.Errorf("unexpected notes: %s", diff)
+		}
+	})
+
 	t.Run("error from iterator", func(t *testing.T) {
 		want := errors.New("foo")
-		pipelines, err := readPipelinesUntilSeen(func() ([]*gitlab.Pipeline, error) {
+		pipelines, err := readPipelines(func() ([]*gitlab.Pipeline, error) {
 			return nil, want
-		}, make(idSet))
+		})
 		if pipelines != nil {
 			t.Errorf("unexpected non-nil pipelines: %+v", pipelines)
 		}
@@ -681,51 +717,13 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 		}
 	})
 
-	t.Run("empty extant pipelines", func(t *testing.T) {
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator(commonPipelines, 2), make(idSet))
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(pipelines, commonPipelines); diff != "" {
-			t.Errorf("unexpected pipelines: %s", diff)
-		}
-	})
-
-	t.Run("no overlap with extant pipelines", func(t *testing.T) {
-		set := make(idSet)
-		set.add(5)
-		set.add(6)
-
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator(commonPipelines, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(pipelines, commonPipelines); diff != "" {
-			t.Errorf("unexpected pipelines: %s", diff)
-		}
-	})
-
 	t.Run("no pages", func(t *testing.T) {
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator([]*gitlab.Pipeline{}, 2), make(idSet))
+		pipelines, err := readPipelines(paginatedPipelineIterator([]*gitlab.Pipeline{}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 		if len(pipelines) > 0 {
 			t.Errorf("unexpected pipelines: %+v", pipelines)
-		}
-	})
-
-	t.Run("early end", func(t *testing.T) {
-		set := make(idSet)
-		set.add(3)
-		set.add(4)
-
-		pipelines, err := readPipelinesUntilSeen(paginatedPipelineIterator(commonPipelines, 2), set)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if diff := cmp.Diff(pipelines, commonPipelines[0:2]); diff != "" {
-			t.Errorf("unexpected pipelines: %s", diff)
 		}
 	})
 }
@@ -857,12 +855,16 @@ func (p *gitLabChangesetSourceTestProvider) mockGetOpenMergeRequestByRefs(mr *gi
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, updated *gitlab.MergeRequest, err error) {
+func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, updated *gitlab.MergeRequest, expectedStateEvent gitlab.UpdateMergeRequestStateEvent, err error) {
 	gitlab.MockUpdateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mrIn *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
 		p.testCommonParams(ctx, client, project)
 		if expectedMR != mrIn {
 			p.t.Errorf("unexpected MergeRequest: have %+v; want %+v", mrIn, expectedMR)
 		}
+		if len(expectedStateEvent) != 0 && opts.StateEvent != expectedStateEvent {
+			p.t.Errorf("unexpected StateEvent: have %+v; want %+v", opts.StateEvent, expectedStateEvent)
+		}
+
 		return updated, err
 	}
 }

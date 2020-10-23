@@ -4,21 +4,24 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/heartbeat"
 	indexmanager "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/index_manager"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/indexer"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer-vm/internal/server"
 	queue "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/queue/client"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
+
+const Port = 3190
 
 func main() {
 	env.Lock()
@@ -37,6 +40,7 @@ func main() {
 		useFirecracker           = mustParseBool(rawUseFirecracker, "PRECISE_CODE_INTEL_USE_FIRECRACKER")
 		firecrackerNumCPUs       = mustParseInt(rawFirecrackerNumCPUs, "PRECISE_CODE_INTEL_FIRECRACKER_NUM_CPUS")
 		firecrackerMemory        = mustGet(rawFirecrackerMemory, "PRECISE_CODE_INTEL_FIRECRACKER_MEMORY")
+		firecrackerDiskSpace     = mustGet(rawFirecrackerDiskSpace, "PRECISE_CODE_INTEL_FIRECRACKER_DISK_SPACE")
 		imageArchivePath         = mustGet(rawImageArchivePath, "PRECISE_CODE_INTEL_IMAGE_ARCHIVE_PATH")
 	)
 
@@ -58,7 +62,8 @@ func main() {
 		internalProxyAuthToken,
 	)
 	indexManager := indexmanager.New()
-	server := server.New()
+
+	server := httpserver.New(Port, func(router *mux.Router) {})
 	heartbeater := heartbeat.NewHeartbeater(context.Background(), queueClient, indexManager, heartbeat.HeartbeaterOptions{
 		Interval: indexerHeartbeatInterval,
 	})
@@ -75,6 +80,7 @@ func main() {
 			UseFirecracker:        useFirecracker,
 			FirecrackerNumCPUs:    firecrackerNumCPUs,
 			FirecrackerMemory:     firecrackerMemory,
+			FirecrackerDiskSpace:  firecrackerDiskSpace,
 			ImageArchivePath:      imageArchivePath,
 		},
 	})

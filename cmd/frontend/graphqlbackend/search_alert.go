@@ -396,7 +396,7 @@ func (r *searchResolver) alertForInvalidRevision(revision string) *searchAlert {
 	revision = strings.TrimSuffix(revision, "^0")
 	return &searchAlert{
 		title:       "Invalid revision syntax",
-		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/user/search/queries#repository-revisions.", revision),
+		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
 	}
 }
 

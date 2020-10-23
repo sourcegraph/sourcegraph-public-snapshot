@@ -2,9 +2,6 @@ package worker
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -15,10 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
-	sqlitewriter "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,10 +26,15 @@ import (
 type handler struct {
 	store               store.Store
 	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserver.Client
+	gitserverClient     gitserverClient
 	metrics             metrics.WorkerMetrics
 	enableBudget        bool
 	budgetRemaining     int64
+	createStore         func(id int) persistence.Store
+}
+
+type gitserverClient interface {
+	DirectoryChildren(ctx context.Context, store store.Store, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 }
 
 var _ dbworker.Handler = &handler{}
@@ -98,25 +98,16 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return true, nil
 	}
 
-	// Create scratch directory that we can clean on completion/failure
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return false, err
-	}
-	defer func() {
-		if cleanupErr := os.RemoveAll(tempDir); cleanupErr != nil {
-			log15.Warn("Failed to remove temporary directory", "path", tempDir, "err", cleanupErr)
-		}
-	}()
-
 	// Pull raw uploaded data from bundle manager
 	r, err := h.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
 		return false, errors.Wrap(err, "bundleManager.GetUpload")
 	}
 	defer func() {
-		if err != nil {
-			// Remove upload file on error instead of waiting for it to expire
+		if err == nil {
+			// Remove upload file after processing - we don't need it anymore. On failure we
+			// may want to retry, so we should keep the upload data around for a bit. The bundle
+			// manager will clean up old uploads periodically.
 			if deleteErr := h.bundleManagerClient.DeleteUpload(ctx, upload.ID); deleteErr != nil {
 				log15.Warn("Failed to delete upload file", "err", err)
 			}
@@ -136,7 +127,7 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := h.write(ctx, tempDir, groupedBundleData); err != nil {
+	if err := h.write(ctx, upload.ID, groupedBundleData); err != nil {
 		return false, err
 	}
 
@@ -158,11 +149,6 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 	}()
 
 	if err := h.updateXrepoData(ctx, store, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
-		return false, err
-	}
-
-	// Send converted database file to bundle manager
-	if err := h.sendDB(ctx, upload.ID, filepath.Join(tempDir, "sqlite.db")); err != nil {
 		return false, err
 	}
 
@@ -191,23 +177,12 @@ func (h *handler) isRepoCurrentlyCloning(ctx context.Context, repoID int, commit
 	return false, nil
 }
 
-// write commits the correlated data to disk.
-func (h *handler) write(ctx context.Context, dirname string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+// write commits the correlated data to the database.
+func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
 	ctx, endOperation := h.metrics.WriteOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
-	dataCache, err := cache.NewDataCache(1)
-	if err != nil {
-		return err
-	}
-
-	store, err := sqlitewriter.NewStore(ctx, filepath.Join(dirname, "sqlite.db"), dataCache)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = store.Close(err)
-	}()
+	store := h.createStore(id)
 
 	store, err = store.Transact(ctx)
 	if err != nil {
@@ -236,7 +211,7 @@ func (h *handler) write(ctx context.Context, dirname string, groupedBundleData *
 		return errors.Wrap(err, "store.WriteReferences")
 	}
 
-	return err
+	return nil
 }
 
 // TODO(efritz) - refactor/simplify this after last change

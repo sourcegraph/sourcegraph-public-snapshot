@@ -4,7 +4,7 @@ package mocks
 
 import (
 	"context"
-	client "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"sync"
 )
@@ -46,8 +46,8 @@ func NewMockQueryResolver() *MockQueryResolver {
 			},
 		},
 		HoverFunc: &QueryResolverHoverFunc{
-			defaultHook: func(context.Context, int, int) (string, client.Range, bool, error) {
-				return "", client.Range{}, false, nil
+			defaultHook: func(context.Context, int, int) (string, clienttypes.Range, bool, error) {
+				return "", clienttypes.Range{}, false, nil
 			},
 		},
 		RangesFunc: &QueryResolverRangesFunc{
@@ -313,15 +313,15 @@ func (c QueryResolverDiagnosticsFuncCall) Results() []interface{} {
 // QueryResolverHoverFunc describes the behavior when the Hover method of
 // the parent MockQueryResolver instance is invoked.
 type QueryResolverHoverFunc struct {
-	defaultHook func(context.Context, int, int) (string, client.Range, bool, error)
-	hooks       []func(context.Context, int, int) (string, client.Range, bool, error)
+	defaultHook func(context.Context, int, int) (string, clienttypes.Range, bool, error)
+	hooks       []func(context.Context, int, int) (string, clienttypes.Range, bool, error)
 	history     []QueryResolverHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // Hover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockQueryResolver) Hover(v0 context.Context, v1 int, v2 int) (string, client.Range, bool, error) {
+func (m *MockQueryResolver) Hover(v0 context.Context, v1 int, v2 int) (string, clienttypes.Range, bool, error) {
 	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
 	m.HoverFunc.appendCall(QueryResolverHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -329,7 +329,7 @@ func (m *MockQueryResolver) Hover(v0 context.Context, v1 int, v2 int) (string, c
 
 // SetDefaultHook sets function that is called when the Hover method of the
 // parent MockQueryResolver instance is invoked and the hook queue is empty.
-func (f *QueryResolverHoverFunc) SetDefaultHook(hook func(context.Context, int, int) (string, client.Range, bool, error)) {
+func (f *QueryResolverHoverFunc) SetDefaultHook(hook func(context.Context, int, int) (string, clienttypes.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -337,7 +337,7 @@ func (f *QueryResolverHoverFunc) SetDefaultHook(hook func(context.Context, int, 
 // Hover method of the parent MockQueryResolver instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *QueryResolverHoverFunc) PushHook(hook func(context.Context, int, int) (string, client.Range, bool, error)) {
+func (f *QueryResolverHoverFunc) PushHook(hook func(context.Context, int, int) (string, clienttypes.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -345,21 +345,21 @@ func (f *QueryResolverHoverFunc) PushHook(hook func(context.Context, int, int) (
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *QueryResolverHoverFunc) SetDefaultReturn(r0 string, r1 client.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, int) (string, client.Range, bool, error) {
+func (f *QueryResolverHoverFunc) SetDefaultReturn(r0 string, r1 clienttypes.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, int, int) (string, clienttypes.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *QueryResolverHoverFunc) PushReturn(r0 string, r1 client.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, int, int) (string, client.Range, bool, error) {
+func (f *QueryResolverHoverFunc) PushReturn(r0 string, r1 clienttypes.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, int, int) (string, clienttypes.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *QueryResolverHoverFunc) nextHook() func(context.Context, int, int) (string, client.Range, bool, error) {
+func (f *QueryResolverHoverFunc) nextHook() func(context.Context, int, int) (string, clienttypes.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -406,7 +406,7 @@ type QueryResolverHoverFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 client.Range
+	Result1 clienttypes.Range
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool

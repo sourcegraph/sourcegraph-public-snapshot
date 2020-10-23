@@ -325,7 +325,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.Syncer.TriggerSync()
+	s.Syncer.TriggerEnqueueSyncJobs()
 
 	err := externalServiceValidate(ctx, &req)
 	if err == github.ErrIncompleteResults {
@@ -429,11 +429,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+	list, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {
 		return nil, err
+	}
+	var repo *repos.Repo
+	if len(list) > 0 {
+		repo = list[0]
 	}
 
 	// If we are sourcegraph.com we don't run a global Sync since there are
@@ -443,15 +447,27 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {
 		// TODO a queue with single flighting to speak to remote for args.Repo?
-		if len(repos) == 1 {
+		if repo != nil {
 			// We have (potentially stale) data we can return to the user right
 			// now. Do that rather than blocking.
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
-				_, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
+				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
 				if err != nil {
 					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+				}
+
+				// Since we don't support private repositories on Cloud,
+				// we can safely assume that when a repository stored in the database is not accessible anymore,
+				// no other external service should have access to it, we can then remove it.
+				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
+					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
+						r.DeletedAt = s.Now()
+					}))
+					if err != nil {
+						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
+					}
 				}
 			}()
 		} else {
@@ -461,13 +477,13 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 	}
 
-	if len(repos) != 1 {
+	if repo == nil {
 		return &protocol.RepoLookupResult{
 			ErrorNotFound: true,
 		}, nil
 	}
 
-	repoInfo, err := newRepoInfo(repos[0])
+	repoInfo, err := newRepoInfo(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -529,7 +545,7 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		}, nil
 	}
 
-	err = s.Syncer.SyncSubset(ctx, repo)
+	err = s.Syncer.SyncRepo(ctx, s.Store, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +579,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	if e := s.Syncer.LastSyncError(); e != nil {
+	for _, e := range s.Syncer.SyncErrors() {
 		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
 			for _, e := range multiErr.Errors {
 				if sourceErr, ok := e.(*repos.SourceError); ok {

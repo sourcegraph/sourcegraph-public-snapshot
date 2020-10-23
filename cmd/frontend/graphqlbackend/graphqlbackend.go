@@ -499,11 +499,6 @@ func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
-	n, ok := r.Node.(*versionContextResolver)
-	return n, ok
-}
-
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.

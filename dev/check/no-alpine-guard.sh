@@ -17,9 +17,10 @@ ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e
   ':(exclude)docker-images/README.md' \
   ':(exclude)docker-images/alpine' \
   ':(exclude)doc/dev/campaigns_design.md' \
-  ':(exclude)doc/user/campaigns/' \
+  ':(exclude)doc/campaigns/' \
   ':(exclude)web/src/enterprise/campaigns/create/CreateCampaignPage.tsx' \
-  ':(exclude)vendor')
+  ':(exclude)vendor' \
+  ':(eclude)testdata')
 set -e
 
 if [ -n "$ALPINE_MATCHES" ]; then

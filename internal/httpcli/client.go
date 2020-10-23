@@ -82,25 +82,45 @@ func NewExternalHTTPClientFactory() *Factory {
 }
 
 var (
-	externalOnce sync.Once
-	externalDoer Doer
+	externalOnce       sync.Once
+	externalDoer       Doer
+	externalHTTPClient *http.Client
 )
 
-// ExternalHTTPClient returns a shared client for external communication. This
-// is a convenience for existing uses of http.DefaultClient.
-//
-// NOTE: Use this for legacy code. New code should generally take in a
-// httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
-// and passed down.
-func ExternalHTTPClient() Doer {
+func externalInit() {
 	externalOnce.Do(func() {
 		var err error
 		externalDoer, err = NewExternalHTTPClientFactory().Doer()
 		if err != nil {
+			panic("httpcli: failed to create the default ExternalDoer. This should not happen: " + err.Error())
+		}
+		externalHTTPClient, err = NewExternalHTTPClientFactory().Client()
+		if err != nil {
 			panic("httpcli: failed to create the default ExternalHTTPClient. This should not happen: " + err.Error())
 		}
 	})
+}
+
+// ExternalDoer returns a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+//
+// NOTE: Use this for legacy code. New code should generally take in a
+// httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
+// and passed down.
+func ExternalDoer() Doer {
+	externalInit()
 	return externalDoer
+}
+
+// ExternalHTTPClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+//
+// NOTE: Use this for legacy code. New code should generally take in a
+// httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
+// and passed down.
+func ExternalHTTPClient() *http.Client {
+	externalInit()
+	return externalHTTPClient
 }
 
 // Doer returns a new Doer wrapped with the middleware stack

@@ -15,6 +15,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,6 +33,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	// Creating user with matching email to the changeset spec author.
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Username:        "mary",
+		Email:           ct.ChangesetSpecAuthorEmail,
+		EmailIsVerified: true,
+		DisplayName:     "Mary Tester",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
 	if err := reposStore.InsertRepos(ctx, repo); err != nil {
@@ -73,9 +85,76 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
-							{Diff: spec.Spec.Commits[0].Diff, Message: spec.Spec.Commits[0].Message},
+							{
+								Author: apitest.Person{
+									Email: spec.Spec.Commits[0].AuthorEmail,
+									Name:  user.Username,
+									User: &apitest.User{
+										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+									},
+								},
+								Diff:    spec.Spec.Commits[0].Diff,
+								Message: spec.Spec.Commits[0].Message,
+								Subject: "git commit message",
+								Body:    "and some more content in a second paragraph.",
+							},
 						},
-						Published: false,
+						Published: campaigns.PublishedValue{Val: false},
+						Diff: struct{ FileDiffs apitest.FileDiffs }{
+							FileDiffs: apitest.FileDiffs{
+								DiffStat: apitest.DiffStat{
+									Added:   1,
+									Deleted: 1,
+									Changed: 2,
+								},
+							},
+						},
+						DiffStat: apitest.DiffStat{
+							Added:   1,
+							Deleted: 1,
+							Changed: 2,
+						},
+					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+				}
+			},
+		},
+		{
+			name:    "GitBranchChangesetDescription Draft",
+			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
+			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
+				return apitest.ChangesetSpec{
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+					Description: apitest.ChangesetSpecDescription{
+						Typename: "GitBranchChangesetDescription",
+						BaseRepository: apitest.Repository{
+							ID: string(spec.Spec.BaseRepository),
+						},
+						ExternalID: "",
+						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						HeadRepository: apitest.Repository{
+							ID: string(spec.Spec.HeadRepository),
+						},
+						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						Title:   spec.Spec.Title,
+						Body:    spec.Spec.Body,
+						Commits: []apitest.GitCommitDescription{
+							{
+								Author: apitest.Person{
+									Email: spec.Spec.Commits[0].AuthorEmail,
+									Name:  user.Username,
+									User: &apitest.User{
+										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+									},
+								},
+								Diff:    spec.Spec.Commits[0].Diff,
+								Message: spec.Spec.Commits[0].Message,
+								Subject: "git commit message",
+								Body:    "and some more content in a second paragraph.",
+							},
+						},
+						Published: campaigns.PublishedValue{Val: "draft"},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
@@ -108,7 +187,6 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: string(spec.Spec.BaseRepository),
 						},
 						ExternalID: spec.Spec.ExternalID,
-						Published:  false,
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
@@ -176,7 +254,16 @@ query($id: ID!) {
 
           commits {
             message
+            subject
+            body
             diff
+            author {
+              name
+              email
+              user {
+                id
+              }
+            }
           }
 
           published

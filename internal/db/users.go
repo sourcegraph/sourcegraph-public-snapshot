@@ -24,7 +24,7 @@ import (
 
 // users provides access to the `users` table.
 //
-// For a detailed overview of the schema, see schema.txt.
+// For a detailed overview of the schema, see schema.md.
 type users struct {
 	// PreCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
@@ -183,6 +183,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 
 	createdAt := time.Now()
 	updatedAt := createdAt
+	invalidatedSessionsAt := createdAt
 	var id int32
 
 	var passwd sql.NullString
@@ -227,8 +228,8 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	var siteAdmin bool
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-		info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, !alreadyInitialized).Scan(&id, &siteAdmin)
+		"INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+		info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, !alreadyInitialized).Scan(&id, &siteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -285,14 +286,15 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	}
 
 	return &types.User{
-		ID:          id,
-		Username:    info.Username,
-		DisplayName: info.DisplayName,
-		AvatarURL:   info.AvatarURL,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		SiteAdmin:   siteAdmin,
-		BuiltinAuth: info.Password != "",
+		ID:                    id,
+		Username:              info.Username,
+		DisplayName:           info.DisplayName,
+		AvatarURL:             info.AvatarURL,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+		SiteAdmin:             siteAdmin,
+		BuiltinAuth:           info.Password != "",
+		InvalidatedSessionsAt: invalidatedSessionsAt,
 	}, nil
 }
 
@@ -613,6 +615,47 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
+func (u *users) InvalidateSessionsByID(ctx context.Context, id int32) error {
+	if Mocks.Users.InvalidateSessionsByID != nil {
+		return Mocks.Users.InvalidateSessionsByID(ctx, id)
+	}
+
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	query := sqlf.Sprintf(`
+		UPDATE users
+		SET
+			updated_at=now(),
+			invalidated_sessions_at=now()
+		WHERE id=%d
+		`, id)
+	res, err := tx.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return userNotFoundErr{args: []interface{}{id}}
+	}
+	return nil
+}
+
 func (u *users) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if Mocks.Users.Count != nil {
 		return Mocks.Users.Count(ctx, opt)
@@ -735,7 +778,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags FROM users u "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -745,7 +788,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags))
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt)
 		if err != nil {
 			return nil, err
 		}

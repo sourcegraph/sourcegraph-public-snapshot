@@ -55,7 +55,7 @@ type Mutation {
 
     Only the user and site admins may perform this mutation.
     """
-    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): EmptyResponse!
+    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
     Creates an organization. The caller is added as a member of the newly created organization.
 
@@ -125,17 +125,6 @@ type Mutation {
         """
         repository: ID!
     ): EmptyResponse!
-    """
-    DEPRECATED: All repositories are scheduled for updates periodically. This
-    mutation will be removed in 3.6.
-
-    Schedules all repositories to be updated from their original source
-    repositories. Updating occurs automatically, so this should not normally
-    be needed.
-
-    Only site admins may perform this mutation.
-    """
-    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
     """
     Creates a new user account.
 
@@ -455,6 +444,12 @@ type Mutation {
     # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
+    Invalidates all sessions belonging to a user.
+
+    Only site admins may perform this mutation.
+    """
+    invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -628,7 +623,9 @@ type Mutation {
     """
     createChangesetSpec(
         """
-        The raw changeset spec (as JSON).
+        The raw changeset spec (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         changesetSpec: String!
     ): ChangesetSpec!
@@ -648,7 +645,9 @@ type Mutation {
         namespace: ID!
 
         """
-        The campaign spec as YAML (or the equivalent JSON).
+        The campaign spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         campaignSpec: String!
 
@@ -796,6 +795,11 @@ type ExistingChangesetReference {
 }
 
 """
+A triple that represents all possible states of the published value: true, false or 'draft'.
+"""
+scalar PublishedValue
+
+"""
 A description of a changeset that represents the proposal to merge one branch into another.
 This is used to describe a pull request (on GitHub and Bitbucket Server).
 """
@@ -877,7 +881,7 @@ type GitBranchChangesetDescription {
     Another ChangesetSpec with the same description, but "published: true",
     can later be applied publish the changeset.
     """
-    published: Boolean!
+    published: PublishedValue!
 }
 
 """
@@ -885,9 +889,24 @@ A description of a Git commit.
 """
 type GitCommitDescription {
     """
-    The Git commit message.
+    The full commit message.
     """
     message: String!
+
+    """
+    The first line of the commit message.
+    """
+    subject: String!
+
+    """
+    The contents of the commit message after the first line.
+    """
+    body: String
+
+    """
+    The Git commit author.
+    """
+    author: Person!
 
     """
     The commit diff (in unified diff format).
@@ -1108,9 +1127,9 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with the given reconciler state.
+        Only include changesets with any of the given reconciler states.
         """
-        reconcilerState: ChangesetReconcilerState
+        reconcilerState: [ChangesetReconcilerState!]
         """
         Only include changesets with the given publication state.
         """
@@ -1180,6 +1199,10 @@ type ChangesetCounts {
     The number of closed changesets.
     """
     closed: Int!
+    """
+    The number of draft changesets (independent of review state).
+    """
+    draft: Int!
     """
     The number of open changesets (independent of review state).
     """
@@ -1264,6 +1287,7 @@ enum ChangesetReconcilerState {
 The state of a changeset on the code host on which it's hosted.
 """
 enum ChangesetExternalState {
+    DRAFT
     OPEN
     CLOSED
     MERGED
@@ -1575,6 +1599,10 @@ type ChangesetConnectionStats {
     """
     unpublished: Int!
     """
+    The count of externalState: DRAFT changesets.
+    """
+    draft: Int!
+    """
     The count of externalState: OPEN changesets.
     """
     open: Int!
@@ -1586,6 +1614,10 @@ type ChangesetConnectionStats {
     The count of externalState: CLOSED changesets.
     """
     closed: Int!
+    """
+    The count of externalState: DELETED changesets.
+    """
+    deleted: Int!
     """
     The count of all changesets. Equal to totalCount of the connection.
     """
@@ -2040,6 +2072,10 @@ type Query {
         """
         query: String
         """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
         Return repositories whose names are in the list.
         """
         names: [String!]
@@ -2273,6 +2309,16 @@ type Query {
     Look up a namespace by ID.
     """
     namespace(id: ID!): Namespace
+
+    """
+    Look up a namespace by name, which is a username or organization name.
+    """
+    namespaceByName(
+        """
+        The name of the namespace.
+        """
+        name: String!
+    ): Namespace
 
     """
     The repositories a user is authorized to access with the given permission.
@@ -2841,20 +2887,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     The matching portion of the diff, if any.
     """
     diffPreview: HighlightedString
-}
-
-"""
-A search result that is a diff between two diffable Git objects.
-"""
-type DiffSearchResult {
-    """
-    The diff that matched the search query.
-    """
-    diff: Diff!
-    """
-    The matching portion of the diff.
-    """
-    preview: HighlightedString!
 }
 
 """
@@ -3482,12 +3514,7 @@ type ExternalRepository {
 (experimental) A version context. Used to change the set of default repository and revisions searched.
 Note: We do not expose the list of repositories and revisions in the version context. This is intentional. However, if a need arises we can add it in.
 """
-type VersionContext implements Node {
-    """
-    The version context ID is its name.
-    """
-    id: ID!
-
+type VersionContext {
     """
     The name of the version context.
     """
@@ -3541,6 +3568,21 @@ type RepositoryTextSearchIndexStatus {
     The number of index shards.
     """
     indexShardsCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines appearing in the index.
+    """
+    newLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the default branch.
+    """
+    defaultBranchNewLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the other branches.
+    """
+    otherBranchesNewLinesCount: Int!
 }
 
 """
@@ -4527,9 +4569,9 @@ type Person {
     """
     displayName: String!
     """
-    The avatar URL.
+    The avatar URL, if known.
     """
-    avatarURL: String!
+    avatarURL: String
     """
     The corresponding user account for this person, if one exists.
     """
@@ -6078,15 +6120,6 @@ type Site implements SettingsSubject {
     Only applies if the site does not have a valid license.
     """
     freeUsersExceeded: Boolean!
-
-    """
-    DEPRECATED: This field is always false and will be removed in future
-    releases. All repositories are enabled by default starting with
-    Sourcegraph 3.4
-    Whether the site has zero access-enabled repositories.
-    """
-    noRepositoriesEnabled: Boolean!
-        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     """
     Alerts to display to the viewer.
     """
@@ -6455,74 +6488,6 @@ type SiteUsagePeriod {
     Excludes anonymous users.
     """
     integrationUserCount: Int!
-    """
-    The user count of Sourcegraph products at each stage of the software development lifecycle.
-    """
-    stages: SiteUsageStages
-}
-
-"""
-Aggregate site usage of features by software development lifecycle stage.
-"""
-type SiteUsageStages {
-    """
-    The number of users using management stage features.
-    """
-    manage: Int!
-    """
-    The number of users using planning stage features.
-    """
-    plan: Int!
-    """
-    The number of users using coding stage features.
-    """
-    code: Int!
-    """
-    The number of users using review stage features.
-    """
-    review: Int!
-    """
-    The number of users using verification stage features.
-    """
-    verify: Int!
-    """
-    The number of users using packaging stage features.
-    """
-    package: Int!
-    """
-    The number of users using deployment stage features.
-    """
-    deploy: Int!
-    """
-    The number of users using configuration stage features.
-    """
-    configure: Int!
-    """
-    The number of users using monitoring stage features.
-    """
-    monitor: Int!
-    """
-    The number of users using security stage features.
-    """
-    secure: Int!
-    """
-    The number of users using automation stage features.
-    """
-    automate: Int!
-}
-
-"""
-A deployment configuration.
-"""
-type DeploymentConfiguration {
-    """
-    The email.
-    """
-    email: String
-    """
-    The site ID.
-    """
-    siteID: String
 }
 
 """
@@ -6851,7 +6816,7 @@ type ExtensionRegistryMutation {
         Force publish even if there are warnings (such as invalid JSON warnings).
         """
         force: Boolean = false
-    ): ExtensionRegistryCreateExtensionResult!
+    ): ExtensionRegistryPublishExtensionResult!
 }
 
 """

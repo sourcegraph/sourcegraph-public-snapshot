@@ -7,10 +7,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -184,7 +185,7 @@ type updateUserArgs struct {
 	AvatarURL   *string
 }
 
-func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*EmptyResponse, error) {
+func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -214,7 +215,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*E
 	if err := db.Users.Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, nil
+	return UserByIDInt32(ctx, userID)
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
@@ -308,6 +309,12 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 
 	if err := db.Users.UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
+	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
+			log15.Warn("Failed to send email to inform user of password update", "error", err)
+		}
 	}
 	return &EmptyResponse{}, nil
 }

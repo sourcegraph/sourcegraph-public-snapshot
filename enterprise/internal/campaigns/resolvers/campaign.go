@@ -161,14 +161,15 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	if err := campaignsEnabled(); err != nil {
-		return nil, err
-	}
-
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, PublicationState: &publishedState}
+	opts := ee.ListChangesetsOpts{
+		CampaignID:       r.Campaign.ID,
+		PublicationState: &publishedState,
+		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
+		OnlySynced: true,
+	}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err

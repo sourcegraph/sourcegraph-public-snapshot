@@ -18,6 +18,8 @@ func TestParseIncludePattern(t *testing.T) {
 		exact  []string
 		like   []string
 		regexp string
+
+		pattern []*sqlf.Query // only tested if non-nil
 	}{
 		`^$`:              {exact: []string{""}},
 		`(^$)`:            {exact: []string{""}},
@@ -65,6 +67,11 @@ func TestParseIncludePattern(t *testing.T) {
 		// Avoid DoS when there are too many possible matches to enumerate.
 		`^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`: {regexp: `^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`},
 		`^[0-a]$`:                               {regexp: `^[0-a]$`},
+		`sourcegraph|^github\.com/foo/bar$`: {
+			like:    []string{`%sourcegraph%`},
+			exact:   []string{"github.com/foo/bar"},
+			pattern: []*sqlf.Query{sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%")},
+		},
 	}
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
@@ -82,11 +89,26 @@ func TestParseIncludePattern(t *testing.T) {
 		}
 		if qs, err := parsePattern(pattern); err != nil {
 			t.Fatal(pattern, err)
-		} else if testing.Verbose() {
-			q := sqlf.Join(qs, "AND")
-			t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+		} else {
+			if testing.Verbose() {
+				q := sqlf.Join(qs, "AND")
+				t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+			}
+
+			if want.pattern != nil {
+				want := queriesToString(want.pattern)
+				q := queriesToString(qs)
+				if want != q {
+					t.Errorf("got pattern %q, want %q for %s", q, want, pattern)
+				}
+			}
 		}
 	}
+}
+
+func queriesToString(qs []*sqlf.Query) string {
+	q := sqlf.Join(qs, "AND")
+	return fmt.Sprintf("%s %v", q.Query(sqlf.PostgresBindVar), q.Args())
 }
 
 func TestRepos_Count(t *testing.T) {
@@ -102,6 +124,39 @@ func TestRepos_Count(t *testing.T) {
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
+
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if want := 1; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	repos, err := Repos.List(ctx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Repos.Delete(ctx, repos[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
+func TestRepos_Delete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)

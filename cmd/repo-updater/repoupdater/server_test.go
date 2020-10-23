@@ -10,22 +10,21 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -37,14 +36,6 @@ import (
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
-	}
-	os.Exit(m.Run())
-}
 
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
@@ -808,8 +799,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 
 				clock := repos.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
-					Store: store,
-					Now:   clock.Now,
+					Now: clock.Now,
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
@@ -820,8 +810,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					syncer.Store = store
-					_ = syncer.Sync(ctx)
+					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
 				}
 
 				s := &Server{
@@ -904,7 +893,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			githubRepository := &repos.Repo{
 				Name:        "github.com/foo/bar",
 				Description: "The description",
-				Language:    "barlang",
 				Archived:    false,
 				Fork:        false,
 				CreatedAt:   now,
@@ -932,7 +920,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			awsCodeCommitRepository := &repos.Repo{
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 				Description: "The stripe-go lib",
-				Language:    "barlang",
 				Archived:    false,
 				Fork:        false,
 				CreatedAt:   now,
@@ -997,6 +984,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 				githubDotComSource *fakeRepoSource
 				gitlabDotComSource *fakeRepoSource
 				assert             repos.ReposAssertion
+				assertDelay        time.Duration
 				err                string
 			}{
 				{
@@ -1219,6 +1207,34 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					result: &protocol.RepoLookupResult{ErrorNotFound: true},
 					err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName(githubRepository.Name), true),
 				},
+				{
+					name: "Private repos that used to be public should be removed asynchronously",
+					args: protocol.RepoLookupArgs{
+						Repo: api.RepoName(githubRepository.Name),
+					},
+					githubDotComSource: &fakeRepoSource{
+						err: github.ErrNotFound,
+					},
+					stored: []*repos.Repo{githubRepository},
+					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+						ExternalRepo: api.ExternalRepoSpec{
+							ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+							ServiceType: extsvc.TypeGitHub,
+							ServiceID:   "https://github.com/",
+						},
+						Name:        "github.com/foo/bar",
+						Description: "The description",
+						VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+						Links: &protocol.RepoLinks{
+							Root:   "github.com/foo/bar",
+							Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+							Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+							Commit: "github.com/foo/bar/commit/{commit}",
+						},
+					}},
+					assertDelay: time.Second,
+					assert:      repos.Assert.ReposEqual(),
+				},
 			}
 
 			for _, tc := range testCases {
@@ -1252,8 +1268,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 
 					clock := clock
 					syncer := &repos.Syncer{
-						Store: store,
-						Now:   clock.Now,
+						Now: clock.Now,
 					}
 					s := &Server{Syncer: syncer, Store: store}
 					if tc.githubDotComSource != nil {
@@ -1289,6 +1304,9 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					}
 
 					if tc.assert != nil {
+						if tc.assertDelay != 0 {
+							time.Sleep(tc.assertDelay)
+						}
 						rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
 						if err != nil {
 							t.Fatal(err)

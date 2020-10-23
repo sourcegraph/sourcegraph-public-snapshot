@@ -4,10 +4,14 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 
 To connect GitHub to Sourcegraph:
 
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Depending on whether you are a site admin or user:
+    1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
+    1. *User*: Go to **Settings > Manage repositories**.
 1. Select **GitHub**.
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
+
+**NOTE** That adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -34,7 +38,7 @@ No token scopes are required if you only want to sync public repositories and do
 
 - `repo` to sync private repositories from GitHub to Sourcegraph.
 - `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
-- `repo`, `read:org`, and `read:discussion` to use [campaigns](../../user/campaigns/index.md) with GitHub repositories.
+- `repo`, `read:org`, and `read:discussion` to use [campaigns](../../campaigns/index.md) with GitHub repositories. See "[Code host interactions in campaigns](../../campaigns/explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns)" for details.
 
 >NOTE: If you plan to use repository permissions with background syncing, an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
 
@@ -48,7 +52,7 @@ Internal rate limiting can be configured to limit the rate at which requests are
 
 If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising [campaign](../../user/campaigns/index.md) changesets.
+**NOTE** Internal rate limiting is only currently applied when synchronising [campaign](../../campaigns/index.md) changesets.
 
 ## Repository permissions
 
@@ -70,7 +74,7 @@ The `webhooks` setting allows specifying the organization webhook secrets necess
 ]
 ```
 
-Using webhooks is highly recommended when using [campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between GitHub and Sourcegraph and make it more efficient.
+Using webhooks is highly recommended when using [campaigns](../../campaigns/index.md), since they speed up the syncing of pull request data between GitHub and Sourcegraph and make it more efficient.
 
 To set up webhooks:
 
@@ -95,7 +99,7 @@ To set up webhooks:
 1. Click **Add webhook**.
 1. Confirm that the new webhook is listed.
 
-Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [campaigns](../../user/campaigns/index.md), faster and more efficiently.
+Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [campaigns](../../campaigns/index.md), faster and more efficiently.
 
 ## Configuration
 

@@ -7,8 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
-	commitmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits/mocks"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -17,8 +15,7 @@ func TestDiagnostics(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
-	mockCommitUpdater := commitmocks.NewMockUpdater()
+	mockGitserverClient := NewMockGitserverClient()
 
 	sourceDiagnostics := []bundles.Diagnostic{
 		{
@@ -60,7 +57,7 @@ func TestDiagnostics(t *testing.T) {
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
 	setMockBundleClientDiagnostics(t, mockBundleClient, "sub1", 1, 3, sourceDiagnostics, 5)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	diagnostics, _, err := api.Diagnostics(context.Background(), "sub1", 42, 3, 1)
 	if err != nil {
 		t.Fatalf("expected error getting diagnostics: %s", err)
@@ -127,11 +124,10 @@ func TestDiagnostics(t *testing.T) {
 func TestDiagnosticsUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockGitserverClient := gitservermocks.NewMockClient()
-	mockCommitUpdater := commitmocks.NewMockUpdater()
+	mockGitserverClient := NewMockGitserverClient()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient, mockCommitUpdater)
+	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	if _, _, err := api.Diagnostics(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting diagnostics. want=%q have=%q", ErrMissingDump, err)
 	}

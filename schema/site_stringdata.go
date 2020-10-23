@@ -35,7 +35,7 @@ const SiteSchemaJSON = `{
       "group": "Search"
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
       "type": "array",
       "items": {
         "type": "string"
@@ -347,6 +347,12 @@ const SiteSchemaJSON = `{
       "default": 1,
       "group": "External services"
     },
+    "repoConcurrentExternalServiceSyncers": {
+      "description": "The number of concurrent external service syncers that can run.",
+      "type": "integer",
+      "default": 3,
+      "group": "External services"
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
@@ -371,13 +377,13 @@ const SiteSchemaJSON = `{
           "default": -1
         },
         "commitDiffMaxRepos": {
-          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when \"after:\" or \"before:\" is specified since those queries are faster. Value must be positive. Defaults to 50.",
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\". The user is prompted to narrow their query if the limit is exceeded. There is a separate limit (commitDiffWithTimeFilterMaxRepos) when \"after:\" or \"before:\" is specified because those queries are faster. Defaults to 50.",
           "type": "integer",
           "default": 50,
           "minimum": 1
         },
         "commitDiffWithTimeFilterMaxRepos": {
-          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\" with a \"after:\" or \"before:\" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when \"after:\" or \"before:\" is not specified since those queries are slower. Value must be positive. Defaults to 10000.",
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\" with a \"after:\" or \"before:\" filter. The user is prompted to narrow their query if the limit is exceeded. There is a separate limit (commitDiffMaxRepos) when \"after:\" or \"before:\" is not specified because those queries are slower. Defaults to 10000.",
           "type": "integer",
           "default": 10000,
           "minimum": 1
@@ -752,7 +758,7 @@ const SiteSchemaJSON = `{
       "group": "Sourcegraph.com"
     },
     "auth.providers": {
-      "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
+      "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
       "type": "array",
       "items": {
         "required": ["type"],
@@ -808,6 +814,18 @@ const SiteSchemaJSON = `{
       "enum": ["release", "none"],
       "default": "release",
       "examples": ["none"],
+      "group": "Misc."
+    },
+    "userRepos.maxPerSite": {
+      "description": "The site wide maximum number of repos that can be added by non site admins",
+      "type": "integer",
+      "default": 200000,
+      "group": "Misc."
+    },
+    "userRepos.maxPerUser": {
+      "description": "The per user maximum number of repos that can be added by non site admins",
+      "type": "integer",
+      "default": 2000,
       "group": "Misc."
     }
   },

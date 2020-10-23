@@ -123,14 +123,14 @@ func TestFindClosestDumps(t *testing.T) {
 	}
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1}},
-		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1}},
-		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{2}},
-		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{2}},
-		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{3}},
-		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{3}},
-		{commit: makeCommit(5), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1, 2, 3}},
-		{commit: makeCommit(8), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1, 2}},
+		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
+		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
+		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
+		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
+		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{3}},
+		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{3}},
+		{commit: makeCommit(5), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1, 2, 3}},
+		{commit: makeCommit(8), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1, 2}},
 	})
 }
 
@@ -187,14 +187,14 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	}
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), allOfIDs: []int{1}},
-		{commit: makeCommit(2), allOfIDs: []int{1}},
-		{commit: makeCommit(3), allOfIDs: []int{1}},
-		{commit: makeCommit(4)},
-		{commit: makeCommit(6)},
-		{commit: makeCommit(7)},
-		{commit: makeCommit(5)},
-		{commit: makeCommit(8)},
+		{commit: makeCommit(1), graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(4), graph: graph},
+		{commit: makeCommit(6), graph: graph},
+		{commit: makeCommit(7), graph: graph},
+		{commit: makeCommit(5), graph: graph},
+		{commit: makeCommit(8), graph: graph},
 	})
 }
 
@@ -235,11 +235,11 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	}
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "blah", rootMustEnclosePath: true},
-		{commit: makeCommit(2), file: "root1/file.ts", rootMustEnclosePath: true, allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "root2/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2}},
-		{commit: makeCommit(2), file: "root2/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2}},
-		{commit: makeCommit(1), file: "root3/file.ts", rootMustEnclosePath: true},
+		{commit: makeCommit(1), file: "blah", rootMustEnclosePath: true, graph: graph},
+		{commit: makeCommit(2), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
+		{commit: makeCommit(2), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
+		{commit: makeCommit(1), file: "root3/file.ts", rootMustEnclosePath: true, graph: graph},
 	})
 }
 
@@ -311,11 +311,11 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	}
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(4), file: "root1/file.ts", rootMustEnclosePath: true, allOfIDs: []int{7, 3}},
-		{commit: makeCommit(5), file: "root2/file.ts", rootMustEnclosePath: true, allOfIDs: []int{8, 7}},
-		{commit: makeCommit(3), file: "root3/file.ts", rootMustEnclosePath: true, allOfIDs: []int{5, 1}},
-		{commit: makeCommit(1), file: "root4/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2, 5}},
-		{commit: makeCommit(2), file: "root4/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2, 5}},
+		{commit: makeCommit(4), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{7, 3}},
+		{commit: makeCommit(5), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{8, 7}},
+		{commit: makeCommit(3), file: "root3/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{5, 1}},
+		{commit: makeCommit(1), file: "root4/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2, 5}},
+		{commit: makeCommit(2), file: "root4/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2, 5}},
 	})
 }
 
@@ -383,14 +383,14 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	}
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx1", allOfIDs: []int{1}},
-		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx1", allOfIDs: []int{2}},
-		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx1", allOfIDs: []int{3}},
-		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx1", allOfIDs: []int{4}},
-		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx2", allOfIDs: []int{5}},
-		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", allOfIDs: []int{6}},
-		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", allOfIDs: []int{7}},
-		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", allOfIDs: []int{8}},
+		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{2}},
+		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{3}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{4}},
+		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{5}},
+		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{6}},
+		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{7}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{8}},
 	})
 }
 
@@ -428,9 +428,71 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	}
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "", rootMustEnclosePath: false, allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "web/", rootMustEnclosePath: false, allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "web/src/file.ts", rootMustEnclosePath: false, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "web/", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "web/src/file.ts", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
+	})
+}
+
+func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	// This database has the following commit graph:
+	//
+	//       <- known commits || new commits ->
+	//                        ||
+	// [1] --+--- 2 --- 3 --  || -- 4 --+-- 7
+	//       |                ||       /
+	//       +-- [5] -- 6 --- || -----+
+
+	uploads := []Upload{
+		{ID: 1, Commit: makeCommit(1)},
+		{ID: 2, Commit: makeCommit(5)},
+	}
+	insertUploads(t, dbconn.Global, uploads...)
+
+	currentGraph := map[string][]string{
+		makeCommit(1): {},
+		makeCommit(2): {makeCommit(1)},
+		makeCommit(3): {makeCommit(2)},
+		makeCommit(5): {makeCommit(1)},
+		makeCommit(6): {makeCommit(5)},
+	}
+
+	visibleUploads, err := calculateVisibleUploads(currentGraph, toUploadMeta(uploads))
+	if err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
+
+	expectedVisibleUploads := map[string][]UploadMeta{
+		makeCommit(1): {{UploadID: 1, Distance: 0}},
+		makeCommit(2): {{UploadID: 1, Distance: 1}},
+		makeCommit(3): {{UploadID: 1, Distance: 2}},
+		makeCommit(5): {{UploadID: 2, Distance: 0}},
+		makeCommit(6): {{UploadID: 2, Distance: 1}},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	graphFragment := map[string][]string{
+		makeCommit(3): {},
+		makeCommit(6): {},
+		makeCommit(4): {makeCommit(3)},
+		makeCommit(7): {makeCommit(4), makeCommit(6)},
+	}
+
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+		// Note: Can't query anything outside of the graph fragment
+		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{1}},
+		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{2}},
+		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, graphFragmentOnly: true, anyOfIDs: []int{1}},
+		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, graphFragmentOnly: true, anyOfIDs: []int{2}},
 	})
 }
 
@@ -456,8 +518,9 @@ func TestDeleteOldestDump(t *testing.T) {
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, UploadedAt: t1},
 		Upload{ID: 2, UploadedAt: t2},
-		Upload{ID: 3, UploadedAt: t3},
-		Upload{ID: 4, UploadedAt: t4},
+		Upload{ID: 3, UploadedAt: t3, State: "queued"},
+		Upload{ID: 4, UploadedAt: t3},
+		Upload{ID: 5, UploadedAt: t4},
 	)
 	insertVisibleAtTip(t, dbconn.Global, 50, 2)
 
@@ -470,6 +533,14 @@ func TestDeleteOldestDump(t *testing.T) {
 		t.Errorf("unexpected pruned identifier. want=%d have=%d", 1, id)
 	}
 
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
 	repositoryIDs, err := store.DirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
@@ -485,13 +556,83 @@ func TestDeleteOldestDump(t *testing.T) {
 		t.Errorf("expected repository to be marked dirty")
 	}
 
-	// Prune next oldest (skips visible at tip)
+	// Prune next oldest (skips visible at tip, non-completed uploads)
 	if id, prunable, err := store.DeleteOldestDump(context.Background()); err != nil {
 		t.Fatalf("unexpected error pruning dumps: %s", err)
 	} else if !prunable {
 		t.Fatal("unexpectedly non-prunable")
-	} else if id != 3 {
-		t.Errorf("unexpected pruned identifier. want=%d have=%d", 3, id)
+	} else if id != 4 {
+		t.Errorf("unexpected pruned identifier. want=%d have=%d", 4, id)
+	}
+
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{4}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{4: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+}
+
+func TestSoftDeleteOldDumps(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, FinishedAt: &t1},
+		Upload{ID: 2, FinishedAt: &t2}, // visible
+		Upload{ID: 3, FinishedAt: &t2},
+		Upload{ID: 4, FinishedAt: &t3}, // visible
+		Upload{ID: 5, FinishedAt: &t3},
+		Upload{ID: 6, FinishedAt: &t4}, // too new
+		Upload{ID: 7, FinishedAt: &t4}, // too new
+	)
+	insertVisibleAtTip(t, dbconn.Global, 50, 2, 4)
+
+	if count, err := store.SoftDeleteOldDumps(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
+		t.Fatalf("unexpected error pruning dumps: %s", err)
+	} else if count != 3 {
+		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 3, count)
+	}
+
+	expectedStates := map[int]string{
+		1: "deleted",
+		2: "completed",
+		3: "deleted",
+		4: "completed",
+		5: "deleted",
+		6: "completed",
+		7: "completed",
+	}
+
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{1, 2, 3, 4, 5, 6, 7}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
 	}
 }
 
@@ -500,6 +641,8 @@ type FindClosestDumpsTestCase struct {
 	file                string
 	rootMustEnclosePath bool
 	indexer             string
+	graph               map[string][]string
+	graphFragmentOnly   bool
 	anyOfIDs            []int
 	allOfIDs            []int
 }
@@ -514,12 +657,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 			testCase.indexer,
 		)
 
-		t.Run(name, func(t *testing.T) {
-			dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
-			if err != nil {
-				t.Fatalf("unexpected error finding closest dumps: %s", err)
-			}
-
+		assertDumpIDs := func(t *testing.T, dumps []Dump) {
 			if len(testCase.anyOfIDs) > 0 {
 				testAnyOf(t, dumps, testCase.anyOfIDs)
 				return
@@ -534,7 +672,29 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 				t.Errorf("unexpected nearest dump length. want=%d have=%d", 0, len(dumps))
 				return
 			}
-		})
+		}
+
+		if !testCase.graphFragmentOnly {
+			t.Run(name, func(t *testing.T) {
+				dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
+				if err != nil {
+					t.Fatalf("unexpected error finding closest dumps: %s", err)
+				}
+
+				assertDumpIDs(t, dumps)
+			})
+		}
+
+		if testCase.graph != nil {
+			t.Run(name+" [graph-fragment]", func(t *testing.T) {
+				dumps, err := store.FindClosestDumpsFromGraphFragment(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer, testCase.graph)
+				if err != nil {
+					t.Fatalf("unexpected error finding closest dumps: %s", err)
+				}
+
+				assertDumpIDs(t, dumps)
+			})
+		}
 	}
 }
 
@@ -597,11 +757,11 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 		t.Fatalf("unexpected error deleting dump: %s", err)
 	}
 
-	// Original dump no longer exists
-	if _, exists, err := store.GetDumpByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if exists {
-		t.Fatal("unexpected record")
+	// Ensure record was deleted
+	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }
 

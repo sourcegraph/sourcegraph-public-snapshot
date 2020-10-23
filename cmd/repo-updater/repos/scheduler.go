@@ -265,8 +265,6 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 		known++
 		s.upsert(r, false)
 	}
-
-	schedKnownRepos.Set(float64(known))
 }
 
 // SetCloned will ensure only repos in names are treated as cloned. All other
@@ -350,7 +348,7 @@ func (s *updateScheduler) DebugDump() interface{} {
 	}
 	for i, update := range s.schedule.heap {
 		// Copy the scheduledRepoUpdate as a value so that
-		// poping off the heap here won't update the index value of the real heap, and
+		// popping off the heap here won't update the index value of the real heap, and
 		// we don't do a racy read on the repo pointer which may change concurrently in the real heap.
 		updateCopy := *update
 		schedule.heap[i] = &updateCopy
@@ -453,6 +451,8 @@ func (q *updateQueue) reset() {
 	q.index = map[api.RepoID]*repoUpdate{}
 	q.seq = 0
 	q.notifyEnqueue = make(chan struct{}, notifyChanBuffer)
+
+	schedUpdateQueueLength.Set(0)
 }
 
 // enqueue adds the repo to the queue with the given priority.
@@ -578,6 +578,7 @@ func (q *updateQueue) Push(x interface{}) {
 	item.Seq = q.nextSeq()
 	q.heap = append(q.heap, item)
 	q.index[item.Repo.ID] = item
+	schedUpdateQueueLength.Inc()
 }
 
 func (q *updateQueue) Pop() interface{} {
@@ -586,6 +587,7 @@ func (q *updateQueue) Pop() interface{} {
 	item.Index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
 	delete(q.index, item.Repo.ID)
+	schedUpdateQueueLength.Dec()
 	return item
 }
 
@@ -743,6 +745,7 @@ func (s *schedule) reset() {
 		s.timer.Stop()
 		s.timer = nil
 	}
+	schedKnownRepos.Set(0)
 }
 
 // The following methods implement heap.Interface based on the priority queue example:
@@ -768,6 +771,7 @@ func (s *schedule) Push(x interface{}) {
 	item.Index = n
 	s.heap = append(s.heap, item)
 	s.index[item.Repo.ID] = item
+	schedKnownRepos.Inc()
 }
 
 func (s *schedule) Pop() interface{} {
@@ -776,6 +780,7 @@ func (s *schedule) Pop() interface{} {
 	item.Index = -1 // for safety
 	s.heap = s.heap[0 : n-1]
 	delete(s.index, item.Repo.ID)
+	schedKnownRepos.Dec()
 	return item
 }
 

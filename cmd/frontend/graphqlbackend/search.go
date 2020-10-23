@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -59,13 +60,19 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
+func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplementer, err error) {
+	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
+	tr.LogFields(otlog.Bool("useNewParser", useNewParser))
 
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
@@ -80,6 +87,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	var queryInfo query.QueryInfo
 	if useNewParser {
 		globbing := getBoolPtr(settings.SearchGlobbing, false)
+		tr.LogFields(otlog.Bool("globbing", globbing))
 		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
@@ -100,6 +108,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 			return alertForQuery(queryString, err), nil
 		}
 	}
+	tr.LazyPrintf("parsing done")
 
 	// If stable:truthy is specified, make the query return a stable result ordering.
 	if queryInfo.BoolValue(query.FieldStable) {
@@ -271,12 +280,13 @@ type resolvedRepositories struct {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery  string                // the raw string of the original search query
-	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType    query.SearchType
-	versionContext *string
-	userSettings   *schema.Settings
+	query               query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery       string                // the raw string of the original search query
+	pagination          *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType         query.SearchType
+	versionContext      *string
+	userSettings        *schema.Settings
+	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex
@@ -327,7 +337,12 @@ func (r *searchResolver) maxResults() int32 {
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
-func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
+func decodedViewerFinalSettings(ctx context.Context) (_ *schema.Settings, err error) {
+	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	if mockDecodedViewerFinalSettings != nil {
 		return mockDecodedViewerFinalSettings, nil
 	}
@@ -342,24 +357,73 @@ func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
 	return &settings, nil
 }
 
-var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
+// A repogroup value is either a exact repo path RepoPath, or a regular
+// expression pattern RepoRegexpPattern.
+type RepoGroupValue interface {
+	value()
+	String() string
+}
 
-func resolveRepoGroups(settings *schema.Settings) (map[string][]*types.Repo, error) {
+type RepoPath string
+type RepoRegexpPattern string
+
+func (RepoPath) value() {}
+func (r RepoPath) String() string {
+	return string(r)
+}
+
+func (RepoRegexpPattern) value() {}
+func (r RepoRegexpPattern) String() string {
+	return string(r)
+}
+
+var mockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
+
+func resolveRepoGroups(settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
+	groups = map[string][]RepoGroupValue{}
 
-	groups := map[string][]*types.Repo{}
+	for name, values := range settings.SearchRepositoryGroups {
+		repos := make([]RepoGroupValue, 0, len(values))
 
-	for name, repoPaths := range settings.SearchRepositoryGroups {
-		repos := make([]*types.Repo, len(repoPaths))
-		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{Name: api.RepoName(repoPath)}
+		for _, value := range values {
+			switch path := value.(type) {
+			case string:
+				repos = append(repos, RepoPath(path))
+			case map[string]interface{}:
+				if stringRegex, ok := path["regex"].(string); ok {
+					repos = append(repos, RepoRegexpPattern(stringRegex))
+				} else {
+					log15.Warn("ignoring repo group value because regex not specfied", "regex-string", path["regex"])
+				}
+			default:
+				log15.Warn("ignoring repo group value of unrecognized type", "value", value, "type", fmt.Sprintf("%T", value))
+			}
 		}
 		groups[name] = repos
 	}
-
 	return groups, nil
+}
+
+// repoGroupValuesToRegexp does a lookup of all repo groups by name and converts
+// their values to a list of regular expressions to search.
+func repoGroupValuesToRegexp(groupNames []string, groups map[string][]RepoGroupValue) []string {
+	var patterns []string
+	for _, groupName := range groupNames {
+		for _, value := range groups[groupName] {
+			switch v := value.(type) {
+			case RepoPath:
+				patterns = append(patterns, "^"+regexp.QuoteMeta(v.String())+"$")
+			case RepoRegexpPattern:
+				patterns = append(patterns, v.String())
+			default:
+				panic("unreachable")
+			}
+		}
+	}
+	return patterns
 }
 
 // NOTE: This function is not called if the version context is not used
@@ -762,16 +826,12 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		if err != nil {
 			return resolvedRepositories{}, err
 		}
-		var patterns []string
-		for _, groupName := range groupNames {
-			for _, repo := range groups[groupName] {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
-			}
-		}
+		patterns := repoGroupValuesToRegexp(groupNames, groups)
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
-		// Ensure we don't omit any repos explicitly included via a repo group.
+		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
+		// listed repo generates at least one pattern.)
 		if len(patterns) > maxRepoListSize {
 			maxRepoListSize = len(patterns)
 		}
@@ -1074,9 +1134,10 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
+
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Repos:           resolved.repoRevs,
+		RepoPromise:     (&search.Promise{}).Resolve(resolved.repoRevs),
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
@@ -1248,4 +1309,18 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 		return searchErr
 	}
 	return nil
+}
+
+// getRepos is a wrapper around p.Get. It returns an error if the promise
+// contains an underlying type other than []*search.RepositoryRevisions.
+func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
+	v, err := p.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	repoRevs, ok := v.([]*search.RepositoryRevisions)
+	if !ok {
+		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
+	}
+	return repoRevs, nil
 }

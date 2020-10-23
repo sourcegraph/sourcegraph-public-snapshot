@@ -414,7 +414,7 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 	return prefixes
 }
 
-// dnf returns the Disjunctive Normal Form of a query (a flat sequence of
+// Dnf returns the Disjunctive Normal Form of a query (a flat sequence of
 // or-expressions) by applying the distributive property on (possibly nested)
 // or-expressions. For example, the query:
 //
@@ -427,7 +427,7 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 // the results. Note that various optimizations are possible
 // during evaluation, but those are separate query pre- or postprocessing steps
 // separate from this general transformation.
-func dnf(query []Node) [][]Node {
+func Dnf(query []Node) [][]Node {
 	return distribute([][]Node{}, query)
 }
 
@@ -438,7 +438,7 @@ func substituteOrForRegexp(nodes []Node) []Node {
 		}
 		return false
 	}
-	new := []Node{}
+	newNode := []Node{}
 	for _, node := range nodes {
 		switch v := node.(type) {
 		case Operator:
@@ -449,106 +449,173 @@ func substituteOrForRegexp(nodes []Node) []Node {
 					values = append(values, node.(Pattern).Value)
 				}
 				valueString := "(" + strings.Join(values, ")|(") + ")"
-				new = append(new, Pattern{Value: valueString})
+				newNode = append(newNode, Pattern{Value: valueString})
 				if len(rest) > 0 {
 					rest = substituteOrForRegexp(rest)
-					new = newOperator(append(new, rest...), Or)
+					newNode = newOperator(append(newNode, rest...), Or)
 				}
 			} else {
-				new = append(new, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
+				newNode = append(newNode, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}
 		case Parameter, Pattern:
-			new = append(new, node)
+			newNode = append(newNode, node)
 		}
 	}
-	return new
+	return newNode
 }
 
-// substituteConcat reduces a concatenation of patterns to a separator-separated string.
-func substituteConcat(nodes []Node, separator string) []Node {
+func fuzzyRegexp(patterns []Pattern) Pattern {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	var values []string
+	for _, p := range patterns {
+		if p.Annotation.Labels.isSet(Literal) {
+			values = append(values, regexp.QuoteMeta(p.Value))
+		} else {
+			values = append(values, p.Value)
+		}
+	}
+	return Pattern{
+		Annotation: Annotation{Labels: Regexp},
+		Value:      "(" + strings.Join(values, ").*?(") + ")",
+	}
+}
+
+func space(patterns []Pattern) Pattern {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	var values []string
+	for _, p := range patterns {
+		values = append(values, p.Value)
+	}
+	return Pattern{
+		Value: strings.Join(values, " "),
+	}
+}
+
+// substituteConcat returns a function that concatenates all contiguous patterns
+// in the tree, rooted by a concat operator. The callback parameter defines how
+// the function concatenates patterns. The return value of callback is
+// substituted in-place in the tree.
+func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
 		}
 		return false
 	}
-	new := []Node{}
-	for _, node := range nodes {
-		switch v := node.(type) {
-		case Parameter, Pattern:
-			new = append(new, node)
-		case Operator:
-			if v.Kind == Concat {
-				// Merge consecutive patterns.
-				previous := v.Operands[0]
-				merged := Pattern{}
-				if p, ok := previous.(Pattern); ok {
-					merged = p
-				}
-				for _, node := range v.Operands[1:] {
-					if isPattern(node) && isPattern(previous) {
-						p := node.(Pattern)
-						if merged.Value != "" {
-							merged.Annotation.Labels |= p.Annotation.Labels
-							merged = Pattern{
-								Value:      merged.Value + separator + p.Value,
-								Annotation: merged.Annotation,
-							}
-						} else {
-							// Base case.
-							merged = Pattern{Value: p.Value}
+
+	// define a recursive function to close over callback and isPattern.
+	var substituteNodes func(nodes []Node) []Node
+	substituteNodes = func(nodes []Node) []Node {
+		newNode := []Node{}
+		for _, node := range nodes {
+			switch v := node.(type) {
+			case Parameter, Pattern:
+				newNode = append(newNode, node)
+			case Operator:
+				if v.Kind == Concat {
+					// Merge consecutive patterns.
+					ps := []Pattern{}
+					previous := v.Operands[0]
+					if p, ok := previous.(Pattern); ok {
+						ps = append(ps, p)
+					}
+					for _, node := range v.Operands[1:] {
+						if isPattern(node) && isPattern(previous) {
+							p := node.(Pattern)
+							ps = append(ps, p)
+							previous = node
+							continue
 						}
-						previous = node
-						continue
+						if len(ps) > 0 {
+							newNode = append(newNode, callback(ps))
+							ps = []Pattern{}
+						}
+						newNode = append(newNode, substituteNodes([]Node{node})...)
 					}
-					if merged.Value != "" {
-						new = append(new, merged)
-						merged = Pattern{}
+					if len(ps) > 0 {
+						newNode = append(newNode, callback(ps))
 					}
-					new = append(new, substituteConcat([]Node{node}, separator)...)
+				} else {
+					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
 				}
-				if merged.Value != "" {
-					new = append(new, merged)
-					merged = Pattern{}
-				}
-			} else {
-				new = append(new, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
 			}
 		}
+		return newNode
 	}
-	return new
+	return substituteNodes
 }
 
-// TrailingParensToLiteral is a heuristic used in the context of regular
-// expression search. It checks whether any pattern is annotated with a label
-// HeusticDanglingParens. This label implies that the regular expression is not
-// well-formed, for example, "foo.*bar(" or "foo(.*bar". As a special case for
-// usability we escape a trailing parenthesis and treat it literally. Any other
-// forms are ignored, and will likely not pass validation.
-func TrailingParensToLiteral(nodes []Node) []Node {
-	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if annotation.Labels.isSet(HeuristicDanglingParens) && strings.HasSuffix(value, "(") {
-			value = strings.TrimSuffix(value, "(")
-			value += `\(`
+// escapeParens is a heuristic used in the context of regular expression search.
+// It escapes two kinds of patterns:
+//
+// 1. Any occurrence of () is converted to \(\).
+// In regex () implies the empty string, which is meaningless as a search
+// query and probably not what the user intended.
+//
+// 2. If the pattern ends with a trailing and unescaped (, it is escaped.
+// Normally, a pattern like foo.*bar( would be an invalid regexp, and we would
+// show no results. But, it is a common and convenient syntax to search for, so
+// we convert thsi pattern to interpret a trailing parenthesis literally.
+//
+// Any other forms are ignored, for example, foo.*(bar is unchanged. In the
+// parser pipeline, such unchanged and invalid patterns are rejected by the
+// validate function.
+func escapeParens(s string) string {
+	var i int
+	for i := 0; i < len(s); i++ {
+		if s[i] == '(' || s[i] == '\\' {
+			break
 		}
-		return Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+	}
+
+	// No special characters found, so return original string.
+	if i >= len(s) {
+		return s
+	}
+
+	var result []byte
+	for i < len(s) {
+		switch s[i] {
+		case '\\':
+			if i+1 < len(s) {
+				result = append(result, '\\', s[i+1])
+				i += 2 // Next char.
+				continue
+			}
+			i++
+			result = append(result, '\\')
+		case '(':
+			if i+1 == len(s) {
+				// Escape a trailing and unescaped ( => \(.
+				result = append(result, '\\', '(')
+				i++
+				continue
+			}
+			if i+1 < len(s) && s[i+1] == ')' {
+				// Escape () => \(\).
+				result = append(result, '\\', '(', '\\', ')')
+				i += 2 // Next char.
+				continue
+			}
+			result = append(result, s[i])
+			i++
+		default:
+			result = append(result, s[i])
+			i++
 		}
-	})
+	}
+	return string(result)
 }
 
-// EmptyGroupsToLiteral is a heuristic used in the context of regular expression
-// search. It labels any pattern containing "()" as a literal pattern since in
-// regex it implies the empty string, which is meaningless as a search query and
-// probably not what the user intended.
-func EmptyGroupsToLiteral(nodes []Node) []Node {
+// escapeParensHeuristic escapes certain parentheses in search patterns (see escapeParens).
+func escapeParensHeuristic(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
-			annotation.Labels.set(HeuristicParensAsPatterns)
-			annotation.Labels.set(Literal)
-			annotation.Labels.unset(Regexp)
+		if !annotation.Labels.isSet(Quoted) {
+			value = escapeParens(value)
 		}
 		return Pattern{
 			Value:      value,
@@ -577,7 +644,7 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 
 // concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
 // Invariant: Guaranteed to succeed on a validated and DNF query.
-func concatRevFilters(nodes []Node) []Node {
+func ConcatRevFilters(nodes []Node) []Node {
 	var revision string
 	nodes = MapField(nodes, FieldRev, func(value string, _ bool) Node {
 		revision = value
@@ -591,6 +658,21 @@ func concatRevFilters(nodes []Node) []Node {
 			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
 		}
 		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+	})
+}
+
+// labelStructural converts Literal labels to Structural labels. Structural
+// queries are parsed the same as literal queries, we just convert the labels as
+// a postprocessing step to keep the parser lean.
+func labelStructural(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		annotation.Labels.unset(Literal)
+		annotation.Labels.set(Structural)
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
 	})
 }
 

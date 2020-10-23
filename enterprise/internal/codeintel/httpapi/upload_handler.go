@@ -8,6 +8,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/codeintelutils"
@@ -38,6 +40,8 @@ func NewUploadHandler(store store.Store, bundleManagerClient bundles.BundleManag
 	return http.HandlerFunc(handler.handleEnqueue)
 }
 
+var revhashPattern = regexp.MustCompile(`^[a-z0-9]{40}$`)
+
 // POST /upload
 func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -46,6 +50,11 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	if !hasQuery(r, "uploadId") {
 		repoName := getQuery(r, "repository")
 		commit := getQuery(r, "commit")
+
+		if !revhashPattern.Match([]byte(commit)) {
+			http.Error(w, "Commit must be a 40-character revhash", http.StatusBadRequest)
+			return
+		}
 
 		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
 		if !ok {
@@ -238,7 +247,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 	)
 
 	// older versions of src-cli expect a string
-	return enqueuePayload{fmt.Sprintf("%d", id)}, nil
+	return enqueuePayload{strconv.Itoa(id)}, nil
 }
 
 // handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a
@@ -268,7 +277,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 	)
 
 	// older versions of src-cli expect a string
-	return enqueuePayload{fmt.Sprintf("%d", id)}, nil
+	return enqueuePayload{strconv.Itoa(id)}, nil
 }
 
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the

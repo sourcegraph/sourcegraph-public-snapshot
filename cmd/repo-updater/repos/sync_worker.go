@@ -3,8 +3,9 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
@@ -21,9 +22,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+type SyncWorkerOptions struct {
+	NumHandlers            int                   // defaults to 3
+	WorkerInterval         time.Duration         // defaults to 10s
+	PrometheusRegisterer   prometheus.Registerer // if non-nil, metrics will be collected
+	CleanupOldJobs         bool                  // run a background process to cleanup old jobs
+	CleanupOldJobsInterval time.Duration         // defaults to 1h
+}
+
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, numHandlers int) *workerutil.Worker {
-	dbHandle := basestore.NewHandleWithDB(db)
+func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+	if opts.NumHandlers == 0 {
+		opts.NumHandlers = 3
+	}
+	if opts.WorkerInterval == 0 {
+		opts.WorkerInterval = 10 * time.Second
+	}
+	if opts.CleanupOldJobsInterval == 0 {
+		opts.CleanupOldJobsInterval = time.Hour
+	}
+
+	dbHandle := basestore.NewHandleWithDB(db, sql.TxOptions{
+		// Change the isolation level for every transaction created by the worker
+		// so that multiple workers can modify the same rows without conflicts.
+		Isolation: sql.LevelReadCommitted,
+	})
 
 	syncJobColumns := append(store.DefaultColumnExpressions(), []*sqlf.Query{
 		sqlf.Sprintf("external_service_id"),
@@ -33,31 +56,47 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	store := store.NewStore(dbHandle, store.StoreOptions{
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
-		Scan:              scanSyncJob,
+		Scan:              scanSingleJob,
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
-		// Zero for now as we expect errors to be transient
-		MaxNumResets:  0,
-		MaxNumRetries: 0,
+		MaxNumResets:      5,
+		MaxNumRetries:     0,
 	})
 
-	return dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
-		Name:        "sync_worker",
-		Handler:     handler,
-		NumHandlers: numHandlers,
-		Interval:    1 * time.Minute,
+	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
+		Name:        "repo_sync_worker",
+		NumHandlers: opts.NumHandlers,
+		Interval:    opts.WorkerInterval,
 		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: newObservationOperation(),
+			HandleOperation: newObservationOperation(opts.PrometheusRegisterer),
 		},
 	})
+
+	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
+		Name:     "sync-worker",
+		Interval: 5 * time.Minute,
+		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
+	})
+
+	if opts.CleanupOldJobs {
+		go runJobCleaner(ctx, db, opts.CleanupOldJobsInterval)
+	}
+
+	return worker, resetter
 }
 
-func newObservationOperation() *observation.Operation {
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
+func newObservationOperation(r prometheus.Registerer) *observation.Operation {
+	var observationContext *observation.Context
+
+	if r == nil {
+		observationContext = &observation.TestContext
+	} else {
+		observationContext = &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: r,
+		}
 	}
 
 	m := metrics.NewOperationMetrics(
@@ -74,28 +113,61 @@ func newObservationOperation() *observation.Operation {
 	})
 }
 
-func scanSyncJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
+	return dbworker.ResetterMetrics{
+		RecordResets: promauto.With(r).NewCounter(prometheus.CounterOpts{
+			Name: "src_external_service_queue_resets_total",
+			Help: "Total number of external services put back into queued state",
+		}),
+		RecordResetFailures: promauto.With(r).NewCounter(prometheus.CounterOpts{
+			Name: "src_external_service_queue_max_resets_total",
+			Help: "Total number of external services that exceed the max number of resets",
+		}),
+		Errors: promauto.With(r).NewCounter(prometheus.CounterOpts{
+			Name: "src_external_service_queue_reset_errors_total",
+			Help: "Total number of errors when running the external service resetter",
+		}),
+	}
+}
+
+func runJobCleaner(ctx context.Context, db dbutil.DB, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
+	for {
+		_, err := db.ExecContext(ctx, `
+-- source: cmd/repo-updater/repos/sync_worker.go:runJobCleaner
+DELETE FROM external_service_sync_jobs
+WHERE
+  finished_at < now() - INTERVAL '1 day'
+  AND state IN ('completed', 'errored')
+`)
+		if err != nil && err != context.Canceled {
+			log15.Error("error while running job cleaner", "err", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
+}
+
+func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	if err != nil {
+		return nil, false, err
+	}
+
+	jobs, err := scanJobs(rows)
 	if err != nil {
 		return nil, false, err
 	}
 
 	var job SyncJob
 
-	for rows.Next() {
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.ExternalServiceID,
-			&job.NextSyncAt,
-		); err != nil {
-			return nil, false, err
-		}
+	if len(jobs) > 0 {
+		job = jobs[0]
 	}
 
 	return &job, true, nil
@@ -118,12 +190,4 @@ type SyncJob struct {
 // RecordID implements workerutil.Record and indicates the queued item id
 func (s *SyncJob) RecordID() int {
 	return s.ID
-}
-
-type syncHandler struct{}
-
-func (h *syncHandler) Handle(ctx context.Context, tx workerutil.Store, record workerutil.Record) error {
-	// Temporary handler which will be implemented once we have implemented code to sync a single
-	// external service
-	return errors.New("TODO")
 }

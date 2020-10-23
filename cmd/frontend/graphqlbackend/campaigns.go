@@ -176,11 +176,14 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() bool
+	Published() campaigns.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {
 	Message() string
+	Subject() string
+	Body() *string
+	Author() *PersonResolver
 	Diff() string
 }
 
@@ -193,7 +196,7 @@ type ListChangesetsArgs struct {
 	First                       int32
 	After                       *string
 	PublicationState            *campaigns.ChangesetPublicationState
-	ReconcilerState             *campaigns.ReconcilerState
+	ReconcilerState             *[]campaigns.ReconcilerState
 	ExternalState               *campaigns.ChangesetExternalState
 	ReviewState                 *campaigns.ChangesetReviewState
 	CheckState                  *campaigns.ChangesetCheckState
@@ -228,9 +231,11 @@ type CampaignsConnectionResolver interface {
 
 type ChangesetsConnectionStatsResolver interface {
 	Unpublished() int32
+	Draft() int32
 	Open() int32
 	Merged() int32
 	Closed() int32
+	Deleted() int32
 	Total() int32
 }
 
@@ -314,6 +319,7 @@ type ChangesetCountsResolver interface {
 	Total() int32
 	Merged() int32
 	Closed() int32
+	Draft() int32
 	Open() int32
 	OpenApproved() int32
 	OpenChangesRequested() int32

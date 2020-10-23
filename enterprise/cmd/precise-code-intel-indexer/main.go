@@ -61,7 +61,7 @@ func main() {
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexManager := indexmanager.New(store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
+	indexManager := indexmanager.New(s, store.WorkerutilIndexStore(s), indexmanager.ManagerOptions{
 		MaximumTransactions:   maximumTransactions,
 		RequeueDelay:          requeueDelay,
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
@@ -75,6 +75,9 @@ func main() {
 		gitserver.DefaultClient,
 		indexabilityUpdaterInterval,
 		indexabilityUpdaterMetrics,
+		indexMinimumSearchCount,
+		float64(indexMinimumSearchRatio)/100,
+		indexMinimumPreciseCount,
 	)
 
 	scheduler := scheduler.NewScheduler(
@@ -115,7 +118,7 @@ func mustInitializeStore() store.Store {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 

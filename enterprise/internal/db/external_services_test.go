@@ -900,13 +900,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   extsvc.KindGitLab,
 			desc:   "invalid empty projects item",
 			config: `{"projects": [{}]}`,
-			assert: includes(`projects.0: Must validate at least one schema (anyOf)`),
+			assert: includes(`projects.0: Must validate one and only one schema (oneOf)`),
 		},
 		{
 			kind:   extsvc.KindGitLab,
 			desc:   "invalid projects item",
 			config: `{"projects": [{"foo": "bar"}]}`,
-			assert: includes(`projects.0: Must validate at least one schema (anyOf)`),
+			assert: includes(`projects.0: Must validate one and only one schema (oneOf)`),
 		},
 		{
 			kind:   extsvc.KindGitLab,
@@ -922,7 +922,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindGitLab,
-			desc: "both name and id can be specified in projects",
+			desc: "both name and id cannot be specified in projects",
 			config: `
 			{
 				"url": "https://gitlab.corp.com",
@@ -932,7 +932,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 					{"name": "foo/bar", "id": 1234}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			assert: includes(`projects.0: Must validate one and only one schema (oneOf)`),
 		},
 		{
 			kind:   extsvc.KindGitLab,

@@ -6,6 +6,7 @@ import { mkdtemp as original_mkdtemp } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import execa from 'execa'
+import commandExists from 'command-exists'
 const mkdtemp = promisify(original_mkdtemp)
 
 const formatDate = (date: Date): string => `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
@@ -177,49 +178,144 @@ export async function getIssueByTitle(octokit: Octokit, title: string): Promise<
     return matchingIssues[0].html_url
 }
 
+export type EditFunc = (d: string) => void
+
+export type Edit = string | EditFunc
+
 export interface CreateBranchWithChangesOptions {
     owner: string
     repo: string
     base: string
     head: string
     commitMessage: string
-    bashEditCommands: string[]
+    edits: Edit[]
+    dryRun?: boolean
 }
 
-export async function createBranchWithChanges({
-    owner,
-    repo,
-    base: baseRevision,
-    head: headBranch,
-    commitMessage,
-    bashEditCommands,
-}: CreateBranchWithChangesOptions): Promise<void> {
+export interface ChangesetsOptions {
+    requiredCommands: string[]
+    changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions)[]
+    dryRun?: boolean
+}
+
+export interface CreatedChangeset {
+    repository: string
+    branch: string
+    pullRequestURL: string
+}
+
+export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
+    for (const command of options.requiredCommands) {
+        try {
+            await commandExists(command)
+        } catch {
+            throw new Error(`Required command ${command} does not exist`)
+        }
+    }
+    const octokit = await getAuthenticatedGitHubClient()
+
+    // Generate changes
+    const results: CreatedChangeset[] = []
+    for (const change of options.changes) {
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+        let prURL = ''
+        if (!options.dryRun) {
+            prURL = await createPR(octokit, change)
+        }
+        results.push({
+            repository: `${change.owner}/${change.repo}`,
+            branch: change.base,
+            pullRequestURL: prURL,
+        })
+    }
+
+    // Log results
+    for (const result of results) {
+        console.log(`${result.repository} (${result.branch}): created pull request ${result.pullRequestURL}`)
+    }
+
+    return results
+}
+
+async function createBranchWithChanges(
+    octokit: Octokit,
+    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
+): Promise<void> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
+    const depthFlag = '--depth 10'
 
-    const bashScript = `set -ex
+    // Determine whether or not to create the base branch, or use the existing one
+    let baseExists = true
+    try {
+        await octokit.repos.getBranch({ branch: baseRevision, owner, repo })
+    } catch (error) {
+        if (error.status === 404) {
+            console.log(`Base ${baseRevision} does not exist`)
+            baseExists = false
+        } else {
+            throw error
+        }
+    }
+    const checkoutCommand =
+        baseExists === true
+            ? // check out the existing branch - fetch fails if we are already checked out, in which case just check out
+              `git fetch ${depthFlag} origin ${baseRevision}:${baseRevision} || git checkout ${baseRevision}`
+            : // create and publish base branch if it does not yet exist
+              `git checkout -b ${baseRevision}`
 
-    cd ${tmpdir};
-    git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
+    // Set up repository
+    const setupScript = `set -ex
+
+    git clone ${depthFlag} git@github.com:${owner}/${repo} || git clone ${depthFlag} https://github.com/${owner}/${repo};
     cd ./${repo};
-    git checkout ${baseRevision};
-    ${bashEditCommands.join(';\n    ')};
-    git add :/;
-    git commit -a -m ${JSON.stringify(commitMessage)};
-    git push origin HEAD:${headBranch};
-    `
-    await execa('bash', ['-c', bashScript], { stdio: 'inherit' })
+    ${checkoutCommand};`
+    await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })
+    const workdir = path.join(tmpdir, repo)
+
+    // Apply edits
+    for (const edit of edits) {
+        switch (typeof edit) {
+            case 'function':
+                edit(workdir)
+                break
+            case 'string': {
+                const editScript = `set -ex
+
+                ${edit};`
+                await execa('bash', ['-c', editScript], { stdio: 'inherit', cwd: workdir })
+            }
+        }
+    }
+
+    if (dryRun) {
+        console.warn('Dry run enabled - printing diff instead of publishing')
+        const showChangesScript = `set -ex
+
+        git --no-pager diff;`
+        await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
+    } else {
+        // Publish changes
+        const publishScript = `set -ex
+
+        git add :/;
+        git commit -a -m ${JSON.stringify(commitMessage)};
+        git push origin HEAD:${headBranch};`
+        await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
+    }
 }
 
-export async function createPR(options: {
-    owner: string
-    repo: string
-    head: string
-    base: string
-    title: string
-    body?: string
-}): Promise<string> {
-    const octokit = await getAuthenticatedGitHubClient()
+async function createPR(
+    octokit: Octokit,
+    options: {
+        owner: string
+        repo: string
+        head: string
+        base: string
+        title: string
+        body?: string
+    }
+): Promise<string> {
     const response = await octokit.pulls.create(options)
     return response.data.html_url
 }

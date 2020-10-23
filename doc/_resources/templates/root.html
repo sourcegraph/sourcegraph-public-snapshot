@@ -1,107 +1,155 @@
 {{define "root"}}
-<!DOCTYPE html>
-<html>
+<!--
+     TODO(sqs): broken: http://localhost:5080/user/search/language
+-->
 
-<head>
-    <title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
-    <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
-    <link rel="stylesheet" href="{{asset "bootstrap.min.css"}}?4.3.1" />
-    <link rel="stylesheet" href="{{asset "layout.css"}}?20" />
-    <link rel="stylesheet" href="{{asset "search.css"}}?20" />
-    <link rel="stylesheet" href="{{asset "content.css"}}?20" />
-    <script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
-    <!-- Google Tag Manager -->
-    <script>(function (w, d, s, l, i) {
-            w[l] = w[l] || []; w[l].push({
-                'gtm.start':
-                    new Date().getTime(), event: 'gtm.js'
-            }); var f = d.getElementsByTagName(s)[0],
-                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
-                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-        })(window, document, 'script', 'dataLayer', 'GTM-TB4NLS7');</script>
-    <!-- End Google Tag Manager -->
-    {{block "head" .}}{{end}}
-</head>
+	<!DOCTYPE html>
+	<html lang="en">
 
-<body class="theme theme-light">
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0"
-            style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    <div class="global-navbar">
-        <input type="checkbox" id="nav-state" class="nav-state" />
-        <div class="nav-content">
-            <div class="nav-container flex-container">
-                <div class="nav-header">
-                    <a href="/" class="nav-logo">
-                        <img class="nav-logo-image small-hidden" src="/assets/sourcegraph-logo-docs.svg"
-                            alt="Sourcegraph Documentation">
-                        <img class="nav-logo-image-small large-hidden medium-hidden"
-                            src="/assets/sourcegraph-logo-docs-small.svg" alt="Sourcegraph Documentation">
-                    </a>
-                    {{block "versionSelector" .}}{{end}}
-                </div>
-                <span class="mobile-nav-button"></span>
-                <div class="nav-links">
-                    <ul class="nav-link-container">
-                        <li class="nav-link"><a href="https://about.sourcegraph.com">About</a></li>
-                        <li class="nav-link"><a href="https://github.com/sourcegraph/sourcegraph">Code</a></li>
-                        <li class="nav-link"><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
-                    </ul>
-                    <form class="search-form form-inline small-hidden" method="get" action="/search">
-                        <input type="text" name="q" class="nav-search form-control" id="search"
-                            value="{{block "query" .}}{{end}}" placeholder="Search docs..." spellcheck="false">
+		<head>
+			<title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
+            <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
+			<link rel="stylesheet" type="text/css" href="{{asset "docsite.css"}}" />
+            <script src="{{asset "docsite.js"}}"></script>
+			<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+            <!-- Google Tag Manager -->
+            <script>(function (w, d, s, l, i) {
+                    w[l] = w[l] || []; w[l].push({
+                        'gtm.start':
+                            new Date().getTime(), event: 'gtm.js'
+                    }); var f = d.getElementsByTagName(s)[0],
+                        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                            'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+                })(window, document, 'script', 'dataLayer', 'GTM-TB4NLS7');</script>
+            <!-- End Google Tag Manager -->
+
+			{{block "head" .}}{{end}}
+		</head>
+
+        <!-- Default to light theme if no JavaScript -->
+		<body class="theme-light">
+            <!-- Google Tag Manager (noscript) -->
+            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+            <!-- End Google Tag Manager (noscript) -->
+
+			<aside id="sidebar">
+                <header>
+				    <h1 id="logo"><a href="/">
+                        <img src="{{asset "logo-theme-light.svg"}}" class="theme-light" alt="Sourcegraph docs"/>
+                        <img src="{{asset "logo-theme-dark.svg"}}" class="theme-dark" alt="Sourcegraph docs"/>
+                    </a></h1>
+                    <form id="search-form" method="get" action="/search">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z"/></svg>
+					    <input type="text" id="search" name="q" value="{{block "query" .}}{{end}}" placeholder="" spellcheck="false" aria-label="Query" />
                         <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
-                        <button class="btn btn-primary nav-search-button ml-2" id="search-button"
-                            type="submit">Search</button>
-                    </form>
+					    <button id="search-button" type="submit" aria-label="Search" class="sr-only">Search</button>
+				    </form>
+                </header>
+                <nav id="sections" class="links sidebar">
+                    <div class="nav-section tree">
+                        <h2 class="sr-only">Sections</h2>
+                        {{if (contentFileExists .ContentVersion "sidebar.md")}}
+                            {{renderMarkdownContentFile .ContentVersion "sidebar.md"}}
+                        {{else}}
+                            {{block "fallbackSidebar" .}}{{end}}
+                        {{end}}
+                    </div>
+                    <div class="nav-section">
+                        <h2 class="sr-only">External</h2>
+                        <ul>
+                            <li class="external"><a href="https://about.sourcegraph.com">About Sourcegraph</a></li>
+                            <li class="external"><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
+                        </ul>
+                    </div>
+                </nav>
+                <div id="theme">
+                    <div>
+                    <button type="button" data-theme-preference="auto">Auto</button>
+                    <button type="button" data-theme-preference="light">Light</button>
+                    <button type="button" data-theme-preference="dark">Dark</button>
+                    </div>
                 </div>
+			</aside>
+
+            <div id="page" class="container">
+			    <main>
+					{{block "content" .}}{{end}}
+			    </main>
+                <footer>
+                    <nav class="links external">
+                        <ul>
+                            <li><a href="https://about.sourcegraph.com">About Sourcegraph</a></li>
+                            <li><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
+                            <li><a href="https://github.com/sourcegraph/sourcegraph">Code (GitHub)</a></li>
+                            <li><a href="https://about.sourcegraph.com/terms">Terms</a></li>
+                            <li><a href="https://about.sourcegraph.com/security">Security</a></li>
+                            <li><a href="https://about.sourcegraph.com/privacy">Privacy</a></li>
+                        </ul>
+                    </nav>
+                </footer>
             </div>
-            {{block "breadcrumb" .}}{{end}}
-        </div>
-    </div>
-    {{block "content" .}}{{end}}
-    {{/* Keep up-to-date with Sourcegraph.com */}}
-    <div class="footer-container column large-12">
-        <div class="footer__container pl-3">
-            <footer class="footer pt-6 pb-2">
-                <div class="footer__postscript d-flex justify-content-between pt-4 pb-2 small">
-                    <ul class="nav">
-                        <li class="nav-item text-muted mt-2 mr-3">© 2020 Sourcegraph</li>
-                        <li class="nav-item"><a class="nav-link" href="https://about.sourcegraph.com/terms">Terms</a>
-                        </li>
-                        <li class="nav-item"><a class="nav-link"
-                                href="https://about.sourcegraph.com/security">Security</a></li>
-                        <li class="nav-item"><a class="nav-link"
-                                href="https://about.sourcegraph.com/privacy">Privacy</a></li>
-                    </ul>
-                </div>
-            </footer>
-        </div>
-    </div>
+		</body>
+	</html>
+{{end}}
 
-    {{block "afterBody" .}}{{end}}
-
-    <script>
-        function copyText(element) {
-            var range, selection;
-
-            if (document.body.createTextRange) {
-                range = document.body.createTextRange();
-                range.moveToElementText(element);
-                range.select();
-            } else if (window.getSelection) {
-                selection = window.getSelection();
-                range = document.createRange();
-                range.selectNodeContents(element);
-                selection.removeAllRanges();
-                selection.addRange(range);
-            }
-            document.execCommand('copy');
-        }
-    </script>
-</body>
-
-</html>
+{{define "fallbackSidebar"}}
+    {{/* The fallback sidebar for revisions before the sidebar.md file existed. */}}
+    <ul>
+        <li class="expand"><a href="/getting-started">Getting started</a>
+            <ul>
+                <li><a href="/getting-started/tour">Product tour</a></li>
+                <li><a href="/getting-started/personalization">Personalization</a></li>
+            </ul>
+        </li>
+        <li class="expand"><a href="/code_search">Code search</a>
+            <ul>
+                <li><a href="code_search/tutorials">Tutorials</a></li>
+                <li><a href="code_search/how-to">How-to guides</a></li>
+                <li><a href="code_search/explanations">Explanations</a></li>
+                <li><a href="code_search/reference">Reference</a></li>
+            </ul>
+        </li>
+        <li><a href="/code_intelligence">Code intelligence</a>
+            <ul>
+                <li><a href="code_intelligence/tutorials">Tutorials</a></li>
+                <li><a href="code_intelligence/how-to">How-to guides</a></li>
+                <li><a href="code_intelligence/explanations">Explanations</a></li>
+                <li><a href="code_intelligence/reference">Reference</a></li>
+            </ul>
+        </li>
+        <li><a href="/campaigns">Campaigns</a>
+            <ul>
+                <li><a href="campaigns/tutorials">Tutorials</a></li>
+                <li><a href="campaigns/how-to">How-to guides</a></li>
+                <li><a href="campaigns/explanations">Explanations</a></li>
+                <li><a href="campaigns/reference">Reference</a></li>
+            </ul>
+        </li>
+        <li><a href="/integration">Integrations</a></li>
+        <li><a href="/extensions">Extensions</a></li>
+        <li><a href="/adopt">Adopting</a></li>
+        <li><a href="/admin">Administration</a>
+            <ul>
+                <li><a href="/admin/install">Install</a></li>
+                <li><a href="/admin/updates">Upgrade</a></li>
+                <li><a href="/admin/config">Configuration</a></li>
+                <li><a href="/admin/external_service">Code hosts</a></li>
+                <li><a href="/admin/auth">User authentication</a></li>
+                <li><a href="/admin/extensions">Extension registry</a></li>
+                <li><a href="/admin/observability">Observability</a></li>
+                <li><a href="/admin/faq">FAQ</a></li>
+                <li><a href="/admin/troubleshooting">Troubleshooting</a></li>
+            </ul></li>
+        <li><a href="/dev">Development</a></li>
+            <ul>
+                <li><a href="dev/getting-started">Getting started</a></li>
+                <li><a href="dev/how-to">How-to guides</a></li>
+                <li><a href="dev/background-information">Background information</a></li>
+            </ul>
+        <li><br></li>
+        <li><a href="/#quickstart-guide">★ Quick install</a></li>
+        <li><a href="/code_search/reference/queries">★ Search query syntax</a></li>
+        <li><a href="/api/graphql">★ GraphQL API</a></li>
+    </ul>
 {{end}}

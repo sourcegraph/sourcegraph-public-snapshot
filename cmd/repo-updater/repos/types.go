@@ -567,8 +567,6 @@ type Repo struct {
 	URI string
 	// Description is a brief description of the repository.
 	Description string
-	// Language is the primary programming language used in this repository.
-	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 	// Archived is whether the repository has been archived.
@@ -589,6 +587,7 @@ type Repo struct {
 	// service itself).
 	ExternalRepo api.ExternalRepoSpec
 	// Sources identifies all the repo sources this Repo belongs to.
+	// The key is a URN created by extsvc.URN
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
 	Metadata interface{}
@@ -655,10 +654,6 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Description, modified = n.Description, true
 	}
 
-	if r.Language != n.Language {
-		r.Language, modified = n.Language, true
-	}
-
 	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
 		!r.ExternalRepo.Equal(&n.ExternalRepo) {
 		r.ExternalRepo, modified = n.ExternalRepo, true
@@ -678,6 +673,20 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
 		r.Sources, modified = n.Sources, true
+	}
+
+	// As a special case, we clear out the value of ViewerPermission for GitHub repos as
+	// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
+	// flip flop as we fetch the same repo from different external services.
+	switch x := n.Metadata.(type) {
+	case *github.Repository:
+		cp := *x
+		cp.ViewerPermission = ""
+		n = n.With(func(clone *Repo) {
+			// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
+			// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
+			clone.Metadata = &cp
+		})
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
@@ -729,7 +738,7 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 //
 // Context on using other fields such as timestamps to order/resolve
 // conflicts: We only want to rely on values that have constraints in our
-// database. Tmestamps have the following downsides:
+// database. Timestamps have the following downsides:
 //
 //   - We need to assume the upstream codehost has reasonable values for them
 //   - Not all codehosts set them to relevant values (eg gitolite or other)
@@ -775,7 +784,7 @@ func sortedSliceLess(a, b []string) bool {
 			return v < b[i]
 		}
 	}
-	return true
+	return len(a) != len(b)
 }
 
 // pick deterministically chooses between a and b a repo to keep and
@@ -906,6 +915,15 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 // ExternalServices is an utility type with
 // convenience methods for operating on lists of ExternalServices.
 type ExternalServices []*ExternalService
+
+// IDs returns the list of ids from all ExternalServices.
+func (es ExternalServices) IDs() []int64 {
+	ids := make([]int64, len(es))
+	for i := range es {
+		ids[i] = es[i].ID
+	}
+	return ids
+}
 
 // DisplayNames returns the list of display names from all ExternalServices.
 func (es ExternalServices) DisplayNames() []string {

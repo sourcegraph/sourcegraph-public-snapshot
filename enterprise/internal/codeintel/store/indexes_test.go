@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -39,7 +40,17 @@ func TestGetIndexByID(t *testing.T) {
 		FinishedAt:     nil,
 		RepositoryID:   123,
 		RepositoryName: "n-123",
-		Rank:           nil,
+		DockerSteps: []DockerStep{
+			{
+				Image:    "cimg/node:12.16",
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+			},
+		},
+		Root:        "/foo/bar",
+		Indexer:     "sourcegraph/lsif-tsc:latest",
+		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Outfile:     "dump.lsif",
+		Rank:        nil,
 	}
 
 	insertIndexes(t, dbconn.Global, expected)
@@ -233,6 +244,7 @@ func TestIsQueued(t *testing.T) {
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
 	insertUploads(t, dbconn.Global, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
+	insertUploads(t, dbconn.Global, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
 
 	testCases := []struct {
 		repositoryID int
@@ -245,6 +257,7 @@ func TestIsQueued(t *testing.T) {
 		{2, makeCommit(2), true},
 		{3, makeCommit(1), false},
 		{3, makeCommit(2), false},
+		{3, makeCommit(3), false},
 	}
 
 	for _, testCase := range testCases {
@@ -272,9 +285,19 @@ func TestInsertIndex(t *testing.T) {
 	insertRepo(t, dbconn.Global, 50, "")
 
 	id, err := store.InsertIndex(context.Background(), Index{
-		Commit:       makeCommit(1),
 		State:        "queued",
+		Commit:       makeCommit(1),
 		RepositoryID: 50,
+		DockerSteps: []DockerStep{
+			{
+				Image:    "cimg/node:12.16",
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+			},
+		},
+		Root:        "/foo/bar",
+		Indexer:     "sourcegraph/lsif-tsc:latest",
+		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Outfile:     "dump.lsif",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
@@ -291,7 +314,17 @@ func TestInsertIndex(t *testing.T) {
 		FinishedAt:     nil,
 		RepositoryID:   50,
 		RepositoryName: "n-50",
-		Rank:           &rank,
+		DockerSteps: []DockerStep{
+			{
+				Image:    "cimg/node:12.16",
+				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+			},
+		},
+		Root:        "/foo/bar",
+		Indexer:     "sourcegraph/lsif-tsc:latest",
+		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Outfile:     "dump.lsif",
+		Rank:        &rank,
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
@@ -352,6 +385,27 @@ func TestMarkIndexErrored(t *testing.T) {
 	}
 }
 
+func TestSetIndexLogContents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	// Add index for updating
+	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
+
+	if err := store.SetIndexLogContents(context.Background(), 1, "test payload"); err != nil {
+		t.Fatalf("unexpected error setting index log contents: %s", err)
+	}
+
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT log_contents FROM lsif_indexes WHERE id = 1")); err != nil {
+		t.Errorf("unexpected error getting log contents: %s", err)
+	} else if state != "test payload" {
+		t.Errorf("unexpected log contents. want=%s have=%s", "test payload", state)
+	}
+}
+
 func TestDequeueIndexProcessSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -377,7 +431,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -388,7 +442,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -420,7 +474,7 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -431,13 +485,13 @@ func TestDequeueIndexProcessError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if message, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_indexes WHERE id = 1")); err != nil {
+	if message, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_message: %s", err)
 	} else if message != "test message" {
 		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "test message", message)

@@ -31,15 +31,15 @@ RUN apk update && apk add --no-cache \
     'redis=5.0.9-r0' \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
-    'nginx=1.18.0-r0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.18.3@sha256:7e53df70c648737b638dc131a4afab65c192c520e8928397b9c7190f9943b077 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:67fa4c1@sha256:e50ed88f971f7b08698abbc87a10fe18f2f8bbb6472766a15677621c59ca5185 /syntect_server /usr/local/bin/
 
 # install postgres 11
 # hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035

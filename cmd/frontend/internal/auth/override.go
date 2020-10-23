@@ -24,7 +24,7 @@ const (
 // in site config.
 //
 // It is used to enable our e2e tests to authenticate to https://sourcegraph.sgdev.org without
-// needing to give them G Suite access.
+// needing to give them Google Workspace access.
 func OverrideAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		secret := envOverrideAuthSecret

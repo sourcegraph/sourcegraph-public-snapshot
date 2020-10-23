@@ -204,7 +204,7 @@ type LocationConnectionResolver interface {
 }
 
 type HoverResolver interface {
-	Markdown() MarkdownResolver
+	Markdown() Markdown
 	Range() RangeResolver
 }
 

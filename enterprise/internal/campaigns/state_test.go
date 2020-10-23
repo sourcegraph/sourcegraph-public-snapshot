@@ -133,12 +133,20 @@ func TestComputeGithubCheckState(t *testing.T) {
 			want: cmpgn.ChangesetCheckStatePassed,
 		},
 		{
-			name: "suites with zero runs should be ignored",
+			name: "queued suites with zero runs should be ignored",
 			events: []*cmpgn.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "QUEUED", ""),
 			},
 			want: cmpgn.ChangesetCheckStatePassed,
+		},
+		{
+			name: "completed suites with zero runs should be ignored",
+			events: []*cmpgn.ChangesetEvent{
+				commitEvent(1, "ctx1", "ERROR"),
+				checkSuiteEvent(1, "cs1", "COMPLETED", ""),
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
 		},
 	}
 
@@ -575,6 +583,28 @@ func TestComputeExternalState(t *testing.T) {
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateDeleted,
+		},
+		{
+			name:      "github draft - no events",
+			changeset: setIsDraft(githubChangeset(daysAgo(10), "OPEN")),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft - changeset newer than events",
+			changeset: setIsDraft(githubChangeset(daysAgo(0), "OPEN")),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "bitbucketserver - no events",

@@ -215,7 +215,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
 		}
 		for _, c := range commit.Commit.CheckSuites.Nodes {
-			if c.Status == "QUEUED" && len(c.CheckRuns.Nodes) == 0 {
+			if (c.Status == "QUEUED" || c.Status == "COMPLETED") && len(c.CheckRuns.Nodes) == 0 {
 				// Ignore queued suites with no runs.
 				// It is common for suites to be created and then stay in the QUEUED state
 				// forever with zero runs.
@@ -246,7 +246,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 				}
 			}
 		case *github.CheckSuite:
-			if m.Status == "QUEUED" && len(m.CheckRuns.Nodes) == 0 {
+			if (m.Status == "QUEUED" || m.Status == "COMPLETED") && len(m.CheckRuns.Nodes) == 0 {
 				// Ignore suites with no runs.
 				// See previous comment.
 				continue
@@ -405,9 +405,9 @@ func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.Changeset
 	switch status {
 	case gitlab.PipelineStatusSuccess:
 		return campaigns.ChangesetCheckStatePassed
-	case gitlab.PipelineStatusFailed:
+	case gitlab.PipelineStatusFailed, gitlab.PipelineStatusCanceled:
 		return campaigns.ChangesetCheckStateFailed
-	case gitlab.PipelineStatusPending:
+	case gitlab.PipelineStatusPending, gitlab.PipelineStatusRunning, gitlab.PipelineStatusCreated:
 		return campaigns.ChangesetCheckStatePending
 	default:
 		return campaigns.ChangesetCheckStateUnknown
@@ -423,7 +423,11 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		s = campaigns.ChangesetExternalState(m.State)
+		if m.IsDraft {
+			s = campaigns.ChangesetExternalStateDraft
+		} else {
+			s = campaigns.ChangesetExternalState(m.State)
+		}
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
 			s = campaigns.ChangesetExternalStateClosed
@@ -536,6 +540,7 @@ func computeDiffStat(ctx context.Context, c *campaigns.Changeset, repo gitserver
 	if err != nil {
 		return nil, err
 	}
+	defer iter.Close()
 
 	stat := &diff.Stat{}
 	for {

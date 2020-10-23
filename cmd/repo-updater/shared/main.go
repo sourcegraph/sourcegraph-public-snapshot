@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,6 +49,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
+
+	err := secret.Init()
+	if err != nil {
+		log.Fatalf("Failed to initialize secrets encryption: %v", err)
+	}
 
 	clock := func() time.Time { return time.Now().UTC() }
 
@@ -73,6 +79,7 @@ func Main(enterpriseInit EnterpriseInit) {
 			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
 		}
 	})
+
 	db, err := dbutil.NewDB(dsn, "repo-updater")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
@@ -129,7 +136,9 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			Kinds: []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			// On Cloud we want to fetch our admin owned external service only here
+			NamespaceUserID: -1,
+			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 
 		if err != nil {
@@ -167,23 +176,31 @@ func Main(enterpriseInit EnterpriseInit) {
 		}
 	}
 
-	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
-
 	syncer := &repos.Syncer{
-		Store:   store,
 		Sourcer: src,
-		Logger:  log15.Root(),
-		Now:     clock,
+		Store:   store,
+		// We always want to listen on the Synced channel since external service syncing
+		// happens on both Cloud and non Cloud instances.
+		Synced:     make(chan repos.Diff),
+		Logger:     log15.Root(),
+		Now:        clock,
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		syncer.FailFullSync = true
-	} else {
-		syncer.Synced = make(chan repos.Diff)
+	var gps *repos.GitolitePhabricatorMetadataSyncer
+	if !envvar.SourcegraphDotComMode() {
+		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
 		syncer.SubsetSynced = make(chan repos.Diff)
-		go watchSyncer(ctx, syncer, scheduler, gps)
-		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval)) }()
 	}
+
+	go watchSyncer(ctx, syncer, scheduler, gps)
+	go func() {
+		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
+			EnqueueInterval: repos.ConfRepoListUpdateInterval,
+			IsCloud:         envvar.SourcegraphDotComMode(),
+			MinSyncInterval: repos.ConfRepoListUpdateInterval,
+		}))
+	}()
 	server.Syncer = syncer
 
 	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)
@@ -294,11 +311,15 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case diff := <-syncer.Synced:
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
-
+			if gps == nil {
+				continue
+			}
 			go func() {
 				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
@@ -319,7 +340,7 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
-			log15.Warn("failed to update git fetch scheduler with list of cloned repositories", "error", err)
+			log15.Warn("failed to fetch list of cloned repositories", "error", err)
 			return
 		}
 
@@ -336,7 +357,7 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		doSync()
 		select {
 		case <-ctx.Done():
-		case <-time.After(10 * time.Second):
+		case <-time.After(30 * time.Second):
 		}
 	}
 }

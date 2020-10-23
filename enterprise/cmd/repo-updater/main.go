@@ -74,34 +74,11 @@ func enterpriseInit(
 		}
 	}()
 
-	// Migrate pre-spec campaigns. We'll try to do this every five minutes
-	// until it succeeds, at which point it will never happen again.
-	//
-	// This code can be removed in Sourcegraph 3.21 or later.
-	go func() {
-		for {
-			svc := campaigns.NewServiceWithClock(campaignsStore, nil, clock)
-			if err := svc.MigratePreSpecCampaigns(ctx); err != nil {
-				log15.Error("MigratePreSpecCampaigns", "error", err)
-			} else {
-				return
-			}
-
-			time.Sleep(5 * time.Minute)
-		}
-	}()
-
-	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB methods for now.
+	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := edb.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
-	go func() {
-		if err := permsStore.MigrateBinaryToIntarray(ctx, 1000); err != nil {
-			log15.Error("MigrateBinaryToIntarray", "error", err)
-		}
-
-		startBackgroundPermsSync(ctx, permsSyncer)
-	}()
+	go startBackgroundPermsSync(ctx, permsSyncer)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
 		server.PermsSyncer = permsSyncer

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 )
 
 // scanUploadMeta scans upload metadata grouped by commit from the return value of `*store.query`.
@@ -12,23 +14,17 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	uploadMeta := map[string][]UploadMeta{}
 	for rows.Next() {
-		var uploadID int
 		var commit string
-		var root string
-		var indexer string
-		if err := rows.Scan(&uploadID, &commit, &root, &indexer); err != nil {
+		var upload UploadMeta
+		if err := rows.Scan(&upload.UploadID, &commit, &upload.Root, &upload.Indexer, &upload.Distance, &upload.AncestorVisible, &upload.Overwritten); err != nil {
 			return nil, err
 		}
 
-		uploadMeta[commit] = append(uploadMeta[commit], UploadMeta{
-			UploadID: uploadID,
-			Root:     root,
-			Indexer:  indexer,
-		})
+		uploadMeta[commit] = append(uploadMeta[commit], upload)
 	}
 
 	return uploadMeta, nil
@@ -36,10 +32,10 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 
 // HasRepository determines if there is LSIF data for the given repository.
 func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, error) {
-	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_uploads
-		WHERE repository_id = %s
+		WHERE state != 'deleted' AND repository_id = %s
 		LIMIT 1
 	`, repositoryID)))
 
@@ -48,10 +44,10 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, erro
 
 // HasCommit determines if the given commit is known for the given repository.
 func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
-	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
-		WHERE repository_id = %s and commit = %s
+		WHERE repository_id = %s AND commit = %s AND NOT overwritten
 		LIMIT 1
 	`, repositoryID, commit)))
 
@@ -60,7 +56,7 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 
 // MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
 func (s *store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error {
-	return s.queryForEffect(
+	return s.Store.Exec(
 		ctx,
 		sqlf.Sprintf(`
 			INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
@@ -74,7 +70,7 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = closeRows(rows, err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	values := map[int]int{}
 	for rows.Next() {
@@ -93,7 +89,7 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 // DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
 func (s *store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
-	return scanIntPairs(s.query(ctx, sqlf.Sprintf(`SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token`)))
+	return scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(`SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token`)))
 }
 
 // CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the set
@@ -112,8 +108,8 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
-	uploadMeta, err := scanUploadMeta(tx.query(ctx, sqlf.Sprintf(`
-		SELECT id, commit, root, indexer
+	uploadMeta, err := scanUploadMeta(tx.Store.Query(ctx, sqlf.Sprintf(`
+		SELECT id, commit, root, indexer, 0 as distance, true as ancestor_visible, false as overwritten
 		FROM lsif_uploads
 		WHERE state = 'completed' AND repository_id = %s
 	`, repositoryID)))
@@ -132,58 +128,53 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		`DELETE FROM lsif_nearest_uploads WHERE repository_id = %s`,
 		`DELETE FROM lsif_uploads_visible_at_tip WHERE repository_id = %s`,
 	} {
-		if err := tx.queryForEffect(ctx, sqlf.Sprintf(query, repositoryID)); err != nil {
+		if err := tx.Store.Exec(ctx, sqlf.Sprintf(query, repositoryID)); err != nil {
 			return err
 		}
 	}
 
-	n := 0
-	for _, uploads := range visibleUploads {
-		n += len(uploads)
-	}
-	nearestUploadsRows := make([]*sqlf.Query, 0, n)
-
+	nearestUploadsInserter := batch.NewBatchInserter(
+		ctx,
+		s.Store.Handle().DB(),
+		"lsif_nearest_uploads",
+		"repository_id",
+		"commit",
+		"upload_id",
+		"distance",
+		"ancestor_visible",
+		"overwritten",
+	)
 	for commit, uploads := range visibleUploads {
 		for _, uploadMeta := range uploads {
-			nearestUploadsRows = append(nearestUploadsRows, sqlf.Sprintf(
-				"(%s, %s, %s, %s)",
+			if err := nearestUploadsInserter.Insert(
+				ctx,
 				repositoryID,
 				commit,
 				uploadMeta.UploadID,
 				uploadMeta.Distance,
-			))
+				uploadMeta.AncestorVisible,
+				uploadMeta.Overwritten,
+			); err != nil {
+				return err
+			}
 		}
 	}
-
-	// Insert new data for this repository in batches - it's likely we'll exceed the maximum
-	// number of placeholders per query so we need to break it into several queries below this
-	// size.
-	for _, batch := range batchQueries(nearestUploadsRows, MaxPostgresNumParameters/4) {
-		if err := tx.queryForEffect(ctx, sqlf.Sprintf(
-			`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance) VALUES %s`,
-			sqlf.Join(batch, ","),
-		)); err != nil {
-			return err
-		}
-	}
-
-	visibleAtTipRows := make([]*sqlf.Query, 0, len(visibleUploads[tipCommit]))
-	for _, uploadMeta := range visibleUploads[tipCommit] {
-		visibleAtTipRows = append(visibleAtTipRows, sqlf.Sprintf("(%s, %s)", repositoryID, uploadMeta.UploadID))
+	if err := nearestUploadsInserter.Flush(ctx); err != nil {
+		return err
 	}
 
 	// Update which repositories are visible from the tip of the default branch. This
 	// flag is used to determine which bundles for a repository we open during a global
 	// find references query.
-	if len(visibleAtTipRows) > 0 {
-		for _, batch := range batchQueries(visibleAtTipRows, MaxPostgresNumParameters/2) {
-			if err := tx.queryForEffect(ctx, sqlf.Sprintf(
-				`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id) VALUES %s`,
-				sqlf.Join(batch, ","),
-			)); err != nil {
-				return err
-			}
+	uploadsVisibleAtTipInserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_uploads_visible_at_tip", "repository_id", "upload_id")
+
+	for _, uploadMeta := range visibleUploads[tipCommit] {
+		if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
+			return err
 		}
+	}
+	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+		return err
 	}
 
 	if dirtyToken != 0 {
@@ -191,7 +182,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		// the dirty token if it wouldn't decrease the value. Dirty repositories are determined
 		// by having a non-equal dirty and update token, and we want the most recent upload
 		// token to win this write.
-		if err := tx.queryForEffect(ctx, sqlf.Sprintf(
+		if err := tx.Store.Exec(ctx, sqlf.Sprintf(
 			`UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s) WHERE repository_id = %s`,
 			dirtyToken,
 			repositoryID,
@@ -201,26 +192,4 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	}
 
 	return nil
-}
-
-// MaxPostgresNumParameters is the maximum number of parameters per query that Postgres
-// will allow. Exceeding this number of parameters will cause the query to be rejected
-// by the server.
-const MaxPostgresNumParameters = 65535
-
-// batchQueries cuts the given query slice into batches of a maximum size. This function
-// will allocate only the outer array to hold each batch, and the data for each batch
-// will refer to the given slice.
-func batchQueries(queries []*sqlf.Query, batchSize int) (batches [][]*sqlf.Query) {
-	for len(queries) > 0 {
-		if len(queries) > batchSize {
-			batches = append(batches, queries[:batchSize])
-			queries = queries[batchSize:]
-		} else {
-			batches = append(batches, queries)
-			queries = nil
-		}
-	}
-
-	return batches
 }

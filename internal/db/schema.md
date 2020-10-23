@@ -176,7 +176,6 @@ Referenced by:
  external_state        | text                     | 
  external_review_state | text                     | 
  external_check_state  | text                     | 
- created_by_campaign   | boolean                  | not null default false
  added_to_campaign     | boolean                  | not null default false
  diff_stat_added       | integer                  | 
  diff_stat_changed     | integer                  | 
@@ -195,6 +194,7 @@ Referenced by:
  unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
+ log_contents          | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -249,6 +249,17 @@ Triggers:
  finished_at           | timestamp with time zone | 
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | 
+
+```
+
+# Table "public.codeintel_schema_migrations"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ version | bigint  | not null
+ dirty   | boolean | not null
+Indexes:
+    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
 
 ```
 
@@ -432,6 +443,9 @@ Triggers:
  num_resets          | integer                  | not null default 0
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
+ log_contents        | text                     | 
+Indexes:
+    "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 
@@ -453,6 +467,7 @@ Foreign-key constraints:
  namespace_user_id | integer                  | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
+    "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
 Foreign-key constraints:
@@ -478,6 +493,67 @@ Indexes:
 
 ```
 
+# Table "public.lsif_data_definitions"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+Indexes:
+    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+
+```
+
+# Table "public.lsif_data_documents"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ path    | text    | not null
+ data    | bytea   | 
+Indexes:
+    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
+
+```
+
+# Table "public.lsif_data_metadata"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ dump_id           | integer | not null
+ num_result_chunks | integer | 
+Indexes:
+    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
+
+```
+
+# Table "public.lsif_data_references"
+```
+   Column   |  Type   | Modifiers 
+------------+---------+-----------
+ dump_id    | integer | not null
+ scheme     | text    | not null
+ identifier | text    | not null
+ data       | bytea   | 
+Indexes:
+    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+
+```
+
+# Table "public.lsif_data_result_chunks"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ dump_id | integer | not null
+ idx     | integer | not null
+ data    | bytea   | 
+Indexes:
+    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
+
+```
+
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |  Type   | Modifiers 
@@ -487,6 +563,21 @@ Indexes:
  update_token  | integer | not null
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+# Table "public.lsif_index_configuration"
+```
+    Column     |  Type   |                               Modifiers                               
+---------------+---------+-----------------------------------------------------------------------
+ id            | bigint  | not null default nextval('lsif_index_configuration_id_seq'::regclass)
+ repository_id | integer | not null
+ data          | bytea   | not null
+Indexes:
+    "lsif_index_configuration_pkey" PRIMARY KEY, btree (id)
+    "lsif_index_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+Foreign-key constraints:
+    "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -522,6 +613,12 @@ Indexes:
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
+ docker_steps    | jsonb[]                  | not null
+ root            | text                     | not null
+ indexer         | text                     | not null
+ indexer_args    | text[]                   | not null
+ outfile         | text                     | not null
+ log_contents    | text                     | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -531,12 +628,14 @@ Check constraints:
 
 # Table "public.lsif_nearest_uploads"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- commit        | text    | not null
- upload_id     | integer | not null
- distance      | integer | not null
+      Column      |  Type   | Modifiers 
+------------------+---------+-----------
+ repository_id    | integer | not null
+ commit           | text    | not null
+ upload_id        | integer | not null
+ distance         | integer | not null
+ ancestor_visible | boolean | not null
+ overwritten      | boolean | not null
 Indexes:
     "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
 
@@ -849,7 +948,6 @@ Referenced by:
  id                    | integer                  | not null default nextval('repo_id_seq'::regclass)
  name                  | citext                   | not null
  description           | text                     | 
- language              | text                     | 
  fork                  | boolean                  | 
  created_at            | timestamp with time zone | not null default now()
  updated_at            | timestamp with time zone | 
@@ -859,7 +957,6 @@ Referenced by:
  archived              | boolean                  | not null default false
  uri                   | citext                   | 
  deleted_at            | timestamp with time zone | 
- sources               | jsonb                    | not null default '{}'::jsonb
  metadata              | jsonb                    | not null default '{}'::jsonb
  private               | boolean                  | not null default false
  cloned                | boolean                  | not null default false
@@ -875,21 +972,19 @@ Indexes:
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
-    "repo_sources_gin_idx" gin (sources)
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
-    "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()
-    trig_read_only_repo_sources_column BEFORE UPDATE OF sources ON repo FOR EACH ROW EXECUTE PROCEDURE make_repo_sources_column_read_only()
 
 ```
 
@@ -899,7 +994,7 @@ Triggers:
 ---------------+--------------------------+----------------------------------
  repo_id       | integer                  | not null
  permission    | text                     | not null
- user_ids      | bytea                    | not null
+ user_ids      | bytea                    | not null default '\x'::bytea
  updated_at    | timestamp with time zone | not null
  user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
@@ -913,25 +1008,12 @@ Indexes:
 ---------------+--------------------------+----------------------------------
  repo_id       | integer                  | not null
  permission    | text                     | not null
- user_ids      | bytea                    | not null
+ user_ids      | bytea                    | not null default '\x'::bytea
  updated_at    | timestamp with time zone | not null
  synced_at     | timestamp with time zone | 
  user_ids_ints | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
-
-```
-
-# Table "public.saved_queries"
-```
-      Column      |           Type           | Modifiers 
-------------------+--------------------------+-----------
- query            | text                     | not null
- last_executed    | timestamp with time zone | not null
- latest_result    | timestamp with time zone | not null
- exec_duration_ns | bigint                   | not null
-Indexes:
-    "saved_queries_query_unique" UNIQUE, btree (query)
 
 ```
 
@@ -998,6 +1080,7 @@ Indexes:
  author_user_id | integer                  | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
+    "settings_org_id_idx" btree (org_id)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -1064,8 +1147,8 @@ Foreign-key constraints:
  service_type | text                     | not null
  service_id   | text                     | not null
  account_id   | text                     | not null
- auth_data    | jsonb                    | 
- account_data | jsonb                    | 
+ auth_data    | text                     | 
+ account_data | text                     | 
  created_at   | timestamp with time zone | not null default now()
  updated_at   | timestamp with time zone | not null default now()
  deleted_at   | timestamp with time zone | 
@@ -1087,7 +1170,7 @@ Foreign-key constraints:
  bind_id         | text                     | not null
  permission      | text                     | not null
  object_type     | text                     | not null
- object_ids      | bytea                    | not null
+ object_ids      | bytea                    | not null default '\x'::bytea
  updated_at      | timestamp with time zone | not null
  service_type    | text                     | not null
  service_id      | text                     | not null
@@ -1104,7 +1187,7 @@ Indexes:
  user_id         | integer                  | not null
  permission      | text                     | not null
  object_type     | text                     | not null
- object_ids      | bytea                    | not null
+ object_ids      | bytea                    | not null default '\x'::bytea
  updated_at      | timestamp with time zone | not null
  synced_at       | timestamp with time zone | 
  object_ids_ints | integer[]                | not null default '{}'::integer[]
@@ -1115,24 +1198,25 @@ Indexes:
 
 # Table "public.users"
 ```
-       Column        |           Type           |                     Modifiers                      
----------------------+--------------------------+----------------------------------------------------
- id                  | integer                  | not null default nextval('users_id_seq'::regclass)
- username            | citext                   | not null
- display_name        | text                     | 
- avatar_url          | text                     | 
- created_at          | timestamp with time zone | not null default now()
- updated_at          | timestamp with time zone | not null default now()
- deleted_at          | timestamp with time zone | 
- invite_quota        | integer                  | not null default 15
- passwd              | text                     | 
- passwd_reset_code   | text                     | 
- passwd_reset_time   | timestamp with time zone | 
- site_admin          | boolean                  | not null default false
- page_views          | integer                  | not null default 0
- search_queries      | integer                  | not null default 0
- tags                | text[]                   | default '{}'::text[]
- billing_customer_id | text                     | 
+         Column          |           Type           |                     Modifiers                      
+-------------------------+--------------------------+----------------------------------------------------
+ id                      | integer                  | not null default nextval('users_id_seq'::regclass)
+ username                | citext                   | not null
+ display_name            | text                     | 
+ avatar_url              | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ updated_at              | timestamp with time zone | not null default now()
+ deleted_at              | timestamp with time zone | 
+ invite_quota            | integer                  | not null default 15
+ passwd                  | text                     | 
+ passwd_reset_code       | text                     | 
+ passwd_reset_time       | timestamp with time zone | 
+ site_admin              | boolean                  | not null default false
+ page_views              | integer                  | not null default 0
+ search_queries          | integer                  | not null default 0
+ tags                    | text[]                   | default '{}'::text[]
+ billing_customer_id     | text                     | 
+ invalidated_sessions_at | timestamp with time zone | not null default now()
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -1167,6 +1251,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:
+    trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()
 
 ```

@@ -30,7 +30,7 @@ func TestIntegration(t *testing.T) {
 	db := dbtest.NewDB(t, *dsn)
 
 	dbstore := repos.NewDBStore(db, sql.TxOptions{
-		Isolation: sql.LevelSerializable,
+		Isolation: sql.LevelReadCommitted,
 	})
 
 	lg := log15.New()
@@ -49,7 +49,6 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(*testing.T, repos.Store) func(*testing.T)
 	}{
-		{"DBStore/Transact", func(*testing.T, repos.Store) func(*testing.T) { return testDBStoreTransact(dbstore) }},
 		{"DBStore/ListExternalServices", testStoreListExternalServices(userID)},
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos},
@@ -58,6 +57,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/DeleteRepos", testStoreDeleteRepos},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},
 		{"DBStore/UpsertSources", testStoreUpsertSources},
+		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, dbstore)},
 		{"DBStore/ListRepos", testStoreListRepos},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination},
 		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
@@ -65,12 +65,23 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
 		{"DBStore/Syncer/Sync", testSyncerSync},
 		{"DBStore/Syncer/SyncWithErrors", testSyncerSyncWithErrors},
-		{"DBStore/Syncer/SyncSubset", testSyncSubset},
+		{"DBStore/Syncer/SyncRepo", testSyncRepo},
 		{"DBStore/Syncer/SyncWorker", testSyncWorkerPlumbing(db)},
-		// {"DBStore/Syncer/Run", testSyncRun},
+		{"DBStore/Syncer/Run", testSyncRun(db)},
+		{"DBStore/Syncer/MultipleServices", testSyncer(db)},
+		{"DBStore/Syncer/OrphanedRepos", testOrphanedRepo(db)},
+		{"DBStore/Syncer/UserAddedRepos", testUserAddedRepos(db, userID)},
+		{"DBStore/Syncer/DeleteExternalService", testDeleteExternalService(db)},
+		{"DBStore/Syncer/NameConflictDiscardOld", testNameOnConflictDiscardOld(db)},
+		{"DBStore/Syncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
+		{"DBStore/Syncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
+		{"DBStore/Syncer/ConflictingSyncers", testConflictingSyncers(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
+				if t.Failed() {
+					return
+				}
 				if _, err := db.Exec(`
 DELETE FROM external_service_sync_jobs;
 DELETE FROM external_service_repos;

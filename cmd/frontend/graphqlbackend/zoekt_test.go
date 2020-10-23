@@ -26,6 +26,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -301,7 +302,7 @@ func TestIndexedSearch(t *testing.T) {
 			args := &search.TextParameters{
 				Query:           q,
 				PatternInfo:     tt.args.patternInfo,
-				Repos:           tt.args.repos,
+				RepoPromise:     (&search.Promise{}).Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
 					Client: &fakeSearcher{
@@ -462,10 +463,11 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 
 func TestZoektResultCountFactor(t *testing.T) {
 	cases := []struct {
-		name     string
-		numRepos int
-		pattern  *search.TextPatternInfo
-		want     int
+		name         string
+		numRepos     int
+		globalSearch bool
+		pattern      *search.TextPatternInfo
+		want         int
 	}{
 		{
 			name:     "One repo implies max scaling factor",
@@ -491,10 +493,24 @@ func TestZoektResultCountFactor(t *testing.T) {
 			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
 			want:     10,
 		},
+		{
+			name:         "for global searches, k should be 1",
+			numRepos:     0,
+			globalSearch: true,
+			pattern:      &search.TextPatternInfo{},
+			want:         1,
+		},
+		{
+			name:         "for global searches, k should be 1, adjusted by the FileMatchLimit",
+			numRepos:     0,
+			globalSearch: true,
+			pattern:      &search.TextPatternInfo{FileMatchLimit: 100},
+			want:         10,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := zoektResultCountFactor(tt.numRepos, tt.pattern)
+			got := zoektResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
@@ -787,7 +803,6 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 			RepoFields: &types.RepoFields{
 				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
 				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
-				Language:    "v-language",
 			}})
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
@@ -1068,5 +1083,49 @@ func TestContainsRefGlobs(t *testing.T) {
 				t.Errorf("got %t, expected %t", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestContextWithoutDeadline(t *testing.T) {
+	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
+	defer cancelWithDeadline()
+
+	tr, ctxWithDeadline := trace.New(ctxWithDeadline, "", "")
+
+	if _, ok := ctxWithDeadline.Deadline(); !ok {
+		t.Fatal("expected context to have deadline")
+	}
+
+	ctxNoDeadline, cancelNoDeadline := contextWithoutDeadline(ctxWithDeadline)
+	defer cancelNoDeadline()
+
+	if _, ok := ctxNoDeadline.Deadline(); ok {
+		t.Fatal("expected context to not have deadline")
+	}
+
+	// We want to keep trace info
+	if tr2 := trace.TraceFromContext(ctxNoDeadline); tr != tr2 {
+		t.Error("trace information not propogated")
+	}
+
+	// Calling cancelWithDeadline should cancel ctxNoDeadline
+	cancelWithDeadline()
+	select {
+	case <-ctxNoDeadline.Done():
+	case <-time.After(10 * time.Second):
+		t.Fatal("expected context to be done")
+	}
+}
+
+func TestContextWithoutDeadline_cancel(t *testing.T) {
+	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
+	defer cancelWithDeadline()
+	ctxNoDeadline, cancelNoDeadline := contextWithoutDeadline(ctxWithDeadline)
+
+	cancelNoDeadline()
+	select {
+	case <-ctxNoDeadline.Done():
+	case <-time.After(10 * time.Second):
+		t.Fatal("expected context to be done")
 	}
 }

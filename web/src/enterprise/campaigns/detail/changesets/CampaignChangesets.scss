@@ -1,9 +1,0 @@
-.campaign-changesets {
-    &__grid {
-        display: grid;
-        grid-template-columns: [caret] min-content [status] min-content [info] minmax(auto, 1fr) [checkstate] min-content [reviewstate] min-content [diffstat] min-content [end];
-        row-gap: 1rem;
-        column-gap: 1rem;
-        align-items: center;
-    }
-}

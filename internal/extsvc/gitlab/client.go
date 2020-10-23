@@ -16,13 +16,14 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"golang.org/x/time/rate"
 )
 
 var (
@@ -78,7 +79,7 @@ type CommonOp struct {
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
-		cli = http.DefaultClient
+		cli = httpcli.ExternalDoer()
 	}
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API
@@ -249,26 +250,26 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	c.RateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, resp.StatusCode, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+		return nil, resp.StatusCode, errors.Wrap(HTTPError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
 }
 
-type httpError int
+type HTTPError int
 
-func (err httpError) Error() string {
+func (err HTTPError) Error() string {
 	return fmt.Sprintf("HTTP error status %d", err)
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	e, ok := err.(httpError)
+	e, ok := err.(HTTPError)
 	if !ok {
 		// Try one level deeper.
 		err = errors.Cause(err)
-		e, ok = err.(httpError)
+		e, ok = err.(HTTPError)
 	}
 	if ok {
 		return int(e)

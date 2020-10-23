@@ -28,10 +28,9 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Aggregate counts of current daily, weekly, and monthly users
 - Aggregate counts of current daily, weekly, and monthly users, by:
   - Whether they are using code host integrations
-  - Product area (site management, code search and navigation, code review, saved searches, diff searches)
   - Search modes used (interactive search, plain-text search)
   - Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)
-- Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover tooltips) and search queries
+- Aggregate daily, weekly, and monthly latencies (in ms) of search queries
 - Aggregate daily, weekly, and monthly counts of:
   - Code intelligence events (e.g., hover tooltips) 
   - Searches using each search mode (interactive search, plain-text search)
@@ -50,3 +49,9 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Count of notifications triggered
   - Count of notifications clicked
   - Count of saved search views
+- Aggregated repository statistics
+  - Total size of git repositories stored in bytes
+  - Total number of lines of code stored in text search index
+- Homepage panel engagement
+  - Percentage of panel clicks (out of total views)
+  - Total count of unique users engaging with the panels

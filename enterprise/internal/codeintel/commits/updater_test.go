@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
@@ -24,7 +23,7 @@ func TestUpdate(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockStore.LockFunc.SetDefaultReturn(true, unlock, nil)
 
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
 	mockGitserverClient.HeadFunc.SetDefaultReturn("b", nil)
 
@@ -72,7 +71,7 @@ func TestUpdateCheckFunc(t *testing.T) {
 
 	mockStore := storemocks.NewMockStore()
 	mockStore.LockFunc.SetDefaultReturn(true, unlock, nil)
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 
 	if err := NewUpdater(mockStore, mockGitserverClient).Update(context.Background(), 42, func(ctx context.Context) (bool, error) { return false, nil }); err != nil {
 		t.Fatalf("unexpected error updating commit graph: %s", err)
@@ -107,7 +106,7 @@ func TestTryUpdate(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockStore.LockFunc.SetDefaultReturn(false, nil, nil)
 
-	mockGitserverClient := gitservermocks.NewMockClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
 	mockGitserverClient.HeadFunc.SetDefaultReturn("b", nil)
 

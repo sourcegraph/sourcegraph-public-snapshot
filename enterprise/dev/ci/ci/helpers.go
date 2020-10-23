@@ -156,7 +156,7 @@ func (c Config) isDocsOnly() bool {
 
 func (c Config) isGoOnly() bool {
 	for _, p := range c.changedFiles {
-		if !strings.HasSuffix(p, ".go") {
+		if !strings.HasSuffix(p, ".go") && p != "go.sum" && p != "go.mod" {
 			return false
 		}
 	}

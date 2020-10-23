@@ -274,8 +274,7 @@ type testChangesetOpts struct {
 	failureMessage   string
 	unsynced         bool
 
-	createdByCampaign bool
-	ownedByCampaign   int64
+	ownedByCampaign int64
 
 	metadata interface{}
 }
@@ -307,7 +306,6 @@ func createChangeset(
 		ReconcilerState:  opts.reconcilerState,
 		Unsynced:         opts.unsynced,
 
-		CreatedByCampaign: opts.createdByCampaign,
 		OwnedByCampaignID: opts.ownedByCampaign,
 
 		Metadata: opts.metadata,
@@ -351,7 +349,7 @@ type testSpecOpts struct {
 
 	// If this is set along with headRef, the changesetSpec will have published
 	// set.
-	published bool
+	published interface{}
 
 	title         string
 	body          string
@@ -370,6 +368,15 @@ func createChangesetSpec(
 ) *campaigns.ChangesetSpec {
 	t.Helper()
 
+	published := campaigns.PublishedValue{Val: opts.published}
+	if opts.published == nil {
+		// Set false as the default.
+		published.Val = false
+	}
+	if !published.Valid() {
+		t.Fatalf("invalid value for published passed, got %v (%T)", opts.published, opts.published)
+	}
+
 	spec := &campaigns.ChangesetSpec{
 		UserID:         opts.user,
 		RepoID:         opts.repo,
@@ -382,7 +389,7 @@ func createChangesetSpec(
 
 			ExternalID: opts.externalID,
 			HeadRef:    opts.headRef,
-			Published:  opts.published,
+			Published:  published,
 
 			Title: opts.title,
 			Body:  opts.body,

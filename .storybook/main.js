@@ -6,8 +6,8 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco-editor')]
 
 const config = {
-  stories: ['../**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', '@storybook/addon-options', 'storybook-addon-designs'],
+  stories: ['../client/**/*.story.tsx'],
+  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs'],
   /**
    * @param config {import('webpack').Configuration}
    * @returns {import('webpack').Configuration}
@@ -22,7 +22,7 @@ const config = {
     // @ts-ignore
     definePlugin.definitions['process.env'].NODE_ENV = JSON.stringify('development')
 
-    // We don't use Storybook's default config for our repo, it doesn't handle TypeScript.
+    // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
     config.module.rules.splice(0, 1)
 
     if (process.env.CI) {
@@ -36,8 +36,6 @@ const config = {
         configFile: path.resolve(__dirname, '..', 'babel.config.js'),
       },
     })
-
-    config.resolve.extensions.push('.ts', '.tsx')
 
     config.plugins.push(
       new MonacoWebpackPlugin({
@@ -67,6 +65,9 @@ const config = {
       use: [
         'to-string-loader',
         'css-loader',
+        {
+          loader: 'postcss-loader',
+        },
         {
           loader: 'sass-loader',
           options: {
@@ -98,6 +99,10 @@ const config = {
       // Make sure Storybook styles get handled by the Storybook config
       exclude: [storybookDirectory],
       use: ['style-loader', 'css-loader'],
+    })
+    config.module.rules.unshift({
+      test: /\.ya?ml$/,
+      use: ['raw-loader'],
     })
 
     Object.assign(config.entry, {

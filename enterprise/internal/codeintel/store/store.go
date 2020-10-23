@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // Store is the interface to Postgres for precise-code-intel features.
@@ -80,6 +81,9 @@ type Store interface {
 	// that were removed for that repository.
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
+	// HardDeleteUploadByID deletes the upload record with the given identifier.
+	HardDeleteUploadByID(ctx context.Context, ids ...int) error
+
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
 	// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
@@ -94,10 +98,19 @@ type Store interface {
 	// any dump with a root intersecting the given path is returned.
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
+	// FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
+	// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error)
+
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
 	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
+
+	// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
+	// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+	// background.
+	SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
@@ -174,7 +187,10 @@ type Store interface {
 	MarkIndexComplete(ctx context.Context, id int) (err error)
 
 	// MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
-	MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error)
+	MarkIndexErrored(ctx context.Context, id int, failureMessage string) error
+
+	// SetIndexLogContents updates the log contents fo the index.
+	SetIndexLogContents(ctx context.Context, indexID int, contents string) error
 
 	// DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 	// the index is returned along with a store instance which wraps the transaction. This transaction must be
@@ -206,6 +222,15 @@ type Store interface {
 
 	// RepoName returns the name for the repo with the given identifier.
 	RepoName(ctx context.Context, repositoryID int) (string, error)
+
+	// GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
+	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
+
+	// GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error)
+
+	// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 }
 
 type store struct {
@@ -216,12 +241,16 @@ var _ Store = &store{}
 
 // New creates a new instance of store connected to the given Postgres DSN.
 func New(postgresDSN string) (Store, error) {
-	base, err := basestore.New(postgresDSN, "codeintel")
+	base, err := basestore.New(postgresDSN, "codeintel", sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{Store: base}, nil
+}
+
+func NewWithDB(db dbutil.DB) Store {
+	return &store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func NewWithHandle(handle *basestore.TransactableHandle) Store {
@@ -239,46 +268,6 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 func (s *store) transact(ctx context.Context) (*store, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &store{Store: txBase}, err
-}
-
-// query performs QueryContext on the underlying connection.
-func (s *store) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	return s.Store.Query(ctx, query)
-}
-
-// queryForEffect performs a query and throws away the result.
-func (s *store) queryForEffect(ctx context.Context, query *sqlf.Query) error {
-	return s.Store.Exec(ctx, query)
-}
-
-// scanStrings scans a slice of strings from the return value of `*store.query`.
-func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
-	return basestore.ScanStrings(rows, queryErr)
-}
-
-// scanFirstString scans a slice of strings from the return value of `*store.query` and returns the first.
-func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
-	return basestore.ScanFirstString(rows, err)
-}
-
-// scanInts scans a slice of ints from the return value of `*store.query`.
-func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
-	return basestore.ScanInts(rows, queryErr)
-}
-
-// scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
-func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
-	return basestore.ScanFirstInt(rows, err)
-}
-
-// scanFirstBool scans a slice of bools from the return value of `*store.query` and returns the first.
-func scanFirstBool(rows *sql.Rows, err error) (bool, bool, error) {
-	return basestore.ScanFirstBool(rows, err)
-}
-
-// closeRows closes the rows object and checks its error value.
-func closeRows(rows *sql.Rows, err error) error {
-	return basestore.CloseRows(rows, err)
 }
 
 // intsToQueries converts a slice of ints into a slice of queries.

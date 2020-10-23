@@ -3,6 +3,7 @@ package apitest
 import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 type GitTarget struct {
@@ -161,9 +162,11 @@ type ChangesetConnection struct {
 
 type ChangesetConnectionStats struct {
 	Unpublished int
+	Draft       int
 	Open        int
 	Merged      int
 	Closed      int
+	Deleted     int
 	Total       int
 }
 
@@ -173,6 +176,7 @@ type ChangesetCounts struct {
 	Merged               int32
 	Closed               int32
 	Open                 int32
+	Draft                int32
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32
@@ -232,7 +236,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription
 
-	Published bool
+	Published campaigns.PublishedValue
 
 	Diff struct {
 		FileDiffs FileDiffs
@@ -241,11 +245,20 @@ type ChangesetSpecDescription struct {
 }
 
 type GitCommitDescription struct {
+	Author  Person
 	Message string
+	Subject string
+	Body    string
 	Diff    string
 }
 
 type PageInfo struct {
 	HasNextPage bool
 	EndCursor   *string
+}
+
+type Person struct {
+	Name  string
+	Email string
+	User  *User
 }

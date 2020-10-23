@@ -74,6 +74,10 @@ func templateToRegexp(buf []byte) []Term {
 		r = next()
 		switch r {
 		case ':':
+			if open > 0 {
+				currentHole = append(currentHole, ':')
+				continue
+			}
 			if len(buf[advance:]) > 0 {
 				r = next()
 				if r == '[' {
@@ -97,12 +101,14 @@ func templateToRegexp(buf []byte) []Term {
 		case '[':
 			if open > 0 {
 				inside++
+				currentHole = append(currentHole, '[')
 				continue
 			}
 			currentLiteral = append(currentLiteral, r)
 		case ']':
 			if open > 0 && inside > 0 {
 				inside--
+				currentHole = append(currentHole, ']')
 				continue
 			}
 			if open > 0 {
@@ -240,12 +246,12 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
+	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {

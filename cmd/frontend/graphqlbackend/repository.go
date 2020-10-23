@@ -32,9 +32,8 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
-	repo    *types.Repo
-	icon    string
-	matches []*searchResultMatchResolver
+	repo *types.Repo
+	icon string
 
 	defaultBranchOnce sync.Once
 	defaultBranch     *GitRefResolver
@@ -258,7 +257,11 @@ func (r *RepositoryResolver) Icon() string {
 	return r.icon
 }
 
-func (r *RepositoryResolver) Label() (*markdownResolver, error) {
+func (r *RepositoryResolver) Rev() string {
+	return r.rev
+}
+
+func (r *RepositoryResolver) Label() (Markdown, error) {
 	var label string
 	if r.rev != "" {
 		label = string(r.repo.Name) + "@" + r.rev
@@ -266,20 +269,20 @@ func (r *RepositoryResolver) Label() (*markdownResolver, error) {
 		label = string(r.repo.Name)
 	}
 	text := "[" + label + "](/" + label + ")"
-	return &markdownResolver{text: text}, nil
+	return Markdown(text), nil
 }
 
-func (r *RepositoryResolver) Detail() *markdownResolver {
-	return &markdownResolver{text: "Repository name match"}
+func (r *RepositoryResolver) Detail() Markdown {
+	return Markdown("Repository name match")
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
-	return r.matches
+	return nil
 }
 
 func (r *RepositoryResolver) ToRepository() (*RepositoryResolver, bool) { return r, true }
 func (r *RepositoryResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
-func (r *RepositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
 	return nil, false
 }
 

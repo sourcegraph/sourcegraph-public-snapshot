@@ -56,21 +56,11 @@ func containsPattern(node Node) bool {
 	})
 }
 
-// returns true if descendent of node contains and/or expressions.
-func containsAndOrExpression(nodes []Node) bool {
+// containsField returns true if the field exists in the query.
+func containsField(nodes []Node, field string) bool {
 	return exists(nodes, func(node Node) bool {
-		term, ok := node.(Operator)
-		return ok && (term.Kind == And || term.Kind == Or)
-	})
-}
-
-// containsNegatedPattern returns true if any search pattern is negated in nodes.
-func containsNegatedPattern(nodes []Node) bool {
-	return exists(nodes, func(node Node) bool {
-		if p, ok := node.(Pattern); ok {
-			if p.Negated {
-				return true
-			}
+		if p, ok := node.(Parameter); ok && p.Field == field {
+			return true
 		}
 		return false
 	})
@@ -147,34 +137,6 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 	}
 
 	return parameters, pattern, nil
-}
-
-// isPureSearchPattern implements a heuristic that returns true if buf, possibly
-// containing whitespace or balanced parentheses, can be treated as a search
-// pattern in the and/or grammar.
-func isPureSearchPattern(buf []byte) bool {
-	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the parensAsPatterns heuristic.
-	try := &parser{buf: buf}
-	result, err := try.parseOr()
-	if err != nil {
-		// This is not an and/or expression, but it is balanced. It
-		// could be, e.g., (foo or). Reject this sort of pattern for now.
-		return false
-	}
-	if try.balanced != 0 {
-		return false
-	}
-	if containsAndOrExpression(result) {
-		// The balanced string is an and/or expression in our grammar,
-		// so it cannot be interpreted as a search pattern.
-		return false
-	}
-	if !isPatternExpression(newOperator(result, Concat)) {
-		// The balanced string contains other parameters, like
-		// "repo:foo", which are not search patterns.
-		return false
-	}
-	return true
 }
 
 // parseBool is like strconv.ParseBool except that it also accepts y, Y, yes,
@@ -350,7 +312,7 @@ func validateRepoRevPair(nodes []Node) error {
 }
 
 // Queries containing commit parameters without type:diff or type:commit are not
-// valid. cf. https://docs.sourcegraph.com/user/search/language#commit-parameter
+// valid. cf. https://docs.sourcegraph.com/code_search/reference/language#commit-parameter
 func validateCommitParameters(nodes []Node) error {
 	var seenCommitParam string
 	var typeCommitExists bool
@@ -368,6 +330,29 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
+// validatePureLiteralPattern checks that no pattern expression contains and/or
+// operators nested inside concat. It may happen that we interpret a query this
+// way due to ambiguity. If this happens, return an error message.
+func validatePureLiteralPattern(nodes []Node, balanced bool) error {
+	impure := exists(nodes, func(node Node) bool {
+		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
+			for _, node := range operator.Operands {
+				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
+					return true
+				}
+			}
+		}
+		return false
+	})
+	if impure {
+		if !balanced {
+			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
+		}
+		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
+	}
+	return nil
+}
+
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
@@ -378,12 +363,18 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
-	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
 				return
 			}
 			_, err = regexp.Compile(value)
+		}
+		if annotation.Labels.isSet(Structural) && negated {
+			if err != nil {
+				return
+			}
+			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
 	if err != nil {

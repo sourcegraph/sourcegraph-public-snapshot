@@ -21,7 +21,7 @@ func (r TestWorkRecord) RecordID() int {
 }
 
 func testStore(options StoreOptions) *store {
-	return newStore(basestore.NewHandleWithDB(dbconn.Global), options)
+	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options)
 }
 
 type TestRecord struct {
@@ -122,8 +122,9 @@ func setupStoreTest(t *testing.T) {
 			finished_at     timestamp with time zone,
 			process_after   timestamp with time zone,
 			num_resets      integer NOT NULL default 0,
+			num_failures    integer NOT NULL default 0,
 			uploaded_at     timestamp with time zone NOT NULL default NOW(),
-			num_failures    integer NOT NULL default 0
+			log_contents    text
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -148,6 +149,7 @@ var defaultTestStoreOptions = StoreOptions{
 	},
 	StalledMaxAge: time.Second * 5,
 	MaxNumResets:  5,
+	MaxNumRetries: 3,
 }
 
 func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, tx Store, ok bool, err error) {

@@ -13,6 +13,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -83,7 +84,17 @@ func containsRefGlobs(q query.QueryInfo) bool {
 	return containsRefGlobs
 }
 
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (_ *indexedSearchRequest, err error) {
+	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	repos, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return nil, err
+	}
+
 	// Parse index:yes (default), index:only, and index:no in search query.
 	indexParam := Yes
 	if index, _ := args.Query.StringValues(query.FieldIndex); len(index) > 0 {
@@ -101,7 +112,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.Repos,
+			Unindexed:        repos,
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -112,14 +123,14 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
 		}
 		return &indexedSearchRequest{
-			Unindexed: args.Repos,
+			Unindexed: repos,
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if indexParam == No {
 		return &indexedSearchRequest{
-			Unindexed: args.Repos,
+			Unindexed: repos,
 		}, nil
 	}
 
@@ -146,13 +157,20 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        args.Repos,
+			Unindexed:        repos,
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
 
+	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
+
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, repos, filter)
+
+	tr.LogFields(
+		log.Int("indexed.size", len(indexed.repoRevs)),
+		log.Int("searcher_repos.size", len(searcherRepos)),
+	)
 
 	// We do not yet support searching non-HEAD for fileRequest (structural
 	// search).
@@ -181,7 +199,10 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(s.Repos()) == 0 {
+	if s.args == nil {
+		return nil, false, nil, nil
+	}
+	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
 		return nil, false, nil, nil
 	}
 
@@ -196,32 +217,39 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 	case symbolRequest:
 		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
 }
 
-func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
-	// If we're only searching a small number of repositories, return more comprehensive results. This is
-	// arbitrary.
-	k := 1
-	switch {
-	case numRepos <= 5:
-		k = 100
-	case numRepos <= 10:
-		k = 10
-	case numRepos <= 25:
-		k = 8
-	case numRepos <= 50:
-		k = 5
-	case numRepos <= 100:
-		k = 3
-	case numRepos <= 500:
-		k = 2
+func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
+	if globalSearch {
+		// for globalSearch, numRepos = 0, but effectively we are searching over all
+		// indexed repos, hence k should be 1
+		k = 1
+	} else {
+		// If we're only searching a small number of repositories, return more
+		// comprehensive results. This is arbitrary.
+		switch {
+		case numRepos <= 5:
+			k = 100
+		case numRepos <= 10:
+			k = 10
+		case numRepos <= 25:
+			k = 8
+		case numRepos <= 50:
+			k = 5
+		case numRepos <= 100:
+			k = 3
+		case numRepos <= 500:
+			k = 2
+		default:
+			k = 1
+		}
 	}
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	if fileMatchLimit > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 	return k
 }
@@ -277,7 +305,10 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
 func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos.repoRevs) == 0 {
+	if args == nil {
+		return nil, false, nil, nil
+	}
+	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
 		return nil, false, nil, nil
 	}
 
@@ -285,9 +316,18 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	// Performance optimization: For queries without repo: filters, it is not
+	// necessary to send the list of all repoBranches to zoekt. Zoekt can simply
+	// search all its shards and we filter the results later against the list of
+	// repos we resolve concurrently.
+	var finalQuery zoektquery.Q
+	if args.Mode == search.ZoektGlobalSearch {
+		finalQuery = zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
+	} else {
+		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
+	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if deadline, ok := ctx.Deadline(); ok {
@@ -354,6 +394,38 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit = true
 	}
 
+	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)
+
+	if args.Mode == search.ZoektGlobalSearch {
+		m := map[string]*search.RepositoryRevisions{}
+		for _, file := range resp.Files {
+			m[file.Repository] = nil
+		}
+		repos, err := getRepos(ctx, args.RepoPromise)
+		if err != nil {
+			return nil, false, nil, err
+		}
+
+		for _, repo := range repos {
+			if _, ok := m[string(repo.Repo.Name)]; !ok {
+				continue
+			}
+			m[string(repo.Repo.Name)] = repo
+		}
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+			repoRev := m[file.Repository]
+			if repoRev == nil {
+				return nil, nil, false
+			}
+			return repoRev.Repo, repoRev.RevSpecs(), true
+		}
+	} else {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+			repo, inputRevs := repos.GetRepoInputRev(file)
+			return repo, inputRevs, true
+		}
+	}
+
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
 	for _, file := range resp.Files {
@@ -363,8 +435,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-
-		repo, inputRevs := repos.GetRepoInputRev(&file)
+		repo, inputRevs, ok := getRepoInputRev(&file)
+		if !ok {
+			continue
+		}
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
 			repoResolver = &RepositoryResolver{repo: repo}
@@ -479,9 +553,7 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	cNew, cancel := context.WithCancel(context.Background())
 
 	// Set trace context so we still get spans propagated
-	if tr := trace.TraceFromContext(cOld); tr != nil {
-		cNew = trace.ContextWithTrace(cNew, tr)
-	}
+	cNew = trace.CopyContext(cNew, cOld)
 
 	go func() {
 		select {
