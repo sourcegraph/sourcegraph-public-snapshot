@@ -1,6 +1,10 @@
 package licensing
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+)
 
 const (
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
@@ -27,10 +31,25 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	baseName := "Sourcegraph Enterprise"
 	var name string
 
-	if hasTag("team") {
+	info := &Info{
+		Info: license.Info{
+			Tags: licenseTags,
+		},
+	}
+	plan := info.Plan()
+	// Identify known plans first
+	switch {
+	case strings.HasPrefix(string(plan), "team-"):
 		baseName = "Sourcegraph Team"
-	} else if hasTag("starter") {
-		name = " Starter"
+	case strings.HasPrefix(string(plan), "enterprise-"):
+		baseName = "Sourcegraph Enterprise"
+
+	default:
+		if hasTag("team") {
+			baseName = "Sourcegraph Team"
+		} else if hasTag("starter") {
+			name = " Starter"
+		}
 	}
 
 	var misc []string
