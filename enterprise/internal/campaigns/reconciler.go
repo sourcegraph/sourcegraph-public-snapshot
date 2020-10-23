@@ -525,10 +525,6 @@ func (ops operations) IsNone() bool {
 	return len(ops) == 0
 }
 
-func (ops operations) IsSyncOnly() bool {
-	return len(ops) == 1 && ops[0] == operationSync
-}
-
 func (ops operations) Equal(b operations) bool {
 	if len(ops) != len(b) {
 		return false
