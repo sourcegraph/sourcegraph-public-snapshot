@@ -37,6 +37,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.21.2
+
+### Fixed
+
+- Fix externalURLs alert logic [#14980](https://github.com/sourcegraph/sourcegraph/pull/14980)
+
 ## 3.21.1
 
 ### Fixed
