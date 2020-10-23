@@ -234,7 +234,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := &ExternalServicesStore{
-		PreCreateCodeHost: func(ctx context.Context) error {
+		PreCreateExternalService: func(ctx context.Context) error {
 			return errcode.NewPresentationError("test plan limit exceeded")
 		},
 	}

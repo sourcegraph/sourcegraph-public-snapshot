@@ -24,9 +24,9 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// reached.
 	db.Users.PreCreateUser = licensing.NewPreCreateUserHook(&usersStore{})
 
-	// Enforce the license's max code host count by preventing the creation of new code hosts when
-	// the max is reached.
-	db.ExternalServices.PreCreateCodeHost = enforcement.NewPreCreateCodeHostHook(&codeHostsStore{})
+	// Enforce the license's max external service count by preventing the creation of new external
+	// services when the max is reached.
+	db.ExternalServices.PreCreateExternalService = enforcement.NewPreCreateExternalServiceHook(&externalServicesStore{})
 
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
@@ -73,8 +73,8 @@ func (usersStore) Count(ctx context.Context) (int, error) {
 	return db.Users.Count(ctx, nil)
 }
 
-type codeHostsStore struct{}
+type externalServicesStore struct{}
 
-func (codeHostsStore) Count(ctx context.Context, opts db.ExternalServicesListOptions) (int, error) {
+func (externalServicesStore) Count(ctx context.Context, opts db.ExternalServicesListOptions) (int, error) {
 	return db.ExternalServices.Count(ctx, opts)
 }
