@@ -41,9 +41,6 @@ func (c *Config) loaders() map[string]loader {
 	}
 }
 
-//
-//
-
 type commonConfig struct {
 	// Bucket is the target bucket for LSIF uploads.
 	Bucket string
@@ -51,9 +48,6 @@ type commonConfig struct {
 	// TTL is the maximum age of an upload before deletion in the configured bucket.
 	TTL time.Duration
 }
-
-//
-//
 
 type S3Config struct {
 	commonConfig
@@ -73,9 +67,6 @@ func (c *S3Config) load(parent *env.BaseConfig) {
 	_ = env.Get("AWS_S3_FORCE_PATH_STYLE", "", "If set, S3 virtual host request path are not used. Set this to target a MinIO instance.")
 
 }
-
-//
-//
 
 type GCSConfig struct {
 	commonConfig
