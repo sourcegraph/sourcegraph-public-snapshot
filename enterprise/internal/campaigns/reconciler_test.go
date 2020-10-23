@@ -966,15 +966,15 @@ func TestDeterminePlan(t *testing.T) {
 			}
 			defer tx.Done(errors.New("fail tx purposefully"))
 			tc.currentSpec.campaignSpec = campaignSpec.ID
-			createPreviousSpec := tc.previousSpec != testSpecOpts{}
-			if createPreviousSpec {
-				previousSpec := createChangesetSpec(t, ctx, tx, tc.previousSpec)
+			var previousSpec *campaigns.ChangesetSpec
+			if tc.previousSpec != (testSpecOpts{}) {
+				previousSpec = createChangesetSpec(t, ctx, tx, tc.previousSpec)
 				tc.changeset.previousSpec = previousSpec.ID
 			}
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(ctx, tx, cs)
+			plan, err := determinePlan(ctx, tx, previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}

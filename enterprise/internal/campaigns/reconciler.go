@@ -66,7 +66,23 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	// Reset the error message.
 	ch.FailureMessage = nil
 
-	plan, err := determinePlan(ctx, tx, ch)
+	var curr, prev *campaigns.ChangesetSpec
+	if ch.CurrentSpecID != 0 {
+		var err error
+		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
+		if err != nil {
+			return err
+		}
+	}
+	if ch.PreviousSpecID != 0 {
+		var err error
+		prev, err = tx.GetChangesetSpecByID(ctx, ch.PreviousSpecID)
+		if err != nil {
+			return err
+		}
+	}
+
+	plan, err := determinePlan(ctx, tx, prev, curr, ch)
 	if err != nil {
 		return err
 	}
@@ -81,7 +97,7 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		tx: tx,
 		ch: ch,
 
-		spec:  plan.spec,
+		spec:  curr,
 		delta: plan.delta,
 	}
 
@@ -595,9 +611,6 @@ type plan struct {
 	// The operations that need to be done to reconcile the changeset.
 	ops operations
 
-	// The current spec of the changeset.
-	spec *campaigns.ChangesetSpec
-
 	// The delta between a possible previous ChangesetSpec and the current
 	// ChangesetSpec.
 	delta *changesetSpecDelta
@@ -611,12 +624,12 @@ func (p *plan) SetOp(op operation) { p.ops = operations{op} }
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*plan, error) {
+func determinePlan(ctx context.Context, tx *Store, previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
 	pl := &plan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
-	if ch.CurrentSpecID == 0 {
+	if currentSpec == nil {
 		if ch.Unsynced {
 			pl.SetOp(operationImport)
 		}
@@ -629,25 +642,11 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		return pl, nil
 	}
 
-	curr, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
-	if err != nil {
-		return pl, err
-	}
-	pl.spec = curr
-
-	if err := checkSpecAppliedToCampaign(ctx, tx, curr); err != nil {
+	if err := checkSpecAppliedToCampaign(ctx, tx, currentSpec.CampaignSpecID); err != nil {
 		return pl, err
 	}
 
-	var prev *campaigns.ChangesetSpec
-	if ch.PreviousSpecID != 0 {
-		prev, err = tx.GetChangesetSpecByID(ctx, ch.PreviousSpecID)
-		if err != nil {
-			return pl, err
-		}
-	}
-
-	delta, err := compareChangesetSpecs(prev, curr)
+	delta, err := compareChangesetSpecs(previousSpec, currentSpec)
 	if err != nil {
 		return pl, nil
 	}
@@ -655,9 +654,9 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
-		if curr.Spec.Published.True() {
+		if currentSpec.Spec.Published.True() {
 			pl.SetOp(operationPublish)
-		} else if curr.Spec.Published.Draft() && ch.SupportsDraft() {
+		} else if currentSpec.Spec.Published.Draft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
 			pl.SetOp(operationPublishDraft)
@@ -718,8 +717,8 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
 
-func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.ChangesetSpec) error {
-	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: spec.CampaignSpecID})
+func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, campaignSpecID int64) error {
+	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: campaignSpecID})
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign spec")
 	}
