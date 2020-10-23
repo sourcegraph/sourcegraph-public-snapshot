@@ -480,7 +480,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 			Date:        spec.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the
-		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
+		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
 		GitApplyArgs: []string{"-p0"},
 		Push:         true,
