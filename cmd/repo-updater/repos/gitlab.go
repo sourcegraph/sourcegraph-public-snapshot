@@ -32,15 +32,15 @@ type GitLabSource struct {
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(svc *ExternalService, account *extsvc.Account, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(svc, &c, cf)
+	return newGitLabSource(svc, &c, account, cf)
 }
 
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, account *extsvc.Account, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -77,13 +77,22 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		return nil, err
 	}
 
+	token := c.Token
+	if account != nil {
+		_, tok, err := gitlab.GetExternalAccountData(&account.AccountData)
+		if err != nil {
+			return nil, errors.Wrap(err, "extracting user token")
+		}
+		token = tok.AccessToken
+	}
+
 	return &GitLabSource{
 		svc:                 svc,
 		config:              c,
 		exclude:             exclude,
 		baseURL:             baseURL,
 		nameTransformations: nts,
-		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(token, ""),
 	}, nil
 }
 

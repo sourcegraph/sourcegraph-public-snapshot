@@ -8,13 +8,26 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// A Sourcer converts the given ExternalServices to Sources
-// whose yielded Repos should be synced.
-type Sourcer func(...*ExternalService) (Sources, error)
+// A Sourcer converts ExternalService instances to Sources whose yielded Repos
+// can be synced or reconciled.
+type Sourcer interface {
+	For(svcs ...*ExternalService) (Sources, error)
+	ForUser(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error)
+
+	// TODO: remove ForUserForFallback once we want to require admins to also
+	// have their own tokens.
+	ForUserWithFallback(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error)
+}
+
+type sourcer struct {
+	cf   *httpcli.Factory
+	decs []func(Source) Source
+}
 
 // NewSourcer returns a Sourcer that converts the given ExternalServices
 // into Sources that use the provided httpcli.Factory to create the
@@ -24,53 +37,176 @@ type Sourcer func(...*ExternalService) (Sources, error)
 //
 // The provided decorator functions will be applied to each Source.
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svcs ...*ExternalService) (Sources, error) {
-		srcs := make([]Source, 0, len(svcs))
-		var errs *multierror.Error
-
-		for _, svc := range svcs {
-			if svc.IsDeleted() {
-				continue
-			}
-
-			src, err := NewSource(svc, cf)
-			if err != nil {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
-				continue
-			}
-
-			for _, dec := range decs {
-				src = dec(src)
-			}
-
-			srcs = append(srcs, src)
-		}
-
-		return srcs, errs.ErrorOrNil()
-	}
+	return &sourcer{cf: cf, decs: decs}
 }
 
+func (s *sourcer) For(svcs ...*ExternalService) (Sources, error) {
+	srcs := make([]Source, 0, len(svcs))
+	var errs *multierror.Error
+
+	for _, svc := range svcs {
+		if svc.IsDeleted() {
+			continue
+		}
+
+		src, err := NewSource(svc, nil, s.cf)
+		if err != nil {
+			errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+			continue
+		}
+
+		for _, dec := range s.decs {
+			src = dec(src)
+		}
+
+		srcs = append(srcs, src)
+	}
+
+	return srcs, errs.ErrorOrNil()
+}
+
+func (s *sourcer) ForUser(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error) {
+	// Build up a map of the services this user has accounts for.
+	accounts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing external accounts for user")
+	}
+
+	accountsBySvc := make(map[string]*extsvc.Account)
+	for _, account := range accounts {
+		accountsBySvc[accountToKey(account)] = account
+	}
+
+	// Now iterate over the provided external services and see what matches.
+	srcs := make([]Source, 0, len(svcs))
+	var errs *multierror.Error
+	for _, svc := range svcs {
+		if svc.IsDeleted() {
+			continue
+		}
+
+		key, err := externalServiceToKey(svc)
+		if err != nil {
+			errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+			continue
+		}
+
+		account := accountsBySvc[key]
+		if account == nil {
+			errs = multierror.Append(errs, &SourceError{
+				Err:    errors.New("no user account for external service"),
+				ExtSvc: svc,
+			})
+			continue
+		}
+
+		src, err := NewSource(svc, account, s.cf)
+		if err != nil {
+			errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+			continue
+		}
+		for _, dec := range s.decs {
+			src = dec(src)
+		}
+
+		srcs = append(srcs, src)
+	}
+
+	return srcs, errs.ErrorOrNil()
+}
+
+// TODO: refactor this and the function above to share more implementation.
+func (s *sourcer) ForUserWithFallback(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error) {
+	// Build up a map of the services this user has accounts for.
+	accounts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing external accounts for user")
+	}
+
+	accountsBySvc := make(map[string]*extsvc.Account)
+	for _, account := range accounts {
+		accountsBySvc[accountToKey(account)] = account
+	}
+
+	// Now iterate over the provided external services and see what matches.
+	srcs := make([]Source, 0, len(svcs))
+	var errs *multierror.Error
+	for _, svc := range svcs {
+		if svc.IsDeleted() {
+			continue
+		}
+
+		key, err := externalServiceToKey(svc)
+		if err != nil {
+			errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+			continue
+		}
+
+		// If the account isn't in the map, we get the fallback behaviour we
+		// want anyway, since the account will be nil.
+		src, err := NewSource(svc, accountsBySvc[key], s.cf)
+		if err != nil {
+			errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+			continue
+		}
+		for _, dec := range s.decs {
+			src = dec(src)
+		}
+
+		srcs = append(srcs, src)
+	}
+
+	return srcs, errs.ErrorOrNil()
+}
+
+func accountToKey(account *extsvc.Account) string {
+	return account.ServiceType + "\t" + account.ServiceID
+}
+
+func externalServiceToKey(svc *ExternalService) (string, error) {
+	// TODO: verify that this actually returns the service ID.
+	url, err := extsvc.ExtractBaseURL(svc.Kind, svc.Config)
+	if err != nil {
+		return "", errors.Wrap(err, "retrieving base URL")
+	}
+
+	return extsvc.KindToType(svc.Kind) + "\t" + url.String(), nil
+}
+
+var ErrKindUserTokenUnsupported = errors.New("user tokens are not supported by this kind of code host")
+
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
-	switch strings.ToUpper(svc.Kind) {
+func NewSource(svc *ExternalService, account *extsvc.Account, cf *httpcli.Factory) (Source, error) {
+	switch kind := strings.ToUpper(svc.Kind); kind {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(svc, account, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(svc, cf)
-	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(svc, cf)
-	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(svc, cf)
-	case extsvc.KindGitolite:
-		return NewGitoliteSource(svc, cf)
-	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(svc, cf)
-	case extsvc.KindAWSCodeCommit:
-		return NewAWSCodeCommitSource(svc, cf)
-	case extsvc.KindOther:
-		return NewOtherSource(svc, cf)
+		return NewGitLabSource(svc, account, cf)
 	default:
-		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
+		if account != nil {
+			return nil, ErrKindUserTokenUnsupported
+		}
+
+		switch kind {
+		case extsvc.KindBitbucketServer:
+			return NewBitbucketServerSource(svc, cf)
+		case extsvc.KindBitbucketCloud:
+			return NewBitbucketCloudSource(svc, cf)
+		case extsvc.KindGitolite:
+			return NewGitoliteSource(svc, cf)
+		case extsvc.KindPhabricator:
+			return NewPhabricatorSource(svc, cf)
+		case extsvc.KindAWSCodeCommit:
+			return NewAWSCodeCommitSource(svc, cf)
+		case extsvc.KindOther:
+			return NewOtherSource(svc, cf)
+		default:
+			panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
+		}
 	}
 }
 

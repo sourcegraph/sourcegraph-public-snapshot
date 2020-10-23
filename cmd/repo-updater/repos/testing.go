@@ -1,3 +1,5 @@
+//+build test
+
 package repos
 
 import (
@@ -15,20 +17,35 @@ import (
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
 // ignoring the given external services.
 func NewFakeSourcer(err error, srcs ...Source) Sourcer {
-	return func(svcs ...*ExternalService) (Sources, error) {
-		var errs *multierror.Error
+	return &fakeSourcer{err: err, srcs: srcs}
+}
 
-		if err != nil {
-			for _, svc := range svcs {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
-			}
-			if len(svcs) == 0 {
-				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: nil})
-			}
+type fakeSourcer struct {
+	err  error
+	srcs []Source
+}
+
+func (s *fakeSourcer) For(svcs ...*ExternalService) (Sources, error) {
+	var errs *multierror.Error
+
+	if s.err != nil {
+		for _, svc := range svcs {
+			errs = multierror.Append(errs, &SourceError{Err: s.err, ExtSvc: svc})
 		}
-
-		return srcs, errs.ErrorOrNil()
+		if len(svcs) == 0 {
+			errs = multierror.Append(errs, &SourceError{Err: s.err, ExtSvc: nil})
+		}
 	}
+
+	return s.srcs, errs.ErrorOrNil()
+}
+
+func (s *fakeSourcer) ForUser(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error) {
+	return s.For(svcs...)
+}
+
+func (s *fakeSourcer) ForUserWithFallback(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error) {
+	return s.For(svcs...)
 }
 
 // FakeSource is a fake implementation of Source to be used in tests.
