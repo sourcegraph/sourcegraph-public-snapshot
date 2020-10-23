@@ -105,8 +105,7 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo   *repos.Repo
-	extSvc *repos.ExternalService
+	repo *repos.Repo
 
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
@@ -126,13 +125,13 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	e.extSvc, err = loadExternalService(ctx, reposStore, e.repo)
+	extSvc, err := loadExternalService(ctx, reposStore, e.repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to load external service")
 	}
 
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(e.repo, e.extSvc)
+	e.ccs, err = e.buildChangesetSource(e.repo, extSvc)
 	if err != nil {
 		return err
 	}
