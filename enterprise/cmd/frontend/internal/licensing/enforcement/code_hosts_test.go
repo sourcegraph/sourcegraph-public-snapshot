@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewPreCreateCodeHostHook(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	if !licensing.EnforceTiers {
 		licensing.EnforceTiers = true
 		defer func() { licensing.EnforceTiers = false }()
