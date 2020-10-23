@@ -16,7 +16,7 @@ Create a campaign to update Dockerfiles in every one of your repositories.
 
 Campaigns, combined with [comby](https://comby.dev) and [structural search](../../code_search/reference/structural.md), allow us to update the base images used in our Dockerfiles in just a few commands.
 
-This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_campaigns#campaign-spec) that
+This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_campaigns.md#campaign-spec) that
 
 1. finds `Dockerfile`s that make use of `golang:1.x` base images and 
 2. changes those `Dockerfiles` to use `golang:1.15`
