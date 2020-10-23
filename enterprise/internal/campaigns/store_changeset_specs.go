@@ -260,6 +260,7 @@ type ListChangesetSpecsOpts struct {
 	Cursor int64
 
 	CampaignSpecID int64
+	IDs            []int64
 	RandIDs        []string
 }
 
@@ -301,6 +302,16 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 
 	if opts.CampaignSpecID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_specs.campaign_spec_id = %d", opts.CampaignSpecID))
+	}
+
+	if len(opts.IDs) != 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.IDs))
+		for _, id := range opts.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%s", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	if len(opts.RandIDs) != 0 {

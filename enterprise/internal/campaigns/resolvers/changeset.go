@@ -460,6 +460,26 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return nil, nil
 }
 
+func (r *changesetResolver) Executions(ctx context.Context) (*string, error) {
+	cr := &ee.ChangesetRewirer{}
+	pl, err := cr.Plan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range pl {
+		if s.Changeset.ID == r.changeset.ID {
+			// Todo: in place modify s.Changeset like rewirer would have done.
+			rpl, err := ee.DeterminePlan(ctx, r.store, s.Changeset)
+			if err != nil {
+				return nil, err
+			}
+			s := rpl.Ops.String()
+			return &s, nil
+		}
+	}
+	return nil, nil
+}
+
 type changesetLabelResolver struct {
 	label campaigns.ChangesetLabel
 }

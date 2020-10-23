@@ -947,11 +947,11 @@ func TestDeterminePlan(t *testing.T) {
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(ctx, tx, cs)
+			plan, err := DeterminePlan(ctx, tx, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := plan.ops, tc.wantOperations; !have.Equal(want) {
+			if have, want := plan.Ops, tc.wantOperations; !have.Equal(want) {
 				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
 			}
 		})

@@ -28,16 +28,16 @@ type rewirerPlan []rewireOperation
 func (r rewirerPlan) String() string {
 	ss := make([]string, len(r))
 	for i, v := range r {
-		ss[i] = string(v.op)
+		ss[i] = string(v.Op)
 	}
 	return strings.Join(ss, ", ")
 }
 
 type rewireOperation struct {
-	c    *campaigns.Changeset
-	spec *campaigns.ChangesetSpec
-	repo *types.Repo
-	op   rewireOperationKind
+	Changeset *campaigns.Changeset
+	Spec      *campaigns.ChangesetSpec
+	Repo      *types.Repo
+	Op        rewireOperationKind
 }
 
 type rewireOperationKind string
@@ -54,7 +54,7 @@ const (
 	rewireOperationAttachTracked rewireOperationKind = "attach-tracked"
 )
 
-type changesetRewirer struct {
+type ChangesetRewirer struct {
 	campaign *campaigns.Campaign
 	tx       *Store
 	rstore   repos.Store
@@ -70,7 +70,7 @@ type changesetRewirer struct {
 	currentSpecsByChangeset    map[int64]*campaigns.ChangesetSpec
 }
 
-func (r *changesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error) {
+func (r *ChangesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error) {
 	// First we need to load the associations
 	err = r.loadAssociations(ctx)
 	if err != nil {
@@ -106,9 +106,9 @@ func (r *changesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error)
 			if ok {
 				// If it's already attached to the campaign and errored, we re-enqueue it.
 				if c.ReconcilerState == campaigns.ReconcilerStateErrored {
-					pl = append(pl, rewireOperation{c: c, op: rewireOperationReenqueue, spec: spec, repo: repo})
+					pl = append(pl, rewireOperation{Changeset: c, Op: rewireOperationReenqueue, Spec: spec, Repo: repo})
 				} else {
-					pl = append(pl, rewireOperation{c: c, op: rewireOperationNone, spec: spec, repo: repo})
+					pl = append(pl, rewireOperation{Changeset: c, Op: rewireOperationNone, Spec: spec, Repo: repo})
 				}
 				attachedChangesets[c.ID] = true
 			} else {
@@ -123,12 +123,12 @@ func (r *changesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error)
 				}
 
 				if err != ErrNoResults {
-					pl = append(pl, rewireOperation{c: existing, op: rewireOperationAttachTracked, spec: spec, repo: repo})
+					pl = append(pl, rewireOperation{Changeset: existing, Op: rewireOperationAttachTracked, Spec: spec, Repo: repo})
 					// If it's already attached to the campaign, we need to keep it
 					// there. And if it's new, we want to attach it:
 					attachedChangesets[existing.ID] = true
 				} else {
-					pl = append(pl, rewireOperation{op: rewireOperationTrack, spec: spec, repo: repo})
+					pl = append(pl, rewireOperation{Op: rewireOperationTrack, Spec: spec, Repo: repo})
 				}
 			}
 
@@ -152,12 +152,12 @@ func (r *changesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error)
 			// We're going to create one so the changeset reconciler picks it up,
 			// creates a commit and pushes it to the branch.
 			// Except, of course, if spec.Spec.Published is false, then it doesn't do anything.
-			pl = append(pl, rewireOperation{op: rewireOperationCreate, spec: spec, repo: repo})
+			pl = append(pl, rewireOperation{Op: rewireOperationCreate, Spec: spec, Repo: repo})
 		} else {
 			// But if we already have a changeset in the given repository with
 			// the given branch, we need to update it to have the new spec
 			// and possibly re-attach it to the campaign:
-			pl = append(pl, rewireOperation{c: c, op: rewireOperationUpdate, spec: spec, repo: repo})
+			pl = append(pl, rewireOperation{Changeset: c, Op: rewireOperationUpdate, Spec: spec, Repo: repo})
 			attachedChangesets[c.ID] = true
 		}
 	}
@@ -182,13 +182,13 @@ func (r *changesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error)
 
 			// But only if it was created on the code host:
 			if c.Published() {
-				pl = append(pl, rewireOperation{c: c, op: rewireOperationClose})
+				pl = append(pl, rewireOperation{Changeset: c, Op: rewireOperationClose})
 			} else {
 				// otherwise we simply delete it.
-				pl = append(pl, rewireOperation{c: c, op: rewireOperationDelete})
+				pl = append(pl, rewireOperation{Changeset: c, Op: rewireOperationDelete})
 			}
 		} else {
-			pl = append(pl, rewireOperation{c: c, op: rewireOperationUnlink})
+			pl = append(pl, rewireOperation{Changeset: c, Op: rewireOperationUnlink})
 		}
 	}
 	return pl, nil
@@ -200,7 +200,7 @@ func (r *changesetRewirer) Plan(ctx context.Context) (pl rewirerPlan, err error)
 // campaign.
 //
 // It also updates the ChangesetIDs on the campaign.
-func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
+func (r *ChangesetRewirer) Rewire(ctx context.Context) (err error) {
 	pl, err := r.Plan(ctx)
 	if err != nil {
 		return err
@@ -257,48 +257,48 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 
 	attachedChangesets := map[int64]bool{}
 	for _, s := range pl {
-		switch s.op {
+		switch s.Op {
 		case rewireOperationNone:
-			attachedChangesets[s.c.ID] = true
+			attachedChangesets[s.Changeset.ID] = true
 		case rewireOperationUnlink:
-			s.c.RemoveCampaignID(r.campaign.ID)
-			if err := r.tx.UpdateChangeset(ctx, s.c); err != nil {
+			s.Changeset.RemoveCampaignID(r.campaign.ID)
+			if err := r.tx.UpdateChangeset(ctx, s.Changeset); err != nil {
 				return err
 			}
 		case rewireOperationClose:
-			s.c.Closing = true
-			s.c.ReconcilerState = campaigns.ReconcilerStateQueued
-			s.c.RemoveCampaignID(r.campaign.ID)
-			if err := r.tx.UpdateChangeset(ctx, s.c); err != nil {
+			s.Changeset.Closing = true
+			s.Changeset.ReconcilerState = campaigns.ReconcilerStateQueued
+			s.Changeset.RemoveCampaignID(r.campaign.ID)
+			if err := r.tx.UpdateChangeset(ctx, s.Changeset); err != nil {
 				return err
 			}
 		case rewireOperationDelete:
-			if err := r.tx.DeleteChangeset(ctx, s.c.ID); err != nil {
+			if err := r.tx.DeleteChangeset(ctx, s.Changeset.ID); err != nil {
 				return err
 			}
 		case rewireOperationCreate:
-			c, err := r.createChangesetForSpec(ctx, s.repo, s.spec)
+			c, err := r.createChangesetForSpec(ctx, s.Repo, s.Spec)
 			if err != nil {
 				return err
 			}
 			attachedChangesets[c.ID] = true
 		case rewireOperationUpdate:
-			if err := r.updateChangesetToNewSpec(ctx, s.c, s.spec); err != nil {
+			if err := r.updateChangesetToNewSpec(ctx, s.Changeset, s.Spec); err != nil {
 				return err
 			}
-			attachedChangesets[s.c.ID] = true
+			attachedChangesets[s.Changeset.ID] = true
 		case rewireOperationReenqueue:
-			if err := r.updateAndReenqueue(ctx, s.c); err != nil {
+			if err := r.updateAndReenqueue(ctx, s.Changeset); err != nil {
 				return err
 			}
-			attachedChangesets[s.c.ID] = true
+			attachedChangesets[s.Changeset.ID] = true
 		case rewireOperationTrack:
 			newChangeset := &campaigns.Changeset{
-				RepoID:              s.repo.ID,
-				ExternalServiceType: s.repo.ExternalRepo.ServiceType,
+				RepoID:              s.Repo.ID,
+				ExternalServiceType: s.Repo.ExternalRepo.ServiceType,
 
 				CampaignIDs:     []int64{r.campaign.ID},
-				ExternalID:      s.spec.Spec.ExternalID,
+				ExternalID:      s.Spec.Spec.ExternalID,
 				AddedToCampaign: true,
 				// Note: no CurrentSpecID, because we merely track this one
 
@@ -317,19 +317,19 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		case rewireOperationAttachTracked:
 			// We already have a changeset with the given repoID and
 			// externalID, so we can track it.
-			s.c.AddedToCampaign = true
-			s.c.CampaignIDs = append(s.c.CampaignIDs, r.campaign.ID)
+			s.Changeset.AddedToCampaign = true
+			s.Changeset.CampaignIDs = append(s.Changeset.CampaignIDs, r.campaign.ID)
 
 			// If it errored, we re-enqueue it.
-			if s.c.ReconcilerState == campaigns.ReconcilerStateErrored {
-				if err := r.updateAndReenqueue(ctx, s.c); err != nil {
+			if s.Changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
+				if err := r.updateAndReenqueue(ctx, s.Changeset); err != nil {
 					return err
 				}
 			} else {
-				return r.tx.UpdateChangeset(ctx, s.c)
+				return r.tx.UpdateChangeset(ctx, s.Changeset)
 			}
 
-			attachedChangesets[s.c.ID] = true
+			attachedChangesets[s.Changeset.ID] = true
 		default:
 			panic("blah not implemented")
 		}
@@ -346,7 +346,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	return r.tx.UpdateCampaign(ctx, r.campaign)
 }
 
-func (r *changesetRewirer) createChangesetForSpec(ctx context.Context, repo *types.Repo, spec *campaigns.ChangesetSpec) (*campaigns.Changeset, error) {
+func (r *ChangesetRewirer) createChangesetForSpec(ctx context.Context, repo *types.Repo, spec *campaigns.ChangesetSpec) (*campaigns.Changeset, error) {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -366,7 +366,7 @@ func (r *changesetRewirer) createChangesetForSpec(ctx context.Context, repo *typ
 	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
 }
 
-func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
+func (r *ChangesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
 
@@ -385,7 +385,7 @@ func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *camp
 
 // loadAssociations populates the changesets, newChangesetSpecs and
 // accessibleReposByID on changesetRewirer.
-func (r *changesetRewirer) loadAssociations(ctx context.Context) (err error) {
+func (r *ChangesetRewirer) loadAssociations(ctx context.Context) (err error) {
 	// Load all of the new ChangesetSpecs
 	r.newChangesetSpecs, _, err = r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
 		CampaignSpecID: r.campaign.CampaignSpecID,
@@ -407,19 +407,27 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (err error) {
 	return err
 }
 
-func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
+func (r *ChangesetRewirer) indexAssociations(ctx context.Context) (err error) {
 	r.changesetsByRepoHeadRef = map[repoHeadRef]*campaigns.Changeset{}
 	r.changesetsByRepoExternalID = map[repoExternalID]*campaigns.Changeset{}
 	r.currentSpecsByChangeset = map[int64]*campaigns.ChangesetSpec{}
 
+	currentChangesetIDs := make([]int64, 0)
 	for _, c := range r.changesets {
-		// This is an n+1
-		s, err := r.tx.GetChangesetSpecByID(ctx, c.CurrentSpecID)
-		if err != nil {
-			return err
+		if c.CurrentSpecID != 0 {
+			currentChangesetIDs = append(currentChangesetIDs, c.CurrentSpecID)
 		}
-		r.currentSpecsByChangeset[c.ID] = s
+	}
+	// TODO: this makes the assumption that the specs come back ordered by IDs, which is wrong.
+	specs, _, err := r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{IDs: currentChangesetIDs})
+	if err != nil {
+		return err
+	}
+	for i, s := range specs {
+		r.currentSpecsByChangeset[r.changesets[i].ID] = s
+	}
 
+	for _, c := range r.changesets {
 		if c.ExternalID != "" {
 			k := repoExternalID{repo: c.RepoID, externalID: c.ExternalID}
 			r.changesetsByRepoExternalID[k] = c
@@ -446,6 +454,7 @@ func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
 			// So we use the spec to get the branch where we _would_ push
 			// the commit.
 
+			s := r.currentSpecsByChangeset[c.ID]
 			k.headRef = git.EnsureRefPrefix(s.Spec.HeadRef)
 			r.changesetsByRepoHeadRef[k] = c
 		}
@@ -454,7 +463,7 @@ func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
 	return nil
 }
 
-func (r *changesetRewirer) updateAndReenqueue(ctx context.Context, ch *campaigns.Changeset) error {
+func (r *ChangesetRewirer) updateAndReenqueue(ctx context.Context, ch *campaigns.Changeset) error {
 	ch.ResetQueued()
 	return r.tx.UpdateChangeset(ctx, ch)
 }

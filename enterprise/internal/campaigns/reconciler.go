@@ -66,12 +66,12 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	// Reset the error message.
 	ch.FailureMessage = nil
 
-	plan, err := determinePlan(ctx, tx, ch)
+	plan, err := DeterminePlan(ctx, tx, ch)
 	if err != nil {
 		return err
 	}
 
-	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.ops)
+	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.Ops)
 
 	e := &executor{
 		sourcer:           r.sourcer,
@@ -111,11 +111,11 @@ type executor struct {
 
 // ExecutePlan executes the given reconciler plan.
 func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
-	if plan.ops.IsNone() {
+	if plan.Ops.IsNone() {
 		return nil
 	}
 
-	if !plan.ops.IsSyncOnly() {
+	if !plan.Ops.IsSyncOnly() {
 		e.repo, e.extSvc, e.campaign, err = loadAssociations(ctx, e.tx, e.ch)
 		if err != nil {
 			return errors.Wrap(err, "failed to load associations")
@@ -128,7 +128,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	synced := false
-	for _, op := range plan.ops.ExecutionOrder() {
+	for _, op := range plan.Ops.ExecutionOrder() {
 		switch op {
 		case operationSync:
 			err = e.syncChangeset(ctx)
@@ -543,7 +543,7 @@ func (ops operations) ExecutionOrder() []operation {
 // to reconcile the current and the desired state of a changeset.
 type plan struct {
 	// The operations that need to be done to reconcile the changeset.
-	ops operations
+	Ops operations
 
 	// The current spec of the changeset.
 	spec *campaigns.ChangesetSpec
@@ -553,15 +553,15 @@ type plan struct {
 	delta *changesetSpecDelta
 }
 
-func (p *plan) AddOp(op operation) { p.ops = append(p.ops, op) }
-func (p *plan) SetOp(op operation) { p.ops = operations{op} }
+func (p *plan) AddOp(op operation) { p.Ops = append(p.Ops, op) }
+func (p *plan) SetOp(op operation) { p.Ops = operations{op} }
 
-// determinePlan looks at the given changeset to determine what action the
+// DeterminePlan looks at the given changeset to determine what action the
 // reconciler should take.
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*plan, error) {
+func DeterminePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*plan, error) {
 	pl := &plan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do

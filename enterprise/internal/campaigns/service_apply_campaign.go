@@ -122,7 +122,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
-	rewirer := &changesetRewirer{
+	rewirer := &ChangesetRewirer{
 		tx:       tx,
 		rstore:   rstore,
 		campaign: campaign,

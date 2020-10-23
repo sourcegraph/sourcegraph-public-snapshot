@@ -93,6 +93,19 @@ export const changesetSpecFieldsFragment = gql`
         id
         expiresAt
         type
+        delta {
+            authorEmailChanged
+            authorNameChanged
+            baseRefChanged
+            bodyChanged
+            commitMessageChanged
+            diffChanged
+            draftChanged
+        }
+        changeset {
+            id
+        }
+        operations
     }
 
     fragment VisibleChangesetSpecFields on VisibleChangesetSpec {
@@ -105,6 +118,19 @@ export const changesetSpecFieldsFragment = gql`
             ...ExistingChangesetReferenceFields
             ...GitBranchChangesetDescriptionFields
         }
+        delta {
+            authorEmailChanged
+            authorNameChanged
+            baseRefChanged
+            bodyChanged
+            commitMessageChanged
+            diffChanged
+            draftChanged
+        }
+        changeset {
+            id
+        }
+        operations
     }
 
     fragment ExistingChangesetReferenceFields on ExistingChangesetReference {
