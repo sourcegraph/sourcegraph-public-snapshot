@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 )
 
 func TestCalcCounts(t *testing.T) {
@@ -1336,6 +1337,38 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab unmarked wip while closed",
+			changesets: []*campaigns.Changeset{
+				glChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []*campaigns.ChangesetEvent{
+				glClosed(1, daysAgo(1), "user1"),
+				glMarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Closed: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab marked wip while closed",
+			changesets: []*campaigns.Changeset{
+				setIsWip(glChangeset(1, daysAgo(1))),
+			},
+			start: daysAgo(1),
+			events: []*campaigns.ChangesetEvent{
+				glClosed(1, daysAgo(1), "user1"),
+				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Closed: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -1515,6 +1548,19 @@ func glMarkWorkInProgress(id int64, t time.Time, login string) *campaigns.Change
 				},
 			},
 		},
+	}
+}
+
+func glClosed(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitLabClosed,
+		Metadata: &gitlabwebhooks.MergeRequestCloseEvent{
+			MergeRequestEventCommon: gitlabwebhooks.MergeRequestEventCommon{
+				User: &gitlab.User{Username: login},
+			},
+		},
+		CreatedAt: t,
 	}
 }
 

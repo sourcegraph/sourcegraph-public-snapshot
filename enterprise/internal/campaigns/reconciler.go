@@ -417,7 +417,14 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 		return errors.New("changeset operation is undraft, but changeset source doesn't implement DraftChangesetSource")
 	}
 
-	cs := &repos.Changeset{Changeset: e.ch, Repo: e.repo}
+	cs := &repos.Changeset{
+		Title:     e.spec.Spec.Title,
+		Body:      e.spec.Spec.Body,
+		BaseRef:   e.spec.Spec.BaseRef,
+		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		Repo:      e.repo,
+		Changeset: e.ch,
+	}
 
 	if err := draftCcs.UndraftChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "undrafting changeset")
@@ -662,7 +669,8 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 			pl.SetOp(operationReopen)
 		}
 
-		if delta.draftChanged {
+		// Only do undraft, when the codehost supports draft changesets.
+		if delta.draftChanged && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
 			pl.AddOp(operationUndraft)
 		}
 

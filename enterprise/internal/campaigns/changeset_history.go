@@ -97,19 +97,31 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			currentExtState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
-		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress,
-			campaigns.ChangesetEventKindGitHubConvertToDraft:
+		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress:
+			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
+			if currentExtState == campaigns.ChangesetExternalStateOpen {
+				currentExtState = campaigns.ChangesetExternalStateDraft
+				pushStates(et)
+			}
+
+		case campaigns.ChangesetEventKindGitHubConvertToDraft:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateDraft
 				pushStates(et)
 			}
 
+		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
+			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
+			if currentExtState == campaigns.ChangesetExternalStateDraft {
+				currentExtState = campaigns.ChangesetExternalStateOpen
+				pushStates(et)
+			}
+
 		case campaigns.ChangesetEventKindGitHubReopened,
 			campaigns.ChangesetEventKindBitbucketServerReopened,
 			campaigns.ChangesetEventKindGitLabReopened,
-			campaigns.ChangesetEventKindGitHubReadyForReview,
-			campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
+			campaigns.ChangesetEventKindGitHubReadyForReview:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateOpen

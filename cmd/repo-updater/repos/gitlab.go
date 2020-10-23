@@ -546,8 +546,7 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
 
-	c.Changeset.SetMetadata(updated)
-	return nil
+	return c.Changeset.SetMetadata(updated)
 }
 
 // UndraftChangeset marks the changeset as *not* work in progress anymore.
