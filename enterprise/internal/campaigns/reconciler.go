@@ -100,9 +100,8 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo     *repos.Repo
-	extSvc   *repos.ExternalService
-	campaign *campaigns.Campaign
+	repo   *repos.Repo
+	extSvc *repos.ExternalService
 
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
