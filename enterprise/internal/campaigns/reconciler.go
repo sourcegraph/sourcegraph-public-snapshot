@@ -66,20 +66,9 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	// Reset the error message.
 	ch.FailureMessage = nil
 
-	var curr, prev *campaigns.ChangesetSpec
-	if ch.CurrentSpecID != 0 {
-		var err error
-		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
-		if err != nil {
-			return err
-		}
-	}
-	if ch.PreviousSpecID != 0 {
-		var err error
-		prev, err = tx.GetChangesetSpecByID(ctx, ch.PreviousSpecID)
-		if err != nil {
-			return err
-		}
+	prev, curr, err := loadChangesetSpecs(ctx, tx, ch)
+	if err != nil {
+		return nil
 	}
 
 	plan, err := determinePlan(ctx, prev, curr, ch)
@@ -780,6 +769,22 @@ func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign
 	}
 
 	return campaign, nil
+}
+
+func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
+	if ch.CurrentSpecID != 0 {
+		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
+		if err != nil {
+			return
+		}
+	}
+	if ch.PreviousSpecID != 0 {
+		prev, err = tx.GetChangesetSpecByID(ctx, ch.PreviousSpecID)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
