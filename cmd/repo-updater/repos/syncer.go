@@ -63,7 +63,7 @@ type Syncer struct {
 type RunOptions struct {
 	EnqueueInterval func() time.Duration // Defaults to 1 minute
 	IsCloud         bool                 // Defaults to false
-	MinSyncInterval time.Duration        // Defaults to 1 minute
+	MinSyncInterval func() time.Duration // Defaults to 1 minute
 	DequeueInterval time.Duration        // Default to 10 seconds
 }
 
@@ -72,8 +72,8 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
-	if opts.MinSyncInterval == 0 {
-		opts.MinSyncInterval = time.Minute
+	if opts.MinSyncInterval == nil {
+		opts.MinSyncInterval = func() time.Duration { return time.Minute }
 	}
 	if opts.DequeueInterval == 0 {
 		opts.DequeueInterval = 10 * time.Second
@@ -120,7 +120,7 @@ type syncHandler struct {
 	db              *sql.DB
 	syncer          *Syncer
 	store           Store
-	minSyncInterval time.Duration
+	minSyncInterval func() time.Duration
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
@@ -134,7 +134,7 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		store = ws.With(tx.Handle().DB())
 	}
 
-	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval)
+	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if

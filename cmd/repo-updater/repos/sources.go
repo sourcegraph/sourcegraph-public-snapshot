@@ -121,7 +121,7 @@ type ChangesetNotFoundError struct {
 }
 
 func (e ChangesetNotFoundError) Error() string {
-	return fmt.Sprintf("Changeset with external ID %q not found", e.Changeset.Changeset.ExternalID)
+	return fmt.Sprintf("Changeset with external ID %s not found", e.Changeset.Changeset.ExternalID)
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it

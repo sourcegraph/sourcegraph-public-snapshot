@@ -67,6 +67,7 @@ export const PhabricatorIcon: React.FunctionComponent<IconProps> = props => (
         {...sizeProps(props)}
         className={`phabricator-icon mdi-icon${props.className ? ' ' + props.className : ''}`}
         viewBox="0 0 64 64"
+        fill="currentColor"
     >
         <g>
             <g id="Oval">

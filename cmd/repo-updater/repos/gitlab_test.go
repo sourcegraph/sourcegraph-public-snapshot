@@ -494,6 +494,19 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			}
 		})
 
+		t.Run("not found", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.ExternalID = "43"
+			p.changeset.Changeset.Metadata = p.mr
+			p.mockGetMergeRequest(43, nil, gitlab.HTTPError(404))
+
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err == nil {
+				t.Fatal("unexpectedly no error for not found changeset")
+			} else if err.Error() != (ChangesetNotFoundError{Changeset: &Changeset{Changeset: &campaigns.Changeset{ExternalID: "43"}}}).Error() {
+				t.Fatalf("unexpected error: %+v", err)
+			}
+		})
+
 		// The guts of the note and pipeline scenarios are tested in separate
 		// unit tests below for read{Notes,Pipelines}UntilSeen, but we'll do a
 		// couple of quick tests here just to ensure that
