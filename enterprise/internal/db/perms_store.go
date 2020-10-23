@@ -491,8 +491,6 @@ DO UPDATE SET
 // row does not yet exist. The use case is to trick the scheduler to skip the repository for syncing
 // permissions when we can't sync permissions for the repository (e.g. due to insufficient permissions
 // of the access token).
-//
-// This method starts its own transaction for update consistency if the caller hasn't started one already.
 func (s *PermsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (err error) {
 	if Mocks.Perms.TouchRepoPermissions != nil {
 		return Mocks.Perms.TouchRepoPermissions(ctx, repoID)
@@ -501,18 +499,7 @@ func (s *PermsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (er
 	ctx, save := s.observe(ctx, "TouchRepoPermissions", "")
 	defer func() { save(&err, otlog.Int32("repoID", repoID)) }()
 
-	var txs *PermsStore
-	if s.inTx() {
-		txs = s
-	} else {
-		txs, err = s.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer txs.Done(&err)
-	}
-
-	touchedAt := txs.clock().UTC()
+	touchedAt := s.clock().UTC()
 	perm := authz.Read.String() // Note: We currently only support read for repository permissions.
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/db/perms_store.go:TouchRepoPermissions
@@ -526,7 +513,7 @@ DO UPDATE SET
   updated_at = excluded.updated_at,
   synced_at = excluded.synced_at
 `, repoID, perm, touchedAt, touchedAt)
-	if err = txs.execute(ctx, q); err != nil {
+	if err = s.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions query")
 	}
 	return nil
