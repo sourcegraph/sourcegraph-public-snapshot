@@ -97,52 +97,29 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 }
 
 // ReviewAuthor returns the author of the review if the ChangesetEvent is related to a review.
-func (e *ChangesetEvent) ReviewAuthor() (string, error) {
+// Returns an empty string if not a review event or the author has been deleted.
+func (e *ChangesetEvent) ReviewAuthor() string {
 	switch meta := e.Metadata.(type) {
 	case *github.PullRequestReview:
-		login := meta.Author.Login
-		if login == "" {
-			return "", errors.New("review author is blank")
-		}
-		return login, nil
+		return meta.Author.Login
 
 	case *github.ReviewDismissedEvent:
-		login := meta.Review.Author.Login
-		if login == "" {
-			return "", errors.New("review author in dismissed event is blank")
-		}
-		return login, nil
+		return meta.Review.Author.Login
 
 	case *bitbucketserver.Activity:
-		username := meta.User.Name
-		if username == "" {
-			return "", errors.New("activity user is blank")
-		}
-		return username, nil
+		return meta.User.Name
 
 	case *bitbucketserver.ParticipantStatusEvent:
-		username := meta.User.Name
-		if username == "" {
-			return "", errors.New("activity user is blank")
-		}
-		return username, nil
+		return meta.User.Name
 
 	case *gitlab.ReviewApprovedEvent:
-		username := meta.Author.Username
-		if username == "" {
-			return "", errors.New("review user is blank")
-		}
-		return username, nil
+		return meta.Author.Username
 
 	case *gitlab.ReviewUnapprovedEvent:
-		username := meta.Author.Username
-		if username == "" {
-			return "", errors.New("review user is blank")
-		}
-		return username, nil
+		return meta.Author.Username
 
 	default:
-		return "", nil
+		return ""
 	}
 }
 
