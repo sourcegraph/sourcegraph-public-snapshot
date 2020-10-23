@@ -150,6 +150,9 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 				upsertChangesetEvents = false
 			}
 
+		case operationPush:
+			err = e.pushChangesetPatch(ctx)
+
 		case operationPublish:
 			err = e.publishChangeset(ctx, false)
 
@@ -167,6 +170,9 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 
 		case operationClose:
 			err = e.closeChangeset(ctx)
+
+		case operationSleep:
+			e.sleep()
 
 		default:
 			err = fmt.Errorf("executor operation %q not implemented", op)
@@ -207,8 +213,8 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 	return ccs, nil
 }
 
-// publishChangeset creates the given changeset on its code host.
-func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
+// pushChangesetPatch creates the commits for the changeset on its codehost.
+func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
@@ -227,17 +233,17 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	if err != nil {
 		return err
 	}
-	ref, err := e.pushCommit(ctx, opts)
-	if err != nil {
-		return err
-	}
+	return e.pushCommit(ctx, opts)
+}
 
+// publishChangeset creates the given changeset on its code host.
+func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
 	// Now create the actual pull request on the code host
 	cs := &repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(ref),
+		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
@@ -335,38 +341,6 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 // If the delta requires updates to the changeset on the code host, it will
 // update the changeset there.
 func (e *executor) updateChangeset(ctx context.Context) (err error) {
-	if e.delta.NeedCommitUpdate() {
-		opts, err := buildCommitOpts(e.repo, e.spec)
-		if err != nil {
-			return err
-		}
-
-		if _, err = e.pushCommit(ctx, opts); err != nil {
-			return err
-		}
-	}
-
-	// If we only need to update the diff and we didn't change the state of the changeset,
-	// we're done, because we already pushed the commit. We don't need to
-	// update anything on the codehost.
-	if !e.delta.NeedCodeHostUpdate() {
-		// But we need to sync the changeset so that it has the new commit.
-		//
-		// The problem: the code host might not have updated the changeset to
-		// have the new commit SHA as its head ref oid (and the check states,
-		// ...).
-		//
-		// That's why we give them 3 seconds to update the changesets.
-		//
-		// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-		if !e.noSleepBeforeSync {
-			time.Sleep(3 * time.Second)
-		}
-		return nil
-	}
-
-	// Otherwise, we need to update the pull request on the code host or, if we
-	// need to reopen it, update it to make sure it has the newest state.
 	cs := repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
@@ -436,11 +410,18 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	return nil
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (string, error) {
-	ref, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
+// sleep sleeps for 3 seconds.
+func (e *executor) sleep() {
+	if !e.noSleepBeforeSync {
+		time.Sleep(3 * time.Second)
+	}
+}
+
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
+	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
-			return "", errors.Errorf(
+			return errors.Errorf(
 				"creating commit from patch for repository %q: %s\n"+
 					"```\n"+
 					"$ %s\n"+
@@ -448,10 +429,10 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 					"```",
 				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, strings.TrimSpace(diffErr.CombinedOutput))
 		}
-		return "", err
+		return err
 	}
 
-	return ref, nil
+	return nil
 }
 
 func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
@@ -513,6 +494,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 type operation string
 
 const (
+	operationPush         operation = "push"
 	operationUpdate       operation = "update"
 	operationUndraft      operation = "undraft"
 	operationPublish      operation = "publish"
@@ -521,17 +503,20 @@ const (
 	operationImport       operation = "import"
 	operationClose        operation = "close"
 	operationReopen       operation = "reopen"
+	operationSleep        operation = "sleep"
 )
 
 var operationPrecedence = map[operation]int{
-	operationImport:       0,
-	operationPublish:      0,
-	operationPublishDraft: 0,
-	operationClose:        0,
-	operationReopen:       1,
-	operationUndraft:      2,
-	operationUpdate:       3,
-	operationSync:         4,
+	operationPush:         0,
+	operationImport:       1,
+	operationPublish:      1,
+	operationPublishDraft: 1,
+	operationClose:        1,
+	operationReopen:       2,
+	operationUndraft:      3,
+	operationUpdate:       4,
+	operationSleep:        5,
+	operationSync:         6,
 }
 
 type operations []operation
@@ -566,8 +551,9 @@ func (ops operations) String() string {
 	if ops.IsNone() {
 		return "No operations required"
 	}
-	ss := make([]string, len(ops))
-	for i, val := range ops {
+	eo := ops.ExecutionOrder()
+	ss := make([]string, len(eo))
+	for i, val := range eo {
 		ss[i] = string(val)
 	}
 	return strings.Join(ss, " => ")
@@ -641,10 +627,12 @@ func determinePlan(ctx context.Context, previousSpec, currentSpec *campaigns.Cha
 	case campaigns.ChangesetPublicationStateUnpublished:
 		if currentSpec.Spec.Published.True() {
 			pl.SetOp(operationPublish)
+			pl.AddOp(operationPush)
 		} else if currentSpec.Spec.Published.Draft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
 			pl.SetOp(operationPublishDraft)
+			pl.AddOp(operationPush)
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
@@ -658,10 +646,29 @@ func determinePlan(ctx context.Context, previousSpec, currentSpec *campaigns.Cha
 		}
 
 		if delta.AttributesChanged() {
-			pl.AddOp(operationUpdate)
+			if delta.NeedCommitUpdate() {
+				pl.AddOp(operationPush)
+			}
 
+			// If we only need to update the diff and we didn't change the state of the changeset,
+			// we're done, because we already pushed the commit. We don't need to
+			// update anything on the codehost.
 			if !delta.NeedCodeHostUpdate() {
+				// But we need to sync the changeset so that it has the new commit.
+				//
+				// The problem: the code host might not have updated the changeset to
+				// have the new commit SHA as its head ref oid (and the check states,
+				// ...).
+				//
+				// That's why we give them 3 seconds to update the changesets.
+				//
+				// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
+				pl.AddOp(operationSleep)
 				pl.AddOp(operationSync)
+			} else {
+				// Otherwise, we need to update the pull request on the code host or, if we
+				// need to reopen it, update it to make sure it has the newest state.
+				pl.AddOp(operationUpdate)
 			}
 		}
 

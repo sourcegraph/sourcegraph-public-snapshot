@@ -849,7 +849,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublish},
+			wantOperations: operations{operationPush, operationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -861,7 +861,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublishDraft},
+			wantOperations: operations{operationPush, operationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -918,7 +918,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublish},
+			wantOperations: operations{operationPush, operationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -954,7 +954,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUpdate, operationSync},
+			wantOperations: operations{operationPush, operationSleep, operationSync},
 		},
 	}
 
