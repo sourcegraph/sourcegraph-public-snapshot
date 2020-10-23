@@ -2,7 +2,6 @@ package enforcement
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -35,13 +34,6 @@ func TestNewPreCreateCodeHostHook(t *testing.T) {
 		defer func() { mockGetCodeHostsLimit = nil }()
 
 		hook := NewPreCreateCodeHostHook(&mockCodeHostsStore{codeHostCount: 10})
-		if hook(ctx) == nil {
-			t.Fatalf("got nil, want error")
-		}
-	})
-
-	t.Run("when there is a database error", func(t *testing.T) {
-		hook := NewPreCreateCodeHostHook(&mockCodeHostsStore{err: errors.New("test fail")})
 		if hook(ctx) == nil {
 			t.Fatalf("got nil, want error")
 		}
