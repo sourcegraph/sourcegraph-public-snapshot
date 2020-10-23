@@ -164,6 +164,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   </CampaignInfoByline>
   <UnpublishedNotice
     className="mb-3"
+    total={10}
     unpublished={2}
   >
     <div
@@ -1147,6 +1148,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   </CampaignInfoByline>
   <UnpublishedNotice
     className="mb-3"
+    total={10}
     unpublished={2}
   >
     <div
