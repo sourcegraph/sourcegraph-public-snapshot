@@ -82,7 +82,7 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		}
 	}
 
-	plan, err := determinePlan(ctx, tx, prev, curr, ch)
+	plan, err := determinePlan(ctx, prev, curr, ch)
 	if err != nil {
 		return err
 	}
@@ -624,7 +624,7 @@ func (p *plan) SetOp(op operation) { p.ops = operations{op} }
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(ctx context.Context, tx *Store, previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
+func determinePlan(ctx context.Context, previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
 	pl := &plan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
@@ -640,10 +640,6 @@ func determinePlan(ctx context.Context, tx *Store, previousSpec, currentSpec *ca
 	if ch.Closing {
 		pl.SetOp(operationClose)
 		return pl, nil
-	}
-
-	if err := checkSpecAppliedToCampaign(ctx, tx, currentSpec.CampaignSpecID); err != nil {
-		return pl, err
 	}
 
 	delta, err := compareChangesetSpecs(previousSpec, currentSpec)
@@ -715,24 +711,6 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	return attachedToOwner
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
-}
-
-func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, campaignSpecID int64) error {
-	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: campaignSpecID})
-	if err != nil {
-		return errors.Wrap(err, "failed to load campaign spec")
-	}
-
-	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{CampaignSpecID: campaignSpec.ID})
-	if err != nil && err != ErrNoResults {
-		return errors.Wrap(err, "failed to load campaign")
-	}
-
-	if campaign == nil || err == ErrNoResults {
-		return errors.New("campaign spec is not applied to a campaign")
-	}
-
-	return nil
 }
 
 func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {

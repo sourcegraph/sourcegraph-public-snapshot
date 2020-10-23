@@ -974,7 +974,7 @@ func TestDeterminePlan(t *testing.T) {
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(ctx, tx, previousSpec, currentSpec, cs)
+			plan, err := determinePlan(ctx, previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
