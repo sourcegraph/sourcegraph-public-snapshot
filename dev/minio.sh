@@ -10,7 +10,7 @@ MINIO_DISK="${HOME}/.sourcegraph-dev/data/minio"
 if [ ! -e "${MINIO_DISK}" ]; then
   mkdir -p "${MINIO_DISK}"
 fi
-IMAGE=minio/minio:edge # TODO - retag
+IMAGE=sourcegraph/minio
 CONTAINER=minio
 
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
