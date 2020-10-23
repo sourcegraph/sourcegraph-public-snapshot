@@ -35,7 +35,7 @@ type reconciler struct {
 	sourcer         repos.Sourcer
 	store           *Store
 
-	// This is used to disable a time.Sleep in updateChangeset so that the
+	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
 	noSleepBeforeSync bool
 }
@@ -66,7 +66,12 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	// Reset the error message.
 	ch.FailureMessage = nil
 
-	plan, err := determinePlan(ctx, tx, ch)
+	prev, curr, err := loadChangesetSpecs(ctx, tx, ch)
+	if err != nil {
+		return nil
+	}
+
+	plan, err := determinePlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
@@ -81,7 +86,7 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		tx: tx,
 		ch: ch,
 
-		spec:  plan.spec,
+		spec:  curr,
 		delta: plan.delta,
 	}
 
@@ -100,8 +105,7 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo   *repos.Repo
-	extSvc *repos.ExternalService
+	repo *repos.Repo
 
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
@@ -121,13 +125,13 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	e.extSvc, err = loadExternalService(ctx, reposStore, e.repo)
+	extSvc, err := loadExternalService(ctx, reposStore, e.repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to load external service")
 	}
 
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(e.repo, e.extSvc)
+	e.ccs, err = e.buildChangesetSource(e.repo, extSvc)
 	if err != nil {
 		return err
 	}
@@ -144,6 +148,9 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 			if notFound {
 				upsertChangesetEvents = false
 			}
+
+		case operationPush:
+			err = e.pushChangesetPatch(ctx)
 
 		case operationPublish:
 			err = e.publishChangeset(ctx, false)
@@ -162,6 +169,9 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 
 		case operationClose:
 			err = e.closeChangeset(ctx)
+
+		case operationSleep:
+			e.sleep()
 
 		default:
 			err = fmt.Errorf("executor operation %q not implemented", op)
@@ -202,8 +212,8 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 	return ccs, nil
 }
 
-// publishChangeset creates the given changeset on its code host.
-func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
+// pushChangesetPatch creates the commits for the changeset on its codehost.
+func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
@@ -222,17 +232,16 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	if err != nil {
 		return err
 	}
-	ref, err := e.pushCommit(ctx, opts)
-	if err != nil {
-		return err
-	}
+	return e.pushCommit(ctx, opts)
+}
 
-	// Now create the actual pull request on the code host
+// publishChangeset creates the given changeset on its code host.
+func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
 	cs := &repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(ref),
+		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
@@ -325,43 +334,7 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 
 // updateChangeset updates the given changeset's attribute on the code host
 // according to its ChangesetSpec and the delta previously computed.
-// If the delta includes only changes to the commit, updateChangeset will only
-// create and force push a new commit.
-// If the delta requires updates to the changeset on the code host, it will
-// update the changeset there.
 func (e *executor) updateChangeset(ctx context.Context) (err error) {
-	if e.delta.NeedCommitUpdate() {
-		opts, err := buildCommitOpts(e.repo, e.spec)
-		if err != nil {
-			return err
-		}
-
-		if _, err = e.pushCommit(ctx, opts); err != nil {
-			return err
-		}
-	}
-
-	// If we only need to update the diff and we didn't change the state of the changeset,
-	// we're done, because we already pushed the commit. We don't need to
-	// update anything on the codehost.
-	if !e.delta.NeedCodeHostUpdate() {
-		// But we need to sync the changeset so that it has the new commit.
-		//
-		// The problem: the code host might not have updated the changeset to
-		// have the new commit SHA as its head ref oid (and the check states,
-		// ...).
-		//
-		// That's why we give them 3 seconds to update the changesets.
-		//
-		// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-		if !e.noSleepBeforeSync {
-			time.Sleep(3 * time.Second)
-		}
-		return nil
-	}
-
-	// Otherwise, we need to update the pull request on the code host or, if we
-	// need to reopen it, update it to make sure it has the newest state.
 	cs := repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
@@ -431,11 +404,18 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	return nil
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (string, error) {
-	ref, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
+// sleep sleeps for 3 seconds.
+func (e *executor) sleep() {
+	if !e.noSleepBeforeSync {
+		time.Sleep(3 * time.Second)
+	}
+}
+
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
+	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
-			return "", errors.Errorf(
+			return errors.Errorf(
 				"creating commit from patch for repository %q: %s\n"+
 					"```\n"+
 					"$ %s\n"+
@@ -443,10 +423,10 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 					"```",
 				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, strings.TrimSpace(diffErr.CombinedOutput))
 		}
-		return "", err
+		return err
 	}
 
-	return ref, nil
+	return nil
 }
 
 func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
@@ -495,7 +475,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 			Date:        spec.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the
-		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
+		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
 		GitApplyArgs: []string{"-p0"},
 		Push:         true,
@@ -508,6 +488,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 type operation string
 
 const (
+	operationPush         operation = "push"
 	operationUpdate       operation = "update"
 	operationUndraft      operation = "undraft"
 	operationPublish      operation = "publish"
@@ -516,27 +497,26 @@ const (
 	operationImport       operation = "import"
 	operationClose        operation = "close"
 	operationReopen       operation = "reopen"
+	operationSleep        operation = "sleep"
 )
 
 var operationPrecedence = map[operation]int{
-	operationImport:       0,
-	operationPublish:      0,
-	operationPublishDraft: 0,
-	operationClose:        0,
-	operationReopen:       1,
-	operationUndraft:      2,
-	operationUpdate:       3,
-	operationSync:         4,
+	operationPush:         0,
+	operationImport:       1,
+	operationPublish:      1,
+	operationPublishDraft: 1,
+	operationClose:        1,
+	operationReopen:       2,
+	operationUndraft:      3,
+	operationUpdate:       4,
+	operationSleep:        5,
+	operationSync:         6,
 }
 
 type operations []operation
 
 func (ops operations) IsNone() bool {
 	return len(ops) == 0
-}
-
-func (ops operations) IsSyncOnly() bool {
-	return len(ops) == 1 && ops[0] == operationSync
 }
 
 func (ops operations) Equal(b operations) bool {
@@ -561,8 +541,9 @@ func (ops operations) String() string {
 	if ops.IsNone() {
 		return "No operations required"
 	}
-	ss := make([]string, len(ops))
-	for i, val := range ops {
+	eo := ops.ExecutionOrder()
+	ss := make([]string, len(eo))
+	for i, val := range eo {
 		ss[i] = string(val)
 	}
 	return strings.Join(ss, " => ")
@@ -595,9 +576,6 @@ type plan struct {
 	// The operations that need to be done to reconcile the changeset.
 	ops operations
 
-	// The current spec of the changeset.
-	spec *campaigns.ChangesetSpec
-
 	// The delta between a possible previous ChangesetSpec and the current
 	// ChangesetSpec.
 	delta *changesetSpecDelta
@@ -611,12 +589,12 @@ func (p *plan) SetOp(op operation) { p.ops = operations{op} }
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*plan, error) {
+func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
 	pl := &plan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
-	if ch.CurrentSpecID == 0 {
+	if currentSpec == nil {
 		if ch.Unsynced {
 			pl.SetOp(operationImport)
 		}
@@ -629,25 +607,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		return pl, nil
 	}
 
-	curr, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
-	if err != nil {
-		return pl, err
-	}
-	pl.spec = curr
-
-	if err := checkSpecAppliedToCampaign(ctx, tx, curr); err != nil {
-		return pl, err
-	}
-
-	var prev *campaigns.ChangesetSpec
-	if ch.PreviousSpecID != 0 {
-		prev, err = tx.GetChangesetSpecByID(ctx, ch.PreviousSpecID)
-		if err != nil {
-			return pl, err
-		}
-	}
-
-	delta, err := compareChangesetSpecs(prev, curr)
+	delta, err := compareChangesetSpecs(previousSpec, currentSpec)
 	if err != nil {
 		return pl, nil
 	}
@@ -655,12 +615,14 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
-		if curr.Spec.Published.True() {
+		if currentSpec.Spec.Published.True() {
 			pl.SetOp(operationPublish)
-		} else if curr.Spec.Published.Draft() && ch.SupportsDraft() {
+			pl.AddOp(operationPush)
+		} else if currentSpec.Spec.Published.Draft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
 			pl.SetOp(operationPublishDraft)
+			pl.AddOp(operationPush)
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
@@ -674,10 +636,29 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		}
 
 		if delta.AttributesChanged() {
-			pl.AddOp(operationUpdate)
+			if delta.NeedCommitUpdate() {
+				pl.AddOp(operationPush)
+			}
 
+			// If we only need to update the diff and we didn't change the state of the changeset,
+			// we're done, because we already pushed the commit. We don't need to
+			// update anything on the codehost.
 			if !delta.NeedCodeHostUpdate() {
+				// But we need to sync the changeset so that it has the new commit.
+				//
+				// The problem: the code host might not have updated the changeset to
+				// have the new commit SHA as its head ref oid (and the check states,
+				// ...).
+				//
+				// That's why we give them 3 seconds to update the changesets.
+				//
+				// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
+				pl.AddOp(operationSleep)
 				pl.AddOp(operationSync)
+			} else {
+				// Otherwise, we need to update the pull request on the code host or, if we
+				// need to reopen it, update it to make sure it has the newest state.
+				pl.AddOp(operationUpdate)
 			}
 		}
 
@@ -716,24 +697,6 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	return attachedToOwner
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
-}
-
-func checkSpecAppliedToCampaign(ctx context.Context, tx *Store, spec *campaigns.ChangesetSpec) error {
-	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: spec.CampaignSpecID})
-	if err != nil {
-		return errors.Wrap(err, "failed to load campaign spec")
-	}
-
-	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{CampaignSpecID: campaignSpec.ID})
-	if err != nil && err != ErrNoResults {
-		return errors.Wrap(err, "failed to load campaign")
-	}
-
-	if campaign == nil || err == ErrNoResults {
-		return errors.New("campaign spec is not applied to a campaign")
-	}
-
-	return nil
 }
 
 func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
@@ -803,6 +766,22 @@ func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign
 	}
 
 	return campaign, nil
+}
+
+func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
+	if ch.CurrentSpecID != 0 {
+		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
+		if err != nil {
+			return
+		}
+	}
+	if ch.PreviousSpecID != 0 {
+		prev, err = tx.GetChangesetSpecByID(ctx, ch.PreviousSpecID)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
