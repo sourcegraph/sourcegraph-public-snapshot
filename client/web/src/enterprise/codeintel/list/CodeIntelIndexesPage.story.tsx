@@ -1,18 +1,17 @@
-import { CodeIntelUploadsPage } from './CodeIntelUploadsPage'
-import { of } from 'rxjs'
 import { storiesOf } from '@storybook/react'
-import { SuiteFunction } from 'mocha'
-import { Upload } from './backend'
 import * as H from 'history'
+import { SuiteFunction } from 'mocha'
 import React from 'react'
-import webStyles from '../../SourcegraphWebApp.scss'
-import { SourcegraphContext } from '../../jscontext'
-import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { of } from 'rxjs'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
+import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+import { SourcegraphContext } from '../../../jscontext'
+import webStyles from '../../../SourcegraphWebApp.scss'
+import { CodeIntelIndexesPage } from './CodeIntelIndexesPage'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
-const { add } = storiesOf('web/Codeintel administration/CodeIntelUploads', module).addDecorator(story => (
+const { add } = storiesOf('web/Codeintel administration/CodeIntelIndexes', module).addDecorator(story => (
     <>
         <div className="theme-light container">{story()}</div>
         <style>{webStyles}</style>
@@ -34,7 +33,11 @@ const commonProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-const upload: Pick<Upload, 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
+const index: Omit<
+    LsifIndexFields,
+    'id' | 'state' | 'queuedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'
+> = {
+    __typename: 'LSIFIndex',
     projectRoot: {
         url: '',
         path: 'web/',
@@ -49,69 +52,56 @@ const upload: Pick<Upload, 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputI
         },
     },
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
-    inputRoot: 'web/',
-    inputIndexer: 'lsif-tsc',
-    isLatestForRepo: false,
 }
 
 add('List', () => (
-    <CodeIntelUploadsPage
+    <CodeIntelIndexesPage
         {...commonProps}
-        fetchLsifUploads={() =>
+        fetchLsifIndexes={() =>
             of({
                 nodes: [
                     {
-                        ...upload,
+                        ...index,
                         id: '1',
-                        state: LSIFUploadState.COMPLETED,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
+                        state: LSIFIndexState.COMPLETED,
+                        queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
                         finishedAt: '2020-06-15T12:30:30+00:00',
                         failure: null,
                         placeInQueue: null,
                     },
                     {
-                        ...upload,
+                        ...index,
                         id: '2',
-                        state: LSIFUploadState.ERRORED,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
+                        state: LSIFIndexState.ERRORED,
+                        queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
                         finishedAt: '2020-06-15T12:30:30+00:00',
                         failure: 'Whoops! The server encountered a boo-boo handling this input.',
                         placeInQueue: null,
                     },
                     {
-                        ...upload,
+                        ...index,
                         id: '3',
-                        state: LSIFUploadState.PROCESSING,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
+                        state: LSIFIndexState.PROCESSING,
+                        queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: '2020-06-15T12:25:30+00:00',
                         finishedAt: null,
                         failure: null,
                         placeInQueue: null,
                     },
                     {
-                        ...upload,
+                        ...index,
                         id: '4',
-                        state: LSIFUploadState.QUEUED,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
+                        state: LSIFIndexState.QUEUED,
+                        queuedAt: '2020-06-15T12:20:30+00:00',
                         startedAt: null,
                         finishedAt: null,
                         placeInQueue: 3,
                         failure: null,
                     },
-                    {
-                        ...upload,
-                        id: '5',
-                        state: LSIFUploadState.UPLOADING,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: null,
-                        finishedAt: null,
-                        failure: null,
-                        placeInQueue: null,
-                    },
                 ],
-                totalCount: 10,
+                totalCount: 8,
                 pageInfo: {
                     __typename: 'PageInfo',
                     endCursor: 'fakenextpage',

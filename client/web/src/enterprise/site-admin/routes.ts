@@ -72,22 +72,22 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/code-intelligence/uploads',
-        render: lazyComponent(() => import('../codeintel/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
+        render: lazyComponent(() => import('../codeintel/list/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
         exact: true,
     },
     {
         path: '/code-intelligence/uploads/:id',
-        render: lazyComponent(() => import('../codeintel/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
+        render: lazyComponent(() => import('../codeintel/detail/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
         exact: true,
     },
     {
         path: '/code-intelligence/indexes',
-        render: lazyComponent(() => import('../codeintel/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
+        render: lazyComponent(() => import('../codeintel/list/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
         exact: true,
     },
     {
         path: '/code-intelligence/indexes/:id',
-        render: lazyComponent(() => import('../codeintel/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
+        render: lazyComponent(() => import('../codeintel/detail/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
     },
     {
