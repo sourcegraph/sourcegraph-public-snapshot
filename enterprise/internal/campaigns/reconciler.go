@@ -670,7 +670,7 @@ func determinePlan(ctx context.Context, tx *Store, ch *campaigns.Changeset) (*pl
 		}
 
 		// Only do undraft, when the codehost supports draft changesets.
-		if delta.draftChanged && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
+		if delta.undraft && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
 			pl.AddOp(operationUndraft)
 		}
 
@@ -887,7 +887,7 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 	// If was set to "draft" and now "true", need to undraft the changeset.
 	// We currently ignore going from "true" to "draft".
 	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
-		delta.draftChanged = true
+		delta.undraft = true
 	}
 
 	// Diff
@@ -948,7 +948,7 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 type changesetSpecDelta struct {
 	titleChanged         bool
 	bodyChanged          bool
-	draftChanged         bool
+	undraft              bool
 	baseRefChanged       bool
 	diffChanged          bool
 	commitMessageChanged bool

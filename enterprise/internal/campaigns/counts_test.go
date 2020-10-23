@@ -1207,7 +1207,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft",
 			changesets: []*campaigns.Changeset{
-				setIsDraft(ghChangeset(1, daysAgo(2))),
+				setDraft(ghChangeset(1, daysAgo(2))),
 			},
 			start:  daysAgo(1),
 			events: []*campaigns.ChangesetEvent{},
@@ -1220,7 +1220,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft then opened for review",
 			changesets: []*campaigns.Changeset{
-				// Not setAsDraft, because the current state is "not in draft anymore".
+				// Not setDraft, because the current state is "not in draft anymore".
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(1),
@@ -1236,7 +1236,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft then opened for review and converted back",
 			changesets: []*campaigns.Changeset{
-				// Not setAsDraft, because the current state is "not in draft anymore".
+				// Not setDraft, because the current state is "not in draft anymore".
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
@@ -1254,7 +1254,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft then opened for review, converted back and opened for review again",
 			changesets: []*campaigns.Changeset{
-				// Not setAsDraft, because the current state is "not in draft anymore".
+				// Not setDraft, because the current state is "not in draft anymore".
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
@@ -1274,7 +1274,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitLab,
 			name:      "GitLab single changeset opened as draft",
 			changesets: []*campaigns.Changeset{
-				setIsWip(glChangeset(1, daysAgo(2))),
+				setDraft(glChangeset(1, daysAgo(2))),
 			},
 			start:  daysAgo(1),
 			events: []*campaigns.ChangesetEvent{},
@@ -1287,7 +1287,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitLab,
 			name:      "GitLab single changeset opened as draft then opened for review",
 			changesets: []*campaigns.Changeset{
-				// Not setIsWip, because the current state is "not a draft anymore".
+				// Not setDraft, because the current state is "not a draft anymore".
 				glChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(1),
@@ -1303,7 +1303,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitLab,
 			name:      "GitLab single changeset opened as draft then opened for review and converted back",
 			changesets: []*campaigns.Changeset{
-				// Not setIsWip, because the current state is "not a draft anymore".
+				// Not setDraft, because the current state is "not a draft anymore".
 				glChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
@@ -1321,7 +1321,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitLab,
 			name:      "GitLab single changeset opened as draft then opened for review, converted back and opened for review again",
 			changesets: []*campaigns.Changeset{
-				// Not setIsWip, because the current state is "not a draft anymore".
+				// Not setDraft, because the current state is "not a draft anymore".
 				glChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
@@ -1357,7 +1357,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitLab,
 			name:      "GitLab marked wip while closed",
 			changesets: []*campaigns.Changeset{
-				setIsWip(glChangeset(1, daysAgo(1))),
+				setDraft(glChangeset(1, daysAgo(1))),
 			},
 			start: daysAgo(1),
 			events: []*campaigns.ChangesetEvent{
@@ -1416,13 +1416,13 @@ func setExternalDeletedAt(c *campaigns.Changeset, t time.Time) *campaigns.Change
 	return c
 }
 
-func setIsDraft(c *campaigns.Changeset) *campaigns.Changeset {
-	c.Metadata.(*github.PullRequest).IsDraft = true
-	return c
-}
-
-func setIsWip(c *campaigns.Changeset) *campaigns.Changeset {
-	c.Metadata.(*gitlab.MergeRequest).WorkInProgress = true
+func setDraft(c *campaigns.Changeset) *campaigns.Changeset {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		m.IsDraft = true
+	case *gitlab.MergeRequest:
+		m.WorkInProgress = true
+	}
 	return c
 }
 

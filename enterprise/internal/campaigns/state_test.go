@@ -586,7 +586,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github draft - no events",
-			changeset: setIsDraft(githubChangeset(daysAgo(10), "OPEN")),
+			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN")),
 			history:   []changesetStatesAtTime{},
 			want:      cmpgn.ChangesetExternalStateDraft,
 		},
@@ -600,7 +600,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github draft - changeset newer than events",
-			changeset: setIsDraft(githubChangeset(daysAgo(0), "OPEN")),
+			changeset: setDraft(githubChangeset(daysAgo(0), "OPEN")),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
@@ -678,7 +678,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "gitlab draft - no events",
-			changeset: setIsWip(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
+			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
 			history:   []changesetStatesAtTime{},
 			want:      cmpgn.ChangesetExternalStateDraft,
 		},
@@ -692,7 +692,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "gitlab draft - changeset newer than events",
-			changeset: setIsWip(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
+			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},

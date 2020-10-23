@@ -341,7 +341,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 // CreateDraftChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	gitlab.SetWIP(&c.Title)
+	c.Title = gitlab.SetWIP(c.Title)
 
 	exists, err := s.CreateChangeset(ctx, c)
 	if err != nil {
@@ -551,6 +551,6 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 
 // UndraftChangeset marks the changeset as *not* work in progress anymore.
 func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
-	gitlab.UnsetWIP(&c.Title)
+	c.Title = gitlab.UnsetWIP(c.Title)
 	return s.UpdateChangeset(ctx, c)
 }

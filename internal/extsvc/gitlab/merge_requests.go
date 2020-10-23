@@ -51,16 +51,18 @@ type MergeRequest struct {
 	Pipelines []*Pipeline
 }
 
-func SetWIP(title *string) {
-	if !strings.HasPrefix(*title, "WIP:") {
-		*title = "WIP: " + *title
+func SetWIP(title string) string {
+	if !strings.HasPrefix(title, "WIP:") {
+		return "WIP: " + title
 	}
+	return title
 }
 
-func UnsetWIP(title *string) {
-	if strings.HasPrefix(*title, "WIP: ") {
-		*title = strings.TrimPrefix(*title, "WIP: ")
+func UnsetWIP(title string) string {
+	if strings.HasPrefix(title, "WIP: ") {
+		return strings.TrimPrefix(title, "WIP: ")
 	}
+	return title
 }
 
 type DiffRefs struct {
