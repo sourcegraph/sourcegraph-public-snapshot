@@ -71,7 +71,7 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return nil
 	}
 
-	plan, err := determinePlan(ctx, prev, curr, ch)
+	plan, err := determinePlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
@@ -595,7 +595,7 @@ func (p *plan) SetOp(op operation) { p.ops = operations{op} }
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(ctx context.Context, previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
+func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
 	pl := &plan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
