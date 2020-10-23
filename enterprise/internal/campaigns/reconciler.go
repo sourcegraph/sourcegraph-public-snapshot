@@ -35,7 +35,7 @@ type reconciler struct {
 	sourcer         repos.Sourcer
 	store           *Store
 
-	// This is used to disable a time.Sleep in updateChangeset so that the
+	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
 	noSleepBeforeSync bool
 }
@@ -237,7 +237,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 // publishChangeset creates the given changeset on its code host.
 func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
-	// Now create the actual pull request on the code host
 	cs := &repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
@@ -335,10 +334,6 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 
 // updateChangeset updates the given changeset's attribute on the code host
 // according to its ChangesetSpec and the delta previously computed.
-// If the delta includes only changes to the commit, updateChangeset will only
-// create and force push a new commit.
-// If the delta requires updates to the changeset on the code host, it will
-// update the changeset there.
 func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	cs := repos.Changeset{
 		Title:     e.spec.Spec.Title,
