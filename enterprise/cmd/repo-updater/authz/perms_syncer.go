@@ -193,7 +193,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 		acct, err := provider.FetchAccount(ctx, user, accts)
 		if err != nil {
-			log15.Warn("Could not fetch account from authz provider",
+			log15.Error("Could not fetch account from authz provider",
 				"userID", user.ID,
 				"authzProvider", provider.ServiceID(),
 				"error", err)
@@ -208,7 +208,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 		err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
-			log15.Warn("Could not associate external account to user",
+			log15.Error("Could not associate external account to user",
 				"userID", user.ID,
 				"authzProvider", provider.ServiceID(),
 				"error", err)
@@ -236,7 +236,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			if !noPerms {
 				return errors.Wrap(err, "fetch user permissions")
 			}
-			log15.Debug("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
+			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		}
 
 		for i := range extIDs {
@@ -299,10 +299,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	var provider authz.Provider
 
-	// No need to check authz provider for a non-private repository,
-	// because we only want to ensure `repo.Unrestricted` is "true"
-	// and permissions bits do not look stale to the scheduler.
-	if !repo.Private {
+	// No need to check authz provider for a non-private repository
+	// because we don't fetch nor store its permissions from code hosts.
+	if repo.Private {
 		// Loop over repository's sources and see if matching any authz provider's URN.
 		providers := s.providersByURNs()
 		for urn := range repo.Sources {
@@ -314,6 +313,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 	}
 
+	// For non-private repositories, we rely on the fact that the `provider` is
+	// always nil here to only make sure `repo.Unrestricted` is true for these
+	// repositories because we don't restrict access to non-private repositories.
 	if provider == nil {
 		log15.Debug("PermsSyncer.syncRepoPerms.noProvider",
 			"repoID", repo.ID,
@@ -323,8 +325,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		if !repo.Unrestricted {
 			// NOTE: Not using transaction here because it is not easy to start transaction
 			// that involves two stores. Being partially succeeded here is OK because:
-			// 	1. We're setting repository to be unrestricted and the permissions bits
-			//		no longer important.
+			// 	1. We're setting the repository to be unrestricted and the permissions
+			// 		bits no longer important.
 			//	2. Eventually, the syncer will try to sync and run down to here again
 			//		because of the permissions staleness.
 			repo.Unrestricted = true
@@ -338,7 +340,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			RepoID:  int32(repoID),
 			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
 			UserIDs: roaring.NewBitmap(),
-		}), "set repository permissions")
+		}), "set repository permissions") // TODO: Use TouchRepoPermissions
 	}
 
 	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
@@ -364,7 +366,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		if !noPerms {
 			return errors.Wrap(err, "fetch repository permissions")
 		}
-		log15.Debug("PermsSyncer.syncRepoPerms.proceedWithPartialResults", "repoID", repo.ID, "err", err)
+		log15.Warn("PermsSyncer.syncRepoPerms.proceedWithPartialResults", "repoID", repo.ID, "err", err)
 	}
 
 	pendingAccountIDsSet := make(map[string]struct{})
@@ -503,7 +505,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		err := s.syncPerms(ctx, request)
 		if err != nil {
-			log15.Warn("Failed to sync permissions", "type", request.Type, "id", request.ID, "err", err)
+			log15.Error("Failed to sync permissions", "type", request.Type, "id", request.ID, "err", err)
 			continue
 		}
 	}

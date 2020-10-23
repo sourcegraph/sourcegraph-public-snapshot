@@ -669,6 +669,7 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Private != n.Private {
 		r.Private, modified = n.Private, true
+		r.Unrestricted = !n.Private // Open or block access immediately
 	}
 
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
