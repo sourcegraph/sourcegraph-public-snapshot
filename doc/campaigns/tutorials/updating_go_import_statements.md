@@ -1,5 +1,13 @@
 # Updating Go import statements using Comby
 
+<style>
+.markdown-body pre.chroma {
+  font-size: 0.75em;
+}
+</style>
+
+### Introduction
+
 This campaign rewrites Go import paths for the `log15` package from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15` using [Comby](https://comby.dev/).
 
 It can handle single-package import statements like these
@@ -19,7 +27,26 @@ import (
 )
 ```
 
-## Campaign spec
+### Prerequisites
+
+We recommend that use the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
+
+1. ["Quickstart"](../quickstart.md)
+1. ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md)
+
+
+### Instructions
+
+1. Save the campaign spec below as `YOUR_CAMPAIGN_SPEC.campaign.yaml`.
+1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
+
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
+
+1. Open the preview URL that the command printed out.
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
+1. Click the **Create campaign** button.
+
+### Campaign spec
 
 ```yaml
 name: update-log15-import
@@ -47,14 +74,3 @@ changesetTemplate:
     message: Fix import path for log15 package
   published: false
 ```
-
-## Instructions
-
-1. Save the campaign spec above as `YOUR_CAMPAIGN_SPEC.campaign.yaml`.
-1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
-
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
-
-1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
-1. Click the **Create campaign** button.

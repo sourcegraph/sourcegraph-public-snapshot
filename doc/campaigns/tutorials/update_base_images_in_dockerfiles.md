@@ -1,11 +1,9 @@
 # Updating base images in Dockerfiles
 
 <style>
-
 .markdown-body pre.chroma {
   font-size: 0.75em;
 }
-
 </style>
 
 <p class="lead">

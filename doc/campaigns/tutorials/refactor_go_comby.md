@@ -1,5 +1,7 @@
 # Refactor Go code using Comby
 
+### Introduction
+
 This campaign uses Sourcegraph's [structural search](../../code_search/reference/structural.md) and [Comby](https://comby.dev/) to rewrite Go statements from
 
 ```go
@@ -16,7 +18,26 @@ The statements are semantically equivalent, but the latter is clearer.
 
 Since the replacements could require importing the `strconv` package, it uses [`goimports`](https://godoc.org/golang.org/x/tools/cmd/goimports) to update the list of imported packages in all `*.go` files.
 
-## Campaign spec
+### Prerequisites
+
+We recommend that use the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
+
+1. ["Quickstart"](../quickstart.md)
+1. ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md)
+
+
+### Instructions
+
+1. Save the campaign spec below as `YOUR_CAMPAIGN_SPEC.campaign.yaml`.
+1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
+
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
+
+1. Open the preview URL that the command printed out.
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
+1. Click the **Create campaign** button.
+
+### Campaign spec
 
 ```yaml
 name: sprintf-to-itoa
@@ -41,14 +62,3 @@ changesetTemplate:
     message: Replacing fmt.Sprintf with strconv.Iota
   published: false
 ```
-
-## Instructions
-
-1. Save the campaign spec above as `YOUR_CAMPAIGN_SPEC.campaign.yaml`.
-1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
-
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
-
-1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
-1. Click the **Create campaign** button.
