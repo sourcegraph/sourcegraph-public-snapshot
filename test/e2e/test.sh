@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -exo pipefail
+set -x
 
 # shellcheck disable=SC1091
 source /root/.profile
