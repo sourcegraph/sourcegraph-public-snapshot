@@ -6,7 +6,7 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 1. To send pings that:
    - Check for new product updates.
    - Send anonymous, non-specific, aggregate metrics back to Sourcegraph.com. You can see the full list below. 
-1. Sourcegraph extensions are fetched from Sourcegraph.com's extension registry (unless you are using a private extension registry: https://docs.sourcegraph.com/admin/extensions#publish-extensions-to-a-private-extension-registry).
+1. Sourcegraph extensions are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](https://docs.sourcegraph.com/admin/extensions#publish-extensions-to-a-private-extension-registry)).
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
 
