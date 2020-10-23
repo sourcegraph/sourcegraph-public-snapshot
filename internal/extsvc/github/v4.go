@@ -78,7 +78,7 @@ func NewV4Client(apiURL *url.URL, token string, cli httpcli.Doer) *V4Client {
 	})
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), token, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
 		apiURL:           apiURL,

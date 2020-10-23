@@ -280,23 +280,24 @@ type MonitorRegistry struct {
 
 // Get fetches the rate limiter associated with the given code host. If none has been
 // configured an infinite limiter is returned.
-func (r *MonitorRegistry) Get(baseURL string) *Monitor {
-	return r.GetOrSet(baseURL, nil)
+func (r *MonitorRegistry) Get(baseURL, token string) *Monitor {
+	return r.GetOrSet(baseURL, token, nil)
 }
 
 // GetOrSet fetches the rate limiter associated with the given code host. If none has been configured
 // yet, the provided limiter will be set. A nil limiter will fall back to an infinite limiter.
-func (r *MonitorRegistry) GetOrSet(baseURL string, fallback *Monitor) *Monitor {
+func (r *MonitorRegistry) GetOrSet(baseURL, token string, fallback *Monitor) *Monitor {
 	baseURL = normaliseURL(baseURL)
 	if fallback == nil {
 		fallback = &Monitor{}
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	l := r.rateLimitMonitors[baseURL]
+	key := baseURL + ":" + token
+	l := r.rateLimitMonitors[key]
 	if l == nil {
 		l = fallback
-		r.rateLimitMonitors[baseURL] = l
+		r.rateLimitMonitors[key] = l
 	}
 	return l
 }
