@@ -3,7 +3,7 @@
 <style>
 
 .markdown-body pre.chroma {
-  font-size: 0.9em;
+  font-size: 0.75em;
 }
 
 </style>
