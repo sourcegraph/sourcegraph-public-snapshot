@@ -656,7 +656,12 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 			cleanupPermsTables(t, s)
 		})
 
-		// Set up test permissions
+		// Touch is an upsert
+		if err := s.TouchRepoPermissions(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Set up some permissions
 		rp := &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,

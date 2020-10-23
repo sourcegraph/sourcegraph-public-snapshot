@@ -487,9 +487,10 @@ DO UPDATE SET
 }
 
 // TouchRepoPermissions only updates the value of both `updated_at` and `synced_at` columns of the
-// `repo_permissions` table without modifying the permissions bits. The use case is to trick the
-// scheduler to skip the repository for syncing permissions when we can't sync permissions for the
-// repository (e.g. due to insufficient permissions of the access token).
+// `repo_permissions` table without modifying the permissions bits. It inserts a new row when the
+// row does not yet exist. The use case is to trick the scheduler to skip the repository for syncing
+// permissions when we can't sync permissions for the repository (e.g. due to insufficient permissions
+// of the access token).
 //
 // This method starts its own transaction for update consistency if the caller hasn't started one already.
 func (s *PermsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (err error) {
@@ -515,16 +516,18 @@ func (s *PermsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (er
 	perm := authz.Read.String() // Note: We currently only support read for repository permissions.
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/db/perms_store.go:TouchRepoPermissions
-UPDATE repo_permissions
-SET
-	updated_at = %s,
-	synced_at = %s
-WHERE
-	repo_id = %s
-AND	permission = %s
-`, touchedAt, touchedAt, repoID, perm)
+INSERT INTO repo_permissions
+	(repo_id, permission, updated_at, synced_at)
+VALUES
+  (%s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  repo_permissions_perm_unique
+DO UPDATE SET
+  updated_at = excluded.updated_at,
+  synced_at = excluded.synced_at
+`, repoID, perm, touchedAt, touchedAt)
 	if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute update repo permissions query")
+		return errors.Wrap(err, "execute upsert repo permissions query")
 	}
 	return nil
 }
