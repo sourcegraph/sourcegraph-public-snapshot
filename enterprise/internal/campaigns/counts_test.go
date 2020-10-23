@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 )
 
 func TestCalcCounts(t *testing.T) {
@@ -1205,7 +1207,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft",
 			changesets: []*campaigns.Changeset{
-				setIsDraft(ghChangeset(1, daysAgo(2))),
+				setDraft(ghChangeset(1, daysAgo(2))),
 			},
 			start:  daysAgo(1),
 			events: []*campaigns.ChangesetEvent{},
@@ -1218,7 +1220,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft then opened for review",
 			changesets: []*campaigns.Changeset{
-				// Not setAsDraft, because the current state is "not in draft anymore".
+				// Not setDraft, because the current state is "not in draft anymore".
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(1),
@@ -1234,7 +1236,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft then opened for review and converted back",
 			changesets: []*campaigns.Changeset{
-				// Not setAsDraft, because the current state is "not in draft anymore".
+				// Not setDraft, because the current state is "not in draft anymore".
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
@@ -1252,7 +1254,7 @@ func TestCalcCounts(t *testing.T) {
 			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset opened as draft then opened for review, converted back and opened for review again",
 			changesets: []*campaigns.Changeset{
-				// Not setAsDraft, because the current state is "not in draft anymore".
+				// Not setDraft, because the current state is "not in draft anymore".
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
@@ -1266,6 +1268,105 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Draft: 1},
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab single changeset opened as draft",
+			changesets: []*campaigns.Changeset{
+				setDraft(glChangeset(1, daysAgo(2))),
+			},
+			start:  daysAgo(1),
+			events: []*campaigns.ChangesetEvent{},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Draft: 1},
+				{Time: daysAgo(0), Total: 1, Draft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab single changeset opened as draft then opened for review",
+			changesets: []*campaigns.Changeset{
+				// Not setDraft, because the current state is "not a draft anymore".
+				glChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(1),
+			events: []*campaigns.ChangesetEvent{
+				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Draft: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab single changeset opened as draft then opened for review and converted back",
+			changesets: []*campaigns.Changeset{
+				// Not setDraft, because the current state is "not a draft anymore".
+				glChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(2),
+			events: []*campaigns.ChangesetEvent{
+				glUnmarkWorkInProgress(1, daysAgo(1), "user1"),
+				glMarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Draft: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(0), Total: 1, Draft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab single changeset opened as draft then opened for review, converted back and opened for review again",
+			changesets: []*campaigns.Changeset{
+				// Not setDraft, because the current state is "not a draft anymore".
+				glChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(3),
+			events: []*campaigns.ChangesetEvent{
+				glUnmarkWorkInProgress(1, daysAgo(2), "user1"),
+				glMarkWorkInProgress(1, daysAgo(1), "user1"),
+				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(3), Total: 1, Draft: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(1), Total: 1, Draft: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab unmarked wip while closed",
+			changesets: []*campaigns.Changeset{
+				glChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []*campaigns.ChangesetEvent{
+				glClosed(1, daysAgo(1), "user1"),
+				glMarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Closed: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab marked wip while closed",
+			changesets: []*campaigns.Changeset{
+				setDraft(glChangeset(1, daysAgo(1))),
+			},
+			start: daysAgo(1),
+			events: []*campaigns.ChangesetEvent{
+				glClosed(1, daysAgo(1), "user1"),
+				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Closed: 1},
 			},
 		},
 	}
@@ -1302,14 +1403,26 @@ func bbsChangeset(id int64, t time.Time) *campaigns.Changeset {
 	}
 }
 
+func glChangeset(id int64, t time.Time) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ID:       id,
+		Metadata: &gitlab.MergeRequest{CreatedAt: gitlab.Time{Time: t}},
+	}
+}
+
 func setExternalDeletedAt(c *campaigns.Changeset, t time.Time) *campaigns.Changeset {
 	c.SetDeleted()
 	c.ExternalDeletedAt = t
 	return c
 }
 
-func setIsDraft(c *campaigns.Changeset) *campaigns.Changeset {
-	c.Metadata.(*github.PullRequest).IsDraft = true
+func setDraft(c *campaigns.Changeset) *campaigns.Changeset {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		m.IsDraft = true
+	case *gitlab.MergeRequest:
+		m.WorkInProgress = true
+	}
 	return c
 }
 
@@ -1401,6 +1514,53 @@ func ghConvertToDraft(id int64, t time.Time, login string) *campaigns.ChangesetE
 				Login: login,
 			},
 		},
+	}
+}
+
+func glUnmarkWorkInProgress(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress,
+		Metadata: &gitlab.UnmarkWorkInProgressEvent{
+			Note: &gitlab.Note{
+				System:    true,
+				Body:      gitlab.SystemNoteBodyReviewUnmarkedWorkInProgress,
+				CreatedAt: gitlab.Time{Time: t},
+				Author: gitlab.User{
+					Username: login,
+				},
+			},
+		},
+	}
+}
+
+func glMarkWorkInProgress(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitLabMarkWorkInProgress,
+		Metadata: &gitlab.MarkWorkInProgressEvent{
+			Note: &gitlab.Note{
+				System:    true,
+				Body:      gitlab.SystemNoteBodyReviewMarkedWorkInProgress,
+				CreatedAt: gitlab.Time{Time: t},
+				Author: gitlab.User{
+					Username: login,
+				},
+			},
+		},
+	}
+}
+
+func glClosed(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitLabClosed,
+		Metadata: &gitlabwebhooks.MergeRequestCloseEvent{
+			MergeRequestEventCommon: gitlabwebhooks.MergeRequestEventCommon{
+				User: &gitlab.User{Username: login},
+			},
+		},
+		CreatedAt: t,
 	}
 }
 

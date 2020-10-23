@@ -46,12 +46,22 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 	}
 }
 
+// SystemNoteBody is a type of all known system message bodies.
+type SystemNoteBody string
+
+const (
+	SystemNoteBodyReviewApproved               SystemNoteBody = "approved this merge request"
+	SystemNoteBodyReviewUnapproved             SystemNoteBody = "unapproved this merge request"
+	SystemNoteBodyReviewUnmarkedWorkInProgress SystemNoteBody = "unmarked as a **Work In Progress**"
+	SystemNoteBodyReviewMarkedWorkInProgress   SystemNoteBody = "marked as a **Work In Progress**"
+)
+
 type Note struct {
-	ID        ID     `json:"id"`
-	Body      string `json:"body"`
-	Author    User   `json:"author"`
-	CreatedAt Time   `json:"created_at"`
-	System    bool   `json:"system"`
+	ID        ID             `json:"id"`
+	Body      SystemNoteBody `json:"body"`
+	Author    User           `json:"author"`
+	CreatedAt Time           `json:"created_at"`
+	System    bool           `json:"system"`
 }
 
 func (n *Note) Key() string {
@@ -63,18 +73,24 @@ func (n *Note) Key() string {
 // better match what other external services provide, and a function to convert
 // a Note into one of those types if the Note is a system approval comment.
 
-type ReviewApproved struct{ *Note }
-type ReviewUnapproved struct{ *Note }
+type ReviewApprovedEvent struct{ *Note }
+type ReviewUnapprovedEvent struct{ *Note }
+type MarkWorkInProgressEvent struct{ *Note }
+type UnmarkWorkInProgressEvent struct{ *Note }
 
-// ToReview returns a pointer to a ReviewApproved or ReviewUnapproved struct, or
-// nil if the Note is not a review note.
-func (n *Note) ToReview() interface{} {
+// ToEvent returns a pointer to a more specific struct, or
+// nil if the Note is not of a known kind.
+func (n *Note) ToEvent() interface{} {
 	if n.System {
 		switch n.Body {
-		case "approved this merge request":
-			return &ReviewApproved{n}
-		case "unapproved this merge request":
-			return &ReviewUnapproved{n}
+		case SystemNoteBodyReviewApproved:
+			return &ReviewApprovedEvent{n}
+		case SystemNoteBodyReviewUnapproved:
+			return &ReviewUnapprovedEvent{n}
+		case SystemNoteBodyReviewUnmarkedWorkInProgress:
+			return &UnmarkWorkInProgressEvent{n}
+		case SystemNoteBodyReviewMarkedWorkInProgress:
+			return &MarkWorkInProgressEvent{n}
 		}
 	}
 
