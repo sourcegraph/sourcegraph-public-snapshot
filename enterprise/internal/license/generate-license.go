@@ -60,10 +60,7 @@ func main() {
 	}
 	b, err = ioutil.ReadFile(*privateKeyFile)
 	if err != nil {
-		fatalErrMsg := fmt.Sprintf(
-			"A problem occurred while reading the private key file \"%s\"\n",
-			*privateKeyFile)
-		log.Fatal(fatalErrMsg, err)
+		log.Fatalf("Unable to read private key: %v\n", err)
 	}
 	privateKey, err := ssh.ParsePrivateKey(b)
 	if err != nil {
