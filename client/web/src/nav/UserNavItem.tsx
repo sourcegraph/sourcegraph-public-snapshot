@@ -91,7 +91,9 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     )
 
     const onThemeCycle = useCallback((): void => {
-        onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
+        const allThemes = Object.values(ThemePreference)
+        const index = allThemes.indexOf(themePreference)
+        onThemePreferenceChange(allThemes[(index + 1) % allThemes.length])
     }, [onThemePreferenceChange, themePreference])
 
     // Target ID for tooltip
@@ -153,6 +155,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         >
                             <option value={ThemePreference.Light}>Light</option>
                             <option value={ThemePreference.Dark}>Dark</option>
+                            <option value={ThemePreference.HighContrastBlack}>High-contrast black</option>
                             <option value={ThemePreference.System}>System</option>
                         </select>
                     </div>

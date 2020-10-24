@@ -8,3 +8,7 @@ export interface ThemeProps {
      */
     isLightTheme: boolean
 }
+
+export interface ThemeProps2 {
+    theme: string
+}

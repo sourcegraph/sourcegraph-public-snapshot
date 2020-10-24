@@ -56,10 +56,6 @@ $theme-colors: (
     'merged': $merged,
 );
 
-$theme-colors-light: (
-    'secondary': $secondary-light,
-);
-
 $body-color: var(--body-color);
 $body-bg: var(--body-bg);
 
@@ -74,6 +70,7 @@ $text-muted: var(--text-muted);
     --danger: #{$danger};
     --merged: #{$merged};
 }
+
 .theme-light {
     // Affects default browser styles
     color-scheme: light;
@@ -95,6 +92,10 @@ $text-muted: var(--text-muted);
     --border-color-2: #{$gray-02};
     --sourcegraph-logo-text-color: #242427;
 }
+$theme-colors-light: (
+    'secondary': $secondary-light,
+);
+
 .theme-dark {
     // Affects default browser styles
     color-scheme: dark;
@@ -109,6 +110,7 @@ $text-muted: var(--text-muted);
     --color-bg-3: #{$gray-19};
     --color-bg-4: #{$gray-22};
     --color-bg-5: #{$gray-17};
+    --code-bg: var(--color-bg-2);
     --text-muted: #{$gray-07};
     --line-number-color: #{$gray-18};
     --header-icon-color: #{$gray-11};
@@ -117,3 +119,35 @@ $text-muted: var(--text-muted);
     --link-hover-color: #ffffff;
     --sourcegraph-logo-text-color: #ffffff;
 }
+
+.theme-hc-black {
+    // Affects default browser styles
+    color-scheme: dark;
+
+    --secondary: #cccccc;
+    --border-color: white;
+    --border-color-2: white;
+    --body-color: #ffffff;
+    --body-bg: #000000;
+    --color-bg-1: #111111;
+    --color-bg-2: #222222;
+    --color-bg-3: #333333;
+    --color-bg-4: #111111;
+    --color-bg-5: #444444;
+    --code-bg: var(--color-bg-2);
+    --text-muted: #eeeeee;
+    --line-number-color: #bbbbbb;
+    --header-icon-color: #bbbbbb;
+    --link-color: #1c7cd6;
+    --link-active-color: #329af0;
+    --link-hover-color: #ffffff;
+    --sourcegraph-logo-text-color: #ffffff;
+
+    a,
+    .btn-link {
+        text-decoration: underline !important;
+    }
+}
+$theme-colors-hc-black: (
+    'secondary': #999999,
+);

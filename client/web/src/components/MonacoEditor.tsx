@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps, ThemeProps2 } from '../../../shared/src/theme'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
@@ -64,7 +64,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
     ],
 })
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, ThemeProps2 {
     /** The contents of the document. */
     value?: string
 
@@ -113,7 +113,12 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         const editor = monaco.editor.create(element, {
             value: this.props.value,
             language: this.props.language,
-            theme: this.props.isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK,
+            theme:
+                this.props.theme === 'hc-black'
+                    ? 'hc-black'
+                    : this.props.isLightTheme
+                    ? SOURCEGRAPH_LIGHT
+                    : SOURCEGRAPH_DARK,
             ...this.props.options,
         })
         if (this.props.onEditorCreated) {
@@ -133,7 +138,9 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ isLightTheme }) => (isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK)),
+                    map(({ isLightTheme, theme }) =>
+                        theme === 'hc-black' ? 'hc-black' : isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK
+                    ),
                     distinctUntilChanged()
                 )
                 .subscribe(theme => monaco.editor.setTheme(theme))

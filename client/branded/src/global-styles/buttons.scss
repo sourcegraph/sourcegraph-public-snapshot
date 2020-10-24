@@ -13,10 +13,23 @@
     }
 }
 
+// High-contrast black theme button variants
+.theme-hc-black {
+    @each $color, $value in $theme-colors-hc-black {
+        .btn-#{$color} {
+            @include button-variant($background: $value, $border: $value);
+        }
+        .btn-outline-#{$color} {
+            @include button-outline-variant($color: $value, $color-hover: $value);
+        }
+    }
+}
+
 // btn-outline-secondary uses a different text color for better contrast.
 // theme classes are necessary because of specifity.
 .theme-dark,
-.theme-light {
+.theme-light,
+.theme-hc-black {
     .btn-outline-secondary {
         color: #{var(--body-color)};
         @include hover() {
