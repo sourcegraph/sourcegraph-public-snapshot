@@ -101,6 +101,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     hideNavLinks,
     variant,
     isLightTheme,
+    themePreference,
     branding,
     location,
     history,
@@ -225,6 +226,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 history={history}
                                 versionContext={versionContext}
                                 isLightTheme={isLightTheme}
+                                theme={themePreference}
                                 patternType={patternType}
                                 caseSensitive={caseSensitive}
                             />

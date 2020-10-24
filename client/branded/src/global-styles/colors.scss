@@ -129,8 +129,8 @@ $theme-colors-light: (
     --border-color-2: white;
     --body-color: #ffffff;
     --body-bg: #000000;
-    --color-bg-1: #111111;
-    --color-bg-2: #222222;
+    --color-bg-1: #000000;
+    --color-bg-2: #000000;
     --color-bg-3: #333333;
     --color-bg-4: #111111;
     --color-bg-5: #444444;
@@ -138,12 +138,12 @@ $theme-colors-light: (
     --text-muted: #eeeeee;
     --line-number-color: #bbbbbb;
     --header-icon-color: #bbbbbb;
-    --link-color: #1c7cd6;
-    --link-active-color: #329af0;
+    --link-color: #4ea9fd;
+    --link-active-color: #70bfff;
     --link-hover-color: #ffffff;
     --sourcegraph-logo-text-color: #ffffff;
 
-    a,
+    a.nav-link,
     .btn-link {
         text-decoration: underline !important;
     }

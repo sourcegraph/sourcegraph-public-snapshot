@@ -9,7 +9,7 @@ import { Subscription, Observable, Subject, Unsubscribable, ReplaySubject, conca
 import { fetchSuggestions } from '../backend'
 import { map, distinctUntilChanged, filter, switchMap, withLatestFrom, debounceTime } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps, ThemeProps2 } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { hasProperty, isDefined } from '../../../../shared/src/util/types'
@@ -29,6 +29,7 @@ import { SearchPatternType } from '../../graphql-operations'
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
         ThemeProps,
+        ThemeProps2,
         CaseSensitivityProps,
         PatternTypeProps,
         CopyQueryButtonProps {
@@ -254,6 +255,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             value={this.props.queryState.query}
                             height={16}
                             isLightTheme={this.props.isLightTheme}
+                            theme={this.props.theme}
                             editorWillMount={this.editorWillMount}
                             onEditorCreated={this.onEditorCreated}
                             options={options}

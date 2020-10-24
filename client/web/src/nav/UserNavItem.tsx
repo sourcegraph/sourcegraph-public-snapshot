@@ -90,7 +90,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = ({
     )
 
     const onThemeCycle = useCallback((): void => {
-        const allThemes = Object.values(ThemePreference)
+        const allThemes = Object.values(ThemePreference).filter(theme => theme !== ThemePreference.System)
         const index = allThemes.indexOf(themePreference)
         onThemePreferenceChange(allThemes[(index + 1) % allThemes.length])
     }, [onThemePreferenceChange, themePreference])
