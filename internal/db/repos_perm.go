@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -254,6 +255,48 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	}
 
 	return append(filtered, verified...), nil
+}
+
+// authzQueryConds returns a query clause for enforcing repository permissions.
+// It uses `repo.id` to filter out repository IDs and should be used as an AND
+// condition in a complete SQL query.
+func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
+	authzAllowByDefault, authzProviders := authz.GetProviders()
+
+	// 🚨 SECURITY: Blocking access to all repositories if both code host authz provider(s) and permissions user mapping
+	// are configured.
+	if globals.PermissionsUserMapping().Enabled && len(authzProviders) > 0 {
+		return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+	}
+
+	authenticatedUserID := int32(0)
+
+	// Authz is bypassed when the request is coming from an internal actor or
+	// there is no authz provider configured and access to all repositories are allowed by default.
+	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
+	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
+		currentUser, err := Users.GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		authenticatedUserID = currentUser.ID
+		bypassAuthz = currentUser.SiteAdmin
+	}
+
+	q := sqlf.Sprintf(`(
+	%s							-- TRUE or FALSE to indicate whether to bypass the check
+OR	repo.unrestricted = TRUE	-- Happy path of unrestricted repositories
+OR	(							-- Restricted repositories require checking permissions
+		SELECT object_ids_ints
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND	permission = %s
+		AND	object_type = 'repos'
+	) @> INTSET(repo.id)
+)
+`, bypassAuthz, authenticatedUserID, authz.Read.String())
+	return q, nil
 }
 
 // isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound

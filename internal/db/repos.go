@@ -10,9 +10,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -60,7 +60,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return Mocks.Repos.Get(ctx, id)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d LIMIT 1", id))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d", id), sqlf.Sprintf("LIMIT 1"))
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", nameOrURI))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s", nameOrURI), sqlf.Sprintf("LIMIT 1"))
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 	// We don't fetch in the same SQL query since uri is not unique and could
 	// conflict with a name. We prefer returning the matching name if it
 	// exists.
-	repos, err = s.getBySQL(ctx, sqlf.Sprintf("uri=%s LIMIT 1", nameOrURI))
+	repos, err = s.getBySQL(ctx, sqlf.Sprintf("uri=%s", nameOrURI), sqlf.Sprintf("LIMIT 1"))
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo,
 		items[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
-	return s.getReposBySQL(ctx, true, q)
+	return s.getReposBySQL(ctx, true, q, nil)
 }
 
 // GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
@@ -173,8 +173,12 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (ct int, err er
 const getRepoByQueryFmtstr = `
 SELECT %s
 FROM repo
-WHERE deleted_at IS NULL
-AND %%s`
+WHERE
+	deleted_at IS NULL
+AND	%%s	-- Populates "queryConds"
+AND	%%s	-- Populates "authzConds"
+%%s		-- Populates "querySuffix"
+`
 
 const getSourcesByRepoQueryStr = `
 (
@@ -214,11 +218,23 @@ var getBySQLColumns = []string{
 	getSourcesByRepoQueryStr,
 }
 
-func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, querySuffix)
+func (s *repos) getBySQL(ctx context.Context, queryConds *sqlf.Query, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	return s.getReposBySQL(ctx, false, queryConds, querySuffix)
 }
 
-func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *repos) getReposBySQL(ctx context.Context, minimal bool, queryConds *sqlf.Query, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	if queryConds == nil {
+		queryConds = sqlf.Sprintf("TRUE")
+	}
+	if querySuffix == nil {
+		querySuffix = sqlf.Sprintf("")
+	}
+
+	authzConds, err := authzQueryConds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	columns := getBySQLColumns
 	if minimal {
 		columns = columns[:6]
@@ -226,6 +242,8 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 
 	q := sqlf.Sprintf(
 		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
+		queryConds,
+		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	)
 
@@ -252,8 +270,7 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 		return nil, err
 	}
 
-	// 🚨 SECURITY: This enforces repository permissions
-	return authzFilter(ctx, repos, authz.Read)
+	return repos, nil
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -474,10 +491,11 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-	tr.LogFields(trace.SQL(fetchSQL))
+	queryConds := sqlf.Join(conds, "AND")
+	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
+	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, queryConds, querySuffix)
 }
 
 // Delete deletes repos associated with the given ids and their associated sources.
