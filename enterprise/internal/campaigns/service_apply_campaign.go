@@ -90,6 +90,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// have.
 	// We do this so we don't continue to possibly create changesets on the
 	// codehost while we're applying a new campaign spec.
+	// This is blocking, because the changeset rows currently being processed by the
+	// reconciler are locked.
 	if err := s.store.CancelQueuedCampaignChangesets(ctx, campaign.ID); err != nil {
 		return campaign, nil
 	}
