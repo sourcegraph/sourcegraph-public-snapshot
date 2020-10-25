@@ -12,6 +12,18 @@ export function formatDate(date: Date): string {
 }
 /* eslint-enable @typescript-eslint/consistent-type-assertions */
 
+const addZero = (index: number): string => (index < 10 ? `0${index}` : `${index}`)
+
+/**
+ * Generates a link for comparing given Date with local time.
+ */
+export function timezoneLink(date: Date, linkName: string): string {
+    const timeString = `${addZero(date.getUTCHours())}${addZero(date.getUTCMinutes())}`
+    return `https://time.is/${timeString}_${date.getUTCDate()}_${date.toLocaleString('en-US', {
+        month: 'short',
+    })}_${date.getUTCFullYear()}_in_UTC?${encodeURI(linkName)}`
+}
+
 export async function readLine(prompt: string, cacheFile?: string): Promise<string> {
     if (!cacheFile) {
         return readLineNoCache(prompt)

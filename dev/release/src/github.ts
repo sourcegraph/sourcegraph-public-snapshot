@@ -1,5 +1,5 @@
 import Octokit from '@octokit/rest'
-import { readLine, formatDate } from './util'
+import { readLine, formatDate, timezoneLink } from './util'
 import { promisify } from 'util'
 import * as semver from 'semver'
 import { mkdtemp as original_mkdtemp } from 'fs'
@@ -8,6 +8,10 @@ import * as path from 'path'
 import execa from 'execa'
 import commandExists from 'command-exists'
 const mkdtemp = promisify(original_mkdtemp)
+
+function dateMarkdown(date: Date, name: string): string {
+    return `[${formatDate(date)}](${timezoneLink(date, name)})`
+}
 
 export async function ensureTrackingIssue({
     majorVersion,
@@ -34,13 +38,23 @@ export async function ensureTrackingIssue({
         repo: 'about',
         path: 'handbook/engineering/releases/release_issue_template.md',
     })
+    const majorMinor = `${majorVersion}.${minorVersion}`
     const releaseIssueBody = releaseIssueTemplate
         .replace(/\$MAJOR/g, majorVersion)
         .replace(/\$MINOR/g, minorVersion)
-        .replace(/\$RELEASE_DATE/g, formatDate(releaseDateTime))
-        .replace(/\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fiveWorkingDaysBeforeRelease))
-        .replace(/\$FOUR_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fourWorkingDaysBeforeRelease))
-        .replace(/\$ONE_WORKING_DAY_BEFORE_RELEASE/g, formatDate(oneWorkingDayBeforeRelease))
+        .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDateTime, `${majorMinor} release date`))
+        .replace(
+            /\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g,
+            dateMarkdown(fiveWorkingDaysBeforeRelease, `Five working days before ${majorMinor} release`)
+        )
+        .replace(
+            /\$FOUR_WORKING_DAYS_BEFORE_RELEASE/g,
+            dateMarkdown(fourWorkingDaysBeforeRelease, `Four working days before ${majorMinor} release`)
+        )
+        .replace(
+            /\$ONE_WORKING_DAY_BEFORE_RELEASE/g,
+            dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${majorMinor} release`)
+        )
 
     const milestoneTitle = `${majorVersion}.${minorVersion}`
     const milestones = await octokit.issues.listMilestonesForRepo({

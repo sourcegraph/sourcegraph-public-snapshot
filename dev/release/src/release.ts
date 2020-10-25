@@ -10,7 +10,7 @@ import {
     createChangesets,
 } from './github'
 import * as changelog from './changelog'
-import { formatDate } from './util'
+import { formatDate, timezoneLink } from './util'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
@@ -192,15 +192,24 @@ const steps: Step[] = [
 
             // Announce issue if issue does not already exist
             if (created) {
+                // Slack markdown links
+                const majorMinor = `${majorVersion}.${minorVersion}`
+                const branchCutDate = new Date(fourWorkingDaysBeforeRelease)
+                const branchCutDateString = `<${timezoneLink(branchCutDate, `${majorMinor} branch cut`)}|${formatDate(
+                    branchCutDate
+                )}>`
+                const releaseDate = new Date(releaseDateTime)
+                const releaseDateString = `<${timezoneLink(releaseDate, `${majorMinor} release`)}|${formatDate(
+                    releaseDate
+                )}>`
                 await postMessage(
-                    `:captain: ${majorVersion}.${minorVersion} Release :captain:
+                    `*${majorVersion}.${minorVersion} Release*
 
-Release captain: @${captainSlackUsername}
-Tracking issue: ${url}
-Key dates:
-- Release branch cut, testing commences: ${formatDate(new Date(fourWorkingDaysBeforeRelease))}
-- Final release tag: ${formatDate(new Date(oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(releaseDateTime))}`,
+:captain: Release captain: @${captainSlackUsername}
+:pencil: Tracking issue: ${url}
+:spiral_calendar_pad: Key dates:
+* Branch cut: ${branchCutDateString}
+* Release: ${releaseDateString}`,
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
