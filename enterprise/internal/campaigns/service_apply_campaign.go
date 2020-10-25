@@ -102,20 +102,17 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 	defer func() { err = tx.Done(err) }()
 
-	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
+	// Populate the campaign with the values from the campaign spec.
 	campaign.CampaignSpecID = campaignSpec.ID
 	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
 	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
 	campaign.Name = campaignSpec.Spec.Name
-
 	actor := actor.FromContext(ctx)
 	if campaign.InitialApplierID == 0 {
 		campaign.InitialApplierID = actor.UID
 	}
 	campaign.LastApplierID = actor.UID
 	campaign.LastAppliedAt = s.clock()
-
 	campaign.Description = campaignSpec.Spec.Description
 
 	if campaign.ID == 0 {
@@ -125,6 +122,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		}
 	}
 
+	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
