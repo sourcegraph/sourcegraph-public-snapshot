@@ -373,7 +373,7 @@ ${issueCategories
                 throw new Error(`version ${version} is pre-release`)
             }
             await createChangesets({
-                requiredCommands: ['comby', sed, 'find'],
+                requiredCommands: ['comby', sed, 'find', 'go'],
                 changes: [
                     {
                         owner: 'sourcegraph',
