@@ -36,7 +36,7 @@ All developers, except:
 
 ## Who else uses Sourcegraph?
 
-In addition to the [companies listed on about.sourcegraph.com](https://about.sourcegraph.com), many large technology companies with 500-3,000+ engineers use Sourcegraph internally.
+In addition to the [companies listed on about.sourcegraph.com](https://about.sourcegraph.com), many large technology companies with 500-15,000+ engineers use Sourcegraph internally.
 
 Also, both Facebook and Google provide an in-house Sourcegraph-like code search and intelligence tool to their employees. A [published research paper from Google](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43835.pdf) and a [Google developer survey](https://docs.google.com/document/d/1LQxLk4E3lrb3fIsVKlANu_pUjnILteoWMMNiJQmqNVU/edit#heading=h.xxziwxixfqq3) showed that 98% of developers surveyed consider their Sourcegraph-like internal tool to be critical. Developers use it on average for 5.3 sessions each day. (Facebook's and Google's in-house tools are not available to other companies; use Sourcegraph instead.)
 
