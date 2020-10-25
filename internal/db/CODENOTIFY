@@ -1,4 +1,4 @@
 external* @LawnGnome
 namespaces* @LawnGnome
 repos* @LawnGnome
-repos_perm.go @unknwon
+repos_perm* @unknwon

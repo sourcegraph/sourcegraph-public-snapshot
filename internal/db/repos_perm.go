@@ -257,6 +257,20 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	return append(filtered, verified...), nil
 }
 
+const authzQueryCondsFmtstr = `(
+	%s							-- TRUE or FALSE to indicate whether to bypass the check
+OR	repo.unrestricted = TRUE	-- Happy path of unrestricted repositories
+OR	(							-- Restricted repositories require checking permissions
+		SELECT object_ids_ints
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND	permission = %s
+		AND	object_type = 'repos'
+	) @> INTSET(repo.id)
+)
+`
+
 // authzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo.id` to filter out repository IDs and should be used as an AND
 // condition in a complete SQL query.
@@ -283,19 +297,7 @@ func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 		bypassAuthz = currentUser.SiteAdmin
 	}
 
-	q := sqlf.Sprintf(`(
-	%s							-- TRUE or FALSE to indicate whether to bypass the check
-OR	repo.unrestricted = TRUE	-- Happy path of unrestricted repositories
-OR	(							-- Restricted repositories require checking permissions
-		SELECT object_ids_ints
-		FROM user_permissions
-		WHERE
-			user_id = %s
-		AND	permission = %s
-		AND	object_type = 'repos'
-	) @> INTSET(repo.id)
-)
-`, bypassAuthz, authenticatedUserID, authz.Read.String())
+	q := sqlf.Sprintf(authzQueryCondsFmtstr, bypassAuthz, authenticatedUserID, authz.Read.String())
 	return q, nil
 }
 
