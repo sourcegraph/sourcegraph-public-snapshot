@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - GraphQL syntax highlighting is now back (special thanks to @rvantonder) [#13935](https://github.com/sourcegraph/sourcegraph/issues/13935)
+- Campaigns now support publishing GitHub draft PRs and GitLab WIP MRs. [#7998](https://github.com/sourcegraph/sourcegraph/issues/7998)
 
 ### Changed
 
@@ -29,10 +30,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The `file:` added to the search field when navigating to a tree or file view will now behave correctly when the file path contains spaces. [#12296](https://github.com/sourcegraph/sourcegraph/issues/12296)
 - OAuth login now respects site configuration `experimentalFeatures: { "tls.external": {...} }` for custom certificates and skipping TLS verify. [#14144](https://github.com/sourcegraph/sourcegraph/issues/14144)
+- If the `HEAD` file in a cloned repo is absent or truncated, background cleanup activities will use a best-effort default to remedy the situation. [#14962](https://github.com/sourcegraph/sourcegraph/pull/14962)
+- Search input will always show suggestions. Previously we only showed suggestions for letters and some special characters. [#14982](https://github.com/sourcegraph/sourcegraph/pull/14982)
 
 ### Removed
 
 -
+
+## 3.21.2
+
+### Fixed
+
+- Fix externalURLs alert logic [#14980](https://github.com/sourcegraph/sourcegraph/pull/14980)
+
+## 3.21.1
+
+### Fixed
+
+- Fix alerting for native integration condition [#14775](https://github.com/sourcegraph/sourcegraph/pull/14775)
+- Fix query with large repo count hanging [#14944](https://github.com/sourcegraph/sourcegraph/pull/14944)
+- Fix server upgrade where codeintel database does not exist [#14953](https://github.com/sourcegraph/sourcegraph/pull/14953)
+- CVE-2019-18218 in postgres docker image [#14954](https://github.com/sourcegraph/sourcegraph/pull/14954)
+- Fix an issue where .git/HEAD in invalid [#14962](https://github.com/sourcegraph/sourcegraph/pull/14962)
+- Repository syncing will not happen more frequently than the repoListUpdateInterval config value [#14901](https://github.com/sourcegraph/sourcegraph/pull/14901) [#14983](https://github.com/sourcegraph/sourcegraph/pull/14983)
 
 ## 3.21.0
 

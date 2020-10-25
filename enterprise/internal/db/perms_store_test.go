@@ -1600,8 +1600,8 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-// This test is used to detect the handle of the following error:
-// 	execute upsert user pending permissions batch query: pq: ON CONFLICT DO UPDATE command cannot affect row a second time
+// This test is used to ensure we ignore invalid pending user IDs on updating repository pending permissions
+// because permissions have been granted for those users.
 func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
@@ -1648,7 +1648,7 @@ func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T)
 		if err := s.SetRepoPendingPermissions(ctx, &extsvc.Accounts{
 			ServiceType: authz.SourcegraphServiceType,
 			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"cindy"},
+			AccountIDs:  []string{}, // Intentionally empty to cover "no-update" case
 		}, &authz.RepoPermissions{
 			RepoID: 1,
 			Perm:   authz.Read,

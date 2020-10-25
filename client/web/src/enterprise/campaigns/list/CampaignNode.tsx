@@ -3,8 +3,6 @@ import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
-import formatDistance from 'date-fns/formatDistance'
-import parseISO from 'date-fns/parseISO'
 import * as H from 'history'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { ListCampaign } from '../../../graphql-operations'
@@ -17,7 +15,7 @@ import {
 export interface CampaignNodeProps {
     node: ListCampaign
     /** Used for testing purposes. Sets the current date */
-    now?: Date
+    now?: () => Date
     history: H.History
     displayNamespace: boolean
 }
@@ -28,7 +26,7 @@ export interface CampaignNodeProps {
 export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
     node,
     history,
-    now = new Date(),
+    now = () => new Date(),
     displayNamespace,
 }) => (
     <>
@@ -54,10 +52,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
                     </Link>
                 </h3>
                 <small className="text-muted d-sm-block">
-                    created{' '}
-                    <span data-tooltip={<Timestamp date={node.createdAt} />}>
-                        {formatDistance(parseISO(node.createdAt), now)} ago
-                    </span>
+                    created <Timestamp date={node.createdAt} now={now} />
                 </small>
             </div>
             <Markdown

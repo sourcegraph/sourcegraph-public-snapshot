@@ -43,11 +43,15 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (Chrome) 1`] = `
           Install the Sourcegraph browser extension
         </a>
          
-        to add code intelligence 
-        to PRs and file views
-         on 
+        to add code intelligence
+         
+        to 
+        pull requests
+         and file views
+         
+        on 
         Bitbucket Server
-         or any other connected code host.
+        .
       </p>
     </div>
     <button
@@ -171,11 +175,15 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing files and reading PRs
-         on 
+        Get code intelligence
+         
+        while browsing files and reviewing
+         
+        pull requests
+         
+        on 
         Bitbucket Server
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
@@ -244,11 +252,15 @@ exports[`InstallBrowserExtensionAlert github (Chrome) 1`] = `
           Install the Sourcegraph browser extension
         </a>
          
-        to add code intelligence 
-        to PRs and file views
-         on 
+        to add code intelligence
+         
+        to 
+        pull requests
+         and file views
+         
+        on 
         GitHub
-         or any other connected code host.
+        .
       </p>
     </div>
     <button
@@ -372,11 +384,15 @@ exports[`InstallBrowserExtensionAlert github (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing files and reading PRs
-         on 
+        Get code intelligence
+         
+        while browsing files and reviewing
+         
+        pull requests
+         
+        on 
         GitHub
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
@@ -445,11 +461,15 @@ exports[`InstallBrowserExtensionAlert gitlab (Chrome) 1`] = `
           Install the Sourcegraph browser extension
         </a>
          
-        to add code intelligence 
-        to MRs and file views
-         on 
+        to add code intelligence
+         
+        to 
+        merge requests
+         and file views
+         
+        on 
         GitLab
-         or any other connected code host.
+        .
       </p>
     </div>
     <button
@@ -573,11 +593,15 @@ exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
-        while browsing files and reading MRs
-         on 
+        Get code intelligence
+         
+        while browsing files and reviewing
+         
+        merge requests
+         
+        on 
         GitLab
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
@@ -601,6 +625,33 @@ exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
     </button>
   </div>
 </InstallBrowserExtensionAlert>
+`;
+
+exports[`InstallBrowserExtensionAlert none (Chrome) 1`] = `
+<InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
+  externalURLs={Array []}
+  isChrome={true}
+  onAlertDismissed={[Function]}
+/>
+`;
+
+exports[`InstallBrowserExtensionAlert none (native integration) 1`] = `
+<InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="native-integration"
+  externalURLs={Array []}
+  isChrome={false}
+  onAlertDismissed={[Function]}
+/>
+`;
+
+exports[`InstallBrowserExtensionAlert none (non-Chrome) 1`] = `
+<InstallBrowserExtensionAlert
+  codeHostIntegrationMessaging="browser-extension"
+  externalURLs={Array []}
+  isChrome={false}
+  onAlertDismissed={[Function]}
+/>
 `;
 
 exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
@@ -635,6 +686,7 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
         >
           <svg
             className="phabricator-icon mdi-icon install-browser-extension-alert__icon"
+            fill="currentColor"
             height={24}
             viewBox="0 0 64 64"
             width={24}
@@ -674,11 +726,13 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
           Install the Sourcegraph browser extension
         </a>
          
-        to add code intelligence 
+        to add code intelligence
+         
         while browsing and reviewing code
-         on 
+         
+        on 
         Phabricator
-         or any other connected code host.
+        .
       </p>
     </div>
     <button
@@ -727,6 +781,7 @@ exports[`InstallBrowserExtensionAlert phabricator (native integration) 1`] = `
         >
           <svg
             className="phabricator-icon mdi-icon install-browser-extension-alert__icon"
+            fill="currentColor"
             height={24}
             viewBox="0 0 64 64"
             width={24}
@@ -828,6 +883,7 @@ exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
         >
           <svg
             className="phabricator-icon mdi-icon install-browser-extension-alert__icon"
+            fill="currentColor"
             height={24}
             viewBox="0 0 64 64"
             width={24}
@@ -858,11 +914,13 @@ exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
       <p
         className="install-browser-extension-alert__text my-0 mr-3"
       >
-        Get code intelligence 
+        Get code intelligence
+         
         while browsing and reviewing code
-         on 
+         
+        on 
         Phabricator
-         or any other connected code host.
+        .
          
         <a
           className="alert-link"
