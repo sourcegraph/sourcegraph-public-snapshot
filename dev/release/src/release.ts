@@ -8,8 +8,10 @@ import {
     trackingIssueTitle,
     ensurePatchReleaseIssue,
     createChangesets,
+    CreatedChangeset,
 } from './github'
 import * as changelog from './changelog'
+import * as campaigns from './campaigns'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
@@ -67,6 +69,7 @@ type StepID =
     // testing
     | '_test:google-calendar'
     | '_test:slack'
+    | '_test:campaign-import-changes'
 
 interface Step {
     id: StepID
@@ -92,26 +95,6 @@ const steps: Step[] = [
                     )
                     .join('\n')
             )
-        },
-    },
-    {
-        id: '_test:google-calendar',
-        run: async config => {
-            const googleCalendar = await getClient()
-            await ensureEvent(
-                {
-                    title: 'TEST EVENT',
-                    startDateTime: new Date(config.releaseDateTime).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
-                },
-                googleCalendar
-            )
-        },
-    },
-    {
-        id: '_test:slack',
-        run: async (_config, message) => {
-            await postMessage(message, '_test-channel')
         },
     },
     {
@@ -372,8 +355,8 @@ ${issueCategories
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
-            await createChangesets({
-                requiredCommands: ['comby', sed, 'find'],
+            const createdChanges = await createChangesets({
+                requiredCommands: ['src', 'comby', sed, 'find'],
                 changes: [
                     {
                         owner: 'sourcegraph',
@@ -443,11 +426,58 @@ ${issueCategories
             })
 
             if (!dryRun.changesets) {
+                try {
+                    await campaigns.importFromCreatedChanges(createdChanges, {
+                        name: `release-sourcegraph-${parsedVersion.version}`,
+                        description: `Track publishing of sourcegraph@${parsedVersion.version}`,
+                        namespace: 'sourcegraph',
+                    })
+                } catch (error) {
+                    console.error(error)
+                    console.error('Failed to create campaign for this release')
+                }
+
                 await postMessage(
                     `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
                     slackAnnounceChannel
                 )
             }
+        },
+    },
+    {
+        id: '_test:google-calendar',
+        run: async config => {
+            const googleCalendar = await getClient()
+            await ensureEvent(
+                {
+                    title: 'TEST EVENT',
+                    startDateTime: new Date(config.releaseDateTime).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                },
+                googleCalendar
+            )
+        },
+    },
+    {
+        id: '_test:slack',
+        run: async (_config, message) => {
+            await postMessage(message, '_test-channel')
+        },
+    },
+    {
+        id: '_test:campaign-import-changes',
+        run: async (_config, campaignConfigJSON) => {
+            const campaignConfig = JSON.parse(campaignConfigJSON) as {
+                changes: CreatedChangeset[]
+                name: string
+                description: string
+            }
+            await campaigns.importFromCreatedChanges(campaignConfig.changes, {
+                name: campaignConfig.name,
+                description: campaignConfig.description,
+                namespace: 'sourcegraph',
+                preview: true,
+            })
         },
     },
 ]
