@@ -21,7 +21,7 @@ import (
 // matched by the campaign spec is already closed.
 var ErrApplyClosedCampaign = errors.New("existing campaign matched by campaign spec is closed")
 
-// ErrMatchingCampaign is returned by ApplyCampaign if a campaign matching the
+// ErrMatchingCampaignExists is returned by ApplyCampaign if a campaign matching the
 // campaign spec already exists and FailIfExists was set.
 var ErrMatchingCampaignExists = errors.New("a campaign matching the given campaign spec already exists")
 
