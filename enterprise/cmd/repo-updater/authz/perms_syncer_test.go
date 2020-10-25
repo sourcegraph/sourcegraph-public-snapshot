@@ -14,6 +14,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -143,6 +144,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		},
 	}
 
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{&extAccount}, nil
 	}
@@ -158,6 +162,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return nil
 	}
 	defer func() {
+		db.Mocks.Users = db.MockUsers{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
