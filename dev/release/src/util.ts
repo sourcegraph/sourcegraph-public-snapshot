@@ -5,14 +5,10 @@ import * as path from 'path'
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
     return `${date.toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
+        timeZone: 'UTC',
         dateStyle: 'medium',
         timeStyle: 'short',
-    } as Intl.DateTimeFormatOptions)} (PT/PST) / ${date.toLocaleString('en-US', {
-        timeZone: 'Europe/Berlin',
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    } as Intl.DateTimeFormatOptions)} (CET/CEST)`
+    } as Intl.DateTimeFormatOptions)} (UTC)`
 }
 /* eslint-enable @typescript-eslint/consistent-type-assertions */
 
