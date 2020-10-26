@@ -208,6 +208,8 @@ describe('Blob viewer', () => {
 
         it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async function () {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
+            await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
+            await driver.page.reload()
 
             // Click on "log" in "console.log()" in line 2
             await driver.page.waitForSelector('.test-log-token', { visible: true })
