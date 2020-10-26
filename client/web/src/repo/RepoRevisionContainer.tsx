@@ -15,7 +15,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ThemeProps } from '../../../shared/src/theme'
 import { RouteDescriptor } from '../util/contributions'
@@ -29,7 +29,6 @@ import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './Reposito
 import { RevisionsPopover } from './RevisionsPopover'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
-import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
@@ -183,15 +182,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                 />
             )
         }
-        if (isRepoNotFoundErrorLike(props.resolvedRevisionOrError)) {
-            return (
-                <HeroPage
-                    icon={MapSearchIcon}
-                    title="404: Not Found"
-                    subtitle="The requested repository was not found."
-                />
-            )
-        }
         if (isRevisionNotFoundErrorLike(props.resolvedRevisionOrError)) {
             if (!props.revision) {
                 return <EmptyRepositoryPage />
@@ -204,13 +194,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                 />
             )
         }
-        return (
-            <HeroPage
-                icon={AlertCircleIcon}
-                title="Error"
-                subtitle={<ErrorMessage error={props.resolvedRevisionOrError} history={props.history} />}
-            />
-        )
+        throw asError(props.resolvedRevisionOrError)
     }
 
     const context: RepoRevisionContainerContext = {
