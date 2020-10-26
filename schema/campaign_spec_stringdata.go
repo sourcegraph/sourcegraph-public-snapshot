@@ -91,10 +91,7 @@ const CampaignSpecSchemaJSON = `{
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
             "additionalProperties": {
-              "oneOf": [
-                {"type": "string"},
-                {"type":"object", "additionalProperties": false, "properties": {"fromFile": {"type":"string"}}}
-              ]
+              "type": "string"
             }
           }
         }

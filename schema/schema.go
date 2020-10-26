@@ -45,9 +45,6 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
-type AdditionalProperties struct {
-	FromFile string `json:"fromFile,omitempty"`
-}
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
@@ -1253,7 +1250,7 @@ type Step struct {
 	// Env description: Environment variables to set in the environment when running this command.
 	Env map[string]string `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
-	Files map[string]interface{} `json:"files,omitempty"`
+	Files map[string]string `json:"files,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
 }
