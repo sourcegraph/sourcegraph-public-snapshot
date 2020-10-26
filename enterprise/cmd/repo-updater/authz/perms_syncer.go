@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -294,7 +295,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// return a nil error and log a warning message.
 	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
 		log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
-		return nil
+		return s.permsStore.TouchRepoPermissions(ctx, int32(repoID))
 	}
 
 	if err != nil {
@@ -618,9 +619,13 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		// Skip if permissions user mapping is enabled or no authz provider is configured
+		// Skip if:
+		// 	- Permissions user mapping is enabled
+		// 	- No authz provider is configured
+		//	- This is not purchased with the current license
 		if globals.PermissionsUserMapping().Enabled ||
-			len(s.providersByServiceID()) == 0 {
+			len(s.providersByServiceID()) == 0 ||
+			(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) {
 			continue
 		}
 

@@ -14,31 +14,10 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="justify-content-end test-campaign-list-page"
+    icon={[Function]}
+    title="Campaigns"
   />
-  <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -112,31 +91,10 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="justify-content-end test-campaign-list-page"
+    icon={[Function]}
+    title="Campaigns"
   />
-  <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -210,31 +168,10 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="justify-content-end test-campaign-list-page"
+    icon={[Function]}
+    title="Campaigns"
   />
-  <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -308,31 +245,10 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </AnchorLink>
     }
-    className="justify-content-end"
-    icon={
-      Object {
-        "$$typeof": Symbol(react.memo),
-        "compare": null,
-        "type": [Function],
-      }
-    }
-    title={
-      <span
-        className="test-campaign-list-page"
-      >
-        Campaigns
-         
-        <sup>
-          <span
-            className="badge badge-merged text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
-      </span>
-    }
+    className="justify-content-end test-campaign-list-page"
+    icon={[Function]}
+    title="Campaigns"
   />
-  <CampaignsListBetaNotice />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}

@@ -1075,7 +1075,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 				err := syncer.Run(ctx, db, store, repos.RunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
-					MinSyncInterval: 1 * time.Millisecond,
+					MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 					DequeueInterval: 1 * time.Millisecond,
 				})
 				if err != nil && err != context.Canceled {
@@ -1217,7 +1217,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 				err := syncer.Run(ctx, db, store, repos.RunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
-					MinSyncInterval: 1 * time.Minute,
+					MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 					DequeueInterval: 1 * time.Millisecond,
 				})
 				if err != nil && err != context.Canceled {
@@ -1543,13 +1543,13 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}()
 
 			<-upsertCalledCh
-			tx1.Done()
+			tx1.Done(nil)
 
 			err = <-errChan
 			if err != nil {
 				t.Fatalf("Error in syncer2: %v", err)
 			}
-			tx2.Done()
+			tx2.Done(nil)
 
 			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
 			if len(fromDB) != 1 {

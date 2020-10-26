@@ -303,6 +303,7 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 }
 
 var _ ChangesetSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
 
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
@@ -337,6 +338,30 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	return exists, nil
 }
 
+// CreateDraftChangeset creates a GitLab merge request. If it already exists,
+// *Changeset will be populated and the return value will be true.
+func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	c.Title = gitlab.SetWIP(c.Title)
+
+	exists, err := s.CreateChangeset(ctx, c)
+	if err != nil {
+		return exists, err
+	}
+
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return false, errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// If it already exists, but is not a WIP, we need to update the title.
+	if exists && !mr.WorkInProgress {
+		if err := s.UpdateChangeset(ctx, c); err != nil {
+			return exists, err
+		}
+	}
+	return exists, nil
+}
+
 // CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
@@ -361,34 +386,30 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
-// LoadChangesets loads the given merge requests from GitLab and updates them.
-// Note that this is an O(n) operation due to limitations in the GitLab REST
-// API.
-func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
-	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
-	// will allow us to query multiple MRs at once.
-	for _, c := range cs {
-		project := c.Repo.Metadata.(*gitlab.Project)
+// LoadChangeset loads the given merge request from GitLab and updates it.
+func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+	project := cs.Repo.Metadata.(*gitlab.Project)
 
-		iid, err := strconv.ParseInt(c.ExternalID, 10, 64)
-		if err != nil {
-			return errors.Wrapf(err, "parsing changeset external ID %s", c.ExternalID)
-		}
+	iid, err := strconv.ParseInt(cs.ExternalID, 10, 64)
+	if err != nil {
+		return errors.Wrapf(err, "parsing changeset external ID %s", cs.ExternalID)
+	}
 
-		mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
-		if err != nil {
-			return errors.Wrapf(err, "retrieving merge request %d", iid)
+	mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
+	if err != nil {
+		if gitlab.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
 		}
+		return errors.Wrapf(err, "retrieving merge request %d", iid)
+	}
 
-		// As above, these additional API calls can go away once we can use
-		// GraphQL.
-		if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-			return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
-		}
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
+	}
 
-		if err := c.SetMetadata(mr); err != nil {
-			return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
-		}
+	if err := cs.SetMetadata(mr); err != nil {
+		return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
 	}
 
 	return nil
@@ -525,6 +546,11 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
 
-	c.Changeset.Metadata = updated
-	return nil
+	return c.Changeset.SetMetadata(updated)
+}
+
+// UndraftChangeset marks the changeset as *not* work in progress anymore.
+func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+	c.Title = gitlab.UnsetWIP(c.Title)
+	return s.UpdateChangeset(ctx, c)
 }

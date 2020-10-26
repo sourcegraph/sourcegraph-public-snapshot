@@ -69,11 +69,10 @@ exports[`CampaignSpecTab input spec is JSON 1`] = `
 }"
     language="json"
   >
-    <div
-      className="code-snippet__container rounded p-3 mb-3"
+    <pre
+      className="bg-code rounded p-3 mb-3"
     >
-      <pre
-        className="m-0"
+      <code
         dangerouslySetInnerHTML={
           Object {
             "__html": "{
@@ -82,7 +81,7 @@ exports[`CampaignSpecTab input spec is JSON 1`] = `
           }
         }
       />
-    </div>
+    </pre>
   </CodeSnippet>
 </CampaignSpecTab>
 `;
@@ -154,18 +153,17 @@ exports[`CampaignSpecTab last apply was an update (after creation) 1`] = `
     code="x"
     language="yaml"
   >
-    <div
-      className="code-snippet__container rounded p-3 mb-3"
+    <pre
+      className="bg-code rounded p-3 mb-3"
     >
-      <pre
-        className="m-0"
+      <code
         dangerouslySetInnerHTML={
           Object {
             "__html": "<span class=\\"hljs-string\\">x</span>",
           }
         }
       />
-    </div>
+    </pre>
   </CodeSnippet>
 </CampaignSpecTab>
 `;
@@ -237,18 +235,17 @@ exports[`CampaignSpecTab last apply was the (initial) creation 1`] = `
     code="x"
     language="yaml"
   >
-    <div
-      className="code-snippet__container rounded p-3 mb-3"
+    <pre
+      className="bg-code rounded p-3 mb-3"
     >
-      <pre
-        className="m-0"
+      <code
         dangerouslySetInnerHTML={
           Object {
             "__html": "<span class=\\"hljs-string\\">x</span>",
           }
         }
       />
-    </div>
+    </pre>
   </CodeSnippet>
 </CampaignSpecTab>
 `;

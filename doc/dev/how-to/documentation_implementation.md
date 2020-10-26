@@ -23,6 +23,12 @@ This structure is inspired by the [Divio documentation system](https://documenta
 
 You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../getting-started/index.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
+You can also run the docsite on its own with the following command:
+
+```sh
+./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080
+```
+
 ## Linking to documentation in-product
 
 In-product documentation links should point to `/help/PATH` instead of using an absolute URL of the form https://docs.sourcegraph.com/PATH. This ensures they link to the documentation for the current product version. There is a redirect (when using either `<a>` or react-router `<Link>`) from `/help/PATH` to the versioned docs.sourcegraph.com URL (https://docs.sourcegraph.com/@VERSION/PATH).

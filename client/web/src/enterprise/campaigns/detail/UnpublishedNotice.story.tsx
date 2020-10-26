@@ -7,4 +7,6 @@ const { add } = storiesOf('web/campaigns/details/UnpublishedNotice', module).add
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Some unpublished', () => <EnterpriseWebStory>{() => <UnpublishedNotice unpublished={10} />}</EnterpriseWebStory>)
+add('None published', () => (
+    <EnterpriseWebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</EnterpriseWebStory>
+))

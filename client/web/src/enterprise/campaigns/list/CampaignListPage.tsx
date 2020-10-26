@@ -11,11 +11,10 @@ import {
     CampaignsByUserVariables,
     CampaignsByOrgVariables,
 } from '../../../graphql-operations'
-import { CampaignsListBetaNotice } from './CampaignsListBetaNotice'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsFlushEdgesIcon } from '../icons'
+import { CampaignsIconFlushLeft } from '../icons'
 
 export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
@@ -56,23 +55,15 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     return (
         <>
             <PageHeader
-                icon={CampaignsFlushEdgesIcon}
-                title={
-                    <span className="test-campaign-list-page">
-                        Campaigns{' '}
-                        <sup>
-                            <span className="badge badge-merged text-uppercase">Beta</span>
-                        </sup>
-                    </span>
-                }
-                className="justify-content-end"
+                icon={CampaignsIconFlushLeft}
+                title="Campaigns"
+                className="justify-content-end test-campaign-list-page"
                 actions={
                     <Link to={`${location.pathname}/create`} className="btn btn-primary">
                         <PlusIcon className="icon-inline" /> New campaign
                     </Link>
                 }
             />
-            <CampaignsListBetaNotice />
             <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
                 location={location}

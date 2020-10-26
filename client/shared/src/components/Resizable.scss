@@ -63,14 +63,3 @@
         }
     }
 }
-
-.theme-light {
-    .resizable {
-        &__handle {
-            background-color: $color-light-bg-5;
-            &--resizing {
-                filter: brightness(0.66);
-            }
-        }
-    }
-}

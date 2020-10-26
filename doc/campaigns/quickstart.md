@@ -129,7 +129,7 @@ On a real campaign, you would do the following:
 1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
 
-    > NOTE: Change [`published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets)  to publish only some of the changesets.
+    > NOTE: Change [`published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](campaign_spec_yaml_reference.md#changesettemplate-published).
 1. Run the `src campaign preview` command again and open the URL.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_rerun_preview.png" class="screenshot">
 1. On the preview page you can confirm that changesets will be published when the spec is applied.

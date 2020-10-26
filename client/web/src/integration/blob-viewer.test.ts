@@ -10,8 +10,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
-
-import { WebGraphQlOperations, ViewerSettingsResult } from '../graphql-operations'
+import { WebGraphQlOperations } from '../graphql-operations'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import { Settings } from '../schema/settings.schema'
 import type * as sourcegraph from 'sourcegraph'
@@ -108,26 +107,25 @@ describe('Blob viewer', () => {
             }
             testContext.overrideGraphQL({
                 ...commonBlobGraphQlResults,
-                ViewerSettings: () =>
-                    ({
-                        viewerSettings: {
-                            final: JSON.stringify(userSettings),
-                            subjects: [
-                                {
-                                    __typename: 'User',
-                                    displayName: 'Test User',
-                                    id: 'TestUserSettingsID',
-                                    latestSettings: {
-                                        id: 123,
-                                        contents: JSON.stringify(userSettings),
-                                    },
-                                    username: 'test',
-                                    viewerCanAdminister: true,
-                                    settingsURL: '/users/test/settings',
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        final: JSON.stringify(userSettings),
+                        subjects: [
+                            {
+                                __typename: 'User',
+                                displayName: 'Test User',
+                                id: 'TestUserSettingsID',
+                                latestSettings: {
+                                    id: 123,
+                                    contents: JSON.stringify(userSettings),
                                 },
-                            ],
-                        },
-                    } as ViewerSettingsResult),
+                                username: 'test',
+                                viewerCanAdminister: true,
+                                settingsURL: '/users/test/settings',
+                            },
+                        ],
+                    },
+                }),
                 Blob: () => ({
                     repository: {
                         commit: {
@@ -193,9 +191,18 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
+        it('truncates long file paths properly', async function () {
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
+            )
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('.test-breadcrumb')
+            await percySnapshot(driver.page, this.test!.fullTitle())
+        })
+
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-            await driver.page.waitForSelector('.e2e-repo-blob')
+            await driver.page.waitForSelector('.test-repo-blob')
             // TODO
         })
 

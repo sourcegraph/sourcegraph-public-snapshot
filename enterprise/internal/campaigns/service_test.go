@@ -826,7 +826,7 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
 
 	ext := &repos.ExternalService{
-		Kind:        extsvc.TypeGitHub,
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -839,7 +839,40 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.TypeGitHub)
+		r := testRepo(t, rstore, extsvc.KindGitHub)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+
+		rs = append(rs, r)
+	}
+
+	err := rstore.InsertRepos(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return rs, ext
+}
+
+func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+	t.Helper()
+
+	rstore := repos.NewDBStore(db, sql.TxOptions{})
+
+	ext := &repos.ExternalService{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "Bitbucket Server",
+		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			Url:   "https://bitbucket.sourcegraph.com",
+			Token: "SECRETTOKEN",
+		}),
+	}
+	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
+	}
+
+	var rs []*repos.Repo
+	for i := 0; i < count; i++ {
+		r := testRepo(t, rstore, extsvc.KindBitbucketServer)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)

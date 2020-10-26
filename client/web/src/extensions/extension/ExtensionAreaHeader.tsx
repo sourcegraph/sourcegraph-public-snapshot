@@ -94,7 +94,13 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="extension-area-header__wrapper">
                             <div className="mb-3">
                                 <div className="d-flex align-items-start">
-                                    {iconURL && <img className="extension-area-header__icon mr-2" src={iconURL.href} />}
+                                    {iconURL && (
+                                        <img
+                                            className="extension-area-header__icon mr-2"
+                                            src={iconURL.href}
+                                            aria-hidden="true"
+                                        />
+                                    )}
                                     <div>
                                         <h1 className="d-flex align-items-center mb-0 font-weight-normal">{name}</h1>
                                         {manifest && (manifest.description || isWorkInProgress) && (
@@ -153,7 +159,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                             <li key={label} className="nav-item">
                                                 <NavLink
                                                     to={props.url + to}
-                                                    className="nav-link extension-area-link"
+                                                    className="nav-link"
                                                     activeClassName="active"
                                                     exact={exact}
                                                 >

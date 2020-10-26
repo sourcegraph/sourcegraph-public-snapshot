@@ -34,15 +34,22 @@ export function testSingleFilePage({
     describe('File views', () => {
         it('adds "View on Sourcegraph" buttons to files', async () => {
             await getDriver().page.goto(url)
+
+            // Make sure the tab is active, because it might not be active if the install page has opened.
+            await getDriver().page.bringToFront()
+
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
             expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
-            await Promise.all([
-                getDriver().page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-                getDriver().page.click('.code-view-toolbar .open-on-sourcegraph'),
-            ])
-            expect(getDriver().page.url()).toBe(
+            await getDriver().page.click('.code-view-toolbar .open-on-sourcegraph')
+
+            // The button opens a new tab, so get the new page whose opener is the current page, and get its url.
+            const currentPageTarget = getDriver().page.target()
+            const newTarget = await getDriver().browser.waitForTarget(target => target.opener() === currentPageTarget)
+            const newPage = await newTarget.page()
+            expect(newPage.url()).toBe(
                 `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
             )
+            await newPage.close()
         })
 
         it('shows hover tooltips when hovering a token', async () => {

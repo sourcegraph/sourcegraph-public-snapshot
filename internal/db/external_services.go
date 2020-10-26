@@ -34,6 +34,10 @@ type ExternalServicesStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
+
+	// PreCreateExternalService (if set) is invoked as a hook prior to creating a
+	// new external service in the database.
+	PreCreateExternalService func(context.Context) error
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -357,6 +361,13 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 
 	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	es.UpdatedAt = es.CreatedAt
+
+	// Prior to saving the record, run a validation hook.
+	if e.PreCreateExternalService != nil {
+		if err := e.PreCreateExternalService(ctx); err != nil {
+			return err
+		}
+	}
 
 	return dbconn.Global.QueryRowContext(
 		ctx,
