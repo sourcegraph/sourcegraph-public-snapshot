@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment, useMemo } from 'react'
 import { parseSearchQuery } from '../../../shared/src/search/parser/parser'
 
 // A read-only syntax highlighted search query
@@ -9,22 +9,26 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
             ? parsedQuery.token.members.map(({ token, range }) => {
                   if (token.type === 'filter') {
                       return (
-                          <>
+                          <Fragment key={range.start}>
                               <span className="search-keyword">
                                   {query.slice(token.filterType.range.start, token.filterType.range.end)}:
                               </span>
                               {token.filterValue ? (
                                   <>{query.slice(token.filterValue.range.start, token.filterValue.range.end)}</>
                               ) : null}
-                          </>
+                          </Fragment>
                       )
                   }
                   if (token.type === 'operator') {
-                      return <span className="search-operator">{query.slice(range.start, range.end)}</span>
+                      return (
+                          <span className="search-operator" key={range.start}>
+                              {query.slice(range.start, range.end)}
+                          </span>
+                      )
                   }
-                  return <>{query.slice(range.start, range.end)}</>
+                  return <Fragment key={range.start}>{query.slice(range.start, range.end)}</Fragment>
               })
-            : [<>{query}</>]
+            : [<Fragment key="0">{query}</Fragment>]
     }, [query])
 
     return <span className="text-monospace search-query-link">{tokens}</span>
