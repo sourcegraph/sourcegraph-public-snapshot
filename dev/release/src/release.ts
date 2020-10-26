@@ -500,7 +500,7 @@ ${issueCategories
         },
     },
     {
-        // Example: yarn run release _test:campaign-import-changes "$(cat ./.secrets/import.json)"
+        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
         id: '_test:campaign-create-from-changes',
         run: async (_config, campaignConfigJSON) => {
             const campaignConfig = JSON.parse(campaignConfigJSON) as {
