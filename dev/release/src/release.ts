@@ -355,6 +355,9 @@ ${issueCategories
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['src', 'comby', sed, 'find'],
                 changes: [
@@ -426,19 +429,28 @@ ${issueCategories
             })
 
             if (!dryRun.changesets) {
+                // Create campaign to track changes
+                let publishCampaign = ''
                 try {
-                    await campaigns.importFromCreatedChanges(createdChanges, {
+                    console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
+                    publishCampaign = await campaigns.importFromCreatedChanges(createdChanges, {
                         name: `release-sourcegraph-${parsedVersion.version}`,
                         description: `Track publishing of sourcegraph@${parsedVersion.version}`,
                         namespace: 'sourcegraph',
+                        auth: sourcegraphAuth,
                     })
+                    console.log(`Created ${publishCampaign}`)
                 } catch (error) {
                     console.error(error)
-                    console.error('Failed to create campaign for this release')
+                    console.error('Failed to create campaign for this release, omitting')
                 }
 
+                // Announce release update in Slack
                 await postMessage(
-                    `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                    `:captain: *Sourcegraph ${parsedVersion.version} release has been staged*
+
+                    * Campaign: ${publishCampaign}
+                    * @stephen: update deploy-sourcegraph-docker as needed`,
                     slackAnnounceChannel
                 )
             }
@@ -472,12 +484,13 @@ ${issueCategories
                 name: string
                 description: string
             }
-            await campaigns.importFromCreatedChanges(campaignConfig.changes, {
+            const campaignURL = await campaigns.importFromCreatedChanges(campaignConfig.changes, {
                 name: campaignConfig.name,
                 description: campaignConfig.description,
                 namespace: 'sourcegraph',
-                preview: true,
+                auth: await campaigns.sourcegraphAuth(),
             })
+            console.log(`Created campaign ${campaignURL}`)
         },
     },
 ]

@@ -6,18 +6,24 @@ import execa from 'execa'
 // https://about.sourcegraph.com/handbook/engineering/deployments/instances#k8s-sgdev-org
 const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
 
-async function sourcegraphAuth(): Promise<NodeJS.ProcessEnv> {
+export async function sourcegraphAuth(): Promise<SourcegraphAuth> {
     return {
         SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
         SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', '.secrets/src-cli.txt'),
     }
 }
 
+export interface SourcegraphAuth {
+    SRC_ENDPOINT: string
+    SRC_ACCESS_TOKEN: string
+    [index: string]: string
+}
+
 export interface CampaignOptions {
     name: string
     description: string
     namespace: string
-    preview?: boolean
+    auth: SourcegraphAuth
 }
 
 export async function importFromCreatedChanges(changes: CreatedChangeset[], options: CampaignOptions): Promise<string> {
@@ -41,10 +47,11 @@ export async function importFromCreatedChanges(changes: CreatedChangeset[], opti
 cat <<EOF
 ${campaignYAML}
 EOF
-) | src campaign ${options.preview ? 'preview' : 'apply'} \\
+) | src campaign apply \\
     -namespace ${options.namespace} \\
     -f -`
-    await execa('bash', ['-c', campaignScript], { stdio: 'inherit', env: await sourcegraphAuth() })
+    await execa('bash', ['-c', campaignScript], { stdio: 'inherit', env: options.auth })
 
-    return ''
+    // return the campaign URL
+    return `${options.auth.SRC_ENDPOINT}/organizations/${options.namespace}/campaigns/${options.name}`
 }
