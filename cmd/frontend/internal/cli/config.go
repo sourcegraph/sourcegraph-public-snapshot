@@ -391,7 +391,7 @@ func comparePostgresDSNs(dsn1, dsn2 string) error {
 	}
 
 	if url1.Host == url2.Host && url1.Path == url2.Path {
-		return fmt.Errorf("database must be distinct: %s and %s seem to refer to the same database", dsn1, dsn2)
+		return fmt.Errorf("codeintel and frontend databases must be distinct: %s and %s seem to refer to the same database", dsn1, dsn2)
 	}
 
 	return nil
