@@ -29,6 +29,8 @@ type sourcer struct {
 	decs []func(Source) Source
 }
 
+var _ Sourcer = &sourcer{}
+
 // NewSourcer returns a Sourcer that converts the given ExternalServices
 // into Sources that use the provided httpcli.Factory to create the
 // http.Clients needed to contact the respective upstream code host APIs.

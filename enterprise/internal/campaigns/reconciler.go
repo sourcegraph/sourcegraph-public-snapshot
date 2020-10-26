@@ -76,6 +76,11 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return err
 	}
 
+	campaign, err := loadCampaign(ctx, tx, ch.OwnedByCampaignID)
+	if err != nil && err != errChangesetIsUnowned {
+		return err
+	}
+
 	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.ops)
 
 	e := &executor{
@@ -86,8 +91,9 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		tx: tx,
 		ch: ch,
 
-		spec:  curr,
-		delta: plan.delta,
+		spec:           curr,
+		delta:          plan.delta,
+		owningCampaign: campaign,
 	}
 
 	return e.ExecutePlan(ctx, plan)
@@ -105,12 +111,12 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo     *repos.Repo
-	campaign *campaigns.Campaign
+	repo *repos.Repo
 
-	ch    *campaigns.Changeset
-	spec  *campaigns.ChangesetSpec
-	delta *changesetSpecDelta
+	ch             *campaigns.Changeset
+	spec           *campaigns.ChangesetSpec
+	delta          *changesetSpecDelta
+	owningCampaign *campaigns.Campaign
 }
 
 // ExecutePlan executes the given reconciler plan.
@@ -132,7 +138,11 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(ctx, e.repo, extSvc, e.campaign.LastApplierID)
+	if e.owningCampaign == nil {
+		e.ccs, err = e.buildChangesetSource(ctx, e.repo, extSvc, 0)
+	} else {
+		e.ccs, err = e.buildChangesetSource(ctx, e.repo, extSvc, e.owningCampaign.LastApplierID)
+	}
 	if err != nil {
 		return err
 	}
@@ -197,10 +207,17 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 }
 
 func (e *executor) buildChangesetSource(ctx context.Context, repo *repos.Repo, extSvc *repos.ExternalService, userID int32) (repos.ChangesetSource, error) {
-	sources, err := e.sourcer.ForUser(ctx, userID, extSvc)
+	var sources repos.Sources
+	var err error
+	if userID == 0 {
+		sources, err = e.sourcer.For(extSvc)
+	} else {
+		sources, err = e.sourcer.ForUser(ctx, userID, extSvc)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	if len(sources) != 1 {
 		return nil, errors.New("invalid number of sources for external service")
 	}
@@ -249,7 +266,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, e.tx, cs); err != nil {
+	if err := decorateChangesetBody(ctx, e.tx, cs, e.owningCampaign); err != nil {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
@@ -347,7 +364,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, e.tx, &cs); err != nil {
+	if err := decorateChangesetBody(ctx, e.tx, &cs, e.owningCampaign); err != nil {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
@@ -754,9 +771,11 @@ func loadExternalService(ctx context.Context, reposStore repos.Store, repo *repo
 	return externalService, nil
 }
 
+var errChangesetIsUnowned = errors.New("changeset has no owning campaign")
+
 func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign, error) {
 	if id == 0 {
-		return nil, errors.New("changeset has no owning campaign")
+		return nil, errChangesetIsUnowned
 	}
 
 	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
@@ -785,10 +804,9 @@ func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset)
 	return
 }
 
-func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
-	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
-	if err != nil {
-		return errors.Wrap(err, "failed to load campaign")
+func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset, campaign *campaigns.Campaign) error {
+	if campaign == nil {
+		return errors.New("cannot decorate a changeset without an owning campaign")
 	}
 
 	// We need to get the namespace, since external campaign URLs are

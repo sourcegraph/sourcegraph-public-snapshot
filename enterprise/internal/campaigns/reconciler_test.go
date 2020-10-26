@@ -1203,7 +1203,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	body := "body"
 	rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
-	if err := decorateChangesetBody(ctx, store, rcs); err != nil {
+	if err := decorateChangesetBody(ctx, store, rcs, campaign); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
