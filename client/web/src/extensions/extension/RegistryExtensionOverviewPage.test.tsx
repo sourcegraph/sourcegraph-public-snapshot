@@ -69,7 +69,7 @@ describe('RegistryExtensionOverviewPage', () => {
                         className?.includes('test-registry-extension-categories')
                     )
                 )
-            ).toEqual(['Other', 'Programming languages' /* no 'invalid' */])
+            ).toEqual(['Programming languages', 'Other' /* no 'invalid' */])
         })
     })
 })
