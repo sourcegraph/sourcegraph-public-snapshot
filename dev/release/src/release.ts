@@ -12,6 +12,7 @@ import {
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
+import { formatDate, timezoneLink } from './util'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
@@ -21,20 +22,6 @@ import * as path from 'path'
 import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
-
-/* eslint-disable @typescript-eslint/consistent-type-assertions */
-const formatDate = (date: Date): string =>
-    `${date.toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    } as Intl.DateTimeFormatOptions)} (SF time) / ${date.toLocaleString('en-US', {
-        timeZone: 'Europe/Berlin',
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    } as Intl.DateTimeFormatOptions)} (Berlin time)`
-/* eslint-enable @typescript-eslint/consistent-type-assertions */
-
 interface Config {
     teamEmail: string
 
@@ -51,7 +38,8 @@ interface Config {
     slackAnnounceChannel: string
 
     dryRun: {
-        changesets: boolean
+        changesets?: boolean
+        trackingIssues?: boolean
     }
 }
 
@@ -170,6 +158,7 @@ const steps: Step[] = [
 
             captainSlackUsername,
             slackAnnounceChannel,
+            dryRun,
         }: Config) => {
             // Create issue
             const { url, created } = await ensureTrackingIssue({
@@ -180,20 +169,32 @@ const steps: Step[] = [
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
+                dryRun: dryRun.trackingIssues || false,
             })
-            console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
+            }
 
             // Announce issue if issue does not already exist
             if (created) {
+                // Slack markdown links
+                const majorMinor = `${majorVersion}.${minorVersion}`
+                const branchCutDate = new Date(fourWorkingDaysBeforeRelease)
+                const branchCutDateString = `<${timezoneLink(branchCutDate, `${majorMinor} branch cut`)}|${formatDate(
+                    branchCutDate
+                )}>`
+                const releaseDate = new Date(releaseDateTime)
+                const releaseDateString = `<${timezoneLink(releaseDate, `${majorMinor} release`)}|${formatDate(
+                    releaseDate
+                )}>`
                 await postMessage(
-                    `:captain: ${majorVersion}.${minorVersion} Release :captain:
+                    `*${majorVersion}.${minorVersion} Release*
 
-Release captain: @${captainSlackUsername}
-Tracking issue: ${url}
-Key dates:
-- Release branch cut, testing commences: ${formatDate(new Date(fourWorkingDaysBeforeRelease))}
-- Final release tag: ${formatDate(new Date(oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(releaseDateTime))}`,
+:captain: Release captain: @${captainSlackUsername}
+:pencil: Tracking issue: ${url}
+:spiral_calendar_pad: Key dates:
+* Branch cut: ${branchCutDateString}
+* Release: ${releaseDateString}`,
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
@@ -202,7 +203,7 @@ Key dates:
     },
     {
         id: 'tracking:patch-issue',
-        run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
+        run: async ({ captainGitHubUsername, slackAnnounceChannel, dryRun }, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
@@ -215,11 +216,10 @@ Key dates:
             const { url, created } = await ensurePatchReleaseIssue({
                 version: parsedVersion,
                 assignees: [captainGitHubUsername],
+                dryRun: dryRun.trackingIssues || false,
             })
-            const existsText = created ? '' : ' (already exists)'
-            console.log(`Patch release issue URL${existsText}: ${url}`)
-            if (!created) {
-                return
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
             }
 
             // Announce issue if issue does not already exist
