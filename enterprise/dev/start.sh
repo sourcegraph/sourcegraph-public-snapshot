@@ -42,6 +42,8 @@ export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
 export EXECUTOR_FRONTEND_URL=http://localhost:3080
 export EXECUTOR_FRONTEND_USERNAME=executor
 export EXECUTOR_FRONTEND_PASSWORD=hunter2
+export EXECUTOR_QUEUE_URL=http://localhost:3191
+export EXECUTOR_USE_FIRECRACKER=false
 
 export PRECISE_CODE_INTEL_EXTERNAL_URL=http://localhost:3080
 export PRECISE_CODE_INTEL_EXTERNAL_URL_FROM_DOCKER=http://host.docker.internal:3080
@@ -52,7 +54,7 @@ export PRECISE_CODE_INTEL_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 export DISABLE_CNCF=notonmybox
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
-export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-indexer-vm precise-code-intel-worker executor-queue "
+export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-indexer-vm precise-code-intel-worker executor-queue executor "
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
 export PROCFILE=enterprise/dev/Procfile

@@ -60,6 +60,11 @@
     # executor-queue
     - host.docker.internal:6091
 - labels:
+    job: executor
+  targets:
+    # executor
+    - host.docker.internal:6092
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter
