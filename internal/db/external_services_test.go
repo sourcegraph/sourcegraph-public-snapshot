@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -219,6 +220,29 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 }
 
+func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	store := &ExternalServicesStore{
+		PreCreateExternalService: func(ctx context.Context) error {
+			return errcode.NewPresentationError("test plan limit exceeded")
+		},
+	}
+	if err := store.Create(ctx, confGet, es); err == nil {
+		t.Fatal("expected an error, got none")
+	}
+}
+
 func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -290,10 +314,10 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	//  - ID=1 is expected to be deleted along with deletion of the external service.
 	//  - ID=2 remains untouched because it is not associated with the external service.
 	_, err = dbconn.Global.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, language, fork)
-VALUES (1, 'github.com/user/repo', '', '', FALSE);
-INSERT INTO repo (id, name, description, language, fork)
-VALUES (2, 'github.com/user/repo2', '', '', FALSE);
+INSERT INTO repo (id, name, description, fork)
+VALUES (1, 'github.com/user/repo', '', FALSE);
+INSERT INTO repo (id, name, description, fork)
+VALUES (2, 'github.com/user/repo2', '', FALSE);
 `)
 	if err != nil {
 		t.Fatal(err)

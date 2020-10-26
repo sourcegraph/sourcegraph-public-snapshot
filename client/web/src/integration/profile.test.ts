@@ -3,6 +3,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { UserAreaUserFields } from '../graphql-operations'
 
 describe('User profile page', () => {
     let driver: Driver
@@ -22,49 +23,42 @@ describe('User profile page', () => {
     afterEach(() => testContext?.dispose())
 
     it('updates display name', async () => {
+        const USER: UserAreaUserFields = {
+            __typename: 'User',
+            id: 'VXNlcjoxODkyNw==',
+            username: 'test',
+            displayName: 'Test',
+            url: '/users/test',
+            settingsURL: '/users/test/settings',
+            avatarURL: '',
+            viewerCanAdminister: true,
+            viewerCanChangeUsername: true,
+            siteAdmin: true,
+            builtinAuth: true,
+            createdAt: '2020-04-10T21:11:42Z',
+            emails: [{ email: 'test@example.com', verified: true }],
+            organizations: { nodes: [] },
+            permissionsInfo: null,
+            tags: [],
+        }
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            User: () => ({
-                user: {
-                    __typename: 'User',
-                    id: 'VXNlcjoxODkyNw==',
-                    username: 'test',
-                    displayName: 'Test',
-                    url: '/users/test',
-                    settingsURL: '/users/test/settings',
-                    avatarURL: '',
-                    viewerCanAdminister: true,
-                    siteAdmin: true,
-                    builtinAuth: true,
-                    createdAt: '2020-04-10T21:11:42Z',
-                    emails: [{ email: 'test@example.com', verified: true }],
-                    organizations: { nodes: [] },
-                    permissionsInfo: null,
-                    tags: [],
-                },
+            UserArea: () => ({
+                user: USER,
             }),
-            UserForProfilePage: () => ({
-                node: {
-                    id: 'VXNlcjoxODkyNw==',
-                    username: 'test',
-                    displayName: 'Test',
-                    avatarURL: '',
-                    viewerCanChangeUsername: true,
-                },
-            }),
-            updateUser: () => ({ updateUser: { alwaysNil: null } }),
+            UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
-        await driver.page.waitForSelector('.user-settings-profile-page')
+        await driver.page.waitForSelector('.user-profile-form-fields')
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__display-name',
+            selector: '.test-UserProfileFormFields__displayName',
             newText: 'Test2',
             selectMethod: 'selectall',
         })
 
         const requestVariables = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('.test-user-settings-profile-page-update-profile')
-        }, 'updateUser')
+            await driver.page.click('#test-EditUserProfileForm__save')
+        }, 'UpdateUser')
 
         assert.strictEqual(requestVariables.displayName, 'Test2')
     })

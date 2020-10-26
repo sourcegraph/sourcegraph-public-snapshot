@@ -1,5 +1,5 @@
 import React from 'react'
-import { CampaignsIconWithBetaBadge } from '../icons'
+import { CampaignsIconFlushLeft } from '../icons'
 import { CampaignFields } from '../../../graphql-operations'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
@@ -17,7 +17,7 @@ interface Props {
  */
 export const CampaignHeader: React.FunctionComponent<Props> = ({ className, name, namespace, actionSection }) => (
     <PageHeader
-        icon={CampaignsIconWithBetaBadge}
+        icon={CampaignsIconFlushLeft}
         title={
             <>
                 <Link to={namespace.url + '/campaigns'}>{namespace.namespaceName}</Link> / {name}

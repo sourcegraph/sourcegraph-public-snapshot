@@ -176,6 +176,7 @@ type ChangesetCounts struct {
 	Merged               int32
 	Closed               int32
 	Open                 int32
+	Draft                int32
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32

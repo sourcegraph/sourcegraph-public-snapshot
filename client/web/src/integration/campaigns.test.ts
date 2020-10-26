@@ -226,7 +226,7 @@ function mockCommonGraphQLResponses(
                 viewerPendingInvitation: null,
             },
         }),
-        User: () => ({
+        UserArea: () => ({
             user: {
                 __typename: 'User',
                 id: 'user123',
@@ -236,6 +236,7 @@ function mockCommonGraphQLResponses(
                 settingsURL: `${namespaceURL}/settings`,
                 avatarURL: '',
                 viewerCanAdminister: true,
+                viewerCanChangeUsername: true,
                 siteAdmin: true,
                 builtinAuth: true,
                 createdAt: '2020-04-10T21:11:42Z',

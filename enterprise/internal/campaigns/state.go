@@ -441,7 +441,11 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 		case gitlab.MergeRequestStateMerged:
 			s = campaigns.ChangesetExternalStateMerged
 		case gitlab.MergeRequestStateOpened:
-			s = campaigns.ChangesetExternalStateOpen
+			if m.WorkInProgress {
+				s = campaigns.ChangesetExternalStateDraft
+			} else {
+				s = campaigns.ChangesetExternalStateOpen
+			}
 		default:
 			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
 		}
@@ -491,11 +495,11 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 		// an unapproval, then changes were requested. If we don't see anything,
 		// then we're pending.
 		for _, note := range m.Notes {
-			if r := note.ToReview(); r != nil {
-				switch r.(type) {
-				case *gitlab.ReviewApproved:
+			if e := note.ToEvent(); e != nil {
+				switch e.(type) {
+				case *gitlab.ReviewApprovedEvent:
 					return campaigns.ChangesetReviewStateApproved, nil
-				case *gitlab.ReviewUnapproved:
+				case *gitlab.ReviewUnapprovedEvent:
 					return campaigns.ChangesetReviewStateChangesRequested, nil
 				}
 			}

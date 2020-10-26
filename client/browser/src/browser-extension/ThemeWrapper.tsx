@@ -13,7 +13,9 @@ export function ThemeWrapper({
     const [isLightTheme, setIsLightTheme] = useState(!darkThemeMediaList.matches)
 
     useEffect(() => {
-        darkThemeMediaList.addListener(event => setIsLightTheme(!event.matches))
+        const listener = (event: MediaQueryListEvent): void => setIsLightTheme(!event.matches)
+        darkThemeMediaList.addEventListener('change', listener)
+        return () => darkThemeMediaList.removeEventListener('change', listener)
     }, [darkThemeMediaList])
 
     useEffect(() => {

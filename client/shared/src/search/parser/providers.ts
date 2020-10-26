@@ -24,8 +24,8 @@ const PARSER_STATE: Monaco.languages.IState = {
     equals: () => false,
 }
 
-const alphabet = 'abcdefghijklmnopqrstuvwxyz'
-const specialCharacters = ':-*]'
+const printable = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
 
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
@@ -77,7 +77,7 @@ export function getProviders(
         },
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
-            triggerCharacters: [...specialCharacters, ...alphabet, ...alphabet.toUpperCase()],
+            triggerCharacters: [...printable, ...latin1Alpha],
             provideCompletionItems: (textModel, position, context, token) =>
                 parsedQueries
                     .pipe(

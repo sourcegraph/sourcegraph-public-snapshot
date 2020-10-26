@@ -68,7 +68,7 @@ interface PanelItem extends Tab<string> {
  *
  * Other components can contribute panel items to the panel.
  */
-export class Panel extends React.PureComponent<Props, State> {
+class Panel extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -168,7 +168,7 @@ function byPriority(a: { priority: number }, b: { priority: number }): number {
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
     <Resizable
-        className="panel--resizable"
+        className="resizable-panel"
         handlePosition="top"
         defaultSize={350}
         storageKey="panel-size"

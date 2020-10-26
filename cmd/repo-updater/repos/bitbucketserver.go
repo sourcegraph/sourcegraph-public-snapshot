@@ -139,50 +139,36 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
-// LoadChangesets loads the latest state of the given Changesets from the codehost.
-func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
-	var notFound []*Changeset
-
-	for i := range cs {
-		repo := cs[i].Repo.Metadata.(*bitbucketserver.Repo)
-		number, err := strconv.Atoi(cs[i].ExternalID)
-		if err != nil {
-			return err
-		}
-
-		pr := &bitbucketserver.PullRequest{ID: number}
-		pr.ToRef.Repository.Slug = repo.Slug
-		pr.ToRef.Repository.Project.Key = repo.Project.Key
-
-		err = s.client.LoadPullRequest(ctx, pr)
-		if err != nil {
-			if bitbucketserver.IsNotFound(err) {
-				notFound = append(notFound, cs[i])
-				if cs[i].Changeset.Metadata == nil {
-					cs[i].Changeset.Metadata = pr
-				}
-				continue
-			}
-
-			return err
-		}
-
-		err = s.loadPullRequestData(ctx, pr)
-		if err != nil {
-			return errors.Wrap(err, "loading pull request data")
-		}
-		if err = cs[i].SetMetadata(pr); err != nil {
-			return errors.Wrap(err, "setting changeset metadata")
-		}
+// LoadChangeset loads the latest state of the given Changeset from the codehost.
+func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+	repo := cs.Repo.Metadata.(*bitbucketserver.Repo)
+	number, err := strconv.Atoi(cs.ExternalID)
+	if err != nil {
+		return err
 	}
 
-	if len(notFound) > 0 {
-		return ChangesetsNotFoundError{Changesets: notFound}
+	pr := &bitbucketserver.PullRequest{ID: number}
+	pr.ToRef.Repository.Slug = repo.Slug
+	pr.ToRef.Repository.Project.Key = repo.Project.Key
+
+	err = s.client.LoadPullRequest(ctx, pr)
+	if err != nil {
+		if bitbucketserver.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
+		}
+
+		return err
+	}
+
+	err = s.loadPullRequestData(ctx, pr)
+	if err != nil {
+		return errors.Wrap(err, "loading pull request data")
+	}
+	if err = cs.SetMetadata(pr); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
 	}
 
 	return nil
@@ -225,8 +211,7 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 		return err
 	}
 
-	c.Changeset.Metadata = updated
-	return nil
+	return c.Changeset.SetMetadata(updated)
 }
 
 // ReopenChangeset reopens the *Changeset on the code host and updates the
@@ -241,9 +226,7 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 		return err
 	}
 
-	c.Changeset.Metadata = pr
-
-	return nil
+	return c.Changeset.SetMetadata(pr)
 }
 
 // ExternalServices returns a singleton slice containing the external service.

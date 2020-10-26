@@ -17,14 +17,14 @@
 /* stylelint-disable declaration-property-unit-whitelist */
 
 .graphiql-container {
-    color: $color-text;
+    color: var(--body-color);
     font-family: var(--sans-serif);
     margin-bottom: 1px;
 
     .topBar {
         background: var(--body-bg);
         height: 3rem;
-        border-color: $color-border;
+        border-color: var(--border-color);
         .title {
             white-space: nowrap;
         }
@@ -39,7 +39,7 @@
     .history-contents p,
     .doc-explorer-contents,
     .doc-category-title {
-        border-color: $color-border;
+        border-color: var(--border-color);
     }
     .variable-editor-title,
     .result-window .CodeMirror-gutters,
@@ -48,14 +48,14 @@
     .doc-explorer,
     .doc-explorer-contents,
     .execute-options {
-        background: #1d2837;
+        background: var(--color-bg-2);
     }
     .variable-editor {
         height: auto;
         .variable-editor-title {
             border-bottom: none;
             font-weight: 400;
-            color: #777777;
+            color: var(--text-muted);
         }
     }
     .history-title-bar,
@@ -89,8 +89,8 @@
         }
         .field-short-description {
             font-family: var(--sans-serif);
-            color: $color-text-1;
-            border-left: 3px solid $color-border;
+            color: var(--body-color);
+            border-left: 3px solid var(--border-color);
             padding-left: 0.5rem;
             margin-top: 0.5rem;
             > p {
@@ -102,12 +102,12 @@
             font-family: var(--sans-serif);
             background: rgba(42, 58, 81, 0.7);
             box-shadow: none;
-            border: 1px solid $color-border;
+            border: 1px solid var(--border-color);
             color: inherit;
         }
         .doc-category-item {
             color: inherit;
-            border-bottom: 1px solid $color-border;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 1rem;
             .field-name:first-of-type {
                 font-weight: bold;
@@ -133,7 +133,7 @@
             box-shadow: none;
         }
         &.error {
-            color: $red;
+            color: var(--danger);
         }
     }
     .execute-button {
@@ -142,22 +142,25 @@
     .execute-button,
     .doc-category .show-btn {
         @extend .btn-primary;
-        background: $blue;
-        border-color: $blue;
+        background: var(--primary);
+        border-color: var(--primary);
         fill: #ffffff;
         padding: 0;
         &.error {
-            background: $blue;
+            background: var(--primary);
         }
+    }
+    button {
+        background-image: none !important;
     }
     .toolbar-button,
     .docExplorerShow {
         @extend .btn-secondary;
-        background: $secondary;
-        border-color: $secondary;
+        background: var(--secondary);
+        border-color: var(--secondary);
     }
     .toolbar-button.error {
-        background: $secondary;
+        background: var(--secondary);
     }
     .doc-explorer-back {
         color: var(--link-color);
@@ -179,7 +182,7 @@
         margin: 0 3px 0;
         width: 10px;
         height: 10px;
-        border-color: #ffffff;
+        border-color: var(--body-color);
     }
     .doc-explorer {
         .search-box {
@@ -200,105 +203,41 @@
     }
     button,
     input {
-        color: $color-text;
+        color: var(--body-color);
         font-family: var(--sans-serif);
     }
-}
 
-/* Light theme overrides */
-.theme-light {
-    .graphiql-container {
-        color: $color-light-text-1;
-        .topBar,
-        .variable-editor-title,
-        .resultWrap,
-        .history-contents,
-        .history-contents p,
-        .doc-explorer-contents,
-        .doc-category-title,
-        .doc-explorer-contents .doc-deprecation,
-        .doc-explorer-contents .doc-category-item,
-        .doc-explorer-contents .field-short-description {
-            border-color: $color-light-border;
-        }
-        .variable-editor-title,
-        .result-window .CodeMirror-gutters,
-        .historyPaneWrap,
-        .history-contents,
-        .doc-explorer,
-        .doc-explorer-contents,
-        .execute-options {
-            background: $color-light-bg-2;
-        }
-        .variable-editor-title,
-        button,
-        input {
-            color: $color-light-text-1;
-        }
-        li:active,
-        li:hover,
-        .history-contents p:active,
-        .history-contents p:hover,
-        .doc-explorer-contents .doc-deprecation,
-        .execute-options > li.selected {
-            background: $color-light-bg-3;
-        }
-        .toolbar-button.error {
-            background: $secondary-light;
-        }
-        .docExplorerShow::before {
-            border-color: $color-light-text-1; /* icon */
-        }
-        .doc-explorer-contents .field-short-description {
-            color: $color-light-text-2;
-        }
-    }
-}
-
-// Tooltip and popover panels are added to the body, so we must handle them
-// separately.
-body > .CodeMirror-lint-tooltip,
-body > .CodeMirror-info,
-body > .CodeMirror-hints {
-    background: #1d2837;
-    color: $color-text;
-    .info-description {
-        color: $color-text;
-    }
-    .CodeMirror-hint {
-        border-color: $color-border;
-        color: $color-text;
-        &-information {
-            border-color: $color-border;
-            > .content {
-                color: $color-text;
-                p:nth-child(odd) {
-                    margin-right: 1rem;
+    .CodeMirror-hints {
+        border-left: solid 1px var(--dropdown-border-color);
+        border-right: solid 1px var(--dropdown-border-color);
+        .CodeMirror-hint {
+            background-color: var(--dropdown-bg);
+            border-color: var(--dropdown-border-color);
+            color: var(--body-color);
+            &-information {
+                background-color: var(--color-bg-3);
+                border-color: var(--border-color);
+                > .content {
+                    color: var(--body-color);
+                    p:nth-child(odd) {
+                        margin-right: 1rem;
+                    }
                 }
             }
-        }
-        &-active {
-            color: #ffffff !important;
-            background-color: #1c7cd6;
+            &-active {
+                background-color: var(--dropdown-link-hover-bg);
+            }
         }
     }
 }
-body.theme-light > .CodeMirror-lint-tooltip,
-body.theme-light > .CodeMirror-info,
-body.theme-light > .CodeMirror-hints {
-    background: $color-light-bg-2;
-    color: $color-light-text-1;
+
+// Tooltips are added to the body, so we must handle them
+// separately.
+body > .CodeMirror-lint-tooltip,
+body > .CodeMirror-info {
+    background: var(--color-bg-2);
+    color: var(--body-color);
     .info-description {
-        color: $color-light-text-1;
-    }
-    .CodeMirror-hint {
-        border-color: $color-light-border;
-        color: $color-light-text-1;
-        &-information {
-            border-color: $color-light-border;
-            > .content {
-                color: $color-light-text-1;
-            }
-        }
+        color: var(--body-color);
     }
 }

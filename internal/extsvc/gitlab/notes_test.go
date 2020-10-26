@@ -148,32 +148,46 @@ func TestNoteKey(t *testing.T) {
 	}
 }
 
-func TestNoteToReview(t *testing.T) {
+func TestNoteToEvent(t *testing.T) {
 	t.Run("non-system note", func(t *testing.T) {
 		note := &Note{System: false}
-		if v := note.ToReview(); v != nil {
-			t.Errorf("unexpected non-nil ToReview value: %+v", v)
+		if v := note.ToEvent(); v != nil {
+			t.Errorf("unexpected non-nil ToEvent value: %+v", v)
 		}
 	})
 
 	t.Run("system, non approval note", func(t *testing.T) {
 		note := &Note{System: true, Body: ""}
-		if v := note.ToReview(); v != nil {
-			t.Errorf("unexpected non-nil ToReview value: %+v", v)
+		if v := note.ToEvent(); v != nil {
+			t.Errorf("unexpected non-nil ToEvent value: %+v", v)
 		}
 	})
 
 	t.Run("system, approval note", func(t *testing.T) {
 		note := &Note{System: true, Body: "approved this merge request"}
-		if v, ok := note.ToReview().(*ReviewApproved); v == nil || !ok {
-			t.Errorf("unexpected ToReview value: %+v", v)
+		if v, ok := note.ToEvent().(*ReviewApprovedEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent value: %+v", v)
 		}
 	})
 
 	t.Run("system, unapproval note", func(t *testing.T) {
 		note := &Note{System: true, Body: "unapproved this merge request"}
-		if v, ok := note.ToReview().(*ReviewUnapproved); v == nil || !ok {
-			t.Errorf("unexpected ToReview value: %+v", v)
+		if v, ok := note.ToEvent().(*ReviewUnapprovedEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent value: %+v", v)
+		}
+	})
+
+	t.Run("system, wip note", func(t *testing.T) {
+		note := &Note{System: true, Body: "marked as a **Work In Progress**"}
+		if v, ok := note.ToEvent().(*MarkWorkInProgressEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent value: %+v", v)
+		}
+	})
+
+	t.Run("system, un wip note", func(t *testing.T) {
+		note := &Note{System: true, Body: "unmarked as a **Work In Progress**"}
+		if v, ok := note.ToEvent().(*UnmarkWorkInProgressEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent value: %+v", v)
 		}
 	})
 }

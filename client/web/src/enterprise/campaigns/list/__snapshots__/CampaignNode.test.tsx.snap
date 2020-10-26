@@ -25,7 +25,7 @@ exports[`CampaignNode campaign without description 1`] = `
       "url": "/users/alice/campaigns/123",
     }
   }
-  now={2019-01-01T23:15:01.000Z}
+  now={[Function]}
 >
   <span
     className="campaign-node__separator"
@@ -79,18 +79,18 @@ exports[`CampaignNode campaign without description 1`] = `
       <small
         className="text-muted d-sm-block"
       >
-        created
-         
-        <span
-          data-tooltip={
-            <Timestamp
-              date="2019-12-04T23:15:01Z"
-            />
-          }
+        created 
+        <Timestamp
+          date="2019-12-04T23:15:01Z"
+          now={[Function]}
         >
-          11 months
-           ago
-        </span>
+          <span
+            className="timestamp"
+            data-tooltip="2019-12-04T23:15:01Z"
+          >
+            in 11 months
+          </span>
+        </Timestamp>
       </small>
     </div>
     <Markdown
@@ -210,7 +210,7 @@ exports[`CampaignNode closed campaign 1`] = `
       "url": "/users/alice/campaigns/123",
     }
   }
-  now={2019-01-01T23:15:01.000Z}
+  now={[Function]}
 >
   <span
     className="campaign-node__separator"
@@ -264,18 +264,18 @@ exports[`CampaignNode closed campaign 1`] = `
       <small
         className="text-muted d-sm-block"
       >
-        created
-         
-        <span
-          data-tooltip={
-            <Timestamp
-              date="2019-12-04T23:15:01Z"
-            />
-          }
+        created 
+        <Timestamp
+          date="2019-12-04T23:15:01Z"
+          now={[Function]}
         >
-          11 months
-           ago
-        </span>
+          <span
+            className="timestamp"
+            data-tooltip="2019-12-04T23:15:01Z"
+          >
+            in 11 months
+          </span>
+        </Timestamp>
       </small>
     </div>
     <Markdown
@@ -403,7 +403,7 @@ exports[`CampaignNode open campaign 1`] = `
       "url": "/users/alice/campaigns/123",
     }
   }
-  now={2019-01-01T23:15:01.000Z}
+  now={[Function]}
 >
   <span
     className="campaign-node__separator"
@@ -457,18 +457,18 @@ exports[`CampaignNode open campaign 1`] = `
       <small
         className="text-muted d-sm-block"
       >
-        created
-         
-        <span
-          data-tooltip={
-            <Timestamp
-              date="2019-12-04T23:15:01Z"
-            />
-          }
+        created 
+        <Timestamp
+          date="2019-12-04T23:15:01Z"
+          now={[Function]}
         >
-          11 months
-           ago
-        </span>
+          <span
+            className="timestamp"
+            data-tooltip="2019-12-04T23:15:01Z"
+          >
+            in 11 months
+          </span>
+        </Timestamp>
       </small>
     </div>
     <Markdown
@@ -596,7 +596,7 @@ exports[`CampaignNode open campaign on user page 1`] = `
       "url": "/users/alice/campaigns/123",
     }
   }
-  now={2019-01-01T23:15:01.000Z}
+  now={[Function]}
 >
   <span
     className="campaign-node__separator"
@@ -630,18 +630,18 @@ exports[`CampaignNode open campaign on user page 1`] = `
       <small
         className="text-muted d-sm-block"
       >
-        created
-         
-        <span
-          data-tooltip={
-            <Timestamp
-              date="2019-12-04T23:15:01Z"
-            />
-          }
+        created 
+        <Timestamp
+          date="2019-12-04T23:15:01Z"
+          now={[Function]}
         >
-          11 months
-           ago
-        </span>
+          <span
+            className="timestamp"
+            data-tooltip="2019-12-04T23:15:01Z"
+          >
+            in 11 months
+          </span>
+        </Timestamp>
       </small>
     </div>
     <Markdown

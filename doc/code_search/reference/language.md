@@ -2,9 +2,20 @@
 
 <style>
 
-ul.r {
-    list-style-position: outside !important;
-    padding-left: 20px !important;
+body.theme-dark img.toggle {
+    filter: invert(100%);
+}
+
+img.toggle {
+    width: 20px;
+    height: 20px;
+}
+
+.toggle-container {
+  border: 1px solid;
+  border-radius: 3px;
+  display: inline-flex;
+  vertical-align: bottom;
 }
 
 li.r {
@@ -18,38 +29,22 @@ li.r {
     margin: 0px !important;
     border-collapse: collapse !important;
     vertical-align: top !important;
+    background-color: transparent !important;
 }
 
 th.r {
     text-align: left !important;
-    background-color: #ece9d8 !important;
-    border: 1px solid #aca899 !important;
     padding: 3px !important;
 }
 
 td.r {
-    background-color: #ffffff !important;
     text-align: left !important;
     vertical-align: top !important;
     border: 1px solid #aca899 !important;
     padding: 3px !important;
 }
 
-.markdown-body code {
-    background-color: #ece9d8;
-    color: black;
-}
-
-img.r {
-  border: 1px solid !important;
-  border-radius: 3px !important;
-  width: 18px !important;
-  margin-right: 8px !important;
-  vertical-align:bottom !important;
-}
-
 .ts {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -59,10 +54,14 @@ img.r {
     height: 24px !important;
     background-image: url(../img/div-ts.png);
     background-size: 16px 512px !important;
+    min-width: 16px; // prevent narrow screen width from removing lines
+}
+
+body.theme-dark .ts {
+    background-image: url(../img/div-ts-dark.png);
 }
 
 .te {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -72,10 +71,14 @@ img.r {
     height: 24px !important;
     background-image: url(../img/div-te.png);
     background-size: 16px 512px !important;
+    min-width: 16px; // prevent narrow screen width from removing lines
+}
+
+body.theme-dark .te {
+    background-image: url(../img/div-te-dark.png);
 }
 
 .le {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -87,22 +90,11 @@ img.r {
     background-size: 16px 512px !important;
 }
 
-.ke {
-    background-color: #ffffff !important;
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-ke.png);
-    background-size: 16px 512px !important;
+body.theme-dark .le {
+    background-image: url(../img/div-le-dark.png);
 }
 
-
 .ls {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -114,8 +106,27 @@ img.r {
     background-size: 16px 512px !important;
 }
 
+body.theme-dark .ls {
+    background-image: url(../img/div-ls-dark.png);
+}
+
+.ke {
+    border: 0px !important;
+    padding: 0px !important;
+    margin: 0px !important;
+    border-collapse: collapse !important;
+    vertical-align: top !important;
+    width: 16px !important;
+    height: 24px !important;
+    background-image: url(../img/div-ke.png);
+    background-size: 16px 512px !important;
+}
+
+body.theme-dark .ke {
+    background-image: url(../img/div-ke-dark.png);
+}
+
 .ks {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -127,9 +138,11 @@ img.r {
     background-size: 16px 512px !important;
 }
 
+body.theme-dark .ks {
+    background-image: url(../img/div-ks-dark.png);
+}
 
 .d {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -141,8 +154,11 @@ img.r {
     background-size: 1024px 512px !important;
 }
 
+body.theme-dark .d {
+    background-image: url(../img/div-d-dark.png);
+}
+
 .e {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -154,25 +170,30 @@ img.r {
     background-size: 1024px 512px !important;
 }
 
+body.theme-dark .e {
+    background-image: url(../img/div-e-dark.png);
+}
+
 .c {
-    background-color: #ffffff !important;
-    padding: 1px 3px !important;
+    padding: 0px 3px !important;
     margin: 0px 0px !important;
     border: 2px solid !important;
     -moz-border-radius: 0.4em !important;
     -webkit-border-radius: 0.4em !important;
     -khtml-border-radius: 0.4em !important;
     border-radius: 0.4em !important;
-    background-color: #fff !important;
-    color: black;
+    white-space: nowrap;
+}
+
+body.theme-dark .c {
+    background-image: url(../img/div-c-dark.png);
 }
 
 </style>
 
 
 This page provides a visual breakdown of our Search Query Language and a handful
-of examples to get you started. It is complementary to our [syntax
-reference](../reference/queries.md) and illustrates syntax using railroad diagrams instead of
+of examples to get you started. It is complementary to our [syntax reference](../reference/queries.md) and illustrates syntax using railroad diagrams instead of
 tables.
 
 **How to read railroad diagrams.** Follow the lines in these railroad diagrams from left
@@ -363,9 +384,9 @@ Group expressions with parentheses to build more complex expressions. If there a
 
 A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
 <ul class="r">
-    <li class="r"><img class="r" src="../img/regex.png">Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
+    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/regex.png"></span> Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
     <strong>Example:</strong> <code>foo.*bar.*baz</code><a href="https://sourcegraph.com/search?q=foo+bar&patternType=regexp"> ↗</a> <code>"foo bar"</code><a href="https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp"> ↗</a></li>
-    <li class="r"><img class="r" src="../img/structural.png">Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural search. <br><strong>Example:</strong> <code>fmt.Sprintf(":[format]", :[args])</code><a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"> ↗</a></li>
+    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/brackets.png"></span> Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural sexarch. <br><strong>Example:</strong> <code>fmt.Sprintf(":[format]", :[args])</code><a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"> ↗</a></li>
 </ul>
 
 
@@ -538,7 +559,7 @@ Search parameters allow you to filter search results or modify search behavior.
                   <td class="ls"></td>
                   <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
                   <td class="d">
-                  <td class="d"><code class="c">rev:<a href="#revison">revision</a></code></td>
+                  <td class="d"><code class="c">rev:<a href="#revision">revision</a></code></td>
                   <td class="le"></td>
               </tr>
               </tbody>
@@ -893,7 +914,7 @@ Notable search types are symbol, commit, and diff searches.
 </div>
 
 Set whether the search pattern should be treated case-sensitively. This is
-synonymous with the <img class="r" src=../img/case.png>toggle button.
+synonymous with the <span class="toggle-container"><img class="toggle" src=../img/case.png></span> toggle button.
 
 **Example:** `OPEN_FILE case:yes` [↗](https://sourcegraph.com/search?q=OPEN_FILE+case:yes)
 

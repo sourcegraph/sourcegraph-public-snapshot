@@ -45,7 +45,7 @@
     &__repo-card {
         padding: 1rem;
         margin-top: 1.5rem;
-        background: $color-bg-2;
+        background: var(--color-bg-2);
     }
 
     &__column {
@@ -59,7 +59,7 @@
 
     &__repo-list-icon {
         margin-right: 0.5rem;
-        color: $gray-15;
+        color: var(--text-muted);
     }
 
     &__example-bar {
@@ -73,17 +73,5 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-}
-
-.theme-light {
-    .repogroup-page {
-        &__repo-card {
-            background: #f7fafd;
-            border-color: $color-light-border-2;
-        }
-        &__repo-list-icon {
-            color: $gray-11;
-        }
     }
 }
