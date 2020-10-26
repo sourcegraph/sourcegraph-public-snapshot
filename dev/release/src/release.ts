@@ -449,7 +449,7 @@ ${issueCategories
                     `:captain: *Sourcegraph ${parsedVersion.version} release has been staged*
 
 * Campaign: ${publishCampaign}
-* @stephen: update deploy-sourcegraph-docker as needed`,
+* @stephen: update <https://github.com/sourcegraph/deploy-sourcegraph-docker|deploy-sourcegraph-docker> as needed`,
                     slackAnnounceChannel
                 )
             }
