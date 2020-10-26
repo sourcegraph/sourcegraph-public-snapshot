@@ -13,8 +13,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
-:warning: WARNING :warning: For users of single-image Sourcegraph instance, please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
-
 ### Added
 
 - GraphQL syntax highlighting is now back (special thanks to @rvantonder) [#13935](https://github.com/sourcegraph/sourcegraph/issues/13935)
@@ -39,11 +37,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.21.2
 
+:warning: WARNING :warning: For users of single-image Sourcegraph instance, please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
+
 ### Fixed
 
 - Fix externalURLs alert logic [#14980](https://github.com/sourcegraph/sourcegraph/pull/14980)
 
 ## 3.21.1
+
+:warning: WARNING :warning: For users of single-image Sourcegraph instance, please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
 
 ### Fixed
 
@@ -55,6 +57,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Repository syncing will not happen more frequently than the repoListUpdateInterval config value [#14901](https://github.com/sourcegraph/sourcegraph/pull/14901) [#14983](https://github.com/sourcegraph/sourcegraph/pull/14983)
 
 ## 3.21.0
+
+:warning: WARNING :warning: For users of single-image Sourcegraph instance, please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
 
 ### Added
 
