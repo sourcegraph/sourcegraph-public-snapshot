@@ -8,8 +8,8 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-const minioAccessKey = "AKIAIOSFODNN7EXAMPLE"
-const minioSecretKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+SetDefaultEnv("MINIO_ACCESS_KEY", "AKIAIOSFODNN7EXAMPLE")
+SetDefaultEnv("MINIO_SECRET_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
 
 func maybeMinio() ([]string, error) {
 	if os.Getenv("DISABLE_MINIO") != "" {
@@ -18,6 +18,6 @@ func maybeMinio() ([]string, error) {
 	}
 
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "minio")
-	procline := fmt.Sprintf(`minio: env 'MINIO_ACCESS_KEY=%s' 'MINIO_SECRET_KEY=%s' /usr/local/bin/minio server %s >> /var/opt/sourcegraph/minio.log 2>&1`, minioAccessKey, minioSecretKey, dataDir)
+	procline := fmt.Sprintf(`minio: /usr/local/bin/minio server %s >> /var/opt/sourcegraph/minio.log 2>&1`,  dataDir)
 	return []string{procline}, nil
 }
