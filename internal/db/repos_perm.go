@@ -258,9 +258,12 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 }
 
 const authzQueryCondsFmtstr = `(
-	%s							-- TRUE or FALSE to indicate whether to bypass the check
-OR	repo.unrestricted = TRUE	-- Happy path of unrestricted repositories
-OR	(							-- Restricted repositories require checking permissions
+	%s									-- TRUE or FALSE to indicate whether to bypass the check
+OR	(									-- Happy path of unrestricted repositories
+		NOT	%s							-- No happy path when permissions user mapping is enabled
+		AND	repo.unrestricted = TRUE
+	)
+OR	(									-- Restricted repositories require checking permissions
 		SELECT object_ids_ints
 		FROM user_permissions
 		WHERE
@@ -272,15 +275,19 @@ OR	(							-- Restricted repositories require checking permissions
 `
 
 // authzQueryConds returns a query clause for enforcing repository permissions.
-// It uses `repo.id` to filter out repository IDs and should be used as an AND
-// condition in a complete SQL query.
+// It uses `repo` as the table name to filter out repository IDs and should be
+// used as an AND condition in a complete SQL query.
 func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
+	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz provider(s) and permissions user mapping
 	// are configured.
-	if globals.PermissionsUserMapping().Enabled && len(authzProviders) > 0 {
-		return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+	if usePermissionsUserMapping {
+		if len(authzProviders) > 0 {
+			return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+		}
+		authzAllowByDefault = false
 	}
 
 	authenticatedUserID := int32(0)
@@ -297,7 +304,12 @@ func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 		bypassAuthz = currentUser.SiteAdmin
 	}
 
-	q := sqlf.Sprintf(authzQueryCondsFmtstr, bypassAuthz, authenticatedUserID, authz.Read.String())
+	q := sqlf.Sprintf(authzQueryCondsFmtstr,
+		bypassAuthz,
+		usePermissionsUserMapping,
+		authenticatedUserID,
+		authz.Read.String(), // Note: We currently only support read for repository permissions.
+	)
 	return q, nil
 }
 
