@@ -264,7 +264,7 @@ const steps: Step[] = [
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
@@ -286,7 +286,7 @@ const steps: Step[] = [
                                 writeFileSync(changelogPath, changelogContents)
                             },
                         ], // Changes already done
-                        title: `Update latest release to ${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                     },
                 ],
                 dryRun: dryRun.changesets,
@@ -373,14 +373,15 @@ ${issueCategories
                 throw new Error(`version ${version} is pre-release`)
             }
             await createChangesets({
-                requiredCommands: ['comby', sed, 'find'],
+                requiredCommands: ['comby', sed, 'find', 'go'],
                 changes: [
                     {
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
                             `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${parsedVersion.version}\`/g' doc/index.md`,
@@ -390,53 +391,41 @@ ${issueCategories
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph',
                         base: `${parsedVersion.major}.${parsedVersion.minor}`,
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             // installs version pinned by deploy-sourcegraph
                             'go install github.com/slimsag/update-docker-tags',
                             `.github/workflows/scripts/update-docker-tags.sh ${parsedVersion.version}`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-digitalocean',
                         base: 'master',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
-                    },
-                    {
-                        owner: 'sourcegraph',
-                        repo: 'deploy-sourcegraph-dot-com',
-                        base: 'release',
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
-                        edits: [
-                            `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
-                        ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                 ],
                 dryRun: dryRun.changesets,
