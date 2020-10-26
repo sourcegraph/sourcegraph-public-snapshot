@@ -21,10 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var ErrIDIsZero = errors.New("invalid node id")
-var ErrCampaignsDisabled = errors.New("campaigns are disabled. Set 'campaigns.enabled' in the site configuration to enable the feature.")
-var ErrCampaignsDotCom = errors.New("access to campaigns on Sourcegraph.com is currently not available")
-
 // Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
 	store       *ee.Store
@@ -39,14 +35,14 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 func campaignsEnabled() error {
 	// On Sourcegraph.com nobody can read/create campaign entities
 	if envvar.SourcegraphDotComMode() {
-		return ErrCampaignsDotCom
+		return ErrCampaignsDotCom{}
 	}
 
 	if enabled := conf.CampaignsEnabled(); enabled {
 		return nil
 	}
 
-	return ErrCampaignsDisabled
+	return ErrCampaignsDisabled{}
 }
 
 // campaignsCreateAccess returns true if the current user can create
@@ -54,7 +50,7 @@ func campaignsEnabled() error {
 func campaignsCreateAccess(ctx context.Context) error {
 	// On Sourcegraph.com nobody can create campaigns/patchsets/changesets
 	if envvar.SourcegraphDotComMode() {
-		return ErrCampaignsDotCom
+		return ErrCampaignsDotCom{}
 	}
 
 	// Only site-admins can create campaigns/patchsets/changesets
@@ -221,12 +217,19 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	if opts.CampaignSpecRandID == "" {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
+		if err == ee.ErrEnsureCampaignFailed {
+			return nil, ErrEnsureCampaignFailed{}
+		} else if err == ee.ErrApplyClosedCampaign {
+			return nil, ErrApplyClosedCampaign{}
+		} else if err == ee.ErrMatchingCampaignExists {
+			return nil, ErrMatchingCampaignExists{}
+		}
 		return nil, err
 	}
 
@@ -253,7 +256,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	}
 
 	if opts.CampaignSpecRandID == "" {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	if args.EnsureCampaign != nil {
@@ -268,6 +271,13 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	// apply the campaign spec
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
+		if err == ee.ErrEnsureCampaignFailed {
+			return nil, ErrEnsureCampaignFailed{}
+		} else if err == ee.ErrApplyClosedCampaign {
+			return nil, ErrApplyClosedCampaign{}
+		} else if err == ee.ErrMatchingCampaignExists {
+			return nil, ErrMatchingCampaignExists{}
+		}
 		return nil, err
 	}
 
@@ -374,7 +384,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 	}
 
 	if campaignID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	var opts ee.MoveCampaignOpts
@@ -416,7 +426,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	}
 
 	if campaignID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -575,7 +585,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	}
 
 	if campaignID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -604,7 +614,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	}
 
 	if changesetID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
