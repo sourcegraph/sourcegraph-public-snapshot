@@ -1,4 +1,4 @@
-package codeintel
+package executor
 
 import (
 	"bytes"
@@ -7,15 +7,17 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func init() {
-	internalProxyAuthToken = "hunter2"
+	sharedUsername = "test"
+	sharedPassword = "hunter2"
 }
 
 func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
-	ts := httptest.NewServer(internalProxyAuthTokenMiddleware(
+	ts := httptest.NewServer(basicAuthMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)
 		}),
@@ -27,7 +29,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 		t.Fatalf("unexpected error creating request: %s", err)
 	}
 
-	// no token
+	// no auth
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -39,8 +41,18 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 		t.Errorf("unexpected www-authenticate header. want=%q have=%q", `Basic realm="Sourcegraph"`, value)
 	}
 
-	// wrong v
-	req.SetBasicAuth("indexer", "hunter3")
+	// wrong username
+	req.SetBasicAuth(strings.ToUpper(sharedUsername), sharedPassword)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("unexpected error performing request: %s", err)
+	}
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
+	}
+
+	// wrong password
+	req.SetBasicAuth(sharedUsername, strings.ToUpper(sharedPassword))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -50,7 +62,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// correct token
-	req.SetBasicAuth("indexer", "hunter2")
+	req.SetBasicAuth(sharedUsername, sharedPassword)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)

@@ -1,4 +1,4 @@
-package codeintel
+package executor
 
 import (
 	"bytes"
@@ -17,11 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var indexerURL = env.Get("PRECISE_CODE_INTEL_INDEX_MANAGER_URL", "", "HTTP address for the internal precise-code-intel-indexer-manager.")
-var internalProxyAuthToken = env.Get("PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN", "", "The auth token used to secure communication between the precise-code-intel-indexer service and the internal API provided by this proxy.")
+var queueURL = env.Get("EXECUTOR_QUEUE_URL", "", "HTTP address for the internal executor-queue.")
+var sharedUsername = env.Get("EXECUTOR_FRONTEND_USERNAME", "", "The username used to securely communicate between the executor service and the internal API provided by this proxy.")
+var sharedPassword = env.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password used to securely communicate between the executor service and the internal API provided by this proxy.")
 
 func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, error) {
-	if indexerURL == "" {
+	if queueURL == "" {
 		factory := func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
@@ -31,8 +32,11 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		return factory, nil
 	}
 
-	if internalProxyAuthToken == "" {
-		return nil, fmt.Errorf("invalid value for PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN: no value supplied")
+	if sharedUsername == "" {
+		return nil, fmt.Errorf("invalid value for EXECUTOR_FRONTEND_USERNAME: no value supplied")
+	}
+	if sharedPassword == "" {
+		return nil, fmt.Errorf("invalid value for EXECUTOR_FRONTEND_PASSWORD: no value supplied")
 	}
 
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
@@ -45,36 +49,37 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		return nil, errors.Wrap(err, "failed to construct the origin for the internal frontend")
 	}
 
-	indexerOrigin, err := url.Parse(indexerURL)
+	queueOrigin, err := url.Parse(queueURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct the origin for the precise-code-intel-index-manager")
+		return nil, errors.Wrap(err, "failed to construct the origin for the executor-queue")
 	}
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
-		base := mux.NewRouter().PathPrefix("/.internal-code-intel/").Subrouter()
+		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
 		base.StrictSlash(true)
 
 		// Proxy only info/refs and git-upload-pack for gitservice (git clone/fetch)
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
-		// Proxy only the known routes in the index queue API
-		base.Path("/index-queue/{rest:(?:dequeue|setlog|complete|heartbeat)}").Handler(reverseProxy(indexerOrigin))
+		// Proxy only the known routes in the executor queue API
+		base.Path("/queue/{rest:heartbeat|.*/(?:dequeue|setLogContents|markComplete|markErrored)}").Handler(reverseProxy(queueOrigin))
 
 		// Upload LSIF indexes without a sudo access token or github tokens
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		return internalProxyAuthTokenMiddleware(base)
+		return basicAuthMiddleware(base)
 	}
 
 	return factory, nil
 }
 
-// internalProxyAuthTokenMiddleware rejects requests that do not have a basic auth password matching
-// the configured internal proxy auth token.
-func internalProxyAuthTokenMiddleware(next http.Handler) http.Handler {
+// basicAuthMiddleware rejects requests that do not have a basic auth username and password matching
+// the expected username and password. This should only be used for internal _services_, not users,
+// in which a shared key exchange can be done so safely.
+func basicAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, token, ok := r.BasicAuth()
+		username, password, ok := r.BasicAuth()
 		if !ok {
 			// This header is required to be present with 401 responses in order to prompt the client
 			// to retry the request with basic auth credentials. If we do not send this header, the
@@ -83,7 +88,7 @@ func internalProxyAuthTokenMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		if token != internalProxyAuthToken {
+		if username != sharedUsername || password != sharedPassword {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
