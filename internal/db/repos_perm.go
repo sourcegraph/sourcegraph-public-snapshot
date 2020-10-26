@@ -274,10 +274,10 @@ OR	(									-- Restricted repositories require checking permissions
 )
 `
 
-// authzQueryConds returns a query clause for enforcing repository permissions.
+// AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
-func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
+func AuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 

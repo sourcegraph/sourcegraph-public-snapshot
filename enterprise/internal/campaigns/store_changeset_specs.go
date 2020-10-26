@@ -3,12 +3,14 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -265,7 +267,11 @@ type ListChangesetSpecsOpts struct {
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
 func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs campaigns.ChangesetSpecs, next int64, err error) {
-	q := listChangesetSpecsQuery(&opts)
+	q, err := listChangesetSpecsQuery(ctx, &opts)
+	fmt.Println("q:", q)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	cs = make(campaigns.ChangesetSpecs, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
@@ -293,10 +299,16 @@ WHERE %s
 ORDER BY changeset_specs.id ASC
 `
 
-func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
+func listChangesetSpecsQuery(ctx context.Context, opts *ListChangesetSpecsOpts) (*sqlf.Query, error) {
+	authzConds, err := db.AuthzQueryConds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changeset_specs.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		authzConds,
 	}
 
 	if opts.CampaignSpecID != 0 {
@@ -317,7 +329,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 		listChangesetSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(changesetSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
-	)
+	), nil
 }
 
 // DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been

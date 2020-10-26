@@ -34,12 +34,13 @@ type changesetsConnectionResolver struct {
 	once           sync.Once
 	changesets     campaigns.Changesets
 	changesetsPage campaigns.Changesets
+	next           int64
 	err            error
 	reposByID      map[api.RepoID]*types.Repo
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
-	_, changesetsPage, reposByID, err := r.compute(ctx)
+	changesetsPage, reposByID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -87,29 +88,31 @@ func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbacken
 // limit.
 // If r.optsSafe is true, it returns all of them. If not, it filters out the
 // ones to which the user doesn't have access.
-func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangesets, currentPage campaigns.Changesets, reposByID map[api.RepoID]*types.Repo, err error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangesets campaigns.Changesets, reposByID map[api.RepoID]*types.Repo, next int64, err error) {
 	r.once.Do(func() {
-		pageSlice := func(changesets campaigns.Changesets) campaigns.Changesets {
-			limit := r.opts.Limit
-			if limit <= 0 {
-				limit = len(changesets)
-			}
-			slice := changesets.Filter(func(cs *campaigns.Changeset) bool { return cs.ID > r.opts.Cursor })
-			if len(slice) > limit {
-				slice = slice[:limit]
-			}
-			return slice
-		}
+		// pageSlice := func(changesets campaigns.Changesets) campaigns.Changesets {
+		// 	limit := r.opts.Limit
+		// 	if limit <= 0 {
+		// 		limit = len(changesets)
+		// 	}
+		// 	slice := changesets.Filter(func(cs *campaigns.Changeset) bool { return cs.ID > r.opts.Cursor })
+		// 	if len(slice) > limit {
+		// 		slice = slice[:limit]
+		// 	}
+		// 	return slice
+		// }
 
-		opts := r.opts
-		opts.Limit = 0
-		opts.Cursor = 0
+		r.opts.OnlyAccessible = !r.optsSafe
+		// opts := r.opts
+		// opts.Limit = 0
+		// opts.Cursor = 0
 
-		cs, _, err := r.store.ListChangesets(ctx, opts)
+		cs, next, err := r.store.ListChangesets(ctx, r.opts)
 		if err != nil {
 			r.err = err
 			return
 		}
+		r.next = next
 
 		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
@@ -119,40 +122,41 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangese
 			return
 		}
 
-		// 🚨 SECURITY: If the opts do not leak information, we can return the
-		// number of changesets. Otherwise we have to filter the changesets by
-		// accessible repos.
-		if r.optsSafe {
-			r.changesets = cs
-			r.changesetsPage = pageSlice(cs)
-			return
-		}
+		r.changesets = cs
 
-		accessibleChangesets := make(campaigns.Changesets, 0)
-		for _, c := range cs {
-			if _, ok := r.reposByID[c.RepoID]; !ok {
-				continue
-			}
-			accessibleChangesets = append(accessibleChangesets, c)
-		}
-
-		r.changesets = accessibleChangesets
-		r.changesetsPage = pageSlice(accessibleChangesets)
+		// // 🚨 SECURITY: If the opts do not leak information, we can return the
+		// // number of changesets. Otherwise we have to filter the changesets by
+		// // accessible repos.
+		// if r.optsSafe {
+		// 	r.changesets = cs
+		// 	r.changesetsPage = pageSlice(cs)
+		// 	return
+		// }
+		//
+		// accessibleChangesets := make(campaigns.Changesets, 0)
+		// for _, c := range cs {
+		// 	if _, ok := r.reposByID[c.RepoID]; !ok {
+		// 		continue
+		// 	}
+		// 	accessibleChangesets = append(accessibleChangesets, c)
+		// }
+		//
+		// r.changesets = accessibleChangesets
+		// r.changesetsPage = pageSlice(accessibleChangesets)
 	})
 
-	return r.changesets, r.changesetsPage, r.reposByID, r.err
+	return r.changesets, r.reposByID, r.next, r.err
 }
 
 func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	all, page, _, err := r.compute(ctx)
+	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(all) > 0 && len(page) > 0 && page[len(page)-1].ID != all[len(all)-1].ID {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(page[len(page)-1].ID))), nil
+	if next > 0 {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 	}
-
 	return graphqlutil.HasNextPage(false), nil
 }
 

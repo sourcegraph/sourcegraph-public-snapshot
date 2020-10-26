@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -389,11 +390,15 @@ type ListChangesetsOpts struct {
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
 	OnlySynced           bool
+	OnlyAccessible       bool
 }
 
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error) {
-	q := listChangesetsQuery(&opts)
+	q, err := listChangesetsQuery(ctx, &opts)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	cs = make([]*campaigns.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
@@ -421,10 +426,18 @@ WHERE %s
 ORDER BY id ASC
 `
 
-func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
+func listChangesetsQuery(ctx context.Context, opts *ListChangesetsOpts) (*sqlf.Query, error) {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+
+	if opts.OnlyAccessible {
+		authzConds, err := db.AuthzQueryConds(ctx)
+		if err != nil {
+			return nil, err
+		}
+		preds = append(preds, authzConds)
 	}
 
 	if opts.CampaignID != 0 {
@@ -480,7 +493,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
-	)
+	), nil
 }
 
 // ListChangesetsAttachedOrOwnedByCampaign lists Changesets that are either

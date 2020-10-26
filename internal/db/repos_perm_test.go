@@ -161,7 +161,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 		defer authz.SetProviders(true, nil)
 
-		_, err := authzQueryConds(context.Background())
+		_, err := AuthzQueryConds(context.Background())
 		wantErr := "The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it."
 		gotErr := fmt.Sprintf("%v", err)
 		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
@@ -174,7 +174,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		got, err := authzQueryConds(context.Background())
+		got, err := AuthzQueryConds(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -243,7 +243,7 @@ func TestAuthzQueryConds(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := authzQueryConds(test.setup())
+			q, err := AuthzQueryConds(test.setup())
 			if err != nil {
 				t.Fatal(err)
 			}

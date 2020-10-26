@@ -230,7 +230,7 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, queryConds *sql
 		querySuffix = sqlf.Sprintf("")
 	}
 
-	authzConds, err := authzQueryConds(ctx)
+	authzConds, err := AuthzQueryConds(ctx)
 	if err != nil {
 		return nil, err
 	}
