@@ -646,6 +646,54 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		now := time.Now().Truncate(time.Microsecond).Unix()
+		s := NewPermsStore(db, func() time.Time {
+			return time.Unix(atomic.LoadInt64(&now), 0).Truncate(time.Microsecond)
+		})
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		// Touch is an upsert
+		if err := s.TouchRepoPermissions(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Set up some permissions
+		rp := &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(2),
+		}
+		if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		// Touch the permissions in an hour late
+		now += 3600
+		if err := s.TouchRepoPermissions(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Permissions bits shouldn't be affected
+		rp = &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
+
+		// Both times should be updated to "now"
+		if rp.UpdatedAt.Unix() != now || rp.SyncedAt.Unix() != now {
+			t.Fatal("UpdatedAt or SyncedAt was not updated but supposed to")
+		}
+	}
+}
+
 func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching with different account ID", func(t *testing.T) {

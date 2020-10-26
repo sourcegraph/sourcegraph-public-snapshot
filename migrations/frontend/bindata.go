@@ -104,6 +104,8 @@
 // 1528395734_repo_updater_log_contents.up.sql (565B)
 // 1528395735_drop_language_from_repo.down.sql (74B)
 // 1528395735_drop_language_from_repo.up.sql (66B)
+// 1528395736_add_index_to_repo_created_at.down.sql (124B)
+// 1528395736_add_index_to_repo_created_at.up.sql (151B)
 
 package migrations
 
@@ -2252,6 +2254,46 @@ func _1528395735_drop_language_from_repoUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395736_add_index_to_repo_created_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xd1\x09\xc2\x30\x10\x06\xe0\xf7\x4c\xf1\x2f\xd0\x05\xf4\xb1\x8d\x10\x90\x54\xd2\x0a\xf5\xa9\x9c\xe9\x3d\x04\xe5\x4e\x2e\xe7\xfe\x4e\xe0\x00\xdf\x30\x20\xab\xf3\x09\x53\x99\x6f\x48\x79\x8a\x1b\xc6\x39\x8f\xf7\x52\x62\x5e\xaf\x0f\x54\x12\x51\x87\x7d\x05\x4d\x7a\x3b\x18\x04\x37\x92\x4e\xd5\x9b\x0a\x9e\x6f\xad\xaf\x10\xfe\xf1\x74\x41\xdc\xd2\xb2\x2e\x30\xfe\xe8\x5e\x8d\xc9\xf9\xd8\xc9\xcf\x21\xfc\x02\x00\x00\xff\xff\x4d\xbc\x9c\x8f\x7c\x00\x00\x00")
+
+func _1528395736_add_index_to_repo_created_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395736_add_index_to_repo_created_atDownSql,
+		"1528395736_add_index_to_repo_created_at.down.sql",
+	)
+}
+
+func _1528395736_add_index_to_repo_created_atDownSql() (*asset, error) {
+	bytes, err := _1528395736_add_index_to_repo_created_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395736_add_index_to_repo_created_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8a, 0x9b, 0x1d, 0x2a, 0xe8, 0x36, 0xb, 0x25, 0x5c, 0xb7, 0x56, 0x17, 0xa8, 0xbc, 0x96, 0xa5, 0xb7, 0x15, 0xed, 0x81, 0xc2, 0x5f, 0xd7, 0xe4, 0x73, 0xe8, 0x1, 0x6d, 0xab, 0x8d, 0xa5, 0x1d}}
+	return a, nil
+}
+
+var __1528395736_add_index_to_repo_created_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\xb1\x0a\xc2\x30\x10\x06\xe0\x3d\x4f\xf1\x8f\x3a\xf4\x05\x74\x92\x18\x21\x20\x17\x48\x23\xd4\xa9\x9c\x69\x86\xa0\x5c\x24\x3d\xdf\x5f\x70\x71\xea\xfa\x0d\xdf\x30\x80\x9a\x96\x03\x6c\x74\xa7\xe4\xe0\xe9\xec\x26\xd8\x40\xf6\x16\xa3\xa3\x74\xbd\x23\xb3\x48\x53\xf4\x8f\xa0\xca\x5a\x97\x02\x86\x76\x96\x95\xb3\xd6\x26\x78\xbc\x5a\x7e\x1a\xb3\x1d\xf8\x0b\x28\x24\xb8\xc9\x8f\x69\x44\x2f\xef\x36\xe7\x5e\x58\xcb\x32\xb3\x22\xd0\x8f\x76\x7f\xda\x1f\xcd\x37\x00\x00\xff\xff\x96\x47\xb7\x7a\x97\x00\x00\x00")
+
+func _1528395736_add_index_to_repo_created_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395736_add_index_to_repo_created_atUpSql,
+		"1528395736_add_index_to_repo_created_at.up.sql",
+	)
+}
+
+func _1528395736_add_index_to_repo_created_atUpSql() (*asset, error) {
+	bytes, err := _1528395736_add_index_to_repo_created_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395736_add_index_to_repo_created_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8, 0x8d, 0xc5, 0xdd, 0xca, 0xff, 0x9d, 0x79, 0xce, 0x93, 0xb4, 0x10, 0x4e, 0xd3, 0x50, 0x6c, 0x8c, 0x54, 0x92, 0xaf, 0x76, 0xaa, 0xee, 0x56, 0x7b, 0x98, 0x8a, 0x98, 0x95, 0xab, 0x5e, 0x3a}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2447,6 +2489,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395734_repo_updater_log_contents.up.sql":                                  _1528395734_repo_updater_log_contentsUpSql,
 	"1528395735_drop_language_from_repo.down.sql":                                  _1528395735_drop_language_from_repoDownSql,
 	"1528395735_drop_language_from_repo.up.sql":                                    _1528395735_drop_language_from_repoUpSql,
+	"1528395736_add_index_to_repo_created_at.down.sql":                             _1528395736_add_index_to_repo_created_atDownSql,
+	"1528395736_add_index_to_repo_created_at.up.sql":                               _1528395736_add_index_to_repo_created_atUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2597,6 +2641,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395734_repo_updater_log_contents.up.sql":                                  {_1528395734_repo_updater_log_contentsUpSql, map[string]*bintree{}},
 	"1528395735_drop_language_from_repo.down.sql":                                  {_1528395735_drop_language_from_repoDownSql, map[string]*bintree{}},
 	"1528395735_drop_language_from_repo.up.sql":                                    {_1528395735_drop_language_from_repoUpSql, map[string]*bintree{}},
+	"1528395736_add_index_to_repo_created_at.down.sql":                             {_1528395736_add_index_to_repo_created_atDownSql, map[string]*bintree{}},
+	"1528395736_add_index_to_repo_created_at.up.sql":                               {_1528395736_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
