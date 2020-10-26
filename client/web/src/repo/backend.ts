@@ -2,6 +2,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import {
     CloneInProgressError,
+    FileNotFoundError,
     RepoNotFoundError,
     RepoSeeOtherError,
     RevisionNotFoundError,
@@ -193,7 +194,13 @@ const fetchHighlightedFile = memoizeObservable(
                 if (!data.repository) {
                     throw new RepoNotFoundError(context.repoName)
                 }
+                if (!data.repository.commit) {
+                    throw new RevisionNotFoundError(context.commitID)
+                }
                 const file = data.repository.commit.file
+                if (!file) {
+                    throw new FileNotFoundError(context.filePath)
+                }
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
@@ -244,9 +251,15 @@ export const fetchFileExternalLinks = memoizeObservable(
             context
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ data, errors }) => {
-                if (!data?.repository?.commit?.file?.externalURLs) {
-                    throw createAggregateError(errors)
+            map(data => {
+                if (!data.repository) {
+                    throw new RepoNotFoundError(context.repoName)
+                }
+                if (!data.repository.commit) {
+                    throw new RevisionNotFoundError(context.revision)
+                }
+                if (!data.repository.commit.file) {
+                    throw new FileNotFoundError(context.filePath)
                 }
                 return data.repository.commit.file.externalURLs
             })

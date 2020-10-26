@@ -17,7 +17,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
-import { makeRepoURI } from '../../../shared/src/util/url'
+import { makeRepoURI, ParsedRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import {
@@ -30,7 +30,7 @@ import {
     quoteIfNeeded,
 } from '../search'
 import { RouteDescriptor } from '../util/contributions'
-import { parseBrowserRepoURL } from '../util/url'
+import { parseBrowserRepoURL, ParsedRepoRevision } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -100,7 +100,7 @@ const RepoPageNotFound: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
-interface RepoContainerProps
+interface RepoPageProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps<Settings>,
         PlatformContextProps,
@@ -127,6 +127,8 @@ interface RepoContainerProps
     globbing: boolean
 }
 
+interface RepoContainerProps extends RepoPageProps, ParsedRepoURI, Pick<ParsedRepoRevision, 'rawRevision'> {}
+
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
 
@@ -143,22 +145,28 @@ export interface ExtensionAlertProps {
     onExtensionAlertDismissed: () => void
 }
 
-export class RepoPage extends React.Component<RepoContainerProps, { error: unknown }> {
-    constructor(props) {
+interface RepoPageState {
+    error?: unknown
+}
+
+export class RepoPage extends React.Component<RepoPageProps, RepoPageState> {
+    constructor(props: RepoPageProps) {
         super(props)
         this.state = {}
     }
-    static getDerivedStateFromError(error: unknown) {
+    public static getDerivedStateFromError(error: unknown): RepoPageState | null {
         if (isRepoNotFoundErrorLike(error)) {
             return { error }
         }
         return null
     }
-    render() {
+    public render(): JSX.Element | null {
+        const parsedUrl = parseBrowserRepoURL(location.pathname + location.search + location.hash)
+
         if (isRepoNotFoundErrorLike(this.state.error)) {
-            return <RepositoryNotFoundPage repo={this.props.repoName} viewerCanAdminister={false} />
+            return <RepositoryNotFoundPage {...parsedUrl} viewerCanAdminister={false} />
         }
-        return <RepoContainer {...this.props} />
+        return <RepoContainer {...this.props} {...parsedUrl} />
     }
 }
 
@@ -166,9 +174,7 @@ export class RepoPage extends React.Component<RepoContainerProps, { error: unkno
  * Renders a horizontal bar and content for a repository page.
  */
 const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
-    const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
-        location.pathname + location.search + location.hash
-    )
+    const { repoName, revision, rawRevision, filePath, commitRange, position, range } = props
 
     // Fetch repository upon mounting the component.
     const initialRepoOrError = useObservable(
@@ -409,7 +415,7 @@ const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
     if (isErrorLike(repoOrError)) {
         // Display error page
         if (isRepoNotFoundErrorLike(repoOrError)) {
-            return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
+            return <RepositoryNotFoundPage repoName={repoName} viewerCanAdminister={viewerCanAdminister} />
         }
         return (
             <HeroPage
