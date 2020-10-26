@@ -4,6 +4,20 @@
 .markdown-body pre.chroma {
   font-size: 0.75em;
 }
+
+img.screenshot {
+    max-width: 600px;
+    margin: 1em;
+    margin-bottom: 0.5em;
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+}
+
+img.center {
+  display: block;
+  margin: auto
+}
+
 </style>
 
 <p class="lead">
@@ -12,59 +26,63 @@ Create a campaign to update Dockerfiles in every one of your repositories.
 
 ### Introduction
 
-Campaigns, combined with [comby](https://comby.dev) and [structural search](../../code_search/reference/structural.md), allow us to update the base images used in our Dockerfiles in just a few commands.
+Campaigns allow us to update the base images used in our Dockerfiles, across many repositories, in just a few commands.
 
 This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_campaigns.md#campaign-spec) that
 
-1. finds `Dockerfile`s that make use of `golang:1.x` base images and 
-2. changes those `Dockerfiles` to use `golang:1.15`
+1. finds `Dockerfile`s that make use of `google/dart:2.x` base images and 
+2. changes those `Dockerfiles` to use `google/dart:2.10`
 
-The campaign spec and instructions here can easily be adapted to update other
-base images.
+The campaign spec and instructions here can [easily be adapted to update other base images](#updating-other-base-images).
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_teaser.png" class="screenshot center">
 
 ### Prerequisites
 
-We recommend that use the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
+We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
 
 1. ["Quickstart"](../quickstart.md)
 1. ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md)
 
 ### Create the campaign spec
 
-Save the following campaign spec YAML as `YOUR_CAMPAIGN_SPEC.campaign.yaml`:
+Save the following campaign spec YAML as `update-dart-base-images-2-10.campaign.yaml`:
 
 ```yaml
-name: update-golang-base-images
-description: This campaign updates the golang builder images in Dockerfiles to Go 1.15.
+name: update-dart-base-images-2-10
+description: This campaign updates `google/dart:2.*` base images in Dockerfiles to `google/dart:2.10.2`.
 
 on:
-  # Find all repositories that contain Dockerfiles with `FROM golang:1.MINOR-alpine [...]` in it,
-  # where the MINOR version can be 10 to 14.
-  - repositoriesMatchingQuery: FROM golang:1.1:[minor~[0-4]]-alpine file:Dockerfile patternType:structural
-  # and optionally specify a sha256 hash
-  - repositoriesMatchingQuery: FROM golang:1.1:[minor~[0-4]]-alpine@sha256::[hash~[a-f0-9]+] file:Dockerfile patternType:structural
+  # Find all repositories that contain Dockerfiles with `FROM google/dart:2.*` as base images.
+  # The regexp used here matches images
+  #
+  #   google/dart:2.MINOR.PATCH
+  #   google/dart:2.MINOR.PATCH-dev.DEVMINOR.DEVPATCH
+  #
+  #   google/dart-runtime:2.MINOR.PATCH
+  #   google/dart-runtime:2.MINOR.PATCH-dev.DEVMINOR.DEVPATCH
+  #
+  # where the tag is < 2.10. Feel free to adjust it to your requirements.
+  - repositoriesMatchingQuery: ^FROM google\/dart(-runtime)?:2\.[0-9]\.?\d?(-dev\.\d\.\d)? file:Dockerfile  patternType:regexp
 
 # In each repository
 steps:
-  # we use comby to update the base images with the sha256 suffix
+  # find all Dockerfiles and replace the old image tags with our desired ones:
   - run: |
-      comby \
-        -in-place \
-        'FROM golang::[version]-alpine@sha256::[hash~[a-f0-9]+]' \
-        'FROM golang:1.15-alpine@sha256:df0119b970c8e5e9f0f5c40f6b55edddf616bab2b911927ebc3b361c469ea29c' \
-        Dockerfile
-    container: comby/comby
-  # and use comby to replace the ones without it:
-  - run: comby -in-place 'FROM golang::[version]-alpine' 'FROM golang:1.15-alpine' Dockerfile
-    container: comby/comby
+      find . -name Dockerfile -type f |\
+      xargs sed\
+        -i\
+        --regexp-extended\
+        's/FROM google\/dart(-runtime)?:2\.[[:digit:]]\.?[[:digit:]]?(-dev\.?[[:digit:]]?\.?[[:digit:]]?)?/FROM google\/dart:2\.10/g'
+    container: alpine:3
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
 changesetTemplate:
-  title: Update golang base images in Dockerfiles to 1.15
-  body: This updates golang base images used in Dockerfiles from golang:1.10 to 1.14 to use golang:1.15.
-  branch: campaigns/golang-15-base-images # Push the commit to this branch.
+  title: Update google/dart base images in Dockerfiles to 2.10.2
+  body: This updates google/dart base images used in Dockerfiles to version 2.10.2
+  branch: campaigns/google-dart-2-10-2-base-images # Push the commit to this branch.
   commit:
-    message: Update golang base images in Dockerfiles to 1.15
+    message: Update google/dart base images in Dockerfiles to 2.10.2
   published: false
 ```
 
@@ -72,18 +90,25 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f hello-world.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
+    <pre>src campaign preview -f update-dart-base-images-2-10.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
 
     > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+1. Wait for it to run and compute the changes for each repository.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_click_url.png" class="screenshot">
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
-1. Click the **Create campaign** button.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_preview.png" class="screenshot">
+1. Click the **Apply spec** button to create the campaign.
+1. Feel free to then [publish the changesets](../../quickstart.md#publish-the-changes) to create pull requests and merge requests on the code hosts.
 
 ### Updating other base images
 
 In order to update other base images in `Dockerfile`s you can either extend the campaign spec or create another campaign spec in which you change the `repositoriesMatchingQuery` and the `steps.run` properties.
 
-Here's how you would update `alpine` base images from `alpine:3.9`, `alpine:3.10`, `alpine:3.11` to `alpine:3.12`:
+You can keep using regexp-based search and `sed`, or you can use [structural search](../../code_search/reference/structural.md) combined with [comby](https://comby.dev) to update base images.
+
+For example, here's how you would update `alpine` base images from `alpine:3.9`, `alpine:3.10`, `alpine:3.11` to `alpine:3.12`:
 
 ```yaml
 # [...]
@@ -104,4 +129,24 @@ steps:
     container: comby/comby
 
 # [...]
+```
+
+And here's how you could update `golang` base images to use Go 1.15:
+
+```yaml
+# [...]
+on:
+  - repositoriesMatchingQuery: FROM golang:1.1:[minor~[0-4]]-alpine file:Dockerfile patternType:structural
+  - repositoriesMatchingQuery: FROM golang:1.1:[minor~[0-4]]-alpine@sha256::[hash~[a-f0-9]+] file:Dockerfile patternType:structural
+
+steps:
+  - run: |
+      comby \
+        -in-place \
+        'FROM golang::[version]-alpine@sha256::[hash~[a-f0-9]+]' \
+        'FROM golang:1.15-alpine@sha256:df0119b970c8e5e9f0f5c40f6b55edddf616bab2b911927ebc3b361c469ea29c' \
+        Dockerfile
+    container: comby/comby
+  - run: comby -in-place 'FROM golang::[version]-alpine' 'FROM golang:1.15-alpine' Dockerfile
+    container: comby/comby
 ```

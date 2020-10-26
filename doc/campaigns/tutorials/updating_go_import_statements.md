@@ -44,7 +44,9 @@ We recommend that use the latest version of Sourcegraph when working with campai
 
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
-1. Click the **Create campaign** button.
+1. Click the **Apply spec** button to create the campaign.
+1. Feel free to then [publish the changesets](../../quickstart.md#publish-the-changes) to create pull requests and merge requests on the code hosts.
+
 
 ### Campaign spec
 
