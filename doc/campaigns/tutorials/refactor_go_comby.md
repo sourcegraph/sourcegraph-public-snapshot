@@ -1,5 +1,11 @@
 # Refactor Go code using Comby
 
+<style>
+.markdown-body pre.chroma {
+  font-size: 0.75em;
+}
+</style>
+
 ### Introduction
 
 This campaign uses Sourcegraph's [structural search](../../code_search/reference/structural.md) and [Comby](https://comby.dev/) to rewrite Go statements from
@@ -25,21 +31,9 @@ We recommend that use the latest version of Sourcegraph when working with campai
 1. ["Quickstart"](../quickstart.md)
 1. ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md)
 
+### Create the camapign spec
 
-### Instructions
-
-1. Save the campaign spec below as `YOUR_CAMPAIGN_SPEC.campaign.yaml`.
-1. Create a campaign from the campaign spec by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
-
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace USERNAME_OR_ORG</code></pre>
-
-1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
-1. Click the **Apply spec** button to create the campaign.
-1. Feel free to then [publish the changesets](../../quickstart.md#publish-the-changes) to create pull requests and merge requests on the code hosts.
-
-
-### Campaign spec
+Save the following campaign spec YAML as `sprintf-to-itoa.campaign.yaml`:
 
 ```yaml
 name: sprintf-to-itoa
@@ -64,3 +58,16 @@ changesetTemplate:
     message: Replacing fmt.Sprintf with strconv.Iota
   published: false
 ```
+
+### Create the campaign
+
+1. In your terminal, run this command:
+
+    <pre>src campaign preview -f sprintf-to-itoa.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
+
+    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+1. Wait for it to run and compute the changes for each repository.
+1. Open the preview URL that the command printed out.
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
+1. Click the **Apply spec** button to create the campaign.
+1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
