@@ -23,7 +23,7 @@ if [ -z "$(cat /tmp/diff.txt)" ]; then
   exit 0
 fi
 
-tail -n +6 </tmp/diff.txt | grep "^\+[^\+]" | cut -c 2- >/tmp/added.txt
+tail -n +6 </tmp/diff.txt | grep "^\+-" | cut -c 2- >/tmp/added.txt
 tail -n +6 </tmp/diff.txt | grep "^\-" | cut -c 2- >/tmp/removed.txt
 
 if [ -z "$(cat /tmp/added.txt)" ]; then
