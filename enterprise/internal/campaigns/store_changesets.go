@@ -772,3 +772,55 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 
 	return nil
 }
+
+type GetChangesetsStatsOpts struct {
+	CampaignID int64
+}
+
+func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsOpts) (stats campaigns.ChangesetsStats, err error) {
+	q := GetChangesetsStatsQuery(opts)
+	err = s.query(ctx, q, func(sc scanner) (err error) {
+		if err = sc.Scan(
+			&stats.Total,
+			&stats.Unpublished,
+			&stats.Closed,
+			&stats.Draft,
+			&stats.Merged,
+			&stats.Open,
+			&stats.Deleted,
+		); err != nil {
+			return err
+		}
+		return err
+	})
+	if err != nil {
+		return stats, err
+	}
+	return stats, err
+}
+
+const getChangesetStatsFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:GetChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'DELETED') AS deleted
+FROM changesets
+INNER JOIN repo on repo.id = changesets.repo_id
+WHERE
+	%s
+`
+
+func GetChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
+	}
+	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
+}

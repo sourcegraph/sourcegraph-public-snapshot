@@ -76,11 +76,13 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 }
 
 func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	cs, _, _, err := r.compute(ctx)
+	stats, err := r.store.GetChangesetsStats(ctx, ee.GetChangesetsStatsOpts{
+		CampaignID: r.opts.CampaignID,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return newChangesetConnectionStats(cs), nil
+	return &changesetsConnectionStatsResolver{stats: stats}, nil
 }
 
 // compute loads all changesets matched by r.opts, but without a
@@ -156,56 +158,28 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectionStatsResolver {
-	stats := &changesetsConnectionStatsResolver{
-		total: int32(len(cs)),
-	}
-
-	for _, c := range cs {
-		if c.PublicationState.Unpublished() {
-			stats.unpublished++
-			continue
-		}
-
-		switch c.ExternalState {
-		case campaigns.ChangesetExternalStateClosed:
-			stats.closed++
-		case campaigns.ChangesetExternalStateDraft:
-			stats.draft++
-		case campaigns.ChangesetExternalStateMerged:
-			stats.merged++
-		case campaigns.ChangesetExternalStateOpen:
-			stats.open++
-		case campaigns.ChangesetExternalStateDeleted:
-			stats.deleted++
-		}
-	}
-
-	return stats
-}
-
 type changesetsConnectionStatsResolver struct {
-	unpublished, draft, open, merged, closed, deleted, total int32
+	stats campaigns.ChangesetsStats
 }
 
 func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
-	return r.unpublished
+	return r.stats.Unpublished
 }
 func (r *changesetsConnectionStatsResolver) Draft() int32 {
-	return r.draft
+	return r.stats.Draft
 }
 func (r *changesetsConnectionStatsResolver) Open() int32 {
-	return r.open
+	return r.stats.Open
 }
 func (r *changesetsConnectionStatsResolver) Merged() int32 {
-	return r.merged
+	return r.stats.Merged
 }
 func (r *changesetsConnectionStatsResolver) Closed() int32 {
-	return r.closed
+	return r.stats.Closed
 }
 func (r *changesetsConnectionStatsResolver) Deleted() int32 {
-	return r.deleted
+	return r.stats.Deleted
 }
 func (r *changesetsConnectionStatsResolver) Total() int32 {
-	return r.total
+	return r.stats.Total
 }
