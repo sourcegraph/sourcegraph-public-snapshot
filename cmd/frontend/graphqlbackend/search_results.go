@@ -1688,12 +1688,6 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "text search failed"))
-	}
 	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
@@ -1706,6 +1700,13 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 				fileCommon.limitHit = false // Ensure we don't display "Show more".
 			}
 		}
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "text search failed"))
 	}
 	for _, r := range fileResults {
 		key := r.uri
