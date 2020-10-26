@@ -18,6 +18,7 @@ import * as semver from 'semver'
 import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
+import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -356,11 +357,14 @@ ${issueCategories
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
+
+            // set up src-cli
+            await commandExists('src')
             const sourcegraphAuth = await campaigns.sourcegraphAuth()
 
             // Render changes
             const createdChanges = await createChangesets({
-                requiredCommands: ['src', 'comby', sed, 'find'],
+                requiredCommands: ['comby', sed, 'find'],
                 changes: [
                     {
                         owner: 'sourcegraph',
@@ -466,7 +470,11 @@ ${issueCategories
             if (!changeRepo || !changeID) {
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
-            const sorcegraphAuth = await campaigns.sourcegraphAuth()
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
             const campaignURL = await campaigns.addToCampaign(
                 [
                     {
@@ -474,7 +482,7 @@ ${issueCategories
                         pullRequestNumber: parseInt(changeID, 10),
                     },
                 ],
-                campaigns.releaseTrackingCampaign(parsedVersion.version, sorcegraphAuth)
+                campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
             )
             console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
         },
@@ -508,11 +516,16 @@ ${issueCategories
                 name: string
                 description: string
             }
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
             const campaignURL = await campaigns.createCampaign(campaignConfig.changes, {
                 name: campaignConfig.name,
                 description: campaignConfig.description,
                 namespace: 'sourcegraph',
-                auth: await campaigns.sourcegraphAuth(),
+                auth: sourcegraphAuth,
             })
             console.log(`Created campaign ${campaignURL}`)
         },
