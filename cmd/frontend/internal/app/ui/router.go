@@ -18,10 +18,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
@@ -188,7 +189,7 @@ func init() {
 // last title component. This function indirectly calls conf.Get(), so should not be invoked from
 // any function that is invoked by an init function.
 func brandNameSubtitle(titles ...string) string {
-	return strings.Join(append(titles, conf.BrandName()), " - ")
+	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
 func initRouter() {
@@ -245,7 +246,7 @@ func initRouter() {
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
 		if shortQuery == "" {
-			return conf.BrandName()
+			return globals.Branding().BrandName
 		}
 		// e.g. "myquery - Sourcegraph"
 		return brandNameSubtitle(shortQuery)
