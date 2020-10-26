@@ -2,21 +2,22 @@ import { CreatedChangeset } from './github'
 import { readLine } from './util'
 import YAML from 'yaml'
 import execa from 'execa'
+import fetch from 'node-fetch'
 
 // https://about.sourcegraph.com/handbook/engineering/deployments/instances#k8s-sgdev-org
 const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
+
+export interface SourcegraphAuth {
+    SRC_ENDPOINT: string
+    SRC_ACCESS_TOKEN: string
+    [index: string]: string
+}
 
 export async function sourcegraphAuth(): Promise<SourcegraphAuth> {
     return {
         SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
         SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', '.secrets/src-cli.txt'),
     }
-}
-
-export interface SourcegraphAuth {
-    SRC_ENDPOINT: string
-    SRC_ACCESS_TOKEN: string
-    [index: string]: string
 }
 
 export interface CampaignOptions {
@@ -26,20 +27,27 @@ export interface CampaignOptions {
     auth: SourcegraphAuth
 }
 
-export async function importFromCreatedChanges(changes: CreatedChangeset[], options: CampaignOptions): Promise<string> {
-    // create a campaign spec
-    const importChangesets: { repository: string; externalIDs: number[] }[] = changes.map(change => ({
-        repository: `github.com/${change.repository}`,
-        externalIDs: [change.pullRequestNumber],
-    }))
-    const campaignSpec = {
-        name: options.name,
-        description: options.description,
-        importChangesets,
+export function releaseTrackingCampaign(version: string, auth: SourcegraphAuth): CampaignOptions {
+    return {
+        name: `release-sourcegraph-${version}`,
+        description: `Track publishing of sourcegraph@${version}`,
+        namespace: 'sourcegraph',
+        auth,
     }
+}
 
-    // apply campaign
-    const campaignYAML = YAML.stringify(campaignSpec)
+interface CampaignSpec {
+    name: string
+    description: string
+    importChangesets: { repository: string; externalIDs: number[] }[]
+}
+
+async function applyCampaign(campaign: CampaignSpec, options: CampaignOptions): Promise<string> {
+    // our version of YAML (<v2) does not seem to support a replacer, so we just do it in JSON,
+    // and the backend does not accept null values - https://github.com/sourcegraph/sourcegraph/issues/15045
+    const campaignYAML = YAML.stringify(
+        JSON.parse(JSON.stringify(campaign, (key, value) => (value === null ? undefined : value))) // eslint-disable-line @typescript-eslint/no-unsafe-return
+    )
     console.log(`Rendered campaign spec:\n\n${campaignYAML}`)
     const campaignScript = `set -ex
 
@@ -54,4 +62,66 @@ EOF
 
     // return the campaign URL
     return `${options.auth.SRC_ENDPOINT}/organizations/${options.namespace}/campaigns/${options.name}`
+}
+
+export async function createCampaign(changes: CreatedChangeset[], options: CampaignOptions): Promise<string> {
+    // create a campaign spec
+    const importChangesets = changes.map(change => ({
+        repository: `github.com/${change.repository}`,
+        externalIDs: [change.pullRequestNumber],
+    }))
+    // apply campaign
+    return await applyCampaign(
+        {
+            name: options.name,
+            description: options.description,
+            importChangesets,
+        },
+        options
+    )
+}
+
+export async function addToCampaign(
+    changes: { repository: string; pullRequestNumber: number }[],
+    options: CampaignOptions
+): Promise<string> {
+    const response = await fetch(`${options.auth.SRC_ENDPOINT}/.api/graphql`, {
+        method: 'POST',
+        headers: {
+            Authorization: `token ${options.auth.SRC_ACCESS_TOKEN}`,
+        },
+        body: JSON.stringify({
+            query: `query getCampaigns($namespace:String!) {
+                organization(name:$namespace) {
+                  campaigns(first:99) {
+                    nodes { name currentSpec { parsedInput } }
+                  }
+                }
+              }`,
+            variables: {
+                namespace: options.namespace,
+            },
+        }),
+    })
+    const {
+        data: {
+            organization: {
+                campaigns: { nodes: results },
+            },
+        },
+    } = (await response.json()) as {
+        data: { organization: { campaigns: { nodes: { name: string; currentSpec: { parsedInput: CampaignSpec } }[] } } }
+    }
+    const campaign = results.find(result => result.name === options.name)
+    if (!campaign) {
+        throw new Error(`Cannot find campaign ${options.name}`)
+    }
+
+    const importChangesets = changes.map(change => ({
+        repository: `github.com/${change.repository}`,
+        externalIDs: [change.pullRequestNumber],
+    }))
+    const newSpec = campaign.currentSpec.parsedInput
+    newSpec.importChangesets.push(...importChangesets)
+    return await applyCampaign(newSpec, options)
 }

@@ -66,10 +66,11 @@ type StepID =
     | 'release:status'
     | 'release:create-candidate'
     | 'release:publish'
+    | 'release:add-to-campaign'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
-    | '_test:campaign-import-changes'
+    | '_test:campaign-create-from-changes'
 
 interface Step {
     id: StepID
@@ -433,12 +434,10 @@ ${issueCategories
                 let publishCampaign = ''
                 try {
                     console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
-                    publishCampaign = await campaigns.importFromCreatedChanges(createdChanges, {
-                        name: `release-sourcegraph-${parsedVersion.version}`,
-                        description: `Track publishing of sourcegraph@${parsedVersion.version}`,
-                        namespace: 'sourcegraph',
-                        auth: sourcegraphAuth,
-                    })
+                    publishCampaign = await campaigns.createCampaign(
+                        createdChanges,
+                        campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+                    )
                     console.log(`Created ${publishCampaign}`)
                 } catch (error) {
                     console.error(error)
@@ -454,6 +453,30 @@ ${issueCategories
                     slackAnnounceChannel
                 )
             }
+        },
+    },
+    {
+        id: 'release:add-to-campaign',
+        // Example: yarn run release release:add-to-campaign 3.21.0 sourcegraph/sourcegraph 15032
+        run: async (_config, version, changeRepo, changeID) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (!changeRepo || !changeID) {
+                throw new Error('Missing parameters (required: version, repo, change ID)')
+            }
+            const sorcegraphAuth = await campaigns.sourcegraphAuth()
+            const campaignURL = await campaigns.addToCampaign(
+                [
+                    {
+                        repository: changeRepo,
+                        pullRequestNumber: parseInt(changeID, 10),
+                    },
+                ],
+                campaigns.releaseTrackingCampaign(parsedVersion.version, sorcegraphAuth)
+            )
+            console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
         },
     },
     {
@@ -477,14 +500,15 @@ ${issueCategories
         },
     },
     {
-        id: '_test:campaign-import-changes',
+        // Example: yarn run release _test:campaign-import-changes "$(cat ./.secrets/import.json)"
+        id: '_test:campaign-create-from-changes',
         run: async (_config, campaignConfigJSON) => {
             const campaignConfig = JSON.parse(campaignConfigJSON) as {
                 changes: CreatedChangeset[]
                 name: string
                 description: string
             }
-            const campaignURL = await campaigns.importFromCreatedChanges(campaignConfig.changes, {
+            const campaignURL = await campaigns.createCampaign(campaignConfig.changes, {
                 name: campaignConfig.name,
                 description: campaignConfig.description,
                 namespace: 'sourcegraph',
