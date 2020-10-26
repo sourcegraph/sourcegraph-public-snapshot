@@ -23,7 +23,7 @@
         width: 6rem;
         height: 6rem;
         min-height: 6rem;
-        background-color: $gray-20;
+        background-color: var(--color-bg-2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -47,13 +47,5 @@
 
     &__cta {
         margin-top: 1rem;
-    }
-}
-
-.theme-light {
-    .hero-page {
-        &__icon {
-            background-color: $gray-01;
-        }
     }
 }

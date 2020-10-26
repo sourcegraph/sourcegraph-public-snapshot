@@ -1,49 +1,62 @@
 import React from 'react'
 
 /**
+ * The internal type used for base icons, which accept both a class name and a
+ * viewbox.
+ */
+type BaseIcon = React.FunctionComponent<{
+    className?: string
+    viewBox?: string
+}>
+
+/**
+ * The internal type used for exported icons, which only support an optional
+ * class name.
+ */
+type Icon = React.FunctionComponent<{
+    className?: string
+}>
+
+/**
  * The base campaign icon, which may have its class and viewBox overridden by
  * the exported components.
  */
-const BaseCampaignsIcon: React.FunctionComponent<{ className?: string; viewBox?: string }> = React.memo(
-    function BaseCampaignsIcon({ className = '', viewBox = '0 0 20 20' }) {
-        return (
-            <svg
-                width="20"
-                height="20"
-                fill="currentColor"
-                className={className}
-                viewBox={viewBox}
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M4.5 5.5a1 1 0 100-2 1 1 0 000 2zm0 1.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
-                />
-                <path d="M13.117 2.967h4v4h-4v-4zM13.117 8.767h4v4h-4v-4zM13.117 14.567h4v4h-4v-4z" />
-                <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M7.702 5a.75.75 0 01.75-.75h3a.75.75 0 110 1.5h-3a.75.75 0 01-.75-.75zM4.87 7.72a.75.75 0 00-.828.662l.746.083-.746-.083v.006L4.04 8.4l-.004.04a12.537 12.537 0 00-.04.671c-.015.44-.015 1.053.044 1.74.118 1.348.474 3.116 1.521 4.425 1.077 1.346 2.656 1.846 3.872 2.029a9.468 9.468 0 002.05.078l.136-.013.039-.004.012-.001h.005s.001-.001-.092-.745l.093.744a.75.75 0 00-.185-1.489M5.533 8.547v.007l-.003.028a11.019 11.019 0 00-.035.581c-.014.395-.014.944.04 1.559.11 1.258.432 2.66 1.197 3.617.736.92 1.875 1.325 2.924 1.482a7.968 7.968 0 001.81.057l.022-.002h.003M4.87 7.72a.75.75 0 01.662.827L4.87 7.72z"
-                />
-                <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M4.43 7.806a.75.75 0 00-.301 1.017l.659-.358-.66.358.001.001.001.001.002.003.004.008.011.02.04.067c.033.054.08.129.143.219a6.467 6.467 0 002.9 2.286c1.06.418 2.177.537 3.005.558a11.195 11.195 0 001.328-.046 5.62 5.62 0 00.084-.009l.025-.003h.007l.003-.001-.099-.744.1.744a.75.75 0 00-.198-1.487h-.001l-.015.002a9.684 9.684 0 01-1.196.045c-.737-.019-1.659-.126-2.492-.455a4.967 4.967 0 01-2.219-1.746 3.02 3.02 0 01-.115-.178l-.002-.005a.75.75 0 00-1.016-.297z"
-                />
-            </svg>
-        )
-    }
-)
+const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({ className = '', viewBox = '0 0 20 20' }) {
+    return (
+        <svg
+            width="20"
+            height="20"
+            fill="currentColor"
+            className={className}
+            viewBox={viewBox}
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M4.5 5.5a1 1 0 100-2 1 1 0 000 2zm0 1.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+            />
+            <path d="M13.117 2.967h4v4h-4v-4zM13.117 8.767h4v4h-4v-4zM13.117 14.567h4v4h-4v-4z" />
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M7.702 5a.75.75 0 01.75-.75h3a.75.75 0 110 1.5h-3a.75.75 0 01-.75-.75zM4.87 7.72a.75.75 0 00-.828.662l.746.083-.746-.083v.006L4.04 8.4l-.004.04a12.537 12.537 0 00-.04.671c-.015.44-.015 1.053.044 1.74.118 1.348.474 3.116 1.521 4.425 1.077 1.346 2.656 1.846 3.872 2.029a9.468 9.468 0 002.05.078l.136-.013.039-.004.012-.001h.005s.001-.001-.092-.745l.093.744a.75.75 0 00-.185-1.489M5.533 8.547v.007l-.003.028a11.019 11.019 0 00-.035.581c-.014.395-.014.944.04 1.559.11 1.258.432 2.66 1.197 3.617.736.92 1.875 1.325 2.924 1.482a7.968 7.968 0 001.81.057l.022-.002h.003M4.87 7.72a.75.75 0 01.662.827L4.87 7.72z"
+            />
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M4.43 7.806a.75.75 0 00-.301 1.017l.659-.358-.66.358.001.001.001.001.002.003.004.008.011.02.04.067c.033.054.08.129.143.219a6.467 6.467 0 002.9 2.286c1.06.418 2.177.537 3.005.558a11.195 11.195 0 001.328-.046 5.62 5.62 0 00.084-.009l.025-.003h.007l.003-.001-.099-.744.1.744a.75.75 0 00-.198-1.487h-.001l-.015.002a9.684 9.684 0 01-1.196.045c-.737-.019-1.659-.126-2.492-.455a4.967 4.967 0 01-2.219-1.746 3.02 3.02 0 01-.115-.178l-.002-.005a.75.75 0 00-1.016-.297z"
+            />
+        </svg>
+    )
+})
 
 /**
  * The icon to use everywhere to represent a campaign. Square, and by default
  * 20x20. If the icon's left side needs to be flush with the left edge, use
  * {@link CampaignsIconFlushLeft} instead.
  */
-export const CampaignsIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <BaseCampaignsIcon className={className} />
-)
+export const CampaignsIcon: Icon = ({ className }) => <BaseCampaignsIcon className={className} />
 
 /**
  * The same icon as {@link CampaignsIcon}, except the icon has no internal
@@ -51,16 +64,23 @@ export const CampaignsIcon: React.FunctionComponent<{ className?: string }> = ({
  * should be flush with the left edges of other content displayed above and/or
  * below it.
  */
-export const CampaignsIconFlushLeft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const CampaignsIconFlushLeft: Icon = ({ className }) => (
     <BaseCampaignsIcon className={className} viewBox="2 0 20 20" />
 )
 
 /**
- * The navbar version of the campaigns icon, with different proportions and
- * bounding box.
+ * The base component for the navbar version of the campaigns icon, with
+ * different proportions and bounding box.
  */
-export const CampaignsIconNav: React.FunctionComponent<{}> = () => (
-    <svg width="32" height="32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+const BaseCampaignsIconNav: BaseIcon = ({ className = '', viewBox }) => (
+    <svg
+        width="20"
+        height="20"
+        className={className}
+        viewBox={viewBox}
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+    >
         <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -78,4 +98,20 @@ export const CampaignsIconNav: React.FunctionComponent<{}> = () => (
             d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
         />
     </svg>
+)
+
+/**
+ * The nav icon with a viewbox set up to align the icon with the other icons on
+ * the global navbar.
+ */
+export const CampaignsIconNav: Icon = ({ className }) => (
+    <BaseCampaignsIconNav className={className} viewBox="0 -3 38 38" />
+)
+
+/**
+ * The nav icon with a viewbox set up to align the icon with the other icons on
+ * the namespace navbar.
+ */
+export const CampaignsIconNamespaceNav: Icon = ({ className }) => (
+    <BaseCampaignsIconNav className={className} viewBox="0 0 36 36" />
 )

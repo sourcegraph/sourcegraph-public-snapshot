@@ -245,12 +245,12 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		{
 			name: "non-existing-repo",
 			pr:   &PullRequest{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550},
-			err:  "error in GraphQL response: Could not resolve to a Repository with the name 'whoisthis/sourcegraph'.",
+			err:  "GitHub repository not found",
 		},
 		{
 			name: "non-existing-pr",
 			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0},
-			err:  "error in GraphQL response: Could not resolve to a PullRequest with the number of 0.",
+			err:  "GitHub pull requests not found: 0",
 		},
 		{
 			name: "success",

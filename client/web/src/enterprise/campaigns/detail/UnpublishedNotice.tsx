@@ -5,11 +5,16 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
 interface UnpublishedNoticeProps {
     unpublished: number
+    total: number
     className?: string
 }
 
-export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> = ({ unpublished, className }) => {
-    if (unpublished === 0) {
+export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> = ({
+    unpublished,
+    total,
+    className,
+}) => {
+    if (unpublished !== total) {
         return <></>
     }
     return (

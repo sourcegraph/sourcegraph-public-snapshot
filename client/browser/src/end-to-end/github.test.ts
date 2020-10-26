@@ -52,14 +52,14 @@ describe('Sourcegraph browser extension on github.com', function () {
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
         base: {
             token: 'varsN',
-            lineId: 'diff-9ef8a22c4ce5141c30a501c542fb1adeL244',
+            lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46L244',
             goToDefinitionURL:
                 'https://github.com/gorilla/mux/blob/f15e0c49460fd49eebe2bcc8486b05d1bef68d3a/regexp.go#L139:2',
         },
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeR247
         head: {
             token: 'host',
-            lineId: 'diff-9ef8a22c4ce5141c30a501c542fb1adeR247',
+            lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
             goToDefinitionURL: headGoToDefinitionUrl,
         },
     }
@@ -71,6 +71,7 @@ describe('Sourcegraph browser extension on github.com', function () {
                     const { token, lineId, goToDefinitionURL } = tokens[side]
                     it(`provides hover tooltips on token "${token}" in the ${side} part`, async () => {
                         await driver.page.goto(`https://github.com/gorilla/mux/pull/117/files?diff=${diffType}`)
+                        await driver.page.bringToFront()
                         // The browser extension takes a bit to initialize and register all event listeners.
                         // Waiting here saves one retry cycle below in the common case.
                         // If it's not enough, the retry will catch it.

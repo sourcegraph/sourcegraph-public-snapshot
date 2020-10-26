@@ -249,6 +249,9 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	}
 
 	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
+		if github.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
+		}
 		return err
 	}
 

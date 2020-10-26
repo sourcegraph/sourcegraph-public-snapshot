@@ -140,12 +140,22 @@
 
 /user/code_intelligence/basic_code_intelligence /user/code_intelligence/explanations/basic_code_intelligence 308
 /user/code_intelligence/features    /user/code_intelligence/explanations/features 308
+/user/code_intelligence/lsif   /user/code_intelligence/explanations/precise_code_intelligence 308
 /user/code_intelligence/precise_code_intelligence   /user/code_intelligence/explanations/precise_code_intelligence 308
 /user/code_intelligence/writing_an_indexer  /user/code_intelligence/explanations/writing_an_indexer 308
 /user/code_intelligence/adding_lsif_to_many_repos   /user/code_intelligence/how-to/adding_lsif_to_many_repos 308
 /user/code_intelligence/adding_lsif_to_workflows    /user/code_intelligence/how-to/adding_lsif_to_workflows 308
 /user/code_intelligence/languages/go    /user/code_intelligence/how-to/index_a_go_repository 308
 /user/code_intelligence/languages/typescript_and_javascript /user/code_intelligence/how-to/index_a_typescript_and_javascript_repository 308
+
+/user/code_intelligence/explanations/basic_code_intelligence /code_intelligence/explanations/basic_code_intelligence 308
+/user/code_intelligence/explanations/features /code_intelligence/explanations/features 308
+/user/code_intelligence/explanations/precise_code_intelligence /code_intelligence/explanations/precise_code_intelligence 308
+/user/code_intelligence/explanations/writing_an_indexer /code_intelligence/explanations/writing_an_indexer 308
+/user/code_intelligence/how-to/adding_lsif_to_many_repos /code_intelligence/how-to/adding_lsif_to_many_repos 308
+/user/code_intelligence/how-to/adding_lsif_to_workflows /code_intelligence/how-to/adding_lsif_to_workflows 308
+/user/code_intelligence/how-to/index_a_go_repository /code_intelligence/how-to/index_a_go_repository 308
+/user/code_intelligence/how-to/index_a_typescript_and_javascript_repository /code_intelligence/how-to/index_a_typescript_and_javascript_repository 308
 
 /user/markdown  /admin/markdown 308
 /user/organizations/index   /admin/organizations 308

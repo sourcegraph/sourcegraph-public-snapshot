@@ -200,6 +200,16 @@ func TestStructuralPatToRegexpQuery(t *testing.T) {
 			Pattern: `:[~:]`,
 			Want:    `(:)`,
 		},
+		{
+			Name:    "Colon prefix",
+			Pattern: `::[version]bar`,
+			Want:    `(:)(.|\s)*?(bar)`,
+		},
+		{
+			Name:    "Colon prefix",
+			Pattern: `::::[version]bar`,
+			Want:    `(:::)(.|\s)*?(bar)`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {

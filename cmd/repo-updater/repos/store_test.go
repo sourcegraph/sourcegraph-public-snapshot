@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -1184,12 +1183,6 @@ func isCloned(r *repos.Repo) bool {
 
 func testStoreSetClonedRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
-
-	// setting the step to a small number to test the pagination system used by SetClonedRepos
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		RepoSetClonedBatchSize: 3,
-	}})
-	defer conf.Mock(nil)
 
 	return func(t *testing.T) {
 		var repositories repos.Repos

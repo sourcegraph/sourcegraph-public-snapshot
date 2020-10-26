@@ -12,7 +12,12 @@
     }
 
     &--enabled {
-        background-color: rgba(36, 110, 51, 0.2);
+        .theme-light & {
+            background-color: rgba($success, 0.2);
+        }
+        .theme-dark & {
+            background-color: rgba($success, 0.2);
+        }
     }
 
     &__shadow {
@@ -22,10 +27,15 @@
         bottom: 0;
         left: 0;
 
-        box-shadow: 0 0 0 6px rgba(36, 110, 51, 0.7);
-
         opacity: 0;
         transition: opacity 500ms;
+
+        .theme-light & {
+            box-shadow: 0 0 0 6px rgba($success, 0.7);
+        }
+        .theme-dark & {
+            box-shadow: 0 0 0 6px rgba($success, 0.7);
+        }
     }
 
     &__shadow--show {
@@ -44,21 +54,5 @@
         right: 0.5rem + ($toggle-width / 2);
         transform: translateX(50%);
         z-index: 1;
-    }
-}
-
-.theme-light {
-    .extension-card {
-        &--enabled {
-            background-color: rgba(199, 233, 205, 0.2);
-        }
-
-        &__shadow {
-            box-shadow: 0 0 0 6px rgba(199, 233, 205, 0.7);
-        }
-
-        &__link {
-            color: $gray-14;
-        }
     }
 }

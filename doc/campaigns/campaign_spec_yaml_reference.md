@@ -241,9 +241,17 @@ changesetTemplate:
 
 ## [`changesetTemplate.published`](#changesettemplate-published)
 
-Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), or [an array to only publish some changesets within the campaign](#publishing-only-specific-changesets).
+Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), `'draft'`, or [an array to only publish some changesets within the campaign](#publishing-only-specific-changesets).
 
 An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host.
+
+When `published` is set to `draft` a commit, branch, and pull request / merge request are being created on the code host **in draft mode**. This means:
+
+- On GitHub the changeset will be a [draft pull request](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests).
+- On GitLab the changeset will be a merge request whose title is be prefixed with `'WIP: '` to [flag it as a draft merge request](https://docs.gitlab.com/ee/user/project/merge_requests/work_in_progress_merge_requests.html#adding-the-draft-flag-to-a-merge-request).
+- On BitBucket Server draft pull requests are not supported and changesets published as `draft` won't be created.
+
+> NOTE: Changesets that have already been published on a code host as a non-draft (`published: true`) cannot be converted into drafts. Changesets can only go from unpublished to draft to published, but not from published to draft. That also allows you to take it out of draft mode on your code host, without risking Sourcegraph to revert to draft mode.
 
 A published changeset results in a commit, branch, and pull request being created on the code host.
 
@@ -255,6 +263,7 @@ To publish only specific changesets within a campaign, an array of single-elemen
 published:
   - github.com/sourcegraph/sourcegraph: true
   - github.com/sourcegraph/src-cli: false
+  - github.com/sourcegraph/campaignutils: draft
 ```
 
 Each key will be matched against the repository name using [glob](https://godoc.org/github.com/gobwas/glob#Compile) syntax. The [gobwas/glob library](https://godoc.org/github.com/gobwas/glob#Compile) is used for matching, with the key operators being:
@@ -294,6 +303,13 @@ changesetTemplate:
   published: true
 ```
 
+To publish all changesets created by a campaign as drafts:
+
+```yaml
+changesetTemplate:
+  published: draft
+```
+
 To only publish changesets within the `sourcegraph` GitHub organization:
 
 ```yaml
@@ -309,4 +325,13 @@ changesetTemplate:
   published:
     - "*": true
     - gitlab.com/*: false
+```
+
+To publish all changesets on GitHub as draft:
+
+```yaml
+changesetTemplate:
+  published:
+    - "*": true
+    - github.com/*: draft
 ```

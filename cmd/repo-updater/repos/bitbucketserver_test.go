@@ -189,7 +189,7 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 		{
 			name: "not-found",
 			cs:   changesets[1],
-			err:  `Changeset with external ID "999" not found`,
+			err:  `Changeset with external ID 999 not found`,
 		},
 	}
 
