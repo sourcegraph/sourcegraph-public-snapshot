@@ -164,36 +164,9 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   </CampaignInfoByline>
   <UnpublishedNotice
     className="mb-3"
+    total={10}
     unpublished={2}
-  >
-    <div
-      className="alert alert-secondary mb-3"
-    >
-      <Memo(SourceBranchIcon)
-        className="icon-inline"
-      />
-       
-      2
-       unpublished
-       
-      changesets
-      . Set
-       
-      <code
-        className="badge badge-secondary"
-      >
-        published: true
-      </code>
-       in the campaign spec and re-run
-       
-      <code
-        className="badge badge-secondary"
-      >
-        src campaign apply -f $CAMPAIGN_SPEC_FILE
-      </code>
-       to publish to your code host.
-    </div>
-  </UnpublishedNotice>
+  />
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -1147,36 +1120,9 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   </CampaignInfoByline>
   <UnpublishedNotice
     className="mb-3"
+    total={10}
     unpublished={2}
-  >
-    <div
-      className="alert alert-secondary mb-3"
-    >
-      <Memo(SourceBranchIcon)
-        className="icon-inline"
-      />
-       
-      2
-       unpublished
-       
-      changesets
-      . Set
-       
-      <code
-        className="badge badge-secondary"
-      >
-        published: true
-      </code>
-       in the campaign spec and re-run
-       
-      <code
-        className="badge badge-secondary"
-      >
-        src campaign apply -f $CAMPAIGN_SPEC_FILE
-      </code>
-       to publish to your code host.
-    </div>
-  </UnpublishedNotice>
+  />
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}

@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -856,77 +856,26 @@ func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error
 		return nil
 	}
 
-	if !s.InTransaction() {
-		tx, err := s.Transact(ctx)
-		if err != nil {
-			return errors.Wrap(err, "SetClonedRepos: failed to create a transaction")
-		}
-		txs := tx.(*DBStore)
-		defer func() { txs.Done(err) }()
-		err = txs.SetClonedRepos(ctx, repoNames...)
-		return err
-	}
+	q := sqlf.Sprintf(setClonedReposQueryFmtstr, pq.StringArray(repoNames))
 
-	sort.Strings(repoNames)
-
-	step := ConfRepoSetClonedBatchSize()
-
-	for i := 0; i < len(repoNames); i += step {
-		firstIdx := i
-		lastIdx := i + step
-
-		if lastIdx >= len(repoNames) {
-			lastIdx = len(repoNames) - 1
-		}
-
-		first := repoNames[firstIdx]
-		last := repoNames[lastIdx]
-
-		names, err := json.Marshal(repoNames[firstIdx : lastIdx+1])
-		if err != nil {
-			return nil
-		}
-
-		q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)), first, last)
-
-		err = s.Exec(ctx, q)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.Exec(ctx, q)
 }
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
---
--- This query generates a diff by selecting only
--- the repos that need to be updated.
--- Selected repos will have their cloned column reversed if
--- their cloned column is true but they are not in cloned_repos
--- or they are in cloned_repos but their cloned column is false.
---
-WITH cloned_repos AS (
-  SELECT jsonb_array_elements_text(%s) AS name
+WITH repo_names AS (
+  SELECT unnest(%s::citext[])::citext AS name
 ),
-diff AS (
-  SELECT id, cloned
-  FROM repo
-  WHERE
-    name BETWEEN %s AND %s
-    AND
-    (
-      NOT cloned
-        AND name IN (SELECT name::citext FROM cloned_repos)
-      OR cloned
-        AND name NOT IN (SELECT name::citext FROM cloned_repos)
-    )
+cloned_repos AS (
+  SELECT repo.id AS id FROM repo_names JOIN repo ON repo.name = repo_names.name
+),
+not_cloned AS (
+  UPDATE repo SET cloned = false
+  WHERE NOT EXISTS (SELECT FROM cloned_repos WHERE repo.id = id) AND cloned
 )
 UPDATE repo
-SET cloned = NOT diff.cloned
-FROM diff
-WHERE repo.id = diff.id;
+SET cloned = true
+WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.

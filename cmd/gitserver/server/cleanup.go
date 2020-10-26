@@ -563,6 +563,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 func setRecloneTime(dir GitDir, now time.Time) error {
 	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
+		ensureHead(dir)
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil

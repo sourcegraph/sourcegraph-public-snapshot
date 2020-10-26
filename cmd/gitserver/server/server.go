@@ -746,6 +746,10 @@ func setGitAttributes(dir GitDir) error {
 	return nil
 }
 
+// testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
+// HEAD, zeroing it out, etc.)
+var testRepoCorrupter func(ctx context.Context, tmpDir GitDir)
+
 // cloneOptions specify optional behaviour for the cloneRepo function.
 type cloneOptions struct {
 	// Block will wait for the clone to finish before returning. If the clone
@@ -860,7 +864,12 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
+		if testRepoCorrupter != nil {
+			testRepoCorrupter(ctx, tmp)
+		}
+
 		removeBadRefs(ctx, tmp)
+		ensureHead(tmp)
 
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
@@ -1170,6 +1179,16 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 	_ = cmd.Run()
 }
 
+// ensureHead verifies that there is a HEAD file within the repo, and that
+// it is of non-zero length. If either condition is met, we configure a
+// best-effort default.
+func ensureHead(dir GitDir) {
+	head, err := os.Stat(dir.Path("HEAD"))
+	if os.IsNotExist(err) || head.Size() == 0 {
+		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+	}
+}
+
 // setLastChanged discerns an approximate last-changed timestamp for a
 // repository. This can be approximate; it's used to determine how often we
 // should run `git fetch`, but is not relied on strongly. The basic plan
@@ -1372,6 +1391,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	removeBadRefs(ctx, dir)
+	ensureHead(dir)
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {

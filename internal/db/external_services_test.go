@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -216,6 +217,29 @@ func TestExternalServicesStore_Create(t *testing.T) {
 
 	if diff := cmp.Diff(es, got); diff != "" {
 		t.Fatalf("(-want +got):\n%s", diff)
+	}
+}
+
+func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	store := &ExternalServicesStore{
+		PreCreateExternalService: func(ctx context.Context) error {
+			return errcode.NewPresentationError("test plan limit exceeded")
+		},
+	}
+	if err := store.Create(ctx, confGet, es); err == nil {
+		t.Fatal("expected an error, got none")
 	}
 }
 

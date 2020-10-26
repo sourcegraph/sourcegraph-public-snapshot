@@ -23,6 +23,7 @@
        popd
        ./dev/ci/e2e.sh
        docker image rm -f "${IMAGE}"
+       ./test/e2e/test.sh
 
 - name: sourcegraph-upgrade
   box: google/gce

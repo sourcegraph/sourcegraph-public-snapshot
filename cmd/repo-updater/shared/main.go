@@ -198,6 +198,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),
+			MinSyncInterval: repos.ConfRepoListUpdateInterval,
 		}))
 	}()
 	server.Syncer = syncer

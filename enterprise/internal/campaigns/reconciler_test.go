@@ -52,6 +52,13 @@ func TestReconcilerProcess(t *testing.T) {
 	draftGithubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateDraft)
 	closedGitHubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateClosed)
 
+	notFoundErr := repos.ChangesetNotFoundError{
+		Changeset: &repos.Changeset{
+			Changeset: &campaigns.Changeset{ExternalID: "100000"},
+		},
+	}
+	notFoundErrMsg := notFoundErr.Error()
+
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
 
@@ -61,6 +68,7 @@ func TestReconcilerProcess(t *testing.T) {
 		previousSpec *testSpecOpts
 
 		sourcerMetadata interface{}
+		sourcerErr      error
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool
 
@@ -644,6 +652,25 @@ func TestReconcilerProcess(t *testing.T) {
 				diffStat: state.DiffStat,
 			},
 		},
+		"syncing not found changeset": {
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "100000",
+				unsynced:         true,
+			},
+			sourcerErr: notFoundErr,
+
+			wantLoadFromCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				failureMessage:   &notFoundErrMsg,
+				externalID:       "100000",
+				reconcilerState:  campaigns.ReconcilerStateErrored,
+				numFailures:      reconcilerMaxNumRetries + 999,
+				unsynced:         true,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -698,7 +725,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// to create/update a changeset.
 			fakeSource := &ct.FakeChangesetSource{
 				Svc:             extSvc,
-				Err:             nil,
+				Err:             tc.sourcerErr,
 				ChangesetExists: tc.alreadyExists,
 				FakeMetadata:    tc.sourcerMetadata,
 			}
@@ -822,7 +849,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublish},
+			wantOperations: operations{operationPush, operationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -834,7 +861,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublishDraft},
+			wantOperations: operations{operationPush, operationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -891,7 +918,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublish},
+			wantOperations: operations{operationPush, operationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -927,7 +954,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUpdate, operationSync},
+			wantOperations: operations{operationPush, operationSleep, operationSync},
 		},
 	}
 
@@ -939,15 +966,15 @@ func TestDeterminePlan(t *testing.T) {
 			}
 			defer tx.Done(errors.New("fail tx purposefully"))
 			tc.currentSpec.campaignSpec = campaignSpec.ID
-			createPreviousSpec := tc.previousSpec != testSpecOpts{}
-			if createPreviousSpec {
-				previousSpec := createChangesetSpec(t, ctx, tx, tc.previousSpec)
+			var previousSpec *campaigns.ChangesetSpec
+			if tc.previousSpec != (testSpecOpts{}) {
+				previousSpec = createChangesetSpec(t, ctx, tx, tc.previousSpec)
 				tc.changeset.previousSpec = previousSpec.ID
 			}
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(ctx, tx, cs)
+			plan, err := determinePlan(previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1176,7 +1203,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	body := "body"
 	rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
-	if err := decorateChangesetBody(ctx, store, rcs, campaign); err != nil {
+	if err := decorateChangesetBody(ctx, store, rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
