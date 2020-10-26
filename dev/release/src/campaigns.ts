@@ -49,16 +49,13 @@ async function applyCampaign(campaign: CampaignSpec, options: CampaignOptions): 
         JSON.parse(JSON.stringify(campaign, (key, value) => (value === null ? undefined : value))) // eslint-disable-line @typescript-eslint/no-unsafe-return
     )
     console.log(`Rendered campaign spec:\n\n${campaignYAML}`)
-    const campaignScript = `set -ex
 
-(
-cat <<EOF
-${campaignYAML}
-EOF
-) | src campaign apply \\
-    -namespace ${options.namespace} \\
-    -f -`
-    await execa('bash', ['-c', campaignScript], { stdio: 'inherit', env: options.auth })
+    // apply the campaign
+    await execa('src', ['campaign', 'apply', '-namespace', options.namespace, '-f', '-'], {
+        stdout: 'inherit',
+        input: campaignYAML,
+        env: options.auth,
+    })
 
     // return the campaign URL
     return `${options.auth.SRC_ENDPOINT}/organizations/${options.namespace}/campaigns/${options.name}`
