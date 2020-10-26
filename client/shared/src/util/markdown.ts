@@ -145,6 +145,10 @@ export const renderMarkdown = (
             allowedStyles: {
                 img: {
                     padding: ALL_VALUES_ALLOWED,
+                    'padding-left': ALL_VALUES_ALLOWED,
+                    'padding-right': ALL_VALUES_ALLOWED,
+                    'padding-top': ALL_VALUES_ALLOWED,
+                    'padding-bottom': ALL_VALUES_ALLOWED,
                 },
                 // SVGs are usually for charts in code insights.
                 // Allow them to be responsive.
