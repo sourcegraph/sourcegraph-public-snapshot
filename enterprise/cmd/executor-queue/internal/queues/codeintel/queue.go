@@ -36,7 +36,7 @@ func QueueOptions(db dbutil.DB, config *Config) apiserver.QueueOptions {
 	}
 }
 
-//NewWithDB creates a dbworker store that wraps the campaign_apply_jobs table.
+// newWorkerStore creates a dbworker store that wraps the lsif_indexes table.
 func newWorkerStore(db dbutil.DB) dbworkerstore.Store {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	options := dbworkerstore.StoreOptions{
