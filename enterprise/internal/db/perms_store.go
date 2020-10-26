@@ -130,15 +130,15 @@ AND permission = %s
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type |  object_ids  | object_ids_ints | updated_at | synced_at
-//  ---------+------------+-------------+--------------+-----------------+------------+-----------
-//         1 |       read |       repos | bitmap{1, 2} |          {1, 2} |      NOW() |     NOW()
+//   user_id | permission | object_type | object_ids_ints | updated_at | synced_at
+//  ---------+------------+-------------+-----------------+------------+-----------
+//         1 |       read |       repos |          {1, 2} |      NOW() |     NOW()
 //
 //  "repo_permissions":
-//   repo_id | permission | user_ids  | user_ids_ints | updated_at |  synced_at
-//  ---------+------------+-----------+---------------+------------+-------------
-//         1 |       read | bitmap{1} |           {1} |      NOW() | <Unchanged>
-//         2 |       read | bitmap{1} |           {1} |      NOW() | <Unchanged>
+//   repo_id | permission | user_ids_ints | updated_at |  synced_at
+//  ---------+------------+---------------+------------+-------------
+//         1 |       read |           {1} |      NOW() | <Unchanged>
+//         2 |       read |           {1} |      NOW() | <Unchanged>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
 	if Mocks.Perms.SetUserPermissions != nil {
 		return Mocks.Perms.SetUserPermissions(ctx, p)
@@ -282,15 +282,15 @@ DO UPDATE SET
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type | object_ids | object_ids_ints | updated_at |  synced_at
-//  ---------+------------+-------------+------------+-----------------+------------+-------------
-//         1 |       read |       repos |  bitmap{1} |             {1} |      NOW() | <Unchanged>
-//         2 |       read |       repos |  bitmap{1} |             {1} |      NOW() | <Unchanged>
+//   user_id | permission | object_type | object_ids_ints | updated_at |  synced_at
+//  ---------+------------+-------------+-----------------+------------+-------------
+//         1 |       read |       repos |             {1} |      NOW() | <Unchanged>
+//         2 |       read |       repos |             {1} |      NOW() | <Unchanged>
 //
 //  "repo_permissions":
-//   repo_id | permission |   user_ids   | user_ids_ints | updated_at | synced_at
-//  ---------+------------+--------------+---------------+------------+-----------
-//         1 |       read | bitmap{1, 2} |        {1, 2} |      NOW() |     NOW()
+//   repo_id | permission | user_ids_ints | updated_at | synced_at
+//  ---------+------------+---------------+------------+-----------
+//         1 |       read |        {1, 2} |      NOW() |     NOW()
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPermissions != nil {
 		return Mocks.Perms.SetRepoPermissions(ctx, p)
@@ -484,6 +484,39 @@ DO UPDATE SET
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
 	), nil
+}
+
+// TouchRepoPermissions only updates the value of both `updated_at` and `synced_at` columns of the
+// `repo_permissions` table without modifying the permissions bits. It inserts a new row when the
+// row does not yet exist. The use case is to trick the scheduler to skip the repository for syncing
+// permissions when we can't sync permissions for the repository (e.g. due to insufficient permissions
+// of the access token).
+func (s *PermsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (err error) {
+	if Mocks.Perms.TouchRepoPermissions != nil {
+		return Mocks.Perms.TouchRepoPermissions(ctx, repoID)
+	}
+
+	ctx, save := s.observe(ctx, "TouchRepoPermissions", "")
+	defer func() { save(&err, otlog.Int32("repoID", repoID)) }()
+
+	touchedAt := s.clock().UTC()
+	perm := authz.Read.String() // Note: We currently only support read for repository permissions.
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/db/perms_store.go:TouchRepoPermissions
+INSERT INTO repo_permissions
+	(repo_id, permission, updated_at, synced_at)
+VALUES
+  (%s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  repo_permissions_perm_unique
+DO UPDATE SET
+  updated_at = excluded.updated_at,
+  synced_at = excluded.synced_at
+`, repoID, perm, touchedAt, touchedAt)
+	if err = s.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute upsert repo permissions query")
+	}
+	return nil
 }
 
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
