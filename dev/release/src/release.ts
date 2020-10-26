@@ -449,8 +449,8 @@ ${issueCategories
                 await postMessage(
                     `:captain: *Sourcegraph ${parsedVersion.version} release has been staged*
 
-                    * Campaign: ${publishCampaign}
-                    * @stephen: update deploy-sourcegraph-docker as needed`,
+* Campaign: ${publishCampaign}
+* @stephen: update deploy-sourcegraph-docker as needed`,
                     slackAnnounceChannel
                 )
             }
