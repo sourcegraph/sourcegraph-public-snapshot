@@ -1,14 +1,13 @@
-import { CodeIntelUploadPage } from './CodeIntelUploadPage'
-import { of } from 'rxjs'
 import { storiesOf } from '@storybook/react'
-import { SuiteFunction } from 'mocha'
-import { Upload } from './backend'
 import * as H from 'history'
+import { SuiteFunction } from 'mocha'
 import React from 'react'
-import webStyles from '../../SourcegraphWebApp.scss'
-import { SourcegraphContext } from '../../jscontext'
-import { LSIFUploadState } from '../../../../shared/src/graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { of } from 'rxjs'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
+import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { SourcegraphContext } from '../../../jscontext'
+import webStyles from '../../../SourcegraphWebApp.scss'
+import { CodeIntelUploadPage } from './CodeIntelUploadPage'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
@@ -34,7 +33,11 @@ const commonProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
+const upload: Omit<
+    LsifUploadFields,
+    'state' | 'uploadedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'
+> = {
+    __typename: 'LSIFUpload',
     id: '1234',
     projectRoot: {
         url: '',

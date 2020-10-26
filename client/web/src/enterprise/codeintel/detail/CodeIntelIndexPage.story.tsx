@@ -1,14 +1,13 @@
 import { CodeIntelIndexPage } from './CodeIntelIndexPage'
-import { Index } from './backend'
 import { of } from 'rxjs'
 import { storiesOf } from '@storybook/react'
 import { SuiteFunction } from 'mocha'
+import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import * as H from 'history'
 import React from 'react'
-import webStyles from '../../SourcegraphWebApp.scss'
-import { SourcegraphContext } from '../../jscontext'
-import { LSIFIndexState } from '../../../../shared/src/graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import webStyles from '../../../SourcegraphWebApp.scss'
+import { SourcegraphContext } from '../../../jscontext'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
@@ -34,7 +33,8 @@ const commonProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-const index: Pick<Index, 'id' | 'projectRoot' | 'inputCommit'> = {
+const index: Omit<LsifIndexFields, 'state' | 'queuedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'> = {
+    __typename: 'LSIFIndex',
     id: '1234',
     projectRoot: {
         url: '',
