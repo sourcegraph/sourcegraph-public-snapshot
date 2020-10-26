@@ -1639,28 +1639,31 @@ type aggregator struct {
 	fileMatches   map[string]*FileMatchResolver
 }
 
+func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
+	if err != nil && !isContextError(ctx, err) {
+		a.multiErrMu.Lock()
+		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
+		a.multiErrMu.Unlock()
+	}
+	if results != nil {
+		a.resultsMu.Lock()
+		a.results = append(a.results, results...)
+		a.resultsMu.Unlock()
+	}
+	if common != nil {
+		a.commonMu.Lock()
+		a.common.update(*common)
+		a.commonMu.Unlock()
+	}
+}
+
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer func() {
 		tr.Finish()
 	}()
 	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErrMu.Lock()
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
-		a.multiErrMu.Unlock()
-	}
-	if repoResults != nil {
-		a.resultsMu.Lock()
-		a.results = append(a.results, repoResults...)
-		a.resultsMu.Unlock()
-	}
-	if repoCommon != nil {
-		a.commonMu.Lock()
-		a.common.update(*repoCommon)
-		a.commonMu.Unlock()
-	}
+	a.report(ctx, repoResults, repoCommon, errors.Wrap(err, "repository search failed"))
 }
 
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
@@ -1772,22 +1775,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		Query:       tp.Query,
 	}
 	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErrMu.Lock()
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "diff search failed"))
-		a.multiErrMu.Unlock()
-	}
-	if diffResults != nil {
-		a.resultsMu.Lock()
-		a.results = append(a.results, diffResults...)
-		a.resultsMu.Unlock()
-	}
-	if diffCommon != nil {
-		a.commonMu.Lock()
-		a.common.update(*diffCommon)
-		a.commonMu.Unlock()
-	}
+	a.report(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1818,22 +1806,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		Query:       tp.Query,
 	}
 	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErrMu.Lock()
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "commit search failed"))
-		a.multiErrMu.Unlock()
-	}
-	if commitResults != nil {
-		a.resultsMu.Lock()
-		a.results = append(a.results, commitResults...)
-		a.resultsMu.Unlock()
-	}
-	if commitCommon != nil {
-		a.commonMu.Lock()
-		a.common.update(*commitCommon)
-		a.commonMu.Unlock()
-	}
+	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
 // isGlobalSearch returns true if the query contains the filters repo or
