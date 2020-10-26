@@ -45,6 +45,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operato
      
     <span
       className="search-operator"
+      key="22"
     >
       and
     </span>
@@ -85,6 +86,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight operator 1`] = `
      
     <span
       className="search-operator"
+      key="5"
     >
       or
     </span>
