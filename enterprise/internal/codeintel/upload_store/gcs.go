@@ -12,41 +12,47 @@ import (
 )
 
 type gcsStore struct {
-	projectID string
-	bucket    string
-	ttl       time.Duration
-	client    *storage.Client
+	projectID    string
+	bucket       string
+	ttl          time.Duration
+	manageBucket bool
+	client       *storage.Client
 }
 
 var _ Store = &gcsStore{}
 
 // newGCSFromConfig creates a new store backed by GCP storage.
 func newGCSFromConfig(ctx context.Context, config *Config) (Store, error) {
-	return newGCS(ctx, config.GCS.ProjectID, config.GCS.Bucket, config.GCS.TTL)
+	return newGCS(ctx, config.GCS.ProjectID, config.GCS.Bucket, config.GCS.TTL, config.ManageBucket)
 }
 
 // newGCS creates a new store backed by GCP storage.
-func newGCS(ctx context.Context, projectID, bucket string, ttl time.Duration) (Store, error) {
+func newGCS(ctx context.Context, projectID, bucket string, ttl time.Duration, manageBucket bool) (Store, error) {
 	client, err := storage.NewClient(ctx, gcsClientOptions()...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &gcsStore{
-		projectID: projectID,
-		bucket:    bucket,
-		ttl:       ttl,
-		client:    client,
+		projectID:    projectID,
+		bucket:       bucket,
+		ttl:          ttl,
+		manageBucket: manageBucket,
+		client:       client,
 	}, nil
 }
 
 func (s *gcsStore) Init(ctx context.Context) error {
+	if !s.manageBucket {
+		return nil
+	}
+
 	if _, err := s.client.Bucket(s.bucket).Attrs(ctx); err != nil {
-		if err != storage.ErrBucketNotExist {
-			return err
+		if err == storage.ErrBucketNotExist {
+			return s.create(ctx)
 		}
 
-		return s.create(ctx)
+		return err
 	}
 
 	return s.update(ctx)

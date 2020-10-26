@@ -10,15 +10,22 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	Backend string
-	S3      S3Config
-	GCS     GCSConfig
+	Backend      string
+	ManageBucket bool
+	S3           S3Config
+	GCS          GCSConfig
 }
 
 func (c *Config) Load() {
 	c.Backend = c.GetOptional(
 		"PRECISE_CODE_INTEL_UPLOAD_BACKEND",
 		"The target file service for code intelligence uploads. S3 and GCS are supported.",
+	)
+
+	c.ManageBucket = c.GetBool(
+		"PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET",
+		"true",
+		"Whether or not the client should manage the target bucket configuration.",
 	)
 
 	config, ok := c.loaders()[c.Backend]

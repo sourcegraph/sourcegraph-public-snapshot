@@ -16,21 +16,22 @@ import (
 )
 
 type s3Store struct {
-	bucket   string
-	ttl      time.Duration
-	client   *s3.S3
-	uploader *s3manager.Uploader
+	bucket       string
+	ttl          time.Duration
+	manageBucket bool
+	client       *s3.S3
+	uploader     *s3manager.Uploader
 }
 
 var _ Store = &s3Store{}
 
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
 func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
-	return newS3(config.S3.Bucket, config.S3.TTL)
+	return newS3(config.S3.Bucket, config.S3.TTL, config.ManageBucket)
 }
 
 // newS3 creates a new store backed by AWS Simple Storage Service.
-func newS3(bucket string, ttl time.Duration) (Store, error) {
+func newS3(bucket string, ttl time.Duration, manageBucket bool) (Store, error) {
 	sess, err := session.NewSessionWithOptions(awsSessionOptions())
 	if err != nil {
 		return nil, err
@@ -40,14 +41,19 @@ func newS3(bucket string, ttl time.Duration) (Store, error) {
 	uploader := s3manager.NewUploader(sess)
 
 	return &s3Store{
-		bucket:   bucket,
-		ttl:      ttl,
-		client:   client,
-		uploader: uploader,
+		bucket:       bucket,
+		ttl:          ttl,
+		manageBucket: manageBucket,
+		client:       client,
+		uploader:     uploader,
 	}, nil
 }
 
 func (s *s3Store) Init(ctx context.Context) error {
+	if !s.manageBucket {
+		return nil
+	}
+
 	if err := s.create(ctx); err != nil {
 		return err
 	}

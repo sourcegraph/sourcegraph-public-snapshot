@@ -7,9 +7,10 @@ import (
 
 func TestConfigS3(t *testing.T) {
 	env := map[string]string{
-		"PRECISE_CODE_INTEL_UPLOAD_BACKEND": "S3",
-		"PRECISE_CODE_INTEL_UPLOAD_BUCKET":  "lsif-uploads",
-		"PRECISE_CODE_INTEL_UPLOAD_TTL":     "8h",
+		"PRECISE_CODE_INTEL_UPLOAD_BACKEND":       "S3",
+		"PRECISE_CODE_INTEL_UPLOAD_BUCKET":        "lsif-uploads",
+		"PRECISE_CODE_INTEL_UPLOAD_TTL":           "8h",
+		"PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET": "true",
 	}
 
 	config := Config{}
@@ -33,6 +34,7 @@ func TestConfigGCS(t *testing.T) {
 		"PRECISE_CODE_INTEL_UPLOAD_BACKEND":        "GCS",
 		"PRECISE_CODE_INTEL_UPLOAD_BUCKET":         "lsif-uploads",
 		"PRECISE_CODE_INTEL_UPLOAD_TTL":            "8h",
+		"PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET":  "true",
 		"PRECISE_CODE_INTEL_UPLOAD_GCP_PROJECT_ID": "test",
 	}
 
