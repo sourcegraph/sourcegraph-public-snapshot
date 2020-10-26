@@ -849,7 +849,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublish},
+			wantOperations: operations{operationPush, operationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -861,7 +861,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublishDraft},
+			wantOperations: operations{operationPush, operationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -918,7 +918,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPublish},
+			wantOperations: operations{operationPush, operationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -954,7 +954,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUpdate, operationSync},
+			wantOperations: operations{operationPush, operationSleep, operationSync},
 		},
 	}
 
@@ -966,15 +966,15 @@ func TestDeterminePlan(t *testing.T) {
 			}
 			defer tx.Done(errors.New("fail tx purposefully"))
 			tc.currentSpec.campaignSpec = campaignSpec.ID
-			createPreviousSpec := tc.previousSpec != testSpecOpts{}
-			if createPreviousSpec {
-				previousSpec := createChangesetSpec(t, ctx, tx, tc.previousSpec)
+			var previousSpec *campaigns.ChangesetSpec
+			if tc.previousSpec != (testSpecOpts{}) {
+				previousSpec = createChangesetSpec(t, ctx, tx, tc.previousSpec)
 				tc.changeset.previousSpec = previousSpec.ID
 			}
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(ctx, tx, cs)
+			plan, err := determinePlan(previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}

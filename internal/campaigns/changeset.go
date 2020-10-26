@@ -437,12 +437,12 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
 
 		for _, note := range m.Notes {
-			if review := note.ToReview(); review != nil {
+			if event := note.ToEvent(); event != nil {
 				events = append(events, &ChangesetEvent{
 					ChangesetID: c.ID,
-					Key:         review.(Keyer).Key(),
-					Kind:        ChangesetEventKindFor(review),
-					Metadata:    review,
+					Key:         event.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(event),
+					Metadata:    event,
 				})
 			}
 		}
@@ -687,10 +687,14 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindBitbucketServerCommitStatus
 	case *gitlab.Pipeline:
 		return ChangesetEventKindGitLabPipeline
-	case *gitlab.ReviewApproved:
+	case *gitlab.ReviewApprovedEvent:
 		return ChangesetEventKindGitLabApproved
-	case *gitlab.ReviewUnapproved:
+	case *gitlab.ReviewUnapprovedEvent:
 		return ChangesetEventKindGitLabUnapproved
+	case *gitlab.MarkWorkInProgressEvent:
+		return ChangesetEventKindGitLabMarkWorkInProgress
+	case *gitlab.UnmarkWorkInProgressEvent:
+		return ChangesetEventKindGitLabUnmarkWorkInProgress
 	case *gitlabwebhooks.MergeRequestCloseEvent:
 		return ChangesetEventKindGitLabClosed
 	case *gitlabwebhooks.MergeRequestMergeEvent:
@@ -761,11 +765,15 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 	case strings.HasPrefix(string(k), "gitlab"):
 		switch k {
 		case ChangesetEventKindGitLabApproved:
-			return new(gitlab.ReviewApproved), nil
+			return new(gitlab.ReviewApprovedEvent), nil
 		case ChangesetEventKindGitLabPipeline:
 			return new(gitlab.Pipeline), nil
 		case ChangesetEventKindGitLabUnapproved:
-			return new(gitlab.ReviewUnapproved), nil
+			return new(gitlab.ReviewUnapprovedEvent), nil
+		case ChangesetEventKindGitLabMarkWorkInProgress:
+			return new(gitlab.MarkWorkInProgressEvent), nil
+		case ChangesetEventKindGitLabUnmarkWorkInProgress:
+			return new(gitlab.UnmarkWorkInProgressEvent), nil
 		case ChangesetEventKindGitLabClosed:
 			return new(gitlabwebhooks.MergeRequestCloseEvent), nil
 		case ChangesetEventKindGitLabMerged:

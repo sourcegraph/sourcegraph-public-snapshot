@@ -1,4 +1,4 @@
-package licensing
+package enforcement
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 )
 
 func TestEnforcementPreCreateUser(t *testing.T) {
@@ -55,22 +56,22 @@ func TestEnforcementPreCreateUser(t *testing.T) {
 
 		// True-up licenses.
 		{
-			license:         &license.Info{Tags: []string{TrueUpUserCountTag}, UserCount: 10},
+			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 		{
-			license:         &license.Info{Tags: []string{TrueUpUserCountTag}, UserCount: 10},
+			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10},
 			activeUserCount: 15,
 			wantErr:         false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("license %s with %d active users", test.license, test.activeUserCount), func(t *testing.T) {
-			MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
 				return test.license, "test-signature", nil
 			}
-			defer func() { MockGetConfiguredProductLicenseInfo = nil }()
+			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 			store := fakeStore{count: test.activeUserCount}
 			err := NewPreCreateUserHook(store)(context.Background())
 			if gotErr := err != nil; gotErr != test.wantErr {
