@@ -1,18 +1,14 @@
 import { CreatedChangeset } from './github'
 import { readLine } from './util'
 import YAML from 'yaml'
-import * as path from 'path'
-import * as os from 'os'
 import execa from 'execa'
-import { promisify } from 'util'
-import { writeFile as original_writeFile, mkdtemp as original_mkdtemp } from 'fs'
 
-const mkdtemp = promisify(original_mkdtemp)
-const writeFile = promisify(original_writeFile)
+// https://about.sourcegraph.com/handbook/engineering/deployments/instances#k8s-sgdev-org
+const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
 
 async function sourcegraphAuth(): Promise<NodeJS.ProcessEnv> {
     return {
-        SRC_ENDPOINT: 'https://k8s.sgdev.org',
+        SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
         SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', '.secrets/src-cli.txt'),
     }
 }
@@ -25,7 +21,7 @@ export interface CampaignOptions {
 }
 
 export async function importFromCreatedChanges(changes: CreatedChangeset[], options: CampaignOptions): Promise<string> {
-    // create a campaign
+    // create a campaign spec
     const importChangesets: { repository: string; externalIDs: number[] }[] = changes.map(change => ({
         repository: `github.com/${change.repository}`,
         externalIDs: [change.pullRequestNumber],
@@ -36,15 +32,19 @@ export async function importFromCreatedChanges(changes: CreatedChangeset[], opti
         importChangesets,
     }
 
-    const tmpdir = await mkdtemp(path.join(os.tmpdir(), 'sg-campaigns'))
+    // apply campaign
     const campaignYAML = YAML.stringify(campaignSpec)
-    console.log(campaignYAML)
-    await writeFile(path.join(tmpdir, 'campaign.yaml'), campaignYAML)
+    console.log(`Rendered campaign spec:\n\n${campaignYAML}`)
     const campaignScript = `set -ex
 
-    src campaign ${options.preview ? 'preview' : 'apply'} \\
-        -namespace ${options.namespace} \\
-        -f campaign.yaml`
-    await execa('bash', ['-c', campaignScript], { stdio: 'inherit', cwd: tmpdir, env: await sourcegraphAuth() })
+(
+cat <<EOF
+${campaignYAML}
+EOF
+) | src campaign ${options.preview ? 'preview' : 'apply'} \\
+    -namespace ${options.namespace} \\
+    -f -`
+    await execa('bash', ['-c', campaignScript], { stdio: 'inherit', env: await sourcegraphAuth() })
+
     return ''
 }
