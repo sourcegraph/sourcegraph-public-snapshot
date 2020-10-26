@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -108,17 +109,36 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
 }
 
-func (c *Monitor) SleepRecommendedTimeForBackgroundOp(ctx context.Context, cost int) error {
+func (c *Monitor) SleepRecommendedTimeForBackgroundOp(ctx context.Context, rateLimiter *rate.Limiter, cost int) error {
 	waitTime := c.RecommendedWaitForBackgroundOp(cost)
 
-	fmt.Printf("I want to wait for %s\n", waitTime)
+	r := rateLimiter.ReserveN(c.now(), cost)
+	if !r.OK() {
+		return fmt.Errorf("cannot reserve %d", cost)
+	}
+	rlWaitTime := r.DelayFrom(c.now())
+	fmt.Printf("rateLimit wants to wait for %s\n", rlWaitTime)
 
-	if waitTime.Milliseconds() == 0 {
-		return nil
+	biggerDelay := waitTime
+	if rlWaitTime > waitTime {
+		biggerDelay = rlWaitTime
 	}
 
+	fmt.Printf("I want to wait for %s\n", biggerDelay)
+
+	if biggerDelay.Milliseconds() == 0 {
+		return nil
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		untilDead := deadline.Sub(c.now())
+		if untilDead < biggerDelay {
+			return errors.New("cannot reserve, would exceed context deadline")
+		}
+	}
+
+	// Reserve tokens
 	c.Reserve(cost)
-	t := time.NewTimer(waitTime)
+	t := time.NewTimer(biggerDelay)
 	defer t.Stop()
 	select {
 	case <-t.C:
@@ -128,6 +148,7 @@ func (c *Monitor) SleepRecommendedTimeForBackgroundOp(ctx context.Context, cost 
 		// Context was canceled before we could proceed. Revert the
 		// reservation, which may permit other events to proceed sooner.
 		c.Release(cost)
+		r.Cancel()
 		return ctx.Err()
 	}
 }

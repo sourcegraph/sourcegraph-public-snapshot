@@ -393,9 +393,8 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		var pageRepos []*github.Repository
-		var cost int
 		var err error
-		pageRepos, hasNext, cost, err = pager(page)
+		pageRepos, hasNext, _, err = pager(page)
 		if err != nil {
 			results <- &githubResult{err: err}
 			return
@@ -403,10 +402,6 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 
 		for _, r := range pageRepos {
 			results <- &githubResult{repo: r}
-		}
-
-		if hasNext && cost > 0 {
-			time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -521,8 +516,6 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
 
 		results <- &githubResult{repo: repo}
-
-		time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 }
 
@@ -737,8 +730,6 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}
-
-		time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
 	return nil

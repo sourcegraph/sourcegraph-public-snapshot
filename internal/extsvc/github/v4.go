@@ -77,7 +77,7 @@ func NewV4Client(apiURL *url.URL, token string, cli httpcli.Doer) *V4Client {
 		return category
 	})
 
-	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
+	rl := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), rate.NewLimiter(2000, 10))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), token, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
@@ -175,11 +175,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "estimating graphql cost")
 	}
 
-	if err := c.rateLimit.WaitN(ctx, cost); err != nil {
-		return errors.Wrap(err, "rate limit")
-	}
-
-	if err := c.rateLimitMonitor.SleepRecommendedTimeForBackgroundOp(ctx, cost); err != nil {
+	if err := c.rateLimitMonitor.SleepRecommendedTimeForBackgroundOp(ctx, c.rateLimit, cost); err != nil {
 		return errors.Wrap(err, "rate limit monitor")
 	}
 
