@@ -1648,9 +1648,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 
 		// Merge file matches
 		if m, ok := a.fileMatches[fm.uri]; ok {
-			m.JLimitHit = m.JLimitHit || fm.JLimitHit
-			m.JLineMatches = append(m.JLineMatches, fm.JLineMatches...)
-			m.symbols = append(m.symbols, fm.symbols...)
+			m.appendMatches(fm)
 		} else {
 			a.fileMatches[fm.uri] = fm
 			a.results = append(a.results, r)
