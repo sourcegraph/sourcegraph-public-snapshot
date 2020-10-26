@@ -16,10 +16,9 @@ type StartableRoutine interface {
 }
 
 // BackgroundRoutine represents a component of a binary that consists of a long
-// running process and a graceful shutdown mechanism.
+// running process with a graceful shutdown mechanism.
 type BackgroundRoutine interface {
 	StartableRoutine
-
 	// Stop signals the Start method to stop accepting new work and complete its
 	// current work. This method can but is not required to block until Start has
 	// returned.
@@ -82,8 +81,7 @@ func waitForSignal(signals <-chan os.Signal) {
 	}()
 }
 
-// CombinedRoutine is a list of background routines which are stopped and
-// started in unison.
+// CombinedRoutine is a list of routines which are started and stopped in unison.
 type CombinedRoutine []BackgroundRoutine
 
 func (r CombinedRoutine) Start() {
@@ -96,4 +94,14 @@ func (r CombinedRoutine) Stop() {
 	var wg sync.WaitGroup
 	stopAll(&wg, r...)
 	wg.Wait()
+}
+
+type noopStop struct{ r StartableRoutine }
+
+func (r noopStop) Start() { r.r.Start() }
+func (r noopStop) Stop()  {}
+
+// NoopStop wraps a startable routine in a type with a noop Stop method.
+func NoopStop(r StartableRoutine) BackgroundRoutine {
+	return noopStop{r}
 }

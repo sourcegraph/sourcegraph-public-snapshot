@@ -27,6 +27,7 @@ var allDockerImages = []string{
 	"precise-code-intel-worker",
 	"precise-code-intel-indexer",
 	"precise-code-intel-indexer-vm",
+	"executor-queue",
 
 	// Images under docker-images/
 	"cadvisor",
