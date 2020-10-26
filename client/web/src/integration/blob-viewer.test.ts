@@ -225,12 +225,9 @@ describe('Blob viewer', () => {
 
         describe('browser extension discoverability', () => {
             const HOVER_THRESHOLD = 5
-            const HOVER_COUNT_KEY = 'hover-count'
 
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
-                await driver.page.reload()
 
                 await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
                 // Close new tab after clicking link
@@ -271,8 +268,6 @@ describe('Blob viewer', () => {
 
             it(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(HOVER_COUNT_KEY => localStorage.removeItem(HOVER_COUNT_KEY), HOVER_COUNT_KEY)
-                await driver.page.reload()
 
                 // Alert should not be visible before the user reaches the hover threshold
                 assert(

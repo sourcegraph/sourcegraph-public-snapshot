@@ -58,6 +58,23 @@ export const createWebIntegrationTestContext = async ({
             `)
         })
 
+    // Clear localStorage before each test to prevent flakiness
+    const clearLocalStoragePath = '/TEST/CLEAR-LOCAL-STORAGE'
+    sharedTestContext.server
+        .get(new URL(clearLocalStoragePath, driver.sourcegraphBaseUrl).href)
+        .intercept((request, response) => {
+            response.type('text/html').send(html`
+                <html>
+                    <head>
+                        <title>Clear localStorage</title>
+                    </head>
+                    <body></body>
+                </html>
+            `)
+        })
+    await driver.page.goto(driver.sourcegraphBaseUrl + clearLocalStoragePath)
+    await driver.page.evaluate(() => localStorage.clear())
+
     return {
         ...sharedTestContext,
         overrideJsContext: overrides => {
