@@ -29,3 +29,4 @@ precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
 precise-code-intel-indexer: precise-code-intel-indexer
 precise-code-intel-indexer-vm: TMPDIR=~/.sourcegraph/indexer-temp precise-code-intel-indexer-vm
 precise-code-intel-worker: precise-code-intel-worker
+minio: ./dev/minio.sh

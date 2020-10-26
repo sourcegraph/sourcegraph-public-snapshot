@@ -40,6 +40,7 @@ var allDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"codeintel-db",
+	"minio",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
