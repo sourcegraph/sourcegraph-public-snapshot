@@ -3,7 +3,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable, NEVER, ObservableInput, of } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import {

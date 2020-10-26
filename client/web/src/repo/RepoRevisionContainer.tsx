@@ -1,4 +1,3 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useMemo } from 'react'
@@ -8,7 +7,6 @@ import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
-    isRepoNotFoundErrorLike,
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'

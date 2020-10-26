@@ -8,7 +8,7 @@ import {
     RevisionNotFoundError,
 } from '../../../shared/src/backend/errors'
 import { FetchFileParameters } from '../../../shared/src/components/CodeExcerpt'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, GraphQLError } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
@@ -316,7 +316,9 @@ export const fetchTreeEntries = memoizeObservable(
                     throw new RevisionNotFoundError(args.revision)
                 }
                 if (!data.repository.commit.tree) {
-                    throw new Error('Tree not found')
+                    const error: Error & GraphQLError = new Error('Tree not found')
+                    error.path = ['repository', 'commit', 'tree']
+                    throw error
                 }
                 return data.repository.commit.tree
             })

@@ -21,7 +21,7 @@ import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
-import { isRepoNotFoundErrorLike, isRevisionNotFoundErrorLike } from '../../../shared/src/backend/errors'
+import { isUnderGraphQLPath } from '../../../shared/src/graphql/graphql'
 
 const maxEntries = 2500
 
@@ -153,8 +153,9 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             singleChildTreeEntry = singleChildEntriesToGitTree(treeOrError.entries)
         }
 
-        if (isRepoNotFoundErrorLike(treeOrError) || isRevisionNotFoundErrorLike(treeOrError)) {
-            throw treeOrError
+        // Only handle errors on the tree level inside here.
+        if (isErrorLike(treeOrError) && isUnderGraphQLPath(treeOrError, ['repository', 'commit', 'tree'])) {
+            throw asError(treeOrError)
         }
 
         return (
