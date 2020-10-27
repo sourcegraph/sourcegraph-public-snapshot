@@ -81,10 +81,10 @@ export const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown>
  * @param generator The source generator.
  */
 export const observableFromAsyncIterable = <T, R>(
-    generator: AsyncGenerator<T, R> | AsyncIterable<T>
+    iterable: AsyncGenerator<T, R> | AsyncIterable<T>
 ): Observable<T | R> =>
     new Observable((observer: Observer<T | R>) => {
-        const iterator = generator[Symbol.asyncIterator]()
+        const iterator = iterable[Symbol.asyncIterator]()
         let unsubscribed = false
         let iteratorDone = false
         function next(): void {
