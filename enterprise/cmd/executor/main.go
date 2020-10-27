@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -29,8 +28,7 @@ func main() {
 	env.HandleHelpFlag()
 
 	logging.Init()
-	tracer.Init()
-	trace.Init(true)
+	trace.Init(false)
 
 	if err := config.Validate(); err != nil {
 		log.Fatalf("failed to read config: %s", err)
