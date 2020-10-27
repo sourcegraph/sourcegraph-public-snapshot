@@ -15,6 +15,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -188,7 +189,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		return errors.Errorf("want 1 external service but got %d", len(svcs))
 	}
 	svc := svcs[0]
-	isUserOwned := svc.NamespaceUserID > 0
+	isUserOwned := svc.NamespaceUserID != nil && *svc.NamespaceUserID > 0
 
 	onSourced := func(*Repo) error { return nil } //noop
 
@@ -326,8 +327,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	if s.Logger != nil {
 		s.Logger.Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	}
-	svc.NextSyncAt = now.Add(interval)
-	svc.LastSyncAt = now
+	nextSyncAt := now.Add(interval)
+	svc.NextSyncAt = &nextSyncAt
+	svc.LastSyncAt = &now
 
 	err = tx.UpsertExternalServices(ctx, svc)
 	if err != nil {
@@ -397,11 +399,11 @@ func resolveNameConflicts(diff *Diff, conflicting Repos) {
 	diff.Deleted = append(diff.Deleted, toDelete...)
 }
 
-func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Duration, diff Diff) time.Duration {
+func calcSyncInterval(now time.Time, lastSync *time.Time, minSyncInterval time.Duration, diff Diff) time.Duration {
 	const maxSyncInterval = 8 * time.Hour
 
 	// Special case, we've never synced
-	if lastSync.IsZero() {
+	if lastSync == nil || lastSync.IsZero() {
 		return minSyncInterval
 	}
 
@@ -411,7 +413,7 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 	}
 
 	// No change, back off
-	interval := now.Sub(lastSync) * 2
+	interval := now.Sub(*lastSync) * 2
 	if interval < minSyncInterval {
 		return minSyncInterval
 	}
@@ -682,7 +684,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	return newDiff(nil, sourced, stored)
 }
 
-func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
+func newDiff(svc *types.ExternalService, sourced, stored []*Repo) (diff Diff) {
 	// Sort sourced so we merge deterministically
 	sort.Sort(Repos(sourced))
 
@@ -753,7 +755,7 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context, svcs []*types.ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
 	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err

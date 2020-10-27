@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -25,12 +26,12 @@ func TestExternalService_Exclude(t *testing.T) {
 
 	type testCase struct {
 		name   string
-		svcs   ExternalServices
-		repos  Repos
+		svcs   types.ExternalServices
+		repos  types.Repos
 		assert ExternalServicesAssertion
 	}
 
-	githubService := ExternalService{
+	githubService := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github",
 		Config: `{
@@ -43,7 +44,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitlabService := ExternalService{
+	gitlabService := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: `{
@@ -56,7 +57,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	bitbucketServerService := ExternalService{
+	bitbucketServerService := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: `{
@@ -70,7 +71,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	awsCodeCommitService := ExternalService{
+	awsCodeCommitService := types.ExternalService{
 		ID:          9,
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS CodeCommit",
@@ -84,7 +85,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitoliteService := ExternalService{
+	gitoliteService := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite",
 		Config: `{
@@ -96,7 +97,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	otherService := ExternalService{
+	otherService := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other code hosts",
 		Config: formatJSON(t, `{
@@ -107,60 +108,76 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	repos := Repos{
+	repos := types.Repos{
 		{
-			Metadata: &github.Repository{
-				ID:            "foo",
-				NameWithOwner: "org/foo",
-			},
-		},
-		{
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "org/foo",
+			RepoFields: &types.RepoFields{
+				Metadata: &github.Repository{
+					ID:            "foo",
+					NameWithOwner: "org/foo",
 				},
 			},
 		},
 		{
-			Metadata: &github.Repository{
-				NameWithOwner: "org/baz",
-			},
-		},
-		{
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					PathWithNamespace: "org/baz",
+			RepoFields: &types.RepoFields{
+				Metadata: &gitlab.Project{
+					ProjectCommon: gitlab.ProjectCommon{
+						ID:                1,
+						PathWithNamespace: "org/foo",
+					},
 				},
 			},
 		},
 		{
-			Metadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "foo",
-				Project: &bitbucketserver.Project{
-					Key: "org",
+			RepoFields: &types.RepoFields{
+				Metadata: &github.Repository{
+					NameWithOwner: "org/baz",
 				},
 			},
 		},
 		{
-			Metadata: &bitbucketserver.Repo{
-				Slug: "baz",
-				Project: &bitbucketserver.Project{
-					Key: "org",
+			RepoFields: &types.RepoFields{
+				Metadata: &gitlab.Project{
+					ProjectCommon: gitlab.ProjectCommon{
+						PathWithNamespace: "org/baz",
+					},
 				},
 			},
 		},
 		{
-			Metadata: &awscodecommit.Repository{
-				ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-				Name: "foo",
+			RepoFields: &types.RepoFields{
+				Metadata: &bitbucketserver.Repo{
+					ID:   1,
+					Slug: "foo",
+					Project: &bitbucketserver.Project{
+						Key: "org",
+					},
+				},
 			},
 		},
 		{
-			Metadata: &awscodecommit.Repository{
-				ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
-				Name: "baz",
+			RepoFields: &types.RepoFields{
+				Metadata: &bitbucketserver.Repo{
+					Slug: "baz",
+					Project: &bitbucketserver.Project{
+						Key: "org",
+					},
+				},
+			},
+		},
+		{
+			RepoFields: &types.RepoFields{
+				Metadata: &awscodecommit.Repository{
+					ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+					Name: "foo",
+				},
+			},
+		},
+		{
+			RepoFields: &types.RepoFields{
+				Metadata: &awscodecommit.Repository{
+					ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
+					Name: "baz",
+				},
 			},
 		},
 		{
@@ -179,14 +196,16 @@ func TestExternalService_Exclude(t *testing.T) {
 			},
 		},
 		{
-			Metadata: &gitolite.Repo{Name: "foo"},
+			RepoFields: &types.RepoFields{
+				Metadata: &gitolite.Repo{Name: "foo"},
+			},
 		},
 	}
 
 	var testCases []testCase
 	{
-		svcs := ExternalServices{
-			githubService.With(func(e *ExternalService) {
+		svcs := types.ExternalServices{
+			githubService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -199,7 +218,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlabService.With(func(e *ExternalService) {
+			gitlabService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -212,7 +231,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServerService.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -226,7 +245,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommitService.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -240,7 +259,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitoliteService.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -262,8 +281,8 @@ func TestExternalService_Exclude(t *testing.T) {
 		})
 	}
 	{
-		svcs := ExternalServices{
-			githubService.With(func(e *ExternalService) {
+		svcs := types.ExternalServices{
+			githubService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -275,7 +294,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlabService.With(func(e *ExternalService) {
+			gitlabService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -287,7 +306,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServerService.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -300,7 +319,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommitService.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -313,7 +332,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitoliteService.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -324,7 +343,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			otherService.With(func(e *ExternalService) {
+			otherService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					"url": "https://git-host.mycorp.com",
@@ -342,7 +361,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			svcs:  svcs,
 			repos: repos,
 			assert: Assert.ExternalServicesEqual(
-				githubService.With(func(e *ExternalService) {
+				githubService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -356,7 +375,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitlabService.With(func(e *ExternalService) {
+				gitlabService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -370,7 +389,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				bitbucketServerService.With(func(e *ExternalService) {
+				bitbucketServerService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -385,7 +404,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				awsCodeCommitService.With(func(e *ExternalService) {
+				awsCodeCommitService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -400,7 +419,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitoliteService.With(func(e *ExternalService) {
+				gitoliteService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -412,7 +431,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				otherService.With(func(e *ExternalService) {
+				otherService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						"url": "https://git-host.mycorp.com",
@@ -522,15 +541,14 @@ func TestSyncRateLimiters(t *testing.T) {
 	}
 
 	makeLister := func(options ...limitOptions) *MockExternalServicesLister {
-		services := make([]*ExternalService, 0, len(options))
+		services := make([]*types.ExternalService, 0, len(options))
 		for i, o := range options {
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				ID:          int64(i) + 1,
 				Kind:        "GitLab",
 				DisplayName: "GitLab",
 				CreatedAt:   now,
 				UpdatedAt:   now,
-				DeletedAt:   time.Time{},
 			}
 			config := schema.GitLabConnection{
 				Url: baseURL,

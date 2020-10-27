@@ -13,8 +13,10 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -89,22 +91,20 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []api.RepoID{req.ID},
-	})
+	repo, err := db.Repos.Get(r.Context(), req.ID)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
+		if _, ok := err.(*db.RepoNotFoundErr); ok {
+			respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
+			return
+		}
 
-	if len(rs) == 0 {
-		respond(w, http.StatusNotFound, errors.Errorf("repository with ID %v does not exist", req.ID))
+		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	var resp protocol.RepoExternalServicesResponse
 
-	svcIDs := rs[0].ExternalServiceIDs()
+	svcIDs := repo.ExternalServiceIDs()
 	if len(svcIDs) == 0 {
 		respond(w, http.StatusOK, resp)
 		return
@@ -132,23 +132,22 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []api.RepoID{req.ID},
-	})
+	var resp protocol.ExcludeRepoResponse
+
+	repo, err := db.Repos.Get(r.Context(), req.ID)
 	if err != nil {
+		if _, ok := err.(*db.RepoNotFoundErr); ok {
+			log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
+			respond(w, http.StatusOK, resp)
+			return
+		}
+
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	var resp protocol.ExcludeRepoResponse
-	if len(rs) == 0 {
-		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
-		respond(w, http.StatusOK, resp)
-		return
-	}
-
 	args := repos.StoreListExternalServicesArgs{
-		Kinds: repos.Repos(rs).Kinds(),
+		Kinds: types.Repos([]*types.Repo{repo}).Kinds(),
 	}
 
 	es, err := s.Store.ListExternalServices(r.Context(), args)
@@ -158,7 +157,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, e := range es {
-		if err := e.Exclude(rs...); err != nil {
+		if err := e.Exclude(repo); err != nil {
 			respond(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -200,7 +199,7 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
-func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func newExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	svcs := make([]api.ExternalService, 0, len(es))
 
 	for _, e := range es {
@@ -214,7 +213,7 @@ func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = &(*e.DeletedAt)
 		}
 
 		svcs = append(svcs, svc)
@@ -370,7 +369,7 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	src, err := repos.NewSource(&repos.ExternalService{
+	src, err := repos.NewSource(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,

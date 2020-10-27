@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"sort"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -105,7 +105,7 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo *repos.Repo
+	repo *types.Repo
 
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
@@ -118,14 +118,15 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return nil
 	}
 
-	reposStore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
-
+	// reposStore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
+	reposStore := db.Repos.With(e.tx)
+	externalServicesStore := db.ExternalServices.With(e.tx)
 	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	extSvc, err := loadExternalService(ctx, reposStore, e.repo)
+	extSvc, err := loadExternalService(ctx, externalServicesStore, e.repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to load external service")
 	}
@@ -195,7 +196,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -699,23 +700,14 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
 
-func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
-	rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{id}})
-	if err != nil {
-		return nil, err
-	}
-	if len(rs) != 1 {
-		return nil, errors.Errorf("repo not found: %d", id)
-	}
-	return rs[0], nil
+func loadRepo(ctx context.Context, tx *db.RepoStore, id api.RepoID) (*types.Repo, error) {
+	return tx.Get(ctx, id)
 }
 
-func loadExternalService(ctx context.Context, reposStore repos.Store, repo *repos.Repo) (*repos.ExternalService, error) {
-	var externalService *repos.ExternalService
+func loadExternalService(ctx context.Context, extSvcStore *db.ExternalServicesStore, repo *types.Repo) (*types.ExternalService, error) {
+	var externalService *types.ExternalService
 	{
-		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
-
-		es, err := reposStore.ListExternalServices(ctx, args)
+		es, err := extSvcStore.List(ctx, db.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 		if err != nil {
 			return nil, err
 		}

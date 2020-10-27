@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -20,13 +21,13 @@ import (
 // A OtherSource yields repositories from a single Other connection configured
 // in Sourcegraph via the external services configuration.
 type OtherSource struct {
-	svc    *ExternalService
+	svc    *types.ExternalService
 	conn   *schema.OtherExternalServiceConnection
 	client httpcli.Doer
 }
 
 // NewOtherSource returns a new OtherSource from the given external service.
-func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
+func NewOtherSource(svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
 	var c schema.OtherExternalServiceConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -76,8 +77,8 @@ func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s OtherSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s OtherSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {

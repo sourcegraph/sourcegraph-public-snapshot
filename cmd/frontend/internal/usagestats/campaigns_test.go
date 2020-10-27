@@ -2,15 +2,14 @@ package usagestats
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -22,33 +21,35 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	// Create stub repo.
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	now := time.Now()
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	if err := rstore.UpsertExternalServices(ctx, &svc); err != nil {
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	if err := db.ExternalServices.Create(ctx, confGet, &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
-	repo := &repos.Repo{
+	repo := &types.Repo{
 		Name: "test/repo",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
-			svc.URN(): {
-				ID:       svc.URN(),
-				CloneURL: "https://secrettoken@test/repo",
+		RepoFields: &types.RepoFields{
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID:       svc.URN(),
+					CloneURL: "https://secrettoken@test/repo",
+				},
 			},
 		},
 	}
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	if err := db.Repos.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

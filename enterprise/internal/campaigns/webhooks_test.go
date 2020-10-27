@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -50,7 +51,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
 			Config: marshalJSON(t, &schema.GitHubConnection{
@@ -218,7 +219,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: marshalJSON(t, &schema.BitbucketServerConnection{

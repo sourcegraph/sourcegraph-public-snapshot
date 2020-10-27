@@ -8,13 +8,14 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
 // whose yielded Repos should be synced.
-type Sourcer func(...*ExternalService) (Sources, error)
+type Sourcer func(...*types.ExternalService) (Sources, error)
 
 // NewSourcer returns a Sourcer that converts the given ExternalServices
 // into Sources that use the provided httpcli.Factory to create the
@@ -24,7 +25,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 //
 // The provided decorator functions will be applied to each Source.
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svcs ...*ExternalService) (Sources, error) {
+	return func(svcs ...*types.ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
 		var errs *multierror.Error
 
@@ -51,7 +52,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
 		return NewGithubSource(svc, cf)
@@ -81,7 +82,7 @@ type Source interface {
 	// as SourceResults
 	ListRepos(context.Context, chan SourceResult)
 	// ExternalServices returns the ExternalServices for the Source.
-	ExternalServices() ExternalServices
+	ExternalServices() types.ExternalServices
 }
 
 // A DraftChangesetSource can create draft changesets and undraft them.
@@ -137,7 +138,7 @@ type SourceResult struct {
 
 type SourceError struct {
 	Err    error
-	ExtSvc *ExternalService
+	ExtSvc *types.ExternalService
 }
 
 func (s *SourceError) Error() string {
@@ -197,8 +198,8 @@ func (srcs Sources) ListRepos(ctx context.Context, results chan SourceResult) {
 }
 
 // ExternalServices returns the ExternalServices from the given Sources.
-func (srcs Sources) ExternalServices() ExternalServices {
-	es := make(ExternalServices, 0, len(srcs))
+func (srcs Sources) ExternalServices() types.ExternalServices {
+	es := make(types.ExternalServices, 0, len(srcs))
 	for _, src := range srcs {
 		es = append(es, src.ExternalServices()...)
 	}

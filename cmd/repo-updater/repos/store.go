@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -27,8 +28,8 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
-	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
+	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
+	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
@@ -159,8 +160,8 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		URI:                 nullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
-		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
+		UpdatedAt:           nullTimeColumn(&r.UpdatedAt),
+		DeletedAt:           nullTimeColumn(&r.DeletedAt),
 		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
 		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
@@ -203,13 +204,13 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 }
 
 // ListExternalServices lists all stored external services matching the given args.
-func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
+func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*types.ExternalService, _ error) {
 	if args.PerPage <= 0 {
 		args.PerPage = DefaultListExternalServicesPerPage
 	}
 	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
 		func(sc scanner) (last, count int64, err error) {
-			var svc ExternalService
+			var svc types.ExternalService
 			err = scanExternalService(&svc, sc)
 			if err != nil {
 				return 0, 0, err
@@ -304,7 +305,7 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 }
 
 // UpsertExternalServices updates or inserts the given ExternalServices.
-func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
+func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
 	if len(svcs) == 0 {
 		return nil
 	}
@@ -325,7 +326,7 @@ func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalS
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		vals = append(vals, sqlf.Sprintf(
@@ -336,10 +337,10 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 			s.Config,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
-			nullTimeColumn(s.DeletedAt.UTC()),
-			nullTimeColumn(s.LastSyncAt.UTC()),
-			nullTimeColumn(s.NextSyncAt.UTC()),
-			nullInt32Column(s.NamespaceUserID),
+			nullTimeColumn(s.DeletedAt),
+			nullTimeColumn(s.LastSyncAt),
+			nullTimeColumn(s.NextSyncAt),
+			s.NamespaceUserID,
 		))
 	}
 
@@ -1274,11 +1275,13 @@ FROM batch
 JOIN repo USING (external_service_type, external_service_id, external_id)
 `
 
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
+func nullTimeColumn(t *time.Time) *time.Time {
+	if t == nil || t.IsZero() {
 		return nil
 	}
-	return &t
+
+	ut := t.UTC()
+	return &ut
 }
 
 func nullStringColumn(s string) *string {
@@ -1354,7 +1357,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanExternalService(svc *ExternalService, s scanner) error {
+func scanExternalService(svc *types.ExternalService, s scanner) error {
 	return s.Scan(
 		&svc.ID,
 		&svc.Kind,
@@ -1362,10 +1365,10 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&secret.StringValue{S: &svc.Config},
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
-		&dbutil.NullTime{Time: &svc.DeletedAt},
-		&dbutil.NullTime{Time: &svc.LastSyncAt},
-		&dbutil.NullTime{Time: &svc.NextSyncAt},
-		&dbutil.NullInt32{N: &svc.NamespaceUserID},
+		&dbutil.NullTime{Time: svc.DeletedAt},
+		&dbutil.NullTime{Time: svc.LastSyncAt},
+		&dbutil.NullTime{Time: svc.NextSyncAt},
+		&dbutil.NullInt32{N: svc.NamespaceUserID},
 	)
 }
 

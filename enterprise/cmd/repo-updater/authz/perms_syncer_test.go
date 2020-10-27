@@ -80,11 +80,11 @@ type mockReposStore struct {
 	listRepos func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
 }
 
-func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
 	return nil, nil
 }
 
-func (s *mockReposStore) UpsertExternalServices(context.Context, ...*repos.ExternalService) error {
+func (s *mockReposStore) UpsertExternalServices(context.Context, ...*types.ExternalService) error {
 	return nil
 }
 

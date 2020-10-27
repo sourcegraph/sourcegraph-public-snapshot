@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -66,7 +67,7 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
+func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 	c, err := extSvc.Configuration()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to get external service config")
@@ -234,7 +235,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -264,7 +265,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 		}
 	}
 
-	var extSvc *repos.ExternalService
+	var extSvc *types.ExternalService
 	for _, e := range es {
 		if externalServiceID != 0 && e.ID != externalServiceID {
 			continue
@@ -855,7 +856,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -882,7 +883,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	var extSvc *repos.ExternalService
+	var extSvc *types.ExternalService
 	for _, e := range es {
 		if externalServiceID != 0 && e.ID != externalServiceID {
 			continue

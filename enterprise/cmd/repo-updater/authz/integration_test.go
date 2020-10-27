@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -74,7 +75,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
 		CreatedAt: clock(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,

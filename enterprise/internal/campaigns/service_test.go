@@ -820,12 +820,12 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 	return changeset
 }
 
-func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
@@ -853,12 +853,12 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	return rs, ext
 }
 
-func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{

@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -446,8 +447,8 @@ func TestSyncRegistry(t *testing.T) {
 	now := time.Now()
 
 	repoStore := MockRepoStore{
-		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
-			return []*repos.ExternalService{
+		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*types.ExternalService, err error) {
+			return []*types.ExternalService{
 				{
 					ID:          1,
 					Kind:        extsvc.KindGitHub,
@@ -578,11 +579,11 @@ func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 }
 
 type MockRepoStore struct {
-	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
 }
 
-func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*repos.ExternalService) error {
+func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
 	panic("implement me")
 }
 
@@ -590,7 +591,7 @@ func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) er
 	panic("implement me")
 }
 
-func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
 	return m.listExternalServices(ctx, args)
 }
 

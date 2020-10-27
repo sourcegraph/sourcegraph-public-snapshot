@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -35,7 +36,7 @@ type SyncRegistry struct {
 }
 
 type RepoStore interface {
-	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 	ListRepos(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
 }
 

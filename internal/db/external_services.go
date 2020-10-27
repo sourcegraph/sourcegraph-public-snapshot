@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -31,6 +33,8 @@ import (
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
 type ExternalServicesStore struct {
+	*basestore.Store
+
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
@@ -38,6 +42,34 @@ type ExternalServicesStore struct {
 	// PreCreateExternalService (if set) is invoked as a hook prior to creating a
 	// new external service in the database.
 	PreCreateExternalService func(context.Context) error
+
+	m sync.Mutex
+}
+
+// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServicesStore {
+	return &ExternalServicesStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+func (e *ExternalServicesStore) With(other basestore.ShareableStore) *ExternalServicesStore {
+	return &ExternalServicesStore{Store: e.Store.With(other)}
+}
+
+func (e *ExternalServicesStore) Transact(ctx context.Context) (*ExternalServicesStore, error) {
+	txBase, err := e.Store.Transact(ctx)
+	return &ExternalServicesStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (e *ExternalServicesStore) ensureStore() {
+	e.m.Lock()
+	defer e.m.Unlock()
+
+	if e.Store == nil {
+		e.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+	}
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -63,6 +95,8 @@ type ExternalServiceKind struct {
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
+	// When specified, only include external services with the given IDs.
+	IDs []int64
 	// When true, only include external services not under any namespace (i.e. owned by all site admins),
 	// and value of NamespaceUserID is ignored.
 	NoNamespace bool
@@ -78,6 +112,13 @@ type ExternalServicesListOptions struct {
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	if len(o.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(o.IDs))
+		for _, id := range o.IDs {
+			ids = append(ids, sqlf.Sprintf("%s", id))
+		}
+		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
 	if o.NoNamespace {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
 	} else if o.NamespaceUserID > 0 {
@@ -348,6 +389,7 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	if Mocks.ExternalServices.Create != nil {
 		return Mocks.ExternalServices.Create(ctx, confGet, es)
 	}
+	e.ensureStore()
 
 	ps := confGet().AuthProviders
 	if err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
@@ -390,6 +432,7 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 	if Mocks.ExternalServices.Update != nil {
 		return Mocks.ExternalServices.Update(ctx, ps, id, update)
 	}
+	e.ensureStore()
 
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
@@ -454,10 +497,11 @@ func (e externalServiceNotFoundError) NotFound() bool {
 // Delete deletes an external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (*ExternalServicesStore) Delete(ctx context.Context, id int64) error {
+func (e *ExternalServicesStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.ExternalServices.Delete != nil {
 		return Mocks.ExternalServices.Delete(ctx, id)
 	}
+	e.ensureStore()
 
 	res, err := dbconn.Global.ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
@@ -480,6 +524,7 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 	if Mocks.ExternalServices.GetByID != nil {
 		return Mocks.ExternalServices.GetByID(id)
 	}
+	e.ensureStore()
 
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("deleted_at IS NULL"),
@@ -505,11 +550,15 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 	if Mocks.ExternalServices.List != nil {
 		return Mocks.ExternalServices.List(opt)
 	}
+	e.ensureStore()
+
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
 func (e *ExternalServicesStore) DistinctKinds(ctx context.Context) ([]string, error) {
+	e.ensureStore()
+
 	q := sqlf.Sprintf(`
 SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
 FROM external_services
@@ -582,10 +631,11 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 // Count counts all external services that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (*ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
+func (e *ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
 	if Mocks.ExternalServices.Count != nil {
 		return Mocks.ExternalServices.Count(ctx, opt)
 	}
+	e.ensureStore()
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int

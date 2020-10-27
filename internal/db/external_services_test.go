@@ -459,6 +459,20 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 	})
 
+	t.Run("list external services with certain IDs", func(t *testing.T) {
+		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+			IDs: []int64{ess[1].ID},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+
+		if diff := cmp.Diff(ess[1:], got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("list external services with no namespace", func(t *testing.T) {
 		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
 			NoNamespace: true,

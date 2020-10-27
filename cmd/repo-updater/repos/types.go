@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -989,7 +990,7 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 }
 
 type externalServiceLister interface {
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
+	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 }
 
 // RateLimitSyncer syncs rate limits based on external service configuration

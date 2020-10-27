@@ -20,8 +20,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -184,7 +186,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 
 func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
-		githubService := &repos.ExternalService{
+		githubService := &types.ExternalService{
 			ID:          1,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github.com - test",
@@ -197,21 +199,23 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 		}`),
 		}
 
-		githubRepo := (&repos.Repo{
+		githubRepo := (&types.Repo{
 			Name: "github.com/foo/bar",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "bar",
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			Sources: map[string]*repos.SourceInfo{},
-			Metadata: &github.Repository{
-				ID:            "bar",
-				NameWithOwner: "foo/bar",
+			RepoFields: &types.RepoFields{
+				Sources: map[string]*types.SourceInfo{},
+				Metadata: &github.Repository{
+					ID:            "bar",
+					NameWithOwner: "foo/bar",
+				},
 			},
 		}).With(repos.Opt.RepoSources(githubService.URN()))
 
-		gitlabService := &repos.ExternalService{
+		gitlabService := &types.ExternalService{
 			ID:          1,
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "gitlab.com - test",
@@ -224,23 +228,25 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 		}`),
 		}
 
-		gitlabRepo := (&repos.Repo{
+		gitlabRepo := (&types.Repo{
 			Name: "gitlab.com/foo/bar",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1",
 				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "http://gitlab.com",
 			},
-			Sources: map[string]*repos.SourceInfo{},
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "foo/bar",
+			RepoFields: &types.RepoFields{
+				Sources: map[string]*types.SourceInfo{},
+				Metadata: &gitlab.Project{
+					ProjectCommon: gitlab.ProjectCommon{
+						ID:                1,
+						PathWithNamespace: "foo/bar",
+					},
 				},
 			},
 		}).With(repos.Opt.RepoSources(gitlabService.URN()))
 
-		bitbucketServerService := &repos.ExternalService{
+		bitbucketServerService := &types.ExternalService{
 			ID:          1,
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket Server - Test",
@@ -254,27 +260,29 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 		}`),
 		}
 
-		bitbucketServerRepo := (&repos.Repo{
+		bitbucketServerRepo := (&types.Repo{
 			Name: "bitbucketserver.mycorp.com/foo/bar",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1",
 				ServiceType: "bitbucketServer",
 				ServiceID:   "http://bitbucketserver.mycorp.com",
 			},
-			Sources: map[string]*repos.SourceInfo{},
-			Metadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "bar",
-				Project: &bitbucketserver.Project{
-					Key: "foo",
+			RepoFields: &types.RepoFields{
+				Sources: map[string]*types.SourceInfo{},
+				Metadata: &bitbucketserver.Repo{
+					ID:   1,
+					Slug: "bar",
+					Project: &bitbucketserver.Project{
+						Key: "foo",
+					},
 				},
 			},
 		}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
 
 		type testCase struct {
 			name  string
-			svcs  repos.ExternalServices // stored services
-			repos repos.Repos            // stored repos
+			svcs  types.ExternalServices // stored services
+			repos types.Repos            // stored repos
 			kind  string
 			res   *protocol.ExcludeRepoResponse
 			err   string
@@ -283,16 +291,16 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 		var testCases []testCase
 
 		for _, k := range []struct {
-			svc  *repos.ExternalService
-			repo *repos.Repo
+			svc  *types.ExternalService
+			repo *types.Repo
 		}{
 			{githubService, githubRepo},
 			{bitbucketServerService, bitbucketServerRepo},
 			{gitlabService, gitlabRepo},
 		} {
-			svcs := repos.ExternalServices{
+			svcs := types.ExternalServices{
 				k.svc,
-				k.svc.With(func(e *repos.ExternalService) {
+				k.svc.With(func(e *types.ExternalService) {
 					e.ID++
 					e.DisplayName += " - Duplicate"
 				}),
@@ -301,10 +309,10 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 			testCases = append(testCases, testCase{
 				name:  "excluded from every external service of the same kind/" + k.svc.Kind,
 				svcs:  svcs,
-				repos: repos.Repos{k.repo}.With(repos.Opt.RepoSources()),
+				repos: types.Repos{k.repo}.With(repos.Opt.RepoSources()),
 				kind:  k.svc.Kind,
 				res: &protocol.ExcludeRepoResponse{
-					ExternalServices: apiExternalServices(svcs.With(func(e *repos.ExternalService) {
+					ExternalServices: apiExternalServices(svcs.With(func(e *types.ExternalService) {
 						if err := e.Exclude(k.repo); err != nil {
 							panic(err)
 						}
@@ -325,7 +333,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				}
 
 				storedRepos := tc.repos.Clone()
-				err = store.InsertRepos(ctx, storedRepos...)
+				err = db.Repos.Create(ctx, storedRepos...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
@@ -339,7 +347,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					tc.err = "<nil>"
 				}
 
-				exclude := storedRepos.Filter(func(r *repos.Repo) bool {
+				exclude := storedRepos.Filter(func(r *types.Repo) bool {
 					return strings.EqualFold(r.ExternalRepo.ServiceType, tc.kind)
 				})
 
@@ -386,7 +394,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 	return func(t *testing.T) {
 		ctx := context.Background()
 
-		svc := repos.ExternalService{
+		svc := types.ExternalService{
 			Kind: extsvc.KindGitHub,
 			Config: `{
 "URL": "https://github.com",
@@ -532,7 +540,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 
-		service1 := &repos.ExternalService{
+		service1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github.com - test",
 			Config: formatJSON(`
@@ -543,7 +551,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 		}`),
 		}
 
-		service2 := &repos.ExternalService{
+		service2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github.com - test2",
 			Config: formatJSON(`
@@ -632,7 +640,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 	return func(t *testing.T) {
 		ctx := context.Background()
 
-		githubService := &repos.ExternalService{
+		githubService := &types.ExternalService{
 			ID:          1,
 			Config:      `{}`,
 			Kind:        extsvc.KindGitHub,
@@ -840,7 +848,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 	}
 }
 
-func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	if len(es) == 0 {
 		return nil
 	}
@@ -873,15 +881,15 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			clock := repos.NewFakeClock(time.Now(), 0)
 			now := clock.Now()
 
-			githubSource := repos.ExternalService{
+			githubSource := types.ExternalService{
 				Kind:   extsvc.KindGitHub,
 				Config: `{}`,
 			}
-			awsSource := repos.ExternalService{
+			awsSource := types.ExternalService{
 				Kind:   extsvc.KindAWSCodeCommit,
 				Config: `{}`,
 			}
-			gitlabSource := repos.ExternalService{
+			gitlabSource := types.ExternalService{
 				Kind:   extsvc.KindGitLab,
 				Config: `{}`,
 			}
