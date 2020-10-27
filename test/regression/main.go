@@ -27,7 +27,6 @@ var (
 )
 
 func main() {
-
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
