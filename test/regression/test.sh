@@ -8,6 +8,9 @@ source /root/.profile
 Xvfb "$DISPLAY" -screen 0 1280x1024x24 &
 x11vnc -display "$DISPLAY" -forever -rfbport 5900 >/x11vnc.log 2>&1 &
 
+curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+chmod +x /usr/local/bin/src
+
 asdf install
 yarn
 yarn generate

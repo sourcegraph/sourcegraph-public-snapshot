@@ -303,6 +303,7 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 }
 
 var _ ChangesetSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
 
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
@@ -333,6 +334,30 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 
 	if err := c.SetMetadata(mr); err != nil {
 		return exists, errors.Wrap(err, "setting changeset metadata")
+	}
+	return exists, nil
+}
+
+// CreateDraftChangeset creates a GitLab merge request. If it already exists,
+// *Changeset will be populated and the return value will be true.
+func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	c.Title = gitlab.SetWIP(c.Title)
+
+	exists, err := s.CreateChangeset(ctx, c)
+	if err != nil {
+		return exists, err
+	}
+
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return false, errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// If it already exists, but is not a WIP, we need to update the title.
+	if exists && !mr.WorkInProgress {
+		if err := s.UpdateChangeset(ctx, c); err != nil {
+			return exists, err
+		}
 	}
 	return exists, nil
 }
@@ -521,6 +546,11 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
 
-	c.Changeset.Metadata = updated
-	return nil
+	return c.Changeset.SetMetadata(updated)
+}
+
+// UndraftChangeset marks the changeset as *not* work in progress anymore.
+func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+	c.Title = gitlab.UnsetWIP(c.Title)
+	return s.UpdateChangeset(ctx, c)
 }

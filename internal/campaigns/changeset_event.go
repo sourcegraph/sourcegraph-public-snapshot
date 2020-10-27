@@ -68,12 +68,14 @@ const (
 	// clearly convey that it only occurs when a request for changes has been dismissed.
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 
-	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
-	ChangesetEventKindGitLabClosed     ChangesetEventKind = "gitlab:closed"
-	ChangesetEventKindGitLabMerged     ChangesetEventKind = "gitlab:merged"
-	ChangesetEventKindGitLabPipeline   ChangesetEventKind = "gitlab:pipeline"
-	ChangesetEventKindGitLabReopened   ChangesetEventKind = "gitlab:reopened"
-	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
+	ChangesetEventKindGitLabApproved             ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabClosed               ChangesetEventKind = "gitlab:closed"
+	ChangesetEventKindGitLabMerged               ChangesetEventKind = "gitlab:merged"
+	ChangesetEventKindGitLabPipeline             ChangesetEventKind = "gitlab:pipeline"
+	ChangesetEventKindGitLabReopened             ChangesetEventKind = "gitlab:reopened"
+	ChangesetEventKindGitLabUnapproved           ChangesetEventKind = "gitlab:unapproved"
+	ChangesetEventKindGitLabMarkWorkInProgress   ChangesetEventKind = "gitlab:mark_wip"
+	ChangesetEventKindGitLabUnmarkWorkInProgress ChangesetEventKind = "gitlab:unmark_wip"
 )
 
 // A ChangesetEvent is an event that happened in the lifetime
@@ -95,52 +97,29 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 }
 
 // ReviewAuthor returns the author of the review if the ChangesetEvent is related to a review.
-func (e *ChangesetEvent) ReviewAuthor() (string, error) {
+// Returns an empty string if not a review event or the author has been deleted.
+func (e *ChangesetEvent) ReviewAuthor() string {
 	switch meta := e.Metadata.(type) {
 	case *github.PullRequestReview:
-		login := meta.Author.Login
-		if login == "" {
-			return "", errors.New("review author is blank")
-		}
-		return login, nil
+		return meta.Author.Login
 
 	case *github.ReviewDismissedEvent:
-		login := meta.Review.Author.Login
-		if login == "" {
-			return "", errors.New("review author in dismissed event is blank")
-		}
-		return login, nil
+		return meta.Review.Author.Login
 
 	case *bitbucketserver.Activity:
-		username := meta.User.Name
-		if username == "" {
-			return "", errors.New("activity user is blank")
-		}
-		return username, nil
+		return meta.User.Name
 
 	case *bitbucketserver.ParticipantStatusEvent:
-		username := meta.User.Name
-		if username == "" {
-			return "", errors.New("activity user is blank")
-		}
-		return username, nil
+		return meta.User.Name
 
-	case *gitlab.ReviewApproved:
-		username := meta.Author.Username
-		if username == "" {
-			return "", errors.New("review user is blank")
-		}
-		return username, nil
+	case *gitlab.ReviewApprovedEvent:
+		return meta.Author.Username
 
-	case *gitlab.ReviewUnapproved:
-		username := meta.Author.Username
-		if username == "" {
-			return "", errors.New("review user is blank")
-		}
-		return username, nil
+	case *gitlab.ReviewUnapprovedEvent:
+		return meta.Author.Username
 
 	default:
-		return "", nil
+		return ""
 	}
 }
 
@@ -239,9 +218,13 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(ev.Status.DateAdded)
-	case *gitlab.ReviewApproved:
+	case *gitlab.ReviewApprovedEvent:
 		t = ev.CreatedAt.Time
-	case *gitlab.ReviewUnapproved:
+	case *gitlab.ReviewUnapprovedEvent:
+		t = ev.CreatedAt.Time
+	case *gitlab.MarkWorkInProgressEvent:
+		t = ev.CreatedAt.Time
+	case *gitlab.UnmarkWorkInProgressEvent:
 		t = ev.CreatedAt.Time
 	case *gitlabwebhooks.MergeRequestCloseEvent,
 		*gitlabwebhooks.MergeRequestMergeEvent,
@@ -632,13 +615,23 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 		}
 		e.CheckRuns = o.CheckRuns
 
-	case *gitlab.ReviewApproved:
-		o := o.Metadata.(*gitlab.ReviewApproved)
+	case *gitlab.ReviewApprovedEvent:
+		o := o.Metadata.(*gitlab.ReviewApprovedEvent)
 		// We always get the full event, so safe to replace it
 		*e = *o
 
-	case *gitlab.ReviewUnapproved:
-		o := o.Metadata.(*gitlab.ReviewUnapproved)
+	case *gitlab.ReviewUnapprovedEvent:
+		o := o.Metadata.(*gitlab.ReviewUnapprovedEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlab.MarkWorkInProgressEvent:
+		o := o.Metadata.(*gitlab.MarkWorkInProgressEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlab.UnmarkWorkInProgressEvent:
+		o := o.Metadata.(*gitlab.UnmarkWorkInProgressEvent)
 		// We always get the full event, so safe to replace it
 		*e = *o
 
