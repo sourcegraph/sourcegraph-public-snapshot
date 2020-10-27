@@ -130,7 +130,7 @@ describe('observableFromAsyncIterable', () => {
 
         const values: number[] = []
         await new Promise(complete => observable.subscribe({ next: value => values.push(value), complete }))
-        expect(values).toStrictEqual([1, 2, 3, 4, 5])
+        expect(values).toStrictEqual([1, 2, 3, 4, 5, 6])
     })
 
     it('throws iterator error', async () => {
