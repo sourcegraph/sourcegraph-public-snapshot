@@ -43,6 +43,38 @@ describe('RegistryExtensionOverviewPage', () => {
         ).toMatchSnapshot()
     })
 
+    // Meant to prevent this regression: https://github.com/sourcegraph/sourcegraph/pull/15040
+    test('renders with no tags', () => {
+        const history = createMemoryHistory()
+        expect(
+            renderer
+                .create(
+                    <Router history={history}>
+                        <RegistryExtensionOverviewPage
+                            eventLogger={{ logViewEvent: noop }}
+                            extension={{
+                                id: 'x',
+                                rawManifest: '{}',
+                                manifest: {
+                                    url: 'https://example.com',
+                                    activationEvents: ['*'],
+                                    categories: ['Programming languages', 'Other'],
+                                    tags: [],
+                                    readme: '**A**',
+                                    repository: {
+                                        url: 'https://github.com/foo/bar',
+                                        type: 'git',
+                                    },
+                                },
+                            }}
+                            history={history}
+                        />
+                    </Router>
+                )
+                .toJSON()
+        ).toMatchSnapshot()
+    })
+
     describe('categories', () => {
         test('filters out unrecognized categories', () => {
             const history = createMemoryHistory()
