@@ -23,11 +23,10 @@ postgres_exporter: ./dev/postgres_exporter.sh
 
 # Enterprise executor services
 executor-queue: executor-queue
-# executor: EXECUTOR_QUEUE_NAME=codeintel TMPDIR=~/.sourcegraph/indexer-temp executor
+codeintel-executor: EXECUTOR_QUEUE_NAME=codeintel TMPDIR=~/.sourcegraph/indexer-temp executor
 
 # Enterprise code intelligence services
 precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
 precise-code-intel-indexer: precise-code-intel-indexer
-precise-code-intel-indexer-vm: TMPDIR=~/.sourcegraph/indexer-temp precise-code-intel-indexer-vm
 precise-code-intel-worker: precise-code-intel-worker
 minio: ./dev/minio.sh
