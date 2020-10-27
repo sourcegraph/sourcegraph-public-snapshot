@@ -10,8 +10,8 @@ schema {
 }
 
 """
-This is no type actually returned by any resolver. It just serves as a documentation
-for how errors may look like.
+This type is not returned by any resolver, but serves to document what an error
+response will look like.
 """
 type Error {
     """
