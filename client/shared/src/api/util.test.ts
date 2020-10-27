@@ -102,17 +102,19 @@ describe('isAsyncIterable', () => {
 })
 
 describe('observableFromAsyncIterable', () => {
-    async function* provideHover() {
-        yield 1
-        await Promise.resolve()
-        yield 2
-        return 'return value'
-    }
     test('result is a valid subscribable', () => {
-        const providerResult = provideHover()
-
-        const observable = observableFromAsyncIterable(providerResult)
-        expect(isSubscribable(observable)).toBe(true)
+        expect(
+            isSubscribable(
+                observableFromAsyncIterable(
+                    (async function* () {
+                        yield 1
+                        await Promise.resolve()
+                        yield 2
+                        return 'return value'
+                    })()
+                )
+            )
+        ).toBe(true)
     })
 
     it('returned observable emits yielded values and return value', async () => {
