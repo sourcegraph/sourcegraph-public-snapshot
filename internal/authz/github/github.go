@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -25,7 +26,7 @@ type Provider struct {
 func NewProvider(urn string, githubURL *url.URL, baseToken string, client *github.Client) *Provider {
 	if client == nil {
 		apiURL, _ := github.APIRoot(githubURL)
-		client = github.NewClient(apiURL, baseToken, nil)
+		client = github.NewClient(apiURL, auth.OAuthBearerToken(baseToken), nil)
 	}
 
 	return &Provider{

@@ -103,7 +103,7 @@ func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client 
 	if personalAccessToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&sudoableToken{Token: personalAccessToken, Sudo: sudo})
+	return p.getClient(&SudoableToken{Token: personalAccessToken, Sudo: sudo})
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
@@ -123,7 +123,10 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 	p.gitlabClientsMu.Lock()
 	defer p.gitlabClientsMu.Unlock()
 
-	key := a.Hash()
+	key := "<nil>"
+	if a != nil {
+		key = a.Hash()
+	}
 	if c, ok := p.gitlabClients[key]; ok {
 		return c
 	}
@@ -148,7 +151,7 @@ type Client struct {
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
-	auth             auth.Authenticator
+	Auth             auth.Authenticator
 	RateLimitMonitor *ratelimit.Monitor
 	RateLimiter      *rate.Limiter // Our internal rate limiter
 }
@@ -179,7 +182,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		baseURL:          baseURL,
 		httpClient:       httpClient,
 		projCache:        projCache,
-		auth:             a,
+		Auth:             a,
 		RateLimitMonitor: rateLimit,
 		RateLimiter:      rl,
 	}
@@ -193,8 +196,8 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.auth != nil {
-		if err := c.auth.Authenticate(req); err != nil {
+	if c.Auth != nil {
+		if err := c.Auth.Authenticate(req); err != nil {
 			return nil, 0, errors.Wrap(err, "authenticating request")
 		}
 	}

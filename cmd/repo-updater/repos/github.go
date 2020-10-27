@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -105,6 +106,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
+	token := auth.OAuthBearerToken(c.Token)
+
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
@@ -113,8 +116,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, c.Token, cli),
-		searchClient:     github.NewClient(apiURL, c.Token, cli),
+		client:           github.NewClient(apiURL, token, cli),
+		searchClient:     github.NewClient(apiURL, token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }

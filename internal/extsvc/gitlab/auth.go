@@ -7,15 +7,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-// sudoableToken represents a personal access token with an optional sudo scope.
-type sudoableToken struct {
+// SudoableToken represents a personal access token with an optional sudo scope.
+type SudoableToken struct {
 	Token string
 	Sudo  string
 }
 
-var _ auth.Authenticator = &sudoableToken{}
+var _ auth.Authenticator = &SudoableToken{}
 
-func (pat *sudoableToken) Authenticate(req *http.Request) error {
+func (pat *SudoableToken) Authenticate(req *http.Request) error {
 	req.Header.Set("Private-Token", pat.Token)
 
 	if pat.Sudo != "" {
@@ -25,6 +25,6 @@ func (pat *sudoableToken) Authenticate(req *http.Request) error {
 	return nil
 }
 
-func (pat *sudoableToken) Hash() string {
+func (pat *SudoableToken) Hash() string {
 	return fmt.Sprintf("pat::sudo:%s::%s", pat.Sudo, pat.Token)
 }

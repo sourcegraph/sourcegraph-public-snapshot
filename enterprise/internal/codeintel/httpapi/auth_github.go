@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -27,7 +28,7 @@ func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		return http.StatusUnauthorized, errors.New("must provide github_token")
 	}
 
-	client := github.NewClient(&githubURL, githubToken, nil)
+	client := github.NewClient(&githubURL, auth.OAuthBearerToken(githubToken), nil)
 
 	// There are 2 supported ways to authenticate the upload:
 	//

@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -25,7 +26,9 @@ type ClientAdapter struct {
 }
 
 func (c *ClientAdapter) WithToken(token string) client {
-	return &ClientAdapter{Client: c.Client.WithToken(token)}
+	return &ClientAdapter{
+		Client: c.Client.WithAuthenticator(auth.OAuthBearerToken(token)),
+	}
 }
 
 var _ client = (*mockClient)(nil)
