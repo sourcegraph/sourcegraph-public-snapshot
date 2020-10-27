@@ -21,7 +21,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # Setup for CI or Local
       case ENV['VAGRANT_RUN_ENV']
       when 'CI'
-        VAGRANT_DOTFILE_PATH = "../.vagrant";
         project_id = server['project_id']
         external_ip = server['external_ip']
         use_private_ip = server['use_private_ip']
