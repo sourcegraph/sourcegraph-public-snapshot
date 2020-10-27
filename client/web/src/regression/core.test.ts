@@ -125,7 +125,7 @@ describe('Core functionality regression test suite', () => {
             )
         }
 
-           await driver.replaceText({
+        await driver.replaceText({
             selector: '.test-settings-file .monaco-editor',
             newText: previousSettings,
             selectMethod: 'keyboard',
