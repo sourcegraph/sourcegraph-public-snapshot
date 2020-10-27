@@ -12,7 +12,7 @@ import { Settings } from '../../../shared/src/settings/settings'
 import { createRecord } from '../../../shared/src/util/createRecord'
 
 export interface ConfiguredRegistryExtensions {
-    [id: string]: ConfiguredRegistryExtension<RegistryExtensionFieldsForList>
+    [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
 }
 
 export interface ConfiguredExtensionRegistry {
@@ -67,7 +67,6 @@ export function configureExtensionRegistry(
         } else {
             categories = NO_VALID_CATEGORIES
         }
-
         // TODO: Add `primaryCategory` to extension schema
         // Primary category is either specified or inferred by array position
         const primaryCategory = categories[0]
