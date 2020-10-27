@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -42,7 +43,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 		tokenAA = &campaigns.UserToken{
 			UserID:            uidA,
 			ExternalServiceID: svcA.ID,
-			Token:             createSecretString("foo"),
+			Token:             createToken(`"foo"`),
 		}
 		if err := s.UpsertUserToken(ctx, tokenAA); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -52,7 +53,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 		tokenAB = &campaigns.UserToken{
 			UserID:            uidA,
 			ExternalServiceID: svcB.ID,
-			Token:             createSecretString("bar"),
+			Token:             createToken(`"bar"`),
 			CreatedAt:         createdAt,
 			UpdatedAt:         updatedAt,
 		}
@@ -217,15 +218,15 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 
 	// Now let's try updating one of the tokens we've already created.
 	t.Run("UpsertUserToken update", func(t *testing.T) {
-		tokenAB.Token = createSecretString("quux")
+		tokenAB.Token = createToken(`"quux"`)
 		if err := s.UpsertUserToken(ctx, tokenAB); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
 		if token, err := s.GetUserToken(ctx, tokenAB.UserID, tokenAB.ExternalServiceID); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
-		} else if have, want := *token.Token.S, "quux"; have != want {
-			t.Errorf("unexpected token value: have=%q want=%q", have, want)
+		} else if diff := cmp.Diff(string(*token.Token), `"quux"`); diff != "" {
+			t.Errorf("unexpected token value:\n%s", diff)
 		}
 	})
 
@@ -258,6 +259,11 @@ func createExternalService(t *testing.T, ctx context.Context, rs repos.Store, ki
 		t.Fatal(err)
 	}
 	return &es
+}
+
+func createToken(s string) *json.RawMessage {
+	msg := json.RawMessage(s)
+	return &msg
 }
 
 func createSecretString(s string) secret.StringValue {

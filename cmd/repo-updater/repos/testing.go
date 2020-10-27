@@ -1,5 +1,3 @@
-//+build test
-
 package repos
 
 import (

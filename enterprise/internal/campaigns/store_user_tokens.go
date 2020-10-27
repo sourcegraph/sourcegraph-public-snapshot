@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -26,13 +27,16 @@ func (s *Store) UpsertUserToken(ctx context.Context, token *campaigns.UserToken)
 		token.UpdatedAt = token.CreatedAt
 	}
 
+	tokenStr := string(*token.Token)
+	secretToken := secret.StringValue{S: &tokenStr}
+
 	columns := sqlf.Join(userTokenColumns, ", ")
 	q := sqlf.Sprintf(
 		upsertUserTokenQueryFmtstr,
 		columns,
 		token.UserID,
 		token.ExternalServiceID,
-		token.Token,
+		secretToken,
 		token.CreatedAt,
 		token.UpdatedAt,
 		columns,
@@ -162,14 +166,21 @@ func scanUserToken(token *campaigns.UserToken, s scanner) error {
 	// secret.StringValue can't Scan if it doesn't have a concrete string
 	// within it, so we'll put something in place, knowing it'll get
 	// overwritten by Scan() anyway.
-	st := ""
-	token.Token = secret.StringValue{S: &st}
+	var st string
+	secretToken := secret.StringValue{S: &st}
 
-	return s.Scan(
+	if err := s.Scan(
 		&token.UserID,
 		&token.ExternalServiceID,
-		&token.Token,
+		&secretToken,
 		&token.CreatedAt,
 		&token.UpdatedAt,
-	)
+	); err != nil {
+		return err
+	}
+
+	t := json.RawMessage(st)
+	token.Token = &t
+
+	return nil
 }
