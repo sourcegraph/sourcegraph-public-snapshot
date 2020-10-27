@@ -24,10 +24,8 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	expected := command{
 		Commands: []string{
 			"ignite", "exec", "deadbeef", "--",
-			"ls", "-a",
+			"cd /work/subdir && TEST=true ls -a",
 		},
-		Dir: "/work/subdir",
-		Env: []string{"TEST=true"},
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
@@ -55,14 +53,16 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 	expected := command{
 		Commands: []string{
 			"ignite", "exec", "deadbeef", "--",
-			"docker", "run", "--rm",
-			"--cpus", "4",
-			"--memory", "20G",
-			"-v", "/work:/data",
-			"-w", "/data/subdir",
-			"-e", "TEST=true",
-			"alpine:latest",
-			"ls", "-a",
+			strings.Join([]string{
+				"docker", "run", "--rm",
+				"--cpus", "4",
+				"--memory", "20G",
+				"-v", "/work:/data",
+				"-w", "/data/subdir",
+				"-e", "TEST=true",
+				"alpine:latest",
+				"ls", "-a",
+			}, " "),
 		},
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {

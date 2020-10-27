@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -34,11 +35,19 @@ var commonFirecrackerFlags = []string{
 // also been the name supplied to a successful invocation of setupFirecracker. Additionally,
 // the virtual machine must not yet have been torn down (via teardownFirecracker).
 func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Options) command {
-	// TODO(efritz) - find out how to support a non-empty env
-	// TODO(efritz) - find out how to support a non-empty dir for raw (src-cli-only) commands
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
-	rawOrDockerCommand.Commands = append([]string{"ignite", "exec", name, "--"}, rawOrDockerCommand.Commands...)
-	return rawOrDockerCommand
+
+	innerCommand := strings.Join(rawOrDockerCommand.Commands, " ")
+	if len(rawOrDockerCommand.Env) > 0 {
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(rawOrDockerCommand.Env, " "), innerCommand)
+	}
+	if rawOrDockerCommand.Dir != "" {
+		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Dir, innerCommand)
+	}
+
+	return command{
+		Commands: []string{"ignite", "exec", name, "--", innerCommand},
+	}
 }
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
