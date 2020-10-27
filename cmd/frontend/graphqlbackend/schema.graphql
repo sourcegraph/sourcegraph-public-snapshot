@@ -36,7 +36,7 @@ type Error {
 
 """
 Optional additional context on an error returned from a resolver.
-It may also contain more properties, which aren't stricktly typed here.
+It may also contain more properties, which aren't strictly typed here.
 For those
 """
 type ErrorExtensions {
