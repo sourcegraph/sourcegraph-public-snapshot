@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
 # shellcheck disable=SC1091
@@ -21,13 +21,13 @@ IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name sourcegrap
 
 sleep 15
 
-pushd test/regression
+pushd test/regression || exit
 go run main.go
-popd
+popd || exit
 
 source /root/.profile
-pushd client/web
+pushd client/web || exit
 yarn run test:regression:core
-popd
+popd || exit
 PID=$(pgrep ffmpeg)
 kill "$PID"
