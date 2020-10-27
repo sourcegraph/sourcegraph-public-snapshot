@@ -1490,7 +1490,7 @@
     tslib "~2.0.0"
     upper-case "2.0.1"
 
-"@graphql-codegen/plugin-helpers@^1.17.8", "@graphql-codegen/plugin-helpers@^1.17.9":
+"@graphql-codegen/plugin-helpers@^1.17.9":
   version "1.17.9"
   resolved "https://registry.yarnpkg.com/@graphql-codegen/plugin-helpers/-/plugin-helpers-1.17.9.tgz#429f7f75b9f09f5229e42546027613f62ef0d4b1"
   integrity sha512-kyj+qsnLGd1JLqXuLpvI6Q/VW7frhoHHNxYJWerpwsSV9m4cttmFj8d9JTfYPZbg6cLIRR7+10lVugzMKozjzA==
@@ -1528,13 +1528,13 @@
     auto-bind "~4.0.0"
     tslib "~2.0.0"
 
-"@graphql-codegen/typescript@1.17.9":
-  version "1.17.9"
-  resolved "https://registry.yarnpkg.com/@graphql-codegen/typescript/-/typescript-1.17.9.tgz#9f96f39c3b59c13f52db8955fff3aa5889bb7827"
-  integrity sha512-r6bPSJIeQoMicMEru2pxwAtw5DaY4KCnCd8R2xoQ8aZpkpxqhzd5fmdhh8oXLE4CAZhUCuV0Uad7Ps17Lr5jaw==
+"@graphql-codegen/typescript@1.17.10":
+  version "1.17.10"
+  resolved "https://registry.yarnpkg.com/@graphql-codegen/typescript/-/typescript-1.17.10.tgz#cee6c6fa4e9200fa841e023682ff023faf7b9ba2"
+  integrity sha512-hujabT4J6ZFBGrt3hbEFhXExggDCXbuUpUfAl7ICrweQ8HFOpzBFzKSeezFHPufcfYZNE2sUWa8SJeVyI6pCRw==
   dependencies:
-    "@graphql-codegen/plugin-helpers" "^1.17.8"
-    "@graphql-codegen/visitor-plugin-common" "^1.17.14"
+    "@graphql-codegen/plugin-helpers" "^1.17.9"
+    "@graphql-codegen/visitor-plugin-common" "^1.17.15"
     auto-bind "~4.0.0"
     tslib "~2.0.1"
 
@@ -1553,10 +1553,10 @@
     pascal-case "3.1.1"
     tslib "~2.0.0"
 
-"@graphql-codegen/visitor-plugin-common@^1.17.14":
-  version "1.17.15"
-  resolved "https://registry.yarnpkg.com/@graphql-codegen/visitor-plugin-common/-/visitor-plugin-common-1.17.15.tgz#e9cb90f9f4177ced5a84289ff1f9d3d3ea5409d1"
-  integrity sha512-vWwuZulw5nYY9X6Vtc9ftw2BcFZoEGM/Qi3i4kEXh0o6Zgyk6XSq8bQM0joxBAD7tIfET2hXjTdq2oWcxurnsA==
+"@graphql-codegen/visitor-plugin-common@^1.17.15":
+  version "1.17.16"
+  resolved "https://registry.yarnpkg.com/@graphql-codegen/visitor-plugin-common/-/visitor-plugin-common-1.17.16.tgz#37316cbe2bb9ec4ff65d1f3287c72641d4b3fe6c"
+  integrity sha512-q/v13WA4gqD79VR+rrUPrTdLn43qaEuSfij9k52ti4GNKnXglGHP8ljXTrHKN6MypUxOJ2u7tcFRgriH1nxy6w==
   dependencies:
     "@graphql-codegen/plugin-helpers" "^1.17.9"
     "@graphql-tools/relay-operation-optimizer" "^6"
