@@ -13,7 +13,6 @@
        cd /sourcegraph
        ./test/e2e/test.sh
 
-
 - name: sourcegraph-regression
   box: google/gce
   machine_type: "custom-16-20480"
