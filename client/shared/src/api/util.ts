@@ -76,9 +76,9 @@ export const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown>
     typeof value[Symbol.asyncIterator] === 'function'
 
 /**
- * Convert an async generator into an observable.
+ * Convert an async iterable into an observable.
  *
- * @param generator The source generator.
+ * @param iterable The source iterable.
  */
 export const observableFromAsyncIterable = <T, R>(
     iterable: AsyncGenerator<T, R> | AsyncIterable<T>
