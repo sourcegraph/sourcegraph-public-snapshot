@@ -33,12 +33,12 @@ Yarn,@reach/popover,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/portal,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/rect,0.10.2,MIT,Unknown,Approved
 Yarn,@reach/utils,0.10.2,MIT,Unknown,Approved
-Yarn,@sentry/browser,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/browser,Approved
-Yarn,@sentry/core,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/core,Approved
-Yarn,@sentry/hub,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/hub,Approved
-Yarn,@sentry/minimal,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/minimal,Approved
-Yarn,@sentry/types,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/types,Approved
-Yarn,@sentry/utils,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/utils,Approved
+Yarn,@sentry/browser,5.24.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/browser,Approved
+Yarn,@sentry/core,5.24.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/core,Approved
+Yarn,@sentry/hub,5.24.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/hub,Approved
+Yarn,@sentry/minimal,5.24.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/minimal,Approved
+Yarn,@sentry/types,5.24.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/types,Approved
+Yarn,@sentry/utils,5.24.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/utils,Approved
 Yarn,@sindresorhus/is,3.0.0,MIT,https://sindresorhus.com,Approved
 Yarn,@slimsag/react-shortcuts,1.2.1,MIT,https://github.com/shopify/quilt/packages/react-shortcuts/README.md,Approved
 Yarn,@sourcegraph/codeintellify,7.1.0,MIT,Unknown,Approved
@@ -273,7 +273,6 @@ Go,github.com/OneOfOne/xxhash,v1.2.8,Apache 2.0,"",Approved
 Go,github.com/PuerkitoBio/purell,v1.1.1,New BSD,"",Approved
 Go,github.com/PuerkitoBio/urlesc,v0.0.0-20170810143723-de5bf2ad4578,New BSD,"",Approved
 Go,github.com/RoaringBitmap/roaring,v0.4.23,Apache 2.0,"",Approved
-Go,github.com/StackExchange/wmi,v0.0.0-20190523213315-cbe66965904d,MIT,"",Approved
 Go,github.com/alcortesm/tgz,v0.0.0-20161220082320-9c5fe88206d7,MIT,"",Approved
 Go,github.com/alecthomas/kingpin,v2.2.6,MIT,"",Approved
 Go,github.com/alecthomas/template,v0.0.0-20190718012654-fb15b899a751,New BSD,"",Approved
@@ -345,7 +344,6 @@ Go,github.com/go-git/go-git-fixtures/v4,v4.0.1,Apache 2.0,"",Approved
 Go,github.com/go-git/go-git/v5,v5.1.0,Apache 2.0,"",Approved
 Go,github.com/go-kit/kit,v0.10.0,MIT,"",Approved
 Go,github.com/go-logfmt/logfmt,v0.5.0,MIT,"",Approved
-Go,github.com/go-ole/go-ole,v1.2.4,MIT,"",Approved
 Go,github.com/go-openapi/analysis,v0.19.10,Apache 2.0,"",Approved
 Go,github.com/go-openapi/errors,v0.19.4,Apache 2.0,"",Approved
 Go,github.com/go-openapi/jsonpointer,v0.19.3,Apache 2.0,"",Approved
@@ -434,8 +432,6 @@ Go,github.com/kylelemons/godebug,v1.1.0,Apache 2.0,"",Approved
 Go,github.com/leanovate/gopter,v0.2.8,MIT,"",Approved
 Go,github.com/leodido/go-urn,v1.2.0,MIT,"",Approved
 Go,github.com/lib/pq,v1.7.0,MIT,"",Approved
-Go,github.com/lightstep/lightstep-tracer-common/golang/gogo,v0.0.0-20200310182322-adf4263e074b,MIT,"",Approved
-Go,github.com/lightstep/lightstep-tracer-go,v0.20.0,MIT,"",Approved
 Go,github.com/machinebox/graphql,v0.2.2,Apache 2.0,"",Approved
 Go,github.com/mailru/easyjson,v0.7.1,MIT,"",Approved
 Go,github.com/matryer/is,v1.3.0,MIT,"",Approved
@@ -484,7 +480,6 @@ Go,github.com/russross/blackfriday,v2.0.0,Simplified BSD,"",Approved
 Go,github.com/schollz/progressbar/v3,v3.3.4,MIT,"",Approved
 Go,github.com/segmentio/fasthash,v1.0.2,MIT,"",Approved
 Go,github.com/sergi/go-diff,v1.1.0,"Apache 2.0,MIT","",Approved
-Go,github.com/shirou/gopsutil,v2.20.5,New BSD,"",Approved
 Go,github.com/shurcooL/github_flavored_markdown,v0.0.0-20181002035957-2122de532470,MIT,"",Approved
 Go,github.com/shurcooL/go,v0.0.0-20200502201357-93f07166e636,"MIT,New BSD","",Approved
 Go,github.com/shurcooL/go-goon,v0.0.0-20170922171312-37c2f522c041,MIT,"",Approved
