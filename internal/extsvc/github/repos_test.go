@@ -15,6 +15,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -70,14 +71,14 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 }
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
-	return newTestClientWithToken(t, "", cli)
+	return newTestClientWithAuthenticator(t, nil, cli)
 }
 
-func newTestClientWithToken(t *testing.T, token string, cli httpcli.Doer) *Client {
+func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *Client {
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewClient(apiURL, token, cli)
+	return NewClient(apiURL, auth, cli)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.
@@ -526,8 +527,8 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 // 🚨 SECURITY: test that cache entries are keyed by auth token
 func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 	c0 := newTestClient(t, nil)
-	c1 := newTestClientWithToken(t, "tok1", nil)
-	c2 := newTestClientWithToken(t, "tok2", nil)
+	c1 := newTestClientWithAuthenticator(t, auth.OAuthBearerToken("tok1"), nil)
+	c2 := newTestClientWithAuthenticator(t, auth.OAuthBearerToken("tok2"), nil)
 
 	// Get "id0" and cache the result for c1
 	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok1" } } }`, http.StatusOK)

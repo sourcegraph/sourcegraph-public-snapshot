@@ -3,8 +3,6 @@ package github
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +22,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -59,11 +58,12 @@ type Client struct {
 	// githubDotCom is true if this client connects to github.com.
 	githubDotCom bool
 
-	// token is the personal access token used to authenticate requests. May be empty, in which case
-	// the default behavior is to make unauthenticated requests.
-	// 🚨 SECURITY: Should not be changed after client creation to prevent unauthorized access to the
-	// repository cache. Use `WithToken` to create a new client with a different token instead.
-	token string
+	// auth is used to authenticate requests. May be empty, in which case the
+	// default behavior is to make unauthenticated requests.
+	// 🚨 SECURITY: Should not be changed after client creation to prevent
+	// unauthorized access to the repository cache. Use `WithAuthenticator` to
+	// create a new client with a different authenticator instead.
+	auth auth.Authenticator
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
@@ -105,10 +105,11 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	return apiURL
 }
 
-// newRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis.
-// A checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
-// with caches for different tokens and API URLs.
-func newRepoCache(apiURL *url.URL, token string) *rcache.Cache {
+// newRepoCache creates a new cache for GitHub repository metadata. The backing
+// store is Redis. A checksum of the authenticator and API URL are used as a
+// Redis key prefix to prevent collisions with caches for different
+// authentication and API URLs.
+func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
 	apiURL = canonicalizedURL(apiURL)
 
 	var cacheTTL time.Duration
@@ -119,14 +120,19 @@ func newRepoCache(apiURL *url.URL, token string) *rcache.Cache {
 		cacheTTL = 30 * time.Second
 	}
 
-	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
-	return rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
+	key := ""
+	if a != nil {
+		key = a.Hash()
+	}
+	return rcache.NewWithTTL("gh_repo:"+key, int(cacheTTL/time.Second))
 }
 
-// NewClient creates a new GitHub API client with an optional default personal access token.
+// NewClient creates a new GitHub API client with an optional default
+// authenticator.
 //
-// apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
-func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
+// apiURL must point to the base URL of the GitHub API. See the docstring for
+// Client.apiURL.
+func NewClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -151,25 +157,28 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 	return &Client{
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
-		token:            token,
+		auth:             a,
 		httpClient:       cli,
 		rateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:        newRepoCache(apiURL, token),
+		repoCache:        newRepoCache(apiURL, a),
 		rateLimit:        rl,
 	}
 }
 
-// WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
-func (c *Client) WithToken(token string) *Client {
-	return NewClient(c.apiURL, token, c.httpClient)
+// WithAuthenticator returns a copy of the Client authenticated as the GitHub
+// user with the given authenticator instance (most likely a token).
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return NewClient(c.apiURL, a, c.httpClient)
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
 	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.token != "" {
-		req.Header.Set("Authorization", "bearer "+c.token)
+	if c.auth != nil {
+		if err := c.auth.Authenticate(req); err != nil {
+			return errors.Wrap(err, "authenticating request")
+		}
 	}
 
 	var resp *http.Response

@@ -2,8 +2,6 @@ package github
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -71,13 +70,12 @@ func TestNewRepoCache(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
 	t.Run("GitHub.com", func(t *testing.T) {
 		url, _ := url.Parse("https://www.github.com")
-		token := "asdf"
+		token := auth.OAuthBearerToken("asdf")
 
 		// github.com caches should:
 		// (1) use githubProxyURL for the prefix hash rather than the given url
 		// (2) have a TTL of 10 minutes
-		key := sha256.Sum256([]byte(token + ":" + githubProxyURL.String()))
-		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
+		prefix := "gh_repo:" + token.Hash()
 		got := newRepoCache(url, token)
 		want := rcache.NewWithTTL(prefix, 600)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
@@ -87,13 +85,12 @@ func TestNewRepoCache(t *testing.T) {
 
 	t.Run("GitHub Enterprise", func(t *testing.T) {
 		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := "asdf"
+		token := auth.OAuthBearerToken("asdf")
 
 		// GitHub Enterprise caches should:
 		// (1) use the given URL for the prefix hash
 		// (2) have a TTL of 30 seconds
-		key := sha256.Sum256([]byte(token + ":" + url.String()))
-		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
+		prefix := "gh_repo:" + token.Hash()
 		got := newRepoCache(url, token)
 		want := rcache.NewWithTTL(prefix, 30)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
@@ -111,7 +108,7 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
-func TestClient_WithToken(t *testing.T) {
+func TestClient_WithAuthenticator(t *testing.T) {
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
@@ -119,17 +116,17 @@ func TestClient_WithToken(t *testing.T) {
 
 	old := &Client{
 		apiURL: uri,
-		token:  "old_token",
+		auth:   auth.OAuthBearerToken("old_token"),
 	}
 
-	newToken := "new_token"
-	new := old.WithToken(newToken)
+	newToken := auth.OAuthBearerToken("new_token")
+	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.token != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.token)
+	if new.auth != newToken {
+		t.Fatalf("token: want %q but got %q", newToken, new.auth)
 	}
 }
 
@@ -549,7 +546,7 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer)
+	cli := NewClient(uri, auth.OAuthBearerToken(os.Getenv("GITHUB_TOKEN")), doer)
 
 	return cli, save
 }
