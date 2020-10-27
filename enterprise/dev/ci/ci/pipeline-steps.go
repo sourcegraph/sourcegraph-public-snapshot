@@ -27,6 +27,8 @@ var allDockerImages = []string{
 	"precise-code-intel-worker",
 	"precise-code-intel-indexer",
 	"precise-code-intel-indexer-vm",
+	"executor-queue",
+	"executor",
 
 	// Images under docker-images/
 	"cadvisor",
@@ -39,6 +41,7 @@ var allDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"codeintel-db",
+	"minio",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.

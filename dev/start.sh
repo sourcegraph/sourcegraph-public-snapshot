@@ -59,6 +59,7 @@ export CODEINTEL_PGPASSWORD="${PGPASSWORD:-}"
 export CODEINTEL_PGDATABASE="${PGDATABASE:-}"
 export CODEINTEL_PGSSLMODE="${PGSSLMODE:-}"
 export CODEINTEL_PGDATASOURCE="${PGDATASOURCE:-}"
+export CODEINTEL_PG_ALLOW_SINGLE_DB=true
 
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
 export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}

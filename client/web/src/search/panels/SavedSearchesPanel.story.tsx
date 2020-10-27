@@ -24,7 +24,7 @@ const props = {
 add('Populated', () => (
     <WebStory>
         {() => (
-            <div style={{ maxWidth: '32rem' }}>
+            <div style={{ maxWidth: '32rem' }} className="web-content">
                 <SavedSearchesPanel {...props} />
             </div>
         )}
@@ -34,7 +34,7 @@ add('Populated', () => (
 add('Loading', () => (
     <WebStory>
         {() => (
-            <div style={{ maxWidth: '32rem' }}>
+            <div style={{ maxWidth: '32rem' }} className="web-content">
                 <SavedSearchesPanel {...props} fetchSavedSearches={() => NEVER} />
             </div>
         )}
@@ -44,7 +44,7 @@ add('Loading', () => (
 add('Empty', () => (
     <WebStory>
         {() => (
-            <div style={{ maxWidth: '32rem' }}>
+            <div style={{ maxWidth: '32rem' }} className="web-content">
                 <SavedSearchesPanel {...props} fetchSavedSearches={() => of([])} />
             </div>
         )}

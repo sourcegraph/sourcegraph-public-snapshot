@@ -966,6 +966,7 @@ Indexes:
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
     "repo_cloned" btree (cloned)
+    "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")

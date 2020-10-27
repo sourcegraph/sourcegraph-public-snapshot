@@ -3,10 +3,7 @@ import { SearchPatternType } from '../graphql-operations'
 export interface ExampleQuery {
     title: string
     description?: string
-    /** HTML string to display the example query. */
-    exampleQuery: JSX.Element
-    /** The raw query string. */
-    rawQuery: string
+    query: string
     patternType: SearchPatternType
 }
 

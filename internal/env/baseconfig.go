@@ -38,7 +38,12 @@ import (
 //     }
 type BaseConfig struct {
 	errs []error
+
+	// getter is used to mock the environment in tests
+	getter GetterFunc
 }
+
+type GetterFunc func(name, defaultValue, description string) string
 
 // Validate returns any errors constructed from a Get* method after the values have
 // been loaded from the environment.
@@ -59,13 +64,18 @@ func (c *BaseConfig) Validate() error {
 // environment, the given default is used in its place. If no value is available,
 // an error is added to the validation errors list.
 func (c *BaseConfig) Get(name, defaultValue, description string) string {
-	rawValue := Get(name, defaultValue, description)
+	rawValue := c.get(name, defaultValue, description)
 	if rawValue == "" {
-		c.errs = append(c.errs, fmt.Errorf("invalid value %q for %s: no value supplied", rawValue, name))
+		c.AddError(fmt.Errorf("invalid value %q for %s: no value supplied", rawValue, name))
 		return ""
 	}
 
 	return rawValue
+}
+
+// GetOptional returns the value with the given name.
+func (c *BaseConfig) GetOptional(name, description string) string {
+	return c.get(name, "", description)
 }
 
 // GetInt returns the value with the given name interpreted as an integer. If no
@@ -73,10 +83,10 @@ func (c *BaseConfig) Get(name, defaultValue, description string) string {
 // If no value is available, or if the given value or default cannot be converted
 // to an integer, an error is added to the validation errors list.
 func (c *BaseConfig) GetInt(name, defaultValue, description string) int {
-	rawValue := Get(name, defaultValue, description)
+	rawValue := c.get(name, defaultValue, description)
 	i, err := strconv.ParseInt(rawValue, 10, 64)
 	if err != nil {
-		c.errs = append(c.errs, fmt.Errorf("invalid int %q for %s: %s", rawValue, name, err))
+		c.AddError(fmt.Errorf("invalid int %q for %s: %s", rawValue, name, err))
 		return 0
 	}
 
@@ -91,7 +101,7 @@ func (c *BaseConfig) GetInt(name, defaultValue, description string) int {
 func (c *BaseConfig) GetPercent(name, defaultValue, description string) int {
 	value := c.GetInt(name, defaultValue, description)
 	if value < 0 || value > 100 {
-		c.errs = append(c.errs, fmt.Errorf("invalid percent %q for %s: must be 0 <= p <= 100", value, name))
+		c.AddError(fmt.Errorf("invalid percent %q for %s: must be 0 <= p <= 100", value, name))
 		return 0
 	}
 
@@ -99,10 +109,10 @@ func (c *BaseConfig) GetPercent(name, defaultValue, description string) int {
 }
 
 func (c *BaseConfig) GetInterval(name, defaultValue, description string) time.Duration {
-	rawValue := Get(name, defaultValue, description)
+	rawValue := c.get(name, defaultValue, description)
 	d, err := time.ParseDuration(rawValue)
 	if err != nil {
-		c.errs = append(c.errs, fmt.Errorf("invalid duration %q for %s: %s", rawValue, name, err))
+		c.AddError(fmt.Errorf("invalid duration %q for %s: %s", rawValue, name, err))
 		return 0
 	}
 
@@ -114,12 +124,32 @@ func (c *BaseConfig) GetInterval(name, defaultValue, description string) time.Du
 // or if the given value or default cannot be converted to a boolean, an error is added to the
 // validation errors list.
 func (c *BaseConfig) GetBool(name, defaultValue, description string) bool {
-	rawValue := Get(name, defaultValue, description)
+	rawValue := c.get(name, defaultValue, description)
 	v, err := strconv.ParseBool(rawValue)
 	if err != nil {
-		c.errs = append(c.errs, fmt.Errorf("invalid bool %q for %s: %s", rawValue, name, err))
+		c.AddError(fmt.Errorf("invalid bool %q for %s: %s", rawValue, name, err))
 		return false
 	}
 
 	return v
+}
+
+// AddError adds a validation error to the configuration object. This should be
+// called from within the Load method of a decorated configuration object to have
+// any effect.
+func (c *BaseConfig) AddError(err error) {
+	c.errs = append(c.errs, err)
+}
+
+func (c *BaseConfig) get(name, defaultValue, description string) string {
+	if c.getter != nil {
+		return c.getter(name, defaultValue, description)
+	}
+
+	return Get(name, defaultValue, description)
+}
+
+// SetMockGetter sets mock to use in place of this packge's Get function.
+func (c *BaseConfig) SetMockGetter(getter GetterFunc) {
+	c.getter = getter
 }

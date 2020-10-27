@@ -55,6 +55,16 @@
     # precise-code-intel-indexer-vm
     - 127.0.0.1:6090
 - labels:
+    job: executor-queue
+  targets:
+    # executor-queue
+    - 127.0.0.1:6091
+- labels:
+    job: executor
+  targets:
+    # executor
+    - 127.0.0.1:6092
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter
