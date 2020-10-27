@@ -15,7 +15,7 @@ asdf install
 yarn
 yarn generate
 
-ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 >ffmpeg.log 2>&1 &
+ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p regression.mp4 >ffmpeg.log 2>&1 &
 
 IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh
 
