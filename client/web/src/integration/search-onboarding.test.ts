@@ -81,9 +81,31 @@ describe('Search onboarding', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const resetOnboardingTour = async () => {
+        await driver.page.evaluate(() => {
+            localStorage.setItem('has-seen-onboarding-tour', 'false')
+            localStorage.setItem('has-cancelled-onboarding-tour', 'false')
+            location.reload()
+        })
+    }
+    const waitAndFocusInput = async () => {
+        await driver.page.waitForSelector('.monaco-editor .view-lines')
+        await driver.page.click('.monaco-editor .view-lines')
+    }
+
     describe('Onboarding', () => {
+        it('only diplay tour afteer input is focused', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            let tourCard = await driver.page.evaluate(() => document.querySelector('.tour-card'))
+            expect(tourCard).toBeNull()
+            await waitAndFocusInput()
+            tourCard = await driver.page.evaluate(() => document.querySelector('.tour-card'))
+            expect(tourCard).toBeTruthy()
+        })
         it('displays all steps in the language onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await resetOnboardingTour()
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-language-button')
             await driver.page.click('.test-tour-language-button')
@@ -109,11 +131,8 @@ describe('Search onboarding', () => {
 
         it('displays all steps in the repo onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-onboarding-tour', 'false')
-                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-                location.reload()
-            })
+            await resetOnboardingTour()
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-repo-button')
             await driver.page.click('.test-tour-repo-button')
@@ -135,11 +154,8 @@ describe('Search onboarding', () => {
         })
         it('advances filter-lang when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-onboarding-tour', 'false')
-                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-                location.reload()
-            })
+            await resetOnboardingTour()
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-language-button')
             await driver.page.click('.test-tour-language-button')
@@ -164,11 +180,8 @@ describe('Search onboarding', () => {
 
         it('advances filter-lang when there is a valid matching language passed to the lang filter', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-onboarding-tour', 'false')
-                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-                location.reload()
-            })
+            await resetOnboardingTour()
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-language-button')
             await driver.page.click('.test-tour-language-button')
@@ -186,11 +199,8 @@ describe('Search onboarding', () => {
         })
         it('advances filter-repository when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-onboarding-tour', 'false')
-                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-                location.reload()
-            })
+            await resetOnboardingTour()
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-repo-button')
             await driver.page.click('.test-tour-repo-button')
@@ -215,11 +225,8 @@ describe('Search onboarding', () => {
 
         it('advances filter-repository when a user types their own repository', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-onboarding-tour', 'false')
-                localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-                location.reload()
-            })
+            await resetOnboardingTour()
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.test-tour-repo-button')
             await driver.page.click('.test-tour-repo-button')
