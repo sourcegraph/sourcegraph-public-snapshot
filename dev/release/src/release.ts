@@ -450,7 +450,7 @@ ${issueCategories
     },
     {
         id: 'release:add-to-campaign',
-        // Example: yarn run release release:add-to-campaign 3.21.0 sourcegraph/sourcegraph 15032
+        // Example: yarn run release release:add-to-campaign 3.21.0 sourcegraph/about 1797
         run: async (_config, version, changeRepo, changeID) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {

@@ -43,11 +43,7 @@ interface CampaignSpec {
 }
 
 async function applyCampaign(campaign: CampaignSpec, options: CampaignOptions): Promise<string> {
-    // our version of YAML (<v2) does not seem to support a replacer, so we just do it in JSON,
-    // and the backend does not accept null values - https://github.com/sourcegraph/sourcegraph/issues/15045
-    const campaignYAML = YAML.stringify(
-        JSON.parse(JSON.stringify(campaign, (key, value) => (value === null ? undefined : value))) // eslint-disable-line @typescript-eslint/no-unsafe-return
-    )
+    const campaignYAML = YAML.stringify(campaign)
     console.log(`Rendered campaign spec:\n\n${campaignYAML}`)
 
     // apply the campaign
@@ -91,7 +87,7 @@ export async function addToCampaign(
             query: `query getCampaigns($namespace:String!) {
                 organization(name:$namespace) {
                   campaigns(first:99) {
-                    nodes { name currentSpec { parsedInput } }
+                    nodes { name currentSpec { originalInput } }
                   }
                 }
               }`,
@@ -107,7 +103,7 @@ export async function addToCampaign(
             },
         },
     } = (await response.json()) as {
-        data: { organization: { campaigns: { nodes: { name: string; currentSpec: { parsedInput: CampaignSpec } }[] } } }
+        data: { organization: { campaigns: { nodes: { name: string; currentSpec: { originalInput: string } }[] } } }
     }
     const campaign = results.find(result => result.name === options.name)
     if (!campaign) {
@@ -118,7 +114,7 @@ export async function addToCampaign(
         repository: `github.com/${change.repository}`,
         externalIDs: [change.pullRequestNumber],
     }))
-    const newSpec = campaign.currentSpec.parsedInput
+    const newSpec = YAML.parse(campaign.currentSpec.originalInput) as CampaignSpec
     newSpec.importChangesets.push(...importChangesets)
     return await applyCampaign(newSpec, options)
 }
