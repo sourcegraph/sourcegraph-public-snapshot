@@ -77,6 +77,9 @@ export DISPLAY=#{ENV['DISPLAY']}
 export CI=#{ENV['CI']}
 export CI_DEBUG_PROFILE=#{ENV['CI_DEBUG_PROFILE']}
 export SGDEV_OVERRIDE_AUTH_SECRET=#{ENV['SGDEV_OVERRIDE_AUTH_SECRET']}
+
+# Env vars required by the QA tests - see:
+# https://my.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/mn37wmu5dzhll6qxcnpmutvlq4
 export SOURCEGRAPH_BASE_URL=#{ENV['SOURCEGRAPH_BASE_URL']}
 export SOURCEGRAPH_SUDO_TOKEN=#{ENV['SOURCEGRAPH_SUDO_TOKEN']}
 export SOURCEGRAPH_SUDO_USER=#{ENV['SOURCEGRAPH_SUDO_USER']}
