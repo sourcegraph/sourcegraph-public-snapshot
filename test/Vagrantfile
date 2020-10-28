@@ -36,7 +36,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       srv.vm.provider :google do |g, o|
         g.machine_type = server['machine_type']
-        g.image = 'e2e-1e5a682e-2020-09-25t14-38-03z'
+        g.image = 'e2e-491e9f27-2020-10-28t17-32-00z'
         g.image_project_id = 'sourcegraph-ci'
         g.google_project_id = project_id
         g.name = "#{server['name']}-"+"#{Time.now.to_i}"
@@ -45,6 +45,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         g.use_private_ip = use_private_ip
         g.disk_size = 20
         g.disk_type = 'pd-ssd'
+        g.scopes = [
+            "compute-rw"
+        ]
+
         o.ssh.username = username
         o.ssh.private_key_path = ssh_key_path
       end
