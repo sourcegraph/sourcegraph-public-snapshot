@@ -6,14 +6,16 @@ body.theme-dark img.toggle {
     filter: invert(100%);
 }
 
+img.toggle {
+    width: 20px;
+    height: 20px;
+}
+
 .toggle-container {
   border: 1px solid;
   border-radius: 3px;
-  width: 22px;
-  height: 22px;
-  margin-right: 8px;
+  display: inline-flex;
   vertical-align: bottom;
-  display: inline-block;
 }
 
 li.r {
@@ -52,6 +54,7 @@ td.r {
     height: 24px !important;
     background-image: url(../img/div-ts.png);
     background-size: 16px 512px !important;
+    min-width: 16px; // prevent narrow screen width from removing lines
 }
 
 body.theme-dark .ts {
@@ -68,6 +71,7 @@ body.theme-dark .ts {
     height: 24px !important;
     background-image: url(../img/div-te.png);
     background-size: 16px 512px !important;
+    min-width: 16px; // prevent narrow screen width from removing lines
 }
 
 body.theme-dark .te {
@@ -178,6 +182,7 @@ body.theme-dark .e {
     -webkit-border-radius: 0.4em !important;
     -khtml-border-radius: 0.4em !important;
     border-radius: 0.4em !important;
+    white-space: nowrap;
 }
 
 body.theme-dark .c {
@@ -379,9 +384,9 @@ Group expressions with parentheses to build more complex expressions. If there a
 
 A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
 <ul class="r">
-    <li class="r"><div class="toggle-container"><img class="toggle" src="../img/regex.png"></div>Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
+    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/regex.png"></span> Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
     <strong>Example:</strong> <code>foo.*bar.*baz</code><a href="https://sourcegraph.com/search?q=foo+bar&patternType=regexp"> ↗</a> <code>"foo bar"</code><a href="https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp"> ↗</a></li>
-    <li class="r"><div class="toggle-container"><img class="toggle" src="../img/brackets.png"></div>Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural sexarch. <br><strong>Example:</strong> <code>fmt.Sprintf(":[format]", :[args])</code><a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"> ↗</a></li>
+    <li class="r"><span class="toggle-container"><img class="toggle" src="../img/brackets.png"></span> Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural sexarch. <br><strong>Example:</strong> <code>fmt.Sprintf(":[format]", :[args])</code><a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"> ↗</a></li>
 </ul>
 
 
@@ -909,7 +914,7 @@ Notable search types are symbol, commit, and diff searches.
 </div>
 
 Set whether the search pattern should be treated case-sensitively. This is
-synonymous with the <img class="toggle" src=../img/case.png>toggle button.
+synonymous with the <span class="toggle-container"><img class="toggle" src=../img/case.png></span> toggle button.
 
 **Example:** `OPEN_FILE case:yes` [↗](https://sourcegraph.com/search?q=OPEN_FILE+case:yes)
 

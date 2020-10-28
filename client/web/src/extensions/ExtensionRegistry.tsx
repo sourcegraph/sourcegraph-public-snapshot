@@ -87,7 +87,10 @@ const extensionRegistryQuery = gql`
     }
 `
 
-export type ConfiguredExtensionCache = Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>
+export type ConfiguredExtensionCache = Map<
+    string,
+    Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
+>
 
 /** A page that displays overview information about the available extensions. */
 export const ExtensionRegistry: React.FunctionComponent<Props> = props => {

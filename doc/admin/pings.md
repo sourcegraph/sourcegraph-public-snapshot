@@ -2,6 +2,14 @@
 
 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
 
+## Connection to Sourcegraph
+1. To send pings that:
+   - Check for new product updates.
+   - Send anonymous, non-specific, aggregate metrics back to Sourcegraph.com. You can see the full list below. 
+1. Sourcegraph extensions are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](https://docs.sourcegraph.com/admin/extensions#publish-extensions-to-a-private-extension-registry)).
+
+There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
+
 ## Critical telemetry
 
 Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices.

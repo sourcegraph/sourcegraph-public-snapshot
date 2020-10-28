@@ -295,7 +295,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// return a nil error and log a warning message.
 	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
 		log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
-		return nil
+		return s.permsStore.TouchRepoPermissions(ctx, int32(repoID))
 	}
 
 	if err != nil {

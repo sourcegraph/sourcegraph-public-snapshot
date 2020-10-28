@@ -8,30 +8,20 @@ import {
     trackingIssueTitle,
     ensurePatchReleaseIssue,
     createChangesets,
+    CreatedChangeset,
 } from './github'
 import * as changelog from './changelog'
+import * as campaigns from './campaigns'
+import { formatDate, timezoneLink } from './util'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
 import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
+import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
-
-/* eslint-disable @typescript-eslint/consistent-type-assertions */
-const formatDate = (date: Date): string =>
-    `${date.toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    } as Intl.DateTimeFormatOptions)} (SF time) / ${date.toLocaleString('en-US', {
-        timeZone: 'Europe/Berlin',
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    } as Intl.DateTimeFormatOptions)} (Berlin time)`
-/* eslint-enable @typescript-eslint/consistent-type-assertions */
-
 interface Config {
     teamEmail: string
 
@@ -48,7 +38,8 @@ interface Config {
     slackAnnounceChannel: string
 
     dryRun: {
-        changesets: boolean
+        changesets?: boolean
+        trackingIssues?: boolean
     }
 }
 
@@ -64,9 +55,11 @@ type StepID =
     | 'release:status'
     | 'release:create-candidate'
     | 'release:publish'
+    | 'release:add-to-campaign'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
+    | '_test:campaign-create-from-changes'
 
 interface Step {
     id: StepID
@@ -92,26 +85,6 @@ const steps: Step[] = [
                     )
                     .join('\n')
             )
-        },
-    },
-    {
-        id: '_test:google-calendar',
-        run: async config => {
-            const googleCalendar = await getClient()
-            await ensureEvent(
-                {
-                    title: 'TEST EVENT',
-                    startDateTime: new Date(config.releaseDateTime).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
-                },
-                googleCalendar
-            )
-        },
-    },
-    {
-        id: '_test:slack',
-        run: async (_config, message) => {
-            await postMessage(message, '_test-channel')
         },
     },
     {
@@ -185,6 +158,7 @@ const steps: Step[] = [
 
             captainSlackUsername,
             slackAnnounceChannel,
+            dryRun,
         }: Config) => {
             // Create issue
             const { url, created } = await ensureTrackingIssue({
@@ -195,20 +169,32 @@ const steps: Step[] = [
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
+                dryRun: dryRun.trackingIssues || false,
             })
-            console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
+            }
 
             // Announce issue if issue does not already exist
             if (created) {
+                // Slack markdown links
+                const majorMinor = `${majorVersion}.${minorVersion}`
+                const branchCutDate = new Date(fourWorkingDaysBeforeRelease)
+                const branchCutDateString = `<${timezoneLink(branchCutDate, `${majorMinor} branch cut`)}|${formatDate(
+                    branchCutDate
+                )}>`
+                const releaseDate = new Date(releaseDateTime)
+                const releaseDateString = `<${timezoneLink(releaseDate, `${majorMinor} release`)}|${formatDate(
+                    releaseDate
+                )}>`
                 await postMessage(
-                    `:captain: ${majorVersion}.${minorVersion} Release :captain:
+                    `*${majorVersion}.${minorVersion} Release*
 
-Release captain: @${captainSlackUsername}
-Tracking issue: ${url}
-Key dates:
-- Release branch cut, testing commences: ${formatDate(new Date(fourWorkingDaysBeforeRelease))}
-- Final release tag: ${formatDate(new Date(oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(releaseDateTime))}`,
+:captain: Release captain: @${captainSlackUsername}
+:pencil: Tracking issue: ${url}
+:spiral_calendar_pad: Key dates:
+* Branch cut: ${branchCutDateString}
+* Release: ${releaseDateString}`,
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
@@ -217,7 +203,7 @@ Key dates:
     },
     {
         id: 'tracking:patch-issue',
-        run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
+        run: async ({ captainGitHubUsername, slackAnnounceChannel, dryRun }, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
@@ -230,11 +216,10 @@ Key dates:
             const { url, created } = await ensurePatchReleaseIssue({
                 version: parsedVersion,
                 assignees: [captainGitHubUsername],
+                dryRun: dryRun.trackingIssues || false,
             })
-            const existsText = created ? '' : ' (already exists)'
-            console.log(`Patch release issue URL${existsText}: ${url}`)
-            if (!created) {
-                return
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
             }
 
             // Announce issue if issue does not already exist
@@ -264,7 +249,7 @@ Key dates:
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
@@ -286,7 +271,7 @@ Key dates:
                                 writeFileSync(changelogPath, changelogContents)
                             },
                         ], // Changes already done
-                        title: `Update latest release to ${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                     },
                 ],
                 dryRun: dryRun.changesets,
@@ -372,15 +357,22 @@ ${issueCategories
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
-            await createChangesets({
-                requiredCommands: ['comby', sed, 'find'],
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            // Render changes
+            const createdChanges = await createChangesets({
+                requiredCommands: ['comby', sed, 'find', 'go'],
                 changes: [
                     {
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
                             `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${parsedVersion.version}\`/g' doc/index.md`,
@@ -390,64 +382,141 @@ ${issueCategories
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph',
                         base: `${parsedVersion.major}.${parsedVersion.minor}`,
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             // installs version pinned by deploy-sourcegraph
                             'go install github.com/slimsag/update-docker-tags',
                             `.github/workflows/scripts/update-docker-tags.sh ${parsedVersion.version}`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-digitalocean',
                         base: 'master',
                         head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
+                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `release: sourcegraph@${parsedVersion.version}`,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                         ],
-                        title: `Update latest release to ${parsedVersion.version}`,
-                    },
-                    {
-                        owner: 'sourcegraph',
-                        repo: 'deploy-sourcegraph-dot-com',
-                        base: 'release',
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `Update latest release to ${parsedVersion.version}`,
-                        edits: [
-                            `${sed} -i -E 's/"defaultContentBranch":"[[:alnum:]\\.]+"/"defaultContentBranch":"${parsedVersion.major}.${parsedVersion.minor}"/g' configure/docs-sourcegraph-com/docs-sourcegraph-com.Deployment.yaml`,
-                        ],
-                        title: `Update latest release to ${parsedVersion.version}`,
                     },
                 ],
                 dryRun: dryRun.changesets,
             })
 
             if (!dryRun.changesets) {
+                // Create campaign to track changes
+                let publishCampaign = ''
+                try {
+                    console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
+                    publishCampaign = await campaigns.createCampaign(
+                        createdChanges,
+                        campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+                    )
+                    console.log(`Created ${publishCampaign}`)
+                } catch (error) {
+                    console.error(error)
+                    console.error('Failed to create campaign for this release, omitting')
+                }
+
+                // Announce release update in Slack
                 await postMessage(
-                    `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                    `:captain: *Sourcegraph ${parsedVersion.version} release has been staged*
+
+* Campaign: ${publishCampaign}
+* @stephen: update <https://github.com/sourcegraph/deploy-sourcegraph-docker|deploy-sourcegraph-docker> as needed`,
                     slackAnnounceChannel
                 )
             }
+        },
+    },
+    {
+        id: 'release:add-to-campaign',
+        // Example: yarn run release release:add-to-campaign 3.21.0 sourcegraph/about 1797
+        run: async (_config, version, changeRepo, changeID) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (!changeRepo || !changeID) {
+                throw new Error('Missing parameters (required: version, repo, change ID)')
+            }
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            const campaignURL = await campaigns.addToCampaign(
+                [
+                    {
+                        repository: changeRepo,
+                        pullRequestNumber: parseInt(changeID, 10),
+                    },
+                ],
+                campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+            )
+            console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
+        },
+    },
+    {
+        id: '_test:google-calendar',
+        run: async config => {
+            const googleCalendar = await getClient()
+            await ensureEvent(
+                {
+                    title: 'TEST EVENT',
+                    startDateTime: new Date(config.releaseDateTime).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                },
+                googleCalendar
+            )
+        },
+    },
+    {
+        id: '_test:slack',
+        run: async (_config, message) => {
+            await postMessage(message, '_test-channel')
+        },
+    },
+    {
+        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
+        id: '_test:campaign-create-from-changes',
+        run: async (_config, campaignConfigJSON) => {
+            const campaignConfig = JSON.parse(campaignConfigJSON) as {
+                changes: CreatedChangeset[]
+                name: string
+                description: string
+            }
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            const campaignURL = await campaigns.createCampaign(campaignConfig.changes, {
+                name: campaignConfig.name,
+                description: campaignConfig.description,
+                namespace: 'sourcegraph',
+                auth: sourcegraphAuth,
+            })
+            console.log(`Created campaign ${campaignURL}`)
         },
     },
 ]

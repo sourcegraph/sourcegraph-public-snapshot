@@ -9,6 +9,8 @@
   { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
   { "Name": "precise-code-intel-indexer", "Host": "127.0.0.1:6089" },
   { "Name": "precise-code-intel-indexer-vm", "Host": "127.0.0.1:6090" },
+  { "Name": "executor-queue", "Host": "127.0.0.1:6091" },
+  { "Name": "executor", "Host": "127.0.0.1:6092" },
   { "Name": "zoekt-indexserver", "Host": "127.0.0.1:6072" },
   { "Name": "zoekt-webserver", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" }
 ]

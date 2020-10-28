@@ -119,6 +119,67 @@ func SetPermissionsUserMapping(u *schema.PermissionsUserMapping) {
 	permissionsUserMapping.Store(u)
 }
 
+var defaultBranding = &schema.Branding{
+	BrandName: "Sourcegraph",
+}
+
+// branding mirrors the value of `branding` in the site configuration.
+// This variable is used to monitor configuration change via conf.Watch and must be operated atomically.
+var branding = func() atomic.Value {
+	var v atomic.Value
+	v.Store(defaultBranding)
+	return v
+}()
+
+var brandingWatchers uint32
+
+// WatchBranding watches for changes in the `branding` site configuration
+// so that changes are reflected in what is returned by the Branding function.
+// This should only be called once and will panic otherwise.
+func WatchBranding(licenseChecker func() error) {
+	if atomic.AddUint32(&brandingWatchers, 1) != 1 {
+		panic("WatchBranding called more than once")
+	}
+
+	conf.Watch(func() {
+		after := conf.Get().Branding
+		if after == nil {
+			after = defaultBranding
+		} else if after.BrandName == "" {
+			bcopy := *after
+			bcopy.BrandName = defaultBranding.BrandName
+			after = &bcopy
+		}
+
+		if err := licenseChecker(); err != nil {
+			SetBranding(defaultBranding)
+			log15.Error("globals.Branding.updateIgnored", "error", err)
+			return
+		}
+
+		if before := Branding(); !reflect.DeepEqual(before, after) {
+			SetBranding(after)
+			log15.Info(
+				"globals.Branding",
+				"updated", true,
+				"before", before,
+				"after", after,
+			)
+		}
+	})
+}
+
+// Branding returns the last valid value of branding in the site configuration.
+// Callers must not mutate the returned pointer.
+func Branding() *schema.Branding {
+	return branding.Load().(*schema.Branding)
+}
+
+// SetBranding sets a valid value for the branding.
+func SetBranding(u *schema.Branding) {
+	branding.Store(u)
+}
+
 // ConfigurationServerFrontendOnly provides the contents of the site configuration
 // to other services and manages modifications to it.
 //

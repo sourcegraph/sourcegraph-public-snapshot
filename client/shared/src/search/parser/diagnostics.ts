@@ -23,14 +23,6 @@ export function getDiagnostics(
                 message: validationResult.reason,
                 ...toMonacoRange(filterType.range),
             })
-        } else if (token.type === 'literal') {
-            if (patternType === SearchPatternType.regexp && token.value.includes(':')) {
-                diagnostics.push({
-                    severity: Monaco.MarkerSeverity.Warning,
-                    message: 'Quoting the query may help if you want a literal match.',
-                    ...toMonacoRange(range),
-                })
-            }
         } else if (token.type === 'quoted') {
             if (patternType === SearchPatternType.literal) {
                 diagnostics.push({

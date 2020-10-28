@@ -249,24 +249,6 @@ func IsBuiltinSignupAllowed() bool {
 	return false
 }
 
-func Branding() *schema.Branding {
-	branding := Get().Branding
-	if branding != nil && branding.BrandName == "" {
-		bcopy := *branding
-		bcopy.BrandName = "Sourcegraph"
-		branding = &bcopy
-	}
-	return branding
-}
-
-func BrandName() string {
-	branding := Branding()
-	if branding == nil || branding.BrandName == "" {
-		return "Sourcegraph"
-	}
-	return branding.BrandName
-}
-
 // SearchSymbolsParallelism returns 20, or the site config
 // "debug.search.symbolsParallelism" value if configured.
 func SearchSymbolsParallelism() int {
