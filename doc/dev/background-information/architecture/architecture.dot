@@ -239,6 +239,7 @@ digraph architecture {
     searcher -> gitserver [fillcolor="#e2a8fd"]
     symbols -> gitserver [fillcolor="#c1eaea"]
     zoekt_indexserver -> {frontend, gitserver} [fillcolor="#aaccff"]
+    query_runner -> frontend [fillcolor="#aaffff"]
     worker -> {gitserver} [fillcolor="#eac1c1"]
     indexer -> {postgres, gitserver} [fillcolor="#22ffff"]
     indexer_vm -> frontend [fillcolor="#0dc9b6"]
