@@ -627,13 +627,6 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
-func nullInt32Column(i int32) *int32 {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -811,27 +804,8 @@ AND repo.id = repo_ids.id::int
 // read much less data into memory.
 func (s *RepoStore) ListEnabledNames(ctx context.Context) ([]string, error) {
 	s.ensureStore()
-
 	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var names []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
-		}
-		names = append(names, name)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return names, nil
+	return basestore.ScanStrings(s.Query(ctx, q))
 }
 
 func parsePattern(p string) ([]*sqlf.Query, error) {

@@ -21,7 +21,7 @@ IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name sourcegrap
 
 sleep 15
 
-pushd test/regression || exit
+pushd test/qa-test || exit
 go run main.go
 popd || exit
 
