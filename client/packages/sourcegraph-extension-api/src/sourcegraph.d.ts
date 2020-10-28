@@ -1133,7 +1133,6 @@ declare module 'sourcegraph' {
         | Promise<T | undefined | null>
         | Subscribable<T | undefined | null>
         | AsyncIterable<T | undefined | null>
-        | AsyncGenerator<T | undefined | null, T>
 
     /** The kinds of markup that can be used. */
     export enum MarkupKind {
