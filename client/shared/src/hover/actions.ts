@@ -1,7 +1,9 @@
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
+import { Remote } from 'comlink'
+
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from } from 'rxjs'
 import {
     catchError,
     delay,
@@ -16,15 +18,17 @@ import {
     mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../actions/ActionItem'
+import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
 import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
@@ -57,7 +61,7 @@ export function getHoverActions(
 /**
  * The scoped context properties for the hover.
  *
- * @internal Exported for testing only.
+ * @internal
  */
 export interface HoverActionsContext extends Context<TextDocumentPositionParameters> {
     ['goToDefinition.showLoading']: boolean
@@ -71,7 +75,7 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
 /**
  * Returns an observable that emits the scoped context for the hover upon subscription and whenever it changes.
  *
- * @internal Exported for testing only.
+ * @internal
  */
 export function getHoverActionsContext(
     {
@@ -80,7 +84,7 @@ export function getHoverActionsContext(
     }:
         | (ExtensionsControllerProps & PlatformContextProps<'urlToFile' | 'requestGraphQL'>)
         | {
-              extensionsController: {
+              extensionsController: Pick<Controller, 'extHostAPI'> & {
                   services: {
                       workspace: {
                           roots: { value: readonly WorkspaceRootWithMetadata[] }
@@ -101,6 +105,7 @@ export function getHoverActionsContext(
     const definitionURLOrError = getDefinitionURL(
         { urlToFile, requestGraphQL },
         extensionsController.services,
+        extensionsController.extHostAPI,
         parameters
     ).pipe(
         catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
@@ -181,7 +186,7 @@ export interface UIDefinitionURL {
  * Returns an observable that emits null if no definitions are found, {url, multiple: false} if exactly 1
  * definition is found, {url: defPanelURL, multiple: true} if multiple definitions are found, or an error.
  *
- * @internal Exported for testing only.
+ * @internal
  */
 export function getDefinitionURL(
     { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
@@ -194,9 +199,11 @@ export function getDefinitionURL(
         }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
     parameters: TextDocumentPositionParameters & URLToFileContext
 ): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
-    return textDocumentDefinition.getLocations(parameters).pipe(
+    return from(extensionHostAPI).pipe(
+        switchMap(api => wrapRemoteObservable(api.getDefinition(parameters))),
         switchMap(
             ({ isLoading, result: definitions }): Observable<Partial<MaybeLoadingResult<UIDefinitionURL | null>>> => {
                 if (definitions.length === 0) {
@@ -293,7 +300,7 @@ export function registerHoverContributions({
 }: (
     | (ExtensionsControllerProps & PlatformContextProps)
     | {
-          extensionsController: {
+          extensionsController: Pick<Controller, 'extHostAPI'> & {
               services: Pick<Services, 'commands' | 'contribution'> & {
                   workspace: {
                       roots: { value: readonly WorkspaceRootWithMetadata[] }
@@ -378,6 +385,7 @@ export function registerHoverContributions({
                 const { result } = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,
+                    extensionsController.extHostAPI,
                     parameters
                 )
                     .pipe(first(({ isLoading, result }) => !isLoading || result !== null))

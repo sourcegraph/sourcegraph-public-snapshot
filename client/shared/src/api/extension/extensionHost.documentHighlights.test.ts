@@ -1,6 +1,6 @@
 import { DocumentHighlight } from 'sourcegraph'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { initNewExtensionAPI, mergeDocumentHighlightResults } from './flatExtensionApi'
+import { initNewExtensionAPI, mergeArrayResult } from './flatExtensionApi'
 import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
@@ -15,11 +15,11 @@ const range3 = new Range(3, 4, 5, 6)
 
 describe('mergeDocumentHighlightResults', () => {
     it('merges non DocumentHighlight values into empty arrays', () => {
-        expect(mergeDocumentHighlightResults([LOADING])).toStrictEqual([])
-        expect(mergeDocumentHighlightResults([null])).toStrictEqual([])
-        expect(mergeDocumentHighlightResults([undefined])).toStrictEqual([])
+        expect(mergeArrayResult([LOADING])).toStrictEqual([])
+        expect(mergeArrayResult([null])).toStrictEqual([])
+        expect(mergeArrayResult([undefined])).toStrictEqual([])
         // and yes, there can be several
-        expect(mergeDocumentHighlightResults([null, LOADING])).toStrictEqual([])
+        expect(mergeArrayResult([null, LOADING])).toStrictEqual([])
     })
 
     it('merges a DocumentHighlight into result', () => {
@@ -27,13 +27,13 @@ describe('mergeDocumentHighlightResults', () => {
         const highlight2: DocumentHighlight = { range: range2 }
         const highlight3: DocumentHighlight = { range: range3 }
         const merged: DocumentHighlight[] = [highlight1, highlight2, highlight3]
-        expect(mergeDocumentHighlightResults([[highlight1], [highlight2, highlight3]])).toEqual(merged)
+        expect(mergeArrayResult([[highlight1], [highlight2, highlight3]])).toEqual(merged)
     })
 
     it('omits non DocumentHighlight values from document highlight result', () => {
         const highlight: DocumentHighlight = { range: range1 }
         const merged: DocumentHighlight[] = [highlight]
-        expect(mergeDocumentHighlightResults([[highlight], null, LOADING, undefined])).toEqual(merged)
+        expect(mergeArrayResult([[highlight], null, LOADING, undefined])).toEqual(merged)
     })
 })
 
