@@ -131,7 +131,7 @@ INSERT INTO repo (
 //
 // Upsert exists for testing purposes only. Repository mutations are managed
 // by repo-updater.
-func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
+func (s *RepoStore) Upsert(ctx context.Context, op InsertRepoOp) error {
 	insert := false
 
 	// We optimistically assume the repo is already in the table, so first
