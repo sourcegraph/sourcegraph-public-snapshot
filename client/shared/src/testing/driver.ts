@@ -393,7 +393,10 @@ export class Driver {
                 await this.page.goto(
                     this.sourcegraphBaseUrl + `/site-admin/repositories?filter=cloned&query=${encodeURIComponent(slug)}`
                 )
-                await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, { visible: true })
+                await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, {
+                    visible: true,
+                    timeout: 300000,
+                })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
