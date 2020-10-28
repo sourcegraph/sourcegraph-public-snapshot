@@ -87,6 +87,7 @@ digraph architecture {
 
                     zoekt_webserver [
                         label="zoekt webserver"
+                        shape="box3d"
                         fillcolor="#ccaaff"
                         URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-webserver"
                     ]
