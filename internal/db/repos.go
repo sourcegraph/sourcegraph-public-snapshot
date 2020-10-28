@@ -552,10 +552,7 @@ func (s *ReposStore) Create(ctx context.Context, repos ...*types.Repo) (err erro
 	if err != nil {
 		return errors.Wrap(err, "insert")
 	}
-	defer rows.Close()
-	if err := rows.Err(); err != nil {
-		return err
-	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for i := 0; rows.Next(); i++ {
 		if err := rows.Scan(&repos[i].ID); err != nil {
