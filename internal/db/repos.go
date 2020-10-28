@@ -627,13 +627,6 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
-func nullInt32Column(i int32) *int32 {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
