@@ -126,13 +126,53 @@ describe('observableFromAsyncIterable', () => {
                 yield 3
                 yield 4
                 yield 5
-                return 6
             })()
         )
 
         const values: number[] = []
         await new Promise(complete => observable.subscribe({ next: value => values.push(value), complete }))
-        expect(values).toStrictEqual([1, 2, 3, 4, 5, 6])
+        expect(values).toStrictEqual([1, 2, 3, 4, 5])
+    })
+
+    it('aborts iterator on unsubscription', async () => {
+        let iterations = 0
+        async function* test() {
+            await Promise.resolve()
+            yield 1
+            iterations++
+            yield 2
+            iterations++
+            yield 3
+            iterations++
+            yield 4
+            iterations++
+            yield 5
+            iterations++
+        }
+
+        const observable = observableFromAsyncIterable(test())
+
+        const collectedValues: number[] = []
+        await new Promise(resolve => {
+            const subscription = observable.subscribe({
+                next: value => {
+                    collectedValues.push(value)
+                    if (value === 3) {
+                        unsubscribe()
+                    }
+                },
+                error: resolve,
+                complete: resolve,
+            })
+            function unsubscribe() {
+                subscription.unsubscribe()
+                resolve()
+            }
+        })
+
+        expect(collectedValues).toStrictEqual([1, 2, 3])
+        // Assert that not only has the observable stopped emitting, but iteration was aborted as well
+        expect(iterations).toBe(3)
     })
 
     it('throws iterator error', async () => {

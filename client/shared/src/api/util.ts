@@ -68,60 +68,34 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
  * Reports whether the value is an AsyncIterable
  */
 export const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
-    typeof value === 'object' &&
-    value !== null &&
-    // hasProperty doesn't work with Symbol.asyncIterator
-    (<O extends object>(object: O): object is O & { [Symbol.asyncIterator]: unknown } =>
-        hasProperty(Symbol.asyncIterator)(object))(value) &&
-    typeof value[Symbol.asyncIterator] === 'function'
+    typeof value === 'object' && value !== null && typeof (value as any)[Symbol.asyncIterator] === 'function'
 
 /**
  * Convert an async iterable into an observable.
  *
  * @param iterable The source iterable.
  */
-export const observableFromAsyncIterable = <T, R>(
-    iterable: AsyncGenerator<T, R> | AsyncIterable<T>
-): Observable<T | R> =>
-    new Observable((observer: Observer<T | R>) => {
-        const iterator = iterable[Symbol.asyncIterator]()
+export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Observable<T> =>
+    new Observable((observer: Observer<T>) => {
         let unsubscribed = false
-        let iteratorDone = false
-        function next(): void {
-            iterator.next().then(
-                result => {
-                    if (unsubscribed) {
-                        return
-                    }
-                    if (result.done) {
-                        observer.next(result.value)
-                        iteratorDone = true
-                        observer.complete()
-                    } else {
-                        observer.next(result.value)
-                        return next()
-                    }
-                },
-                error => {
-                    observer.error(error)
+
+        ;(async () => {
+            for await (const value of iterable) {
+                if (unsubscribed) {
+                    // Swallow latest value if unsubscribed, stop iteration
+                    return
                 }
-            )
-        }
-        next()
+
+                observer.next(value)
+            }
+        })()
+            .catch(error => observer.error(error))
+            .finally(() => observer.complete())
+
         return () => {
             unsubscribed = true
-            if (!iteratorDone && iterator.throw) {
-                iterator.throw(new AbortError()).catch(() => {
-                    // ignore
-                })
-            }
         }
     })
-
-export class AbortError extends Error {
-    public readonly name = 'AbortError'
-    public readonly message = 'Aborted'
-}
 
 /**
  * Promisifies method calls and objects if specified, throws otherwise if there is no stub provided
