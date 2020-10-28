@@ -207,9 +207,9 @@ func TestS3Combine(t *testing.T) {
 		}
 
 		expectedParts := map[int64]string{
-			0: "test-bucket/test-src1",
-			1: "test-bucket/test-src2",
-			2: "test-bucket/test-src3",
+			1: "test-bucket/test-src1",
+			2: "test-bucket/test-src2",
+			3: "test-bucket/test-src3",
 		}
 		if diff := cmp.Diff(expectedParts, parts); diff != "" {
 			t.Fatalf("unexpected parts payloads (-want, +got):\n%s", diff)
@@ -239,9 +239,9 @@ func TestS3Combine(t *testing.T) {
 		}
 
 		expectedParts := map[int64]string{
-			0: "etag-test-bucket/test-src1",
-			1: "etag-test-bucket/test-src2",
-			2: "etag-test-bucket/test-src3",
+			1: "etag-test-bucket/test-src1",
+			2: "etag-test-bucket/test-src2",
+			3: "etag-test-bucket/test-src3",
 		}
 		if diff := cmp.Diff(expectedParts, parts); diff != "" {
 			t.Fatalf("unexpected parts payloads (-want, +got):\n%s", diff)
