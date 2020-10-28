@@ -1,6 +1,5 @@
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { Remote } from 'comlink'
-
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
 import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from } from 'rxjs'
@@ -89,7 +88,6 @@ export function getHoverActionsContext(
                       workspace: {
                           roots: { value: readonly WorkspaceRootWithMetadata[] }
                       }
-                      textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
                       textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
                   }
               }
@@ -192,12 +190,10 @@ export function getDefinitionURL(
     { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
     {
         workspace,
-        textDocumentDefinition,
     }: {
         workspace: {
             roots: { value: readonly WorkspaceRootWithMetadata[] }
         }
-        textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
     parameters: TextDocumentPositionParameters & URLToFileContext
@@ -305,7 +301,6 @@ export function registerHoverContributions({
                   workspace: {
                       roots: { value: readonly WorkspaceRootWithMetadata[] }
                   }
-                  textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
               }
           }
           platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>

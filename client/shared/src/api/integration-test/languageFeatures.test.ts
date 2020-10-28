@@ -44,11 +44,13 @@ describe('LanguageFeatures (integration)', () => {
         }),
         labeledProviderResults: labeledDefinitionResults,
         providerWithImplementation: run => ({ provideDefinition: run } as sourcegraph.DefinitionProvider),
-        getResult: (services, uri) =>
-            services.textDocumentDefinition.getLocations({
-                textDocument: { uri },
-                position: { line: 1, character: 2 },
-            }),
+        getResult: (services, uri, extensionHost) =>
+            wrapRemoteObservable(
+                extensionHost.getDefinition({
+                    textDocument: { uri },
+                    position: { line: 1, character: 2 },
+                })
+            ),
         emptyResultValue: [],
     })
     testLocationProvider<sourcegraph.ReferenceProvider>({
@@ -79,7 +81,7 @@ describe('LanguageFeatures (integration)', () => {
         emptyResultValue: [],
     })
     testLocationProvider<sourcegraph.LocationProvider>({
-        name: 'registerLocationProvider',
+        name: 'registerDefinitionProvider',
         registerProvider: extensionAPI => (selector, provider) =>
             extensionAPI.languages.registerLocationProvider('x', selector, provider),
         labeledProvider: label => ({
