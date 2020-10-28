@@ -8,6 +8,8 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 )
 
@@ -16,7 +18,7 @@ type gcsStore struct {
 	bucket       string
 	ttl          time.Duration
 	manageBucket bool
-	client       *storage.Client
+	client       gcsAPI
 }
 
 var _ Store = &gcsStore{}
@@ -33,13 +35,17 @@ func newGCS(ctx context.Context, projectID, bucket string, ttl time.Duration, ma
 		return nil, err
 	}
 
+	return newGCSWithClient(&gcsAPIShim{client}, projectID, bucket, ttl, manageBucket), nil
+}
+
+func newGCSWithClient(client gcsAPI, projectID, bucket string, ttl time.Duration, manageBucket bool) *gcsStore {
 	return &gcsStore{
 		projectID:    projectID,
 		bucket:       bucket,
 		ttl:          ttl,
 		manageBucket: manageBucket,
 		client:       client,
-	}, nil
+	}
 }
 
 func (s *gcsStore) Init(ctx context.Context) error {
@@ -47,19 +53,34 @@ func (s *gcsStore) Init(ctx context.Context) error {
 		return nil
 	}
 
-	if _, err := s.client.Bucket(s.bucket).Attrs(ctx); err != nil {
+	bucket := s.client.Bucket(s.bucket)
+
+	if _, err := bucket.Attrs(ctx); err != nil {
 		if err == storage.ErrBucketNotExist {
-			return s.create(ctx)
+			if err := s.create(ctx, bucket); err != nil {
+				return errors.Wrap(err, "failed to create bucket")
+			}
+
+			return nil
 		}
 
-		return err
+		return errors.Wrap(err, "failed to get bucket attributes")
 	}
 
-	return s.update(ctx)
+	if err := s.update(ctx, bucket); err != nil {
+		return errors.Wrap(err, "failed to update bucket attributes")
+	}
+
+	return nil
 }
 
 func (s *gcsStore) Get(ctx context.Context, key string, skipBytes int64) (io.ReadCloser, error) {
-	return s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, skipBytes, -1)
+	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, skipBytes, -1)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get object")
+	}
+
+	return rc, nil
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (err error) {
@@ -69,28 +90,65 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (err err
 	writer := s.client.Bucket(s.bucket).Object(key).NewWriter(ctx)
 	defer func() {
 		if closeErr := writer.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
+			err = multierror.Append(err, errors.Wrap(closeErr, "failed to close writer"))
 		}
 
 		cancel()
 	}()
 
-	_, err = io.Copy(writer, r)
+	if _, err := io.Copy(writer, r); err != nil {
+		return errors.Wrap(err, "failed to upload object")
+	}
+
 	return err
 }
 
-func (s *gcsStore) create(ctx context.Context) error {
-	return s.client.Bucket(s.bucket).Create(ctx, s.projectID, &storage.BucketAttrs{
+func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (err error) {
+	bucket := s.client.Bucket(s.bucket)
+
+	defer func() {
+		if err == nil {
+			// Delete sources on success
+			if err := s.deleteSources(ctx, bucket, sources); err != nil {
+				log15.Error("failed to delete source objects", "error", err)
+			}
+		}
+	}()
+
+	var handles []gcsObjectHandle
+	for _, source := range sources {
+		handles = append(handles, bucket.Object(source))
+	}
+
+	if err := bucket.Object(destination).ComposerFrom(handles...).Run(ctx); err != nil {
+		return errors.Wrap(err, "failed to compose objects")
+	}
+
+	return nil
+}
+
+func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
+	return invokeParallel(sources, func(index int, source string) error {
+		if err := bucket.Object(source).Delete(ctx); err != nil {
+			return errors.Wrap(err, "failed to delete source object")
+		}
+
+		return nil
+	})
+}
+
+func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
+	return bucket.Create(ctx, s.projectID, &storage.BucketAttrs{
 		Lifecycle: s.lifecycle(),
 	})
 }
 
-func (s *gcsStore) update(ctx context.Context) error {
+func (s *gcsStore) update(ctx context.Context, bucket gcsBucketHandle) error {
 	lifecycle := s.lifecycle()
-	_, err := s.client.Bucket(s.bucket).Update(ctx, storage.BucketAttrsToUpdate{
+
+	return bucket.Update(ctx, storage.BucketAttrsToUpdate{
 		Lifecycle: &lifecycle,
 	})
-	return err
 }
 
 func (s *gcsStore) lifecycle() storage.Lifecycle {

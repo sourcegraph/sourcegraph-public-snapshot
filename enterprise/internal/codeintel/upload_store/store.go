@@ -19,6 +19,11 @@ type Store interface {
 
 	// Upload writes the content in the given reader to the object at the given key.
 	Upload(ctx context.Context, key string, r io.Reader) error
+
+	// Compose will concatenate the given source objects together and write to the given
+	// destination object. The source objects will be removed if the composed write is
+	// successful.
+	Compose(ctx context.Context, destination string, sources ...string) error
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config *Config) (Store, error){
