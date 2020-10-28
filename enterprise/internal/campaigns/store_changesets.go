@@ -396,6 +396,7 @@ type ListChangesetsOpts struct {
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
 	OnlySynced           bool
+	ExternalServiceID    string
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -481,6 +482,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 	if opts.OnlySynced {
 		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
+	}
+
+	if opts.ExternalServiceID != "" {
+		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
 	}
 
 	return sqlf.Sprintf(

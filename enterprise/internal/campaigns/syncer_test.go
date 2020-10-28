@@ -210,40 +210,6 @@ func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
 			},
 			wantIDs: []int64{1, 2},
 		},
-		"non-empty list with unpublished changesets": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return []*campaigns.Changeset{
-					{
-						ID:               1,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-						PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-					},
-					{
-						ID:               2,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-						PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-					},
-				}, 0, nil
-			},
-			wantIDs: []int64{},
-		},
-		"non-empty list with processing changesets": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return []*campaigns.Changeset{
-					{
-						ID:               1,
-						ReconcilerState:  campaigns.ReconcilerStateProcessing,
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-					},
-					{
-						ID:               2,
-						ReconcilerState:  campaigns.ReconcilerStateProcessing,
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-					},
-				}, 0, nil
-			},
-			wantIDs: []int64{},
-		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			var wg sync.WaitGroup

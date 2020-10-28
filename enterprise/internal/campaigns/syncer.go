@@ -468,7 +468,13 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 }
 
 func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Context) error {
-	changesets, _, err := s.SyncStore.ListChangesets(ctx, ListChangesetsOpts{OnlyWithoutDiffStats: true})
+	published := campaigns.ChangesetPublicationStatePublished
+	changesets, _, err := s.SyncStore.ListChangesets(ctx, ListChangesetsOpts{
+		OnlyWithoutDiffStats: true,
+		ExternalServiceID:    s.codeHostURL,
+		PublicationState:     &published,
+		ReconcilerStates:     []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted},
+	})
 	if err != nil {
 		return err
 	}
@@ -479,11 +485,6 @@ func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Conte
 
 	ids := make([]int64, 0, len(changesets))
 	for _, cs := range changesets {
-		// TODO: This needs to go into ListChangesetsOpts
-		if cs.PublicationState != campaigns.ChangesetPublicationStatePublished ||
-			cs.ReconcilerState != campaigns.ReconcilerStateCompleted {
-			continue
-		}
 		ids = append(ids, cs.ID)
 	}
 	s.priorityNotify <- ids
