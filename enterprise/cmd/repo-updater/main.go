@@ -51,7 +51,7 @@ func enterpriseInit(
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	campaigns.SetupCampaignsBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
+	campaigns.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db

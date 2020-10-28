@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func SetupCampaignsBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *Store, repoStore repos.Store, cf *httpcli.Factory) {
+func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *Store, repoStore repos.Store, cf *httpcli.Factory) {
 	sourcer := repos.NewSourcer(cf)
 
 	reconcilerWorker := NewWorker(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
