@@ -8,7 +8,7 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 
 // TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
@@ -41,7 +41,7 @@ export function search(
     version: string,
     patternType: GQL.SearchPatternType,
     versionContext: string | undefined,
-    extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+    extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     const transformedQuery = from(extensionHostPromise).pipe(
         switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))

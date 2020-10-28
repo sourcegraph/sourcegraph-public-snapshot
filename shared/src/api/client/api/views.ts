@@ -11,7 +11,7 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ProxySubscribable } from '../../extension/api/common'
 import { wrapRemoteObservable, ProxySubscription } from './common'
 import { ViewService, ViewContexts } from '../services/viewService'
-import { FlatExtHostAPI } from '../../contract'
+import { FlatExtensionHostAPI } from '../../contract'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
@@ -65,7 +65,7 @@ export class ClientViews implements ClientViewsAPI {
 
     constructor(
         private panelViewRegistry: PanelViewProviderRegistry,
-        private extensionHostAPI: comlink.Remote<FlatExtHostAPI>,
+        private extensionHostAPI: comlink.Remote<FlatExtensionHostAPI>,
         private viewerService: ViewerService,
         private viewService: ViewService
     ) {}

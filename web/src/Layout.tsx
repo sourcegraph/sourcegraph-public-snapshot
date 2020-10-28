@@ -58,7 +58,7 @@ import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../shared/src/api/contract'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -116,7 +116,7 @@ export interface LayoutProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined

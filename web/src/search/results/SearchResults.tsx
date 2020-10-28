@@ -36,7 +36,7 @@ import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extensionHostAPI' | 'services'>,
@@ -59,7 +59,7 @@ export interface SearchResultsProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
+        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType

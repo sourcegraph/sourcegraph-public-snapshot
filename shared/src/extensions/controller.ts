@@ -13,7 +13,7 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
-import { FlatExtHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI } from '../api/contract'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -44,7 +44,7 @@ export interface Controller extends Unsubscribable {
      */
     unsubscribe(): void
 
-    extensionHostAPI: Promise<Remote<FlatExtHostAPI>>
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 }
 
 /**

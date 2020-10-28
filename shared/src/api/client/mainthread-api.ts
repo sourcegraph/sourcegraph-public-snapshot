@@ -4,7 +4,7 @@ import { Subscription, from, of } from 'rxjs'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
 import { switchMap, concatMap } from 'rxjs/operators'
-import { FlatExtHostAPI, MainThreadAPI } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { ProxySubscription } from './api/common'
 import { Services } from './services'
 import { proxySubscribable } from '../extension/api/common'
@@ -13,7 +13,7 @@ import { proxySubscribable } from '../extension/api/common'
 export type MainThreadAPIDependencies = Pick<Services, 'commands'>
 
 export const initMainThreadAPI = (
-    extensionHost: Remote<FlatExtHostAPI>,
+    extensionHost: Remote<FlatExtensionHostAPI>,
     platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
     dependencies: MainThreadAPIDependencies
 ): { api: MainThreadAPI; subscription: Subscription } => {

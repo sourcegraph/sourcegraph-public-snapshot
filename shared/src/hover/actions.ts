@@ -30,7 +30,7 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { FlatExtHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { Remote } from 'comlink'
 
 const LOADING = 'loading' as const
@@ -180,7 +180,7 @@ export interface UIDefinitionURL {
 export function getDefinitionURL(
     { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
 
-    extensionHostAPI: Promise<Remote<FlatExtHostAPI>>,
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
     parameters: TextDocumentPositionParams & URLToFileContext
 ): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
     return from(extensionHostAPI).pipe(

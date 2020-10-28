@@ -25,7 +25,7 @@ export interface TextDocumentData extends Pick<TextDocument, 'uri' | 'languageId
  * e.g. for communicating  direction "main -> ext host"
  * Note this API object lives in the extension host thread
  */
-export interface FlatExtHostAPI {
+export interface FlatExtensionHostAPI {
     /**
      * Updates the settings exposed to extensions.
      */

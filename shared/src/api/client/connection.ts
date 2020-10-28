@@ -20,7 +20,7 @@ import {
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
-import { FlatExtHostAPI } from '../contract'
+import { FlatExtensionHostAPI } from '../contract'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -52,7 +52,7 @@ export async function createExtensionHostClientConnection(
     services: Services,
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
-): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtHostAPI> }> {
+): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtensionHostAPI> }> {
     const subscription = new Subscription()
 
     // MAIN THREAD

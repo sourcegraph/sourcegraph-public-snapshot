@@ -2,7 +2,7 @@ import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import type * as sourcegraph from 'sourcegraph'
 import { BehaviorSubject, Subject, of, Observable, from, concat, OperatorFunction, Subscription } from 'rxjs'
-import { FlatExtHostAPI, MainThreadAPI } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, mapTo } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
@@ -58,7 +58,7 @@ const matchProvider = (textDocument: TextDocumentIdentifier) => <T>(provider: Re
 
 export interface InitResult
     extends Pick<typeof sourcegraph, 'commands' | 'search' | 'languages' | 'workspace' | 'configuration'> {
-    exposedToMain: FlatExtHostAPI
+    exposedToMain: FlatExtensionHostAPI
     state: Readonly<ExtState>
 }
 
@@ -161,7 +161,7 @@ export const initNewExtensionAPI = (
 
     const modelReferences = new ReferenceCounter()
 
-    const exposedToMain: FlatExtHostAPI = {
+    const exposedToMain: FlatExtensionHostAPI = {
         // Configuration
         syncSettingsData: data => {
             state.settings.next(Object.freeze(data))

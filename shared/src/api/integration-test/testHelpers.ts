@@ -11,7 +11,7 @@ import { ViewerData } from '../client/services/viewerService'
 import { TextModel } from '../client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { FlatExtHostAPI } from '../contract'
+import { FlatExtensionHostAPI } from '../contract'
 import { Remote } from 'comlink'
 import { ViewerId } from '../viewerTypes'
 
@@ -71,7 +71,7 @@ export async function integrationTestContext(
 ): Promise<{
     extensionAPI: typeof sourcegraph
     services: Services
-    extensionHost: Remote<FlatExtHostAPI>
+    extensionHost: Remote<FlatExtensionHostAPI>
     viewerIds: ViewerId[]
 }> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS

@@ -33,7 +33,7 @@ import { NotificationType } from '../../../../../shared/src/api/client/services/
 import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
 import { pretendRemote, noopFlatExtensionHostAPI } from '../../../../../shared/src/api/util'
-import { FlatExtHostAPI } from '../../../../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
 
 const RENDER = sinon.spy()
 
