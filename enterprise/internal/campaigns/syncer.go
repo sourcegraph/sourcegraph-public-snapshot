@@ -738,10 +738,3 @@ const (
 	priorityNormal priority = iota
 	priorityHigh
 )
-
-// A SourceChangesets groups *repos.Changesets together with the
-// repos.ChangesetSource that can be used to modify the changesets.
-type SourceChangesets struct {
-	repos.ChangesetSource
-	Changesets []*repos.Changeset
-}
