@@ -387,58 +387,6 @@ func TestSyncerRun(t *testing.T) {
 
 }
 
-func TestFilterSyncData(t *testing.T) {
-	testCases := []struct {
-		name        string
-		codeHostURL string
-		data        []campaigns.ChangesetSyncData
-		want        []campaigns.ChangesetSyncData
-	}{
-		{
-			name:        "Empty",
-			codeHostURL: "https://example.com/",
-			data:        []campaigns.ChangesetSyncData{},
-			want:        []campaigns.ChangesetSyncData{},
-		},
-		{
-			name:        "single item, should match",
-			codeHostURL: "https://example.com/",
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					RepoExternalServiceID: "https://example.com/",
-				},
-			},
-			want: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					RepoExternalServiceID: "https://example.com/",
-				},
-			},
-		},
-		{
-			name:        "single item, should not match",
-			codeHostURL: "https://example.com/",
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					RepoExternalServiceID: "https://example2.com/",
-				},
-			},
-			want: []campaigns.ChangesetSyncData{},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			data := filterSyncData(tc.codeHostURL, tc.data)
-			if diff := cmp.Diff(tc.want, data); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
 func TestSyncRegistry(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

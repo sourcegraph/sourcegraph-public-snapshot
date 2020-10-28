@@ -458,12 +458,10 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	allSyncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+	syncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
-
-	syncData := filterSyncData(s.codeHostURL, allSyncData)
 
 	ss := make([]scheduledSync, len(syncData))
 	for i := range syncData {
@@ -605,17 +603,6 @@ func buildChangesetSource(
 	}
 
 	return css, nil
-}
-
-// filterSyncData filters to changesets belonging to repositories on codeHostURL.
-func filterSyncData(codeHostURL string, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
-	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
-	for _, d := range allSyncData {
-		if d.RepoExternalServiceID == codeHostURL {
-			syncData = append(syncData, d)
-		}
-	}
-	return syncData
 }
 
 type scheduledSync struct {
