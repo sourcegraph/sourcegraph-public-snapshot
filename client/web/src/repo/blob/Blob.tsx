@@ -37,6 +37,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { HoverThresholdProps } from '../RepoContainer'
+import { File2 } from '../../../../shared/src/graphql/schema'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
@@ -52,8 +53,7 @@ interface BlobProps
         HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
-    /** The raw content of the blob. */
-    content: string
+    blob: File2
 
     /** The trusted syntax-highlighted code as HTML */
     html: string
@@ -291,12 +291,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<
-            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'blob' | 'isLightTheme'>
         > = this.componentUpdates.pipe(
-            map(props =>
-                pick(props, 'repoName', 'revision', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')
-            ),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
+            map(props => pick(props, 'repoName', 'revision', 'commitID', 'filePath', 'mode', 'blob', 'isLightTheme')),
+            distinctUntilChanged((a, b) => isEqual(a, b) || a.blob === b.blob),
             share()
         )
 
@@ -308,7 +306,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     this.props.extensionsController.services.model.addModel({
                         uri,
                         languageId: model.mode,
-                        text: model.content,
+                        text: model.blob.content,
                     })
                 }
                 this.props.extensionsController.services.viewer.removeAllViewers()

@@ -299,7 +299,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <Blob
                     {...props}
                     className="blob-page__blob test-repo-blob"
-                    content={blobOrError.content}
+                    blob={blobOrError}
                     html={blobOrError.highlight.html}
                     wrapCode={wrapCode}
                     renderMode={renderMode}
