@@ -53,38 +53,38 @@ func (cs *CampaignSpec) ExpiresAt() time.Time {
 }
 
 type CampaignSpecFields struct {
-	Name              string                    `json:"name"`
-	Description       string                    `json:"description"`
-	On                []CampaignSpecOn          `json:"on"`
-	Steps             []CampaignSpecStep        `json:"steps"`
-	ImportChangeset   []CampaignImportChangeset `json:"importChangesets,omitempty"`
-	ChangesetTemplate ChangesetTemplate         `json:"changesetTemplate"`
+	Name              string                    `json:"name" yaml:"name"`
+	Description       string                    `json:"description,omitempty" yaml:"description,omitempty"`
+	On                []CampaignSpecOn          `json:"on,omitempty" yaml:"on,omitempty"`
+	Steps             []CampaignSpecStep        `json:"steps,omitempty" yaml:"steps,omitempty"`
+	ImportChangeset   []CampaignImportChangeset `json:"importChangesets,omitempty" yaml:"importChangesets,omitempty"`
+	ChangesetTemplate ChangesetTemplate         `json:"changesetTemplate,omitempty" yaml:"changesetTemplate,omitempty"`
 }
 
 type CampaignSpecOn struct {
-	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty"`
-	Repository                string `json:"repository,omitempty"`
+	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery,omitempty"`
+	Repository                string `json:"repository,omitempty" yaml:"repository,omitempty"`
 }
 
 type CampaignSpecStep struct {
-	Run       string            `json:"run"`
-	Container string            `json:"container"`
-	Env       map[string]string `json:"env"`
+	Run       string            `json:"run" yaml:"run"`
+	Container string            `json:"container" yaml:"container"`
+	Env       map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
 type CampaignImportChangeset struct {
-	Repository  string        `json:"repository"`
-	ExternalIDs []interface{} `json:"externalIDs"`
+	Repository  string        `json:"repository" yaml:"repository"`
+	ExternalIDs []interface{} `json:"externalIDs" yaml:"externalIDs"`
 }
 
 type ChangesetTemplate struct {
-	Title     string                   `json:"title"`
-	Body      string                   `json:"body"`
-	Branch    string                   `json:"branch"`
-	Commit    CommitTemplate           `json:"commit"`
-	Published overridable.BoolOrString `json:"published"`
+	Title     string                   `json:"title,omitempty" yaml:"title,omitempty"`
+	Body      string                   `json:"body,omitempty" yaml:"body,omitempty"`
+	Branch    string                   `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Commit    CommitTemplate           `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Published overridable.BoolOrString `json:"published,omitempty" yaml:"published,omitempty"`
 }
 
 type CommitTemplate struct {
-	Message string `json:"message"`
+	Message string `json:"message,omitempty" yaml:"message,omitempty"`
 }
