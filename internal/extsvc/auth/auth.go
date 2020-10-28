@@ -1,3 +1,6 @@
+// auth provides the Authenticator interface, which can be used to add
+// authentication data to an outbound HTTP request, and concrete implementations
+// for the commonly used authentication types.
 package auth
 
 import "net/http"
