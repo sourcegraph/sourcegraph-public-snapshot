@@ -24,6 +24,9 @@ type Store interface {
 	// destination object. The source objects will be removed if the composed write is
 	// successful.
 	Compose(ctx context.Context, destination string, sources ...string) (int64, error)
+
+	// Delete removes the content at the given key.
+	Delete(ctx context.Context, key string) error
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config *Config) (Store, error){

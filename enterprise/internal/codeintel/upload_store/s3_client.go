@@ -62,12 +62,30 @@ func (s *s3Store) Init(ctx context.Context) error {
 		return nil
 	}
 
-	if err := s.create(ctx); err != nil {
-		return errors.Wrap(err, "failed to create bucket")
+	//
+	// TODO - rewrite, test
+
+	tryCreate := func() error {
+		if err := s.create(ctx); err != nil {
+			return errors.Wrap(err, "failed to create bucket")
+		}
+
+		if err := s.update(ctx); err != nil {
+			return errors.Wrap(err, "failed to update bucket attributes")
+		}
+
+		return nil
 	}
 
-	if err := s.update(ctx); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
+	var err error
+	for i := 0; i < 20; i++ {
+		if i > 0 {
+			<-time.After(time.Second)
+		}
+
+		if err = tryCreate(); err == nil {
+			break
+		}
 	}
 
 	return nil
@@ -186,6 +204,15 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	}
 
 	return *obj.ContentLength, nil
+}
+
+func (s *s3Store) Delete(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+
+	return errors.Wrap(err, "failed to delete object")
 }
 
 func (s *s3Store) create(ctx context.Context) error {

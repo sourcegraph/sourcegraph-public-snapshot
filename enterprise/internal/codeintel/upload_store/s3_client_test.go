@@ -292,6 +292,26 @@ func TestS3Combine(t *testing.T) {
 	}
 }
 
+func TestS3Delete(t *testing.T) {
+	s3Client := NewMockS3API()
+	s3Client.GetObjectFunc.SetDefaultReturn(&s3.GetObjectOutput{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
+	}, nil)
+
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
+	if err := client.Delete(context.Background(), "test-key"); err != nil {
+		t.Fatalf("unexpected error getting key: %s", err.Error())
+	}
+
+	if calls := s3Client.DeleteObjectFunc.History(); len(calls) != 1 {
+		t.Fatalf("unexpected number of DeleteObject calls. want=%d have=%d", 1, len(calls))
+	} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
+		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	} else if value := *calls[0].Arg1.Key; value != "test-key" {
+		t.Errorf("unexpected key argument. want=%s have=%s", "test-key", value)
+	}
+}
+
 func TestS3Lifecycle(t *testing.T) {
 	s3Client := NewMockS3API()
 	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24*3, true)
