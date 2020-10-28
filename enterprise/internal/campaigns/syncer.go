@@ -534,23 +534,8 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 		}
 	}
 
-	csEvents := c.Events()
-	SetDerivedState(ctx, c, csEvents)
-
-	// Deduplicate events per changeset based on their Kind+Key to avoid
-	// conflicts when inserting into database.
-	uniqueEvents := make(map[string]struct{}, len(csEvents))
-	var events []*campaigns.ChangesetEvent
-
-	for _, e := range csEvents {
-		k := string(e.Kind) + e.Key
-		if _, ok := uniqueEvents[k]; ok {
-			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
-			continue
-		}
-		uniqueEvents[k] = struct{}{}
-		events = append(events, e)
-	}
+	events := c.Events().Dedupe()
+	SetDerivedState(ctx, c, events)
 
 	tx, err := syncStore.Transact(ctx)
 	if err != nil {
