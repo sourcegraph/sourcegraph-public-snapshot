@@ -24,6 +24,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -64,22 +65,20 @@ type Client struct {
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
-	// Token is the personal access token for accessing the
-	// server. https://bitbucket.example.com/plugins/servlet/access-tokens/manage
-	Token string
-
-	// The username and password credentials for accessing the server. Typically these are only
-	// used when the server doesn't support personal access tokens (such as Bitbucket Server
-	// version 5.4 and older). If both Token and Username/Password are specified, Token is used.
-	Username, Password string
+	// Auth is the authentication method used when accessing the server.
+	// Supported types are:
+	// * auth.OAuthToken for a personal access token; see also
+	//   https://bitbucket.example.com/plugins/servlet/access-tokens/manage
+	// * auth.BasicAuth for a username and password combination. Typically
+	//   these are only used when the server doesn't support personal access
+	//   tokens (such as Bitbucket Server 5.4 and older).
+	// * SudoableClient for an OAuth 1 client used to authenticate requests.
+	//   This is generally set using SetOAuth.
+	Auth auth.Authenticator
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter
-
-	// OAuth client used to authenticate requests, if set via SetOAuth.
-	// Takes precedence over Token and Username / Password authentication.
-	Oauth *oauth.Client
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
@@ -102,15 +101,26 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
 	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
 
+	// Initially set up authentication. Note that we'll use a nil Authenticator
+	// if c.Authorization is set: in that case, we'll use SetOAuth after
+	// allocating the Client.
+	var a auth.Authenticator
+	if c.Authorization == nil {
+		if c.Token != "" {
+			a = auth.OAuthBearerToken(c.Token)
+		} else {
+			a = &auth.BasicAuth{Username: c.Username, Password: c.Password}
+		}
+	}
+
 	client := &Client{
 		httpClient: httpClient,
 		URL:        u,
-		Username:   c.Username,
-		Password:   c.Password,
-		Token:      c.Token,
+		Auth:       a,
 		RateLimit:  l,
 	}
 
+	// If we're setting up OAuth 1 client authentication, let's do that now.
 	if c.Authorization != nil {
 		err := client.SetOAuth(
 			c.Authorization.Oauth.ConsumerKey,
@@ -149,10 +159,14 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 		return err
 	}
 
-	c.Oauth = &oauth.Client{
-		Credentials:     oauth.Credentials{Token: consumerKey},
-		PrivateKey:      key,
-		SignatureMethod: oauth.RSASHA1,
+	c.Auth = &SudoableOAuthClient{
+		Client: auth.OAuthClient{
+			Client: &oauth.Client{
+				Credentials:     oauth.Credentials{Token: consumerKey},
+				PrivateKey:      key,
+				SignatureMethod: oauth.RSASHA1,
+			},
+		},
 	}
 
 	return nil
@@ -163,13 +177,30 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 // Application Link in Bitbucket Server is configured to allow user impersonation,
 // returning an error otherwise.
 func (c *Client) Sudo(username string) (*Client, error) {
-	if c.Oauth == nil {
+	a, ok := c.Auth.(*SudoableOAuthClient)
+	if !ok || a == nil {
 		return nil, errors.New("bitbucketserver.Client: OAuth not configured")
 	}
 
+	authCopy := *a
+	authCopy.Username = username
+
 	sudo := *c
-	sudo.Username = username
+	sudo.Auth = &authCopy
 	return &sudo, nil
+}
+
+// Username returns the username that will be used when communicating with
+// Bitbucket Server, if the authentication method includes a username.
+func (c *Client) Username() (string, error) {
+	switch a := c.Auth.(type) {
+	case *SudoableOAuthClient:
+		return a.Username, nil
+	case *auth.BasicAuth:
+		return a.Username, nil
+	default:
+		return "", errors.New("bitbucketserver.Client: authentication method does not include a username")
+	}
 }
 
 // UserFilters is a list of UserFilter that is ANDed together.
@@ -798,7 +829,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.authenticate(req); err != nil {
+	if err := c.Auth.Authenticate(req); err != nil {
 		return err
 	}
 
@@ -836,33 +867,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		*s = bs
 	} else if result != nil {
 		return json.Unmarshal(bs, result)
-	}
-
-	return nil
-}
-
-func (c *Client) authenticate(req *http.Request) error {
-	// Authenticate request, in order of preference.
-	if c.Oauth != nil {
-		if c.Username != "" {
-			qry := req.URL.Query()
-			qry.Set("user_id", c.Username)
-			req.URL.RawQuery = qry.Encode()
-		}
-
-		if err := c.Oauth.SetAuthorizationHeader(
-			req.Header,
-			&oauth.Credentials{Token: ""}, // Token must be empty
-			req.Method,
-			req.URL,
-			nil,
-		); err != nil {
-			return err
-		}
-	} else if c.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
-	} else if c.Username != "" || c.Password != "" {
-		req.SetBasicAuth(c.Username, c.Password)
 	}
 
 	return nil
