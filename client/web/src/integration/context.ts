@@ -10,6 +10,11 @@ import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import html from 'tagged-template-noop'
 import { commonWebGraphQlResults } from './graphQlResults'
 
+export interface ServerSideEvent {
+    name: string
+    data: string
+}
+
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
@@ -19,6 +24,13 @@ export interface WebIntegrationTestContext
      * Overrides `window.context` from the default created by `createJsContext()`.
      */
     overrideJsContext: (jsContext: SourcegraphContext) => void
+
+    /**
+     * Configures fake responses for streaming search
+     *
+     * @param overrides The array of events to return.
+     */
+    overrideSearchStreamEvents: (overrides: ServerSideEvent[]) => void
 }
 
 /**
@@ -58,10 +70,31 @@ export const createWebIntegrationTestContext = async ({
             `)
         })
 
+    let searchStreamEventOverrides: ServerSideEvent[] = []
+    sharedTestContext.server
+        .get(new URL('/search/stream?*params', driver.sourcegraphBaseUrl).href)
+        .intercept((request, response) => {
+            if (!searchStreamEventOverrides || searchStreamEventOverrides.length === 0) {
+                throw new Error(
+                    'Search stream event overrides missing. Call overrideSearchStreamEvents() to set the events.'
+                )
+            }
+
+            const responseContent = searchStreamEventOverrides
+                .map(event => `event: ${event.name}\ndata: ${event.data}\n\n`)
+                .join('')
+
+            console.log('intercepted streaming search')
+            response.status(200).type('text/event-stream').send(responseContent)
+        })
+
     return {
         ...sharedTestContext,
         overrideJsContext: overrides => {
             jsContext = overrides
+        },
+        overrideSearchStreamEvents: overrides => {
+            searchStreamEventOverrides = overrides
         },
     }
 }
