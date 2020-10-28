@@ -74,12 +74,11 @@ func (s *SyncRegistry) Add(kind, config string) {
 		return
 	}
 
-	baseURL, err := extsvc.ExtractBaseURL(kind, config)
+	normalised, err := externalServiceSyncerKey(kind, config)
 	if err != nil {
-		log15.Error("Getting normalised URL from service", "err", err)
+		log15.Error(err.Error())
 		return
 	}
-	normalised := baseURL.String()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -166,12 +165,11 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	baseURL, err := extsvc.ExtractBaseURL(es.Kind, es.Config)
+	normalised, err := externalServiceSyncerKey(es.Kind, es.Config)
 	if err != nil {
-		log15.Error("Extracting url from external service", "err", err)
+		log15.Error(err.Error())
 		return
 	}
-	normalised := baseURL.String()
 
 	s.mu.Lock()
 	syncer, exists := s.syncers[normalised]
@@ -194,6 +192,14 @@ func timeIsNilOrZero(t *time.Time) bool {
 		return true
 	}
 	return t.IsZero()
+}
+
+func externalServiceSyncerKey(kind, config string) (string, error) {
+	baseURL, err := extsvc.ExtractBaseURL(kind, config)
+	if err != nil {
+		return "", errors.Wrap(err, "getting normalized URL from service")
+	}
+	return baseURL.String(), nil
 }
 
 // A ChangesetSyncer periodically syncs metadata of changesets
