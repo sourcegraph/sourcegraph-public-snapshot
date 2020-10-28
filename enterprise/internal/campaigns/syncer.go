@@ -332,10 +332,10 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			if timer != nil {
 				timer.Stop()
 			}
-			start := time.Now()
+			start := s.clock()
 			schedule, err := s.computeSchedule(ctx)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
-			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
+			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.clock().Sub(start).Seconds())
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
@@ -343,7 +343,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
 			var behindSchedule int
-			now := time.Now()
+			now := s.clock()
 			for _, ss := range schedule {
 				if ss.nextSync.Before(now) {
 					behindSchedule++
@@ -351,10 +351,10 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			}
 			syncerMetrics.behindSchedule.WithLabelValues(s.codeHostURL).Set(float64(behindSchedule))
 		case <-timerChan:
-			start := time.Now()
+			start := s.clock()
 			err := s.syncFunc(ctx, next.changesetID)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
-			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
+			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(s.clock().Sub(start).Seconds())
 			syncerMetrics.syncs.WithLabelValues(labelValues...).Add(1)
 
 			if err != nil {
