@@ -8,6 +8,7 @@ import (
 	regexpsyntax "regexp/syntax"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -518,6 +519,253 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
+
+// Create inserts repos and their sources, respectively in the repo and external_service_repos table.
+// Associated external services must already exist.
+func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
+	tr, ctx := trace.New(ctx, "repos.Create", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	s.ensureStore()
+
+	records := make([]*repoRecord, 0, len(repos))
+
+	for _, r := range repos {
+		repoRec, err := newRepoRecord(r)
+		if err != nil {
+			return err
+		}
+
+		records = append(records, repoRec)
+	}
+
+	encodedRepos, err := json.Marshal(records)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(insertReposQuery, string(encodedRepos))
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "insert")
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for i := 0; rows.Next(); i++ {
+		if err := rows.Scan(&repos[i].ID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// repoRecord is the json representation of a repository as used in this package
+// Postgres CTEs.
+type repoRecord struct {
+	ID                  api.RepoID      `json:"id"`
+	Name                string          `json:"name"`
+	URI                 *string         `json:"uri,omitempty"`
+	Description         string          `json:"description"`
+	CreatedAt           time.Time       `json:"created_at"`
+	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
+	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
+	ExternalServiceType *string         `json:"external_service_type,omitempty"`
+	ExternalServiceID   *string         `json:"external_service_id,omitempty"`
+	ExternalID          *string         `json:"external_id,omitempty"`
+	Archived            bool            `json:"archived"`
+	Fork                bool            `json:"fork"`
+	Private             bool            `json:"private"`
+	Metadata            json.RawMessage `json:"metadata"`
+	Sources             json.RawMessage `json:"sources,omitempty"`
+}
+
+func newRepoRecord(r *types.Repo) (*repoRecord, error) {
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
+	}
+
+	sources, err := sourcesColumn(r.ID, r.Sources)
+	if err != nil {
+		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
+	}
+
+	return &repoRecord{
+		ID:                  r.ID,
+		Name:                string(r.Name),
+		URI:                 nullStringColumn(r.URI),
+		Description:         r.Description,
+		CreatedAt:           r.CreatedAt.UTC(),
+		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
+		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
+		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
+		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
+		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		Archived:            r.Archived,
+		Fork:                r.Fork,
+		Private:             r.Private,
+		Metadata:            metadata,
+		Sources:             sources,
+	}, nil
+}
+
+func nullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
+func nullStringColumn(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func nullInt32Column(i int32) *int32 {
+	if i == 0 {
+		return nil
+	}
+	return &i
+}
+
+func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+	switch m := metadata.(type) {
+	case nil:
+		msg = json.RawMessage("{}")
+	case string:
+		msg = json.RawMessage(m)
+	case []byte:
+		msg = m
+	case json.RawMessage:
+		msg = m
+	default:
+		msg, err = json.MarshalIndent(m, "        ", "    ")
+	}
+	return
+}
+
+func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (json.RawMessage, error) {
+	var records []externalServiceRepo
+	for _, src := range sources {
+		records = append(records, externalServiceRepo{
+			ExternalServiceID: src.ExternalServiceID(),
+			RepoID:            int64(repoID),
+			CloneURL:          secret.StringValue{S: &src.CloneURL},
+		})
+	}
+
+	return json.MarshalIndent(records, "        ", "    ")
+}
+
+type externalServiceRepo struct {
+	ExternalServiceID int64              `json:"external_service_id"`
+	RepoID            int64              `json:"repo_id"`
+	CloneURL          secret.StringValue `json:"clone_url"`
+}
+
+var insertReposQuery = `
+WITH repos_list AS (
+  SELECT * FROM ROWS FROM (
+	json_to_recordset(%s)
+	AS (
+		name                  citext,
+		uri                   citext,
+		description           text,
+		created_at            timestamptz,
+		updated_at            timestamptz,
+		deleted_at            timestamptz,
+		external_service_type text,
+		external_service_id   text,
+		external_id           text,
+		archived              boolean,
+		fork                  boolean,
+		private               boolean,
+		metadata              jsonb,
+		sources               jsonb
+	  )
+	)
+	WITH ORDINALITY
+),
+inserted_repos AS (
+  INSERT INTO repo (
+	name,
+	uri,
+	description,
+	created_at,
+	updated_at,
+	deleted_at,
+	external_service_type,
+	external_service_id,
+	external_id,
+	archived,
+	fork,
+	private,
+	metadata
+  )
+  SELECT
+	name,
+	NULLIF(BTRIM(uri), ''),
+	description,
+	created_at,
+	updated_at,
+	deleted_at,
+	external_service_type,
+	external_service_id,
+	external_id,
+	archived,
+	fork,
+	private,
+	metadata
+  FROM repos_list
+  RETURNING id
+),
+inserted_repos_rows AS (
+  SELECT id, ROW_NUMBER() OVER () AS rn FROM inserted_repos
+),
+repos_list_rows AS (
+  SELECT *, ROW_NUMBER() OVER () AS rn FROM repos_list
+),
+inserted_repos_with_ids AS (
+  SELECT
+	inserted_repos_rows.id,
+	repos_list_rows.*
+  FROM repos_list_rows
+  JOIN inserted_repos_rows USING (rn)
+),
+sources_list AS (
+  SELECT
+    inserted_repos_with_ids.id AS repo_id,
+	sources.external_service_id AS external_service_id,
+	sources.clone_url AS clone_url
+  FROM
+    inserted_repos_with_ids,
+	jsonb_to_recordset(inserted_repos_with_ids.sources)
+	  AS sources(
+		external_service_id bigint,
+		repo_id             integer,
+		clone_url           text
+	  )
+),
+insert_sources AS (
+  INSERT INTO external_service_repos (
+    external_service_id,
+    repo_id,
+    clone_url
+  )
+  SELECT
+    external_service_id,
+    repo_id,
+    clone_url
+  FROM sources_list
+)
+SELECT id FROM inserted_repos_with_ids;
+`
 
 // Delete deletes repos associated with the given ids and their associated sources.
 func (s *RepoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
