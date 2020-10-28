@@ -18,7 +18,7 @@ The document content can set class names and IDs on elements (for example, Markd
     --width: 1200px;
     --sidebar-width: 230px;
     --spacing: 1rem;
-    --gutter: calc(2*var(--spacing));
+    --gutter: calc(2 * var(--spacing));
 
     --base-font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
     --monospace-font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
@@ -155,10 +155,10 @@ body > div#page {
         display: none !important;
     }
     body > #page > main > #index {
-        margin-top: calc(2*var(--spacing));
+        margin-top: calc(2 * var(--spacing));
     }
     body > #page > main > #content {
-	    margin-top: calc(1*var(--spacing));
+	    margin-top: calc(1 * var(--spacing));
     }
 }
 @media (min-width: 800px /* == var(--sidebar-breakpoint-width) */) {
@@ -170,7 +170,7 @@ body > div#page {
         border-right: solid 1px var(--sidebar-border-color);
         width: var(--sidebar-width);
         overflow-y: auto;
-        padding-bottom: calc(0.75*var(--spacing));
+        padding-bottom: calc(0.75 * var(--spacing));
     }
 }
 
@@ -201,7 +201,7 @@ body > #sidebar #logo {
 body > #sidebar #logo a {
     text-decoration: none;
     display: block;
-    padding: calc(1.25*var(--spacing)) calc(1.25*var(--spacing)) calc(0.5*var(--spacing)) ;
+    padding: calc(1.25 * var(--spacing)) calc(1.25 * var(--spacing)) calc(0.5 * var(--spacing)) ;
 }
 body > #sidebar #logo img {
     width: 170px;
@@ -215,7 +215,7 @@ body > #sidebar #search-form {
     margin-bottom: 0;
     position: relative;
     display: flex;
-    padding: calc(0.5*var(--spacing)) calc(1*var(--spacing));
+    padding: calc(0.5 * var(--spacing)) calc(1 * var(--spacing));
 }
 body > #sidebar #search-form #search {
     color: var(--text-color);
@@ -224,7 +224,7 @@ body > #sidebar #search-form #search {
     background-color: var(--body-bg);
     width: 100%;
     justify-self: center;
-    padding: calc(0.5*var(--spacing)) calc(0.25*var(--spacing)) calc(0.5*var(--spacing)) calc(2.2*var(--spacing));
+    padding: calc(0.5 * var(--spacing)) calc(0.25 * var(--spacing)) calc(0.5 * var(--spacing)) calc(2.2 * var(--spacing));
     font-size: 1.0rem;
 }
 body > #sidebar #search-form #search:focus {
@@ -240,20 +240,20 @@ body > #sidebar #search-form .search-icon {
 }
 /* Nav */
 body > #sidebar nav.links {
-    margin-top: calc(0.75*var(--spacing));
+    margin-top: calc(0.75 * var(--spacing));
 }
 body > #sidebar a {
-    padding: calc(0.4*var(--spacing)) calc(1.5*var(--spacing));
+    padding: calc(0.4 * var(--spacing)) calc(1.5 * var(--spacing));
 }
 body > #sidebar nav .current > a {
     font-weight: bold;
     color: var(--text-color);
 }
 body > #sidebar nav .nav-section  {
-    margin-top: calc(1.5*var(--spacing));
+    margin-top: calc(1.5 * var(--spacing));
 }
 body > #sidebar .nav-section > ul > li {
-    margin-bottom: calc(0.25*var(--spacing));
+    margin-bottom: calc(0.25 * var(--spacing));
 }
 body > #sidebar .nav-section > ul > li.expand {
     background-color: var(--sidebar-nav-active-bg);
@@ -271,8 +271,8 @@ body > #sidebar #theme {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    margin-top: calc(2*var(--spacing));
-    padding: 0 calc(1.5*var(--spacing));
+    margin-top: calc(2 * var(--spacing));
+    padding: 0 calc(1.5 * var(--spacing));
 }
 body > #sidebar #theme div {
     display: flex;
@@ -293,7 +293,7 @@ body > #sidebar #theme button.active {
 /* FOOTER */
 body > #page > footer {
     border-top: solid 1px var(--border-color);
-    padding: calc(1.5*var(--spacing)) 0;
+    padding: calc(1.5 * var(--spacing)) 0;
     font-size: 80%;
 }
 body > #page > footer nav.links ul {
@@ -303,9 +303,9 @@ body > #page > footer nav.links ul {
 body > #page > footer a {
     color: var(--text-muted);
     white-space: nowrap;
-    padding: calc(0.25*var(--spacing)) calc(0.5*var(--spacing));
-    margin-bottom: calc(0.75*var(--spacing));
-    margin-right: calc(0.75*var(--spacing));
+    padding: calc(0.25 * var(--spacing)) calc(0.5 * var(--spacing));
+    margin-bottom: calc(0.75 * var(--spacing));
+    margin-right: calc(0.75 * var(--spacing));
 }
 
 /* SIDEBAR & FOOTER (common) */
@@ -316,12 +316,12 @@ body > #sidebar .external a, body > #page > footer .external a {
 /* DOCUMENT */
 @media (max-width: 1200px /* == var(--index-breakpoint-width) */) {
     body > #page > main > #index {
-        margin-top: calc(2*var(--spacing));
+        margin-top: calc(2 * var(--spacing));
         border-left: solid 1px var(--border-color);
         padding-left: var(--spacing);
     }
     body > #page > main > #content {
-        margin-top: calc(1*var(--spacing));
+        margin-top: calc(1 * var(--spacing));
     }
 }
 @media (min-width: 1200px /* == var(--index-breakpoint-width) */) {
@@ -330,11 +330,11 @@ body > #sidebar .external a, body > #page > footer .external a {
 		flex-direction: row-reverse;
 	}
 	body > #page > main > #index {
-        margin-top: calc(4.25*var(--spacing));
-        margin-left: calc(2*var(--spacing));
+        margin-top: calc(4.25 * var(--spacing));
+        margin-left: calc(2 * var(--spacing));
         width: 30%;
 		position: sticky;
-		top: calc(2*var(--spacing));
+		top: calc(2 * var(--spacing));
 		max-height: 100vh;
 		padding: var(--spacing);
         border: solid 1px var(--border-color);
@@ -342,7 +342,7 @@ body > #sidebar .external a, body > #page > footer .external a {
     body > #page > main > #content {
         flex: 8 4 auto;
         min-width: 0;
-        margin-top: calc(3.25*var(--spacing));
+        margin-top: calc(3.25 * var(--spacing));
     }
 }
 
@@ -383,7 +383,7 @@ body > #page > main > #index > ul li::before {
 }
 
 body > #page > main > #content {
-    margin-bottom: calc(3*var(--spacing));
+    margin-bottom: calc(3 * var(--spacing));
 }
 #content > .breadcrumbs {
 	font-size: 90%;
@@ -502,7 +502,7 @@ body > #page > main > #content {
     box-shadow: inset 0 -1px 0 var(--border-color);
 }
 .markdown-body aside {
-    padding: calc(0.5*var(--spacing)) var(--spacing);
+    padding: calc(0.5 * var(--spacing)) var(--spacing);
     margin-bottom: var(--spacing);
     border-width: 1px;
     border-left-width: 15px;
