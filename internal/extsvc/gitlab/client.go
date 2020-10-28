@@ -136,17 +136,19 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 	return c
 }
 
-// Client is a GitLab API client. Clients are associated with a particular user identity, which is
-// defined by some combination of the following fields: OAuthToken, PersonalAccessToken, Sudo. If
-// Sudo is non-empty, then either PersonalAccessToken or OAuthToken must contain a sudo-level token
-// and the user identity will be the user ID specified by Sudo (rather than the user that owns the
-// token).
+// Client is a GitLab API client. Clients are associated with a particular user
+// identity, which is defined by the Auth implementation. In addition to the
+// generic types provided by the auth package, Client also supports
+// SudoableToken: if this is used and its Sudo field is non-empty, then the user
+// identity will be the user ID specified by Sudo (rather than the user that
+// owns the token).
 //
-// The Client's cache is keyed by the union of OAuthToken, PersonalAccessToken, and Sudo. It is NOT
-// keyed by the actual user ID that is defined by these. So if an OAuth token and personal access
-// token belong to the same user and there are two corresponding Client instances, those Client
-// instances will NOT share the same cache. However, two Client instances sharing the exact same
-// values for those fields WILL share a cache.
+// The Client's cache is keyed by Auth.Hash(). It is NOT keyed by the actual
+// user ID that is defined by the authentication method. So if an OAuth token
+// and personal access token belong to the same user and there are two
+// corresponding Client instances, those Client instances will NOT share the
+// same cache. However, two Client instances sharing the exact same values for
+// those fields WILL share a cache.
 type Client struct {
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
