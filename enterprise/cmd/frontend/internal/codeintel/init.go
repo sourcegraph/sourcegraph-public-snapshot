@@ -21,6 +21,7 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -91,10 +92,21 @@ var services struct {
 	err                 error
 }
 
+var uploadstoreConfig = &uploadstore.Config{}
+
+func init() {
+	uploadstoreConfig.Load()
+}
+
 func initOnce(ctx context.Context) error {
 	once.Do(func() {
 		if bundleManagerURL == "" {
 			services.err = fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+			return
+		}
+
+		if err := uploadstoreConfig.Validate(); err != nil {
+			services.err = fmt.Errorf("failed to load config: %s", err)
 			return
 		}
 
@@ -105,8 +117,12 @@ func initOnce(ctx context.Context) error {
 		}
 
 		codeIntelDB := mustInitializeCodeIntelDatabase()
+		uploadStore, err := uploadstore.Create(context.Background(), uploadstoreConfig)
+		if err != nil {
+			log.Fatalf("failed to initialize upload store: %s", err)
+		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL)
+		bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL, uploadStore)
 		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
 
 		services.store = store

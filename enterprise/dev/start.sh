@@ -47,6 +47,15 @@ export EXECUTOR_USE_FIRECRACKER=false
 export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 export DISABLE_CNCF=notonmybox
 
+export PRECISE_CODE_INTEL_UPLOAD_BACKEND=S3
+export PRECISE_CODE_INTEL_UPLOAD_BUCKET=lsif-uploads-local
+export PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET=true
+export AWS_ACCESS_KEY_ID='AKIAIOSFODNN7EXAMPLE'
+export AWS_SECRET_ACCESS_KEY='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+export AWS_ENDPOINT=http://localhost:9000
+export AWS_REGION=us-east-1
+export AWS_S3_FORCE_PATH_STYLE=true
+
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-indexer-vm precise-code-intel-worker executor-queue executor "
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -32,11 +34,18 @@ import (
 const Port = 3188
 
 func main() {
+	uploadstoreConfig := &uploadstore.Config{}
+	uploadstoreConfig.Load()
+
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
+
+	if err := uploadstoreConfig.Validate(); err != nil {
+		log.Fatalf("failed to load config: %s", err)
+	}
 
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
@@ -70,10 +79,15 @@ func main() {
 			Interval: commitUpdaterInterval,
 		},
 	)
+
+	uploadStore, err := uploadstore.Create(context.Background(), uploadstoreConfig)
+	if err != nil {
+		log.Fatalf("failed to initialize upload store: %s", err)
+	}
 	worker := worker.NewWorker(
 		store,
 		codeIntelDB,
-		bundles.New(codeIntelDB, observationContext, bundleManagerURL),
+		bundles.New(codeIntelDB, observationContext, bundleManagerURL, uploadStore),
 		gitserver.DefaultClient,
 		workerPollInterval,
 		workerConcurrency,
