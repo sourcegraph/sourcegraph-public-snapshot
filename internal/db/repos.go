@@ -252,6 +252,10 @@ var getBySQLColumns = []string{
 	getSourcesByRepoQueryStr,
 }
 
+func minimalColumns(columns []string) []string {
+	return columns[:6]
+}
+
 func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	return s.getReposBySQL(ctx, false, querySuffix)
 }
@@ -259,7 +263,7 @@ func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*t
 func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
-		columns = columns[:6]
+		columns = minimalColumns(columns)
 	}
 
 	q := sqlf.Sprintf(
@@ -709,19 +713,49 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	return conds, nil
 }
 
-// GetRepoNamesByUser will fetch the names of all repos added by the given user
-func (s *RepoStore) GetRepoNamesByUser(ctx context.Context, userID int32) ([]string, error) {
+// GetUserAddedRepos will fetch the names of all repos added by the given user
+func (s *RepoStore) GetUserAddedRepos(ctx context.Context, userID int32) ([]*types.Repo, error) {
 	s.ensureStore()
-	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(`
-SELECT DISTINCT (repo.name) from repo
+
+	columns := minimalColumns(getBySQLColumns)
+	copied := make([]string, len(columns))
+	copy(copied, columns)
+	for i := range copied {
+		copied[i] = "repo." + copied[i]
+	}
+	fmtString := fmt.Sprintf(`
+SELECT %s from repo
 JOIN external_service_repos esr ON repo.id = esr.repo_id
 WHERE esr.external_service_id IN (
     SELECT id from external_services
-    WHERE namespace_user_id = %s
+    WHERE namespace_user_id = %%s
     AND deleted_at IS NULL
 )
 AND repo.deleted_at IS NULL
-`, userID)))
+`, strings.Join(copied, ","))
+	q := sqlf.Sprintf(fmtString, userID)
+
+	rows, err := s.Query(ctx, q)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user repos")
+	}
+	defer rows.Close()
+
+	var repos []*types.Repo
+	for rows.Next() {
+		var repo types.Repo
+		if err := scanRepo(rows, &repo); err != nil {
+			return nil, err
+		}
+		repos = append(repos, &repo)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: This enforces repository permissions
+	return authzFilter(ctx, repos, authz.Read)
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and

@@ -342,7 +342,7 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
-func Test_GetRepoNamesByUser(t *testing.T) {
+func Test_GetUserAddedRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -426,8 +426,14 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VAL
 		t.Fatal(err)
 	}
 
-	want := []string{"github.com/sourcegraph/sourcegraph"}
-	have, err := Repos.GetRepoNamesByUser(ctx, user.ID)
+	want := []*types.Repo{
+		{
+			ID:   repo.ID,
+			Name: "github.com/sourcegraph/sourcegraph",
+		},
+	}
+
+	have, err := Repos.GetUserAddedRepos(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
