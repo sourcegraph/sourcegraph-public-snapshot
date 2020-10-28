@@ -503,11 +503,11 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 !!decoration.after &&
                                 this.state.lineDecorationAttachmentIDs[decoration.range.start.line + 1]
                         )
-                        .map(decoration => {
+                        .map((decoration, index) => {
                             const line = decoration.range.start.line + 1
                             return (
                                 <LineDecorationAttachment
-                                    key={this.state.lineDecorationAttachmentIDs[line]}
+                                    key={this.state.lineDecorationAttachmentIDs[line] + `-${index}`}
                                     portalID={this.state.lineDecorationAttachmentIDs[line]}
                                     line={line}
                                     attachment={decoration.after!}
