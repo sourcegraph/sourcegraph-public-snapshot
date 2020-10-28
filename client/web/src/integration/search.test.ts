@@ -497,8 +497,8 @@ describe('Search', () => {
 
         test('Streaming search with single repo result', async () => {
             const searchStreamEvents: ServerSideEvent[] = [
-                { name: 'repomatches', data: '[{"repository":"github.com/sourcegraph/sourcegraph"}]' },
-                { name: 'done', data: '{}' },
+                { name: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { name: 'done', data: {} },
             ]
 
             testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })

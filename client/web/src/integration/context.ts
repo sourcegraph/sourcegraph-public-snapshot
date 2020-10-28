@@ -12,7 +12,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 
 export interface ServerSideEvent {
     name: string
-    data: string
+    data: unknown
 }
 
 export interface WebIntegrationTestContext
@@ -81,10 +81,8 @@ export const createWebIntegrationTestContext = async ({
             }
 
             const responseContent = searchStreamEventOverrides
-                .map(event => `event: ${event.name}\ndata: ${event.data}\n\n`)
+                .map(event => `event: ${event.name}\ndata: ${JSON.stringify(event.data)}\n\n`)
                 .join('')
-
-            console.log('intercepted streaming search')
             response.status(200).type('text/event-stream').send(responseContent)
         })
 
