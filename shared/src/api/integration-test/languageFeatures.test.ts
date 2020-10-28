@@ -129,7 +129,7 @@ function testLocationProvider<P>({
     getResult: (
         services: Services,
         uri: string,
-        extHost: Remote<FlatExtensionHostAPI>
+        extensionHost: Remote<FlatExtensionHostAPI>
     ) => Observable<MaybeLoadingResult<unknown>>
     emptyResultValue: unknown
 }): void {

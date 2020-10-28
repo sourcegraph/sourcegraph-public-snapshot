@@ -27,7 +27,7 @@ import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
  * Holds the entire state exposed to the extension host
  * as a single object
  */
-export interface ExtState {
+export interface ExtensionHostState {
     settings: BehaviorSubject<Readonly<SettingsCascade<object>>>
 
     // Workspace
@@ -59,7 +59,7 @@ const matchProvider = (textDocument: TextDocumentIdentifier) => <T>(provider: Re
 export interface InitResult
     extends Pick<typeof sourcegraph, 'commands' | 'search' | 'languages' | 'workspace' | 'configuration'> {
     exposedToMain: FlatExtensionHostAPI
-    state: Readonly<ExtState>
+    state: Readonly<ExtensionHostState>
 }
 
 /**
@@ -85,7 +85,7 @@ function assertViewerType<T extends ExtensionViewer['type']>(
 }
 
 /**
- * Holds internally ExtState and manages communication with the Client
+ * Holds internally ExtensionHostState and manages communication with the Client
  * Returns the initialized public extension API pieces ready for consumption and the internal extension host API ready to be exposed to the main thread
  * NOTE that this function will slowly merge with the one in extensionHost.ts
  *
@@ -95,7 +95,7 @@ export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
     initialSettings: Readonly<SettingsCascade<object>>
 ): InitResult => {
-    const state: ExtState = {
+    const state: ExtensionHostState = {
         // Most extensions never call `configuration.get()` synchronously in `activate()` to get
         // the initial settings data, and instead only subscribe to configuration changes.
         // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
