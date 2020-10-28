@@ -17,8 +17,8 @@ schema {
 }
 
 """
-This is no type actually returned by any resolver. It just serves as a documentation
-for how errors may look like.
+This type is not returned by any resolver, but serves to document what an error
+response will look like.
 """
 type Error {
     """
@@ -43,8 +43,7 @@ type Error {
 
 """
 Optional additional context on an error returned from a resolver.
-It may also contain more properties, which aren't stricktly typed here.
-For those
+It may also contain more properties, which aren't strictly typed here.
 """
 type ErrorExtensions {
     """
