@@ -410,13 +410,13 @@ func resolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 	}
 
 	a := actor.FromContext(ctx)
-	repos, err := db.Repos.GetUserAddedRepos(ctx, a.UID)
+	names, err := db.Repos.GetUserAddedRepoNames(ctx, a.UID)
 	if err != nil {
 		log15.Warn("getting user added repos", "err", err)
 	} else {
-		values := make([]RepoGroupValue, 0, len(repos))
-		for _, repo := range repos {
-			values = append(values, RepoPath(repo.Name))
+		values := make([]RepoGroupValue, 0, len(names))
+		for _, name := range names {
+			values = append(values, RepoPath(name))
 		}
 		groups["my"] = values
 	}

@@ -961,8 +961,8 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	return conds, nil
 }
 
-// GetUserAddedRepos will fetch the names of all repos added by the given user
-func (s *RepoStore) GetUserAddedRepos(ctx context.Context, userID int32) ([]*types.Repo, error) {
+// GetUserAddedRepoNames will fetch all repos added by the given user
+func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
 	s.ensureStore()
 
 	columns := minimalColumns(getBySQLColumns)
@@ -1003,7 +1003,15 @@ AND repo.deleted_at IS NULL
 	}
 
 	// 🚨 SECURITY: This enforces repository permissions
-	return authzFilter(ctx, repos, authz.Read)
+	repos, err = authzFilter(ctx, repos, authz.Read)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing authz filter")
+	}
+	names := make([]api.RepoName, 0, len(repos))
+	for _, r := range repos {
+		names = append(names, r.Name)
+	}
+	return names, nil
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and

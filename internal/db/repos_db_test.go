@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -406,8 +405,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repo
-	createdRepos := mustCreate(ctx, t, &types.Repo{
+	repo := &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "r",
 			ServiceType: extsvc.TypeGitHub,
@@ -431,26 +429,17 @@ func Test_GetUserAddedRepos(t *testing.T) {
 				},
 			},
 		},
-	})
-	repo := createdRepos[0]
-
-	// Link repo to external service
-	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES(%d, %d, 'blah')
-`, service.ID, repo.ID)
-	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	}
+	err = Repos.Create(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := []*types.Repo{
-		{
-			ID:   repo.ID,
-			Name: "github.com/sourcegraph/sourcegraph",
-		},
+	want := []api.RepoName{
+		repo.Name,
 	}
 
-	have, err := Repos.GetUserAddedRepos(ctx, user.ID)
+	have, err := Repos.GetUserAddedRepoNames(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
