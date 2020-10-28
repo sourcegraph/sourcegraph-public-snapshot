@@ -84,8 +84,50 @@ type Client struct {
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(c.Url)
+func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	client, err := newClient(config, httpClient)
+	if err != nil {
+		return nil, err
+	}
+
+	if config.Authorization == nil {
+		if config.Token != "" {
+			client.Auth = auth.OAuthBearerToken(config.Token)
+		} else {
+			client.Auth = &auth.BasicAuth{
+				Username: config.Username,
+				Password: config.Password,
+			}
+		}
+	} else {
+		err := client.SetOAuth(
+			config.Authorization.Oauth.ConsumerKey,
+			config.Authorization.Oauth.SigningKey,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
+		}
+	}
+
+	return client, nil
+}
+
+// NewClientWithAuthenticator returns an authenticated Bitbucket Server API
+// client with the provided configuration, but using the given Authenticator and
+// ignoring any authentication related fields in the configuration. If a nil
+// httpClient is provided, http.DefaultClient will be used.
+func NewClientWithAuthenticator(config *schema.BitbucketServerConnection, httpClient httpcli.Doer, a auth.Authenticator) (*Client, error) {
+	client, err := newClient(config, httpClient)
+	if err != nil {
+		return nil, err
+	}
+
+	client.Auth = a
+	return client, nil
+}
+
+func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
@@ -101,37 +143,11 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
 	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
 
-	// Initially set up authentication. Note that we'll use a nil Authenticator
-	// if c.Authorization is set: in that case, we'll use SetOAuth after
-	// allocating the Client.
-	var a auth.Authenticator
-	if c.Authorization == nil {
-		if c.Token != "" {
-			a = auth.OAuthBearerToken(c.Token)
-		} else {
-			a = &auth.BasicAuth{Username: c.Username, Password: c.Password}
-		}
-	}
-
-	client := &Client{
+	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		Auth:       a,
 		RateLimit:  l,
-	}
-
-	// If we're setting up OAuth 1 client authentication, let's do that now.
-	if c.Authorization != nil {
-		err := client.SetOAuth(
-			c.Authorization.Oauth.ConsumerKey,
-			c.Authorization.Oauth.SigningKey,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
-		}
-	}
-
-	return client, nil
+	}, nil
 }
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
