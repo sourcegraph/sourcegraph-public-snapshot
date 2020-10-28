@@ -26,7 +26,7 @@ Create a campaign that changes wording in every repository.
 
 ### Introduction
 
-This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_campaigns.md#campaign-spec) that replaces the words `allowlist` and `denylist` with `allowlist` and `denylist` in every Markdown file across your complete code base.
+This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_campaigns.md#campaign-spec) that replaces the words `allowlist` and `denylist` with `allowlist` and `denylist` in every Markdown file across your entire code base.
 
 The campaign spec is can be easily be changed to search and replace other terms in other file types.
 
