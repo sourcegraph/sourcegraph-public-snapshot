@@ -407,6 +407,15 @@ type HomepagePanels struct {
 	PercentUsersShown                      float64
 }
 
+type SearchOnboarding struct {
+	TotalOnboardingTourViews               int32
+	ViewedLangStepPercentage               int32
+	ViewedFilterRepoStepPercentage         int32
+	ViewedAddQueryTermStepPercentage       int32
+	ViewedSubmitSearchStepPercentage       int32
+	ViewedSearchReferenceStephesPercentage int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32

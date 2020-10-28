@@ -164,6 +164,16 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
+func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
+
+	homepagePanels, err := usagestats.GetHomepagePanels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(homepagePanels)
+}
+
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
 
@@ -203,6 +213,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
+		SearchOnboarding:    []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
