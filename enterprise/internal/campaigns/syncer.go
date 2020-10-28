@@ -58,7 +58,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 
 	// Add and start syncers
 	for _, service := range services {
-		r.Add(service.ID)
+		r.Add(service.Kind, service.Config)
 	}
 
 	go r.handlePriorityItems()
@@ -68,28 +68,13 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 
 // Add adds a syncer for the code host associated with the supplied external service if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) Add(extServiceID int64) {
-	ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
-	defer cancel()
-	services, err := s.RepoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-		IDs: []int64{extServiceID},
-	})
-	if err != nil {
-		log15.Error("Listing external services", "err", err)
-		return
-	}
-	if len(services) < 1 {
+func (s *SyncRegistry) Add(kind, config string) {
+	if !campaigns.IsKindSupported(kind) {
+		log15.Info("External service not support by campaigns", "kind", kind)
 		return
 	}
 
-	service := services[0]
-
-	if !campaigns.IsKindSupported(service.Kind) {
-		log15.Info("External service not support by campaigns", "kind", service.Kind)
-		return
-	}
-
-	baseURL, err := extsvc.ExtractBaseURL(service.Kind, service.Config)
+	baseURL, err := extsvc.ExtractBaseURL(kind, config)
 	if err != nil {
 		log15.Error("Getting normalised URL from service", "err", err)
 		return
@@ -105,7 +90,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	}
 
 	// We need to be able to cancel the syncer if the service is removed
-	ctx, cancel = context.WithCancel(s.Ctx)
+	ctx, cancel := context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
 		SyncStore:      s.SyncStore,
@@ -193,7 +178,7 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	s.mu.Unlock()
 
 	if timeIsNilOrZero(es.DeletedAt) && !exists {
-		s.Add(es.ID)
+		s.Add(es.Kind, es.Config)
 	}
 
 	s.mu.Lock()

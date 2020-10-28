@@ -434,7 +434,7 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(1)
 
 	// Adding it again should have no effect
-	r.Add(1)
+	r.Add(extsvc.KindGitHub, `{"url": "https://example.com/"}`)
 	assertSyncerCount(1)
 
 	// Simulate a service being removed
