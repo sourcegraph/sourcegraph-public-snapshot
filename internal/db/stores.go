@@ -4,7 +4,7 @@ var (
 	AccessTokens     = &accessTokens{}
 	ExternalServices = &ExternalServicesStore{}
 	DefaultRepos     = &defaultRepos{}
-	Repos            = &ReposStore{}
+	Repos            = &RepoStore{}
 	Phabricator      = &phabricator{}
 	QueryRunnerState = &queryRunnerState{}
 	Namespaces       = &namespaces{}

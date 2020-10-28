@@ -148,10 +148,10 @@ Releases are also uploaded to the [GitHub releases
 page](https://github.com/sourcegraph/browser-extensions/releases) and tagged in
 git.
 
-To release the latest commit on master, ensure your master is up-to-date and run
+To release the latest commit on `main`, ensure your `main` branch is up-to-date and run:
 
 ```sh
-git push origin master:bext/release
+git push origin main:bext/release
 ```
 
 ## Manual build of the browser extension

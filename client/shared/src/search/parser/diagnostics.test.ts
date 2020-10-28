@@ -27,24 +27,6 @@ describe('getDiagnostics()', () => {
         ])
     })
 
-    test('search query containing colon, regexp pattern type, suggest quotes', () => {
-        expect(
-            getDiagnostics(
-                (parseSearchQuery('Configuration::doStuff(...)') as ParseSuccess<Sequence>).token,
-                SearchPatternType.regexp
-            )
-        ).toStrictEqual([
-            {
-                endColumn: 27,
-                endLineNumber: 1,
-                message: 'Quoting the query may help if you want a literal match.',
-                severity: 4,
-                startColumn: 1,
-                startLineNumber: 1,
-            },
-        ])
-    })
-
     test('search query containing colon, literal pattern type, do not raise error', () => {
         expect(
             getDiagnostics(

@@ -92,9 +92,9 @@ export const _fetchRecentSearches = (): Observable<EventLogResult | null> =>
         nodes: [
             {
                 argument:
-                    '{"mode": "plain", "code_search": {"query_data": {"empty": false, "query": {"chars": {"count": 4, "space": 0, "non_ascii": 0, "double_quote": 0, "single_quote": 0}, "fields": {"count": 1, "count_non_default": 0}, "field_default": {"count": 1, "count_regexp": 0, "count_literal": 1, "count_pattern": 0, "count_double_quote": 0, "count_single_quote": 0}}, "combined": "test"}}}',
+                    '{"mode": "plain", "code_search": {"query_data": {"empty": false, "query": {"chars": {"count": 4, "space": 0, "non_ascii": 0, "double_quote": 0, "single_quote": 0}, "fields": {"count": 1, "count_non_default": 0}, "field_default": {"count": 1, "count_regexp": 0, "count_literal": 1, "count_pattern": 0, "count_double_quote": 0, "count_single_quote": 0}}, "combined": "test and spec"}}}',
                 timestamp: '2020-09-08T17:36:52Z',
-                url: 'https://sourcegraph.test:3443/search?q=test&patternType=literal',
+                url: 'https://sourcegraph.test:3443/search?q=test%20and%20spec&patternType=literal',
             },
             {
                 argument:

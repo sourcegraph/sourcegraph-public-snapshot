@@ -50,33 +50,33 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
-// ReposStore is a DB-backed implementation of the Repos.
-type ReposStore struct {
+// RepoStore is a DB-backed implementation of the Repos.
+type RepoStore struct {
 	*basestore.Store
 
-	m sync.Mutex
+	mu sync.Mutex
 }
 
-// NewReposStoreWithDB instantiates and returns a new ReposStore with prepared statements.
-func NewReposStoreWithDB(db dbutil.DB) *ReposStore {
-	return &ReposStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+// NewRepoStoreWithDB instantiates and returns a new RepoStore with prepared statements.
+func NewRepoStoreWithDB(db dbutil.DB) *RepoStore {
+	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-func (s *ReposStore) With(other basestore.ShareableStore) *ReposStore {
-	return &ReposStore{Store: s.Store.With(other)}
+func (s *RepoStore) With(other basestore.ShareableStore) *RepoStore {
+	return &RepoStore{Store: s.Store.With(other)}
 }
 
-func (s *ReposStore) Transact(ctx context.Context) (*ReposStore, error) {
+func (s *RepoStore) Transact(ctx context.Context) (*RepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &ReposStore{Store: txBase}, err
+	return &RepoStore{Store: txBase}, err
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
 // This function ensures access to dbconn happens after the rest of the code or tests have
 // initialized it.
-func (s *ReposStore) ensureStore() {
-	s.m.Lock()
-	defer s.m.Unlock()
+func (s *RepoStore) ensureStore() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if s.Store == nil {
 		s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
@@ -88,7 +88,7 @@ func (s *ReposStore) ensureStore() {
 // caller is concerned the copy of the data in the database might be
 // stale, the caller is responsible for fetching data from any
 // external services.
-func (s *ReposStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
@@ -112,7 +112,7 @@ func (s *ReposStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error
 // Name is the name for this repository (e.g., "github.com/user/repo"). It is
 // the same as URI, unless the user configures a non-default
 // repositoryPathPattern.
-func (s *ReposStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
+func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
@@ -144,7 +144,7 @@ func (s *ReposStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*ty
 
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
-func (s *ReposStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
+func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
 	if Mocks.Repos.GetByIDs != nil {
 		return Mocks.Repos.GetByIDs(ctx, ids...)
 	}
@@ -164,7 +164,7 @@ func (s *ReposStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.
 
 // GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
 // entries could be less than the candidate list due to no repository is associated with some IDs.
-func (s *ReposStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
+func (s *RepoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
 	repos, err := s.GetByIDs(ctx, ids...)
 	if err != nil {
 		return nil, err
@@ -179,7 +179,7 @@ func (s *ReposStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (m
 	return repoMap, nil
 }
 
-func (s *ReposStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
+func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
 	}
@@ -203,7 +203,7 @@ func (s *ReposStore) Count(ctx context.Context, opt ReposListOptions) (ct int, e
 
 	var count int
 
-	if err := s.Store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -253,11 +253,11 @@ var getBySQLColumns = []string{
 	getSourcesByRepoQueryStr,
 }
 
-func (s *ReposStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	return s.getReposBySQL(ctx, false, querySuffix)
 }
 
-func (s *ReposStore) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
 		columns = columns[:6]
@@ -496,7 +496,7 @@ const (
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
-func (s *ReposStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
+func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.List", "")
 	defer func() {
 		tr.SetError(err)
@@ -769,7 +769,7 @@ SELECT id FROM inserted_repos_with_ids;
 `
 
 // Delete deletes repos associated with the given ids and their associated sources.
-func (s *ReposStore) Delete(ctx context.Context, ids ...api.RepoID) error {
+func (s *RepoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -810,7 +810,7 @@ AND repo.id = repo_ids.id::int
 // requested information by other services (repo-updater and
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
-func (s *ReposStore) ListEnabledNames(ctx context.Context) ([]string, error) {
+func (s *RepoStore) ListEnabledNames(ctx context.Context) ([]string, error) {
 	s.ensureStore()
 
 	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
@@ -863,7 +863,7 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-func (*ReposStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
+func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	conds = []*sqlf.Query{
 		sqlf.Sprintf("deleted_at IS NULL"),
 	}

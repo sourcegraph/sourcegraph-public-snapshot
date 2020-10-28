@@ -38,6 +38,7 @@ export interface MonacoQueryInputProps
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
+    showOnboardingTour: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     /**
      * The current onboarding tour instance
@@ -247,7 +248,12 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         return (
             <>
                 <div ref={this.containerRefs.next.bind(this.containerRefs)} className="monaco-query-input-container">
-                    <div className="flex-grow-1 flex-shrink-past-contents">
+                    <div
+                        className="flex-grow-1 flex-shrink-past-contents"
+                        onFocus={() =>
+                            this.props.showOnboardingTour && !this.props.tour?.isActive() && this.props.tour?.start()
+                        }
+                    >
                         <MonacoEditor
                             id="monaco-query-input"
                             language={SOURCEGRAPH_SEARCH}

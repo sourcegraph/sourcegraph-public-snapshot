@@ -1636,11 +1636,24 @@ type aggregator struct {
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
 		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
 	}
-	if results != nil {
-		a.results = append(a.results, results...)
+	for _, r := range results {
+		fm, ok := r.ToFileMatch()
+		if !ok {
+			a.results = append(a.results, r)
+			continue
+		}
+
+		// Merge file matches
+		if m, ok := a.fileMatches[fm.uri]; ok {
+			m.appendMatches(fm)
+		} else {
+			a.fileMatches[fm.uri] = fm
+			a.results = append(a.results, r)
+		}
 	}
 	if common != nil {
 		a.common.update(*common)
@@ -1662,24 +1675,13 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "symbol search failed"))
+
+	results := make([]SearchResultResolver, len(symbolFileMatches))
+	for i := range symbolFileMatches {
+		results[i] = symbolFileMatches[i]
 	}
-	for _, symbolFileMatch := range symbolFileMatches {
-		key := symbolFileMatch.uri
-		if m, ok := a.fileMatches[key]; ok {
-			m.symbols = symbolFileMatch.symbols
-		} else {
-			a.fileMatches[key] = symbolFileMatch
-			a.results = append(a.results, symbolFileMatch)
-		}
-	}
-	if symbolsCommon != nil {
-		a.common.update(*symbolsCommon)
-	}
+
+	a.report(ctx, results, symbolsCommon, errors.Wrap(err, "symbol search failed"))
 }
 
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
@@ -1688,12 +1690,6 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "text search failed"))
-	}
 	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
@@ -1707,22 +1703,12 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 			}
 		}
 	}
-	for _, r := range fileResults {
-		key := r.uri
-		m, ok := a.fileMatches[key]
-		if ok {
-			// TODO(keegan) This looks broken? It isn't merging.
-			// merge line match results with an existing symbol result
-			m.JLimitHit = m.JLimitHit || r.JLimitHit
-			m.JLineMatches = r.JLineMatches
-		} else {
-			a.fileMatches[key] = r
-			a.results = append(a.results, r)
-		}
+
+	results := make([]SearchResultResolver, len(fileResults))
+	for i := range fileResults {
+		results[i] = fileResults[i]
 	}
-	if fileCommon != nil {
-		a.common.update(*fileCommon)
-	}
+	a.report(ctx, results, fileCommon, errors.Wrap(err, "text search failed"))
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {

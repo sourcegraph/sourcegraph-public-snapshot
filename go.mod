@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
+	cloud.google.com/go/storage v1.6.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -13,6 +14,7 @@ require (
 	github.com/aphistic/sweet-junit v0.2.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
+	github.com/aws/aws-sdk-go v1.29.15
 	github.com/aws/aws-sdk-go-v2 v0.20.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
@@ -188,7 +190,7 @@ require (
 	golang.org/x/sys v0.0.0-20200915084602-288bc346aa39
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200915031644-64986481280e
-	google.golang.org/api v0.29.0 // indirect
+	google.golang.org/api v0.29.0
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36 // indirect
 	google.golang.org/grpc v1.31.1 // indirect
