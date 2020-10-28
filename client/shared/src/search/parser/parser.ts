@@ -57,7 +57,7 @@ export interface Operator {
  */
 export interface Sequence {
     type: 'sequence'
-    members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[]
+    members: Pick<ParseSuccess<Token>, 'range' | 'token'>[]
 }
 
 /**
@@ -88,8 +88,9 @@ export type Token =
     | Comment
     | Literal
     | Filter
-    | Sequence
     | Quoted
+
+export type Term = Token | Sequence
 
 /**
  * Represents the failed result of running a {@link Parser} on a search query.
@@ -112,11 +113,11 @@ interface ParseError {
 /**
  * Represents the successful result of running a {@link Parser} on a search query.
  */
-export interface ParseSuccess<T = Token> {
+export interface ParseSuccess<T = Term> {
     type: 'success'
 
     /**
-     * The parsed token.
+     * The resulting term.
      */
     token: T
 
@@ -129,16 +130,16 @@ export interface ParseSuccess<T = Token> {
 /**
  * Represents the result of running a {@link Parser} on a search query.
  */
-export type ParserResult<T = Token> = ParseError | ParseSuccess<T>
+export type ParserResult<T = Term> = ParseError | ParseSuccess<T>
 
-type Parser<T = Token> = (input: string, start: number) => ParserResult<T>
+type Parser<T = Term> = (input: string, start: number) => ParserResult<T>
 
 /**
  * Returns a {@link Parser} that succeeds if zero or more tokens parsed
  * by the given `parseToken` parsers are found in a search query.
  */
-const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
+const zeroOrMore = (parseToken: Parser<Term>): Parser<Sequence> => (input, start) => {
+    const members: Pick<ParseSuccess<Token>, 'range' | 'token'>[] = []
     let adjustedStart = start
     let end = start + 1
     while (input[adjustedStart] !== undefined) {
@@ -224,7 +225,7 @@ const character = (character: string): Parser<Literal> => (input, start) => {
  * Returns a {@link Parser} that will attempt to parse
  * tokens matching the given RegExp pattern in a search query.
  */
-const pattern = <T extends Token = Literal>(
+const pattern = <T extends Term = Literal>(
     regexp: RegExp,
     output?: T | ((input: string, range: CharacterRange) => T),
     expected?: string
@@ -282,11 +283,8 @@ const closingParen = pattern(/\)/, { type: 'closingParen' as const })
  * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
-const followedBy = (
-    parseToken: Parser<Exclude<Token, Sequence>>,
-    parseNext: Parser<Exclude<Token, Sequence>>
-): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
+const followedBy = (parseToken: Parser<Token>, parseNext: Parser<Token>): Parser<Sequence> => (input, start) => {
+    const members: Pick<ParseSuccess<Token>, 'range' | 'token'>[] = []
     const tokenResult = parseToken(input, start)
     if (tokenResult.type === 'error') {
         return tokenResult
@@ -338,11 +336,11 @@ const filter: Parser<Filter> = (input, start) => {
     }
 }
 
-const baseTerms = [operator, filter, quoted, literal]
+const baseTerms: Parser<Token>[] = [operator, filter, quoted, literal]
 
-const createParser = (terms: Parser<Exclude<Token, Sequence>>[]): Parser<Sequence> =>
+const createParser = (terms: Parser<Token>[]): Parser<Sequence> =>
     zeroOrMore(
-        oneOf<Token>(
+        oneOf<Term>(
             whitespace,
             openingParen,
             closingParen,
