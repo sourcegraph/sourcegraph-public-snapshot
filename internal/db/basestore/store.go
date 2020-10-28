@@ -97,6 +97,11 @@ func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	return s.handle.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
+// QueryRow performs QueryRowContext on the underlying connection.
+func (s *Store) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
+	return s.handle.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+}
+
 // Exec performs a query and throws away the result.
 func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
 	rows, err := s.Query(ctx, query)

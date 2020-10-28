@@ -123,6 +123,7 @@ func (fm *FileMatchResolver) path() string {
 // counts and limit.
 func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
+	fm.symbols = append(fm.symbols, src.symbols...)
 	fm.MatchCount += src.MatchCount
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }

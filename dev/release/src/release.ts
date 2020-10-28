@@ -8,8 +8,10 @@ import {
     trackingIssueTitle,
     ensurePatchReleaseIssue,
     createChangesets,
+    CreatedChangeset,
 } from './github'
 import * as changelog from './changelog'
+import * as campaigns from './campaigns'
 import { formatDate, timezoneLink } from './util'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
@@ -17,6 +19,7 @@ import * as semver from 'semver'
 import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
+import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 interface Config {
@@ -35,8 +38,8 @@ interface Config {
     slackAnnounceChannel: string
 
     dryRun: {
-        changesets: boolean
-        trackingIssues: boolean
+        changesets?: boolean
+        trackingIssues?: boolean
     }
 }
 
@@ -52,9 +55,11 @@ type StepID =
     | 'release:status'
     | 'release:create-candidate'
     | 'release:publish'
+    | 'release:add-to-campaign'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
+    | '_test:campaign-create-from-changes'
 
 interface Step {
     id: StepID
@@ -80,26 +85,6 @@ const steps: Step[] = [
                     )
                     .join('\n')
             )
-        },
-    },
-    {
-        id: '_test:google-calendar',
-        run: async config => {
-            const googleCalendar = await getClient()
-            await ensureEvent(
-                {
-                    title: 'TEST EVENT',
-                    startDateTime: new Date(config.releaseDateTime).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
-                },
-                googleCalendar
-            )
-        },
-    },
-    {
-        id: '_test:slack',
-        run: async (_config, message) => {
-            await postMessage(message, '_test-channel')
         },
     },
     {
@@ -184,7 +169,7 @@ const steps: Step[] = [
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
-                dryRun: dryRun.trackingIssues,
+                dryRun: dryRun.trackingIssues || false,
             })
             if (url) {
                 console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
@@ -231,7 +216,7 @@ const steps: Step[] = [
             const { url, created } = await ensurePatchReleaseIssue({
                 version: parsedVersion,
                 assignees: [captainGitHubUsername],
-                dryRun: dryRun.trackingIssues,
+                dryRun: dryRun.trackingIssues || false,
             })
             if (url) {
                 console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
@@ -372,7 +357,13 @@ ${issueCategories
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
-            await createChangesets({
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            // Render changes
+            const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go'],
                 changes: [
                     {
@@ -432,11 +423,100 @@ ${issueCategories
             })
 
             if (!dryRun.changesets) {
+                // Create campaign to track changes
+                let publishCampaign = ''
+                try {
+                    console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
+                    publishCampaign = await campaigns.createCampaign(
+                        createdChanges,
+                        campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+                    )
+                    console.log(`Created ${publishCampaign}`)
+                } catch (error) {
+                    console.error(error)
+                    console.error('Failed to create campaign for this release, omitting')
+                }
+
+                // Announce release update in Slack
                 await postMessage(
-                    `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                    `:captain: *Sourcegraph ${parsedVersion.version} release has been staged*
+
+* Campaign: ${publishCampaign}
+* @stephen: update <https://github.com/sourcegraph/deploy-sourcegraph-docker|deploy-sourcegraph-docker> as needed`,
                     slackAnnounceChannel
                 )
             }
+        },
+    },
+    {
+        id: 'release:add-to-campaign',
+        // Example: yarn run release release:add-to-campaign 3.21.0 sourcegraph/about 1797
+        run: async (_config, version, changeRepo, changeID) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (!changeRepo || !changeID) {
+                throw new Error('Missing parameters (required: version, repo, change ID)')
+            }
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            const campaignURL = await campaigns.addToCampaign(
+                [
+                    {
+                        repository: changeRepo,
+                        pullRequestNumber: parseInt(changeID, 10),
+                    },
+                ],
+                campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+            )
+            console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
+        },
+    },
+    {
+        id: '_test:google-calendar',
+        run: async config => {
+            const googleCalendar = await getClient()
+            await ensureEvent(
+                {
+                    title: 'TEST EVENT',
+                    startDateTime: new Date(config.releaseDateTime).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                },
+                googleCalendar
+            )
+        },
+    },
+    {
+        id: '_test:slack',
+        run: async (_config, message) => {
+            await postMessage(message, '_test-channel')
+        },
+    },
+    {
+        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
+        id: '_test:campaign-create-from-changes',
+        run: async (_config, campaignConfigJSON) => {
+            const campaignConfig = JSON.parse(campaignConfigJSON) as {
+                changes: CreatedChangeset[]
+                name: string
+                description: string
+            }
+
+            // set up src-cli
+            await commandExists('src')
+            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            const campaignURL = await campaigns.createCampaign(campaignConfig.changes, {
+                name: campaignConfig.name,
+                description: campaignConfig.description,
+                namespace: 'sourcegraph',
+                auth: sourcegraphAuth,
+            })
+            console.log(`Created campaign ${campaignURL}`)
         },
     },
 ]

@@ -237,6 +237,7 @@ export interface CreatedChangeset {
     repository: string
     branch: string
     pullRequestURL: string
+    pullRequestNumber: number
 }
 
 export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
@@ -253,14 +254,15 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
     const results: CreatedChangeset[] = []
     for (const change of options.changes) {
         await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
-        let prURL = ''
+        let pullRequest: { url: string; number: number } = { url: '', number: -1 }
         if (!options.dryRun) {
-            prURL = await createPR(octokit, change)
+            pullRequest = await createPR(octokit, change)
         }
         results.push({
             repository: `${change.owner}/${change.repo}`,
             branch: change.base,
-            pullRequestURL: prURL,
+            pullRequestURL: pullRequest.url,
+            pullRequestNumber: pullRequest.number,
         })
     }
 
@@ -350,7 +352,10 @@ async function createPR(
         title: string
         body?: string
     }
-): Promise<string> {
+): Promise<{ url: string; number: number }> {
     const response = await octokit.pulls.create(options)
-    return response.data.html_url
+    return {
+        url: response.data.html_url,
+        number: response.data.number,
+    }
 }

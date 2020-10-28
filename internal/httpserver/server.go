@@ -30,10 +30,13 @@ func New(port int, setupRoutes func(router *mux.Router)) goroutine.BackgroundRou
 	}
 
 	router := mux.NewRouter()
-	setupRoutes(router)
 	router.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	if setupRoutes != nil {
+		setupRoutes(router)
+	}
 
 	return &server{
 		server: &http.Server{

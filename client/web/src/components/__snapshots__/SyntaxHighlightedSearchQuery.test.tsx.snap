@@ -1,0 +1,97 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SyntaxHighlightedSearchQuery should syntax highlight filter 1`] = `
+<SyntaxHighlightedSearchQuery
+  query="repo:sourcegraph lang:go"
+>
+  <span
+    className="text-monospace search-query-link"
+  >
+    <span
+      className="search-keyword"
+    >
+      repo
+      :
+    </span>
+    sourcegraph
+     
+    <span
+      className="search-keyword"
+    >
+      lang
+      :
+    </span>
+    go
+  </span>
+</SyntaxHighlightedSearchQuery>
+`;
+
+exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operator 1`] = `
+<SyntaxHighlightedSearchQuery
+  query="repo:sourcegraph test and spec"
+>
+  <span
+    className="text-monospace search-query-link"
+  >
+    <span
+      className="search-keyword"
+    >
+      repo
+      :
+    </span>
+    sourcegraph
+     
+    test
+     
+    <span
+      className="search-operator"
+      key="22"
+    >
+      and
+    </span>
+     
+    spec
+  </span>
+</SyntaxHighlightedSearchQuery>
+`;
+
+exports[`SyntaxHighlightedSearchQuery should syntax highlight negated filter 1`] = `
+<SyntaxHighlightedSearchQuery
+  query="-lang:ts test"
+>
+  <span
+    className="text-monospace search-query-link"
+  >
+    <span
+      className="search-keyword"
+    >
+      -lang
+      :
+    </span>
+    ts
+     
+    test
+  </span>
+</SyntaxHighlightedSearchQuery>
+`;
+
+exports[`SyntaxHighlightedSearchQuery should syntax highlight operator 1`] = `
+<SyntaxHighlightedSearchQuery
+  query="test or spec"
+>
+  <span
+    className="text-monospace search-query-link"
+  >
+    test
+     
+    <span
+      className="search-operator"
+      key="5"
+    >
+      or
+    </span>
+     
+    spec
+  </span>
+</SyntaxHighlightedSearchQuery>
+`;
