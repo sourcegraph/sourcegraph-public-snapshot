@@ -185,6 +185,11 @@ func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int
 // GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
 // from the bundle manager.
 func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error) {
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
+	if err != nil {
+		return nil, err
+	}
+
 	pr, pw := io.Pipe()
 
 	go func() {
@@ -194,7 +199,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 		zeroPayloadIterations := 0
 
 		for {
-			n, err := c.getUploadChunk(ctx, pw, bundleID, seek)
+			n, err := c.getUploadChunk(ctx, pw, bundleID, url, seek)
 			if err != nil {
 				if !isConnectionError(err) {
 					_ = pw.CloseWithError(err)
@@ -233,9 +238,23 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 // getUploadChunk retrieves a raw LSIF upload from the bundle manager starting from the offset as
 // indicated by seek. The number of bytes written to the given writer is returned, along with any
 // error.
-func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, bundleID int, seek int64) (int64, error) {
-	body, err := c.uploadStore.Get(context.Background(), uploadName(bundleID), seek)
+func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, bundleID int, url *url.URL, seek int64) (int64, error) {
+	q := url.Query()
+	q.Set("seek", strconv.FormatInt(seek, 10))
+	url.RawQuery = q.Encode()
+
+	body, err := c.do(ctx, "GET", url, nil)
 	if err != nil {
+		if err == ErrNotFound {
+			body, err := c.uploadStore.Get(context.Background(), uploadName(bundleID), seek)
+			if err != nil {
+				return 0, err
+			}
+			defer body.Close()
+
+			return c.ioCopy(w, body)
+		}
+
 		return 0, err
 	}
 	defer body.Close()

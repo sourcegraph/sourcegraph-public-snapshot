@@ -29,6 +29,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetUpload(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
 	var fullContents []byte
 	for i := 0; i < 1000; i++ {
 		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
@@ -37,7 +42,7 @@ func TestGetUpload(t *testing.T) {
 	uploadStore := mocks.NewMockStore()
 	uploadStore.GetFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader(compress(fullContents))), nil)
 
-	client := &bundleManagerClientImpl{uploadStore: uploadStore, ioCopy: io.Copy}
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, uploadStore: uploadStore, ioCopy: io.Copy}
 	r, err := client.GetUpload(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
@@ -54,6 +59,11 @@ func TestGetUpload(t *testing.T) {
 }
 
 func TestGetUploadTransientErrors(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
 	var fullContents []byte
 	for i := 0; i < 1000; i++ {
 		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
@@ -86,7 +96,7 @@ func TestGetUploadTransientErrors(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader(compress(fullContents)[seek:])), nil
 	})
 
-	client := &bundleManagerClientImpl{uploadStore: uploadStore, ioCopy: mockCopy}
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, uploadStore: uploadStore, ioCopy: mockCopy}
 	r, err := client.GetUpload(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
@@ -103,6 +113,11 @@ func TestGetUploadTransientErrors(t *testing.T) {
 }
 
 func TestGetUploadReadNothingLoop(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
 	var fullContents []byte
 	for i := 0; i < 1000; i++ {
 		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
@@ -118,7 +133,7 @@ func TestGetUploadReadNothingLoop(t *testing.T) {
 		return 0, errors.New("read: connection reset by peer")
 	}
 
-	client := &bundleManagerClientImpl{uploadStore: uploadStore, ioCopy: mockCopy}
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, uploadStore: uploadStore, ioCopy: mockCopy}
 	if _, err := client.GetUpload(context.Background(), 42); err != ErrNoDownloadProgress {
 		t.Fatalf("unexpected error getting upload. want=%q have=%q", ErrNoDownloadProgress, err)
 	}
