@@ -522,7 +522,7 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
 // Associated external services must already exist.
-func (s *ReposStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
+func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create", "")
 	defer func() {
 		tr.SetError(err)
