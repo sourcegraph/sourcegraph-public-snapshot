@@ -18,15 +18,15 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// RunWorkers starts a dbworker.NewWorker that fetches enqueued changesets
+// NewWorker creates a dbworker.NewWorker that fetches enqueued changesets
 // from the database and passes them to the changeset reconciler for
 // processing.
-func RunWorkers(
+func NewWorker(
 	ctx context.Context,
 	s *Store,
 	gitClient GitserverClient,
 	sourcer repos.Sourcer,
-) {
+) *workerutil.Worker {
 	r := &reconciler{gitserverClient: gitClient, sourcer: sourcer, store: s}
 
 	options := workerutil.WorkerOptions{
@@ -56,7 +56,7 @@ func RunWorkers(
 	})
 
 	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
-	worker.Start()
+	return worker
 }
 
 // reconcilerMaxNumRetries is the maximum number of attempts the reconciler
