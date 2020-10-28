@@ -667,8 +667,8 @@ type MockGcsComposer struct {
 func NewMockGcsComposer() *MockGcsComposer {
 	return &MockGcsComposer{
 		RunFunc: &GcsComposerRunFunc{
-			defaultHook: func(context.Context) error {
-				return nil
+			defaultHook: func(context.Context) (*storage.ObjectAttrs, error) {
+				return nil, nil
 			},
 		},
 	}
@@ -679,7 +679,7 @@ func NewMockGcsComposer() *MockGcsComposer {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockGcsComposer interface {
-	Run(context.Context) error
+	Run(context.Context) (*storage.ObjectAttrs, error)
 }
 
 // NewMockGcsComposerFrom creates a new mock of the MockGcsComposer
@@ -696,23 +696,23 @@ func NewMockGcsComposerFrom(i surrogateMockGcsComposer) *MockGcsComposer {
 // GcsComposerRunFunc describes the behavior when the Run method of the
 // parent MockGcsComposer instance is invoked.
 type GcsComposerRunFunc struct {
-	defaultHook func(context.Context) error
-	hooks       []func(context.Context) error
+	defaultHook func(context.Context) (*storage.ObjectAttrs, error)
+	hooks       []func(context.Context) (*storage.ObjectAttrs, error)
 	history     []GcsComposerRunFuncCall
 	mutex       sync.Mutex
 }
 
 // Run delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGcsComposer) Run(v0 context.Context) error {
-	r0 := m.RunFunc.nextHook()(v0)
-	m.RunFunc.appendCall(GcsComposerRunFuncCall{v0, r0})
-	return r0
+func (m *MockGcsComposer) Run(v0 context.Context) (*storage.ObjectAttrs, error) {
+	r0, r1 := m.RunFunc.nextHook()(v0)
+	m.RunFunc.appendCall(GcsComposerRunFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Run method of the
 // parent MockGcsComposer instance is invoked and the hook queue is empty.
-func (f *GcsComposerRunFunc) SetDefaultHook(hook func(context.Context) error) {
+func (f *GcsComposerRunFunc) SetDefaultHook(hook func(context.Context) (*storage.ObjectAttrs, error)) {
 	f.defaultHook = hook
 }
 
@@ -720,7 +720,7 @@ func (f *GcsComposerRunFunc) SetDefaultHook(hook func(context.Context) error) {
 // Run method of the parent MockGcsComposer instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *GcsComposerRunFunc) PushHook(hook func(context.Context) error) {
+func (f *GcsComposerRunFunc) PushHook(hook func(context.Context) (*storage.ObjectAttrs, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -728,21 +728,21 @@ func (f *GcsComposerRunFunc) PushHook(hook func(context.Context) error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GcsComposerRunFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context) error {
-		return r0
+func (f *GcsComposerRunFunc) SetDefaultReturn(r0 *storage.ObjectAttrs, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*storage.ObjectAttrs, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GcsComposerRunFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context) error {
-		return r0
+func (f *GcsComposerRunFunc) PushReturn(r0 *storage.ObjectAttrs, r1 error) {
+	f.PushHook(func(context.Context) (*storage.ObjectAttrs, error) {
+		return r0, r1
 	})
 }
 
-func (f *GcsComposerRunFunc) nextHook() func(context.Context) error {
+func (f *GcsComposerRunFunc) nextHook() func(context.Context) (*storage.ObjectAttrs, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -780,7 +780,10 @@ type GcsComposerRunFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *storage.ObjectAttrs
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -792,7 +795,7 @@ func (c GcsComposerRunFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GcsComposerRunFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockGcsObjectHandle is a mock implementation of the gcsObjectHandle

@@ -32,6 +32,9 @@ type MockS3API struct {
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *S3APIGetObjectFunc
+	// HeadObjectFunc is an instance of a mock function object controlling
+	// the behavior of the method HeadObject.
+	HeadObjectFunc *S3APIHeadObjectFunc
 	// PutBucketLifecycleConfigurationFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// PutBucketLifecycleConfiguration.
@@ -75,6 +78,11 @@ func NewMockS3API() *MockS3API {
 				return nil, nil
 			},
 		},
+		HeadObjectFunc: &S3APIHeadObjectFunc{
+			defaultHook: func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+				return nil, nil
+			},
+		},
 		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
 			defaultHook: func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
 				return nil, nil
@@ -98,6 +106,7 @@ type surrogateMockS3API interface {
 	CreateMultipartUpload(context.Context, *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error)
 	DeleteObject(context.Context, *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error)
 	GetObject(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error)
+	HeadObject(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)
 	PutBucketLifecycleConfiguration(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
 	UploadPartCopy(context.Context, *s3.UploadPartCopyInput) (*s3.UploadPartCopyOutput, error)
 }
@@ -123,6 +132,9 @@ func NewMockS3APIFrom(i surrogateMockS3API) *MockS3API {
 		},
 		GetObjectFunc: &S3APIGetObjectFunc{
 			defaultHook: i.GetObject,
+		},
+		HeadObjectFunc: &S3APIHeadObjectFunc{
+			defaultHook: i.HeadObject,
 		},
 		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
 			defaultHook: i.PutBucketLifecycleConfiguration,
@@ -782,6 +794,114 @@ func (c S3APIGetObjectFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c S3APIGetObjectFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// S3APIHeadObjectFunc describes the behavior when the HeadObject method of
+// the parent MockS3API instance is invoked.
+type S3APIHeadObjectFunc struct {
+	defaultHook func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)
+	hooks       []func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)
+	history     []S3APIHeadObjectFuncCall
+	mutex       sync.Mutex
+}
+
+// HeadObject delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockS3API) HeadObject(v0 context.Context, v1 *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+	r0, r1 := m.HeadObjectFunc.nextHook()(v0, v1)
+	m.HeadObjectFunc.appendCall(S3APIHeadObjectFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HeadObject method of
+// the parent MockS3API instance is invoked and the hook queue is empty.
+func (f *S3APIHeadObjectFunc) SetDefaultHook(hook func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HeadObject method of the parent MockS3API instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *S3APIHeadObjectFunc) PushHook(hook func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *S3APIHeadObjectFunc) SetDefaultReturn(r0 *s3.HeadObjectOutput, r1 error) {
+	f.SetDefaultHook(func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *S3APIHeadObjectFunc) PushReturn(r0 *s3.HeadObjectOutput, r1 error) {
+	f.PushHook(func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+		return r0, r1
+	})
+}
+
+func (f *S3APIHeadObjectFunc) nextHook() func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *S3APIHeadObjectFunc) appendCall(r0 S3APIHeadObjectFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of S3APIHeadObjectFuncCall objects describing
+// the invocations of this function.
+func (f *S3APIHeadObjectFunc) History() []S3APIHeadObjectFuncCall {
+	f.mutex.Lock()
+	history := make([]S3APIHeadObjectFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// S3APIHeadObjectFuncCall is an object that describes an invocation of
+// method HeadObject on an instance of MockS3API.
+type S3APIHeadObjectFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *s3.HeadObjectInput
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *s3.HeadObjectOutput
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c S3APIHeadObjectFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c S3APIHeadObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
