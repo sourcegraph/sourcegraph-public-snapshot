@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 )
@@ -117,18 +116,15 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 			if err := s.deleteSources(ctx, *multipartUpload.Bucket, sources); err != nil {
 				log15.Error("failed to delete source objects", "error", err)
 			}
-
-			return
-		}
-
-		// On failure, try to clean up copied then orphaned parts
-		_, abortErr := s.client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{
-			Bucket:   multipartUpload.Bucket,
-			Key:      multipartUpload.Key,
-			UploadId: multipartUpload.UploadId,
-		})
-		if abortErr != nil {
-			err = multierror.Append(err, errors.Wrap(abortErr, "failed to abort multipart upload"))
+		} else {
+			// On failure, try to clean up copied then orphaned parts
+			if _, err := s.client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{
+				Bucket:   multipartUpload.Bucket,
+				Key:      multipartUpload.Key,
+				UploadId: multipartUpload.UploadId,
+			}); err != nil {
+				log15.Error("failed to abort multipart upload", "error", err)
+			}
 		}
 	}()
 
@@ -186,7 +182,7 @@ func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []st
 			Bucket: aws.String(bucket),
 			Key:    aws.String(source),
 		}); err != nil {
-			return multierror.Append(err, errors.Wrap(err, "failed to delete source object"))
+			return errors.Wrap(err, "failed to delete source object")
 		}
 
 		return nil
