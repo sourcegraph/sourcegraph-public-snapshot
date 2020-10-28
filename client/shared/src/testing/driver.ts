@@ -395,7 +395,7 @@ export class Driver {
                 )
                 await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, {
                     visible: true,
-                    timeout: 0,
+                    timeout: 300000,
                 })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
