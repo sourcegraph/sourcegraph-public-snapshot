@@ -118,9 +118,9 @@ pre, code, kbd {
 code {
     background-color: var(--code-bg);
     padding: .2em .4em;
+    border-radius: 0.2em;
     margin: 0;
     font-size: 85%;
-    border-radius: 6px;
 }
 
 /* LAYOUT */
