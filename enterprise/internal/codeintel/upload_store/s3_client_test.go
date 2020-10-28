@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	s3 "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -143,10 +144,29 @@ func TestS3GetSkipBytes(t *testing.T) {
 func TestS3Upload(t *testing.T) {
 	s3Client := NewMockS3API()
 	uploaderClient := NewMockS3Uploader()
+	uploaderClient.UploadFunc.SetDefaultHook(func(ctx context.Context, input *s3manager.UploadInput) error {
+		// Synchronously read the reader so that we trigger the
+		// counting reader inside the Upload method and test the
+		// count.
+		contents, err := ioutil.ReadAll(input.Body)
+		if err != nil {
+			return err
+		}
+
+		if string(contents) != "TEST PAYLOAD" {
+			t.Fatalf("unexpected contents. want=%s have=%s", "TEST PAYLOAD", contents)
+		}
+
+		return nil
+	})
 
 	client := newS3WithClients(s3Client, uploaderClient, "test-bucket", time.Hour*24, false)
-	if err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD"))); err != nil {
+
+	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
+	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
+	} else if size != 12 {
+		t.Errorf("unexpected size. want=%d have=%d", 12, size)
 	}
 
 	if calls := uploaderClient.UploadFunc.History(); len(calls) != 1 {
@@ -155,15 +175,6 @@ func TestS3Upload(t *testing.T) {
 		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 	} else if value := *calls[0].Arg1.Key; value != "test-key" {
 		t.Errorf("unexpected key argument. want=%s have=%s", "test-key", value)
-	} else {
-		contents, err := ioutil.ReadAll(calls[0].Arg1.Body)
-		if err != nil {
-			t.Fatalf("unexpected error reading body: %s", err.Error())
-		}
-
-		if string(contents) != "TEST PAYLOAD" {
-			t.Fatalf("unexpected contents. want=%s have=%s", "TEST PAYLOAD", contents)
-		}
 	}
 }
 
@@ -183,9 +194,15 @@ func TestS3Combine(t *testing.T) {
 		}, nil
 	})
 
+	s3Client.HeadObjectFunc.SetDefaultReturn(&s3.HeadObjectOutput{ContentLength: aws.Int64(42)}, nil)
+
 	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
-	if err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3"); err != nil {
+
+	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
+	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
+	} else if size != 42 {
+		t.Errorf("unexpected size. want=%d have=%d", 42, size)
 	}
 
 	if calls := s3Client.UploadPartCopyFunc.History(); len(calls) != 3 {

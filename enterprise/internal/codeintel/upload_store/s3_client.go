@@ -91,23 +91,27 @@ func (s *s3Store) Get(ctx context.Context, key string, skipBytes int64) (io.Read
 	return resp.Body, nil
 }
 
-func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) error {
-	err := s.uploader.Upload(ctx, &s3manager.UploadInput{
+func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {
+	cr := &countingReader{r: r}
+
+	if err := s.uploader.Upload(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
-		Body:   r,
-	})
+		Body:   cr,
+	}); err != nil {
+		return 0, errors.Wrap(err, "failed to upload object")
+	}
 
-	return errors.Wrap(err, "failed to upload object")
+	return int64(cr.n), nil
 }
 
-func (s *s3Store) Compose(ctx context.Context, destination string, sources ...string) (err error) {
+func (s *s3Store) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
 	multipartUpload, err := s.client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(destination),
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to create multipart upload")
+		return 0, errors.Wrap(err, "failed to create multipart upload")
 	}
 
 	defer func() {
@@ -151,7 +155,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 
 		return nil
 	}); err != nil {
-		return err
+		return 0, err
 	}
 
 	var parts []*s3.CompletedPart
@@ -170,23 +174,18 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		UploadId:        multipartUpload.UploadId,
 		MultipartUpload: &s3.CompletedMultipartUpload{Parts: parts},
 	}); err != nil {
-		return errors.Wrap(err, "failed to complete multipart upload")
+		return 0, errors.Wrap(err, "failed to complete multipart upload")
 	}
 
-	return nil
-}
-
-func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
-	return invokeParallel(sources, func(index int, source string) error {
-		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-			Bucket: aws.String(bucket),
-			Key:    aws.String(source),
-		}); err != nil {
-			return errors.Wrap(err, "failed to delete source object")
-		}
-
-		return nil
+	obj, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: multipartUpload.Bucket,
+		Key:    multipartUpload.Key,
 	})
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to stat composed object")
+	}
+
+	return *obj.ContentLength, nil
 }
 
 func (s *s3Store) create(ctx context.Context) error {
@@ -239,6 +238,19 @@ func (s *s3Store) lifecycle() *s3.BucketLifecycleConfiguration {
 	}
 }
 
+func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
+	return invokeParallel(sources, func(index int, source string) error {
+		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(source),
+		}); err != nil {
+			return errors.Wrap(err, "failed to delete source object")
+		}
+
+		return nil
+	})
+}
+
 // awsSessionOptions returns the session used to configure the AWS SDK client.
 //
 // Authentication of the client will first prefer environment variables, then will
@@ -278,4 +290,15 @@ func awsEnv(name string) *string {
 	}
 
 	return nil
+}
+
+type countingReader struct {
+	r io.Reader
+	n int
+}
+
+func (r *countingReader) Read(p []byte) (n int, err error) {
+	n, err = r.r.Read(p)
+	r.n += n
+	return n, err
 }

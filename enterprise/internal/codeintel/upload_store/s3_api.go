@@ -8,6 +8,7 @@ import (
 )
 
 type s3API interface {
+	HeadObject(ctx context.Context, input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)
 	GetObject(ctx context.Context, input *s3.GetObjectInput) (*s3.GetObjectOutput, error)
 	CreateMultipartUpload(ctx context.Context, input *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error)
 	AbortMultipartUpload(ctx context.Context, input *s3.AbortMultipartUploadInput) (*s3.AbortMultipartUploadOutput, error)
@@ -34,6 +35,10 @@ func (s *s3APIShim) CreateBucket(ctx context.Context, input *s3.CreateBucketInpu
 
 func (s *s3APIShim) PutBucketLifecycleConfiguration(ctx context.Context, input *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
 	return s.S3.PutBucketLifecycleConfigurationWithContext(ctx, input)
+}
+
+func (s *s3APIShim) HeadObject(ctx context.Context, input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+	return s.S3.HeadObjectWithContext(ctx, input)
 }
 
 func (s *s3APIShim) GetObject(ctx context.Context, input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {

@@ -174,8 +174,12 @@ func TestGCSUpload(t *testing.T) {
 	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
 
 	client := newGCSWithClient(gcsClient, "pid", "test-bucket", time.Hour*24, false)
-	if err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD"))); err != nil {
+
+	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
+	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
+	} else if size != 12 {
+		t.Errorf("unexpected size`. want=%d have=%d", 12, size)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
@@ -201,6 +205,7 @@ func TestGCSCombine(t *testing.T) {
 	objectHandle3 := NewMockGcsObjectHandle()
 	objectHandle4 := NewMockGcsObjectHandle()
 	composer := NewMockGcsComposer()
+	composer.RunFunc.SetDefaultReturn(&storage.ObjectAttrs{Size: 42}, nil)
 
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	objectHandle1.ComposerFromFunc.SetDefaultReturn(composer)
@@ -214,8 +219,12 @@ func TestGCSCombine(t *testing.T) {
 	})
 
 	client := newGCSWithClient(gcsClient, "pid", "test-bucket", time.Hour*24, false)
-	if err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3"); err != nil {
+
+	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
+	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
+	} else if size != 42 {
+		t.Errorf("unexpected size`. want=%d have=%d", 42, size)
 	}
 
 	if calls := objectHandle1.ComposerFromFunc.History(); len(calls) != 1 {

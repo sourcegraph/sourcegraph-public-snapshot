@@ -18,12 +18,12 @@ type Store interface {
 	Get(ctx context.Context, key string, skipBytes int64) (io.ReadCloser, error)
 
 	// Upload writes the content in the given reader to the object at the given key.
-	Upload(ctx context.Context, key string, r io.Reader) error
+	Upload(ctx context.Context, key string, r io.Reader) (int64, error)
 
 	// Compose will concatenate the given source objects together and write to the given
 	// destination object. The source objects will be removed if the composed write is
 	// successful.
-	Compose(ctx context.Context, destination string, sources ...string) error
+	Compose(ctx context.Context, destination string, sources ...string) (int64, error)
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config *Config) (Store, error){
@@ -47,5 +47,5 @@ func Create(ctx context.Context, config *Config) (Store, error) {
 		return nil, err
 	}
 
-	return store, nil
+	return store, err
 }

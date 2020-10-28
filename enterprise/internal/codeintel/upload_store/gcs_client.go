@@ -83,7 +83,7 @@ func (s *gcsStore) Get(ctx context.Context, key string, skipBytes int64) (io.Rea
 	return rc, nil
 }
 
-func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (err error) {
+func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -96,14 +96,15 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (err err
 		cancel()
 	}()
 
-	if _, err := io.Copy(writer, r); err != nil {
-		return errors.Wrap(err, "failed to upload object")
+	n, err := io.Copy(writer, r)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to upload object")
 	}
 
-	return err
+	return n, nil
 }
 
-func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (err error) {
+func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
 	bucket := s.client.Bucket(s.bucket)
 
 	defer func() {
@@ -120,21 +121,12 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 		handles = append(handles, bucket.Object(source))
 	}
 
-	if err := bucket.Object(destination).ComposerFrom(handles...).Run(ctx); err != nil {
-		return errors.Wrap(err, "failed to compose objects")
+	attrs, err := bucket.Object(destination).ComposerFrom(handles...).Run(ctx)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to compose objects")
 	}
 
-	return nil
-}
-
-func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return invokeParallel(sources, func(index int, source string) error {
-		if err := bucket.Object(source).Delete(ctx); err != nil {
-			return errors.Wrap(err, "failed to delete source object")
-		}
-
-		return nil
-	})
+	return attrs.Size, nil
 }
 
 func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
@@ -164,6 +156,16 @@ func (s *gcsStore) lifecycle() storage.Lifecycle {
 			},
 		},
 	}
+}
+
+func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
+	return invokeParallel(sources, func(index int, source string) error {
+		if err := bucket.Object(source).Delete(ctx); err != nil {
+			return errors.Wrap(err, "failed to delete source object")
+		}
+
+		return nil
+	})
 }
 
 // gcsClientOptions returns options used to configure a GCS storage client. If the

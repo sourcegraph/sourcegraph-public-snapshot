@@ -26,7 +26,7 @@ type gcsObjectHandle interface {
 }
 
 type gcsComposer interface {
-	Run(ctx context.Context) error
+	Run(ctx context.Context) (*storage.ObjectAttrs, error)
 }
 
 type gcsAPIShim struct{ *storage.Client }
@@ -83,7 +83,6 @@ func (s *objectHandleShim) ComposerFrom(sources ...gcsObjectHandle) gcsComposer 
 	return &composerShim{s.ObjectHandle.ComposerFrom(rawSources...)}
 }
 
-func (s *composerShim) Run(ctx context.Context) error {
-	_, err := s.Composer.Run(ctx)
-	return err
+func (s *composerShim) Run(ctx context.Context) (*storage.ObjectAttrs, error) {
+	return s.Composer.Run(ctx)
 }
