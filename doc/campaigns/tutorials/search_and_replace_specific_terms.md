@@ -17,7 +17,6 @@ img.center {
   display: block;
   margin: auto
 }
-
 </style>
 
 <p class="lead">
@@ -78,7 +77,7 @@ changesetTemplate:
     > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
 1. Wait for it to run and compute the changes for each repository.
 1. Open the preview URL that the command printed out.
-1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
+1. Examine the preview. Confirm that the changes are what you intended. If not, edit your campaign spec and then rerun the command above.
 1. Click the **Apply spec** button to create the campaign.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
 
@@ -86,7 +85,7 @@ changesetTemplate:
 
 With [ruplacer](https://github.com/TankerHQ/ruplacer) we can easily search and replace terms in multiple case styles: `white_list`, `WhiteList`, `WHITE_LIST` etc.
 
-To use `ruplacer` in our campaign spec, all we need to do is to build a small Docker image in which `ruplacer` is availabe.
+To use `ruplacer` in our campaign spec, all we need to do is to build a small Docker image in which `ruplacer` is available.
 
 Save the following in a `Dockerfile`:
 
