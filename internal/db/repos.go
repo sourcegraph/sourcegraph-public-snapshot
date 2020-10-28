@@ -720,6 +720,7 @@ WHERE esr.external_service_id IN (
     WHERE namespace_user_id = %s
     AND deleted_at IS NULL
 )
+AND repo.deleted_at IS NULL
 `, userID)))
 }
 
