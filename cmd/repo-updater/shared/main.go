@@ -292,7 +292,15 @@ func Main(enterpriseInit EnterpriseInit) {
 				}
 			}
 		}),
-	})
+	}, debugserver.Endpoint{
+		Name: "Current Authz Providers",
+		Path: "/current-authz-providers",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// TODO (flying-robot): access list of authz providers
+			_, _ = w.Write([]byte(`{"hello":"world"}`))
+		}),
+	},
+	)
 
 	srv := &http.Server{Addr: addr, Handler: handler}
 	log.Fatal(srv.ListenAndServe())
