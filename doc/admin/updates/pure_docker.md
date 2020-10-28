@@ -21,6 +21,7 @@ Confirm that `lsif-server-disk` has the correct file permissions:
 
 ```
 sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
+```
 
 ## 3.18.0 -> 3.19.1
 
