@@ -132,11 +132,13 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	etags := map[int]*string{}
 
 	if err := invokeParallel(sources, func(index int, source string) error {
+		partNumber := index + 1
+
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
 			Bucket:     multipartUpload.Bucket,
 			Key:        multipartUpload.Key,
 			UploadId:   multipartUpload.UploadId,
-			PartNumber: aws.Int64(int64(index)),
+			PartNumber: aws.Int64(int64(partNumber)),
 			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, source)),
 		})
 		if err != nil {
@@ -144,7 +146,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		}
 
 		m.Lock()
-		etags[index] = copyResult.CopyPartResult.ETag
+		etags[partNumber] = copyResult.CopyPartResult.ETag
 		m.Unlock()
 
 		return nil
@@ -153,9 +155,11 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	}
 
 	var parts []*s3.CompletedPart
-	for partNumber, etag := range etags {
+	for i := 0; i < len(sources); i++ {
+		partNumber := i + 1
+
 		parts = append(parts, &s3.CompletedPart{
-			ETag:       etag,
+			ETag:       etags[partNumber],
 			PartNumber: aws.Int64(int64(partNumber)),
 		})
 	}
