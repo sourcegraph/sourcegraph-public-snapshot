@@ -251,6 +251,7 @@ digraph architecture {
     gitserver -> {github_proxy} [fillcolor="#cd5c5c", constraint=false]
     repo_updater -> {github_proxy} [fillcolor="#05a167"]
     repo_updater -> {postgres} [fillcolor="#05a167", constraint=false]
+    repo_updater -> {gitserver} [fillcolor="#05a167", constraint=false]
 
     /* Manual layout adjustments */
     codeintel_db -> bitbucket_cloud [style="invis"]
