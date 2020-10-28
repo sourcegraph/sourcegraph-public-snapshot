@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"reflect"
 	"sort"
 	"strings"
@@ -336,6 +338,101 @@ func TestRepos_List(t *testing.T) {
 	}
 	if !jsonEqual(t, repos, want) {
 		t.Errorf("got %v, want %v", repos, want)
+	}
+}
+
+func Test_GetRepoNamesByUser(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+
+	// Create a user
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: user.ID,
+	})
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "Github - Test",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		NamespaceUserID: &user.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a repo
+	createdRepos := mustCreate(ctx, t, &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:    "github.com/sourcegraph/sourcegraph",
+		Private: true,
+		RepoFields: &types.RepoFields{
+			URI:         "uri",
+			Description: "description",
+			Fork:        true,
+			Archived:    true,
+			Cloned:      true,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				service.URN(): {
+					ID:       service.URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+		},
+	})
+	repo := createdRepos[0]
+
+	// Link repo to external service
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES(%d, %d, 'blah')
+`, service.ID, repo.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"github.com/sourcegraph/sourcegraph"}
+	have, err := Repos.GetRepoNamesByUser(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
 	}
 }
 

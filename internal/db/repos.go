@@ -709,6 +709,20 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	return conds, nil
 }
 
+// GetRepoNamesByUser will fetch the names of all repos added by the given user
+func (s *RepoStore) GetRepoNamesByUser(ctx context.Context, userID int32) ([]string, error) {
+	s.ensureStore()
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(`
+SELECT DISTINCT (repo.name) from repo
+JOIN external_service_repos esr ON repo.id = esr.repo_id
+WHERE esr.external_service_id IN (
+    SELECT id from external_services
+    WHERE namespace_user_id = %s
+    AND deleted_at IS NULL
+)
+`, userID)))
+}
+
 // parseCursorConds checks whether the query is using cursor-based pagination, and
 // if so performs the necessary transformations for it to be successful.
 func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
