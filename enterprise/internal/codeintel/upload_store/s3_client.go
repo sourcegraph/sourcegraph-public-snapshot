@@ -206,6 +206,15 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	return *obj.ContentLength, nil
 }
 
+func (s *s3Store) Delete(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+
+	return errors.Wrap(err, "failed to delete object")
+}
+
 func (s *s3Store) create(ctx context.Context) error {
 	_, err := s.client.CreateBucket(ctx, &s3.CreateBucketInput{
 		Bucket: aws.String(s.bucket),

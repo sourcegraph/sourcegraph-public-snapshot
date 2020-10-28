@@ -129,6 +129,10 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 	return attrs.Size, nil
 }
 
+func (s *gcsStore) Delete(ctx context.Context, key string) error {
+	return errors.Wrap(s.client.Bucket(s.bucket).Object(key).Delete(ctx), "failed to delete object")
+}
+
 func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
 	return bucket.Create(ctx, s.projectID, &storage.BucketAttrs{
 		Lifecycle: s.lifecycle(),

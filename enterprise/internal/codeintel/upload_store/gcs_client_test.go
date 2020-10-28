@@ -265,6 +265,30 @@ func TestGCSCombine(t *testing.T) {
 	}
 }
 
+func TestGCSDelete(t *testing.T) {
+	gcsClient := NewMockGcsAPI()
+	bucketHandle := NewMockGcsBucketHandle()
+	objectHandle := NewMockGcsObjectHandle()
+	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
+	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
+	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
+
+	client := newGCSWithClient(gcsClient, "pid", "test-bucket", time.Hour*24, false)
+	if err := client.Delete(context.Background(), "test-key"); err != nil {
+		t.Fatalf("unexpected error getting key: %s", err.Error())
+	}
+
+	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
+		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
+	} else if value := calls[0].Arg0; value != "test-bucket" {
+		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	}
+
+	if calls := objectHandle.DeleteFunc.History(); len(calls) != 1 {
+		t.Fatalf("unexpected number of Delete calls. want=%d have=%d", 1, len(calls))
+	}
+}
+
 func TestGCSLifecycle(t *testing.T) {
 	client := newGCSWithClient(nil, "pid", "test-bucket", time.Hour*24*3, true)
 
