@@ -265,9 +265,9 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
-// ScanAnyPatternLiteral consumes all characters up to a whitespace character
+// ScanAnyPattern consumes all characters up to a whitespace character
 // and returns the string and how much it consumed.
-func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
+func ScanAnyPattern(buf []byte) (scanned string, count int) {
 	var advance int
 	var r rune
 	var result []rune
@@ -297,12 +297,12 @@ func isField(buf []byte) bool {
 	return field != ""
 }
 
-// ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
+// ScanBalancedPattern attempts to scan parentheses as literal patterns.
 // It returns the scanned string, how much to advance, and whether it succeeded.
 // Basically it scans any literal string, including whitespace, but ensures that
 // a resulting string does not contain 'and' or 'or keywords, nor parameters, and
 // is balanced.
-func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool) {
+func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 	var advance, balanced int
 	var r rune
 	var result []rune
@@ -619,7 +619,7 @@ func (p *parser) ParseFieldValue() (string, error) {
 	}
 	// First try scan a field value for cases like (a b repo:foo), where a
 	// trailing ) may be closing a group, and not part of the value.
-	value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:])
+	value, advance, ok := ScanBalancedPattern(p.buf[p.pos:])
 	if !ok {
 		// The above failed, so attempt a best effort.
 		value, advance = ScanValue(p.buf[p.pos:], false)
@@ -644,8 +644,8 @@ func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
 	return Pattern{}, false
 }
 
-func (p *parser) TryScanBalancedPatternLiteral(label labels) (Pattern, bool) {
-	if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
+func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
+	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 		pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
 		p.pos += advance
 		return pattern, true
@@ -676,7 +676,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 	}
 
 	if isSet(p.heuristics, parensAsPatterns) {
-		if pattern, ok := p.TryScanBalancedPatternLiteral(label); ok {
+		if pattern, ok := p.TryScanBalancedPattern(label); ok {
 			return pattern
 		}
 	}
@@ -687,7 +687,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 	if label.isSet(Regexp) {
 		value, advance = ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
 	} else {
-		value, advance = ScanAnyPatternLiteral(p.buf[p.pos:])
+		value, advance = ScanAnyPattern(p.buf[p.pos:])
 	}
 	if isSet(p.heuristics, allowDanglingParens) {
 		label.set(HeuristicDanglingParens)
@@ -769,7 +769,7 @@ loop:
 		switch {
 		case p.match(LPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if isSet(p.heuristics, parensAsPatterns) {
-				if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
+				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 					if label.isSet(Literal) {
 						label.set(HeuristicParensAsPatterns)
 					}
