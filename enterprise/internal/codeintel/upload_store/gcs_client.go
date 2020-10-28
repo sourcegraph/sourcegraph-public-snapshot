@@ -8,6 +8,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 )
@@ -108,7 +109,9 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 	defer func() {
 		if err == nil {
 			// Delete sources on success
-			err = s.deleteSources(ctx, bucket, sources)
+			if err := s.deleteSources(ctx, bucket, sources); err != nil {
+				log15.Error("failed to delete source objects", "error", err)
+			}
 		}
 	}()
 

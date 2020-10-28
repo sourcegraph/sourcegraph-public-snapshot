@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 )
 
@@ -113,7 +114,10 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	defer func() {
 		if err == nil {
 			// Delete sources on success
-			err = s.deleteSources(ctx, *multipartUpload.Bucket, sources)
+			if err := s.deleteSources(ctx, *multipartUpload.Bucket, sources); err != nil {
+				log15.Error("failed to delete source objects", "error", err)
+			}
+
 			return
 		}
 
