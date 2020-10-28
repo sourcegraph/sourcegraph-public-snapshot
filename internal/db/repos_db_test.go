@@ -2,13 +2,14 @@ package db
 
 import (
 	"context"
-	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
