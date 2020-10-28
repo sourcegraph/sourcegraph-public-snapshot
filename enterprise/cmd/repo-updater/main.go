@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -21,6 +23,7 @@ import (
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -40,18 +43,36 @@ func enterpriseInit(
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
 	ctx := context.Background()
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-
-	campaignsStore := campaigns.NewStoreWithClock(db, clock)
+	campaignsStore := campaigns.NewStore(db)
 
 	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	campaigns.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	sourcer := repos.NewSourcer(cf)
+	go campaigns.RunWorkers(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
+
+	// Set up expired spec deletion
+	go func() {
+		for {
+			// We first need to delete expired ChangesetSpecs...
+			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
+			}
+			// ... and then the CampaignSpecs, due to the campaign_spec_id
+			// foreign key on changeset_specs.
+			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
+			}
+
+			time.Sleep(2 * time.Minute)
+		}
+	}()
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
