@@ -28,6 +28,7 @@ export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
  */
 export interface Literal {
     type: 'literal'
+    range: CharacterRange
     value: string
 }
 
@@ -38,8 +39,9 @@ export interface Literal {
  */
 export interface Filter {
     type: 'filter'
-    filterType: Pick<ParseSuccess<Literal>, 'range' | 'token'>
-    filterValue: Pick<ParseSuccess<Literal | Quoted>, 'range' | 'token'> | undefined
+    range: CharacterRange
+    filterType: Literal
+    filterValue: Quoted | Literal | undefined
 }
 
 /**
@@ -49,6 +51,7 @@ export interface Filter {
  */
 export interface Operator {
     type: 'operator'
+    range: CharacterRange
     value: string
 }
 
@@ -57,7 +60,8 @@ export interface Operator {
  */
 export interface Sequence {
     type: 'sequence'
-    members: Pick<ParseSuccess<Token>, 'range' | 'token'>[]
+    range: CharacterRange
+    members: Token[]
 }
 
 /**
@@ -67,6 +71,7 @@ export interface Sequence {
  */
 export interface Quoted {
     type: 'quoted'
+    range: CharacterRange
     quotedValue: string
 }
 
@@ -77,18 +82,26 @@ export interface Quoted {
  */
 export interface Comment {
     type: 'comment'
+    range: CharacterRange
     value: string
 }
 
-export type Token =
-    | { type: 'whitespace' }
-    | { type: 'openingParen' }
-    | { type: 'closingParen' }
-    | { type: 'operator' }
-    | Comment
-    | Literal
-    | Filter
-    | Quoted
+export interface Whitespace {
+    type: 'whitespace'
+    range: CharacterRange
+}
+
+export interface OpeningParen {
+    type: 'openingParen'
+    range: CharacterRange
+}
+
+export interface ClosingParen {
+    type: 'closingParen'
+    range: CharacterRange
+}
+
+export type Token = Whitespace | OpeningParen | ClosingParen | Operator | Comment | Literal | Filter | Quoted
 
 export type Term = Token | Sequence
 
@@ -120,11 +133,6 @@ export interface ParseSuccess<T = Term> {
      * The resulting term.
      */
     token: T
-
-    /**
-     * The character range that was successfully parsed.
-     */
-    range: CharacterRange
 }
 
 /**
@@ -139,7 +147,7 @@ type Parser<T = Term> = (input: string, start: number) => ParserResult<T>
  * by the given `parseToken` parsers are found in a search query.
  */
 const zeroOrMore = (parseToken: Parser<Term>): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Token>, 'range' | 'token'>[] = []
+    const members: Token[] = []
     let adjustedStart = start
     let end = start + 1
     while (input[adjustedStart] !== undefined) {
@@ -152,16 +160,14 @@ const zeroOrMore = (parseToken: Parser<Term>): Parser<Sequence> => (input, start
                 members.push(member)
             }
         } else {
-            const { range, token } = result
-            members.push({ range, token })
+            members.push(result.token)
         }
-        end = result.range.end
+        end = result.token.range.end
         adjustedStart = end
     }
     return {
         type: 'success',
-        range: { start, end },
-        token: { type: 'sequence', members },
+        token: { type: 'sequence', members, range: { start, end } },
     }
 }
 
@@ -201,8 +207,7 @@ const quoted: Parser<Quoted> = (input, start) => {
     return {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
-        range: { start, end: end + 1 },
-        token: { type: 'quoted', quotedValue: input.slice(start + 1, end) },
+        token: { type: 'quoted', quotedValue: input.slice(start + 1, end), range: { start, end: end + 1 } },
     }
 }
 
@@ -216,8 +221,7 @@ const character = (character: string): Parser<Literal> => (input, start) => {
     }
     return {
         type: 'success',
-        range: { start, end: start + 1 },
-        token: { type: 'literal', value: character },
+        token: { type: 'literal', value: character, range: { start, end: start + 1 } },
     }
 }
 
@@ -245,28 +249,33 @@ const pattern = <T extends Term = Literal>(
         const range = { start, end: start + match[0].length }
         return {
             type: 'success',
-            range,
             token: output
                 ? typeof output === 'function'
                     ? output(input, range)
                     : output
-                : ({ type: 'literal', value: match[0] } as T),
+                : ({ type: 'literal', value: match[0], range } as T),
         }
     }
 }
 
-const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
+const whitespace = pattern(
+    /\s+/,
+    (_input, range): Whitespace => ({
+        type: 'whitespace',
+        range,
+    })
+)
 
 const literal = pattern(/[^\s)]+/)
 
 const operator = pattern(
     /(and|AND|or|OR|not|NOT)/,
-    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
+    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end), range: { start, end } })
 )
 
 const comment = pattern(
     /\/\/.*/,
-    (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end) })
+    (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end), range: { start, end } })
 )
 
 const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
@@ -275,34 +284,33 @@ const filterDelimiter = character(':')
 
 const filterValue = oneOf<Quoted | Literal>(quoted, literal)
 
-const openingParen = pattern(/\(/, { type: 'openingParen' as const })
+const openingParen = pattern(/\(/, (_input, range): OpeningParen => ({ type: 'openingParen', range }))
 
-const closingParen = pattern(/\)/, { type: 'closingParen' as const })
+const closingParen = pattern(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
 /**
  * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
 const followedBy = (parseToken: Parser<Token>, parseNext: Parser<Token>): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Token>, 'range' | 'token'>[] = []
+    const members: Token[] = []
     const tokenResult = parseToken(input, start)
     if (tokenResult.type === 'error') {
         return tokenResult
     }
-    members.push({ token: tokenResult.token, range: tokenResult.range })
-    let { end } = tokenResult.range
+    members.push(tokenResult.token)
+    let { end } = tokenResult.token.range
     if (input[end] !== undefined) {
         const separatorResult = parseNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
-        members.push({ token: separatorResult.token, range: separatorResult.range })
-        end = separatorResult.range.end
+        members.push(separatorResult.token)
+        end = separatorResult.token.range.end
     }
     return {
         type: 'success',
-        range: { start, end },
-        token: { type: 'sequence', members },
+        token: { type: 'sequence', members, range: { start, end } },
     }
 }
 
@@ -316,22 +324,24 @@ const filter: Parser<Filter> = (input, start) => {
     if (parsedKeyword.type === 'error') {
         return parsedKeyword
     }
-    const parsedDelimiter = filterDelimiter(input, parsedKeyword.range.end)
+    const parsedDelimiter = filterDelimiter(input, parsedKeyword.token.range.end)
     if (parsedDelimiter.type === 'error') {
         return parsedDelimiter
     }
     const parsedValue =
-        input[parsedDelimiter.range.end] === undefined ? undefined : filterValue(input, parsedDelimiter.range.end)
+        input[parsedDelimiter.token.range.end] === undefined
+            ? undefined
+            : filterValue(input, parsedDelimiter.token.range.end)
     if (parsedValue && parsedValue.type === 'error') {
         return parsedValue
     }
     return {
         type: 'success',
-        range: { start, end: parsedValue ? parsedValue.range.end : parsedDelimiter.range.end },
         token: {
             type: 'filter',
-            filterType: parsedKeyword,
-            filterValue: parsedValue,
+            range: { start, end: parsedValue ? parsedValue.token.range.end : parsedDelimiter.token.range.end },
+            filterType: parsedKeyword.token,
+            filterValue: parsedValue?.token,
         },
     }
 }
@@ -344,9 +354,7 @@ const createParser = (terms: Parser<Token>[]): Parser<Sequence> =>
             whitespace,
             openingParen,
             closingParen,
-            ...terms.map(token =>
-                followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
-            )
+            ...terms.map(token => followedBy(token, oneOf<Whitespace | ClosingParen>(whitespace, closingParen)))
         )
     )
 
