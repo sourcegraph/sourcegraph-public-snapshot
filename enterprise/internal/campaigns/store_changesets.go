@@ -312,7 +312,7 @@ type ListChangesetSyncDataOpts struct {
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open campaign.
 func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-	q := listChangesetSyncData(opts)
+	q := listChangesetSyncDataQuery(opts)
 	results := make([]campaigns.ChangesetSyncData, 0)
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		var h campaigns.ChangesetSyncData
@@ -338,8 +338,8 @@ func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
 	)
 }
 
-func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
-	fmtString := `
+const listChangesetSyncDataQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:ListChangesetSyncData
  SELECT changesets.id,
         changesets.updated_at,
         max(ce.updated_at) AS latest_event,
@@ -354,6 +354,7 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
  ORDER BY changesets.id ASC
 `
 
+func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("campaigns.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
@@ -370,7 +371,7 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
-	return sqlf.Sprintf(fmtString, sqlf.Join(preds, "\n AND"))
+	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"))
 }
 
 // ListChangesetsOpts captures the query options needed for
