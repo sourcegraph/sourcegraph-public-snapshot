@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -69,6 +70,22 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 		createdRepos = append(createdRepos, repo)
 	}
 	return createdRepos
+}
+
+func generateRepos(n int, base ...*types.Repo) types.Repos {
+	if len(base) == 0 {
+		return nil
+	}
+
+	rs := make(types.Repos, 0, n)
+	for i := 0; i < n; i++ {
+		id := strconv.Itoa(i)
+		r := base[i%len(base)].Clone()
+		r.Name += api.RepoName(id)
+		r.ExternalRepo.ID += id
+		rs = append(rs, r)
+	}
+	return rs
 }
 
 // InsertRepoOp represents an operation to insert a repository.
@@ -954,7 +971,7 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	})
 }
 
-func TestRepos_Create(t *testing.T) {
+func TestRepos_createRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -980,7 +997,7 @@ func TestRepos_Create(t *testing.T) {
 	}
 }
 
-func TestRepos_Create_dupe(t *testing.T) {
+func TestRepos_createRepo_dupe(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

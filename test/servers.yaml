@@ -13,7 +13,7 @@
        cd /sourcegraph
        ./test/e2e/test.sh
 
-- name: sourcegraph-regression
+- name: sourcegraph-qa-test
   box: google/gce
   machine_type: "custom-16-20480"
   project_id: sourcegraph-ci
