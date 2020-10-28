@@ -22,10 +22,6 @@ type s3Uploader interface {
 	Upload(ctx context.Context, input *s3manager.UploadInput) error
 }
 
-//
-//
-//
-
 type s3APIShim struct{ *s3.S3 }
 type s3UploaderShim struct{ *s3manager.Uploader }
 

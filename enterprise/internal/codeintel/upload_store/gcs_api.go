@@ -29,10 +29,6 @@ type gcsComposer interface {
 	Run(ctx context.Context) error
 }
 
-//
-//
-//
-
 type gcsAPIShim struct{ *storage.Client }
 type bucketHandleShim struct{ *storage.BucketHandle }
 type objectHandleShim struct{ *storage.ObjectHandle }
