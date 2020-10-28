@@ -11,8 +11,7 @@
   shell_commands:
     - |
       cd /sourcegraph
-      sleep 3h
-    #    ./test/e2e/test.sh
+      ./test/e2e/test.sh
 
 - name: sourcegraph-qa-test
   box: google/gce
