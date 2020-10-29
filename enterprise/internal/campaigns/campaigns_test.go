@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
+func testRepo(t *testing.T, store repos.Store, serviceKind string) (*repos.Repo, *repos.ExternalService) {
 	t.Helper()
 
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	svc := repos.ExternalService{
+	svc := &repos.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -27,7 +27,7 @@ func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 	}
 
 	// create a few external services
-	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+	if err := store.UpsertExternalServices(context.Background(), svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
@@ -45,5 +45,5 @@ func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
 			},
 		},
-	}
+	}, svc
 }
