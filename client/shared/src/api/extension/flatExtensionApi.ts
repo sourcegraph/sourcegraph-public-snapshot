@@ -84,12 +84,14 @@ export const initNewExtensionAPI = (
         ),
     }
 
+    // Most extensions never call `configuration.get()` synchronously in
+    // `activate()` to get the initial settings data, and instead only subscribe
+    // to configuration changes. In order for these extensions to be able to
+    // access settings, make sure `configuration` emits on subscription by
+    // making it a BehaviorSubject.
     const configChanges = new BehaviorSubject<void>(undefined)
-    // Most extensions never call `configuration.get()` synchronously in `activate()` to get
-    // the initial settings data, and instead only subscribe to configuration changes.
-    // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
-    const rootChanges = new Subject<void>() // TODO: remove this?
+    const rootChanges = new Subject<void>()
 
     const versionContextChanges = new Subject<string | undefined>()
 
@@ -104,14 +106,14 @@ export const initNewExtensionAPI = (
         addWorkspaceRoot: (root: WorkspaceRoot) => {
             state.roots = [...state.roots, { ...root, uri: new URL(root.uri) }]
         },
-        getWorkspaceRoots: () => state.roots.map(root => ({ ...root, uri: root.uri.toString() })),
+        getWorkspaceRoots: () => state.roots.map(root => ({ ...root, uri: root.uri.toString() })), // TODO remove if this isn't needed
         removeWorkspaceRoot: (uri: string) => {
             state.roots = state.roots.filter(root => root.uri.toString() !== uri)
         },
         setVersionContext: context => {
             state.versionContext = context
         },
-        getVersionContext: () => state.versionContext,
+        getVersionContext: () => state.versionContext, // TODO remove if this isn't needed
 
         // Search
         transformSearchQuery: query =>
