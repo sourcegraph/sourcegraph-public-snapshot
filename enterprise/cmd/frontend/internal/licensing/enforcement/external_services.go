@@ -23,15 +23,19 @@ func NewPreCreateExternalServiceHook(externalServices ExternalServicesStore) fun
 	}
 
 	return func(ctx context.Context) error {
-		// First we need to determine how many external services are permissible.
-		var maxExtSvcCount int
-		if mockGetExternalServicesLimit != nil {
-			maxExtSvcCount = mockGetExternalServicesLimit(ctx)
+		// Licenses are associated with features and resource limits according to
+		// the current plan. We first need to determine the instance license, and then
+		// extract the maximum external service count from it.
+		info, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			return err
 		}
-
-		// TODO(flying-robot, unknwon) - wrap licensing Info type with per-tier
-		// limits that we can reference here. The count check below will pass
-		// the validation right now since maxExternalServices = 0.
+		var maxExtSvcCount int
+		if info != nil {
+			maxExtSvcCount = info.Plan().MaxExternalServiceCount()
+		} else {
+			maxExtSvcCount = licensing.NoLicenseMaximumExternalServiceCount
+		}
 
 		// Next we'll grab the current count of external services.
 		extSvcCount, err := externalServices.Count(ctx, db.ExternalServicesListOptions{})
@@ -42,7 +46,7 @@ func NewPreCreateExternalServiceHook(externalServices ExternalServicesStore) fun
 		// If we have none configured or we're under the limit, we can pass the
 		// validation. Otherwise an error will be returned. Note that we consider
 		// a maximum of 0 to be "unlimited", which is consistent with other checks.
-		if extSvcCount == 0 || maxExtSvcCount == 0 || extSvcCount < maxExtSvcCount {
+		if maxExtSvcCount == 0 || extSvcCount < maxExtSvcCount {
 			return nil
 		}
 		return errcode.NewPresentationError(
@@ -54,8 +58,3 @@ func NewPreCreateExternalServiceHook(externalServices ExternalServicesStore) fun
 		)
 	}
 }
-
-// These mocks are used for test purposes.
-var (
-	mockGetExternalServicesLimit func(_ context.Context) int
-)
