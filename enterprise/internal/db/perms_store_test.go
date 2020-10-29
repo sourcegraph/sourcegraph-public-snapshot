@@ -2432,12 +2432,17 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		// TODO: Set up test users and repos
+
 		// Mock rows for testing
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock().Add(-1*time.Minute)),
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock()),
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock().Add(-2*time.Minute)),
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock()),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock()),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock().Add(-1*time.Minute)),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 3`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock()),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock().Add(-2*time.Minute)),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 3`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 4`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
