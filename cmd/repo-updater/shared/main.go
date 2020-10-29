@@ -18,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
@@ -238,6 +240,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		)(server.Handler())
 	}
 
+	globals.WatchExternalURL(nil)
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
@@ -295,15 +298,33 @@ func Main(enterpriseInit EnterpriseInit) {
 			}
 		}),
 	}, debugserver.Endpoint{
-		Name: "Current Authz Providers",
-		Path: "/current-authz-providers",
+		Name: "List Authz Providers",
+		Path: "/list-authz-providers",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, ps := authz.GetProviders()
-			providers := make(map[string]authz.Provider, len(ps))
-			for _, p := range ps {
-				providers[p.ServiceID()] = p
+			_, providers := authz.GetProviders()
+
+			type providerInfo struct {
+				ServiceType        string
+				ServiceID          string
+				ExternalServiceURL string
 			}
-			fmt.Fprintf(w, "%s", providers)
+			infos := make([]providerInfo, 0, len(providers))
+			for _, p := range providers {
+				_, id := extsvc.DecodeURN(p.URN())
+				infos = append(infos, providerInfo{
+					ServiceType:        p.ServiceType(),
+					ServiceID:          p.ServiceID(),
+					ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), graphqlbackend.MarshalExternalServiceID(id)),
+				})
+			}
+
+			p, err := json.MarshalIndent(infos, "", "  ")
+			if err != nil {
+				http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			_, _ = w.Write(p)
 		}),
 	},
 	)
