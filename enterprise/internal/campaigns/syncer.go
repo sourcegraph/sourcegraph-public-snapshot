@@ -89,7 +89,7 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 	}
 
 	sourcer := repos.NewSourcer(s.HTTPFactory)
-	css, err := buildChangesetSource(s.Ctx, s.RepoStore, sourcer, extSvc)
+	css, err := buildChangesetSource(sourcer, extSvc)
 	if err != nil {
 		log15.Error(err.Error())
 		return
@@ -576,8 +576,6 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 
 // buildChangesetSource returns a ChangesetSource for the given external service.
 func buildChangesetSource(
-	ctx context.Context,
-	reposStore RepoStore,
 	sourcer repos.Sourcer,
 	extSvc *repos.ExternalService,
 ) (repos.ChangesetSource, error) {
