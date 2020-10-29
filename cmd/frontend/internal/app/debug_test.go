@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -150,8 +149,8 @@ func TestGrafanaLicensing(t *testing.T) {
 			t.Fatalf("status code: got %d, want %d", got, want)
 		}
 		// http.Error appends a trailing newline that won't be present in
-		// the error message itself, so we need to add it ourselves.
-		if diff := cmp.Diff(rec.Body.String(), fmt.Sprintln(errMonitoringNotLicensed)); diff != "" {
+		// the error message itself, so we need to remove it.
+		if diff := cmp.Diff(strings.TrimSuffix(rec.Body.String(), "\n"), errMonitoringNotLicensed); diff != "" {
 			t.Fatal(diff)
 		}
 	})
