@@ -136,6 +136,43 @@ It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src
 
 Environment variables to set in the environment when running this command.
 
+## [`steps.files`](#steps-env)
+
+> NOTE: This feature only available in Sourcegraph 3.22 and later.
+
+Files to create on the host machine and mount into the container when running `steps.run`.
+
+`steps.files` is an object, where the key is the name of the file _inside the container_ and the value is the content of the file.
+
+### Examples
+
+```yaml
+steps:
+  - run: cat /tmp/my-temp-file.txt >> README.md
+    container: alpine:3
+    files:
+      /tmp/my-temp-file.txt: Hello world!
+```
+
+```yaml
+steps:
+  - run: cat /tmp/global-gitignore >> .gitignore
+    container: alpine:3
+    files:
+      /tmp/global-gitignore: |
+        # Vim
+        *.swp
+        # JetBrains/IntelliJ
+        .idea
+        # Emacs
+        *~
+        \#*\#
+        /.emacs.desktop
+        /.emacs.desktop.lock
+        .\#*
+        .dir-locals.el
+```
+
 ## [`importChangesets`](#importchangesets)
 
 An array describing which already-existing changesets should be imported from the code host into the campaign.
