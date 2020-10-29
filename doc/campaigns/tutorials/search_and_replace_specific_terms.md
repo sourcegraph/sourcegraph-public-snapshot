@@ -29,6 +29,8 @@ This tutorial shows you how to create [a campaign spec](../explanations/introduc
 
 The campaign spec can be easily changed to search and replace other terms in other file types.
 
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_teaser.png" class="screenshot center">
+
 ### Prerequisites
 
 We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
@@ -76,8 +78,11 @@ changesetTemplate:
 
     > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
 1. Wait for it to run and compute the changes for each repository.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_click_url.png" class="screenshot">
 1. Examine the preview. Confirm that the changes are what you intended. If not, edit your campaign spec and then rerun the command above.
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the campaign.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
 
