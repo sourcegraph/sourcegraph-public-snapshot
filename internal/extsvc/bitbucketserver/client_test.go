@@ -846,8 +846,10 @@ func TestAuth(t *testing.T) {
 				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, &SudoableOAuthClient{})
 			} else if have.Client.Client.Credentials.Token != "foo" {
 				t.Errorf("unexpected token: have=%q want=%q", have.Client.Client.Credentials.Token, "foo")
-			} else if !have.Client.Client.PrivateKey.Equal(key) {
-				t.Errorf("unexpected key: have=%+v want=%+v", have.Client.Client.PrivateKey, key)
+			} else if diff := cmp.Diff(have.Client.Client.PrivateKey, key); diff != "" {
+				// There's a useful PrivateKey.Equal() function in Go 1.15, but
+				// that's much too new for us to be able to use it here.
+				t.Errorf("unexpected key:\n%s", diff)
 			}
 		})
 	})
