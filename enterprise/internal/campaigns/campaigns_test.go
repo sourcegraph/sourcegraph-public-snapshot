@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,7 +37,7 @@ func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
 			ServiceType: extsvc.KindToType(serviceKind),
-			ServiceID:   "https://example.com/",
+			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
 		},
 		Sources: map[string]*repos.SourceInfo{
 			svc.URN(): {
