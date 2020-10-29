@@ -44,8 +44,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 	repo := testRepo(t, reposStore, extsvc.KindGitHub)
 	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
 
-	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
+	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
@@ -431,6 +432,39 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if have[0].ID != changesets[cap(changesets)-1].ID {
 				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], changesets[cap(changesets)-1])
+			}
+		}
+
+		{
+			gitlabMR := &gitlab.MergeRequest{
+				ID:        gitlab.ID(1),
+				Title:     "Fix a bunch of bugs",
+				CreatedAt: gitlab.Time{Time: clock.now()},
+				UpdatedAt: gitlab.Time{Time: clock.now()},
+			}
+			gitlabChangeset := &cmpgn.Changeset{
+				Metadata:            gitlabMR,
+				RepoID:              gitlabRepo.ID,
+				ExternalServiceType: extsvc.TypeGitLab,
+			}
+			if err := s.CreateChangeset(ctx, gitlabChangeset); err != nil {
+				t.Fatal(err)
+			}
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: "https://gitlab.com/"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := 1
+			if len(have) != want {
+				t.Fatalf("have %d changesets; want %d", len(have), want)
+			}
+
+			if have[0].ID != gitlabChangeset.ID {
+				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], gitlabChangeset)
+			}
+			if err := s.DeleteChangeset(ctx, gitlabChangeset.ID); err != nil {
+				t.Fatal(err)
 			}
 		}
 
