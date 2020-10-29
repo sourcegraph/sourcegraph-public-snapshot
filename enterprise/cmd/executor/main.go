@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-const port = 3192
+const port = ":3192"
 
 func main() {
 	config := &Config{}

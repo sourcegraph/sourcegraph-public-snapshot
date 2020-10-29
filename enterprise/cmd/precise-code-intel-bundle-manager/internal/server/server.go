@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const port = 3187
+const port = ":3187"
 
 type Server struct {
 	bundleDir          string

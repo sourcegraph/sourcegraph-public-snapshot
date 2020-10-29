@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 )
 
-const port = 3189
+const port = ":3189"
 
 type Server struct {
 	indexManager indexmanager.Manager
