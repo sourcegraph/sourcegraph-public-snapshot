@@ -14,7 +14,7 @@ func TestChangesetEvents(t *testing.T) {
 	type testCase struct {
 		name      string
 		changeset Changeset
-		events    []*ChangesetEvent
+		events    ChangesetEvents
 	}
 
 	var cases []testCase
@@ -72,7 +72,7 @@ func TestChangesetEvents(t *testing.T) {
 					},
 				},
 			},
-			[]*ChangesetEvent{{
+			ChangesetEvents{{
 				ChangesetID: 23,
 				Kind:        ChangesetEventKindGitHubAssigned,
 				Key:         assignedEvent.Key(),
@@ -184,7 +184,7 @@ func TestChangesetEvents(t *testing.T) {
 					Activities: activities,
 				},
 			},
-			[]*ChangesetEvent{{
+			ChangesetEvents{{
 				ChangesetID: 24,
 				Kind:        ChangesetEventKindBitbucketServerOpened,
 				Key:         activities[0].Key(),
@@ -238,7 +238,7 @@ func TestChangesetEvents(t *testing.T) {
 				ID:       1234,
 				Metadata: mr,
 			},
-			events: []*ChangesetEvent{
+			events: ChangesetEvents{
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabApproved,
