@@ -359,17 +359,19 @@ func TestSyncRegistry(t *testing.T) {
 
 	now := time.Now()
 
+	extSvc := &repos.ExternalService{
+		ID:          1,
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "",
+		Config:      `{"url": "https://example.com/"}`,
+		CreatedAt:   time.Time{},
+		UpdatedAt:   time.Time{},
+	}
+
 	repoStore := MockRepoStore{
 		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
 			return []*repos.ExternalService{
-				{
-					ID:          1,
-					Kind:        extsvc.KindGitHub,
-					DisplayName: "",
-					Config:      `{"url": "https://example.com/"}`,
-					CreatedAt:   time.Time{},
-					UpdatedAt:   time.Time{},
-				},
+				extSvc,
 			}, nil
 		},
 	}
@@ -400,7 +402,7 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(1)
 
 	// Adding it again should have no effect
-	r.Add(extsvc.KindGitHub, `{"url": "https://example.com/"}`)
+	r.Add(extSvc)
 	assertSyncerCount(1)
 
 	// Simulate a service being removed
@@ -427,7 +429,6 @@ func TestSyncRegistry(t *testing.T) {
 	syncer := &ChangesetSyncer{
 		SyncStore:   syncStore,
 		ReposStore:  repoStore,
-		HTTPFactory: nil,
 		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id

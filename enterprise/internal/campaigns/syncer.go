@@ -58,7 +58,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 
 	// Add and start syncers
 	for _, service := range services {
-		r.Add(service.Kind, service.Config)
+		r.Add(service)
 	}
 
 	go r.handlePriorityItems()
@@ -68,13 +68,13 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 
 // Add adds a syncer for the code host associated with the supplied external service if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) Add(kind, config string) {
-	if !campaigns.IsKindSupported(kind) {
-		log15.Info("External service not support by campaigns", "kind", kind)
+func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
+	if !campaigns.IsKindSupported(extSvc.Kind) {
+		log15.Info("External service not support by campaigns", "kind", extSvc.Kind)
 		return
 	}
 
-	normalised, err := externalServiceSyncerKey(kind, config)
+	normalised, err := externalServiceSyncerKey(extSvc.Kind, extSvc.Config)
 	if err != nil {
 		log15.Error(err.Error())
 		return
@@ -88,13 +88,20 @@ func (s *SyncRegistry) Add(kind, config string) {
 		return
 	}
 
+	sourcer := repos.NewSourcer(s.HTTPFactory)
+	css, err := buildChangesetSource(s.Ctx, s.RepoStore, sourcer, extSvc)
+	if err != nil {
+		log15.Error(err.Error())
+		return
+	}
+
 	// We need to be able to cancel the syncer if the service is removed
 	ctx, cancel := context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
 		SyncStore:      s.SyncStore,
 		ReposStore:     s.RepoStore,
-		HTTPFactory:    s.HTTPFactory,
+		css:            css,
 		codeHostURL:    normalised,
 		cancel:         cancel,
 		priorityNotify: make(chan []int64, 500),
@@ -176,7 +183,29 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	s.mu.Unlock()
 
 	if timeIsNilOrZero(es.DeletedAt) && !exists {
-		s.Add(es.Kind, es.Config)
+		// Convert the api.ExternalService to repos.ExternalService.
+		// They're basically the same, just some pointers here and there.
+		extSvc := &repos.ExternalService{
+			ID:          es.ID,
+			Kind:        es.Kind,
+			DisplayName: es.DisplayName,
+			Config:      es.Config,
+			CreatedAt:   es.CreatedAt,
+			UpdatedAt:   es.UpdatedAt,
+		}
+		if es.DeletedAt != nil {
+			extSvc.DeletedAt = *es.DeletedAt
+		}
+		if es.LastSyncAt != nil {
+			extSvc.LastSyncAt = *es.LastSyncAt
+		}
+		if es.NextSyncAt != nil {
+			extSvc.NextSyncAt = *es.NextSyncAt
+		}
+		if es.NamespaceUserID != nil {
+			extSvc.NamespaceUserID = *es.NamespaceUserID
+		}
+		s.Add(extSvc)
 	}
 
 	s.mu.Lock()
@@ -205,9 +234,10 @@ func externalServiceSyncerKey(kind, config string) (string, error) {
 // A ChangesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type ChangesetSyncer struct {
-	SyncStore   SyncStore
-	ReposStore  RepoStore
-	HTTPFactory *httpcli.Factory
+	SyncStore  SyncStore
+	ReposStore RepoStore
+
+	css repos.ChangesetSource
 
 	codeHostURL string
 
@@ -501,19 +531,12 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-
-	sourcer := repos.NewSourcer(s.HTTPFactory)
-	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, sourcer, cs)
+	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, s.css, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, sourcer repos.Sourcer, c *campaigns.Changeset) (err error) {
-	s, err := buildChangesetSource(ctx, repoStore, sourcer, c)
-	if err != nil {
-		return err
-	}
-
+func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, css repos.ChangesetSource, c *campaigns.Changeset) (err error) {
 	rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []api.RepoID{c.RepoID},
 	})
@@ -523,7 +546,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 	repo := rs[0]
 
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
-	if err := s.LoadChangeset(ctx, repoChangeset); err != nil {
+	if err := css.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
 			return err
@@ -551,24 +574,13 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-// buildChangesetSource returns a slice of SourceChangesets in which the
-// given *campaigns.Changesets are grouped together as repos.Changesets with the
-// repos.Source that can modify them.
-// rlr is optional
+// buildChangesetSource returns a ChangesetSource for the given external service.
 func buildChangesetSource(
 	ctx context.Context,
 	reposStore RepoStore,
 	sourcer repos.Sourcer,
-	c *campaigns.Changeset,
+	extSvc *repos.ExternalService,
 ) (repos.ChangesetSource, error) {
-	es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-		RepoIDs: []api.RepoID{c.RepoID},
-	})
-	if err != nil {
-		return nil, err
-	}
-	extSvc := es[0]
-
 	sources, err := sourcer(extSvc)
 	if err != nil {
 		return nil, err
