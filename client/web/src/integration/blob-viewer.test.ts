@@ -206,7 +206,7 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async function () {
+        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
             await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
             await driver.page.reload()
@@ -217,7 +217,8 @@ describe('Blob viewer', () => {
 
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
             assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
-            await percySnapshot(driver.page, this.test!.fullTitle())
+            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
+            // await percySnapshot(driver.page, this.test!.fullTitle())
         })
 
         it.skip('gets displayed when navigating to a URL with a token position', async () => {
