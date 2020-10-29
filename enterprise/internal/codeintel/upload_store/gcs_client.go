@@ -3,46 +3,53 @@ package uploadstore
 import (
 	"context"
 	"io"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"google.golang.org/api/option"
 )
 
 type gcsStore struct {
-	projectID    string
 	bucket       string
 	ttl          time.Duration
 	manageBucket bool
+	config       GCSConfig
 	client       gcsAPI
 }
 
 var _ Store = &gcsStore{}
 
-// newGCSFromConfig creates a new store backed by GCP storage.
-func newGCSFromConfig(ctx context.Context, config *Config) (Store, error) {
-	return newGCS(ctx, config.GCS.ProjectID, config.GCS.Bucket, config.GCS.TTL, config.ManageBucket)
+type GCSConfig struct {
+	ProjectID               string
+	CredentialsFile         string
+	CredentialsFileContents string
 }
 
-// newGCS creates a new store backed by GCP storage.
-func newGCS(ctx context.Context, projectID, bucket string, ttl time.Duration, manageBucket bool) (Store, error) {
-	client, err := storage.NewClient(ctx, gcsClientOptions()...)
+func (c *GCSConfig) load(parent *env.BaseConfig) {
+	c.ProjectID = parent.Get("PRECISE_CODE_INTEL_UPLOAD_GCP_PROJECT_ID", "", "The project containing the GCS bucket.")
+	c.CredentialsFile = parent.GetOptional("PRECISE_CODE_INTEL_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The path to a service account key file with access to GCS.")
+	c.CredentialsFileContents = parent.GetOptional("PRECISE_CODE_INTEL_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of a service account key file with access to GCS.")
+}
+
+// newGCSFromConfig creates a new store backed by GCP storage.
+func newGCSFromConfig(ctx context.Context, config *Config) (Store, error) {
+	client, err := storage.NewClient(ctx, gcsClientOptions(config.GCS)...)
 	if err != nil {
 		return nil, err
 	}
 
-	return newGCSWithClient(&gcsAPIShim{client}, projectID, bucket, ttl, manageBucket), nil
+	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS), nil
 }
 
-func newGCSWithClient(client gcsAPI, projectID, bucket string, ttl time.Duration, manageBucket bool) *gcsStore {
+func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig) *gcsStore {
 	return &gcsStore{
-		projectID:    projectID,
 		bucket:       bucket,
 		ttl:          ttl,
+		config:       config,
 		manageBucket: manageBucket,
 		client:       client,
 	}
@@ -134,7 +141,7 @@ func (s *gcsStore) Delete(ctx context.Context, key string) error {
 }
 
 func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
-	return bucket.Create(ctx, s.projectID, &storage.BucketAttrs{
+	return bucket.Create(ctx, s.config.ProjectID, &storage.BucketAttrs{
 		Lifecycle: s.lifecycle(),
 	})
 }
@@ -155,7 +162,7 @@ func (s *gcsStore) lifecycle() storage.Lifecycle {
 					Type: "Delete",
 				},
 				Condition: storage.LifecycleCondition{
-					AgeInDays: int64(time.Duration(s.ttl) / (time.Hour * 24)),
+					AgeInDays: int64(s.ttl / (time.Hour * 24)),
 				},
 			},
 		},
@@ -172,19 +179,13 @@ func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, so
 	})
 }
 
-// gcsClientOptions returns options used to configure a GCS storage client. If the
-// envvar GOOGLE_APPLICATION_CREDENTIALS is set, it will be used as a path to the GCP
-// credentials file. If the envvar GOOGLE_APPLICATION_CREDENTIALS_JSON is set, it will
-// be used as the JSON payload of a GCP credentials file.
-//
-// See https://cloud.google.com/docs/authentication/production.
-func gcsClientOptions() []option.ClientOption {
-	if value := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); value != "" {
-		return []option.ClientOption{option.WithCredentialsFile(value)}
+func gcsClientOptions(config GCSConfig) []option.ClientOption {
+	if config.CredentialsFile != "" {
+		return []option.ClientOption{option.WithCredentialsFile(config.CredentialsFile)}
 	}
 
-	if value := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"); value != "" {
-		return []option.ClientOption{option.WithCredentialsJSON([]byte(value))}
+	if config.CredentialsFileContents != "" {
+		return []option.ClientOption{option.WithCredentialsJSON([]byte(config.CredentialsFileContents))}
 	}
 
 	return nil
