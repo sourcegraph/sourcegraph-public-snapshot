@@ -165,7 +165,7 @@ const Options: React.FunctionComponent = () => {
         }, noop)
     }, [])
 
-    const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
+    const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('.sourcegraph.com')
 
     let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
     if (
