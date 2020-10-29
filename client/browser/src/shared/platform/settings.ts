@@ -1,7 +1,7 @@
 import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { from, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { BehaviorSubject, from, fromEvent, Observable } from 'rxjs'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { SettingsEdit } from '../../../../shared/src/api/client/services/settings'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -13,15 +13,29 @@ import {
     SettingsSubject,
 } from '../../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../../shared/src/util/errors'
-import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
+/**
+ * Returns an observable that emits the localStorage value for the given key on
+ * every storage update event, starting with the current value.
+ */
+function observeLocalStorageKey(key: string, defaultValue: string): Observable<string> {
+    const initialValue = localStorage.getItem(key)
+    return fromEvent<StorageEvent>(window, 'storage').pipe(
+        filter(event => event.key === key),
+        map(event => event.newValue),
+        startWith(initialValue),
+        map(value => value ?? defaultValue),
+        distinctUntilChanged()
+    )
+}
+
 const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
     const storageSubject = isInPage
-        ? new LocalStorageSubject<string>(inPageClientSettingsKey, '{}')
+        ? observeLocalStorageKey(inPageClientSettingsKey, '{}')
         : observeStorageKey('sync', 'clientSettings')
 
     const subject: SettingsSubject = {
