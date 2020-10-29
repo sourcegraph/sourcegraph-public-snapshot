@@ -341,10 +341,14 @@ ${issueCategories
     },
     {
         id: 'release:create-candidate',
-        run: async (config, candidate?) => {
+        argNames: ['candidate'],
+        run: async (config, candidate) => {
+            if (!candidate) {
+                throw new Error('Candidate information is required (either "final" or a number)')
+            }
             const { upcoming: release } = releaseVersions(config)
 
-            const tag = JSON.stringify(`v${release.version}${candidate ? `-rc.${candidate}` : ''}`)
+            const tag = JSON.stringify(`v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`)
             const branch = JSON.stringify(`${release.major}.${release.minor}`)
 
             console.log(`Creating and pushing tag ${tag} on ${branch}`)
