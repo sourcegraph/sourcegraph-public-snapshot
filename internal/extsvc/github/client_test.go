@@ -70,7 +70,7 @@ func TestNewRepoCache(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
 	t.Run("GitHub.com", func(t *testing.T) {
 		url, _ := url.Parse("https://www.github.com")
-		token := auth.OAuthBearerToken("asdf")
+		token := &auth.OAuthBearerToken{Token: "asdf"}
 
 		// github.com caches should:
 		// (1) use githubProxyURL for the prefix hash rather than the given url
@@ -85,7 +85,7 @@ func TestNewRepoCache(t *testing.T) {
 
 	t.Run("GitHub Enterprise", func(t *testing.T) {
 		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := auth.OAuthBearerToken("asdf")
+		token := &auth.OAuthBearerToken{Token: "asdf"}
 
 		// GitHub Enterprise caches should:
 		// (1) use the given URL for the prefix hash
@@ -116,10 +116,10 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 	old := &Client{
 		apiURL: uri,
-		auth:   auth.OAuthBearerToken("old_token"),
+		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
-	newToken := auth.OAuthBearerToken("new_token")
+	newToken := &auth.OAuthBearerToken{Token: "new_token"}
 	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")
@@ -546,7 +546,9 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(uri, auth.OAuthBearerToken(os.Getenv("GITHUB_TOKEN")), doer)
+	cli := NewClient(uri, &auth.OAuthBearerToken{
+		Token: os.Getenv("GITHUB_TOKEN"),
+	}, doer)
 
 	return cli, save
 }

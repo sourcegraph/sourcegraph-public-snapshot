@@ -527,8 +527,8 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 // 🚨 SECURITY: test that cache entries are keyed by auth token
 func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 	c0 := newTestClient(t, nil)
-	c1 := newTestClientWithAuthenticator(t, auth.OAuthBearerToken("tok1"), nil)
-	c2 := newTestClientWithAuthenticator(t, auth.OAuthBearerToken("tok2"), nil)
+	c1 := newTestClientWithAuthenticator(t, &auth.OAuthBearerToken{Token: "tok1"}, nil)
+	c2 := newTestClientWithAuthenticator(t, &auth.OAuthBearerToken{Token: "tok2"}, nil)
 
 	// Get "id0" and cache the result for c1
 	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok1" } } }`, http.StatusOK)

@@ -27,7 +27,7 @@ type ClientAdapter struct {
 
 func (c *ClientAdapter) WithToken(token string) client {
 	return &ClientAdapter{
-		Client: c.Client.WithAuthenticator(auth.OAuthBearerToken(token)),
+		Client: c.Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}),
 	}
 }
 

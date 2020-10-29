@@ -777,11 +777,11 @@ func TestAuth(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := auth.OAuthBearerToken("foo")
-			if have, ok := client.Auth.(auth.OAuthBearerToken); !ok {
+			want := &auth.OAuthBearerToken{Token: "foo"}
+			if have, ok := client.Auth.(*auth.OAuthBearerToken); !ok {
 				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, want)
-			} else if string(have) != "foo" {
-				t.Errorf("unexpected token: have=%q want=%q", string(have), "foo")
+			} else if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected token:\n%s", diff)
 			}
 		})
 
@@ -886,7 +886,7 @@ func TestAuth(t *testing.T) {
 
 		t.Run("errors", func(t *testing.T) {
 			for name, a := range map[string]auth.Authenticator{
-				"OAuth 2 token": auth.OAuthBearerToken("abcdef"),
+				"OAuth 2 token": &auth.OAuthBearerToken{Token: "abcdef"},
 				"nil":           nil,
 			} {
 				t.Run(name, func(t *testing.T) {

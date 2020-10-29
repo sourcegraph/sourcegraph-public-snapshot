@@ -26,7 +26,7 @@ type Provider struct {
 func NewProvider(urn string, githubURL *url.URL, baseToken string, client *github.Client) *Provider {
 	if client == nil {
 		apiURL, _ := github.APIRoot(githubURL)
-		client = github.NewClient(apiURL, auth.OAuthBearerToken(baseToken), nil)
+		client = github.NewClient(apiURL, &auth.OAuthBearerToken{Token: baseToken}, nil)
 	}
 
 	return &Provider{

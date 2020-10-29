@@ -8,20 +8,18 @@ import (
 
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
-type OAuthBearerToken string
+type OAuthBearerToken struct {
+	Token string
+}
 
-var _ Authenticator = OAuthBearerToken("")
+var _ Authenticator = &OAuthBearerToken{}
 
-func (token OAuthBearerToken) Authenticate(req *http.Request) error {
-	req.Header.Set("Authorization", "Bearer "+string(token))
+func (token *OAuthBearerToken) Authenticate(req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+token.Token)
 	return nil
 }
 
-func (token OAuthBearerToken) Hash() string {
-	return hashString(string(token))
-}
-
-func hashString(s string) string {
-	key := sha256.Sum256([]byte(s))
+func (token *OAuthBearerToken) Hash() string {
+	key := sha256.Sum256([]byte(token.Token))
 	return hex.EncodeToString(key[:])
 }

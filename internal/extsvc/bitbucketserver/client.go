@@ -92,7 +92,7 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 
 	if config.Authorization == nil {
 		if config.Token != "" {
-			client.Auth = auth.OAuthBearerToken(config.Token)
+			client.Auth = &auth.OAuthBearerToken{Token: config.Token}
 		} else {
 			client.Auth = &auth.BasicAuth{
 				Username: config.Username,
@@ -118,7 +118,7 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 // httpClient is provided, http.DefaultClient will be used.
 func NewClientWithAuthenticator(config *schema.BitbucketServerConnection, httpClient httpcli.Doer, a auth.Authenticator) (*Client, error) {
 	switch a.(type) {
-	case auth.OAuthBearerToken, *auth.BasicAuth, *SudoableOAuthClient:
+	case *auth.OAuthBearerToken, *auth.BasicAuth, *SudoableOAuthClient:
 		// Excellent.
 	case nil:
 		return nil, errors.New("a cannot be nil")

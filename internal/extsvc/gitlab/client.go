@@ -111,7 +111,7 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(auth.OAuthBearerToken(oauthToken))
+	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
