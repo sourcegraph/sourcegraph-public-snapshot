@@ -42,7 +42,17 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 
 	enterpriseServices.CodeIntelResolver = resolver
 	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
-	go goroutine.MonitorBackgroundRoutines(ctx, routines...) // TODO - integrate this better
+
+	// TODO(efritz) - return these to the frontend to run
+	// Requires refactoring of the frontend server setup
+	// so I'm going to kick that can down the road for a
+	// short while.
+	//
+	// Repo updater is currently doing something similar
+	// here and would also be ripe for a refresher of the
+	// startup flow.
+	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
+
 	return nil
 }
 
