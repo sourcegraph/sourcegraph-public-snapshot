@@ -253,6 +253,10 @@ var getBySQLColumns = []string{
 	getSourcesByRepoQueryStr,
 }
 
+func minimalColumns(columns []string) []string {
+	return columns[:6]
+}
+
 func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	return s.getReposBySQL(ctx, false, querySuffix)
 }
@@ -260,7 +264,7 @@ func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*t
 func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
-		columns = columns[:6]
+		columns = minimalColumns(columns)
 	}
 
 	q := sqlf.Sprintf(
@@ -929,6 +933,59 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	}
 
 	return conds, nil
+}
+
+// GetUserAddedRepoNames will fetch all repos added by the given user
+func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
+	s.ensureStore()
+
+	columns := minimalColumns(getBySQLColumns)
+	copied := make([]string, len(columns))
+	copy(copied, columns)
+	for i := range copied {
+		copied[i] = "repo." + copied[i]
+	}
+	fmtString := fmt.Sprintf(`
+SELECT %s from repo
+JOIN external_service_repos esr ON repo.id = esr.repo_id
+WHERE esr.external_service_id IN (
+    SELECT id from external_services
+    WHERE namespace_user_id = %%s
+    AND deleted_at IS NULL
+)
+AND repo.deleted_at IS NULL
+`, strings.Join(copied, ","))
+	q := sqlf.Sprintf(fmtString, userID)
+
+	rows, err := s.Query(ctx, q)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user repos")
+	}
+	defer rows.Close()
+
+	var repos []*types.Repo
+	for rows.Next() {
+		var repo types.Repo
+		if err := scanRepo(rows, &repo); err != nil {
+			return nil, err
+		}
+		repos = append(repos, &repo)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: This enforces repository permissions
+	repos, err = authzFilter(ctx, repos, authz.Read)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing authz filter")
+	}
+	names := make([]api.RepoName, 0, len(repos))
+	for _, r := range repos {
+		names = append(names, r.Name)
+	}
+	return names, nil
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and
