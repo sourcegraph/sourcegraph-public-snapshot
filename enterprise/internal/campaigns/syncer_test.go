@@ -19,12 +19,12 @@ func TestNextSync(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
 	tests := []struct {
 		name string
-		h    campaigns.ChangesetSyncData
+		h    *campaigns.ChangesetSyncData
 		want time.Time
 	}{
 		{
 			name: "No time passed",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock(),
 			},
@@ -32,7 +32,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Linear backoff",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * time.Hour),
 			},
@@ -40,7 +40,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Use max of ExternalUpdateAt and LatestEvent",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * time.Hour),
 				LatestEvent:       clock().Add(-1 * time.Hour),
@@ -49,7 +49,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff max is capped",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * maxSyncDelay),
 			},
@@ -57,7 +57,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff min is capped",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * minSyncDelay / 2),
 			},
@@ -65,7 +65,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Event arrives after sync",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * maxSyncDelay / 2),
 				LatestEvent:       clock().Add(10 * time.Minute),
@@ -74,7 +74,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Never synced",
-			h:    campaigns.ChangesetSyncData{},
+			h:    &campaigns.ChangesetSyncData{},
 			want: clock(),
 		},
 	}
@@ -262,8 +262,8 @@ func TestSyncerRun(t *testing.T) {
 			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 				return nil, 0, nil
 			},
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-				return []campaigns.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now.Add(-2 * maxSyncDelay),
@@ -296,8 +296,8 @@ func TestSyncerRun(t *testing.T) {
 		now := time.Now()
 		store := MockSyncStore{
 			listChangesets: mockListChangesets,
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-				return []campaigns.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now,
@@ -328,8 +328,8 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
 			listChangesets: mockListChangesets,
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-				return []campaigns.ChangesetSyncData{}, nil
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{}, nil
 			},
 		}
 		syncFunc := func(ctx context.Context, ids int64) error {
@@ -378,8 +378,8 @@ func TestSyncRegistry(t *testing.T) {
 
 	syncStore := MockSyncStore{
 		listChangesets: mockListChangesets,
-		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
-			return []campaigns.ChangesetSyncData{
+		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []*campaigns.ChangesetSyncData, err error) {
+			return []*campaigns.ChangesetSyncData{
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
@@ -460,7 +460,7 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 type MockSyncStore struct {
-	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
+	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
@@ -468,7 +468,7 @@ type MockSyncStore struct {
 	transact              func(context.Context) (*Store, error)
 }
 
-func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 	return m.listChangesetSyncData(ctx, opts)
 }
 

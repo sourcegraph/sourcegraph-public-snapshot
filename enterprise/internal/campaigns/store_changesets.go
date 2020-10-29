@@ -313,15 +313,15 @@ type ListChangesetSyncDataOpts struct {
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open campaign.
-func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 	q := listChangesetSyncDataQuery(opts)
-	results := make([]campaigns.ChangesetSyncData, 0)
+	results := make([]*campaigns.ChangesetSyncData, 0)
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		var h campaigns.ChangesetSyncData
 		if err = scanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
-		results = append(results, h)
+		results = append(results, &h)
 		return err
 	})
 	if err != nil {

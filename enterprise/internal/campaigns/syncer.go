@@ -115,7 +115,7 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 // handlePriorityItems fetches changesets in the priority queue from the db and passes them
 // to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
-	fetchSyncData := func(ids []int64) ([]campaigns.ChangesetSyncData, error) {
+	fetchSyncData := func(ids []int64) ([]*campaigns.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 		defer cancel()
 		return s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: ids})
@@ -295,7 +295,7 @@ func init() {
 }
 
 type SyncStore interface {
-	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
+	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
@@ -425,7 +425,7 @@ var (
 )
 
 // NextSync computes the time we want the next sync to happen.
-func NextSync(clock func() time.Time, h campaigns.ChangesetSyncData) time.Time {
+func NextSync(clock func() time.Time, h *campaigns.ChangesetSyncData) time.Time {
 	lastSync := h.UpdatedAt
 
 	if lastSync.IsZero() {

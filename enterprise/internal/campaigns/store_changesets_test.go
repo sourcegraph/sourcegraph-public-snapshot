@@ -1103,7 +1103,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		t.Fatal(err)
 	}
 
-	checkChangesetIDs := func(t *testing.T, hs []cmpgn.ChangesetSyncData, want []int64) {
+	checkChangesetIDs := func(t *testing.T, hs []*cmpgn.ChangesetSyncData, want []int64) {
 		t.Helper()
 
 		haveIDs := []int64{}
@@ -1120,7 +1120,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []cmpgn.ChangesetSyncData{
+		want := []*cmpgn.ChangesetSyncData{
 			{
 				ChangesetID:           changesets[0].ID,
 				UpdatedAt:             clock.now(),
