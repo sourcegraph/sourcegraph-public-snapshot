@@ -66,14 +66,6 @@ func containsField(nodes []Node, field string) bool {
 	})
 }
 
-// ContainsAndOrKeyword returns true if this query contains or- or and-
-// keywords. It is a temporary signal to determine whether we can fallback to
-// the older existing search functionality.
-func ContainsAndOrKeyword(input string) bool {
-	lower := strings.ToLower(input)
-	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
-}
-
 // ContainsRegexpMetasyntax returns true if a string is a valid regular
 // expression and contains regex metasyntax (i.e., it is not a literal).
 func ContainsRegexpMetasyntax(input string) bool {
