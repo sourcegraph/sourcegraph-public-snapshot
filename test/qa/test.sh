@@ -28,7 +28,7 @@ popd || exit
 source /root/.profile
 pushd client/web || exit
 yarn run test:regression:core
-yarn run test:regression:onboarding
+yarn run test:regression:search
 popd || exit
 PID=$(pgrep ffmpeg)
 kill "$PID"
