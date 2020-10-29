@@ -36,6 +36,10 @@ export function releaseTrackingCampaign(version: string, auth: SourcegraphAuth):
     }
 }
 
+export function campaignURL(options: CampaignOptions): string {
+    return `${options.auth.SRC_ENDPOINT}/organizations/${options.namespace}/campaigns/${options.name}`
+}
+
 interface CampaignSpec {
     name: string
     description: string
@@ -53,8 +57,7 @@ async function applyCampaign(campaign: CampaignSpec, options: CampaignOptions): 
         env: options.auth,
     })
 
-    // return the campaign URL
-    return `${options.auth.SRC_ENDPOINT}/organizations/${options.namespace}/campaigns/${options.name}`
+    return campaignURL(options)
 }
 
 export async function createCampaign(changes: CreatedChangeset[], options: CampaignOptions): Promise<string> {
