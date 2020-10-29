@@ -1,6 +1,9 @@
 package graphql
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 const RepositoryFieldsFragment = `
 fragment repositoryFields on Repository {
@@ -30,6 +33,8 @@ type Repository struct {
 	URL                string
 	ExternalRepository struct{ ServiceType string }
 	DefaultBranch      *Branch
+
+	FileMatches map[string]bool
 }
 
 func (r *Repository) BaseRef() string {
@@ -43,3 +48,16 @@ func (r *Repository) Rev() string {
 func (r *Repository) Slug() string {
 	return strings.ReplaceAll(r.Name, "/", "-")
 }
+
+func (r *Repository) SearchResultPaths() (list fileMatchPathList) {
+	var files []string
+	for f := range r.FileMatches {
+		files = append(files, f)
+	}
+	sort.Strings(files)
+	return fileMatchPathList(files)
+}
+
+type fileMatchPathList []string
+
+func (f fileMatchPathList) String() string { return strings.Join(f, " ") }

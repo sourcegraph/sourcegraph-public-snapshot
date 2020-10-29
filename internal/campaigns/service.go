@@ -430,6 +430,7 @@ query ChangesetRepos(
                     ...repositoryFields
                 }
                 ... on FileMatch {
+                    file { path }
                     repository {
                         ...repositoryFields
                     }
@@ -454,13 +455,18 @@ func (svc *Service) resolveRepositorySearch(ctx context.Context, query string) (
 		return nil, err
 	}
 
-	ids := map[string]struct{}{}
+	ids := map[string]*graphql.Repository{}
 	var repos []*graphql.Repository
 	for _, r := range result.Search.Results.Results {
-		if _, ok := ids[r.ID]; !ok {
+		existing, ok := ids[r.ID]
+		if !ok {
 			repo := r.Repository
 			repos = append(repos, &repo)
-			ids[r.ID] = struct{}{}
+			ids[r.ID] = &repo
+		} else {
+			for file := range r.FileMatches {
+				existing.FileMatches[file] = true
+			}
 		}
 	}
 	return repos, nil
@@ -492,12 +498,18 @@ func (sr *searchResult) UnmarshalJSON(data []byte) error {
 
 	switch tn.Typename {
 	case "FileMatch":
-		var result struct{ Repository graphql.Repository }
+		var result struct {
+			Repository graphql.Repository
+			File       struct {
+				Path string
+			}
+		}
 		if err := json.Unmarshal(data, &result); err != nil {
 			return err
 		}
 
 		sr.Repository = result.Repository
+		sr.Repository.FileMatches = map[string]bool{result.File.Path: true}
 		return nil
 
 	case "Repository":

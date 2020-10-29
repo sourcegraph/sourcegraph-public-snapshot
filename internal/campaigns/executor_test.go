@@ -98,6 +98,24 @@ func TestExecutor_Integration(t *testing.T) {
 			executorTimeout: 100 * time.Millisecond,
 			wantErrInclude:  "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 100ms.",
 		},
+		{
+			name:  "templated",
+			repos: []*graphql.Repository{srcCLIRepo},
+			archives: []mockRepoArchive{
+				{repo: srcCLIRepo, files: map[string]string{
+					"README.md": "# Welcome to the README\n",
+					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
+				}},
+			},
+			steps: []Step{
+				{Run: `go fmt main.go`, Container: "doesntmatter:13"},
+				{Run: `touch modified-${{ join previous_step.modified_files " " }}.md`, Container: "alpine:13"},
+				{Run: `touch added-${{ join previous_step.added_files " " }}`, Container: "alpine:13"},
+			},
+			wantFilesChanged: map[string][]string{
+				srcCLIRepo.ID: []string{"main.go", "modified-main.go.md", "added-modified-main.go.md"},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -170,11 +188,16 @@ func TestExecutor_Integration(t *testing.T) {
 
 				diffsByName := map[string]*diff.FileDiff{}
 				for _, fd := range fileDiffs {
-					diffsByName[fd.OrigName] = fd
+					if fd.NewName == "/dev/null" {
+						diffsByName[fd.OrigName] = fd
+					} else {
+						diffsByName[fd.NewName] = fd
+					}
 				}
+
 				for _, file := range wantFiles {
 					if _, ok := diffsByName[file]; !ok {
-						t.Errorf("%s was not changed", file)
+						t.Errorf("%s was not changed (diffsByName=%#v)", file, diffsByName)
 					}
 				}
 			}

@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- EXPERIMENTAL: Templated campaign specs and file mounting. The campaign specs evaluated by `src campaign [preview|apply]` can now include template variables in `steps.run`, `steps.env`, and the new `steps.files` property, which allows users to create files inside the container in which the step is executed. The feature is marked as EXPERIMENTAL because it might change in the near future until we deem it non-experimental. See [#361](https://github.com/sourcegraph/src-cli/pull/361) for details.
+
 ### Changed
 
 ### Fixed
