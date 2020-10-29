@@ -2840,6 +2840,72 @@ type SavedSearch implements Node {
 }
 
 """
+CODE MONITORS
+"""
+type Monitor implements Node {
+    id: ID!
+    createdBy: User!
+    createdAt: DateTime!
+    description: String!
+    owner: Owner!
+    trigger: Trigger
+    actions: ActionConnection
+}
+
+union Owner = User | Org
+
+type MonitorQuery implements Node {
+    id: ID!
+    query: String!
+}
+
+"""
+We will support different kinds of triggers
+"""
+union Trigger = MonitorQuery
+
+type ActionConnection  {
+"""
+A list of actions.
+"""
+nodes: [Action!]!
+
+"""
+The total number of campaigns in the connection.
+"""
+totalCount: Int!
+
+"""
+Pagination information.
+"""
+pageInfo: PageInfo!
+}
+
+"""
+We will support different kind of actions
+"""
+union Action = MonitorEmail
+
+type MonitorEmail implements Node {
+    id: ID!
+    enabled: Boolean!
+    priority: MonitorEmailPriority!
+    header: String!
+    recipient: MonitorEmailRecipient!
+}
+
+enum MonitorEmailPriority {
+    NORMAL
+    CRITICAL
+}
+
+"""
+Eventually we may add Org or arbitrary email strings
+"""
+union MonitorEmailRecipient = User
+
+
+"""
 A search query description.
 """
 type SearchQueryDescription {
@@ -5380,6 +5446,7 @@ type UserConnection {
 A user.
 """
 type User implements Node & SettingsSubject & Namespace {
+    monitor: Monitor!
     """
     The unique ID for the user.
     """

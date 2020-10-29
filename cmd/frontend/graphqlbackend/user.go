@@ -340,3 +340,7 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 }
+
+func (r *UserResolver) Monitor(ctx context.Context) (MonitorResolver, error) {
+	return &monitor{userID: r.ID()}, nil
+}
