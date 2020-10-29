@@ -10,6 +10,7 @@ import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
 import { createTreeEntriesResult } from './graphQlResponseHelpers'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { SearchEvent } from '../search/stream'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -495,10 +496,10 @@ describe('Search', () => {
             }),
         }
 
-        test('Streaming search with single repo result', async () => {
-            const searchStreamEvents: ServerSideEvent[] = [
-                { name: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
-                { name: 'done', data: {} },
+        test.only('Streaming search with single repo result', async () => {
+            const searchStreamEvents: SearchEvent[] = [
+                { type: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { type: 'done', data: {} },
             ]
 
             testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })
