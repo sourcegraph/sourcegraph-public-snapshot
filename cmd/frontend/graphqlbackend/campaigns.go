@@ -136,6 +136,8 @@ type ChangesetSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
+	Changeset(ctx context.Context) (ChangesetResolver, error)
+
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
 	ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool)
 }

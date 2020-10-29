@@ -104,6 +104,39 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
+func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.changesetSpec.CampaignSpecID})
+	if err != nil {
+		return nil, err
+	}
+	svc := ee.NewService(r.store, r.httpFactory)
+	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.store, campaignSpec)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		return nil, nil
+	}
+	mapping, err := r.store.GetChangesetSpecRewireData(ctx, campaignSpec.ID, campaign.ID)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%+v\n", mapping)
+	changesetID := mapping.ForChangesetSpec(r.changesetSpec.ID)
+	if changesetID == 0 {
+		return nil, nil
+	}
+	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
+	if err != nil {
+		return nil, err
+	}
+	repo, err := r.computeRepo()
+	if err != nil {
+		return nil, err
+	}
+	return NewChangesetResolver(r.store, r.httpFactory, changeset, repo.Type()), nil
+}
+
 func (r *changesetSpecResolver) repoAccessible() (bool, error) {
 	repo, err := r.computeRepo()
 	if err != nil {

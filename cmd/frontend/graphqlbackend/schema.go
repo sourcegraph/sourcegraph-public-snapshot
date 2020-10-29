@@ -743,6 +743,11 @@ interface ChangesetSpec {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The changeset this spec targets, if exists.
+    """
+    changeset: Changeset
 }
 
 """
@@ -772,6 +777,11 @@ type HiddenChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The changeset this spec targets, if exists.
+    """
+    changeset: Changeset
 }
 
 """
@@ -806,6 +816,11 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The changeset this spec targets, if exists.
+    """
+    changeset: Changeset
 }
 
 """

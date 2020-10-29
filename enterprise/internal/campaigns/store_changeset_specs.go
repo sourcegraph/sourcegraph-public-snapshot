@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
@@ -329,7 +330,7 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:DeleteExpiredChangesetSpecs
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:DeleteExpiredChangesetSpecs
 DELETE FROM
   changeset_specs cspecs
 WHERE
@@ -349,6 +350,50 @@ AND
     NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
   )
 );
+`
+
+// GetChangesetSpecRewireData returns ChangesetSpecRewireData mapping changeset specs to changesets.
+func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, campaignID int64) (csrd campaigns.ChangesetSpecRewireMapping, err error) {
+	q := sqlf.Sprintf(getChangesetSpecRewireDataQueryFmtstr, campaignSpecID, campaignID, campaignID, campaignSpecID)
+	fmt.Printf("%+v %+v\n", q.Query(sqlf.PostgresBindVar), q.Args())
+
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c campaigns.ChangesetSpecRewire
+		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
+			return err
+		}
+		csrd = append(csrd, &c)
+		return nil
+	})
+	return csrd, err
+}
+
+var getChangesetSpecRewireDataQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
+SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
+FROM changeset_specs
+LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
+WHERE
+	changeset_specs.campaign_spec_id = %s AND
+	type = 'existing'
+
+UNION ALL
+
+SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
+FROM changeset_specs
+LEFT JOIN changesets
+	ON
+		changesets.repo_id = changeset_specs.repo_id AND
+		changesets.current_spec_id IS NOT NULL AND
+		((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
+INNER JOIN changeset_specs AS current_spec ON current_spec.id = changesets.current_spec_id
+WHERE
+	changeset_specs.campaign_spec_id = %s AND
+	changeset_specs.type = 'branch' AND (
+		(changesets.external_branch IS NOT NULL AND CONCAT('refs/heads/', changesets.external_branch) = changeset_specs.spec->>'headRef')
+		OR
+		(changesets.external_branch IS NULL AND current_spec.spec->>'headRef' = changeset_specs.spec->>'headRef')
+	)
 `
 
 func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {

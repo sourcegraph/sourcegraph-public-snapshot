@@ -1,6 +1,10 @@
 package campaigns
 
-import "time"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
 
 type ChangesetSyncState struct {
 	BaseRefOid string
@@ -28,4 +32,33 @@ type ChangesetSyncData struct {
 	// RepoExternalServiceID is the external_service_id in the repo table, usually
 	// represented by the code host URL
 	RepoExternalServiceID string
+}
+
+type ChangesetSpecRewire struct {
+	ChangesetSpecID int64
+	ChangesetID     int64
+	RepoID          api.RepoID
+}
+
+type ChangesetSpecRewireMapping []*ChangesetSpecRewire
+
+func (csrm ChangesetSpecRewireMapping) RepoIDs() []api.RepoID {
+	repoIDMap := make(map[api.RepoID]struct{})
+	for _, c := range csrm {
+		repoIDMap[c.RepoID] = struct{}{}
+	}
+	repoIDs := make([]api.RepoID, len(repoIDMap))
+	for id := range repoIDMap {
+		repoIDs = append(repoIDs, id)
+	}
+	return repoIDs
+}
+
+func (csrm ChangesetSpecRewireMapping) ForChangesetSpec(id int64) int64 {
+	for _, m := range csrm {
+		if m.ChangesetSpecID == id {
+			return m.ChangesetID
+		}
+	}
+	return 0
 }
