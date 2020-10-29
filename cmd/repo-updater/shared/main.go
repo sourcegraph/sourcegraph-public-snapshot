@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -296,8 +298,12 @@ func Main(enterpriseInit EnterpriseInit) {
 		Name: "Current Authz Providers",
 		Path: "/current-authz-providers",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// TODO (flying-robot): access list of authz providers
-			_, _ = w.Write([]byte(`{"hello":"world"}`))
+			_, ps := authz.GetProviders()
+			providers := make(map[string]authz.Provider, len(ps))
+			for _, p := range ps {
+				providers[p.ServiceID()] = p
+			}
+			fmt.Fprintf(w, "%s", providers)
 		}),
 	},
 	)
