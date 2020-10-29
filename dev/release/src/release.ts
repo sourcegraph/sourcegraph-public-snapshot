@@ -28,8 +28,9 @@ interface Config {
     captainSlackUsername: string
     captainGitHubUsername: string
 
-    majorVersion: string
-    minorVersion: string
+    previousRelease: string
+    upcomingRelease: string
+
     releaseDateTime: string
     oneWorkingDayBeforeRelease: string
     fourWorkingDaysBeforeRelease: string
@@ -40,6 +41,27 @@ interface Config {
     dryRun: {
         changesets?: boolean
         trackingIssues?: boolean
+    }
+}
+
+function releaseVersions(
+    config: Config
+): {
+    previous: semver.SemVer
+    upcoming: semver.SemVer
+} {
+    const parseOptions: semver.Options = { loose: false }
+    const parsedPrevious = semver.parse(config.previousRelease, parseOptions)
+    if (!parsedPrevious) {
+        throw new Error(`previousRelease '${config.previousRelease}' is not valid semver`)
+    }
+    const parsedUpcoming = semver.parse(config.upcomingRelease, parseOptions)
+    if (!parsedUpcoming) {
+        throw new Error(`upcomingRelease '${config.upcomingRelease}' is not valid semver`)
+    }
+    return {
+        previous: parsedPrevious,
+        upcoming: parsedUpcoming,
     }
 }
 
@@ -91,6 +113,7 @@ const steps: Step[] = [
         id: 'tracking:release-timeline',
         run: async config => {
             const googleCalendar = await getClient()
+            const versions = releaseVersions(config)
             const events: EventOptions[] = [
                 {
                     title: 'Release captain: prepare for branch cut (5 working days until release)',
@@ -122,7 +145,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(config.oneWorkingDayBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Cut release branch ${config.majorVersion}.${config.minorVersion}`,
+                    title: `Cut release branch ${versions.upcoming.major}.${versions.upcoming.minor}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
@@ -130,7 +153,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(config.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Release Sourcegraph ${config.majorVersion}.${config.minorVersion}`,
+                    title: `Release Sourcegraph ${versions.upcoming.major}.${versions.upcoming.minor}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
@@ -147,23 +170,22 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:release-issue',
-        run: async ({
-            majorVersion,
-            minorVersion,
-            releaseDateTime,
-            captainGitHubUsername,
-            oneWorkingDayBeforeRelease,
-            fourWorkingDaysBeforeRelease,
-            fiveWorkingDaysBeforeRelease,
+        run: async (config: Config) => {
+            const {
+                releaseDateTime,
+                captainGitHubUsername,
+                oneWorkingDayBeforeRelease,
+                fourWorkingDaysBeforeRelease,
+                fiveWorkingDaysBeforeRelease,
 
-            captainSlackUsername,
-            slackAnnounceChannel,
-            dryRun,
-        }: Config) => {
+                captainSlackUsername,
+                slackAnnounceChannel,
+                dryRun,
+            } = config
+            const versions = releaseVersions(config)
             // Create issue
             const { url, created } = await ensureTrackingIssue({
-                majorVersion,
-                minorVersion,
+                version: versions.upcoming,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
@@ -178,7 +200,7 @@ const steps: Step[] = [
             // Announce issue if issue does not already exist
             if (created) {
                 // Slack markdown links
-                const majorMinor = `${majorVersion}.${minorVersion}`
+                const majorMinor = `${versions.upcoming.major}.${versions.upcoming.minor}`
                 const branchCutDate = new Date(fourWorkingDaysBeforeRelease)
                 const branchCutDateString = `<${timezoneLink(branchCutDate, `${majorMinor} branch cut`)}|${formatDate(
                     branchCutDate
@@ -188,7 +210,7 @@ const steps: Step[] = [
                     releaseDate
                 )}>`
                 await postMessage(
-                    `*${majorVersion}.${minorVersion} Release*
+                    `*${majorMinor} Release*
 
 :captain: Release captain: @${captainSlackUsername}
 :pencil: Tracking issue: ${url}
@@ -281,20 +303,16 @@ const steps: Step[] = [
     {
         id: 'release:status',
         run: async (config, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-
             const githubClient = await getAuthenticatedGitHubClient()
+            const versions = releaseVersions(config)
 
             const trackingIssueURL = await getIssueByTitle(
                 githubClient,
-                trackingIssueTitle(config.majorVersion, config.minorVersion)
+                trackingIssueTitle(versions.upcoming.major, versions.upcoming.minor)
             )
             if (!trackingIssueURL) {
                 throw new Error(
-                    `Tracking issue for version ${config.majorVersion}.${config.minorVersion} not found--has it been create yet?`
+                    `Tracking issue for version ${versions.upcoming.version} not found - has it been created yet?`
                 )
             }
 
@@ -302,7 +320,7 @@ const steps: Step[] = [
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
 
-            const openQuery = `is:open org:sourcegraph is:issue milestone:${config.majorVersion}.${config.minorVersion}`
+            const openQuery = `is:open org:sourcegraph is:issue milestone:${versions.upcoming.major}.${versions.upcoming.minor}`
             const openIssues = await listIssues(githubClient, openQuery)
             const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
 
