@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -209,8 +209,6 @@ describe('Blob viewer', () => {
 
         it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-            await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
-            await driver.page.reload()
 
             // Click on "log" in "console.log()" in line 2
             await driver.page.waitForSelector('.test-log-token', { visible: true })
