@@ -3,6 +3,14 @@
 set -eu
 pushd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
+ORPHAN_ASDF=()
+mapfile ORPHAN_ASDF < <(find "$HOME/.asdf/installs/" -maxdepth 2 -empty)
+
+for dir in "${ORPHAN_ASDF[@]}"; do
+    echo "Removing orphaned .asdf directory: ${dir}"
+    rm -rf "${dir}"
+done
+
 TOOL_VERSION_FILES=()
 mapfile -d $'\0' TOOL_VERSION_FILES < <(fd .tool-versions --hidden --absolute-path --print0)
 

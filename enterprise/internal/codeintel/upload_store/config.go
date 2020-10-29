@@ -24,7 +24,7 @@ func (c *Config) Load() {
 
 	c.ManageBucket = c.GetBool(
 		"PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET",
-		"true",
+		"false",
 		"Whether or not the client should manage the target bucket configuration.",
 	)
 
