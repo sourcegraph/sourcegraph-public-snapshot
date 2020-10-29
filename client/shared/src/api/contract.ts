@@ -20,8 +20,11 @@ export interface FlatExtensionHostAPI {
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 
     // Workspace
-    syncRoots: (roots: readonly clientType.WorkspaceRoot[]) => void
-    syncVersionContext: (versionContext: string | undefined) => void
+    addWorkspaceRoot: (root: clientType.WorkspaceRoot) => void
+    getWorkspaceRoots: () => clientType.WorkspaceRoot[]
+    removeWorkspaceRoot: (uri: string) => void
+    setVersionContext: (versionContext: string | undefined) => void
+    getVersionContext: () => string | undefined
 
     // Search
     transformSearchQuery: (query: string) => ProxySubscribable<string>

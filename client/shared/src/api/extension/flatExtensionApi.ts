@@ -14,7 +14,7 @@ import { toPosition } from './api/types'
 import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover } from '@sourcegraph/extension-api-types'
+import { Hover, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly } from '../../util/types'
@@ -89,7 +89,7 @@ export const initNewExtensionAPI = (
     // the initial settings data, and instead only subscribe to configuration changes.
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
-    const rootChanges = new Subject<void>()
+    const rootChanges = new Subject<void>() // TODO: remove this?
 
     const versionContextChanges = new Subject<string | undefined>()
 
@@ -101,14 +101,17 @@ export const initNewExtensionAPI = (
         },
 
         // Workspace
-        syncRoots: (roots): void => {
-            state.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
-            rootChanges.next()
+        addWorkspaceRoot: (root: WorkspaceRoot) => {
+            state.roots = [...state.roots, { ...root, uri: new URL(root.uri) }]
         },
-        syncVersionContext: context => {
+        getWorkspaceRoots: () => state.roots.map(root => ({ ...root, uri: root.uri.toString() })),
+        removeWorkspaceRoot: (uri: string) => {
+            state.roots = state.roots.filter(root => root.uri.toString() !== uri)
+        },
+        setVersionContext: context => {
             state.versionContext = context
-            versionContextChanges.next(context)
         },
+        getVersionContext: () => state.versionContext,
 
         // Search
         transformSearchQuery: query =>
