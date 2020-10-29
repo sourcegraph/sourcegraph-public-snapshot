@@ -85,22 +85,41 @@ changesetTemplate:
 
 With [ruplacer](https://github.com/TankerHQ/ruplacer) we can easily search and replace terms in multiple case styles: `white_list`, `WhiteList`, `WHITE_LIST` etc.
 
-To use `ruplacer` in our campaign spec, all we need to do is to build a small Docker image in which `ruplacer` is available.
+The easiest way to use `ruplacer` in our campaign spec would look like this:
 
-Save the following in a `Dockerfile`:
+```yaml
+steps:
+    # Install and use ruplacer to replace words in case-style variations
+  - run: |
+      cargo install ruplacer \
+      && find . -type f \( -name '*.md' -or -name '*.markdown' \) -not -path "*/vendor/*" -not -path "*/node_modules/*" >> /tmp/find_result.txt \
+      && cat /tmp/find_result.txt | while read file;
+      do
+        ruplacer --subvert whitelist allowlist --go ${file} || echo "nothing to replace";
+        ruplacer --subvert blacklist denylist --go ${file} || echo "nothing to replace";
+      done
+    # Use the rust image in our container
+    container: rust
+```
+
+But there's a problem with that approach: every new execution of `src campaign preview` has to execute the `cargo install ruplacer` command again. And if you're tweaking which terms you're replacing, that performance cost can become too much quite fast.
+
+A better option would be to to build a small Docker image in which `ruplacer` is already installed.
+
+To do that, save the following in a `Dockerfile`:
 
 ```dockerfile
 FROM rust
 RUN cargo install ruplacer
 ```
 
-Then build a Docker image, tagged with `ruplacer`, out of it by running the following command in your terminal:
+Then build a Docker image out of it, tagged with `ruplacer`, by running the following command in your terminal:
 
 ```
 docker build . -t ruplacer
 ```
 
-Once that is done, we can replace the `steps` in our campaign spec with the following:
+Once that is done, we can use the following `steps` in our campaign spec:
 
 ```yaml
 steps:
@@ -111,6 +130,7 @@ steps:
         ruplacer --subvert whitelist allowlist --go ${file} || echo "nothing to replace";
         ruplacer --subvert blacklist denylist --go ${file} || echo "nothing to replace";
       done
+    # Use the newly-built ruplacer image
     container: ruplacer
 ```
 
