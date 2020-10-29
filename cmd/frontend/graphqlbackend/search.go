@@ -413,13 +413,18 @@ func resolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 	names, err := db.Repos.GetUserAddedRepoNames(ctx, a.UID)
 	if err != nil {
 		log15.Warn("getting user added repos", "err", err)
-	} else {
-		values := make([]RepoGroupValue, 0, len(names))
-		for _, name := range names {
-			values = append(values, RepoPath(name))
-		}
-		groups["my"] = values
+		return groups, nil
 	}
+
+	if len(names) == 0 {
+		return groups, nil
+	}
+
+	values := make([]RepoGroupValue, 0, len(names))
+	for _, name := range names {
+		values = append(values, RepoPath(name))
+	}
+	groups["my"] = values
 
 	return groups, nil
 }
