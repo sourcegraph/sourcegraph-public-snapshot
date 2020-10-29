@@ -25,4 +25,4 @@
   shell_commands:
     - |
       cd /sourcegraph
-      ./test/qa-test/test.sh
+      ./test/qa/test.sh
