@@ -125,8 +125,8 @@ func (m *manager) OnShutdown() {
 
 	for _, indexer := range m.indexers {
 		for _, meta := range indexer.metas {
-			if err := meta.tx.Done(err); err != nil && err != err {
-				log15.Error(fmt.Sprintf("Failed to close transaction holding index %d", meta.index.ID), "err", err)
+			if doneErr := meta.tx.Done(err); doneErr != nil && doneErr != err {
+				log15.Error(fmt.Sprintf("Failed to close transaction holding index %d", meta.index.ID), "err", doneErr)
 			}
 		}
 	}

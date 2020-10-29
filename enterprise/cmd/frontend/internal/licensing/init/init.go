@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
@@ -28,6 +29,10 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
 	db.ExternalServices.PreCreateExternalService = enforcement.NewPreCreateExternalServiceHook(&externalServicesStore{})
+
+	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
+	// feature, then alternative debug handlers will be invoked.
+	app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
 
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.

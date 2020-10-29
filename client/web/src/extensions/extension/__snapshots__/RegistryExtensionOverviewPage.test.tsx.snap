@@ -174,10 +174,10 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
         >
           <a
             className="btn btn-outline-secondary btn-sm"
-            href="/extensions?query=category%3AOther"
+            href="/extensions?query=category%3A%22Programming+languages%22"
             onClick={[Function]}
           >
-            Other
+            Programming languages
           </a>
         </li>
         <li
@@ -185,10 +185,10 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
         >
           <a
             className="btn btn-outline-secondary btn-sm"
-            href="/extensions?query=category%3A%22Programming+languages%22"
+            href="/extensions?query=category%3AOther"
             onClick={[Function]}
           >
-            Programming languages
+            Other
           </a>
         </li>
       </ul>
