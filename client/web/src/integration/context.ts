@@ -11,11 +11,6 @@ import html from 'tagged-template-noop'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { SearchEvent } from '../search/stream'
 
-export interface ServerSideEvent {
-    name: string
-    data: unknown
-}
-
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
