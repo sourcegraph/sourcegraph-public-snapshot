@@ -10,6 +10,7 @@ import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
 import { createTreeEntriesResult } from './graphQlResponseHelpers'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { SearchEvent } from '../search/stream'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -461,6 +462,58 @@ describe('Search', () => {
             await driver.page.keyboard.type(' hello')
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
+        })
+    })
+
+    describe('Streaming search', () => {
+        const viewerSettingsWithStreamingSearch: Partial<WebGraphQlOperations> = {
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({ experimentalFeatures: { searchStreaming: true } }),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({ experimentalFeatures: { searchStreaming: true } }),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+        }
+
+        test('Streaming search with single repo result', async () => {
+            const searchStreamEvents: SearchEvent[] = [
+                { type: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { type: 'done', data: {} },
+            ]
+
+            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })
+            testContext.overrideSearchStreamEvents(searchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-search-result', { visible: true })
+
+            const results = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-search-result-label')].map(label =>
+                    (label.textContent || '').trim()
+                )
+            )
+            expect(results).toEqual(['github.com/sourcegraph/sourcegraph'])
         })
     })
 })

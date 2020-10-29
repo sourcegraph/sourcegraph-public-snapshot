@@ -9,15 +9,17 @@ import { SearchPatternType } from '../graphql-operations'
 // change anything and everything here. We are iteratively improving this
 // until it is no longer a proof of concept and instead works well.
 
-type SearchEvent =
-    | { type: 'filematches'; matches: FileMatch[] }
-    | { type: 'repomatches'; matches: RepositoryMatch[] }
-    | { type: 'commitmatches'; matches: CommitMatch[] }
-    | { type: 'symbolmatches'; matches: FileSymbolMatch[] }
-    | { type: 'filters'; filters: Filter[] }
-    | { type: 'alert'; alert: Alert }
+export type SearchEvent =
+    | { type: 'filematches'; data: FileMatch[] }
+    | { type: 'repomatches'; data: RepositoryMatch[] }
+    | { type: 'commitmatches'; data: CommitMatch[] }
+    | { type: 'symbolmatches'; data: FileSymbolMatch[] }
+    | { type: 'filters'; data: Filter[] }
+    | { type: 'alert'; data: Alert }
+    | { type: 'error'; data: Error }
+    | { type: 'done'; data: {} }
 
-interface FileMatch extends RepositoryMatch {
+interface FileMatch {
     name: string
     repository: string
     branches?: string[]
@@ -245,42 +247,45 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
                 return {
                     ...results,
                     // File matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLFileMatch)),
+                    results: results.results.concat(newEvent.data.map(toGQLFileMatch)),
                 }
 
             case 'repomatches':
                 return {
                     ...results,
                     // Repository matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLRepositoryMatch)),
+                    results: results.results.concat(newEvent.data.map(toGQLRepositoryMatch)),
                 }
 
             case 'commitmatches':
                 return {
                     ...results,
                     // Generic matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLCommitMatch)),
+                    results: results.results.concat(newEvent.data.map(toGQLCommitMatch)),
                 }
 
             case 'symbolmatches':
                 return {
                     ...results,
                     // symbol matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLSymbolMatch)),
+                    results: results.results.concat(newEvent.data.map(toGQLSymbolMatch)),
                 }
 
             case 'filters':
                 return {
                     ...results,
                     // New filter results replace all previous ones
-                    dynamicFilters: newEvent.filters.map(toGQLSearchFilter),
+                    dynamicFilters: newEvent.data.map(toGQLSearchFilter),
                 }
 
             case 'alert':
                 return {
                     ...results,
-                    alert: toGQLSearchAlert(newEvent.alert),
+                    alert: toGQLSearchAlert(newEvent.data),
                 }
+
+            default:
+                return results
         }
     }, emptyGQLSearchResults),
     defaultIfEmpty(emptyGQLSearchResults)
@@ -328,32 +333,32 @@ export function search(
         const subscriptions = new Subscription()
         subscriptions.add(
             observeMessages<FileMatch[]>(eventSource, 'filematches')
-                .pipe(map(matches => ({ type: 'filematches' as const, matches })))
+                .pipe(map(matches => ({ type: 'filematches' as const, data: matches })))
                 .subscribe(observer)
         )
         subscriptions.add(
             observeMessages<FileSymbolMatch[]>(eventSource, 'symbolmatches')
-                .pipe(map(matches => ({ type: 'symbolmatches' as const, matches })))
+                .pipe(map(matches => ({ type: 'symbolmatches' as const, data: matches })))
                 .subscribe(observer)
         )
         subscriptions.add(
             observeMessages<RepositoryMatch[]>(eventSource, 'repomatches')
-                .pipe(map(matches => ({ type: 'repomatches' as const, matches })))
+                .pipe(map(matches => ({ type: 'repomatches' as const, data: matches })))
                 .subscribe(observer)
         )
         subscriptions.add(
             observeMessages<CommitMatch[]>(eventSource, 'commitmatches')
-                .pipe(map(matches => ({ type: 'commitmatches' as const, matches })))
+                .pipe(map(matches => ({ type: 'commitmatches' as const, data: matches })))
                 .subscribe(observer)
         )
         subscriptions.add(
             observeMessages<Filter[]>(eventSource, 'filters')
-                .pipe(map(filters => ({ type: 'filters' as const, filters })))
+                .pipe(map(filters => ({ type: 'filters' as const, data: filters })))
                 .subscribe(observer)
         )
         subscriptions.add(
             observeMessages<Alert>(eventSource, 'alert')
-                .pipe(map(alert => ({ type: 'alert' as const, alert })))
+                .pipe(map(alert => ({ type: 'alert' as const, data: alert })))
                 .subscribe(observer)
         )
         subscriptions.add(
