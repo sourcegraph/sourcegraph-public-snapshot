@@ -191,13 +191,14 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
-        it('truncates long file paths properly', async function () {
+        it('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
             )
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.page.waitForSelector('.test-breadcrumb')
-            await percySnapshot(driver.page, this.test!.fullTitle())
+            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
+            // await percySnapshot(driver.page, this.test!.fullTitle())
         })
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
