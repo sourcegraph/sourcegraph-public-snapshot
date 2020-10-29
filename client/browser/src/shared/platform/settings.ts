@@ -1,6 +1,6 @@
 import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { BehaviorSubject, from, fromEvent, Observable } from 'rxjs'
+import { from, fromEvent, Observable } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { SettingsEdit } from '../../../../shared/src/api/client/services/settings'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
