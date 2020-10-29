@@ -5,7 +5,7 @@ import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
 import { RepoGroupsResult, SearchResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { WebIntegrationTestContext, createWebIntegrationTestContext, ServerSideEvent } from './context'
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
 import { createTreeEntriesResult } from './graphQlResponseHelpers'
@@ -496,7 +496,7 @@ describe('Search', () => {
             }),
         }
 
-        test.only('Streaming search with single repo result', async () => {
+        test('Streaming search with single repo result', async () => {
             const searchStreamEvents: SearchEvent[] = [
                 { type: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
                 { type: 'done', data: {} },
