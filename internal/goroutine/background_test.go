@@ -1,12 +1,13 @@
 package goroutine
 
 import (
+	"context"
 	"os"
 	"syscall"
 	"testing"
 )
 
-func TestMonitorBackgroundRoutines(t *testing.T) {
+func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
 	exiter = func() {}
 
 	r1 := NewMockBackgroundRoutine()
@@ -19,7 +20,7 @@ func TestMonitorBackgroundRoutines(t *testing.T) {
 
 	go func() {
 		defer close(unblocked)
-		monitorBackgroundRoutines(signals, r1, r2, r3)
+		monitorBackgroundRoutines(context.Background(), signals, r1, r2, r3)
 	}()
 
 	signals <- syscall.SIGINT
@@ -27,10 +28,41 @@ func TestMonitorBackgroundRoutines(t *testing.T) {
 
 	for _, r := range []*MockBackgroundRoutine{r1, r2, r3} {
 		if calls := len(r.StartFunc.History()); calls != 1 {
-			t.Errorf("unexpected number fo calls to start. want=%d have=%d", 1, calls)
+			t.Errorf("unexpected number of calls to start. want=%d have=%d", 1, calls)
 		}
 		if calls := len(r.StopFunc.History()); calls != 1 {
-			t.Errorf("unexpected number fo calls to stop. want=%d have=%d", 1, calls)
+			t.Errorf("unexpected number of calls to stop. want=%d have=%d", 1, calls)
+		}
+	}
+}
+
+func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
+	exiter = func() {}
+
+	r1 := NewMockBackgroundRoutine()
+	r2 := NewMockBackgroundRoutine()
+	r3 := NewMockBackgroundRoutine()
+
+	signals := make(chan os.Signal, 1)
+	defer close(signals)
+	unblocked := make(chan struct{})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		defer close(unblocked)
+		monitorBackgroundRoutines(ctx, signals, r1, r2, r3)
+	}()
+
+	cancel()
+	<-unblocked
+
+	for _, r := range []*MockBackgroundRoutine{r1, r2, r3} {
+		if calls := len(r.StartFunc.History()); calls != 1 {
+			t.Errorf("unexpected number of calls to start. want=%d have=%d", 1, calls)
+		}
+		if calls := len(r.StopFunc.History()); calls != 1 {
+			t.Errorf("unexpected number of calls to stop. want=%d have=%d", 1, calls)
 		}
 	}
 }
