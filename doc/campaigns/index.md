@@ -94,3 +94,4 @@ Create a campaign by specifying a search query to get a list of repositories and
 ## References
 
 - [Campaign spec YAML reference](campaign_spec_yaml_reference.md)
+- [Campaign spec templating](campaign_spec_templating.md)
