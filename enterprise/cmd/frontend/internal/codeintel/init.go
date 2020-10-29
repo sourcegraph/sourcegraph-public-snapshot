@@ -43,7 +43,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	enterpriseServices.CodeIntelResolver = resolver
 	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
 
-	// TODO(efritz) - return these to the frontend to run
+	// TODO(efritz) - return these to the frontend to run.
 	// Requires refactoring of the frontend server setup
 	// so I'm going to kick that can down the road for a
 	// short while.
