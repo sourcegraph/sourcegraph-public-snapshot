@@ -1,14 +1,15 @@
 package campaigns
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-type UserToken struct {
+type UserCredential struct {
 	UserID            int32
 	ExternalServiceID int64
-	Token             *json.RawMessage
+	Credential        auth.Authenticator
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }

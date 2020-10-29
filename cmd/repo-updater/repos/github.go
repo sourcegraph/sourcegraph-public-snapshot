@@ -107,7 +107,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, account *
 	}
 
 	token := &auth.OAuthBearerToken{Token: c.Token}
-	// TODO: something with account
+	// TODO: do something with account.
 
 	return &GithubSource{
 		svc:              svc,

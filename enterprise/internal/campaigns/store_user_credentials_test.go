@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
@@ -28,8 +28,8 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 	// let's define our token placeholders here, along with other state we need
 	// to track across subtests.
 	var (
-		tokenAA *campaigns.UserToken
-		tokenAB *campaigns.UserToken
+		tokenAA *campaigns.UserCredential
+		tokenAB *campaigns.UserCredential
 
 		createdAt = time.Date(2020, 10, 2, 23, 56, 0, 0, time.UTC)
 		updatedAt = time.Date(2020, 10, 2, 23, 57, 0, 0, time.UTC)
@@ -40,20 +40,20 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 	// use in the other subtests, at least as far as user A's tokens go.
 	t.Run("UpsertUserToken insert", func(t *testing.T) {
 		// Create a user token with implicit created and updated times.
-		tokenAA = &campaigns.UserToken{
+		tokenAA = &campaigns.UserCredential{
 			UserID:            uidA,
 			ExternalServiceID: svcA.ID,
-			Token:             createToken(`"foo"`),
+			Credential:        createCredential(`"foo"`),
 		}
 		if err := s.UpsertUserToken(ctx, tokenAA); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
 		// Create a user token with explicit created and updated times.
-		tokenAB = &campaigns.UserToken{
+		tokenAB = &campaigns.UserCredential{
 			UserID:            uidA,
 			ExternalServiceID: svcB.ID,
-			Token:             createToken(`"bar"`),
+			Credential:        createCredential(`"bar"`),
 			CreatedAt:         createdAt,
 			UpdatedAt:         updatedAt,
 		}
@@ -93,7 +93,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 			t.Errorf("unexpected non-nil error: %v", err)
 		} else if next != 0 {
 			t.Errorf("unexpected cursor: have=%d want=%d", next, 0)
-		} else if diff := cmp.Diff(have, []*campaigns.UserToken{
+		} else if diff := cmp.Diff(have, []*campaigns.UserCredential{
 			// The seeming reverse order here is because of the earlier
 			// createdAt that we used when upserting tokenAB.
 			tokenAB,
@@ -114,7 +114,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 		if next != 1 {
 			t.Errorf("unexpected cursor: have=%d want=%d", next, 1)
 		}
-		if diff := cmp.Diff(have, []*campaigns.UserToken{
+		if diff := cmp.Diff(have, []*campaigns.UserCredential{
 			tokenAB,
 		}); diff != "" {
 			t.Errorf("unexpected tokens:\n%s", diff)
@@ -132,7 +132,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 		if next != 0 {
 			t.Errorf("unexpected cursor: have=%d want=%d", next, 0)
 		}
-		if diff := cmp.Diff(have, []*campaigns.UserToken{
+		if diff := cmp.Diff(have, []*campaigns.UserCredential{
 			tokenAA,
 		}); diff != "" {
 			t.Errorf("unexpected tokens:\n%s", diff)
@@ -161,7 +161,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 			t.Errorf("unexpected non-nil error: %v", err)
 		} else if next != 0 {
 			t.Errorf("unexpected cursor: have=%d want=%d", next, 0)
-		} else if diff := cmp.Diff(have, []*campaigns.UserToken{
+		} else if diff := cmp.Diff(have, []*campaigns.UserCredential{
 			tokenAA,
 		}); diff != "" {
 			t.Errorf("unexpected tokens:\n%s", diff)
@@ -179,7 +179,7 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 		if next != 0 {
 			t.Errorf("unexpected cursor: have=%d want=%d", next, 0)
 		}
-		if diff := cmp.Diff(have, []*campaigns.UserToken{
+		if diff := cmp.Diff(have, []*campaigns.UserCredential{
 			tokenAA,
 		}); diff != "" {
 			t.Errorf("unexpected tokens:\n%s", diff)
@@ -218,14 +218,14 @@ func testStoreUserTokens(t *testing.T, ctx context.Context, s *Store, rs repos.S
 
 	// Now let's try updating one of the tokens we've already created.
 	t.Run("UpsertUserToken update", func(t *testing.T) {
-		tokenAB.Token = createToken(`"quux"`)
+		tokenAB.Credential = createCredential(`"quux"`)
 		if err := s.UpsertUserToken(ctx, tokenAB); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
 		if token, err := s.GetUserToken(ctx, tokenAB.UserID, tokenAB.ExternalServiceID); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
-		} else if diff := cmp.Diff(string(*token.Token), `"quux"`); diff != "" {
+		} else if diff := cmp.Diff(string(token.Credential.(auth.OAuthBearerToken)), `"quux"`); diff != "" {
 			t.Errorf("unexpected token value:\n%s", diff)
 		}
 	})
@@ -261,9 +261,8 @@ func createExternalService(t *testing.T, ctx context.Context, rs repos.Store, ki
 	return &es
 }
 
-func createToken(s string) *json.RawMessage {
-	msg := json.RawMessage(s)
-	return &msg
+func createCredential(s string) auth.Authenticator {
+	return auth.OAuthBearerToken(s)
 }
 
 func createSecretString(s string) secret.StringValue {
