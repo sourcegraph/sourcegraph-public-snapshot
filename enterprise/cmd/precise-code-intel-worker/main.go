@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -61,7 +60,7 @@ func main() {
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	server := httpserver.New(Port, func(router *mux.Router) {})
+	server := httpserver.New(port, nil, httpserver.Options{})
 	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
 	commitUpdater := commitupdater.NewUpdater(
 		store,
@@ -82,8 +81,13 @@ func main() {
 		observationContext,
 	)
 
-	go debugserver.Start()
-	goroutine.MonitorBackgroundRoutines(server, uploadResetter, commitUpdater, worker)
+	goroutine.MonitorBackgroundRoutines(
+		server,
+		uploadResetter,
+		commitUpdater,
+		worker,
+		goroutine.NoopStop(debugserver.NewServerRoutine()),
+	)
 }
 
 func mustInitializeStore() store.Store {

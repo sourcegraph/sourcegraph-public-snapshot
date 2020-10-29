@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const Port = 3187
+const port = 3187
 
 type Server struct {
 	bundleDir          string
@@ -26,5 +26,5 @@ func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, obs
 		observationContext: observationContext,
 	}
 
-	return httpserver.New(Port, server.setupRoutes)
+	return httpserver.New(port, server.setupRoutes, httpserver.Options{})
 }

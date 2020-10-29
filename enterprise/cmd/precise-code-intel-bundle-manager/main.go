@@ -83,6 +83,7 @@ func main() {
 
 	routines := []goroutine.BackgroundRoutine{
 		server,
+		goroutine.NoopStop(debugserver.NewServerRoutine()),
 	}
 
 	if !disableJanitor {
@@ -91,7 +92,6 @@ func main() {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	go debugserver.Start()
 	goroutine.MonitorBackgroundRoutines(routines...)
 }
 

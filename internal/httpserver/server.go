@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -20,10 +21,15 @@ type server struct {
 	once   sync.Once
 }
 
+type Options struct {
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+}
+
 // New returns a BackgroundRoutine that maintains an HTTP server listening on the given
 // port with a router configured with the given function. All servers will respond 200
 // to requests to /healthz.
-func New(port int, setupRoutes func(router *mux.Router)) goroutine.BackgroundRoutine {
+func New(port int, setupRoutes func(router *mux.Router), options Options) goroutine.BackgroundRoutine {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
@@ -40,8 +46,10 @@ func New(port int, setupRoutes func(router *mux.Router)) goroutine.BackgroundRou
 
 	return &server{
 		server: &http.Server{
-			Addr:    net.JoinHostPort(host, strconv.FormatInt(int64(port), 10)),
-			Handler: ot.Middleware(router),
+			Addr:         net.JoinHostPort(host, strconv.FormatInt(int64(port), 10)),
+			Handler:      ot.Middleware(router),
+			ReadTimeout:  options.ReadTimeout,
+			WriteTimeout: options.WriteTimeout,
 		},
 	}
 }
