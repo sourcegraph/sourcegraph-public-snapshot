@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-func TestChangesetEvents(t *testing.T) {
+func TestChangesetEvent(t *testing.T) {
 	type testCase struct {
 		name      string
 		changeset Changeset
@@ -292,4 +292,23 @@ func TestChangesetEvents(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChangesetEvents(t *testing.T) {
+	t.Run("Removes duplicates", func(t *testing.T) {
+		events := ChangesetEvents{
+			&ChangesetEvent{
+				Kind: ChangesetEventKindGitHubCommit,
+				Key:  "veryuniquekey",
+			},
+			&ChangesetEvent{
+				Kind: ChangesetEventKindGitHubCommit,
+				Key:  "veryuniquekey",
+			},
+		}
+		deduped := events.Dedupe()
+		if have, want := len(deduped), 1; have != want {
+			t.Fatalf("incorrect count of changeset events returned from Dedupe, have=%d, want=%d", have, want)
+		}
+	})
 }

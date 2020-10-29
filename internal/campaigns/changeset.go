@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -377,26 +376,6 @@ func (c *Changeset) URL() (s string, err error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
-}
-
-type ChangesetEvents []*ChangesetEvent
-
-// Dedupe deduplicates events per changeset based on their Kind+Key to avoid
-// conflicts when inserting into database.
-func (ce ChangesetEvents) Dedupe() []*ChangesetEvent {
-	uniqueEvents := make(map[string]struct{}, len(ce))
-	var events []*ChangesetEvent
-
-	for _, e := range ce {
-		k := string(e.Kind) + e.Key
-		if _, ok := uniqueEvents[k]; ok {
-			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
-			continue
-		}
-		uniqueEvents[k] = struct{}{}
-		events = append(events, e)
-	}
-	return events
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
