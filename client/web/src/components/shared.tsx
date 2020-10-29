@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 import { ActionsNavItems, ActionsNavItemsProps } from '../../../shared/src/actions/ActionsNavItems'
 import { CommandListPopoverButton, CommandListPopoverButtonProps } from '../../../shared/src/commandPalette/CommandList'
 import {
@@ -10,6 +10,7 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/HoverOverlay'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 // Components from shared with web-styling class names applied
 
@@ -33,16 +34,18 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
     }
 
     const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken } = props
+    const { onHoverShown } = props
 
-    /** Whether the hover has actual content (that provides value to the user) */
-    const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
+    // Using the `NoCheck` variation of `useDeepCompareEffect` since `hoverOrError` CAN be a primitive
+    useDeepCompareEffectNoCheck(() => {
+        /** Whether the hover has actual content (that provides value to the user) */
+        const hoverHasValue =
+            hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
 
-    useEffect(() => {
         if (hoverHasValue) {
             onHoverShown?.()
         }
-    }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
+    }, [hoverOrError])
 
     return (
         <HoverOverlay

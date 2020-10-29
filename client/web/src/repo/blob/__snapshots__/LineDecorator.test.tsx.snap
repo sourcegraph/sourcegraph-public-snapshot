@@ -1,0 +1,54 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LineDecorator renders multiple attachments 1`] = `
+Array [
+  <span
+    className="line-decoration-attachment"
+    rel="noreferrer noopener"
+  >
+    <span
+      className="line-decoration-attachment__contents"
+      data-contents="attachment from extension one"
+      style={
+        Object {
+          "backgroundColor": undefined,
+          "color": undefined,
+        }
+      }
+    />
+  </span>,
+  <span
+    className="line-decoration-attachment"
+    rel="noreferrer noopener"
+  >
+    <span
+      className="line-decoration-attachment__contents"
+      data-contents="attachment from extension two"
+      style={
+        Object {
+          "backgroundColor": undefined,
+          "color": undefined,
+        }
+      }
+    />
+  </span>,
+]
+`;
+
+exports[`LineDecorator renders one attachment 1`] = `
+<span
+  className="line-decoration-attachment"
+  rel="noreferrer noopener"
+>
+  <span
+    className="line-decoration-attachment__contents"
+    data-contents="test content"
+    style={
+      Object {
+        "backgroundColor": undefined,
+        "color": undefined,
+      }
+    }
+  />
+</span>
+`;
