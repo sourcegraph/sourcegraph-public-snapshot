@@ -15,6 +15,7 @@ import {
     scan,
     mapTo,
 } from 'rxjs/operators'
+import { WorkspaceRoot } from 'sourcegraph'
 import { ActionItemAction } from '../actions/ActionItem'
 import { Context } from '../api/client/context/context'
 import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
@@ -57,7 +58,7 @@ export function getHoverActions(
 /**
  * The scoped context properties for the hover.
  *
- * @internal Exported for testing only.
+ * @internal
  */
 export interface HoverActionsContext extends Context<TextDocumentPositionParameters> {
     ['goToDefinition.showLoading']: boolean
@@ -71,7 +72,7 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
 /**
  * Returns an observable that emits the scoped context for the hover upon subscription and whenever it changes.
  *
- * @internal Exported for testing only.
+ * @internal
  */
 export function getHoverActionsContext(
     {
@@ -101,6 +102,7 @@ export function getHoverActionsContext(
     const definitionURLOrError = getDefinitionURL(
         { urlToFile, requestGraphQL },
         extensionsController.services,
+        [], // TODO
         parameters
     ).pipe(
         catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
@@ -181,19 +183,16 @@ export interface UIDefinitionURL {
  * Returns an observable that emits null if no definitions are found, {url, multiple: false} if exactly 1
  * definition is found, {url: defPanelURL, multiple: true} if multiple definitions are found, or an error.
  *
- * @internal Exported for testing only.
+ * @internal
  */
 export function getDefinitionURL(
     { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
     {
-        workspace,
         textDocumentDefinition,
     }: {
-        workspace: {
-            roots: { value: readonly WorkspaceRootWithMetadata[] }
-        }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
+    workspaceRoots: WorkspaceRootWithMetadata[],
     parameters: TextDocumentPositionParameters & URLToFileContext
 ): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
     return textDocumentDefinition.getLocations(parameters).pipe(
@@ -209,7 +208,7 @@ export function getDefinitionURL(
                 if (definitions.length > 1) {
                     // Open the panel to show all definitions.
                     const uri = withWorkspaceRootInputRevision(
-                        workspace.roots.value || [],
+                        workspaceRoots,
                         parseRepoURI(parameters.textDocument.uri)
                     )
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({
@@ -237,7 +236,7 @@ export function getDefinitionURL(
                 // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
                 // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
                 // branch name to a URL with a full Git commit SHA.
-                const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
+                const uri = withWorkspaceRootInputRevision(workspaceRoots, parseRepoURI(def.uri))
 
                 if (def.range) {
                     uri.position = {
@@ -295,9 +294,6 @@ export function registerHoverContributions({
     | {
           extensionsController: {
               services: Pick<Services, 'commands' | 'contribution'> & {
-                  workspace: {
-                      roots: { value: readonly WorkspaceRootWithMetadata[] }
-                  }
                   textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
               }
           }
@@ -378,6 +374,7 @@ export function registerHoverContributions({
                 const { result } = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,
+                    [], // TODO
                     parameters
                 )
                     .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
