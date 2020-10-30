@@ -132,3 +132,14 @@ steps:
     env:
       LINTER_ERRORS: ${{ previous_step.stdout }}
 ```
+
+If you need to escape the `${{` and `}}` delimiters you can simply render them as string literals:
+
+
+```yaml
+steps:
+  - run: cp /tmp/escaped.txt .
+    container: alpine:3
+    files:
+      /tmp/escaped.txt: ${{ "${{" }} ${{ "}}" }}
+```
