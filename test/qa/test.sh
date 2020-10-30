@@ -31,3 +31,6 @@ yarn run test:regression:core
 popd || exit
 PID=$(pgrep ffmpeg)
 kill "$PID"
+
+logile=$(docker inspect server --format '{{.LogPath}}')
+cp $logfile sourcegraph-server.log
