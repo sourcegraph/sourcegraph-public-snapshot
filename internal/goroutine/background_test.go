@@ -7,9 +7,10 @@ import (
 	"testing"
 )
 
-func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
-	exiter = func() {}
+// Make the exiter a no-op in tests
+func init() { exiter = func() {} }
 
+func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
 	r1 := NewMockBackgroundRoutine()
 	r2 := NewMockBackgroundRoutine()
 	r3 := NewMockBackgroundRoutine()
@@ -37,8 +38,6 @@ func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
 }
 
 func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
-	exiter = func() {}
-
 	r1 := NewMockBackgroundRoutine()
 	r2 := NewMockBackgroundRoutine()
 	r3 := NewMockBackgroundRoutine()
