@@ -120,8 +120,6 @@ func NewClientWithAuthenticator(config *schema.BitbucketServerConnection, httpCl
 	switch a.(type) {
 	case *auth.OAuthBearerToken, *auth.BasicAuth, *SudoableOAuthClient:
 		// Excellent.
-	case nil:
-		return nil, errors.New("a cannot be nil")
 	default:
 		return nil, errors.Errorf("unknown Authenticator type: %T", a)
 	}
