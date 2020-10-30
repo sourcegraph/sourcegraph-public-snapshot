@@ -16,8 +16,8 @@ yarn
 yarn generate
 
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
-
-IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name sourcegraph-server
+CONTAINER=sourcegraph-server
+IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name $CONTAINER
 
 sleep 15
 
@@ -32,5 +32,6 @@ popd || exit
 PID=$(pgrep ffmpeg)
 kill "$PID"
 
-logile=$(docker inspect server --format '{{.LogPath}}')
-cp $logfile sourcegraph-server.log
+LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
+cp "$LOGFILE" $CONTAINER.log
+chmod 744 $CONTAINER.log
