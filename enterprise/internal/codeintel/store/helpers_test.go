@@ -221,7 +221,6 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 			rows = append(rows, sqlf.Sprintf(
 				"(%s, %s, %s, %s, %s, %s, %s)",
 				repositoryID,
-				commit,
 				dbutil.CommitBytea(commit),
 				meta.UploadID,
 				meta.Distance,
@@ -232,7 +231,7 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", commit_bytea, upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
+		`INSERT INTO lsif_nearest_uploads (repository_id, commit_bytea, upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

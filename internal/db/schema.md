@@ -631,7 +631,7 @@ Check constraints:
       Column      |  Type   | Modifiers 
 ------------------+---------+-----------
  repository_id    | integer | not null
- commit           | text    | not null
+ commit           | text    | 
  upload_id        | integer | not null
  distance         | integer | not null
  ancestor_visible | boolean | not null
