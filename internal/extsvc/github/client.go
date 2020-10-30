@@ -165,8 +165,9 @@ func NewClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *Client 
 	}
 }
 
-// WithAuthenticator returns a copy of the Client authenticated as the GitHub
-// user with the given authenticator instance (most likely a token).
+// WithAuthenticator returns a new Client that uses the same configuration as
+// the current Client, except authenticated as the GitHub user with the given
+// authenticator instance (most likely a token).
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return NewClient(c.apiURL, a, c.httpClient)
 }
