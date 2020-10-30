@@ -155,12 +155,16 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		commits = append(commits, sqlf.Sprintf("%s", commit))
 	}
 
-	uploadMeta, err := scanUploadMeta(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
-		FROM lsif_nearest_uploads nu
-		JOIN lsif_uploads u ON u.id = nu.upload_id
-		WHERE nu.repository_id = %s AND encode(nu.commit_bytea, 'hex') IN (%s) AND nu.ancestor_visible
-	`, repositoryID, sqlf.Join(commits, ", "))))
+	uploadMeta, err := scanUploadMeta(s.Store.Query(ctx, sqlf.Sprintf(
+		`
+			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
+			FROM lsif_nearest_uploads nu
+			JOIN lsif_uploads u ON u.id = nu.upload_id
+			WHERE nu.repository_id = %s AND encode(nu.commit_bytea, 'hex') IN (%s) AND nu.ancestor_visible
+		`,
+		repositoryID,
+		sqlf.Join(commits, ", "),
+	)))
 	if err != nil {
 		return nil, err
 	}
