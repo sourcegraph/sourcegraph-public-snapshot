@@ -636,8 +636,10 @@ Check constraints:
  distance         | integer | not null
  ancestor_visible | boolean | not null
  overwritten      | boolean | not null
+ commit_bytea     | bytea   | 
 Indexes:
     "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
+    "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
 
