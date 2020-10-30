@@ -89,7 +89,7 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 	}
 
 	sourcer := repos.NewSourcer(s.HTTPFactory)
-	css, err := buildChangesetSource(sourcer, extSvc)
+	source, err := buildChangesetSource(sourcer, extSvc)
 	if err != nil {
 		log15.Error(err.Error())
 		return
@@ -101,7 +101,7 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 	syncer := &ChangesetSyncer{
 		SyncStore:      s.SyncStore,
 		ReposStore:     s.RepoStore,
-		css:            css,
+		source:         source,
 		codeHostURL:    normalised,
 		cancel:         cancel,
 		priorityNotify: make(chan []int64, 500),
@@ -237,7 +237,7 @@ type ChangesetSyncer struct {
 	SyncStore  SyncStore
 	ReposStore RepoStore
 
-	css repos.ChangesetSource
+	source repos.ChangesetSource
 
 	codeHostURL string
 
@@ -531,12 +531,12 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, s.css, cs)
+	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, s.source, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, css repos.ChangesetSource, c *campaigns.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, c *campaigns.Changeset) (err error) {
 	rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []api.RepoID{c.RepoID},
 	})
@@ -546,7 +546,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 	repo := rs[0]
 
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
-	if err := css.LoadChangeset(ctx, repoChangeset); err != nil {
+	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
 			return err
@@ -584,12 +584,12 @@ func buildChangesetSource(
 		return nil, err
 	}
 
-	css, ok := sources[0].(repos.ChangesetSource)
+	source, ok := sources[0].(repos.ChangesetSource)
 	if !ok {
 		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", extSvc.Kind)
 	}
 
-	return css, nil
+	return source, nil
 }
 
 type scheduledSync struct {
