@@ -17,5 +17,5 @@ func New(indexManager indexmanager.Manager) goroutine.BackgroundRoutine {
 		indexManager: indexManager,
 	}
 
-	return httpserver.New(port, server.setupRoutes, httpserver.Options{})
+	return httpserver.New(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }

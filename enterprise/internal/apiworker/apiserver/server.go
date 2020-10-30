@@ -16,7 +16,7 @@ func NewServer(options Options) goroutine.BackgroundRoutine {
 	handler := newHandler(options, glock.NewRealClock())
 
 	return goroutine.CombinedRoutine{
-		httpserver.New(addr, handler.setupRoutes, httpserver.Options{}),
+		httpserver.New(addr, httpserver.NewHandler(handler.setupRoutes), httpserver.Options{}),
 		goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler}),
 	}
 }

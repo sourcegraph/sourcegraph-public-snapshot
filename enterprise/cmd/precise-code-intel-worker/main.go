@@ -60,7 +60,7 @@ func main() {
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	server := httpserver.New(port, nil, httpserver.Options{})
+	server := httpserver.New(port, httpserver.NewHandler(nil), httpserver.Options{})
 	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
 	commitUpdater := commitupdater.NewUpdater(
 		store,

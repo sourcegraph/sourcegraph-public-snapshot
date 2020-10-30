@@ -39,7 +39,7 @@ func main() {
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		routines = append(routines, httpserver.New(port, nil, httpserver.Options{}))
+		routines = append(routines, httpserver.New(port, httpserver.NewHandler(nil), httpserver.Options{}))
 	}
 
 	goroutine.MonitorBackgroundRoutines(routines...)

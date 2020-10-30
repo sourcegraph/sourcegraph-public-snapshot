@@ -26,5 +26,5 @@ func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, obs
 		observationContext: observationContext,
 	}
 
-	return httpserver.New(port, server.setupRoutes, httpserver.Options{})
+	return httpserver.New(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }
