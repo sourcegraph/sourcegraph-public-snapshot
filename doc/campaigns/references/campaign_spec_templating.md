@@ -13,7 +13,7 @@
 
 [Certain fields](#fields-with-template-support) in a [campaign spec YAML](campaign_spec_yaml_reference.md) can include template variables to create even more powerful and performant campaigns.
 
-Template variables in a camapaign spec all have this form: `${{ <variable> }}`. They are evaluated before the execution of each entry in `steps` and allow accessing not only data from search results but also from previous steps.
+Template variables in a campaign spec all have this form: `${{ <variable> }}`. They are evaluated before the execution of each entry in `steps` and allow accessing not only data from search results but also from previous steps.
 
 Here is an example excerpt of a campaign spec that uses the template variables:
 
@@ -36,7 +36,7 @@ run: comby -in-place 'fmt.Sprintf("%d", :[v])' 'strconv.Itoa(:[v])' cmd/src/main
 
 The result is that `comby` only search and replaces in those files, instead of having to search through the complete repository.
 
-The `${{ previous_step.modified_files }}` in the second step will be replaced by the list of files that the previous `comby` step modified. The final `run` value willlook like this, if `comby` modified both of these files:
+The `${{ previous_step.modified_files }}` in the second step will be replaced by the list of files that the previous `comby` step modified. The final `run` value will look like this, if `comby` modified both of these files:
 
 ```yaml
 run: goimports -w cmd/src/main.go internal/fmt/fmt.go
@@ -65,16 +65,16 @@ The following template variables are available:
     List of files that have been modified by the previous step in `steps`. Empty if no files have been modified.
 - `${{ previous_step.added_files }}`
 
-    List of files that have been added by the previous step in `steps`. Empty if no files have been modified.
+    List of files that have been added by the previous step in `steps`. Empty if no files have been added.
 - `${{ previous_step.deleted_files }}`
 
-    List of files that have been deleted by the previous step in `steps`. Empty if no files have been modified.
+    List of files that have been deleted by the previous step in `steps`. Empty if no files have been deleted.
 - `${{ previous_step.stdout }}`
 
-    String containing the complete output of the previous step on standard output.
+    The complete output of the previous step on standard output.
 - `${{ previous_step.stderr}}`
 
-    String containing the complete output of the previous step on standard error.
+    The complete output of the previous step on standard error.
 
 ## Template helper functions
 
@@ -82,7 +82,6 @@ The following template variables are available:
 - `${{ split repository.name "/" }}`
 
 ## Examples
-
 
 Pass the exact list of search result file paths to a command:
 
