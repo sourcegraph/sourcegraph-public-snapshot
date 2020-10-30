@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -85,6 +86,7 @@ func main() {
 	)
 
 	goroutine.MonitorBackgroundRoutines(
+		context.Background(),
 		server,
 		uploadResetter,
 		commitUpdater,

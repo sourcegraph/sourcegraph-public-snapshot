@@ -74,6 +74,7 @@ func main() {
 	}
 
 	goroutine.MonitorBackgroundRoutines(
+		context.Background(),
 		goroutine.NoopStop(debugserver.NewServerRoutine()),
 		server,
 	)

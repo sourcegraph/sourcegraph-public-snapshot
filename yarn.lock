@@ -4112,18 +4112,18 @@
   dependencies:
     "@types/pollyjs__core" "*"
 
-"@types/pollyjs__core@*", "@types/pollyjs__core@4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@types/pollyjs__core/-/pollyjs__core-4.3.0.tgz#813c4d778d518771d9ddf559d63120190e4fc86d"
-  integrity sha512-gloFb5e36G8Tice0J2GhdzqAAongh2ALBel5QjvjmTk4Vv0+mD3xkE3O50XHdRfbJwCOo7A/rpH+6J+kuKXdZg==
+"@types/pollyjs__core@*", "@types/pollyjs__core@4.3.1":
+  version "4.3.1"
+  resolved "https://registry.npmjs.org/@types/pollyjs__core/-/pollyjs__core-4.3.1.tgz#374c62ef87b1a582cf448615860ecc2dbb15c309"
+  integrity sha512-YxAH9Ms9A2jStQKko/wnCCLN6VYQHfrSPvHRC8YlVXuZVoVx56tz8I88QyBxrNO9ZEC4o2dvQqkDO1A8neOQZQ==
   dependencies:
     "@types/pollyjs__adapter" "*"
     "@types/pollyjs__persister" "*"
 
-"@types/pollyjs__persister-fs@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/@types/pollyjs__persister-fs/-/pollyjs__persister-fs-2.0.0.tgz#8643bca7e80da499541d3e4d28fd039e3bfdc5be"
-  integrity sha512-m788FLVtzE+qqrNeotBel2S1EhNMkkNRVJa9XQqeNdwvaJvOp7h/EWacKCrdHLK406LBo7vhL8dpWldkRBm0lg==
+"@types/pollyjs__persister-fs@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/@types/pollyjs__persister-fs/-/pollyjs__persister-fs-2.0.1.tgz#5b660cf725dd93dc10710377e923269e57b9094c"
+  integrity sha512-wYqBN0sqHg+XHGo0Hy5J7pCF0IW6+aWEz9+wKWN6VuLmq3Bh2D/pzLOADSbSH8g5IwYQWNRO4GTYONCffNSlwg==
   dependencies:
     "@types/pollyjs__persister" "*"
 
@@ -4147,10 +4147,10 @@
   resolved "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.5.6.tgz#9c03d3fed70a8d517c191b7734da2879b50ca26c"
   integrity sha512-ZBFR7TROLVzCkswA3Fmqq+IIJt62/T7aY/Dmz+QkU7CaW2QFqAitCE8Ups7IzmGhcN1YWMBT4Qcoc07jU9hOJQ==
 
-"@types/puppeteer@3.0.1":
-  version "3.0.1"
-  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-3.0.1.tgz#053ec20facc162b25a64785affccaa3e5817c607"
-  integrity sha512-t03eNKCvWJXhQ8wkc5C6GYuSqMEdKLOX0GLMGtks25YZr38wKZlKTwGM/BoAPVtdysX7Bb9tdwrDS1+NrW3RRA==
+"@types/puppeteer@3.0.3":
+  version "3.0.3"
+  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-3.0.3.tgz#db0066e294cb9a1572d8e25fc68705e6d270ee8b"
+  integrity sha512-JDrg4N5hzKvtZsD62DV6i5h5hxKtZF+Q79YmGIacAVyJNcG1OWR0ty+e6LwqGWaoEt5lPeTtA2Z7OuTjUg6rag==
   dependencies:
     "@types/node" "*"
 

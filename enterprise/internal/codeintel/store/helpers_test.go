@@ -14,6 +14,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 type printableRank struct{ value *int }
@@ -217,12 +218,21 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	var rows []*sqlf.Query
 	for commit, metas := range uploads {
 		for _, meta := range metas {
-			rows = append(rows, sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)", repositoryID, commit, meta.UploadID, meta.Distance, meta.AncestorVisible, meta.Overwritten))
+			rows = append(rows, sqlf.Sprintf(
+				"(%s, %s, %s, %s, %s, %s, %s)",
+				repositoryID,
+				commit,
+				dbutil.CommitBytea(commit),
+				meta.UploadID,
+				meta.Distance,
+				meta.AncestorVisible,
+				meta.Overwritten,
+			))
 		}
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
+		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", commit_bytea, upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

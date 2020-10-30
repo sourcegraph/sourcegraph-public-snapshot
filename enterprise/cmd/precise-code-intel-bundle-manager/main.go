@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -95,7 +96,7 @@ func main() {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	goroutine.MonitorBackgroundRoutines(routines...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
 func mustInitializeStore() store.Store {
