@@ -81,7 +81,7 @@ describe('LanguageFeatures (integration)', () => {
         emptyResultValue: [],
     })
     testLocationProvider<sourcegraph.LocationProvider>({
-        name: 'registerDefinitionProvider',
+        name: 'registerLocationProvider',
         registerProvider: extensionAPI => (selector, provider) =>
             extensionAPI.languages.registerLocationProvider('x', selector, provider),
         labeledProvider: label => ({
