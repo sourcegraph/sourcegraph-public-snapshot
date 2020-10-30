@@ -2861,7 +2861,7 @@ type Monitor implements Node {
     trigger: Trigger
     actions(
         """
-        Returns the first n monitors form the list
+        Returns the first n actions from the list
         """
         first: Int = 50
         """
@@ -5656,7 +5656,7 @@ type User implements Node & SettingsSubject & Namespace {
     """
     monitors(
         """
-        Returns the first n monitors form the list
+        Returns the first n monitors from the list
         """
         first: Int = 50
         """
