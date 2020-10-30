@@ -19,7 +19,7 @@ import { isInPage } from '../context'
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
 /**
- * Returns an observable that emits the localStorage value for the given key on
+ * Returns an observable that emits the localStorage value (as a raw string) for the given key on
  * every storage update event, starting with the current value.
  */
 function observeLocalStorageKey(key: string, defaultValue: string): Observable<string> {
@@ -34,7 +34,10 @@ function observeLocalStorageKey(key: string, defaultValue: string): Observable<s
 }
 
 const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
-    const storageSubject = isInPage
+    /** Observable of the JSONC string of the settings. */
+    const storageObservable = isInPage
+        // NOTE: We can't use LocalStorageSubject here because the JSONC string is stored raw in localStorage and LocalStorageSubject also does parsing.
+        // This could be changed, but users already have settings stored, so it would need a migration for little benefit.
         ? observeLocalStorageKey(inPageClientSettingsKey, '{}')
         : observeStorageKey('sync', 'clientSettings')
 
