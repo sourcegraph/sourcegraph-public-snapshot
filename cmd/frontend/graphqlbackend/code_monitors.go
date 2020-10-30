@@ -10,7 +10,7 @@ import (
 )
 
 // TODO: add events for triggers and actions
-// TODO: in-memory store implementation
+// TODO: add mock-store
 // TODO: add mutations
 
 //
