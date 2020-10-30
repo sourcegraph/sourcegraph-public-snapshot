@@ -14,10 +14,32 @@ func TestChangesetEvent(t *testing.T) {
 	type testCase struct {
 		name      string
 		changeset Changeset
-		events    ChangesetEvents
+		events    []*ChangesetEvent
 	}
 
-	var cases []testCase
+	bbsActivity := &bitbucketserver.Activity{
+		ID:     1,
+		Action: bitbucketserver.OpenedActivityAction,
+	}
+
+	cases := []testCase{{
+		name: "removes duplicates",
+		changeset: Changeset{
+			Metadata: &bitbucketserver.PullRequest{
+				Activities: []*bitbucketserver.Activity{
+					bbsActivity,
+					bbsActivity,
+				},
+			},
+		},
+		events: []*ChangesetEvent{
+			{
+				Kind:     ChangesetEventKindBitbucketServerOpened,
+				Key:      "1",
+				Metadata: bbsActivity,
+			},
+		},
+	}}
 
 	{ // Github
 
@@ -72,7 +94,7 @@ func TestChangesetEvent(t *testing.T) {
 					},
 				},
 			},
-			ChangesetEvents{{
+			[]*ChangesetEvent{{
 				ChangesetID: 23,
 				Kind:        ChangesetEventKindGitHubAssigned,
 				Key:         assignedEvent.Key(),
@@ -184,7 +206,7 @@ func TestChangesetEvent(t *testing.T) {
 					Activities: activities,
 				},
 			},
-			ChangesetEvents{{
+			[]*ChangesetEvent{{
 				ChangesetID: 24,
 				Kind:        ChangesetEventKindBitbucketServerOpened,
 				Key:         activities[0].Key(),
@@ -238,7 +260,7 @@ func TestChangesetEvent(t *testing.T) {
 				ID:       1234,
 				Metadata: mr,
 			},
-			events: ChangesetEvents{
+			events: []*ChangesetEvent{
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabApproved,
@@ -292,23 +314,4 @@ func TestChangesetEvent(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestChangesetEvents(t *testing.T) {
-	t.Run("Removes duplicates", func(t *testing.T) {
-		events := ChangesetEvents{
-			&ChangesetEvent{
-				Kind: ChangesetEventKindGitHubCommit,
-				Key:  "veryuniquekey",
-			},
-			&ChangesetEvent{
-				Kind: ChangesetEventKindGitHubCommit,
-				Key:  "veryuniquekey",
-			},
-		}
-		deduped := events.Dedupe()
-		if have, want := len(deduped), 1; have != want {
-			t.Fatalf("incorrect count of changeset events returned from Dedupe, have=%d, want=%d", have, want)
-		}
-	})
 }

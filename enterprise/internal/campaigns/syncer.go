@@ -535,7 +535,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 		}
 	}
 
-	events := c.Events().Dedupe()
+	events := c.Events()
 	SetDerivedState(ctx, c, events)
 
 	tx, err := syncStore.Transact(ctx)

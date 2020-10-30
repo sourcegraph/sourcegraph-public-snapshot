@@ -78,26 +78,6 @@ const (
 	ChangesetEventKindGitLabUnmarkWorkInProgress ChangesetEventKind = "gitlab:unmark_wip"
 )
 
-type ChangesetEvents []*ChangesetEvent
-
-// Dedupe deduplicates events per changeset based on their Kind+Key to avoid
-// conflicts when inserting into database.
-func (ce ChangesetEvents) Dedupe() []*ChangesetEvent {
-	uniqueEvents := make(map[string]struct{}, len(ce))
-	var events []*ChangesetEvent
-
-	for _, e := range ce {
-		k := string(e.Kind) + e.Key
-		if _, ok := uniqueEvents[k]; ok {
-			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
-			continue
-		}
-		uniqueEvents[k] = struct{}{}
-		events = append(events, e)
-	}
-	return events
-}
-
 // A ChangesetEvent is an event that happened in the lifetime
 // and context of a Changeset.
 type ChangesetEvent struct {
