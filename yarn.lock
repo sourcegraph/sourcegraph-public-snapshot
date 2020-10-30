@@ -4120,10 +4120,10 @@
     "@types/pollyjs__adapter" "*"
     "@types/pollyjs__persister" "*"
 
-"@types/pollyjs__persister-fs@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/@types/pollyjs__persister-fs/-/pollyjs__persister-fs-2.0.0.tgz#8643bca7e80da499541d3e4d28fd039e3bfdc5be"
-  integrity sha512-m788FLVtzE+qqrNeotBel2S1EhNMkkNRVJa9XQqeNdwvaJvOp7h/EWacKCrdHLK406LBo7vhL8dpWldkRBm0lg==
+"@types/pollyjs__persister-fs@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/@types/pollyjs__persister-fs/-/pollyjs__persister-fs-2.0.1.tgz#5b660cf725dd93dc10710377e923269e57b9094c"
+  integrity sha512-wYqBN0sqHg+XHGo0Hy5J7pCF0IW6+aWEz9+wKWN6VuLmq3Bh2D/pzLOADSbSH8g5IwYQWNRO4GTYONCffNSlwg==
   dependencies:
     "@types/pollyjs__persister" "*"
 
