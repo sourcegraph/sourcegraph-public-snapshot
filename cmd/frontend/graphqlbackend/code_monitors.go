@@ -9,14 +9,53 @@ import (
 	"github.com/graph-gophers/graphql-go"
 )
 
-// TODO: MonitorConnection
-// TODO: Events
+// TODO: add events for triggers and actions
 // TODO: in-memory store implementation
-// TODO: modification
+// TODO: add mutations
+
+//
+// MonitorConnection
+//
+type ListMonitorsArgs struct {
+	First int32
+	After *string
+}
+
+func monitors(ctx context.Context, userID graphql.ID, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	// TODO: fetch data
+	return &monitorConnection{userID: userID}, nil
+}
+
+type MonitorConnectionResolver interface {
+	Nodes(ctx context.Context) ([]MonitorResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type monitorConnection struct {
+	userID graphql.ID
+}
+
+func (m *monitorConnection) Nodes(ctx context.Context) ([]MonitorResolver, error) {
+	return []MonitorResolver{&monitor{userID: m.userID}}, nil
+}
+
+func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
+	return 1, nil
+}
+
+func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
 
 //
 // Monitor
 //
+type ListActionArgs struct {
+	First int32
+	After *string
+}
+
 type MonitorResolver interface {
 	ID() graphql.ID
 	CreatedBy(ctx context.Context) (*UserResolver, error)
@@ -24,18 +63,11 @@ type MonitorResolver interface {
 	Description() string
 	Owner(ctx context.Context) (Owner, error)
 	Trigger(ctx context.Context) (Trigger, error)
-	Actions(ctx context.Context) (ActionConnectionResolver, error)
+	Actions(ctx context.Context, args *ListActionArgs) (ActionConnectionResolver, error)
 }
 
 type monitor struct {
 	userID graphql.ID
-}
-
-func (m *monitor) Actions(ctx context.Context) (ActionConnectionResolver, error) {
-	return &actionConnectionResolver{
-			monitorID: m.ID(),
-			userID:    m.userID}, // TODO: remove this. This is just for the stub implementation.
-		nil
 }
 
 func (m *monitor) ID() graphql.ID {
@@ -56,6 +88,14 @@ func (m *monitor) Description() string {
 
 func (m *monitor) Trigger(ctx context.Context) (Trigger, error) {
 	return &trigger{&monitorQuery{monitorID: m.ID()}}, nil
+}
+
+func (m *monitor) Actions(ctx context.Context, args *ListActionArgs) (ActionConnectionResolver, error) {
+	// TODO: fetch data
+	return &actionConnection{
+			monitorID: m.ID(),
+			userID:    m.userID}, // TODO: remove this. This is just for the stub implementation.
+		nil
 }
 
 //
@@ -85,7 +125,7 @@ func (o *owner) ToOrg() (*OrgResolver, bool) {
 }
 
 //
-// Trigger
+// Trigger <<UNION>>
 //
 type Trigger interface {
 	ToMonitorQuery() (MonitorQueryResolver, bool)
@@ -128,20 +168,20 @@ type ActionConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type actionConnectionResolver struct {
+type actionConnection struct {
 	userID    graphql.ID //  TODO: remove this. This is just for the stub implementation.
 	monitorID graphql.ID
 }
 
-func (a *actionConnectionResolver) Nodes(ctx context.Context) ([]Action, error) {
+func (a *actionConnection) Nodes(ctx context.Context) ([]Action, error) {
 	return []Action{&action{email: &monitorEmail{id: "42", userID: a.userID}}}, nil
 }
 
-func (a *actionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (a *actionConnection) TotalCount(ctx context.Context) (int32, error) {
 	return 1, nil
 }
 
-func (a *actionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (a *actionConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
 }
 

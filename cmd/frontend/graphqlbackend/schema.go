@@ -2842,6 +2842,23 @@ type SavedSearch implements Node {
 """
 CODE MONITORS
 """
+type MonitorConnection  {
+    """
+    A list of monitors.
+    """
+    nodes: [Monitor!]!
+
+    """
+    The total number of monitors in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 type Monitor implements Node {
     id: ID!
     createdBy: User!
@@ -2849,7 +2866,16 @@ type Monitor implements Node {
     description: String!
     owner: Owner!
     trigger: Trigger
-    actions: ActionConnection
+    actions(
+        """
+        Returns the first n monitors form the list
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ActionConnection!
 }
 
 union Owner = User | Org
@@ -2865,20 +2891,20 @@ We will support different kinds of triggers
 union Trigger = MonitorQuery
 
 type ActionConnection  {
-"""
-A list of actions.
-"""
-nodes: [Action!]!
+    """
+    A list of actions.
+    """
+    nodes: [Action!]!
 
-"""
-The total number of campaigns in the connection.
-"""
-totalCount: Int!
+    """
+    The total number of actions in the connection.
+    """
+    totalCount: Int!
 
-"""
-Pagination information.
-"""
-pageInfo: PageInfo!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -5446,7 +5472,6 @@ type UserConnection {
 A user.
 """
 type User implements Node & SettingsSubject & Namespace {
-    monitor: Monitor!
     """
     The unique ID for the user.
     """
@@ -5632,6 +5657,20 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    A list of monitors owned by the user or her organization
+    """
+    monitors(
+        """
+        Returns the first n monitors form the list
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorConnection!
 }
 
 """
