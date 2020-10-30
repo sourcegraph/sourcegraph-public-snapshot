@@ -38,7 +38,7 @@ func New(listener net.Listener, handler http.Handler, options Options) goroutine
 	}
 }
 
-// TODO - document
+// New returns a BackgroundRoutine that serves the given handler on the given port.
 func NewFromAddr(addr string, handler http.Handler, options Options) (goroutine.BackgroundRoutine, error) {
 	listener, err := NewListener(addr)
 	if err != nil {
