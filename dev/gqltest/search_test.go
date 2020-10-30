@@ -597,6 +597,18 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
 			},
 			{
+				name:  `Literals, simple not keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Literals, not keyword and implicit and inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Literals, not and and keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
+			},
+			{
 				name:  `Dangling right parens, supported via content: filter`,
 				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPath)" and main patterntype:literal`,
 			},
