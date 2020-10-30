@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gomodule/oauth1/oauth"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
