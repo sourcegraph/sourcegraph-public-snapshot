@@ -2868,7 +2868,7 @@ type Monitor implements Node {
     trigger: Trigger
     actions(
         """
-        Returns the first n monitors form the list
+        Returns the first n actions from the list
         """
         first: Int = 50
         """
@@ -2886,7 +2886,7 @@ type MonitorQuery implements Node {
 }
 
 """
-We will support different kinds of triggers
+Supported triggers for code monitors
 """
 union Trigger = MonitorQuery
 
@@ -2908,7 +2908,7 @@ type ActionConnection  {
 }
 
 """
-We will support different kind of actions
+Supported actions for code monitors
 """
 union Action = MonitorEmail
 
@@ -2926,7 +2926,7 @@ enum MonitorEmailPriority {
 }
 
 """
-Eventually we may add Org or arbitrary email strings
+Supported types of recipients for email actions
 """
 union MonitorEmailRecipient = User
 
@@ -5663,7 +5663,7 @@ type User implements Node & SettingsSubject & Namespace {
     """
     monitors(
         """
-        Returns the first n monitors form the list
+        Returns the first n monitors from the list
         """
         first: Int = 50
         """
