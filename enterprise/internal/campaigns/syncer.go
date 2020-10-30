@@ -183,29 +183,7 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	s.mu.Unlock()
 
 	if timeIsNilOrZero(es.DeletedAt) && !exists {
-		// Convert the api.ExternalService to repos.ExternalService.
-		// They're basically the same, just some pointers here and there.
-		extSvc := &repos.ExternalService{
-			ID:          es.ID,
-			Kind:        es.Kind,
-			DisplayName: es.DisplayName,
-			Config:      es.Config,
-			CreatedAt:   es.CreatedAt,
-			UpdatedAt:   es.UpdatedAt,
-		}
-		if es.DeletedAt != nil {
-			extSvc.DeletedAt = *es.DeletedAt
-		}
-		if es.LastSyncAt != nil {
-			extSvc.LastSyncAt = *es.LastSyncAt
-		}
-		if es.NextSyncAt != nil {
-			extSvc.NextSyncAt = *es.NextSyncAt
-		}
-		if es.NamespaceUserID != nil {
-			extSvc.NamespaceUserID = *es.NamespaceUserID
-		}
-		s.Add(extSvc)
+		s.Add(extsvcTypeApiToRepos(&es))
 	}
 
 	s.mu.Lock()
@@ -712,3 +690,29 @@ const (
 	priorityNormal priority = iota
 	priorityHigh
 )
+
+// extsvcTypeApiToRepos converts the api.ExternalService to repos.ExternalService.
+// They're basically the same, just some pointers here and there.
+func extsvcTypeApiToRepos(es *api.ExternalService) *repos.ExternalService {
+	extSvc := &repos.ExternalService{
+		ID:          es.ID,
+		Kind:        es.Kind,
+		DisplayName: es.DisplayName,
+		Config:      es.Config,
+		CreatedAt:   es.CreatedAt,
+		UpdatedAt:   es.UpdatedAt,
+	}
+	if es.DeletedAt != nil {
+		extSvc.DeletedAt = *es.DeletedAt
+	}
+	if es.LastSyncAt != nil {
+		extSvc.LastSyncAt = *es.LastSyncAt
+	}
+	if es.NextSyncAt != nil {
+		extSvc.NextSyncAt = *es.NextSyncAt
+	}
+	if es.NamespaceUserID != nil {
+		extSvc.NamespaceUserID = *es.NamespaceUserID
+	}
+	return extSvc
+}
