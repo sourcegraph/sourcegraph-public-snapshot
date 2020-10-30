@@ -281,7 +281,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 			}),
 		)
 		pipeline.AddTrigger(":chromium:",
-			bk.Trigger("regression"),
+			bk.Trigger("qa"),
 			bk.Async(async),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
