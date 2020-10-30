@@ -268,8 +268,30 @@ describe('parseSearchQuery()', () => {
         })
     })
 
-    test('quoted', () =>
+    test('quoted, double quotes', () =>
         expect(parseSearchQuery('"a:b"')).toMatchObject({
+            token: {
+                range: {
+                    end: 5,
+                    start: 0,
+                },
+                members: [
+                    {
+                        range: {
+                            end: 5,
+                            start: 0,
+                        },
+                        quotedValue: 'a:b',
+                        type: 'quoted',
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        }))
+
+    test('quoted, single quotes', () =>
+        expect(parseSearchQuery("'a:b'")).toMatchObject({
             token: {
                 range: {
                     end: 5,
