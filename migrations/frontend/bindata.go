@@ -108,6 +108,8 @@
 // 1528395736_add_index_to_repo_created_at.up.sql (151B)
 // 1528395737_compressed_commits.down.sql (76B)
 // 1528395737_compressed_commits.up.sql (339B)
+// 1528395738_changeset_rewirer_db.down.sql (310B)
+// 1528395738_changeset_rewirer_db.up.sql (906B)
 
 package migrations
 
@@ -2336,6 +2338,46 @@ func _1528395737_compressed_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395738_changeset_rewirer_dbDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\xcc\xcb\x8a\xc2\x30\x14\x80\xe1\x7d\x9e\xe2\xec\x3a\x03\x03\x7d\x80\x30\x8b\x5e\x32\x63\x20\x97\x92\x9c\xa2\xbb\x12\xdb\x53\x2b\x48\x29\x49\x17\xfa\xf6\xe2\x4a\xd1\x5d\xb7\x3f\x7c\x7f\x29\xfe\xa5\xe1\x8c\x15\x0a\x85\x03\x2c\x4a\x25\xa0\x9f\xc2\x7c\xa2\x44\x6b\x97\x16\xea\x13\xd4\xce\x36\x50\x59\xd5\x6a\x03\xf2\x0f\xc4\x41\x7a\xf4\xb0\xde\x16\xe2\x1b\x1c\x5d\x57\x8a\x73\xb8\x74\xe7\x61\x0b\x9f\x28\x0c\x5d\xa4\x91\x33\xd6\x36\x75\x81\x2f\x2e\x81\x17\xf8\xfc\x1f\x63\x98\xfb\x09\x7e\x41\xa1\x93\xfa\xeb\xad\xff\x40\x16\x69\x4c\xf9\xe3\x97\xf2\xec\x1b\xf6\x3b\xe1\xc4\x87\x96\x1e\x8c\x45\x30\xad\x52\x9c\xb1\xca\x6a\x2d\x91\xb3\x7b\x00\x00\x00\xff\xff\x2b\xcb\xb2\x94\x36\x01\x00\x00")
+
+func _1528395738_changeset_rewirer_dbDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_changeset_rewirer_dbDownSql,
+		"1528395738_changeset_rewirer_db.down.sql",
+	)
+}
+
+func _1528395738_changeset_rewirer_dbDownSql() (*asset, error) {
+	bytes, err := _1528395738_changeset_rewirer_dbDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_changeset_rewirer_db.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x53, 0x87, 0xca, 0xc1, 0x64, 0x7e, 0x2b, 0xcf, 0xec, 0x7, 0x8c, 0x9d, 0x66, 0x91, 0x2c, 0x90, 0xb4, 0x94, 0x11, 0x93, 0x3a, 0x9d, 0xe1, 0xfa, 0xc5, 0x91, 0x89, 0xc2, 0xef, 0xdd, 0x54, 0x6a}}
+	return a, nil
+}
+
+var __1528395738_changeset_rewirer_dbUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x92\xc1\x6e\xab\x30\x10\x45\xf7\xfe\x8a\xd9\x3c\x39\x91\x5e\x9b\x7d\x50\x2a\x39\xe0\xb6\x56\x1d\x53\x05\x47\xcd\x0e\x51\x32\x04\xa4\x0a\x45\xd8\x0b\xfa\xf7\x15\x84\xa6\xe0\xa8\x25\x62\xc3\x66\x8e\xe7\xcc\xbd\x62\xcd\x9f\x84\xf2\x08\x61\x52\xf3\x2d\x68\xb6\x96\x1c\xd2\x3c\x29\x8f\x68\xd0\xc6\xe6\x84\xa9\x01\x16\x04\xe0\x87\x72\xb7\x51\x20\x1e\x41\x85\x1a\xf8\x5e\x44\x3a\x02\xfb\x79\x42\xd0\x7c\xaf\x3d\xb2\x7b\x0d\x98\xbe\x7e\x1a\x71\x7d\xa6\x56\x40\xb1\x2e\x8c\x2d\xca\x23\x85\xb7\x67\xbe\xe5\x30\x73\xe0\xfb\xe6\x7b\xf7\x40\xb1\xb6\x58\x95\xc9\x87\x08\xe8\x7c\xb9\xb4\x58\x5b\x10\x51\xab\x55\x3b\x29\x6f\x52\xbd\x57\x49\x99\xe6\x14\x60\x9a\xaa\xd5\xfc\xd9\x48\x3b\xeb\x3a\x69\xa5\x8d\xfd\xe7\xc4\x69\x75\x7e\x5f\x13\x17\x87\xf1\x56\xfb\xf0\xca\x25\xba\x7c\x83\x80\x5d\x15\xb7\x90\x83\xba\xa7\x65\xc9\x31\x39\xc4\x15\x66\xe3\x41\x2e\xe4\xef\x29\x1a\x64\x8b\xd9\x58\x84\x0b\x36\xbc\xdf\x75\x3b\xfd\x9d\xff\x15\x58\x81\x1f\x2a\x9f\xe9\x19\xad\x30\x33\x8b\x66\x97\x59\xd0\xff\x2e\x37\xef\x6e\x70\x9f\xf7\x94\xc0\x54\x70\x35\x6f\x86\x52\xbc\x70\xe8\xaf\xff\x47\x3d\x42\xfc\x70\xb3\x11\xda\x23\x5f\x01\x00\x00\xff\xff\x06\x23\x5e\x99\x8a\x03\x00\x00")
+
+func _1528395738_changeset_rewirer_dbUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_changeset_rewirer_dbUpSql,
+		"1528395738_changeset_rewirer_db.up.sql",
+	)
+}
+
+func _1528395738_changeset_rewirer_dbUpSql() (*asset, error) {
+	bytes, err := _1528395738_changeset_rewirer_dbUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_changeset_rewirer_db.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x18, 0xd1, 0x99, 0x31, 0x1f, 0xc1, 0xb, 0xb7, 0x43, 0xee, 0x9e, 0x66, 0xa7, 0x79, 0xfc, 0x90, 0x2e, 0xc5, 0xd6, 0x7a, 0x3f, 0xb7, 0x96, 0x8d, 0xc5, 0x88, 0xbe, 0x7f, 0xce, 0x8d, 0x31, 0xd7}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2535,6 +2577,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395736_add_index_to_repo_created_at.up.sql":                               _1528395736_add_index_to_repo_created_atUpSql,
 	"1528395737_compressed_commits.down.sql":                                       _1528395737_compressed_commitsDownSql,
 	"1528395737_compressed_commits.up.sql":                                         _1528395737_compressed_commitsUpSql,
+	"1528395738_changeset_rewirer_db.down.sql":                                     _1528395738_changeset_rewirer_dbDownSql,
+	"1528395738_changeset_rewirer_db.up.sql":                                       _1528395738_changeset_rewirer_dbUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2689,6 +2733,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395736_add_index_to_repo_created_at.up.sql":                               {_1528395736_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
 	"1528395737_compressed_commits.down.sql":                                       {_1528395737_compressed_commitsDownSql, map[string]*bintree{}},
 	"1528395737_compressed_commits.up.sql":                                         {_1528395737_compressed_commitsUpSql, map[string]*bintree{}},
+	"1528395738_changeset_rewirer_db.down.sql":                                     {_1528395738_changeset_rewirer_dbDownSql, map[string]*bintree{}},
+	"1528395738_changeset_rewirer_db.up.sql":                                       {_1528395738_changeset_rewirer_dbUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

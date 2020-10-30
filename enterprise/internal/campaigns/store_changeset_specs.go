@@ -372,7 +372,7 @@ var getChangesetSpecRewireDataQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
 SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
 FROM changeset_specs
-LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
+LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.external_id
 WHERE
 	changeset_specs.campaign_spec_id = %s AND
 	type = 'existing'
@@ -390,9 +390,9 @@ INNER JOIN changeset_specs AS current_spec ON current_spec.id = changesets.curre
 WHERE
 	changeset_specs.campaign_spec_id = %s AND
 	changeset_specs.type = 'branch' AND (
-		(changesets.external_branch IS NOT NULL AND CONCAT('refs/heads/', changesets.external_branch) = changeset_specs.spec->>'headRef')
+		(changesets.external_branch IS NOT NULL AND changesets.external_branch = changeset_specs.head_ref)
 		OR
-		(changesets.external_branch IS NULL AND current_spec.spec->>'headRef' = changeset_specs.spec->>'headRef')
+		(changesets.external_branch IS NULL AND current_spec.head_ref = changeset_specs.head_ref)
 	)
 `
 
