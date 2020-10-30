@@ -219,7 +219,7 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	for commit, metas := range uploads {
 		for _, meta := range metas {
 			rows = append(rows, sqlf.Sprintf(
-				"(%s, %s, %s, %s, %s, %s, %s)",
+				"(%s, %s, %s, %s, %s, %s)",
 				repositoryID,
 				dbutil.CommitBytea(commit),
 				meta.UploadID,
