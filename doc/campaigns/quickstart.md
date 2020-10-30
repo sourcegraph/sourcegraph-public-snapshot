@@ -66,7 +66,7 @@ Once `src login` reports that you're authenticated, we're ready for the next ste
 
 A **campaign spec** is a YAML file that defines a campaign. It specifies which changes should be made in which repositories and how those should be published on the code host.
 
-See the ["Campaign spec YAML reference"](campaign_spec_yaml_reference.md) for details.
+See the ["Campaign spec YAML reference"](references/campaign_spec_yaml_reference.md) for details.
 
 Save the following campaign spec as `hello-world.campaign.yaml`:
 
@@ -129,7 +129,7 @@ On a real campaign, you would do the following:
 1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
 
-    > NOTE: Change [`published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](campaign_spec_yaml_reference.md#changesettemplate-published).
+    > NOTE: Change [`published` to an array](references/campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](references/campaign_spec_yaml_reference.md#changesettemplate-published).
 1. Run the `src campaign preview` command again and open the URL.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_rerun_preview.png" class="screenshot">
 1. On the preview page you can confirm that changesets will be published when the spec is applied.
