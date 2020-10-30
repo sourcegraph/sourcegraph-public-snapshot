@@ -11,14 +11,18 @@ import (
 )
 
 // NewServer returns an HTTP job queue server.
-func NewServer(options Options) goroutine.BackgroundRoutine {
+func NewServer(options Options) (goroutine.BackgroundRoutine, error) {
 	addr := fmt.Sprintf(":%d", options.Port)
 	handler := newHandler(options, glock.NewRealClock())
 
-	return goroutine.CombinedRoutine{
-		httpserver.New(addr, httpserver.NewHandler(handler.setupRoutes), httpserver.Options{}),
-		goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler}),
+	server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(handler.setupRoutes), httpserver.Options{})
+	if err != nil {
+		return nil, err
 	}
+
+	janitor := goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler})
+
+	return goroutine.CombinedRoutine{server, janitor}, nil
 }
 
 type handlerWrapper struct{ handler *handler }

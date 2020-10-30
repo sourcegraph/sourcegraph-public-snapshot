@@ -18,7 +18,7 @@ type Server struct {
 	observationContext *observation.Context
 }
 
-func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, observationContext *observation.Context) (goroutine.BackgroundRoutine, error) {
 	server := &Server{
 		bundleDir:          bundleDir,
 		storeCache:         storeCache,
@@ -26,5 +26,5 @@ func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, obs
 		observationContext: observationContext,
 	}
 
-	return httpserver.New(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
+	return httpserver.NewFromAddr(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }

@@ -12,10 +12,10 @@ type Server struct {
 	indexManager indexmanager.Manager
 }
 
-func New(indexManager indexmanager.Manager) goroutine.BackgroundRoutine {
+func New(indexManager indexmanager.Manager) (goroutine.BackgroundRoutine, error) {
 	server := &Server{
 		indexManager: indexManager,
 	}
 
-	return httpserver.New(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
+	return httpserver.NewFromAddr(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }

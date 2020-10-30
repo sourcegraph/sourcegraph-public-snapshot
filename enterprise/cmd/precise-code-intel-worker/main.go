@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-const Port = 3188
+const port = ":3188"
 
 func main() {
 	env.Lock()
@@ -60,7 +60,10 @@ func main() {
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	server := httpserver.New(port, httpserver.NewHandler(nil), httpserver.Options{})
+	server, err := httpserver.NewFromAddr(port, httpserver.NewHandler(nil), httpserver.Options{})
+	if err != nil {
+		log.Fatalf("failed to create listener: %s", err)
+	}
 	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
 	commitUpdater := commitupdater.NewUpdater(
 		store,

@@ -39,7 +39,12 @@ func main() {
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		routines = append(routines, httpserver.New(port, httpserver.NewHandler(nil), httpserver.Options{}))
+		server, err := httpserver.NewFromAddr(port, httpserver.NewHandler(nil), httpserver.Options{})
+		if err != nil {
+			log.Fatalf("failed to create listener: %s", err)
+		}
+
+		routines = append(routines, server)
 	}
 
 	goroutine.MonitorBackgroundRoutines(routines...)

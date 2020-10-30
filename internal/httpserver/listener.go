@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
+// TODO - document
 func NewListener(addr string) (_ net.Listener, err error) {
 	addr, err = SanitizeAddr(addr)
 	if err != nil {
@@ -20,6 +21,7 @@ func NewListener(addr string) (_ net.Listener, err error) {
 	return listener, err
 }
 
+// TODO - document
 func SanitizeAddr(addr string) (string, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {

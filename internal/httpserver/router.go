@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// TODO - document
 func MakeRouter(setupRoutes func(router *mux.Router)) http.Handler {
 	router := mux.NewRouter()
 	router.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {

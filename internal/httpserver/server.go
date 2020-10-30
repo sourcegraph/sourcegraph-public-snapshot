@@ -38,6 +38,16 @@ func New(listener net.Listener, handler http.Handler, options Options) goroutine
 	}
 }
 
+// TODO - document
+func NewFromAddr(addr int, handler http.Handler, options Options) (goroutine.BackgroundRoutine, error) {
+	listener, err := NewListener(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(listener, handler, options), nil
+}
+
 func (s *server) Start() {
 	if err := s.server.Serve(s.listener); err != http.ErrServerClosed {
 		log15.Error("Failed to start server", "error", err)

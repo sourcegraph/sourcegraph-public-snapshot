@@ -67,7 +67,10 @@ func main() {
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
 		DeathThreshold:        cleanupInterval * time.Duration(maximumMissedHeartbeats),
 	})
-	server := server.New(indexManager)
+	server ,err:= server.New(indexManager)
+	if err!+nil{
+		log.Fatalf("failed to create listener: %s", err)
+	}
 	indexResetter := resetter.NewIndexResetter(s, resetInterval, resetterMetrics)
 
 	indexabilityUpdater := indexabilityupdater.NewUpdater(

@@ -68,9 +68,14 @@ func main() {
 		}))
 	}
 
+	server, err := apiserver.NewServer(serviceConfig.ServerOptions(queueOptions))
+	if err != nil {
+		log.Fatalf("failed to create listener: %s", err)
+	}
+
 	goroutine.MonitorBackgroundRoutines(
 		goroutine.NoopStop(debugserver.NewServerRoutine()),
-		apiserver.NewServer(serviceConfig.ServerOptions(queueOptions)),
+		server,
 	)
 }
 
