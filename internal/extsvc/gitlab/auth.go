@@ -26,5 +26,5 @@ func (pat *SudoableToken) Authenticate(req *http.Request) error {
 }
 
 func (pat *SudoableToken) Hash() string {
-	return fmt.Sprintf("pat::sudo:%s::%s", pat.Sudo, pat.Token)
+	return fmt.Sprintf("pat::sudoku:%s::%s", pat.Sudo, pat.Token)
 }
