@@ -63,3 +63,5 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Homepage panel engagement
   - Percentage of panel clicks (out of total views)
   - Total count of unique users engaging with the panels
+- Retention data
+  - Weekly user retention data

@@ -152,6 +152,7 @@ func TestSerializeBasic(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	now := time.Now()
@@ -175,6 +176,7 @@ func TestSerializeBasic(t *testing.T) {
 		"saved_searches": null,
 		"homepage_panels": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -231,6 +233,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"saved_searches": null,
 		"homepage_panels": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -267,6 +270,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	now := time.Now()
@@ -290,6 +294,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"saved_searches": null,
 		"homepage_panels": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -336,15 +341,16 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 			"Weekly": [` + period + `, ` + period + `],
 			"Monthly": [` + period + `, ` + period + `]
 		}`)),
-		SearchUsage:       nil,
-		GrowthStatistics:  nil,
-		SavedSearches:     nil,
-		HomepagePanels:    nil,
-		InitialAdminEmail: "test@sourcegraph.com",
-		TotalUsers:        234,
-		HasRepos:          true,
-		EverSearched:      false,
-		EverFindRefs:      true,
+		SearchUsage:         nil,
+		GrowthStatistics:    nil,
+		SavedSearches:       nil,
+		HomepagePanels:      nil,
+		InitialAdminEmail:   "test@sourcegraph.com",
+		TotalUsers:          234,
+		HasRepos:            true,
+		EverSearched:        false,
+		EverFindRefs:        true,
+		RetentionStatistics: nil,
 	}
 
 	now := time.Now()
@@ -368,6 +374,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"saved_searches": null,
 		"homepage_panels": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
