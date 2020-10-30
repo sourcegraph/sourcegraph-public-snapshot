@@ -39,4 +39,4 @@
   shell_commands:
     - |
        cd /sourcegraph
-       ./test/upgrade/test.sh
+       ./test/qa-upgrade/test.sh
