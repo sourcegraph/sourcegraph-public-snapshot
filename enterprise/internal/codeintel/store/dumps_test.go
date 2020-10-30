@@ -674,16 +674,16 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 			}
 		}
 
-		// if !testCase.graphFragmentOnly {
-		// 	t.Run(name, func(t *testing.T) {
-		// 		dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
-		// 		if err != nil {
-		// 			t.Fatalf("unexpected error finding closest dumps: %s", err)
-		// 		}
+		if !testCase.graphFragmentOnly {
+			t.Run(name, func(t *testing.T) {
+				dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
+				if err != nil {
+					t.Fatalf("unexpected error finding closest dumps: %s", err)
+				}
 
-		// 		assertDumpIDs(t, dumps)
-		// 	})
-		// }
+				assertDumpIDs(t, dumps)
+			})
+		}
 
 		if testCase.graph != nil {
 			t.Run(name+" [graph-fragment]", func(t *testing.T) {
