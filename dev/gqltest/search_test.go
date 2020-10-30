@@ -755,6 +755,10 @@ func TestSearch(t *testing.T) {
 				name:  `Or distributive property on repo`,
 				query: `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
 			},
+			{
+				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
+				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
