@@ -8,10 +8,10 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-func maybeMinio() ([]string, error) {
+func maybeMinio() []string {
 	if os.Getenv("DISABLE_MINIO") != "" {
 		log15.Info("WARNING: Running with minio disabled")
-		return []string{""}, nil
+		return []string{""}
 	}
 
 	// Set default for MinIO auth and point at local MinIO endpoint
@@ -24,5 +24,5 @@ func maybeMinio() ([]string, error) {
 	// Configure MinIO service
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "minio")
 	procline := fmt.Sprintf(`minio: /usr/local/bin/minio server %s >> /var/opt/sourcegraph/minio.log 2>&1`, dataDir)
-	return []string{procline}, nil
+	return []string{procline}
 }
