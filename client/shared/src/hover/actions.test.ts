@@ -337,10 +337,8 @@ describe('getHoverActionsContext', () => {
                                     pretendRemote<FlatExtensionHostAPI>({
                                         getDefinition: () =>
                                             proxySubscribable(
-                                                cold<MaybeLoadingResult<Location[]>>(`l e 50ms l ${LOADER_DELAY}ms r`, {
-                                                    l: { isLoading: true, result: [] },
-                                                    e: { isLoading: false, result: [] },
-                                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                                cold<MaybeLoadingResult<Location[]>>('-b', {
+                                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
                                                 })
                                             ),
                                     })
