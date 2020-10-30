@@ -268,7 +268,8 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 
 	// for sourcegraph-upgrade
 	env["TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION"] = "3.20.0"
-	env["TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"] = candidateImageTag(c)
+	env["TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"] = "9c98b433090edcd326dc0fcd87bd7ac9c6f129fa_78019_candidate"
+	// env["TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"] = candidateImageTag(c)
 
 	return func(pipeline *bk.Pipeline) {
 		if !runE2E {

@@ -16,7 +16,7 @@ E2E_INIT=true SOURCEGRAPH_BASE_URL=http://localhost:7080 yarn run test:regressio
 # Upgrade to current candidate image
 docker container stop sourcegraph-old
 docker run --name sourcegraph-new --detach --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
-  sourcegraph/server:"$TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"
+  us.gcr.io/sourcegraph-dev/server:"$TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"
 
 # Run tests
 echo "TEST: Running regression tests"
