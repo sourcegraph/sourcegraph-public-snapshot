@@ -17,7 +17,7 @@ yarn generate
 
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
 
-IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name sourcegraph-server
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-server
 
 sleep 15
 

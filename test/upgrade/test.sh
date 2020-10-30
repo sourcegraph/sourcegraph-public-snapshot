@@ -7,16 +7,21 @@ asdf install
 yarn install
 yarn generate
 
+# shellcheck disable=SC1091
+source /root/.profile
+
 cd ./client/web || exit
 
 # Run and initialize an old Sourcegraph release
-docker run --name sourcegraph-old --detach --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
-  sourcegraph/server:"$TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION"
+IMAGE=sourcegraph/server:$TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION ../../dev/run-server-image.sh -d --name sourcegraph-old
+sleep 15
 E2E_INIT=true SOURCEGRAPH_BASE_URL=http://localhost:7080 yarn run test:regression -t 'Initialize new Sourcegraph instance'
+
 # Upgrade to current candidate image
 docker container stop sourcegraph-old
-docker run --name sourcegraph-new --detach --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
-  us.gcr.io/sourcegraph-dev/server:"$TEST_UPGRADE_TO_SOURCEGRAPH_VERSION"
+sleep 5
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ../../dev/run-server-image.sh -d --name sourcegraph-new
+sleep 15
 
 # Run tests
 echo "TEST: Running regression tests"
