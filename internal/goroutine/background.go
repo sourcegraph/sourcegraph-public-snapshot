@@ -72,10 +72,10 @@ func stopAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 func waitForSignal(ctx context.Context, signals <-chan os.Signal) {
 	select {
 	case <-ctx.Done():
-		go exitOnSignal(signals, 2)
+		go exitAfterSignals(signals, 2)
 
 	case <-signals:
-		go exitOnSignal(signals, 1)
+		go exitAfterSignals(signals, 1)
 	}
 }
 
@@ -84,9 +84,10 @@ func waitForSignal(ctx context.Context, signals <-chan os.Signal) {
 // a good indication to the calling program that the tests didn't in fact pass.
 var exiter = func() { os.Exit(0) }
 
-// exitOnSignal waits for n signals on the given channel, then calls os.Exit(0).
-func exitOnSignal(signals <-chan os.Signal, n int) {
-	for i := 0; i < n; i++ {
+// exitAfterSignals waits for a number of signals on the given channel, then
+// calls os.Exit(0) to exit the program.
+func exitAfterSignals(signals <-chan os.Signal, numSignals int) {
+	for i := 0; i < numSignals; i++ {
 		<-signals
 	}
 
