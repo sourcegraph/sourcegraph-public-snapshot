@@ -118,8 +118,9 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
 
-	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(
-		`
+	return scanDumps(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(`
 			SELECT
 				d.id,
 				d.commit,
@@ -139,11 +140,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 			FROM lsif_nearest_uploads u
 			JOIN lsif_dumps_with_repository_name d ON d.id = u.upload_id
 			WHERE u.repository_id = %s AND u.commit_bytea = %s AND NOT u.overwritten AND %s
-		`,
-		repositoryID,
-		dbutil.CommitBytea(commit),
-		sqlf.Join(conds, " AND "),
-	)))
+		`, repositoryID, dbutil.CommitBytea(commit), sqlf.Join(conds, " AND "))))
 }
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
