@@ -39,7 +39,7 @@ func New(listener net.Listener, handler http.Handler, options Options) goroutine
 }
 
 // TODO - document
-func NewFromAddr(addr int, handler http.Handler, options Options) (goroutine.BackgroundRoutine, error) {
+func NewFromAddr(addr string, handler http.Handler, options Options) (goroutine.BackgroundRoutine, error) {
 	listener, err := NewListener(addr)
 	if err != nil {
 		return nil, err
