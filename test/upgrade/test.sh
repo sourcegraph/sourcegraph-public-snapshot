@@ -4,6 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
 asdf install
+yarn install
 yarn generate
 
 cd ./client/web || exit
