@@ -46,7 +46,7 @@ func monitorBackgroundRoutines(ctx context.Context, signals <-chan os.Signal, ro
 	wg.Wait()
 }
 
-// startAll calls each routine's Start method in its own goroutine and and registersq
+// startAll calls each routine's Start method in its own goroutine and registers
 // each running goroutine with the given waitgroup.
 func startAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 	for _, r := range routines {
