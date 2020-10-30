@@ -2835,7 +2835,7 @@ type SavedSearch implements Node {
 """
 CODE MONITORS
 """
-type MonitorConnection  {
+type MonitorConnection {
     """
     A list of monitors.
     """
@@ -2883,7 +2883,7 @@ Supported triggers for code monitors
 """
 union Trigger = MonitorQuery
 
-type ActionConnection  {
+type ActionConnection {
     """
     A list of actions.
     """
@@ -2922,7 +2922,6 @@ enum MonitorEmailPriority {
 Supported types of recipients for email actions
 """
 union MonitorEmailRecipient = User
-
 
 """
 A search query description.
