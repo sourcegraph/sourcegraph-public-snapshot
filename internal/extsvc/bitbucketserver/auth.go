@@ -8,7 +8,7 @@ import (
 
 // SudoableOAuthClient extends the generic OAuthClient type to allow for an
 // optional username to be set, which will be attached to the request as a
-// user_id if set.
+// user_id query param if set.
 type SudoableOAuthClient struct {
 	Client   auth.OAuthClient
 	Username string
