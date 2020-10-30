@@ -244,9 +244,9 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests on release, patch and main branches
-	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
+func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
+	// Run e2e and QA tests on release, patch and main branches
+	runE2EandQA := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
 
 	var async bool
 	if c.branch == "main" {
@@ -266,12 +266,22 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
 	return func(pipeline *bk.Pipeline) {
-		if !runE2E {
+		if !runE2EandQA {
 			return
 		}
 
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
+			bk.Async(async),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env:     env,
+			}),
+		)
+		pipeline.AddTrigger(":chromium:",
+			bk.Trigger("qa"),
 			bk.Async(async),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
