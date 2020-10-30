@@ -84,7 +84,7 @@ changesetTemplate:
 1. Examine the preview. Confirm that the changes are what you intended. If not, edit your campaign spec and then rerun the command above.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the campaign.
-1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
+1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../references/campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
 
 ### Using `ruplacer` to replace terms in multiple case styles
 

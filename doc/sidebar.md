@@ -28,7 +28,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Explanations](campaigns/explanations/index.md)
   - [Tutorials](campaigns/tutorials/index.md)
   - [How-to guides](campaigns/how-tos/index.md)
-  - [Reference](campaigns/campaign_spec_yaml_reference.md)
+  - [References](campaigns/references/index.md)
 - [Integrations](integration/index.md)
   - [Browser extension](integration/browser_extension/index.md)
   - [Editors](integration/editor.md)
