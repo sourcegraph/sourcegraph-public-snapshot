@@ -1,0 +1,195 @@
+# LSIF indexers
+
+Language support is an ever-evolving feature of Sourcegraph. Some languages may be better supported than others due to demand or developer bandwidth/expertise. This page clarifies the status of the LSIF indexers which we can both recommend to customers and provide support for.
+
+For a more complete description of the LSIF indexer ecosystem, see [LSIF.dev](https://lsif.dev/). A Sourcegraph instance should be able to ingest any LSIF index file confirming to the LSIF specification. Therefore, the absence of a third-party indexer here should not be interpreted as a quality judgement on that indexer; just that Sourcegraph engineers may not have the required knowledge to provide deep technical support.
+
+## Quick reference
+
+This table should be maintained as an authoritative resource usable by users, Sales, and Customer Engineers. Major changes to the development of our indexers should be reflected here.
+
+<table>
+   <thead>
+      <tr>
+        <th>Indexer</th>
+        <th>Status</th>
+        <th>M1</th>
+        <th>M2</th>
+        <th>M3</th>
+        <th>M4</th>
+        <th>M5</th>
+        <th>M6</th>
+        <th>M7</th>
+        <th>M8</th>
+      </tr>
+   </thead>
+   <tbody>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-go">lsif-go</a></td>
+        <td><img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td><img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
+        <td><img src="https://camo.githubusercontent.com/8e6bd8a6aba8c088662ec6a11a167ce9815c83e3/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d646576656c6f706d656e742d79656c6c6f77" alt="Development"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
+        <td><img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <!-- TODO - mark as deprecated. -->
+        <td><a href="https://github.com/sourcegraph/lsif-cpp">lsif-cpp</a></td>
+        <td><img src="https://camo.githubusercontent.com/001ad9e3c9314e4128e94e7bc39fab63e419057e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d626574612d6f72616e67653f7374796c653d666c6174" alt="Beta"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-semanticdb">lsif-semanticdb</a></td>
+        <td><img src="https://camo.githubusercontent.com/001ad9e3c9314e4128e94e7bc39fab63e419057e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d626574612d6f72616e67653f7374796c653d666c6174" alt="Beta"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M8 -->
+      </tr>
+   </tbody>
+</table>
+
+Milestone quick legend (read on for expanded definitions):
+
+- **M1**: Can provide a decorated AST
+- **M2**: Emits documents and ranges
+- **M3**: Emits hover text
+- **M4**: Emits definitions (within compilation unit)
+- **M5**: Emits references (within compilation unit)
+- **M6**: Emits definitions (within input source)
+- **M7**: Emits references (within input source)
+- **M8**: Emits monikers for cross-repository support
+
+## Progress milestones in indexer development
+
+We have recognized a common set of steps required to build feature-complete LSIF indexers, broadly outlined in the following. The order and _doneness criteria_ of these steps may differ between language and development ecosystems. Major divergences will be detailed in the notes below. 
+
+We also note when we can generally consider marking an in-progress indexer as _alpha_ (when early adopters can try it with expectations of failure), _beta_ (when it could be useful to early adopters despite lack of features), and _ready_ (when no major features are absent but edge cases remain).
+
+- **M1**: The indexer can read produce an in-memory abstract syntax tree from source code input. Source code may be read from disk independently of a particular build system. This syntax tree should be decorated with symbol and type information (if supported). This step should invest a lot of developer energy upfront to evaluate multiple compiler/analysis frontends supporting the target language. Choosing a feature-incomplete or unreliable library or framework (such as DXR or Spoon) at this point will dead-end feature development and will cost much more developer energy to fix.
+- **M2**: The indexer can emit a validated LSIF index file including a document vertex for each file in the source code and a range vertex for each symbol in the source code. This index should be consumed without error by the latest Sourcegraph instance.
+
+---
+
+The next set of milestones provide definitions, references, and hover text support for symbols within the same _compilation unit_. The granularity of compilation unit depends on the language. For example, files are the compilation unit for Python, packages are the compilation unit for Go.
+
+Data should be provided for symbols contained in the common _80%_ of the language (a rough percentage). Some language features may make the extraction of the correct symbol information difficult, so we do not require 100% of the language to be covered this early in development. Example of possible unsupported features include inner classes in Java, conditional compilation, and the presence of architecture-dependent source files.
+
+- **M3**: The indexer can emit a validated LSIF index file including hover text payloads. This index should be consumed without error by the latest Sourcegraph instance and hover tooltips should appear for these symbols.
+- **M4**: The indexer can emit a validated LSIF index file including paths from ranges to their _local_ definition (within same compilation unit). This index should be consumed without error by the latest Sourcegraph instance and Go to Definition should work on these symbols.
+- **M5**: The indexer can emit a validated LSIF index file including paths from ranges to the set of _local_ references (within same compilation unit). This index should be consumed without error by the latest Sourcegraph instance and single compilation unit Find References should work on these symbols.
+
+At this point, the indexer may be considered **alpha**. It is outputting _some_ useful precise information and Sourcegraph will provide better hover text and _some_ better local code navigation. _Most_ code intel interactions are expected to fall back to search-based code intelligence.
+
+---
+
+The next set of milestones provide definitions and references support for all symbols within the input source code. This should add edges between symbols of different compilation units.
+
+- **M6**: The indexer can emit a validated LSIF index file including paths from ranges to their definition, if not defined externally to the input source code. This index should be consumed without error by the latest Sourcegraph instance and Go to Definition should work on these symbols.
+- **M7**: The indexer can emit a validated LSIF index file including paths from ranges to the complete set of references contained in the input source code. This index should be consumed without error by the latest Sourcegraph instance and single compilation unit Find References should work on these symbols.
+
+At this point, the indexer may be considered **beta**. It is outputting _more_ useful precise information and Sourcegraph will provide mostly correct code navigation with cross-repository support falling back to search-based code intelligence.
+
+---
+
+The next milestone provides support for cross-repository definitions and references.
+
+- **M8**: The indexer can emit a validated LSIF index file including import monikers for each symbol defined non-locally, and export monikers for each symbol importable by another repository. This index should be consumed without error by the latest Sourcegraph instance and Go to Definition and Find References should work on cross-repository symbols _given that both repositories are indexed at the exact commit imported_.
+
+At this point, the indexer may be generally considered **ready**. Some languages and ecosystems may require some of the additional following milestones to be considered ready due to a bad out-of-the-box developer experience or absence of a critical language features. For example, lsif-java is nearly useless without built-in support for build systems such as gradle, and some customers may reject lsif-clang if it has no support for a language feature introduced in C++14.
+
+---
+
+The next milestone integrates the indexer with a common build tool or framework for the language and surrounding ecosystem. The priority and applicability of this milestone will vary wildly by languages. For example, lsif-go uses the standard library and the language has a built-in dependency manager; all of our customers use Gradle, making lsif-java effectively unusable without native Gradle support.
+
+- **M9**: The indexer integrates natively with common mainstream build tools. We should aim to cover _at least_ the majority of build tools used by existing enterprise customers.
+
+The implementation of this milestone will also vary wildly by language. It could be that the indexer runs as a step in a larger tool, or the indexer contains build-specific logic in order to determine the set of source code that needs to be analyzed. 
+
+---
+
+The next milestone represents the never-finished long tail of feature additions. The remaining _20%_ of the language should be supported via incremental updates and releases over time. Support of additional language features should be prioritized by popularity and demand.
+
+- **M10**: Support additional language features.
+
+We may lack the language expertise or bandwidth to implement certain features on indexers. It may be a good idea to hire a domain expert or outsource additional features when the demand for support is sufficiently high and the implementation is sufficiently difficult.
+
+## Notes on specific indexers
+
+#### lsif-clang
+
+- The indexer outputs unexpected data in specific scenarios involving more advanced language features.
+
+- C/C++ build system ecosystem is extremely fragmented and difficult to support out of the box. We have decided that integrated build tool support will not be a short-term goal of lsif-clang.
+
+#### lsif-java
+
+- Natively supports Gradle.
+
+#### lsif-cpp
+
+- Difficult to install.
+- Supports clang only (no gcc builds).
+- No hover text support (Sourcegraph will always fall back to search or tooltips).
+- Deprecated in favor of lsif-clang.
+
+#### lsif-semanticdb
+
+- Requires generation of a SemanticDB database.
+- Support is not currently on the near-term roadmap.
+
+<style type="text/css">
+.indexer-implemented-y { text-align: center; background-color: #28a745; }
+.indexer-implemented-n { text-align: center; background-color: #dc3545; }
+</style>
