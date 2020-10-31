@@ -356,7 +356,7 @@ func TestService(t *testing.T) {
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
-			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
+			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: admin.ID, Spec: &campaigns.ChangesetSpecDescription{}}
 			if err := store.CreateChangesetSpec(ctx, cs); err != nil {
 				t.Fatal(err)
 			}

@@ -397,6 +397,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
 				CreatedAt: tc.createdAt,
+				Spec: &cmpgn.ChangesetSpecDescription{
+					ExternalID: "1",
+				},
 			}
 
 			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {

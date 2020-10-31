@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -693,8 +694,11 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(repos))
-		for _, r := range repos {
+		for i, r := range repos {
 			c := &campaigns.ChangesetSpec{
+				Spec: &campaigns.ChangesetSpecDescription{
+					ExternalID: strconv.Itoa(i),
+				},
 				RepoID:          r.ID,
 				UserID:          userID,
 				CampaignSpecID:  campaignSpec.ID,

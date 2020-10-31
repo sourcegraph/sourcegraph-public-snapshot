@@ -280,6 +280,9 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 				changesetSpec := &cmpgn.ChangesetSpec{
 					RepoID:         1,
 					CampaignSpecID: campaignSpec.ID,
+					Spec: &cmpgn.ChangesetSpecDescription{
+						ExternalID: "1",
+					},
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 					t.Fatal(err)

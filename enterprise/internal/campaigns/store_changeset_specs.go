@@ -19,6 +19,9 @@ var changesetSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("raw_spec"),
 	sqlf.Sprintf("spec"),
+	sqlf.Sprintf("head_ref"),
+	sqlf.Sprintf("external_id"),
+	sqlf.Sprintf("type"),
 	sqlf.Sprintf("campaign_spec_id"),
 	sqlf.Sprintf("repo_id"),
 	sqlf.Sprintf("user_id"),
@@ -59,7 +62,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var createChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:CreateChangesetSpec
 INSERT INTO changeset_specs (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s::json->>'headRef', %s::json->>'externalID', %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Query, error) {
@@ -82,12 +85,19 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		}
 	}
 
+	if c.Spec == nil {
+		return nil, errors.New("no spec given, crap")
+	}
+
 	return sqlf.Sprintf(
 		createChangesetSpecQueryFmtstr,
 		sqlf.Join(changesetSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
+		spec,
+		spec,
+		c.Spec.Type(),
 		nullInt64Column(c.CampaignSpecID),
 		c.RepoID,
 		nullInt32Column(c.UserID),
@@ -115,7 +125,7 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var updateChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangesetSpec
 UPDATE changeset_specs
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s`
 
@@ -127,12 +137,19 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 
 	c.UpdatedAt = s.now()
 
+	if c.Spec == nil {
+		return nil, errors.New("no spec given, crap")
+	}
+
 	return sqlf.Sprintf(
 		updateChangesetSpecQueryFmtstr,
 		sqlf.Join(changesetSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
+		spec,
+		spec,
+		c.Spec.Type(),
 		nullInt64Column(c.CampaignSpecID),
 		c.RepoID,
 		nullInt32Column(c.UserID),
