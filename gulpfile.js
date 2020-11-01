@@ -9,7 +9,7 @@ const {
   watchGraphQlOperations,
   watchSchema,
 } = require('./client/shared/gulpfile')
-const { webpack: webWebpack, webpackDevServer: webWebpackDevServer } = require('./client/web/gulpfile')
+const { build: buildWeb, watch: watchWeb } = require('./client/web/gulpfile')
 
 /**
  * Generates files needed for builds.
@@ -29,12 +29,12 @@ const watchGenerate = gulp.series(generate, watchGenerators)
 /**
  * Builds everything.
  */
-const build = gulp.series(generate, webWebpack)
+const build = gulp.series(generate, buildWeb)
 
 /**
  * Watches everything and rebuilds on file changes.
  */
-const dev = gulp.series(generate, gulp.parallel(watchGenerators, webWebpackDevServer))
+const dev = gulp.series(generate, gulp.parallel(watchGenerators, watchWeb))
 
 module.exports = {
   generate,

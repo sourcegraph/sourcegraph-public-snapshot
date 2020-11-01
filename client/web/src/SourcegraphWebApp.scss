@@ -6,6 +6,7 @@ It should import all component stylesheets
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
+@use '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 @import '../../branded/src/global-styles/index.scss';
 
 // stylelint-disable-next-line selector-max-id

@@ -58,7 +58,6 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
         <div className="user-settings-profile-page">
             <PageTitle title="Profile" />
             <h2>Profile</h2>
-
             {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
                 <div className="card mb-3">
                     <div className="card-body">

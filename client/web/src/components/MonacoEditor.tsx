@@ -245,12 +245,17 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 }
 
 if (!window.MonacoEnvironment) {
+    const WORKER_MODULES: { [label: string]: string } = {
+        editorWorkerService: 'editor/editor.worker.js',
+        json: 'language/json/json.worker.js',
+    }
     window.MonacoEnvironment = {
-        getWorkerUrl(moduleId: string, label: string): string {
-            if (label === 'json') {
-                return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
+        getWorkerUrl(_moduleId: string, label: string): string {
+            const moduleRelativePath = WORKER_MODULES[label]
+            if (!moduleRelativePath) {
+                throw new Error(`module not found: ${label}`)
             }
-            return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
+            return `${window.context.assetsRoot}/esbuild/node_modules/monaco-editor/esm/vs/${moduleRelativePath}`
         },
     }
 }

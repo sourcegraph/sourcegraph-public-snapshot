@@ -67,10 +67,7 @@ const config = {
   entry: {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
-    app: [
-      'react-hot-loader/patch',
-      isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-    ],
+    app: [isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx')],
 
     'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
     'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
@@ -126,8 +123,6 @@ const config = {
   },
   module: {
     rules: [
-      // Run hot-loading-related Babel plugins on our application code only (because they'd be
-      // slow to run on all JavaScript code).
       {
         test: /\.[jt]sx?$/,
         include: path.join(__dirname, 'src'),
@@ -136,19 +131,7 @@ const config = {
           ...(mode === 'production' ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
-            options: {
-              cacheDirectory: true,
-              plugins: [
-                'react-hot-loader/babel',
-                [
-                  '@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper',
-                  {
-                    modulePattern: 'web/src/.*\\.tsx$',
-                    componentNamePattern: '(Page|Area)$',
-                  },
-                ],
-              ],
-            },
+            options: { cacheDirectory: true },
           },
         ],
       },
