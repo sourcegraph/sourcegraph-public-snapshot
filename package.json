@@ -278,7 +278,7 @@
     "date-fns": "^2.15.0",
     "delay": "^4.3.0",
     "downshift": "^3.4.8",
-    "focus-visible": "^5.1.0",
+    "focus-visible": "^5.2.0",
     "got": "^11.5.2",
     "graphiql": "^1.0.3",
     "he": "^1.2.0",
