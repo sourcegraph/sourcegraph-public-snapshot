@@ -4053,10 +4053,10 @@
   resolved "https://registry.npmjs.org/@types/mockdate/-/mockdate-2.0.0.tgz#aaf388a1ead3b0f5ed6dc1611956ea7b40a57d3c"
   integrity sha1-qvOIoerTsPXtbcFhGVbqe0ClfTw=
 
-"@types/mz@2.7.1":
-  version "2.7.1"
-  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.1.tgz#1ac1d69b039c8b3cbe603972b5c12d3167a84f58"
-  integrity sha512-H86h7KmRDVs9UeSiQvtUeVhS+WYpJSYSsZrRvNYpGWGiytEqxwEtvgRnINESQtCgnojIH2wS2WgaMTJP0firBw==
+"@types/mz@2.7.2":
+  version "2.7.2"
+  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.2.tgz#48de03aacc98aeb40cfdeb8c58fff9fb8a2d8dfc"
+  integrity sha512-a6E4fuAakzq/uRHEohiYo9M5G+NV33FodRGCU+N4W65CAk6PPJo9KWPH8hxkqiiUgfs8EgUFuKPxclcUEahsRw==
   dependencies:
     "@types/node" "*"
 
