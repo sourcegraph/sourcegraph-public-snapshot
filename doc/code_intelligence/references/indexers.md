@@ -13,14 +13,14 @@ This table should be maintained as an authoritative resource usable by users, Sa
       <tr>
         <th>Indexer</th>
         <th>Status</th>
-        <th><a href="#">M1:<br/><small>AST</small></a></th>
-        <th><a href="#">M2:<br/><small>Docs / ranges</small></a></th>
-        <th><a href="#">M3:<br/><small>Hover text</small></a></th>
-        <th><a href="#">M4:<br/><small>Unit defs</small></a></th>
-        <th><a href="#">M5:<br/><small>Unit refs</small></a></th>
-        <th><a href="#">M6:<br/><small>Input defs</small></a></th>
-        <th><a href="#">M7:<br/><small>Input refs</small></a></th>
-        <th><a href="#">M8:<br/><small>Cross-repo</small></a></th>
+        <th><a href="#m1-can-provide-a-decorated-ast">M1:<br/><small>AST</small></a></th>
+        <th><a href="#m2-emits-documents-and-ranges">M2:<br/><small>Docs / ranges</small></a></th>
+        <th><a href="#m3-emits-hover-text">M3:<br/><small>Hover text</small></a></th>
+        <th><a href="#m4-emits-definitions-within-compilation-unit">M4:<br/><small>Unit defs</small></a></th>
+        <th><a href="#m5-emits-references-within-compilation-unit">M5:<br/><small>Unit refs</small></a></th>
+        <th><a href="#m6-emits-definitions-within-input-source">M6:<br/><small>Input defs</small></a></th>
+        <th><a href="#m7-emits-references-within-input-source">M7:<br/><small>Input refs</small></a></th>
+        <th><a href="#m8-emits-monikers-for-cross-repository-support">M8:<br/><small>Cross-repo</small></a></th>
       </tr>
    </thead>
    <tbody>
