@@ -129,7 +129,7 @@ export const initMainThreadAPI = (
     }
 
     const api: MainThreadAPI = {
-        applySettingsEdit: edit => updateSettings(platformContext, edit),
+        applySettingsEdit2: edit => updateSettings(platformContext, edit),
         requestGraphQL: (request, variables) =>
             platformContext
                 .requestGraphQL({

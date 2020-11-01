@@ -10,6 +10,8 @@ import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
 import navItemStyles from './NavItem.module.scss'
 
+console.log('NAVBAR CSS MODULE', navBarStyles)
+
 interface NavBarProps {
     children: React.ReactNode
     logo: React.ReactNode

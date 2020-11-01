@@ -117,12 +117,8 @@ export DISABLE_CODE_INSIGHTS_HISTORICAL="${DISABLE_CODE_INSIGHTS_HISTORICAL:-"tr
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
 
-# webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
-# until they are (re)built and (2) otherwise proxies to Caddy running on port 3081 (which proxies to
-# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
-# having port 3080.
-export SRC_HTTP_ADDR=":3082"
-export WEBPACK_DEV_SERVER=1
+# Caddy listens on port 3080 and proxies to Sourcegraph running on port 3081.
+export SRC_HTTP_ADDR=":3081"
 
 if [ -z "${DEV_NO_CONFIG-}" ]; then
   export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}

@@ -1,18 +1,18 @@
 {
-  http_port 3081
+  http_port 3080
   auto_https disable_redirects
 }
 
 # A bit of monstrosity, since we need to reverse proxy via webpack which then
 # reverse proxies to us on HTTP.
 #
-# Caddy (tls :3443) -> webpack (:3080) -> Caddy (:3081) -> sourcegraph-frontend (:3082)
+# Caddy (tls :3443) -> Caddy (:3080) -> sourcegraph-frontend (:3081)
 {$SOURCEGRAPH_HTTPS_DOMAIN}:{$SOURCEGRAPH_HTTPS_PORT} {
   tls internal
   reverse_proxy localhost:3080
 }
 
-# Caddy (:3081) -> sourcegraph-frontend (:3082)
-:3081 {
-  reverse_proxy localhost:3082
+# Caddy (:3080) -> sourcegraph-frontend (:3081)
+:3080 {
+  reverse_proxy localhost:3081
 }

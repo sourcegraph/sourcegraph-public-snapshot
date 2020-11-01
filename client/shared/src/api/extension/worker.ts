@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs'
 import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 
 // eslint-disable-next-line import/extensions
-import ExtensionHostWorker from './main.worker.ts'
+// import ExtensionHostWorker from './main.worker.ts'
 
 /**
  * Creates a web worker with the extension host and sets up a bidirectional MessageChannel-based communication channel.
@@ -15,7 +15,7 @@ import ExtensionHostWorker from './main.worker.ts'
 export function createExtensionHostWorker(workerBundleURL?: string): { worker: Worker; clientEndpoints: EndpointPair } {
     const clientAPIChannel = new MessageChannel()
     const extensionHostAPIChannel = new MessageChannel()
-    const worker = workerBundleURL ? new Worker(workerBundleURL) : new ExtensionHostWorker()
+    const worker = workerBundleURL ? new Worker(workerBundleURL) : new Worker('/.assets/worker.js')
     const workerEndpoints: EndpointPair = {
         proxy: clientAPIChannel.port2,
         expose: extensionHostAPIChannel.port2,

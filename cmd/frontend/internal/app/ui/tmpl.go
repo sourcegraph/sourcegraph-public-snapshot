@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -26,22 +26,16 @@ var errorHTML string
 var (
 	versionCacheMu sync.RWMutex
 	versionCache   = make(map[string]string)
-
-	_, noAssetVersionString = os.LookupEnv("WEBPACK_DEV_SERVER")
 )
 
 // Functions that are exposed to templates.
 var funcMap = template.FuncMap{
 	"version": func(fp string) (string, error) {
-		if noAssetVersionString {
-			return "", nil
-		}
-
 		// Check the cache for the version.
 		versionCacheMu.RLock()
 		version, ok := versionCache[fp]
 		versionCacheMu.RUnlock()
-		if ok {
+		if ok && false && !env.InsecureDev { // dont cache in dev mode! TODO(sqs)
 			return version, nil
 		}
 
@@ -56,6 +50,7 @@ var funcMap = template.FuncMap{
 			return "", err
 		}
 		version = fmt.Sprintf("%x", md5.Sum(data))
+		log.Println("XX", version, fp, len(data))
 
 		// Update cache.
 		versionCacheMu.Lock()

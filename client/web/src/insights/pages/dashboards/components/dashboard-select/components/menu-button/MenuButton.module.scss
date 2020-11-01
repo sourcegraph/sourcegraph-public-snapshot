@@ -1,3 +1,5 @@
+@import '@reach/listbox/styles.css';
+
 // Special reach-ui selector to increase the specificity in order to override reach ui styles
 // for the list-box button element.
 .button[data-reach-listbox-button] {

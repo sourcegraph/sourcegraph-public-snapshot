@@ -24,8 +24,8 @@ import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { UsageHoverFieldsGQLFragment, UsageHover } from './UsageHover'
-import { UsageViewOptionsProps, useUsageViewOptions } from './useUsageViewOptions'
+/// import { UsageHoverFieldsGQLFragment, UsageHover } from './UsageHover'
+// import { UsageViewOptionsProps, useUsageViewOptions } from './useUsageViewOptions'
 
 const UsagePageFieldsGQLFragment = gql`
     fragment UsagePageFields on UsageInfo {
