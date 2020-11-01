@@ -7,4 +7,4 @@ on our release process and how this tool is used.
 
 Run `yarn run build` to build the tool (_required_ alongside `yarn run release` to make
 sure you are using the latest version of the tool), and `yarn run watch` to build on any
-changes to files.
+changes to files. Note that configuration changes requires rebuilds as well!

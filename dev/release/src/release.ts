@@ -12,7 +12,7 @@ import {
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
-import { formatDate, timezoneLink } from './util'
+import { formatDate, timezoneLink, readLine, getWeekNumber } from './util'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
@@ -44,21 +44,44 @@ interface Config {
     }
 }
 
-function releaseVersions(
+/**
+ * Convenience function for getting relevant configured releases as semver.SemVer
+ *
+ * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
+ */
+async function releaseVersions(
     config: Config
-): {
+): Promise<{
     previous: semver.SemVer
     upcoming: semver.SemVer
-} {
+}> {
     const parseOptions: semver.Options = { loose: false }
     const parsedPrevious = semver.parse(config.previousRelease, parseOptions)
     if (!parsedPrevious) {
-        throw new Error(`previousRelease '${config.previousRelease}' is not valid semver`)
+        throw new Error(`config.previousRelease '${config.previousRelease}' is not valid semver`)
     }
     const parsedUpcoming = semver.parse(config.upcomingRelease, parseOptions)
     if (!parsedUpcoming) {
-        throw new Error(`upcomingRelease '${config.upcomingRelease}' is not valid semver`)
+        throw new Error(`config.upcomingRelease '${config.upcomingRelease}' is not valid semver`)
     }
+
+    // Verify the configured upcoming release. The response is cached and expires in a
+    // week, after which the captain is required to confirm again.
+    const now = new Date()
+    const confirmVersion = await readLine(
+        'Please confirm the upcoming release version: ',
+        `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
+    )
+    const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
+    if (!parsedConfirmed) {
+        throw new Error(`Provided version '${confirmVersion}' is not valid semver`)
+    }
+    if (semver.neq(parsedConfirmed, parsedUpcoming)) {
+        throw new Error(
+            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration`
+        )
+    }
+
     return {
         previous: parsedPrevious,
         upcoming: parsedUpcoming,
@@ -114,7 +137,7 @@ const steps: Step[] = [
         id: 'tracking:release-timeline',
         run: async config => {
             const googleCalendar = await getClient()
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
             const events: EventOptions[] = [
                 {
                     title: 'Release captain: prepare for branch cut (5 working days until release)',
@@ -183,7 +206,7 @@ const steps: Step[] = [
                 slackAnnounceChannel,
                 dryRun,
             } = config
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             // Create issue
             const { url, created } = await ensureTrackingIssue({
@@ -229,7 +252,7 @@ const steps: Step[] = [
         id: 'tracking:patch-issue',
         run: async config => {
             const { captainGitHubUsername, slackAnnounceChannel, dryRun } = config
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             // Create issue
             const { url, created } = await ensurePatchReleaseIssue({
@@ -255,7 +278,7 @@ const steps: Step[] = [
         id: 'changelog:cut',
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             await createChangesets({
                 requiredCommands: [],
@@ -298,7 +321,7 @@ const steps: Step[] = [
         id: 'release:status',
         run: async config => {
             const githubClient = await getAuthenticatedGitHubClient()
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             const trackingIssueURL = await getIssueByTitle(
                 githubClient,
@@ -346,7 +369,7 @@ ${issueCategories
             if (!candidate) {
                 throw new Error('Candidate information is required (either "final" or a number)')
             }
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             const tag = JSON.stringify(`v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`)
             const branch = JSON.stringify(`${release.major}.${release.minor}`)
@@ -366,7 +389,7 @@ ${issueCategories
         id: 'release:stage',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             // set up src-cli
             await commandExists('src')
@@ -463,7 +486,7 @@ ${issueCategories
         // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
         argNames: ['changeRepo', 'changeID'],
         run: async (config, changeRepo, changeID) => {
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
@@ -488,7 +511,7 @@ ${issueCategories
         id: 'release:close',
         run: async config => {
             const { slackAnnounceChannel } = config
-            const { upcoming: release } = releaseVersions(config)
+            const { upcoming: release } = await releaseVersions(config)
 
             const versionAnchor = release.version.replace('.', '-')
             const campaignURL = campaigns.campaignURL(
