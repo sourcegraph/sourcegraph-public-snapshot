@@ -211,7 +211,7 @@
     "node-fetch": "^2.6.0",
     "nyc": "^15.1.0",
     "open": "^7.0.4",
-    "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "optimize-css-assets-webpack-plugin": "^5.0.4",
     "p-retry": "^4.2.0",
     "p-timeout": "^3.2.0",
     "postcss": "^8.1.1",
