@@ -111,7 +111,7 @@ func main() {
 	}
 
 	go debugserver.Start()
-	goroutine.MonitorBackgroundRoutines(routines...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
 func mustInitializeStore() store.Store {

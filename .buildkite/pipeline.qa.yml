@@ -2,9 +2,15 @@ env:
   VAGRANT_RUN_ENV: "CI"
 steps:
 - artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
-  # setting to pass until tests are 100% confirmed as working, so as to avoid disrupting dev workflow on main
   command:
-    - .buildkite/vagrant-run.sh sourcegraph-qa-test || true
+    - .buildkite/vagrant-run.sh sourcegraph-qa-test
   label: ':docker::arrow_right::chromium:'
+  agents:
+    queue: 'baremetal'
+
+- label: ':docker::arrow_double_up:'
+  command:
+  - .buildkite/vagrant-run.sh sourcegraph-upgrade || true
+  timeout_in_minutes: 20
   agents:
     queue: 'baremetal'

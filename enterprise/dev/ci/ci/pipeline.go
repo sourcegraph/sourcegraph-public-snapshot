@@ -143,7 +143,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,                          // wait for all steps to pass
 
 			addDockerImages(c, true), // publish final images
-			triggerE2E(c, env),       // trigger e2e late so that it can leverage candidate images
+			triggerE2EandQA(c, env),  // trigger e2e late so that it can leverage candidate images
 		}
 	}
 

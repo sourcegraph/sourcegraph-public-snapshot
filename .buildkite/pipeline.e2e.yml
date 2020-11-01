@@ -16,11 +16,3 @@ steps:
     label: ':docker::arrow_right::chromium:'
     agents:
       queue: 'baremetal'
-
-# TODO: move to qa
-  - command:
-    - .buildkite/vagrant-run.sh sourcegraph-upgrade || true
-    timeout_in_minutes: 20
-    label: ':docker::arrow-double-up:'
-    agents:
-      queue: 'baremetal'
