@@ -301,30 +301,30 @@ func Main(enterpriseInit EnterpriseInit) {
 		Name: "List Authz Providers",
 		Path: "/list-authz-providers",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, providers := authz.GetProviders()
-
 			type providerInfo struct {
-				ServiceType        string
-				ServiceID          string
-				ExternalServiceURL string
+				ServiceType        string `json:"service_type"`
+				ServiceID          string `json:"service_id"`
+				ExternalServiceURL string `json:"external_service_url"`
 			}
-			infos := make([]providerInfo, 0, len(providers))
-			for _, p := range providers {
+
+			_, providers := authz.GetProviders()
+			infos := make([]providerInfo, len(providers))
+			for i, p := range providers {
 				_, id := extsvc.DecodeURN(p.URN())
-				infos = append(infos, providerInfo{
+				infos[i] = providerInfo{
 					ServiceType:        p.ServiceType(),
 					ServiceID:          p.ServiceID(),
 					ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), graphqlbackend.MarshalExternalServiceID(id)),
-				})
+				}
 			}
 
-			p, err := json.MarshalIndent(infos, "", "  ")
+			resp, err := json.MarshalIndent(infos, "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
-
-			_, _ = w.Write(p)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(resp)
 		}),
 	},
 	)
