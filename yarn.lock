@@ -2688,22 +2688,22 @@
     sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.20.12":
-  version "0.20.12"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.12.tgz#566c4823fbd915332bd10e537572a8d654677148"
-  integrity sha512-1yzJQ7CYUV8YWYbdK9BsuJO/jnVQM/CNAG2YQGKwnrmeqWsF+xDQL/bCBDTeo41SUzliLJQxk74/WDowbpWrBA==
+"@sourcegraph/eslint-config@^0.20.16":
+  version "0.20.16"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.16.tgz#78ebb5ec3569ac886c8533651e01c798e8086715"
+  integrity sha512-kBgquxOK4rqyXtMD8FMjnh1Et0pUMF1Aea3iYh4k2FQPy2P46ig+UKz+XzRJFai7GHrKhCLkiCCJuWRCukf2dw==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^4.5.0"
     "@typescript-eslint/parser" "^4.5.0"
-    eslint-config-prettier "^6.12.0"
+    eslint-config-prettier "^6.15.0"
     eslint-plugin-ban "^1.4.0"
-    eslint-plugin-etc "^0.0.3-beta.48"
+    eslint-plugin-etc "^1.1.5"
     eslint-plugin-import "^2.22.1"
-    eslint-plugin-jsdoc "^30.6.4"
+    eslint-plugin-jsdoc "^30.7.6"
     eslint-plugin-react "^7.21.4"
     eslint-plugin-react-hooks "^4.1.2"
-    eslint-plugin-rxjs "^0.0.3-beta.30"
+    eslint-plugin-rxjs "^2.0.0"
     eslint-plugin-unicorn "^21.0.0"
 
 "@sourcegraph/event-positions@^1.0.4":
@@ -9686,10 +9686,10 @@ eslint-ast-utils@^1.1.0:
     lodash.get "^4.4.2"
     lodash.zip "^4.2.0"
 
-eslint-config-prettier@^6.12.0:
-  version "6.12.0"
-  resolved "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-6.12.0.tgz#9eb2bccff727db1c52104f0b49e87ea46605a0d2"
-  integrity sha512-9jWPlFlgNwRUYVoujvWTQ1aMO8o6648r+K7qU7K5Jmkbyqav1fuEZC0COYpGBxyiAJb65Ra9hrmFx19xRGwXWw==
+eslint-config-prettier@^6.15.0:
+  version "6.15.0"
+  resolved "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-6.15.0.tgz#7f93f6cb7d45a92f1537a70ecc06366e1ac6fed9"
+  integrity sha512-a1+kOYLR8wMGustcgAjdydMsQ2A/2ipRPwRKUmfYaSxc9ZPcrku080Ctl6zrZzZNs/U82MjSv+qKREkoq3bJaw==
   dependencies:
     get-stdin "^6.0.0"
 
@@ -9735,10 +9735,10 @@ eslint-plugin-ban@^1.4.0:
   dependencies:
     requireindex "~1.2.0"
 
-eslint-plugin-etc@^0.0.3-beta.48:
-  version "0.0.3-beta.49"
-  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.3-beta.49.tgz#2f4c83faf5cf5957e540514a007e0178af3269aa"
-  integrity sha512-cOCF6fJOlrqH3R9hs3mnqASGcDv93mnTJ1wa1Ep7SFJvjP+8+OiyaFL5bVbNyxUBuKbPjKHM7yAnC8b6KtX3sg==
+eslint-plugin-etc@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-1.1.5.tgz#29102203ed4475ca17d2230ccb1236a9148443c0"
+  integrity sha512-3xL62PJiDEPSy1XJGFOViT+pTnfzIe18LYZEWcShBjvf/MMGZBo+hbtb0gJ+u/3UCNkW+cx7+XLpfcEp3UzYcQ==
   dependencies:
     "@phenomnomnominal/tsquery" "^4.0.0"
     "@typescript-eslint/experimental-utils" "^4.0.0"
@@ -9766,10 +9766,10 @@ eslint-plugin-import@^2.22.1:
     resolve "^1.17.0"
     tsconfig-paths "^3.9.0"
 
-eslint-plugin-jsdoc@^30.6.4:
-  version "30.6.4"
-  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-30.6.4.tgz#ae7dab1ff24dff2c75fab7bb96a6b5f12621c212"
-  integrity sha512-aDTsAkKwyMsIYtytjH5zPtv+LkbCORN6oy/T4L40ssU5pgXWRSs0ULyJb6e4p2jT8y5nmG3IgpawYarL4tKunw==
+eslint-plugin-jsdoc@^30.7.6:
+  version "30.7.6"
+  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-30.7.6.tgz#050ee54014dd301d9d53eb0e9aa740293861cc47"
+  integrity sha512-w18IOiS/9ahKgRfQOuHbce+EQYx3fwIkZhUZDEK+augNlhJkzgTSZkrBkzaflSbFNZ9/Tk4xzUABEaTbsBSzew==
   dependencies:
     comment-parser "^0.7.6"
     debug "^4.2.0"
@@ -9808,10 +9808,10 @@ eslint-plugin-react@^7.21.4:
     resolve "^1.17.0"
     string.prototype.matchall "^4.0.2"
 
-eslint-plugin-rxjs@^0.0.3-beta.30:
-  version "0.0.3-beta.30"
-  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.3-beta.30.tgz#caaed11af114c77f83890948112c8b19c3518e9d"
-  integrity sha512-9d6y6lroFtFsTVhsALCmjQ+J+VmnNjk1CWGArXz2G4YGVYa9XphmxX3ymZOjdzJoNMrHKHafbvIoK2zP3zZomA==
+eslint-plugin-rxjs@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-2.0.0.tgz#cdf624783bc2551c6b5a67114a7498c4394a9e1a"
+  integrity sha512-h4WhHktoYEieOhcxh8zmvWHf3RP5mOinUJYrpYWc4QrMX5Afkl9PO5yp7ArDx2HqgilZJ0Q46NuALmx+++7+cw==
   dependencies:
     "@typescript-eslint/experimental-utils" "^4.0.0"
     common-tags "^1.8.0"
