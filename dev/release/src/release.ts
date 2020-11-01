@@ -68,13 +68,14 @@ async function releaseVersions(
     // Verify the configured upcoming release. The response is cached and expires in a
     // week, after which the captain is required to confirm again.
     const now = new Date()
+    const cachedVersion = `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
     const confirmVersion = await readLine(
         `Please confirm the upcoming release version (configured: '${config.upcomingRelease}'): `,
-        `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
+        cachedVersion
     )
     const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
     if (!parsedConfirmed) {
-        throw new Error(`Provided version '${confirmVersion}' is not valid semver`)
+        throw new Error(`Provided version '${confirmVersion}' is not valid semver (in ${cachedVersion})`)
     }
     if (semver.neq(parsedConfirmed, parsedUpcoming)) {
         throw new Error(
