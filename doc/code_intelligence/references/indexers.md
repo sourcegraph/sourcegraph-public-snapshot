@@ -6,7 +6,7 @@ For a more complete description of the LSIF indexer ecosystem, see [LSIF.dev](ht
 
 ## Quick reference
 
-This table should be maintained as an authoritative resource usable by users, Sales, and Customer Engineers. Major changes to the development of our indexers should be reflected here.
+This table is maintained as an authoritative resource for users, Sales, and Customer Engineers. Any major changes to the development of our indexers will be reflected here.
 
 <table>
    <thead>
