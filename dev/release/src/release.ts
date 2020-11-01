@@ -69,7 +69,7 @@ async function releaseVersions(
     // week, after which the captain is required to confirm again.
     const now = new Date()
     const confirmVersion = await readLine(
-        'Please confirm the upcoming release version: ',
+        `Please confirm the upcoming release version (configured: '${config.upcomingRelease}'): `,
         `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
     )
     const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
@@ -82,10 +82,12 @@ async function releaseVersions(
         )
     }
 
-    return {
+    const versions = {
         previous: parsedPrevious,
         upcoming: parsedUpcoming,
     }
+    console.log(`Using versions: { upcoming: ${versions.upcoming.format()}, previous: ${versions.previous.format()} }`)
+    return versions
 }
 
 type StepID =
