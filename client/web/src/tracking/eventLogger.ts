@@ -33,13 +33,18 @@ export class EventLogger implements TelemetryService {
     constructor() {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
-        browserExtensionMessageReceived.subscribe(({ platform }) => {
-            this.log('BrowserExtensionConnectedToServer', { platform })
+        // TODO(sqs): hack, https://github.com/evanw/esbuild/issues/399
+        // console.log('!! not ready')
 
-            if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-                console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
-            }
-        })
+        if (false && typeof browserExtensionMessageReceived !== 'undefined') {
+            browserExtensionMessageReceived.subscribe(({ platform }) => {
+                this.log('BrowserExtensionConnectedToServer', { platform })
+
+                if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+                    console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
+                }
+            })
+        }
 
         this.initializeLogParameters()
     }

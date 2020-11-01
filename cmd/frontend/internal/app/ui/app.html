@@ -27,8 +27,15 @@
 		<meta property='og:description' content="{{.Description}}" />
 		{{end}}
 	{{end}}
-	<title>{{.Title}}</title>
-	{{if not .WebpackDevServer}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
+	    <title>{{.Title}}</title>
+
+    <!-- TODO(sqs): fix this after esbuild -->
+	    {{if not ".WebpackDevServer"}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
+                <link rel="stylesheet" href="/.assets/main3.css?{{version "main3.css"}}">
+	    <link rel="stylesheet" href="/.assets/main2.css?{{version "main2.css"}}">
+    <link rel="stylesheet" href="/.assets/esbuild/all.css?{{version "esbuild/all.css"}}">
+    <!-- end -->
+
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
 	{{ if .Context.SourcegraphDotComMode }}
@@ -63,7 +70,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	<script src="{{.Manifest.AppJSBundlePath}}"></script>
+	<script src="/.assets/{{.Manifest.AppJSBundlePath}}?{{version .Manifest.AppJSBundlePath}}" type="module"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

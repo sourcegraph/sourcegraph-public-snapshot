@@ -2,13 +2,6 @@
 
 package assets
 
-import (
-	"encoding/json"
-	"os"
-
-	"github.com/cockroachdb/errors"
-)
-
 var MockLoadWebpackManifest func() (*WebpackManifest, error)
 
 // LoadWebpackManifest uses Webpack manifest to extract hashed bundle names to
@@ -21,12 +14,16 @@ func LoadWebpackManifest() (m *WebpackManifest, err error) {
 		return MockLoadWebpackManifest()
 	}
 
-	manifestContent, err := os.ReadFile("./ui/assets/webpack.manifest.json")
-	if err != nil {
-		return nil, errors.Wrap(err, "loading webpack manifest file from disk")
-	}
-	if err := json.Unmarshal(manifestContent, &m); err != nil {
-		return nil, errors.Wrap(err, "parsing manifest json")
-	}
-	return m, nil
+	return &WebpackManifest{
+		AppJSBundlePath: "esbuild/main.js",
+	}, nil
+
+	// manifestContent, err := os.ReadFile("./ui/assets/webpack.manifest.json")
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "loading webpack manifest file from disk")
+	// }
+	// if err := json.Unmarshal(manifestContent, &m); err != nil {
+	// 	return nil, errors.Wrap(err, "parsing manifest json")
+	// }
+	// return m, nil
 }

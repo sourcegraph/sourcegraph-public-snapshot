@@ -11,7 +11,7 @@ const {
   cssModulesTypings,
   watchCSSModulesTypings,
 } = require('./client/shared/gulpfile')
-const { webpack: webWebpack, webpackDevServer: webWebpackDevServer } = require('./client/web/gulpfile')
+const { build: buildWeb, watch: watchWeb } = require('./client/web/gulpfile')
 
 /**
  * Generates files needed for builds.
@@ -31,7 +31,7 @@ const watchGenerate = gulp.series(generate, watchGenerators)
 /**
  * Builds everything.
  */
-const build = gulp.series(generate, webWebpack)
+const build = gulp.series(generate, buildWeb)
 
 /**
  * Watches everything and rebuilds on file changes.
@@ -43,7 +43,7 @@ const dev = gulp.series(async () => {
       console.error('Error in initial generate step: ', err)
     })
   } catch (err) {}
-}, gulp.parallel(watchGenerators, webWebpackDevServer))
+}, gulp.parallel(watchGenerators, watchWeb))
 
 module.exports = {
   generate,
