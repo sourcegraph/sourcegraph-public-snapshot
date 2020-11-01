@@ -369,6 +369,9 @@ func DecodeURN(urn string) (kind string, id int64) {
 		return "", 0
 	}
 
-	id, _ = strconv.ParseInt(fields[2], 10, 64)
+	id, err := strconv.ParseInt(fields[2], 10, 64)
+	if err != nil {
+		return "", 0
+	}
 	return fields[1], id
 }

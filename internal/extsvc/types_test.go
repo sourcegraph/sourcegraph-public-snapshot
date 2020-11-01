@@ -175,8 +175,8 @@ func TestDecodeURN(t *testing.T) {
 		},
 		{
 			desc:     "A valid complete URN",
-			urn:      "extsvc:github:1",
-			wantKind: "github",
+			urn:      "extsvc:github.com:1",
+			wantKind: "github.com",
 			wantID:   1,
 		},
 		{
@@ -184,6 +184,18 @@ func TestDecodeURN(t *testing.T) {
 			urn:      "extsvc::1",
 			wantKind: "",
 			wantID:   1,
+		},
+		{
+			desc:     "A URN with floating-point ID",
+			urn:      "extsvc:github.com:1.0",
+			wantKind: "",
+			wantID:   0,
+		},
+		{
+			desc:     "A URN with string ID",
+			urn:      "extsvc:github.com:fake",
+			wantKind: "",
+			wantID:   0,
 		},
 	}
 
