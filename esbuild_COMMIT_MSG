@@ -1,0 +1,31 @@
+Why no HMR?
+- https://github.com/evanw/esbuild/issues/464#issuecomment-710271500
+- Ode to Complexity: https://medium.com/@dan_abramov/hot-reloading-in-react-1140438583bf
+
+Dev server
+- esbuild watch mode: https://github.com/evanw/esbuild/issues/21#issuecomment-699048623
+
+Code splitting
+- https://github.com/evanw/esbuild/issues/16#issuecomment-665592808
+
+
+- Upgrades @graphql-codegen/cli to 1.17.12 to get the less noisy errorsOnly output from the GraphQL codegen (https://github.com/dotansimha/graphql-code-generator/pull/4931)
+
+ES modules in production:
+- https://www.bryanbraun.com/2020/10/23/es-modules-in-production-my-experience-so-far/
+- 2015 experience from Khan Academy (not good, was slower): https://blog.khanacademy.org/forgo-js-packaging-not-so-fast/
+
+
+TODOs
+- Resolve alias:
+  // react-visibility-sensor's main field points to a UMD bundle instead of ESM
+      // https://github.com/joshwnj/react-visibility-sensor/issues/148
+      'react-visibility-sensor': path.resolve(
+        rootDirectory,
+        'node_modules/react-visibility-sensor/visibility-sensor.js'
+      ),
+- Worker loader
+- Omit from utility-types is unnecessary, it's now builtin
+
+
+GraphiQL: https://github.com/graphql/graphiql/issues/1515

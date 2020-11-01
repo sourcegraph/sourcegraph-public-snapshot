@@ -28,7 +28,7 @@ const (
 	// It's local access token, don't worry.
 	authHeader = "token 1b13a0a1217377aa9a43d7cc46782f24b648ab0c"
 
-	graphqlEndpoint = "http://localhost:3082/.api/graphql" // CI:LOCALHOST_OK
+	graphqlEndpoint = "http://localhost:3081/.api/graphql" // CI:LOCALHOST_OK
 )
 
 var deleteFlag = flag.Bool("del", false, "delete everything campaign-related in the DB before applying new campaign specs")

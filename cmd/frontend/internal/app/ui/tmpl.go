@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"sync"
@@ -23,17 +22,11 @@ import (
 var (
 	versionCacheMu sync.RWMutex
 	versionCache   = make(map[string]string)
-
-	_, noAssetVersionString = os.LookupEnv("WEBPACK_DEV_SERVER")
 )
 
 // Functions that are exposed to templates.
 var funcMap = template.FuncMap{
 	"version": func(fp string) (string, error) {
-		if noAssetVersionString {
-			return "", nil
-		}
-
 		// Check the cache for the version.
 		versionCacheMu.RLock()
 		version, ok := versionCache[fp]
