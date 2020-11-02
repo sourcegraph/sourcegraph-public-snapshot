@@ -104,7 +104,9 @@ export const initNewExtensionAPI = (
 
         // Workspace
         addWorkspaceRoot: (root: WorkspaceRoot) => {
-            state.roots = [...state.roots, { ...root, uri: new URL(root.uri) }]
+            if (!state.roots.some(existingRoot => existingRoot.uri.toString() !== root.uri)) {
+                state.roots = [...state.roots, { ...root, uri: new URL(root.uri) }]
+            }
         },
         getWorkspaceRoots: () => state.roots.map(root => ({ ...root, uri: root.uri.toString() })), // TODO remove if this isn't needed
         removeWorkspaceRoot: (uri: string) => {
