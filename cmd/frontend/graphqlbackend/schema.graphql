@@ -2904,7 +2904,13 @@ union Owner = User | Org
 A query that can serve as a trigger for code monitors.
 """
 type MonitorQuery implements Node {
+    """
+    The unique id of a trigger query.
+    """
     id: ID!
+    """
+    A query.
+    """
     query: String!
 }
 

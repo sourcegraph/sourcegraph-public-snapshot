@@ -2840,11 +2840,7 @@ type SavedSearch implements Node {
 }
 
 """
-CODE MONITORS
-"""
-
-"""
-A list of monitors
+A list of code monitors
 """
 type MonitorConnection {
     """
@@ -2915,7 +2911,13 @@ union Owner = User | Org
 A query that can serve as a trigger for code monitors.
 """
 type MonitorQuery implements Node {
+    """
+    The unique id of a trigger query.
+    """
     id: ID!
+    """
+    A query.
+    """
     query: String!
 }
 
@@ -2925,7 +2927,7 @@ Supported triggers for code monitors.
 union MonitorTrigger = MonitorQuery
 
 """
-A list of code monitors.
+A list of actions.
 """
 type MonitorActionConnection {
     """
@@ -2974,7 +2976,7 @@ type MonitorEmail implements Node {
     """
     recipient: MonitorEmailRecipient!
 }
-    
+
 """
 The priority of an email action.
 """
