@@ -15,7 +15,7 @@ declare mermaid_diagrams=(
 
 # Install mermaid util
 yarn
-mermaid="../../../../node_modules/.bin/mmdc"
+mermaid="../../../../../node_modules/.bin/mmdc"
 
 # Generate mermaid diagrams
 for diagram in "${mermaid_diagrams[@]}"; do

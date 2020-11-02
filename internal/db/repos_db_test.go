@@ -4,9 +4,12 @@ import (
 	"context"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -71,6 +74,22 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 		createdRepos = append(createdRepos, repo)
 	}
 	return createdRepos
+}
+
+func generateRepos(n int, base ...*types.Repo) types.Repos {
+	if len(base) == 0 {
+		return nil
+	}
+
+	rs := make(types.Repos, 0, n)
+	for i := 0; i < n; i++ {
+		id := strconv.Itoa(i)
+		r := base[i%len(base)].Clone()
+		r.Name += api.RepoName(id)
+		r.ExternalRepo.ID += id
+		rs = append(rs, r)
+	}
+	return rs
 }
 
 // InsertRepoOp represents an operation to insert a repository.
@@ -140,7 +159,7 @@ INSERT INTO repo (
 //
 // Upsert exists for testing purposes only. Repository mutations are managed
 // by repo-updater.
-func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
+func (s *RepoStore) Upsert(ctx context.Context, op InsertRepoOp) error {
 	insert := false
 
 	// We optimistically assume the repo is already in the table, so first
@@ -345,6 +364,97 @@ func TestRepos_List(t *testing.T) {
 	}
 	if !jsonEqual(t, repos, want) {
 		t.Errorf("got %v, want %v", repos, want)
+	}
+}
+
+func Test_GetUserAddedRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+
+	// Create a user
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: user.ID,
+	})
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "Github - Test",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		NamespaceUserID: &user.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:    "github.com/sourcegraph/sourcegraph",
+		Private: true,
+		RepoFields: &types.RepoFields{
+			URI:         "uri",
+			Description: "description",
+			Fork:        true,
+			Archived:    true,
+			Cloned:      true,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				service.URN(): {
+					ID:       service.URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+		},
+	}
+	err = Repos.Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []api.RepoName{
+		repo.Name,
+	}
+
+	have, err := Repos.GetUserAddedRepoNames(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
 	}
 }
 
@@ -851,7 +961,7 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	})
 }
 
-func TestRepos_Create(t *testing.T) {
+func TestRepos_createRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -877,7 +987,7 @@ func TestRepos_Create(t *testing.T) {
 	}
 }
 
-func TestRepos_Create_dupe(t *testing.T) {
+func TestRepos_createRepo_dupe(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

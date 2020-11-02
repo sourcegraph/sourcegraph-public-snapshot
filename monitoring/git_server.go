@@ -83,6 +83,7 @@ func GitServer() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("running commands").Unit(Seconds),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
+								- **Query a graph for individual commands** using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a command might be spiking in frequency.
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).

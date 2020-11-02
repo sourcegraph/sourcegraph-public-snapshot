@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -31,8 +32,8 @@ var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTT
 var rawHunkCacheSize = env.Get("PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY", "1000", "Maximum number of git diff hunk objects that can be loaded into the hunk cache at once.")
 
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	if bundleManagerURL == "" {
-		return fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+	if err := initOnce(ctx); err != nil {
+		return err
 	}
 
 	hunkCacheSize, err := strconv.ParseInt(rawHunkCacheSize, 10, 64)
@@ -40,42 +41,80 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return fmt.Errorf("invalid int %q for PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY: %s", rawHunkCacheSize, err)
 	}
 
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
-	codeIntelDB := mustInitializeCodeIntelDatabase()
-
-	store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-	bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL)
-	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
 	if err != nil {
 		return fmt.Errorf("failed to initialize hunk cache: %s", err)
 	}
 
-	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
-		store,
-		bundleManagerClient,
-		api,
+	resolver := codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
+		services.store,
+		services.bundleManagerClient,
+		services.api,
 		hunkCache,
 	))
 
-	newCodeIntelUploadHandler := func(internal bool) http.Handler {
-		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, internal)
-	}
-
-	enterpriseServices.NewCodeIntelUploadHandler = newCodeIntelUploadHandler
-
-	h, err := newInternalProxyHandler(newCodeIntelUploadHandler(true))
+	internalHandler, err := NewCodeIntelUploadHandler(ctx, true)
 	if err != nil {
 		return err
 	}
 
-	enterpriseServices.NewCodeIntelInternalProxyHandler = h
+	externalHandler, err := NewCodeIntelUploadHandler(ctx, false)
+	if err != nil {
+		return err
+	}
+
+	enterpriseServices.CodeIntelResolver = resolver
+	enterpriseServices.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+		if internal {
+			return internalHandler
+		}
+
+		return externalHandler
+	}
+
 	return nil
+}
+
+func NewCodeIntelUploadHandler(ctx context.Context, internal bool) (http.Handler, error) {
+	if err := initOnce(ctx); err != nil {
+		return nil, err
+	}
+
+	return codeintelhttpapi.NewUploadHandler(services.store, services.bundleManagerClient, internal), nil
+}
+
+var once sync.Once
+var services struct {
+	store               store.Store
+	bundleManagerClient bundles.BundleManagerClient
+	api                 codeintelapi.CodeIntelAPI
+	err                 error
+}
+
+func initOnce(ctx context.Context) error {
+	once.Do(func() {
+		if bundleManagerURL == "" {
+			services.err = fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+			return
+		}
+
+		observationContext := &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+
+		codeIntelDB := mustInitializeCodeIntelDatabase()
+		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
+		bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL)
+		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
+
+		services.store = store
+		services.bundleManagerClient = bundleManagerClient
+		services.api = api
+	})
+
+	return services.err
 }
 
 func mustInitializeCodeIntelDatabase() *sql.DB {

@@ -1,0 +1,9 @@
+env:
+  VAGRANT_RUN_ENV: "CI"
+steps:
+- artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-qa-test
+  label: ':docker::arrow_right::chromium:'
+  agents:
+    queue: 'baremetal'

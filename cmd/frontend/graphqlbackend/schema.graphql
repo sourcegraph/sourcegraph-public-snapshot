@@ -10,6 +10,43 @@ schema {
 }
 
 """
+This type is not returned by any resolver, but serves to document what an error
+response will look like.
+"""
+type Error {
+    """
+    A string giving more context about the error that ocurred.
+    """
+    message: String!
+    """
+    The GraphQL path to where the error happened. For an error in the query
+    query {
+        user {
+            externalID # This is a nullable field that failed computing.
+        }
+    }
+    the path would be ["user", "externalID"].
+    """
+    path: [String!]!
+    """
+    Optional additional context on the error.
+    """
+    extensions: ErrorExtensions
+}
+
+"""
+Optional additional context on an error returned from a resolver.
+It may also contain more properties, which aren't strictly typed here.
+"""
+type ErrorExtensions {
+    """
+    An error code, which can be asserted on.
+    Possible error codes are communicated in the doc string of the field.
+    """
+    code: String
+}
+
+"""
 Represents a null return value.
 """
 type EmptyResponse {
@@ -541,11 +578,10 @@ type Mutation {
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 
     """
-    CAMPAIGNS
-
-    Create a campaign from a campaign spec and locally computed changeset specs. If a campaign in
-    the same namespace with the same name already exists, an error is returned. The newly created
+    Create a campaign from a campaign spec and locally computed changeset specs. The newly created
     campaign is returned.
+    If a campaign in the same namespace with the same name already exists, an error with the error code
+    ErrMatchingCampaignExists is returned.
     """
     createCampaign(
         """
@@ -558,6 +594,8 @@ type Mutation {
     Create or update a campaign from a campaign spec and locally computed changeset specs. If no
     campaign exists in the namespace with the name given in the campaign spec, a campaign will be
     created. Otherwise, the existing campaign will be updated. The campaign is returned.
+    Closed campaigns cannot be applied to. In that case, an error with the error code ErrApplyClosedCampaign
+    will be returned.
     """
     applyCampaign(
         """
@@ -570,7 +608,7 @@ type Mutation {
         parameters does not match the campaign with this ID. This lets callers use a stable ID
         that refers to a specific campaign during an edit session (and is not susceptible to
         conflicts if the underlying campaign is moved to a different namespace, renamed, or
-        deleted).
+        deleted). The returned error has the error code ErrEnsureCampaignFailed.
         """
         ensureCampaign: ID
     ): Campaign!

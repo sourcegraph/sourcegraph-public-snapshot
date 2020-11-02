@@ -97,6 +97,8 @@ func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, e
 	return scanFirstIndex(rows, err)
 }
 
+var ScanFirstIndexRecord = scanFirstIndexRecord
+
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(`
@@ -318,6 +320,8 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.outfile`),
 	sqlf.Sprintf("NULL"),
 }
+
+var IndexColumnsWithNullRank = indexColumnsWithNullRank
 
 // SetIndexLogContents updates the log contents fo the index.
 func (s *store) SetIndexLogContents(ctx context.Context, indexID int, contents string) error {
