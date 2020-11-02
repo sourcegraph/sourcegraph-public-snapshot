@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 const uploadDir = "uploads"
@@ -53,16 +54,42 @@ func UploadPartFilename(bundleDir string, id, index int64) string {
 	return filepath.Join(bundleDir, uploadPartsDir, fmt.Sprintf("%d.%d.gz", id, index))
 }
 
-// PathExists returns (true, nil) if the specified path exists, or (false, error) if an error
-// occurred (such as not having permission to read the path).
-func PathExists(filename string) (bool, error) {
-	if _, err := os.Stat(filename); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
+// DBsDir returns the path of the directory containing db file trees.
+func DBsDir(bundleDir string) string {
+	return filepath.Join(bundleDir, dbsDir)
+}
 
-		return false, err
-	}
+// DBDir returns the path of the directory containing files for a given bundle identifier.
+func DBDir(bundleDir string, id int64) string {
+	return filepath.Join(bundleDir, dbsDir, strconv.FormatInt(id, 10))
+}
 
-	return true, nil
+// SQLiteDBFilename returns the path of the SQLite db for the given bundle identifier.
+func SQLiteDBFilename(bundleDir string, id int64) string {
+	return filepath.Join(bundleDir, dbsDir, strconv.FormatInt(id, 10), "sqlite.db")
+}
+
+// DBPartsDir returns the path of the directory containing db part files.
+func DBPartsDir(bundleDir string) string {
+	return filepath.Join(bundleDir, dbPartsDir)
+}
+
+// DBPartFilename returns the path of the db with the given identifier and part index.
+func DBPartFilename(bundleDir string, id, index int64) string {
+	return filepath.Join(bundleDir, dbPartsDir, fmt.Sprintf("%d.%d.gz", id, index))
+}
+
+// DBBackupsDir returns the path of the directory containing db backup files.
+func DBBackupsDir(bundleDir string) string {
+	return filepath.Join(bundleDir, dbBackupsDir)
+}
+
+// DBBackupFilename returns the path of the backup SQLite db for the given bundle identifier.
+func DBBackupFilename(bundleDir string, id int64) string {
+	return filepath.Join(bundleDir, dbBackupsDir, strconv.FormatInt(id, 10)+".db")
+}
+
+// MigrationMarkerFilename returns the path to the file that marks a migration has been performed.
+func MigrationMarkerFilename(bundleDir string, version int) string {
+	return filepath.Join(bundleDir, migrationMarkersDir, fmt.Sprintf("v%d", version))
 }
