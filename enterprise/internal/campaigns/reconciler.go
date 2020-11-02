@@ -183,7 +183,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	if upsertChangesetEvents {
-		events := e.ch.Events().Dedupe()
+		events := e.ch.Events()
 		SetDerivedState(ctx, e.ch, events)
 
 		if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
