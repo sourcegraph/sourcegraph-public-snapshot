@@ -134,6 +134,8 @@
 // 1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql (188B)
 // 1528395750_repair_view.down.sql (536B)
 // 1528395750_repair_view.up.sql (348B)
+// 1528395751_incremental_indexer.down.sql (784B)
+// 1528395751_incremental_indexer.up.sql (802B)
 
 package migrations
 
@@ -2882,6 +2884,46 @@ func _1528395750_repair_viewUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395751_incremental_indexerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xc4\x91\xcd\x4e\xe3\x30\x14\x85\xf7\x7e\x8a\xb3\xab\x34\x9a\xe6\x05\xa2\x2e\xd2\xd6\x33\x04\xe5\x07\x25\x29\x5d\x46\x26\xbe\x55\x2d\x35\xb1\xe5\x1f\x2a\xde\x1e\x35\x41\x40\xab\x82\x80\x0d\xde\xd9\x3a\x3a\xf7\xfb\xae\x97\xfc\x7f\x5a\xc4\x8c\xcd\xe7\x58\x5b\x6d\x20\xc9\xd0\x20\x69\xf0\x78\x54\x74\x74\x6c\x5d\x95\x77\xb8\x4f\xf9\x16\x07\xa7\x76\xad\x0c\xbd\x71\xed\x51\xf9\x7d\x6b\xc9\x68\xa7\xbc\xb6\x4f\xed\x20\x7a\x8a\x2f\xa3\xc1\x1c\xb4\x90\x5f\x0c\x8f\xbd\x31\x63\x49\xd6\xf0\x0a\x4d\xb2\xcc\xf8\x59\x0b\xc6\xfc\xaa\xcc\x36\x79\x81\x07\xe1\xa8\xed\x74\xdf\x2b\x3f\x91\x57\xd4\x59\x12\x9e\x5e\x98\x57\x15\x4f\x1a\x7e\xd9\x8e\xa4\x46\xcd\x33\xbe\x6a\x10\xa2\x3f\x7f\x11\xa2\x9d\x1a\x94\xdb\x93\x6c\x85\x87\x70\x30\x56\x77\xe4\xdc\x74\xff\x57\x95\xf9\x39\x41\xc0\xf6\x86\x57\x1c\xce\x9f\x26\x2d\x30\xeb\x74\x6f\x0e\xe4\x49\xce\x62\xf6\xc1\xcc\xab\xf2\x48\x6a\x86\x33\x14\x1b\x8d\xef\xc2\xe1\x32\xfa\x86\x31\x39\x04\x86\xef\x9d\xdb\x32\x2d\xc6\x56\x58\x94\x05\x6c\xa4\x24\x16\x08\xd1\xbb\x41\x4a\x9e\x4a\x27\x39\x1b\x49\x1a\x9d\x4e\x3b\x48\x6b\x14\x9b\x2c\xbb\x66\xf7\xd9\xe7\xfe\xcc\xef\x75\xcd\xbf\x64\x58\xe6\x79\xda\xc4\xec\x39\x00\x00\xff\xff\x74\x51\x7b\xf4\x10\x03\x00\x00")
+
+func _1528395751_incremental_indexerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395751_incremental_indexerDownSql,
+		"1528395751_incremental_indexer.down.sql",
+	)
+}
+
+func _1528395751_incremental_indexerDownSql() (*asset, error) {
+	bytes, err := _1528395751_incremental_indexerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395751_incremental_indexer.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x90, 0x3a, 0xb4, 0x5e, 0x96, 0x6b, 0xc6, 0x16, 0xa4, 0xc0, 0x27, 0x81, 0x42, 0xb, 0x64, 0xd0, 0xc3, 0x44, 0x8c, 0x73, 0x5, 0xf8, 0x7, 0xb3, 0x9, 0xd1, 0xba, 0x90, 0x1, 0x34, 0x9c, 0x6b}}
+	return a, nil
+}
+
+var __1528395751_incremental_indexerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xc4\x91\xc9\x6e\xb3\x30\x1c\xc4\xef\x7e\x8a\xb9\x45\xfa\xf4\x85\x17\x40\x39\x10\x70\x5a\x2a\x96\x0a\x48\x73\x44\x14\xff\xa3\x58\x0a\x60\x79\x69\xda\xb7\xaf\x02\xdd\x92\x2e\x6a\x7b\xa9\x6f\xb6\x46\x33\xf3\x1b\x2f\xf9\x45\x9c\xf9\x8c\xcd\xe7\x88\xf4\xa0\x20\x48\x51\x2f\xa8\xb7\xb8\x93\x74\x30\x2c\x2a\xf2\x6b\xdc\xc4\x7c\x83\xbd\x91\xdb\x5a\xb8\x4e\x99\xfa\x20\xed\xae\xd6\xa4\x06\x23\xed\xa0\x1f\xea\xbe\xe9\xc8\x3f\x97\x3a\xb5\x1f\x1a\xf1\x4d\xf1\xe8\xeb\x33\x16\x24\x15\x2f\x50\x05\xcb\x84\x9f\xb8\x20\x88\x22\x84\x79\xb2\x4e\x33\xdc\x36\x86\xea\x76\xe8\x3a\x69\x61\xe9\xde\x22\xe2\xab\x60\x9d\x54\xc8\xd6\x49\x32\xa1\x14\xd4\x6a\x6a\x2c\x3d\x41\x84\x05\x0f\x2a\x7e\x1e\x87\xa0\x44\xc9\x13\x1e\x56\x70\xde\xbf\xff\x70\xde\x56\xf6\xd2\xec\x48\xd4\x8d\x45\x63\xa0\xf4\xd0\x92\x31\xd3\x7d\x55\xe4\xe9\x69\x25\x87\xcd\x25\x2f\x38\x8c\x3d\x26\x2d\x30\x6b\x87\x4e\xed\xc9\x92\x98\xf9\xec\x93\xcc\x0f\xd7\x40\x50\x32\x9c\x54\xd1\xde\xf8\xde\x18\x9c\x4b\x5f\x6b\x4c\x0c\x8e\xe1\x67\xe7\x2a\x8f\xb3\xd1\x15\x1a\x79\x06\xed\x49\x81\x05\x9c\xf7\x26\x48\x8a\xa3\xe9\x04\xa7\x3d\x41\x23\xd3\x71\x83\xb8\x7c\xde\xf8\x1d\xdd\x57\xbf\xfd\x3b\xbe\x97\x99\xff\x86\x90\x85\x79\x9a\xc6\x95\xcf\x1e\x03\x00\x00\xff\xff\xad\x06\xc8\x07\x22\x03\x00\x00")
+
+func _1528395751_incremental_indexerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395751_incremental_indexerUpSql,
+		"1528395751_incremental_indexer.up.sql",
+	)
+}
+
+func _1528395751_incremental_indexerUpSql() (*asset, error) {
+	bytes, err := _1528395751_incremental_indexerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395751_incremental_indexer.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x48, 0x26, 0xb1, 0xb4, 0x92, 0x3e, 0xd2, 0x7b, 0x3c, 0x8a, 0x3b, 0x6, 0x8c, 0x8c, 0x81, 0x40, 0x95, 0x21, 0xf9, 0x74, 0x93, 0xa3, 0xe4, 0xf1, 0x83, 0xa1, 0xb3, 0x78, 0x7e, 0x8, 0xf8, 0x2c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3107,6 +3149,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
 	"1528395750_repair_view.down.sql":                                                        _1528395750_repair_viewDownSql,
 	"1528395750_repair_view.up.sql":                                                          _1528395750_repair_viewUpSql,
+	"1528395751_incremental_indexer.down.sql":                                                _1528395751_incremental_indexerDownSql,
+	"1528395751_incremental_indexer.up.sql":                                                  _1528395751_incremental_indexerUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3287,6 +3331,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   {_1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql, map[string]*bintree{}},
 	"1528395750_repair_view.down.sql":                                                        {_1528395750_repair_viewDownSql, map[string]*bintree{}},
 	"1528395750_repair_view.up.sql":                                                          {_1528395750_repair_viewUpSql, map[string]*bintree{}},
+	"1528395751_incremental_indexer.down.sql":                                                {_1528395751_incremental_indexerDownSql, map[string]*bintree{}},
+	"1528395751_incremental_indexer.up.sql":                                                  {_1528395751_incremental_indexerUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

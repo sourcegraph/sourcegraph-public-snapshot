@@ -35,6 +35,12 @@ func getQueryInt(r *http.Request, name string) int {
 	return value
 }
 
+func getQueryBool(r *http.Request, name string) bool {
+	value, _ := strconv.ParseBool(r.URL.Query().Get(name))
+	return value
+}
+
+
 // copyAll writes the contents of r to w and logs on write failure.
 func copyAll(w http.ResponseWriter, r io.Reader) {
 	if _, err := io.Copy(w, r); err != nil {

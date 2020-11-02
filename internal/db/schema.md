@@ -785,6 +785,7 @@ Foreign-key constraints:
  num_resets      | integer                  | not null default 0
  upload_size     | bigint                   | 
  num_failures    | integer                  | not null default 0
+ base_commit     | text                     | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state

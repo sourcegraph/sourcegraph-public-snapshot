@@ -36,6 +36,7 @@ type Upload struct {
 	UploadedParts  []int      `json:"uploadedParts"`
 	UploadSize     *int64     `json:"uploadSize"`
 	Rank           *int       `json:"placeInQueue"`
+	BaseCommit     *string    `json:"baseCommit"`
 }
 
 func (u Upload) RecordID() int {
@@ -72,6 +73,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
 			&upload.UploadSize,
+			&upload.BaseCommit,
 			&upload.Rank,
 		); err != nil {
 			return nil, err
@@ -156,6 +158,7 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 			u.num_parts,
 			u.uploaded_parts,
 			u.upload_size,
+			u.base_commit,
 			s.rank
 		FROM lsif_uploads_with_repository_name u
 		LEFT JOIN (
@@ -269,6 +272,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.num_parts,
 				u.uploaded_parts,
 				u.upload_size,
+				u.base_commit,
 				s.rank
 			FROM lsif_uploads_with_repository_name u
 			LEFT JOIN (
@@ -337,8 +341,9 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err err
 				state,
 				num_parts,
 				uploaded_parts,
-				upload_size
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+				upload_size,
+				base_commit
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
 			upload.Commit,
@@ -349,6 +354,7 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err err
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
+			upload.BaseCommit,
 		),
 	))
 
@@ -428,6 +434,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_parts"),
 	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("u.upload_size"),
+	sqlf.Sprintf("u.base_commit"),
 	sqlf.Sprintf("NULL"),
 }
 

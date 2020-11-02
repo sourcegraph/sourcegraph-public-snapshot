@@ -106,6 +106,28 @@ func (s *Store) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, err er
 	`, id)))
 }
 
+func (s *store) GetDumpForCommit(ctx context.Context, repositoryID int, commit, indexer, root string) (Dump, bool, error) {
+	return scanFirstDump(s.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			d.id,
+			d.commit,
+			d.root,
+			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
+			d.uploaded_at,
+			d.state,
+			d.failure_message,
+			d.started_at,
+			d.finished_at,
+			d.process_after,
+			d.num_resets,
+			d.num_failures,
+			d.repository_id,
+			d.repository_name,
+			d.indexer
+		FROM lsif_dumps_with_repository_name d WHERE d.repository_id = %s AND commit = %s AND indexer = %s AND root = %s
+	`, repositoryID, commit, indexer, root)))
+}
+
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.

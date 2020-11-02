@@ -5,7 +5,8 @@ package lsifstore
 // This implementation is identical to the TypeScript version used before
 // the port to Go so that we can continue to read old conversions without
 // a migration.
-func HashKey(id ID, maxIndex int) int {
+func
+HashKey(id ID, maxIndex int) int {
 	hash := int32(0)
 	for _, c := range string(id) {
 		hash = (hash << 5) - hash + int32(c)

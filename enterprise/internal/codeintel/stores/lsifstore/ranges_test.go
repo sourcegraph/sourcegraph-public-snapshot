@@ -1,7 +1,11 @@
+<<<<<<< HEAD:enterprise/internal/codeintel/stores/lsifstore/ranges_test.go
 package lsifstore
+=======
+package util
+>>>>>>> 2d6cff297c... prototeep:enterprise/internal/codeintel/bundles/util/ranges_test.go
 
 import (
-	"strconv"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -43,7 +47,11 @@ func TestFindRanges(t *testing.T) {
 
 	m := map[ID]RangeData{}
 	for i, r := range ranges {
+<<<<<<< HEAD:enterprise/internal/codeintel/stores/lsifstore/ranges_test.go
 		m[ID(strconv.Itoa(i))] = r
+=======
+		m[types.ID(fmt.Sprintf("%d", i))] = r
+>>>>>>> 2d6cff297c... prototeep:enterprise/internal/codeintel/bundles/util/ranges_test.go
 	}
 
 	for i, r := range ranges {
@@ -91,7 +99,11 @@ func TestFindRangesOrder(t *testing.T) {
 
 	m := map[ID]RangeData{}
 	for i, r := range ranges {
+<<<<<<< HEAD:enterprise/internal/codeintel/stores/lsifstore/ranges_test.go
 		m[ID(strconv.Itoa(i))] = r
+=======
+		m[types.ID(fmt.Sprintf("%d", i))] = r
+>>>>>>> 2d6cff297c... prototeep:enterprise/internal/codeintel/bundles/util/ranges_test.go
 	}
 
 	actual := findRanges(m, 2, 4)
