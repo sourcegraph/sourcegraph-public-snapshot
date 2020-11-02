@@ -80,7 +80,7 @@ func main() {
 
 	server, err := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
 	if err != nil {
-		log.Fatalf("failed to create listener: %s", err)
+		log.Fatalf("Failed to create listener: %s", err)
 	}
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, lsifstore.New(codeIntelDB), bundleDir, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
