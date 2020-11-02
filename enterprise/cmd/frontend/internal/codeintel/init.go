@@ -51,7 +51,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// Repo updater is currently doing something similar
 	// here and would also be ripe for a refresher of the
 	// startup flow.
-	go goroutine.MonitorBackgroundRoutines(routines...)
+	go goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 
 	return nil
 }
