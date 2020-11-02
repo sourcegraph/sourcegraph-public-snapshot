@@ -156,20 +156,22 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 		To:       []string{email},
 		Template: verifyEmailTemplates,
 		Data: struct {
-			Email string
-			URL   string
+			Email       string
+			URL         string
+			ExternalURL string
 		}{
 			Email: email,
 			URL: globals.ExternalURL().ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
 			}).String(),
+			ExternalURL: globals.ExternalURL().String(),
 		},
 	})
 }
 
 var verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Verify your email on Sourcegraph`,
+	Subject: `Verify your email on Sourcegraph ({{.ExternalURL}})`,
 	Text: `
 Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:
 
@@ -200,27 +202,29 @@ func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, chan
 		To:       []string{email},
 		Template: updateAccountEmailTemplate,
 		Data: struct {
-			Email    string
-			Change   string
-			Username string
+			Email       string
+			Change      string
+			Username    string
+			ExternalURL string
 		}{
-			Email:    email,
-			Change:   change,
-			Username: usr.Username,
+			Email:       email,
+			Change:      change,
+			Username:    usr.Username,
+			ExternalURL: globals.ExternalURL().String(),
 		},
 	})
 }
 
 var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Update to your Sourcegraph account`,
+	Subject: `Update to your Sourcegraph account ({{.ExternalURL}})`,
 	Text: `
-Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph.
+Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.ExternalURL}}).
 
 If this was not you please change your password immediately.
 `,
 	HTML: `
 <p>
-Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph.
+Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph ({{.ExternalURL}}).
 </p>
 
 <p><strong>If this was not you please change your password immediately.</strong></p>
