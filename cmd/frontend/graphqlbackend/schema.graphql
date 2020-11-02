@@ -2858,7 +2858,7 @@ type Monitor implements Node {
     createdAt: DateTime!
     description: String!
     owner: Owner!
-    trigger: Trigger
+    trigger: MonitorTrigger
     actions(
         """
         Returns the first n actions from the list.
@@ -2868,7 +2868,7 @@ type Monitor implements Node {
         Opaque pagination cursor.
         """
         after: String
-    ): ActionConnection!
+    ): MonitorActionConnection!
 }
 
 union Owner = User | Org
@@ -2881,13 +2881,13 @@ type MonitorQuery implements Node {
 """
 Supported triggers for code monitors.
 """
-union Trigger = MonitorQuery
+union MonitorTrigger = MonitorQuery
 
-type ActionConnection {
+type MonitorActionConnection {
     """
     A list of actions.
     """
-    nodes: [Action!]!
+    nodes: [MonitorAction!]!
 
     """
     The total number of actions in the connection.
@@ -2903,7 +2903,7 @@ type ActionConnection {
 """
 Supported actions for code monitors.
 """
-union Action = MonitorEmail
+union MonitorAction = MonitorEmail
 
 type MonitorEmail implements Node {
     id: ID!
