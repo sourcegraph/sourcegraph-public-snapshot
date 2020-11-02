@@ -390,10 +390,9 @@ export const scanBalancedPattern: Parser<Literal> = (input, start) => {
     let current = ''
     const result: string[] = []
 
-    const nextChar = (): string => {
+    const nextChar = (): void => {
         current = input[adjustedStart]
         adjustedStart += 1
-        return current
     }
 
     if (!keepScanning(input, start)) {
@@ -405,7 +404,7 @@ export const scanBalancedPattern: Parser<Literal> = (input, start) => {
     }
 
     while (input[adjustedStart] !== undefined) {
-        current = nextChar()
+        nextChar()
         if (current === ' ' && balanced === 0) {
             // Stop scanning a potential pattern when we see whitespace in a balanced state.
             adjustedStart -= 1 // Backtrack.
@@ -441,7 +440,7 @@ export const scanBalancedPattern: Parser<Literal> = (input, start) => {
             result.push(current)
         } else if (current === '\\') {
             if (input[adjustedStart] !== undefined) {
-                current = nextChar()
+                nextChar()
                 // Accept anything anything escaped. The point is to consume escaped spaces like "\ "
                 // so that we don't recognize it as terminating a pattern.
                 result.push('\\', current)
