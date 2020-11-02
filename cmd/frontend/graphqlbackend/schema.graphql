@@ -2971,7 +2971,16 @@ type MonitorEmail implements Node {
     """
     A list of events.
     """
-    events: MonitorActionEventConnection!
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
 }
 
 """

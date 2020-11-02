@@ -203,7 +203,7 @@ type MonitorEmailResolver interface {
 	Priority() string
 	Header() string
 	Recipient(ctx context.Context) (MonitorEmailRecipient, error)
-	Events(ctx context.Context) (MonitorActionEventConnectionResolver, error)
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
 type monitorEmail struct {
@@ -234,7 +234,7 @@ func (m *monitorEmail) ID() graphql.ID {
 	return "monitorEmail ID not implemented"
 }
 
-func (m *monitorEmail) Events(ctx context.Context) (MonitorActionEventConnectionResolver, error) {
+func (m *monitorEmail) Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error) {
 	return &monitorActionEventConnection{}, nil
 }
 
@@ -284,6 +284,11 @@ func (a *monitorActionEventConnection) PageInfo(ctx context.Context) (*graphqlut
 //
 // MonitorEvent
 //
+type ListEventsArgs struct {
+	First int32
+	After *string
+}
+
 type MonitorEventResolver interface {
 	ID() graphql.ID
 	Status() string
