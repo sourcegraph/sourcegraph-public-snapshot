@@ -95,18 +95,12 @@ describe('getHoverActionsContext', () => {
                 from(
                     getHoverActionsContext(
                         {
+                            getDefinition: () =>
+                                cold<MaybeLoadingResult<Location[]>>(`l ${LOADER_DELAY + 100}ms r`, {
+                                    l: { isLoading: true, result: [] },
+                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                }),
                             extensionsController: {
-                                extHostAPI: Promise.resolve(
-                                    pretendRemote<FlatExtensionHostAPI>({
-                                        getDefinition: () =>
-                                            proxySubscribable(
-                                                cold<MaybeLoadingResult<Location[]>>(`l ${LOADER_DELAY + 100}ms r`, {
-                                                    l: { isLoading: true, result: [] },
-                                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
-                                                })
-                                            ),
-                                    })
-                                ),
                                 services: {
                                     workspace: testWorkspaceService(),
 
@@ -176,19 +170,13 @@ describe('getHoverActionsContext', () => {
                 from(
                     getHoverActionsContext(
                         {
+                            getDefinition: () =>
+                                cold<MaybeLoadingResult<Location[]>>(`l e 50ms l ${LOADER_DELAY}ms r`, {
+                                    l: { isLoading: true, result: [] },
+                                    e: { isLoading: false, result: [] },
+                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                }),
                             extensionsController: {
-                                extHostAPI: Promise.resolve(
-                                    pretendRemote<FlatExtensionHostAPI>({
-                                        getDefinition: () =>
-                                            proxySubscribable(
-                                                cold<MaybeLoadingResult<Location[]>>(`l e 50ms l ${LOADER_DELAY}ms r`, {
-                                                    l: { isLoading: true, result: [] },
-                                                    e: { isLoading: false, result: [] },
-                                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
-                                                })
-                                            ),
-                                    })
-                                ),
                                 services: {
                                     workspace: testWorkspaceService(),
                                     textDocumentReferences: {
@@ -264,17 +252,11 @@ describe('getHoverActionsContext', () => {
                 from(
                     getHoverActionsContext(
                         {
+                            getDefinition: () =>
+                                cold<MaybeLoadingResult<Location[]>>('-b', {
+                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                }),
                             extensionsController: {
-                                extHostAPI: Promise.resolve(
-                                    pretendRemote<FlatExtensionHostAPI>({
-                                        getDefinition: () =>
-                                            proxySubscribable(
-                                                cold<MaybeLoadingResult<Location[]>>('-b', {
-                                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
-                                                })
-                                            ),
-                                    })
-                                ),
                                 services: {
                                     workspace: testWorkspaceService(),
                                     textDocumentReferences: {
@@ -332,17 +314,11 @@ describe('getHoverActionsContext', () => {
                 from(
                     getHoverActionsContext(
                         {
+                            getDefinition: () =>
+                                cold<MaybeLoadingResult<Location[]>>('-b', {
+                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                }),
                             extensionsController: {
-                                extHostAPI: Promise.resolve(
-                                    pretendRemote<FlatExtensionHostAPI>({
-                                        getDefinition: () =>
-                                            proxySubscribable(
-                                                cold<MaybeLoadingResult<Location[]>>('-b', {
-                                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
-                                                })
-                                            ),
-                                    })
-                                ),
                                 services: {
                                     workspace: testWorkspaceService(),
                                     textDocumentReferences: {
@@ -400,19 +376,15 @@ describe('getDefinitionURL', () => {
 
     it('emits null if the locations result is empty', () =>
         expect(
-            getDefinitionURL(
-                { urlToFile, requestGraphQL },
-                {
-                    workspace: testWorkspaceService(),
-                },
-                Promise.resolve(
-                    pretendRemote<FlatExtensionHostAPI>({
-                        getDefinition: () => proxySubscribable(of({ isLoading: false, result: [] })),
-                    })
-                ),
-                FIXTURE_PARAMS
-            )
-                .pipe(first(({ isLoading }) => !isLoading))
+            of({ isLoading: false, result: [] })
+                .pipe(
+                    getDefinitionURL(
+                        { urlToFile, requestGraphQL },
+                        { workspace: testWorkspaceService() },
+                        FIXTURE_PARAMS
+                    ),
+                    first(({ isLoading }) => !isLoading)
+                )
                 .toPromise()
         ).resolves.toStrictEqual({ isLoading: false, result: null }))
 
@@ -440,25 +412,18 @@ describe('getDefinitionURL', () => {
                         Partial<ViewStateSpec>
                 ) => ''
             )
-            await getDefinitionURL(
-                { urlToFile, requestGraphQL },
-                {
-                    workspace: testWorkspaceService(),
-                },
-                Promise.resolve(
-                    pretendRemote<FlatExtensionHostAPI>({
-                        getDefinition: () =>
-                            proxySubscribable(
-                                of<MaybeLoadingResult<Location[]>>({
-                                    isLoading: false,
-                                    result: [{ uri: 'git://r3?c3#f' }],
-                                })
-                            ),
-                    })
-                ),
-                FIXTURE_PARAMS
-            )
-                .pipe(first(({ isLoading }) => !isLoading))
+            await of<MaybeLoadingResult<Location[]>>({
+                isLoading: false,
+                result: [{ uri: 'git://r3?c3#f' }],
+            })
+                .pipe(
+                    getDefinitionURL(
+                        { urlToFile, requestGraphQL },
+                        { workspace: testWorkspaceService() },
+                        FIXTURE_PARAMS
+                    ),
+                    first(({ isLoading }) => !isLoading)
+                )
                 .toPromise()
             sinon.assert.calledOnce(urlToFile)
             expect(urlToFile.getCalls()[0].args[0]).toMatchObject({
@@ -474,25 +439,20 @@ describe('getDefinitionURL', () => {
             const requestGraphQL = (): Observable<never> =>
                 throwError(new PrivateRepoPublicSourcegraphComError('ResolveRawRepoName'))
             const urlToFile = sinon.spy()
-            await getDefinitionURL(
-                { urlToFile, requestGraphQL },
-                {
-                    workspace: testWorkspaceService(),
-                },
-                Promise.resolve(
-                    pretendRemote<FlatExtensionHostAPI>({
-                        getDefinition: () =>
-                            proxySubscribable(
-                                of<MaybeLoadingResult<Location[]>>({
-                                    isLoading: false,
-                                    result: [{ uri: 'git://r3?c3#f' }],
-                                })
-                            ),
-                    })
-                ),
-                FIXTURE_PARAMS
-            )
-                .pipe(first(({ isLoading }) => !isLoading))
+            await of<MaybeLoadingResult<Location[]>>({
+                isLoading: false,
+                result: [{ uri: 'git://r3?c3#f' }],
+            })
+                .pipe(
+                    getDefinitionURL(
+                        { urlToFile, requestGraphQL },
+                        {
+                            workspace: testWorkspaceService(),
+                        },
+                        FIXTURE_PARAMS
+                    ),
+                    first(({ isLoading }) => !isLoading)
+                )
                 .toPromise()
             sinon.assert.calledOnce(urlToFile)
             sinon.assert.calledWith(urlToFile, {
@@ -509,25 +469,18 @@ describe('getDefinitionURL', () => {
         describe('when the result is inside the current root', () => {
             it('emits the definition URL the user input revision (not commit SHA) of the root', () =>
                 expect(
-                    getDefinitionURL(
-                        { urlToFile, requestGraphQL },
-                        {
-                            workspace: testWorkspaceService(),
-                        },
-                        Promise.resolve(
-                            pretendRemote<FlatExtensionHostAPI>({
-                                getDefinition: () =>
-                                    proxySubscribable(
-                                        of<MaybeLoadingResult<Location[]>>({
-                                            isLoading: false,
-                                            result: [{ uri: 'git://r3?c3#f' }],
-                                        })
-                                    ),
-                            })
-                        ),
-                        FIXTURE_PARAMS
-                    )
-                        .pipe(first(({ isLoading }) => !isLoading))
+                    of<MaybeLoadingResult<Location[]>>({
+                        isLoading: false,
+                        result: [{ uri: 'git://r3?c3#f' }],
+                    })
+                        .pipe(
+                            getDefinitionURL(
+                                { urlToFile, requestGraphQL },
+                                { workspace: testWorkspaceService() },
+                                FIXTURE_PARAMS
+                            ),
+                            first(({ isLoading }) => !isLoading)
+                        )
                         .toPromise()
                 ).resolves.toEqual({ isLoading: false, result: { url: '/r3@v3/-/blob/f', multiple: false } }))
         })
@@ -535,49 +488,37 @@ describe('getDefinitionURL', () => {
         describe('when the result is not inside the current root (different repo and/or commit)', () => {
             it('emits the definition URL with range', () =>
                 expect(
-                    getDefinitionURL(
-                        { urlToFile, requestGraphQL },
-                        {
-                            workspace: testWorkspaceService(),
-                        },
-                        Promise.resolve(
-                            pretendRemote<FlatExtensionHostAPI>({
-                                getDefinition: () =>
-                                    proxySubscribable(
-                                        of<MaybeLoadingResult<Location[]>>({
-                                            isLoading: false,
-                                            result: [FIXTURE_LOCATION],
-                                        })
-                                    ),
-                            })
-                        ),
-                        FIXTURE_PARAMS
-                    )
-                        .pipe(first(({ isLoading }) => !isLoading))
+                    of<MaybeLoadingResult<Location[]>>({
+                        isLoading: false,
+                        result: [FIXTURE_LOCATION],
+                    })
+                        .pipe(
+                            getDefinitionURL(
+                                { urlToFile, requestGraphQL },
+                                {
+                                    workspace: testWorkspaceService(),
+                                },
+                                FIXTURE_PARAMS
+                            ),
+                            first(({ isLoading }) => !isLoading)
+                        )
                         .toPromise()
                 ).resolves.toEqual({ isLoading: false, result: { url: '/r2@c2/-/blob/f2#L3:3', multiple: false } }))
 
             it('emits the definition URL without range', () =>
                 expect(
-                    getDefinitionURL(
-                        { urlToFile, requestGraphQL },
-                        {
-                            workspace: testWorkspaceService(),
-                        },
-                        Promise.resolve(
-                            pretendRemote<FlatExtensionHostAPI>({
-                                getDefinition: () =>
-                                    proxySubscribable(
-                                        of<MaybeLoadingResult<Location[]>>({
-                                            isLoading: false,
-                                            result: [{ ...FIXTURE_LOCATION, range: undefined }],
-                                        })
-                                    ),
-                            })
-                        ),
-                        FIXTURE_PARAMS
-                    )
-                        .pipe(first(({ isLoading }) => !isLoading))
+                    of<MaybeLoadingResult<Location[]>>({
+                        isLoading: false,
+                        result: [{ ...FIXTURE_LOCATION, range: undefined }],
+                    })
+                        .pipe(
+                            getDefinitionURL(
+                                { urlToFile, requestGraphQL },
+                                { workspace: testWorkspaceService() },
+                                FIXTURE_PARAMS
+                            ),
+                            first(({ isLoading }) => !isLoading)
+                        )
                         .toPromise()
                 ).resolves.toEqual({ isLoading: false, result: { url: '/r2@c2/-/blob/f2', multiple: false } }))
         })
@@ -585,25 +526,18 @@ describe('getDefinitionURL', () => {
 
     it('emits the definition panel URL if there is more than 1 location result', () =>
         expect(
-            getDefinitionURL(
-                { urlToFile, requestGraphQL },
-                {
-                    workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]),
-                },
-                Promise.resolve(
-                    pretendRemote<FlatExtensionHostAPI>({
-                        getDefinition: () =>
-                            proxySubscribable(
-                                of<MaybeLoadingResult<Location[]>>({
-                                    isLoading: false,
-                                    result: [FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }],
-                                })
-                            ),
-                    })
-                ),
-                FIXTURE_PARAMS
-            )
-                .pipe(first())
+            of<MaybeLoadingResult<Location[]>>({
+                isLoading: false,
+                result: [FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }],
+            })
+                .pipe(
+                    getDefinitionURL(
+                        { urlToFile, requestGraphQL },
+                        { workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]) },
+                        FIXTURE_PARAMS
+                    ),
+                    first()
+                )
                 .toPromise()
         ).resolves.toEqual({ isLoading: false, result: { url: '/r@v/-/blob/f#L2:2&tab=def', multiple: true } }))
 })

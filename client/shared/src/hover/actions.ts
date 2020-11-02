@@ -1,5 +1,5 @@
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { Remote } from 'comlink'
+import { Location } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
 import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from } from 'rxjs'
@@ -22,7 +22,6 @@ import { Context } from '../api/client/context/context'
 import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
-import { FlatExtensionHostAPI } from '../api/contract'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
@@ -48,7 +47,17 @@ export function getHoverActions(
     }: ExtensionsControllerProps & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
     hoverContext: HoveredToken & HoverContext
 ): Observable<ActionItemAction[]> {
-    return getHoverActionsContext({ extensionsController, platformContext }, hoverContext).pipe(
+    return getHoverActionsContext(
+        {
+            extensionsController,
+            platformContext,
+            getDefinition: parameters =>
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinition(parameters)))
+                ),
+        },
+        hoverContext
+    ).pipe(
         switchMap(context =>
             extensionsController.services.contribution
                 .getContributions(undefined, context)
@@ -79,20 +88,20 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
 export function getHoverActionsContext(
     {
         extensionsController,
+        getDefinition,
         platformContext: { urlToFile, requestGraphQL },
-    }:
-        | (ExtensionsControllerProps & PlatformContextProps<'urlToFile' | 'requestGraphQL'>)
-        | {
-              extensionsController: Pick<Controller, 'extHostAPI'> & {
-                  services: {
-                      workspace: {
-                          roots: { value: readonly WorkspaceRootWithMetadata[] }
-                      }
-                      textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
-                  }
-              }
-              platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
-          },
+    }: {
+        getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
+        extensionsController: {
+            services: {
+                workspace: {
+                    roots: { value: readonly WorkspaceRootWithMetadata[] }
+                }
+                textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
+            }
+        }
+        platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
+    },
     hoverContext: HoveredToken & HoverContext
 ): Observable<Context<TextDocumentPositionParameters>> {
     const parameters: TextDocumentPositionParameters & URLToFileContext = {
@@ -100,12 +109,8 @@ export function getHoverActionsContext(
         position: { line: hoverContext.line - 1, character: hoverContext.character - 1 },
         part: hoverContext.part,
     }
-    const definitionURLOrError = getDefinitionURL(
-        { urlToFile, requestGraphQL },
-        extensionsController.services,
-        extensionsController.extHostAPI,
-        parameters
-    ).pipe(
+    const definitionURLOrError = getDefinition(parameters).pipe(
+        getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController.services, parameters),
         catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
         share()
     )
@@ -186,7 +191,7 @@ export interface UIDefinitionURL {
  *
  * @internal
  */
-export function getDefinitionURL(
+export const getDefinitionURL = (
     { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
     {
         workspace,
@@ -195,11 +200,9 @@ export function getDefinitionURL(
             roots: { value: readonly WorkspaceRootWithMetadata[] }
         }
     },
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
     parameters: TextDocumentPositionParameters & URLToFileContext
-): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
-    return from(extensionHostAPI).pipe(
-        switchMap(api => wrapRemoteObservable(api.getDefinition(parameters))),
+) => (locations: Observable<MaybeLoadingResult<Location[]>>): Observable<MaybeLoadingResult<UIDefinitionURL | null>> =>
+    locations.pipe(
         switchMap(
             ({ isLoading, result: definitions }): Observable<Partial<MaybeLoadingResult<UIDefinitionURL | null>>> => {
                 if (definitions.length === 0) {
@@ -283,7 +286,6 @@ export function getDefinitionURL(
             ((): MaybeLoadingResult<UIDefinitionURL | null> => ({ isLoading: true, result: null }))()
         )
     )
-}
 
 /**
  * Registers contributions for hover-related functionality.
@@ -377,13 +379,12 @@ export function registerHoverContributions({
             command: 'goToDefinition',
             run: async (parametersString: string) => {
                 const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(parametersString)
-                const { result } = await getDefinitionURL(
-                    { urlToFile, requestGraphQL },
-                    extensionsController.services,
-                    extensionsController.extHostAPI,
-                    parameters
-                )
-                    .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
+                const { result } = await from(extensionsController.extHostAPI)
+                    .pipe(
+                        switchMap(api => wrapRemoteObservable(api.getDefinition(parameters))),
+                        getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController.services, parameters),
+                        first(({ isLoading, result }) => !isLoading || result !== null)
+                    )
                     .toPromise()
                 if (!result) {
                     throw new Error('No definition found.')
