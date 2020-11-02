@@ -122,3 +122,92 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestEncodeURN(t *testing.T) {
+	tests := []struct {
+		desc    string
+		kind    string
+		id      int64
+		wantURN string
+	}{
+		{
+			desc:    "An empty kind and ID",
+			kind:    "",
+			id:      0,
+			wantURN: "extsvc::0",
+		},
+		{
+			desc:    "A valid kind and ID",
+			kind:    "github.com",
+			id:      1,
+			wantURN: "extsvc:github.com:1",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			urn := URN(test.kind, test.id)
+			if urn != test.wantURN {
+				t.Fatalf("got urn %q, want %q", urn, test.wantURN)
+			}
+		})
+	}
+}
+
+func TestDecodeURN(t *testing.T) {
+	tests := []struct {
+		desc     string
+		urn      string
+		wantKind string
+		wantID   int64
+	}{
+		{
+			desc:     "An empty string",
+			urn:      "",
+			wantKind: "",
+			wantID:   0,
+		},
+		{
+			desc:     "An incomplete URN",
+			urn:      "extsvc:",
+			wantKind: "",
+			wantID:   0,
+		},
+		{
+			desc:     "A valid complete URN",
+			urn:      "extsvc:github.com:1",
+			wantKind: "github.com",
+			wantID:   1,
+		},
+		{
+			desc:     "A valid URN with no kind",
+			urn:      "extsvc::1",
+			wantKind: "",
+			wantID:   1,
+		},
+		{
+			desc:     "A URN with floating-point ID",
+			urn:      "extsvc:github.com:1.0",
+			wantKind: "",
+			wantID:   0,
+		},
+		{
+			desc:     "A URN with string ID",
+			urn:      "extsvc:github.com:fake",
+			wantKind: "",
+			wantID:   0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			kind, id := DecodeURN(test.urn)
+			if kind != test.wantKind {
+				t.Errorf("got kind %q, want %q", kind, test.wantKind)
+			}
+			if id != test.wantID {
+				t.Errorf("got id %d, want %d", id, test.wantID)
+			}
+		})
+	}
+}
