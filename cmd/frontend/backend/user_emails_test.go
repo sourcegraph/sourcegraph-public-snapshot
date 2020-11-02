@@ -151,7 +151,7 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		}{
 			Email:       "a@example.com",
 			URL:         "http://example.com/-/verify-email?code=c&email=a%40example.com",
-			ExternalURL: "https://example.com",
+			ExternalURL: "http://example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
@@ -195,7 +195,7 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 			Email:       "a@example.com",
 			Change:      "updated password",
 			Username:    "Foo",
-			ExternalURL: "https://example.com",
+			ExternalURL: "http://example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
