@@ -43,7 +43,7 @@ func monitorBackgroundRoutines(ctx context.Context, signals <-chan os.Signal, ro
 	startAll(wg, routines...)
 	waitForSignal(ctx, signals)
 	stopAll(wg, routines...)
-	wg.Done()
+	wg.Wait()
 }
 
 // startAll calls each routine's Start method in its own goroutine and registers
