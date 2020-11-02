@@ -2916,6 +2916,60 @@ type MonitorQuery implements Node {
     A query.
     """
     query: String!
+    """
+    A list of events
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorTriggerEventConnection!
+}
+
+"""
+A list of trigger events.
+"""
+type MonitorTriggerEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorTriggerEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A trigger event is a simple monitor event together with a list of events from associated actions
+"""
+type MonitorTriggerEvent {
+    """
+    The trigger event.
+    """
+    event: MonitorEvent
+    """
+    A list of events of associated actions.
+    """
+    actionEvents(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
 }
 
 """

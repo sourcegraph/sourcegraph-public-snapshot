@@ -144,6 +144,7 @@ func (t *monitorTrigger) ToMonitorQuery() (MonitorQueryResolver, bool) {
 type MonitorQueryResolver interface {
 	ID() graphql.ID
 	Query() string
+	Events(ctx context.Context, args *ListEventsArgs) MonitorTriggerEventConnectionResolver
 }
 
 type monitorQuery struct {
@@ -156,6 +157,59 @@ func (q *monitorQuery) ID() graphql.ID {
 
 func (q *monitorQuery) Query() string {
 	return "repo:github.com/sourcegraph/sourcegraph file:code_monitors not implemented"
+}
+
+func (q *monitorQuery) Events(ctx context.Context, args *ListEventsArgs) MonitorTriggerEventConnectionResolver {
+	return &monitorTriggerEventConnection{}
+}
+
+//
+// MonitorTriggerEventConnection
+//
+type MonitorTriggerEventConnectionResolver interface {
+	Nodes(ctx context.Context) ([]MonitorTriggerEventResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type monitorTriggerEventConnection struct {
+}
+
+func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]MonitorTriggerEventResolver, error) {
+	return []MonitorTriggerEventResolver{&monitorTriggerEvent{}}, nil
+}
+
+func (a *monitorTriggerEventConnection) TotalCount(ctx context.Context) (int32, error) {
+	return 1, nil
+}
+
+func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+//
+// MonitorTriggerEvent
+//
+type MonitorTriggerEventResolver interface {
+	Event() (MonitorEventResolver, error)
+	ActionEvents(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+}
+
+type monitorTriggerEvent struct {
+}
+
+func (m monitorTriggerEvent) Event() (MonitorEventResolver, error) {
+	dummy := "trigger status details not implemented"
+	return &monitorEvent{
+		id:        "42",
+		status:    "SUCCESS",
+		message:   &dummy,
+		timestamp: DateTime{time.Now()},
+	}, nil
+}
+
+func (m monitorTriggerEvent) ActionEvents(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error) {
+	return &monitorActionEventConnection{}, nil
 }
 
 //
