@@ -21,7 +21,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             className="repogroup-panel__repogroup-icon mr-4"
-            src="https://github.com/cncf/artwork/blob/master/other/cncf/icon/color/cncf-icon-color.png?raw=true"
+            src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png"
           />
           <div
             className="d-flex flex-column"
@@ -178,7 +178,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               className="repogroup-panel__repogroup-icon mr-4"
-              src="https://github.com/cncf/artwork/blob/master/other/cncf/icon/color/cncf-icon-color.png?raw=true"
+              src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png"
             />
             <div
               className="d-flex flex-column"

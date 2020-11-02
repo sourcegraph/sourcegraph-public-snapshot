@@ -54,8 +54,9 @@ type StepID =
     // release
     | 'release:status'
     | 'release:create-candidate'
-    | 'release:publish'
+    | 'release:stage'
     | 'release:add-to-campaign'
+    | 'release:close'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
@@ -348,7 +349,7 @@ ${issueCategories
         },
     },
     {
-        id: 'release:publish',
+        id: 'release:stage',
         run: async ({ slackAnnounceChannel, dryRun }, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
@@ -474,6 +475,27 @@ ${issueCategories
                 campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
             )
             console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
+        },
+    },
+    {
+        id: 'release:close',
+        run: async ({ slackAnnounceChannel }, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            const versionAnchor = parsedVersion.version.replace('.', '-')
+            const campaignURL = campaigns.campaignURL(
+                campaigns.releaseTrackingCampaign(parsedVersion.version, await campaigns.sourcegraphAuth())
+            )
+            await postMessage(
+                `:captain: *${parsedVersion.version} has been published*
+
+* Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
+* Release campaign: ${campaignURL}`,
+                slackAnnounceChannel
+            )
+            console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
         },
     },
     {

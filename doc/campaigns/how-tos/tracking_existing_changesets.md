@@ -1,6 +1,6 @@
 # Tracking existing changesets
 
-You can track existing changests by adding them to the [campaign spec](#campaign-specs) under the `importChangesets` property.
+You can track existing changests by adding them to the [campaign spec](../explanations/introduction_to_campaigns.md#campaign-spec) under the `importChangesets` property.
 
 The following example campaign spec tracks five existing changesets in different repositories on different code hosts:
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -42,7 +43,7 @@ func main() {
 		routines = append(routines, httpserver.New(port, nil))
 	}
 
-	goroutine.MonitorBackgroundRoutines(routines...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
 func makeWorkerMetrics() workerutil.WorkerMetrics {

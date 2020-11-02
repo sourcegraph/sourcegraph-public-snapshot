@@ -9,20 +9,20 @@ sequenceDiagram
     Resolvers         -->>+ Position Adjuster: AdjustPosition(file, position, from: commit, to: dumps[i].commit)
     Position Adjuster -->>- Resolvers: adjusted file, adjusted position
     Resolvers          ->>+ Code Intel API: Definitions(dumps[i], adjusted file, adjusted position)
-    Code Intel API     ->>+ Bundle Manager: Definitions(dumps[i], adjusted file, adjusted position)
-    Bundle Manager    -->>- Code Intel API: locations
+    Code Intel API     ->>+ LSIF Store: Definitions(dumps[i], adjusted file, adjusted position)
+    LSIF Store        -->>- Code Intel API: locations
 
     alt if locations is empty
-    Code Intel API     ->>+ Bundle Manager: MonikersByPosition(dump, adjusted file, adjusted position)
-      Bundle Manager    -->>- Code Intel API: monikers
+    Code Intel API     ->>+ LSIF Store: MonikersByPosition(dump, adjusted file, adjusted position)
+      LSIF Store        -->>- Code Intel API: monikers
 
       loop for each monikers[i] (while locations is empty)
-        Code Intel API  ->>+ Bundle Manager: PackageInformation(monikers[i])
-        Bundle Manager -->>- Code Intel API: package information
+        Code Intel API  ->>+ LSIF Store: PackageInformation(monikers[i])
+        LSIF Store     -->>- Code Intel API: package information
         Code Intel API  ->>+ Store: GetPackage(package information)
         Store          -->>- Code Intel API: package dump
-        Code Intel API  ->>+ Bundle Manager: MonikerResults(package dump, monikers[i])
-        Bundle Manager -->>- Code Intel API: locations
+        Code Intel API  ->>+ LSIF Store: MonikerResults(package dump, monikers[i])
+        LSIF Store     -->>- Code Intel API: locations
       end
     end
 

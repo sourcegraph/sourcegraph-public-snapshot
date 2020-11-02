@@ -17,7 +17,29 @@ func TestChangesetEvent(t *testing.T) {
 		events    ChangesetEvents
 	}
 
-	var cases []testCase
+	bbsActivity := &bitbucketserver.Activity{
+		ID:     1,
+		Action: bitbucketserver.OpenedActivityAction,
+	}
+
+	cases := []testCase{{
+		name: "removes duplicates",
+		changeset: Changeset{
+			Metadata: &bitbucketserver.PullRequest{
+				Activities: []*bitbucketserver.Activity{
+					bbsActivity,
+					bbsActivity,
+				},
+			},
+		},
+		events: []*ChangesetEvent{
+			{
+				Kind:     ChangesetEventKindBitbucketServerOpened,
+				Key:      "1",
+				Metadata: bbsActivity,
+			},
+		},
+	}}
 
 	{ // Github
 

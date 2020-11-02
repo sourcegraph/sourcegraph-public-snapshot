@@ -95,13 +95,20 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 		return
 	}
 
+	sourcer := repos.NewSourcer(s.HTTPFactory)
+	source, err := buildChangesetSource(sourcer, extSvc)
+	if err != nil {
+		log15.Error(err.Error())
+		return
+	}
+
 	// We need to be able to cancel the syncer if the service is removed
 	ctx, cancel := context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
 		SyncStore:      s.SyncStore,
 		ReposStore:     s.RepoStore,
-		css:            css,
+		source:         source,
 		codeHostURL:    normalised,
 		extSvcID:       extSvc.ID,
 		cancel:         cancel,
@@ -178,29 +185,7 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	s.mu.Unlock()
 
 	if timeIsNilOrZero(es.DeletedAt) && !exists {
-		// Convert the api.ExternalService to repos.ExternalService.
-		// They're basically the same, just some pointers here and there.
-		extSvc := &repos.ExternalService{
-			ID:          es.ID,
-			Kind:        es.Kind,
-			DisplayName: es.DisplayName,
-			Config:      es.Config,
-			CreatedAt:   es.CreatedAt,
-			UpdatedAt:   es.UpdatedAt,
-		}
-		if es.DeletedAt != nil {
-			extSvc.DeletedAt = *es.DeletedAt
-		}
-		if es.LastSyncAt != nil {
-			extSvc.LastSyncAt = *es.LastSyncAt
-		}
-		if es.NextSyncAt != nil {
-			extSvc.NextSyncAt = *es.NextSyncAt
-		}
-		if es.NamespaceUserID != nil {
-			extSvc.NamespaceUserID = *es.NamespaceUserID
-		}
-		s.Add(extSvc)
+		s.Add(extsvcTypeApiToRepos(&es))
 	}
 
 	s.mu.Lock()
@@ -232,7 +217,7 @@ type ChangesetSyncer struct {
 	SyncStore  SyncStore
 	ReposStore RepoStore
 
-	css repos.ChangesetSource
+	source repos.ChangesetSource
 
 	codeHostURL string
 	extSvcID    int64
@@ -527,12 +512,12 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, s.css, cs)
+	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, s.source, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, css repos.ChangesetSource, c *campaigns.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, c *campaigns.Changeset) (err error) {
 	rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []api.RepoID{c.RepoID},
 	})
@@ -542,7 +527,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 	repo := rs[0]
 
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
-	if err := css.LoadChangeset(ctx, repoChangeset); err != nil {
+	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
 			return err
@@ -553,7 +538,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 		}
 	}
 
-	events := c.Events().Dedupe()
+	events := c.Events()
 	SetDerivedState(ctx, c, events)
 
 	tx, err := syncStore.Transact(ctx)
@@ -580,12 +565,12 @@ func buildChangesetSource(
 		return nil, err
 	}
 
-	css, ok := sources[0].(repos.ChangesetSource)
+	source, ok := sources[0].(repos.ChangesetSource)
 	if !ok {
 		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", extSvc.Kind)
 	}
 
-	return css, nil
+	return source, nil
 }
 
 type scheduledSync struct {
@@ -708,3 +693,29 @@ const (
 	priorityNormal priority = iota
 	priorityHigh
 )
+
+// extsvcTypeApiToRepos converts the api.ExternalService to repos.ExternalService.
+// They're basically the same, just some pointers here and there.
+func extsvcTypeApiToRepos(es *api.ExternalService) *repos.ExternalService {
+	extSvc := &repos.ExternalService{
+		ID:          es.ID,
+		Kind:        es.Kind,
+		DisplayName: es.DisplayName,
+		Config:      es.Config,
+		CreatedAt:   es.CreatedAt,
+		UpdatedAt:   es.UpdatedAt,
+	}
+	if es.DeletedAt != nil {
+		extSvc.DeletedAt = *es.DeletedAt
+	}
+	if es.LastSyncAt != nil {
+		extSvc.LastSyncAt = *es.LastSyncAt
+	}
+	if es.NextSyncAt != nil {
+		extSvc.NextSyncAt = *es.NextSyncAt
+	}
+	if es.NamespaceUserID != nil {
+		extSvc.NamespaceUserID = *es.NamespaceUserID
+	}
+	return extSvc
+}
