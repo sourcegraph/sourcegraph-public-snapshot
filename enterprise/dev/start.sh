@@ -38,6 +38,7 @@ export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
 export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
+export PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT=http://localhost:9000
 
 export EXECUTOR_FRONTEND_URL=http://localhost:3080
 export EXECUTOR_FRONTEND_USERNAME=executor
@@ -46,15 +47,6 @@ export EXECUTOR_QUEUE_URL=http://localhost:3191
 export EXECUTOR_USE_FIRECRACKER=false
 export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 export DISABLE_CNCF=notonmybox
-
-export PRECISE_CODE_INTEL_UPLOAD_BACKEND=S3
-export PRECISE_CODE_INTEL_UPLOAD_BUCKET=lsif-uploads-local
-export PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET=true
-export AWS_ACCESS_KEY_ID='AKIAIOSFODNN7EXAMPLE'
-export AWS_SECRET_ACCESS_KEY='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
-export AWS_ENDPOINT=http://localhost:9000
-export AWS_REGION=us-east-1
-export AWS_S3_FORCE_PATH_STYLE=true
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-worker executor-queue executor "
