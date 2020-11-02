@@ -206,7 +206,9 @@ We may lack the language expertise or bandwidth to implement certain features on
 
 #### lsif-java
 
-- Natively supports Gradle.
+- Undergoing a large-scale rewrite not yet on the master branch.
+- Native Gradle integration supported in the rewrite.
+- Maven support planned after Gradle integration work has concluded.
 
 #### lsif-cpp
 
