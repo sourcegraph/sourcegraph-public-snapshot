@@ -204,18 +204,19 @@ const oneOf = <T>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
 }
 
 /**
- * A {@link Parser} that will attempt to parse quoted strings in a search query.
+ * A {@link Parser} that will attempt to parse delimited strings for an arbitrary
+ * delimiter. `\` is treated as an escape character for the delimited string.
  */
-const quoted: Parser<Quoted> = (input, start) => {
-    if (input[start] !== '"') {
-        return { type: 'error', expected: '"', at: start }
+const quoted = (delimiter: string): Parser<Quoted> => (input, start) => {
+    if (input[start] !== delimiter) {
+        return { type: 'error', expected: delimiter, at: start }
     }
     let end = start + 1
-    while (input[end] && (input[end] !== '"' || input[end - 1] === '\\')) {
+    while (input[end] && (input[end] !== delimiter || input[end - 1] === '\\')) {
         end = end + 1
     }
     if (!input[end]) {
-        return { type: 'error', expected: '"', at: end }
+        return { type: 'error', expected: delimiter, at: end }
     }
     return {
         type: 'success',
@@ -295,7 +296,7 @@ const filterKeyword = scanToken(new RegExp(`-?(${filterTypeKeysWithAliases.join(
 
 const filterDelimiter = character(':')
 
-const filterValue = oneOf<Quoted | Literal>(quoted, literal)
+const filterValue = oneOf<Quoted | Literal>(quoted('"'), quoted("'"), literal)
 
 const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: 'openingParen', range }))
 
@@ -359,7 +360,7 @@ const filter: Parser<Filter> = (input, start) => {
     }
 }
 
-const baseTerms: Parser<Token>[] = [operator, filter, quoted, literal]
+const baseTerms: Parser<Token>[] = [operator, filter, quoted('"'), quoted("'"), literal]
 
 const createParser = (terms: Parser<Token>[]): Parser<Sequence> =>
     zeroOrMore(
