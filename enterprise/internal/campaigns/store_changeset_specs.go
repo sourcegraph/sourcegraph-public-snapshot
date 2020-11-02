@@ -392,7 +392,7 @@ FROM changeset_specs
 LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.external_id
 WHERE
 	changeset_specs.campaign_spec_id = %s AND
-	type = 'existing'
+	type = 'EXISTING'
 
 UNION ALL
 
@@ -406,7 +406,7 @@ LEFT JOIN changesets
 INNER JOIN changeset_specs AS current_spec ON current_spec.id = changesets.current_spec_id
 WHERE
 	changeset_specs.campaign_spec_id = %s AND
-	changeset_specs.type = 'branch' AND (
+	changeset_specs.type = 'BRANCH' AND (
 		(changesets.external_branch IS NOT NULL AND changesets.external_branch = changeset_specs.head_ref)
 		OR
 		(changesets.external_branch IS NULL AND current_spec.head_ref = changeset_specs.head_ref)
