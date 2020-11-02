@@ -20,21 +20,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const port = 3187
+const addr = ":3187"
 
 type Server struct {
-	bundleDir string
-
+	bundleDir          string
 	observationContext *observation.Context
 }
 
-func New(bundleDir string, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func New(bundleDir string, observationContext *observation.Context) (goroutine.BackgroundRoutine, error) {
 	server := &Server{
 		bundleDir:          bundleDir,
 		observationContext: observationContext,
 	}
 
-	return httpserver.New(port, server.setupRoutes)
+	return httpserver.NewFromAddr(addr, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }
 
 func (s *Server) setupRoutes(router *mux.Router) {

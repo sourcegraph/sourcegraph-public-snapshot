@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-const Port = 3188
+const addr = ":3188"
 
 func main() {
 	env.Lock()
@@ -61,7 +61,10 @@ func main() {
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	server := httpserver.New(Port, func(router *mux.Router) {})
+	server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
 	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
 	commitUpdater := commitupdater.NewUpdater(
 		store,
@@ -82,8 +85,19 @@ func main() {
 		observationContext,
 	)
 
-	go debugserver.Start()
-	goroutine.MonitorBackgroundRoutines(server, uploadResetter, commitUpdater, worker)
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
+
+	goroutine.MonitorBackgroundRoutines(
+		context.Background(),
+		server,
+		uploadResetter,
+		commitUpdater,
+		worker,
+	)
 }
 
 func mustInitializeStore() store.Store {

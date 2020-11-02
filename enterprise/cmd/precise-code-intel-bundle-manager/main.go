@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -40,8 +41,16 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	goroutine.MonitorBackgroundRoutines(
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
-		server.New(bundleDir, observationContext),
-	)
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
+
+	server, err := server.New(bundleDir, observationContext)
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
+	goroutine.MonitorBackgroundRoutines(context.Background(), server)
 }

@@ -496,9 +496,11 @@ func space(patterns []Pattern) Pattern {
 }
 
 // substituteConcat returns a function that concatenates all contiguous patterns
-// in the tree, rooted by a concat operator. The callback parameter defines how
-// the function concatenates patterns. The return value of callback is
-// substituted in-place in the tree.
+// in the tree, rooted by a concat operator. Concat operators containing negated
+// patterns are lifted out: (concat "a" (not "b")) -> ("a" (not "b"))
+//
+// The callback parameter defines how the function concatenates patterns. The
+// return value of callback is substituted in-place in the tree.
 func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {

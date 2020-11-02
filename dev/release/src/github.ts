@@ -14,8 +14,7 @@ function dateMarkdown(date: Date, name: string): string {
 }
 
 export async function ensureTrackingIssue({
-    majorVersion,
-    minorVersion,
+    version,
     assignees,
     releaseDateTime,
     oneWorkingDayBeforeRelease,
@@ -23,8 +22,7 @@ export async function ensureTrackingIssue({
     fiveWorkingDaysBeforeRelease,
     dryRun,
 }: {
-    majorVersion: string
-    minorVersion: string
+    version: semver.SemVer
     assignees: string[]
     releaseDateTime: Date
     oneWorkingDayBeforeRelease: Date
@@ -38,10 +36,11 @@ export async function ensureTrackingIssue({
         repo: 'about',
         path: 'handbook/engineering/releases/release_issue_template.md',
     })
-    const majorMinor = `${majorVersion}.${minorVersion}`
+    const majorMinor = `${version.major}.${version.minor}`
     const releaseIssueBody = releaseIssueTemplate
-        .replace(/\$MAJOR/g, majorVersion)
-        .replace(/\$MINOR/g, minorVersion)
+        .replace(/\$MAJOR/g, version.major.toString())
+        .replace(/\$MINOR/g, version.minor.toString())
+        .replace(/\$PATCH/g, version.patch.toString())
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDateTime, `${majorMinor} release date`))
         .replace(
             /\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g,
@@ -56,7 +55,7 @@ export async function ensureTrackingIssue({
             dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${majorMinor} release`)
         )
 
-    const milestoneTitle = `${majorVersion}.${minorVersion}`
+    const milestoneTitle = `${version.major}.${version.minor}`
     const milestones = await octokit.issues.listMilestonesForRepo({
         owner: 'sourcegraph',
         repo: 'sourcegraph',
@@ -75,7 +74,7 @@ export async function ensureTrackingIssue({
     return ensureIssue(
         octokit,
         {
-            title: trackingIssueTitle(majorVersion, minorVersion),
+            title: trackingIssueTitle(version.major, version.minor),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -184,7 +183,7 @@ export async function listIssues(
     return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
 }
 
-export function trackingIssueTitle(major: string, minor: string): string {
+export function trackingIssueTitle(major: number, minor: number): string {
     return `${major}.${minor} release tracking issue`
 }
 

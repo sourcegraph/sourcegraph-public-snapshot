@@ -113,8 +113,6 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	sourcer := repos.NewSourcer(cf)
-
 	store := ee.NewStore(dbconn.Global)
 
 	spec := &campaigns.CampaignSpec{
@@ -164,7 +162,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
 
-		if err := ee.SyncChangeset(ctx, repoStore, store, sourcer, c); err != nil {
+		if err := ee.SyncChangeset(ctx, repoStore, store, githubSrc, c); err != nil {
 			t.Fatal(err)
 		}
 	}
