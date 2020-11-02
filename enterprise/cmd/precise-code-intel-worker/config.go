@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -10,6 +11,8 @@ const Port = 3188
 
 type Config struct {
 	env.BaseConfig
+
+	UploadStoreConfig *uploadstore.Config
 
 	BundleManagerURL      string
 	WorkerPollInterval    time.Duration
@@ -20,6 +23,10 @@ type Config struct {
 }
 
 func (c *Config) Load() {
+	uploadStoreConfig := &uploadstore.Config{}
+	uploadStoreConfig.Load()
+	c.UploadStoreConfig = uploadStoreConfig
+
 	c.BundleManagerURL = c.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 	c.WorkerPollInterval = c.GetInterval("PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL", "1s", "Interval between queries to the upload queue.")
 	c.WorkerConcurrency = c.GetInt("PRECISE_CODE_INTEL_WORKER_CONCURRENCY", "1", "The maximum number of indexes that can be processed concurrently.")

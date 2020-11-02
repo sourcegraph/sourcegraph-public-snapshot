@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -50,14 +51,14 @@ type BundleManagerClient interface {
 
 	// SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk. This method returns the
 	// size of the file on disk.
-	SendUpload(ctx context.Context, bundleID int, r io.Reader) (int, error)
+	SendUpload(ctx context.Context, bundleID int, r io.Reader) (int64, error)
 
 	// SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
 	SendUploadPart(ctx context.Context, bundleID, partIndex int, r io.Reader) error
 
 	// StitchParts instructs the bundle manager to collapse multipart uploads into a single file. This method
 	// returns the size of the stitched file on disk.
-	StitchParts(ctx context.Context, bundleID int) (int, error)
+	StitchParts(ctx context.Context, bundleID, numParts int) (int64, error)
 
 	// DeleteUpload removes the upload file with the given identifier from disk.
 	DeleteUpload(ctx context.Context, bundleID int) error
@@ -105,6 +106,7 @@ type bundleManagerClientImpl struct {
 	observationContext  *observation.Context
 	httpClient          *http.Client
 	httpLimiter         *parallel.Run
+	uploadStore         uploadstore.Store
 	bundleManagerURL    string
 	userAgent           string
 	maxPayloadSizeBytes int
@@ -119,12 +121,14 @@ func New(
 	codeIntelDB *sql.DB,
 	observationContext *observation.Context,
 	bundleManagerURL string,
+	uploadStore uploadstore.Store,
 ) BundleManagerClient {
 	return &bundleManagerClientImpl{
 		codeIntelDB:         codeIntelDB,
 		observationContext:  observationContext,
 		httpClient:          &http.Client{Transport: defaultTransport},
 		httpLimiter:         parallel.NewRun(500),
+		uploadStore:         uploadStore,
 		bundleManagerURL:    bundleManagerURL,
 		userAgent:           filepath.Base(os.Args[0]),
 		maxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
@@ -152,45 +156,30 @@ func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 
 // SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk. This method returns the
 // size of the file on disk.
-func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, r io.Reader) (int, error) {
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
-	if err != nil {
-		return 0, err
-	}
-
-	return c.postPayload(ctx, url, r)
+func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, r io.Reader) (int64, error) {
+	return c.uploadStore.Upload(ctx, uploadName(bundleID), r)
 }
 
 // SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendUploadPart(ctx context.Context, bundleID, partIndex int, r io.Reader) error {
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d/%d", bundleID, partIndex), nil)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.postPayload(ctx, url, r)
+	_, err := c.uploadStore.Upload(ctx, uploadPartName(bundleID, partIndex), r)
 	return err
 }
 
 // StitchParts instructs the bundle manager to collapse multipart uploads into a single file. This method
 // returns the size of the stitched file on disk.
-func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID int) (size int, err error) {
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d/stitch", bundleID), nil)
-	if err != nil {
-		return 0, err
+func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID, numParts int) (int64, error) {
+	var sources []string
+	for partNumber := 0; partNumber < numParts; partNumber++ {
+		sources = append(sources, uploadPartName(bundleID, partNumber))
 	}
 
-	return c.doAndDecodeSize(ctx, "POST", url, nil)
+	return c.uploadStore.Compose(ctx, uploadName(bundleID), sources...)
 }
 
 // DeleteUpload removes the upload file with the given identifier from disk.
 func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int) error {
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
-	if err != nil {
-		return err
-	}
-
-	return c.doAndDrop(ctx, "DELETE", url, nil)
+	return c.uploadStore.Delete(ctx, uploadName(bundleID))
 }
 
 // GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
@@ -210,7 +199,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 		zeroPayloadIterations := 0
 
 		for {
-			n, err := c.getUploadChunk(ctx, pw, url, seek)
+			n, err := c.getUploadChunk(ctx, pw, bundleID, url, seek)
 			if err != nil {
 				if !isConnectionError(err) {
 					_ = pw.CloseWithError(err)
@@ -249,13 +238,23 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 // getUploadChunk retrieves a raw LSIF upload from the bundle manager starting from the offset as
 // indicated by seek. The number of bytes written to the given writer is returned, along with any
 // error.
-func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (int64, error) {
+func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, bundleID int, url *url.URL, seek int64) (int64, error) {
 	q := url.Query()
 	q.Set("seek", strconv.FormatInt(seek, 10))
 	url.RawQuery = q.Encode()
 
 	body, err := c.do(ctx, "GET", url, nil)
 	if err != nil {
+		if err == ErrNotFound {
+			body, err := c.uploadStore.Get(context.Background(), uploadName(bundleID), seek)
+			if err != nil {
+				return 0, err
+			}
+			defer body.Close()
+
+			return c.ioCopy(w, body)
+		}
+
 		return 0, err
 	}
 	defer body.Close()
@@ -509,4 +508,12 @@ func isConnectionError(err error) bool {
 	}
 
 	return false
+}
+
+func uploadName(bundleID int) string {
+	return fmt.Sprintf("upload-%d.lsif.gz", bundleID)
+}
+
+func uploadPartName(bundleID, partNumber int) string {
+	return fmt.Sprintf("upload-%d.%d.lsif.gz", bundleID, partNumber)
 }

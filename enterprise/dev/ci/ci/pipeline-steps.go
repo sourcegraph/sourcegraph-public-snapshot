@@ -25,7 +25,6 @@ var allDockerImages = []string{
 	"symbols",
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
-	"precise-code-intel-indexer",
 	"executor-queue",
 	"executor",
 

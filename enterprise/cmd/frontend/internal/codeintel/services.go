@@ -3,6 +3,7 @@ package codeintel
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"sync"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -33,8 +35,13 @@ var once sync.Once
 
 func initServices(ctx context.Context) error {
 	once.Do(func() {
-		if err := config.Validate(); err != nil {
-			services.err = err
+		if config.BundleManagerURL == "" {
+			services.err = fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+			return
+		}
+
+		if err := config.UploadStoreConfig.Validate(); err != nil {
+			services.err = fmt.Errorf("failed to load config: %s", err)
 			return
 		}
 
@@ -44,16 +51,16 @@ func initServices(ctx context.Context) error {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
+		codeIntelDB := mustInitializeCodeIntelDatabase()
+		uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig)
+		if err != nil {
+			log.Fatalf("failed to initialize upload store: %s", err)
+		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		codeintelDB := mustInitializeCodeIntelDatabase()
-		lsifStore := lsifstore.New(codeintelDB)
-		gitserverClient := gitserver.DefaultClient
-		bundleManagerClient := bundles.New(codeintelDB, observationContext, config.BundleManagerURL)
-		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserverClient), observationContext)
+		bundleManagerClient := bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore)
+		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
 
 		services.store = store
-		services.lsifStore = lsifStore
-		services.gitserverClient = gitserverClient
 		services.bundleManagerClient = bundleManagerClient
 		services.api = api
 	})

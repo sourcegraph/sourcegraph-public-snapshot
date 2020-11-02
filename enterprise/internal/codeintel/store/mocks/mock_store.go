@@ -392,7 +392,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		MarkQueuedFunc: &StoreMarkQueuedFunc{
-			defaultHook: func(context.Context, int, *int) error {
+			defaultHook: func(context.Context, int, *int64) error {
 				return nil
 			},
 		},
@@ -4878,15 +4878,15 @@ func (c StoreMarkIndexErroredFuncCall) Results() []interface{} {
 // StoreMarkQueuedFunc describes the behavior when the MarkQueued method of
 // the parent MockStore instance is invoked.
 type StoreMarkQueuedFunc struct {
-	defaultHook func(context.Context, int, *int) error
-	hooks       []func(context.Context, int, *int) error
+	defaultHook func(context.Context, int, *int64) error
+	hooks       []func(context.Context, int, *int64) error
 	history     []StoreMarkQueuedFuncCall
 	mutex       sync.Mutex
 }
 
 // MarkQueued delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) MarkQueued(v0 context.Context, v1 int, v2 *int) error {
+func (m *MockStore) MarkQueued(v0 context.Context, v1 int, v2 *int64) error {
 	r0 := m.MarkQueuedFunc.nextHook()(v0, v1, v2)
 	m.MarkQueuedFunc.appendCall(StoreMarkQueuedFuncCall{v0, v1, v2, r0})
 	return r0
@@ -4894,7 +4894,7 @@ func (m *MockStore) MarkQueued(v0 context.Context, v1 int, v2 *int) error {
 
 // SetDefaultHook sets function that is called when the MarkQueued method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int, *int) error) {
+func (f *StoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int, *int64) error) {
 	f.defaultHook = hook
 }
 
@@ -4902,7 +4902,7 @@ func (f *StoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int, *in
 // MarkQueued method of the parent MockStore instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreMarkQueuedFunc) PushHook(hook func(context.Context, int, *int) error) {
+func (f *StoreMarkQueuedFunc) PushHook(hook func(context.Context, int, *int64) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4911,7 +4911,7 @@ func (f *StoreMarkQueuedFunc) PushHook(hook func(context.Context, int, *int) err
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreMarkQueuedFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *int) error {
+	f.SetDefaultHook(func(context.Context, int, *int64) error {
 		return r0
 	})
 }
@@ -4919,12 +4919,12 @@ func (f *StoreMarkQueuedFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreMarkQueuedFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *int) error {
+	f.PushHook(func(context.Context, int, *int64) error {
 		return r0
 	})
 }
 
-func (f *StoreMarkQueuedFunc) nextHook() func(context.Context, int, *int) error {
+func (f *StoreMarkQueuedFunc) nextHook() func(context.Context, int, *int64) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4965,7 +4965,7 @@ type StoreMarkQueuedFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *int
+	Arg2 *int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

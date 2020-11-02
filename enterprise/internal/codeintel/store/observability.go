@@ -497,7 +497,7 @@ func (s *ObservedStore) AddUploadPart(ctx context.Context, uploadID, partIndex i
 }
 
 // MarkQueued calls into the inner store and registers the observed result.
-func (s *ObservedStore) MarkQueued(ctx context.Context, uploadID int, uploadSize *int) (err error) {
+func (s *ObservedStore) MarkQueued(ctx context.Context, uploadID int, uploadSize *int64) (err error) {
 	ctx, endObservation := s.markQueuedOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.MarkQueued(ctx, uploadID, uploadSize)

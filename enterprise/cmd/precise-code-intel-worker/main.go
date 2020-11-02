@@ -12,6 +12,7 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -56,6 +57,11 @@ func main() {
 		log.Fatalf("Failed to create listener: %s", err)
 	}
 
+	uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig)
+	if err != nil {
+		log.Fatalf("failed to initialize upload store: %s", err)
+	}
+
 	debugServer, err := debugserver.NewServerRoutine()
 	if err != nil {
 		log.Fatalf("Failed to create listener: %s", err)
@@ -68,7 +74,7 @@ func main() {
 		worker.NewWorker(
 			store,
 			codeIntelDB,
-			bundles.New(codeIntelDB, observationContext, config.BundleManagerURL),
+			bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore),
 			gitserver.DefaultClient,
 			config.WorkerPollInterval,
 			config.WorkerConcurrency,
