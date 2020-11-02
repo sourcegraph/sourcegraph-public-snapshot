@@ -654,11 +654,10 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
 export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
-        for (const member of parsedQuery.token.members) {
-            const token = member.token
+        for (const token of parsedQuery.token.members) {
             if (
                 token.type === 'filter' &&
-                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterType.value.toLowerCase() === 'patterntype' &&
                 token.filterValue
             ) {
                 return {
@@ -675,9 +674,8 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
 export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
-        for (const member of parsedQuery.token.members) {
-            const token = member.token
-            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
+        for (const token of parsedQuery.token.members) {
+            if (token.type === 'filter' && token.filterType.value.toLowerCase() === 'case' && token.filterValue) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
                     value: query.slice(token.filterValue.range.start, token.filterValue.range.end),

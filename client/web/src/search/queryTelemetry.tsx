@@ -14,9 +14,9 @@ export function queryTelemetryData(query: string, caseSensitive: boolean) {
 function filterExistsInQuery(parsedQuery: ParserResult<Sequence>, filterToMatch: string): boolean {
     if (parsedQuery.type === 'success') {
         const members = parsedQuery.token.members
-        for (const member of members) {
-            if (member.token.type === 'filter') {
-                const resolvedFilter = resolveFilter(member.token.filterType.token.value)
+        for (const token of members) {
+            if (token.type === 'filter') {
+                const resolvedFilter = resolveFilter(token.filterType.value)
                 if (resolvedFilter !== undefined && resolvedFilter.type === filterToMatch) {
                     return true
                 }
