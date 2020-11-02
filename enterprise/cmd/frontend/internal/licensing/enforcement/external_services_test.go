@@ -23,6 +23,18 @@ func TestNewPreCreateExternalServiceHook(t *testing.T) {
 		wantErr              bool
 	}{
 		{
+			desc:                 "An older starter plan with unlimited external services",
+			license:              &license.Info{Tags: []string{"plan:old-starter-0"}},
+			externalServiceCount: 1000,
+			wantErr:              false,
+		},
+		{
+			desc:                 "An older enterprise plan with unlimited external services",
+			license:              &license.Info{Tags: []string{"plan:old-enterprise-0"}},
+			externalServiceCount: 1000,
+			wantErr:              false,
+		},
+		{
 			desc:                 "An enterprise plan with unlimited external services",
 			license:              &license.Info{Tags: []string{"plan:enterprise-0"}},
 			externalServiceCount: 1000,
