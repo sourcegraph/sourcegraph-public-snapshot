@@ -16,8 +16,10 @@
         padding: 0.5rem 1rem;
         word-wrap: break-word;
         white-space: pre-line;
+        user-select: text;
         &-link {
             margin-bottom: 0;
+            user-select: none;
         }
         &--border-success {
             border-left: 6px solid $success;
