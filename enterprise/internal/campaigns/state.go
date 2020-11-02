@@ -568,8 +568,9 @@ func computeDiffStat(ctx context.Context, c *campaigns.Changeset, repo gitserver
 // computeSyncState computes the up to date sync state based on the changeset as
 // it currently exists on the external provider.
 func computeSyncState(ctx context.Context, c *campaigns.Changeset, repo gitserver.Repo) (*campaigns.ChangesetSyncState, error) {
-	// We compute the rev by first trying to get the OID, then the Ref. We call
-	// out to gitserver to ensure that both are always on gitserver.
+	// We compute the revision by first trying to get the OID, then the Ref. //
+	// We then call out to gitserver to ensure that the one we use is available on
+	// gitserver.
 	base, err := computeRev(ctx, repo, c.BaseRefOid, c.BaseRef)
 	if err != nil {
 		return nil, err
