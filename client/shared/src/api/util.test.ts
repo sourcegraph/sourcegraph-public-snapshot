@@ -134,20 +134,19 @@ describe('observableFromAsyncIterable', () => {
         expect(values).toStrictEqual([1, 2, 3, 4, 5])
     })
 
-    it('aborts iterator on unsubscription', async () => {
-        let iterations = 0
+    it('stops emitting and throws AbortError on unsubscription', async () => {
+        let abortErrorThrown = false
         async function* test() {
             await Promise.resolve()
             yield 1
-            iterations++
             yield 2
-            iterations++
-            yield 3
-            iterations++
+            try {
+                yield 3
+            } catch {
+                abortErrorThrown = true
+            }
             yield 4
-            iterations++
             yield 5
-            iterations++
         }
 
         const observable = observableFromAsyncIterable(test())
@@ -171,8 +170,8 @@ describe('observableFromAsyncIterable', () => {
         })
 
         expect(collectedValues).toStrictEqual([1, 2, 3])
-        // Assert that not only has the observable stopped emitting, but iteration was aborted as well
-        expect(iterations).toBe(3)
+        // Assert that not only has the observable stopped emitting, that an `AbortError` was thrown as well
+        expect(abortErrorThrown).toBe(true)
     })
 
     it('throws iterator error', async () => {
