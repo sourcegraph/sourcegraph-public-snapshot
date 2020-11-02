@@ -1,4 +1,71 @@
-import { parseSearchQuery } from './parser'
+import { parseSearchQuery, scanBalancedPattern } from './parser'
+
+expect.addSnapshotSerializer({
+    serialize: value => JSON.stringify(value),
+    test: () => true,
+})
+
+describe('scanBalancedPattern()', () => {
+    test('balanced, scans up to whitespace', () => {
+        expect(scanBalancedPattern('foo OR bar', 0)).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"literal","range":{"start":0,"end":3},"value":"foo"}}'
+        )
+    })
+
+    test('balanced, consumes spaces', () => {
+        expect(scanBalancedPattern('(hello there)', 0)).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"literal","range":{"start":0,"end":13},"value":"(hello there)"}}'
+        )
+    })
+
+    test('balanced, consumes unrecognized filter-like value', () => {
+        expect(scanBalancedPattern('( general:kenobi )', 0)).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"literal","range":{"start":0,"end":18},"value":"( general:kenobi )"}}'
+        )
+    })
+
+    test('not recognized, contains not operator', () => {
+        expect(scanBalancedPattern('(foo not bar)', 0)).toMatchInlineSnapshot(
+            '{"type":"error","expected":"no recognized filter or operator","at":5}'
+        )
+    })
+
+    test('not recognized, starts with a not operator', () => {
+        expect(scanBalancedPattern('(not chocolate)', 0)).toMatchInlineSnapshot(
+            '{"type":"error","expected":"no recognized filter or operator","at":1}'
+        )
+    })
+
+    test('not recognized, contains an or operator', () => {
+        expect(scanBalancedPattern('(foo OR bar)', 0)).toMatchInlineSnapshot(
+            '{"type":"error","expected":"no recognized filter or operator","at":5}'
+        )
+    })
+
+    test('not recognized, contains an and operator', () => {
+        expect(scanBalancedPattern('repo:foo AND bar', 0)).toMatchInlineSnapshot(
+            '{"type":"error","expected":"no recognized filter or operator","at":0}'
+        )
+    })
+
+    test('not recognized, contains a recognized repo field', () => {
+        expect(scanBalancedPattern('repo:foo bar', 0)).toMatchInlineSnapshot(
+            '{"type":"error","expected":"no recognized filter or operator","at":0}'
+        )
+    })
+
+    test('balanced, no conflicting tokens', () => {
+        expect(scanBalancedPattern('(bor band )', 0)).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"literal","range":{"start":0,"end":11},"value":"(bor band )"}}'
+        )
+    })
+
+    test('not recognized, unbalanced', () => {
+        expect(scanBalancedPattern('foo(', 0)).toMatchInlineSnapshot(
+            '{"type":"error","expected":"no unbalanced parentheses","at":4}'
+        )
+    })
+})
 
 describe('parseSearchQuery()', () => {
     test('empty', () =>

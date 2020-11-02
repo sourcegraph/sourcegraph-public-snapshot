@@ -90,6 +90,8 @@ Create a campaign by specifying a search query to get a list of repositories and
 
 - [Refactoring Go code using Comby](tutorials/refactor_go_comby.md)
 - [Updating Go import statements using Comby](tutorials/updating_go_import_statements.md)
+- [Update base images in Dockerfiles](tutorials/update_base_images_in_dockerfiles.md)
+- [Search and replace specific terms](tutorials/search_and_replace_specific_terms.md)
 
 ## References
 
