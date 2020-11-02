@@ -360,6 +360,119 @@ const filter: Parser<Filter> = (input, start) => {
     }
 }
 
+const scanFilterOrOperator = oneOf<Literal | Sequence>(filterKeyword, followedBy(operator, whitespace))
+const keepScanning = (input: string, start: number): boolean => scanFilterOrOperator(input, start).type !== 'success'
+
+/**
+ * ScanBalancedPattern attempts to scan balanced parentheses as literal patterns. This
+ * ensures that we interpret patterns containing parentheses _as patterns_ and not
+ * groups. For example, it accepts these patterns:
+ *
+ * ((a|b)|c)              - a regular expression with balanced parentheses for grouping
+ * myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
+ * foo(...)               - a structural search pattern
+ *
+ * If it weren't for this scanner, the above parentheses would have to be
+ * interpreted as part of the query language group syntax, like these:
+ *
+ * (foo or (bar and baz))
+ *
+ * So, this scanner detects parentheses as patterns without needing the user to
+ * explicitly escape them. As such, there are cases where this scanner should
+ * not succeed:
+ *
+ * (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
+ * (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
+ */
+export const scanBalancedPattern: Parser<Literal> = (input, start) => {
+    let adjustedStart = start
+    let balanced = 0
+    let current = ''
+    const result: string[] = []
+
+    const nextChar = (): void => {
+        current = input[adjustedStart]
+        adjustedStart += 1
+    }
+
+    if (!keepScanning(input, start)) {
+        return {
+            type: 'error',
+            expected: 'no recognized filter or operator',
+            at: start,
+        }
+    }
+
+    while (input[adjustedStart] !== undefined) {
+        nextChar()
+        if (current === ' ' && balanced === 0) {
+            // Stop scanning a potential pattern when we see whitespace in a balanced state.
+            adjustedStart -= 1 // Backtrack.
+            break
+        } else if (current === '(') {
+            if (!keepScanning(input, adjustedStart)) {
+                return {
+                    type: 'error',
+                    expected: 'no recognized filter or operator',
+                    at: adjustedStart,
+                }
+            }
+            balanced += 1
+            result.push(current)
+        } else if (current === ')') {
+            balanced -= 1
+            if (balanced < 0) {
+                // This paren is an unmatched closing paren, so we stop treating it as a potential
+                // pattern here--it might be closing a group.
+                adjustedStart -= 1 // Backtrack.
+                balanced = 0 // Pattern is balanced up to this point
+                break
+            }
+            result.push(current)
+        } else if (current === ' ') {
+            if (!keepScanning(input, adjustedStart)) {
+                return {
+                    type: 'error',
+                    expected: 'no recognized filter or operator',
+                    at: adjustedStart,
+                }
+            }
+            result.push(current)
+        } else if (current === '\\') {
+            if (input[adjustedStart] !== undefined) {
+                nextChar()
+                // Accept anything anything escaped. The point is to consume escaped spaces like "\ "
+                // so that we don't recognize it as terminating a pattern.
+                result.push('\\', current)
+                continue
+            }
+            result.push(current)
+        } else {
+            result.push(current)
+        }
+    }
+
+    if (balanced !== 0) {
+        return {
+            type: 'error',
+            expected: 'no unbalanced parentheses',
+            at: adjustedStart,
+        }
+    }
+
+    return {
+        type: 'success',
+        token: {
+            type: 'literal',
+            range: {
+                start,
+                end: adjustedStart,
+            },
+            value: result.join(''),
+        },
+    }
+}
+
 const baseTerms: Parser<Token>[] = [operator, filter, quoted('"'), quoted("'"), literal]
 
 const createParser = (terms: Parser<Token>[]): Parser<Sequence> =>
