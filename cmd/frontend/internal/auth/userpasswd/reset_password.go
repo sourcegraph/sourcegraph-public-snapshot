@@ -69,9 +69,11 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		Data: struct {
 			Username string
 			URL      string
+			Host     string
 		}{
 			Username: usr.Username,
 			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+			Host:     globals.ExternalURL().Host,
 		},
 	}); err != nil {
 		httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
@@ -79,21 +81,22 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var setPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Set your Sourcegraph password`,
+var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Reset your Sourcegraph password ({{.Host}})`,
 	Text: `
-Your administrator created an account for you on Sourcegraph.
+Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
 
-To set the password for {{.Username}} on Sourcegraph, follow this link:
+To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
   {{.URL}}
 `,
 	HTML: `
 <p>
-  Your administrator created an account for you on Sourcegraph.
+  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
+  on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
+<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
 `,
 })
 
@@ -123,9 +126,11 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 		Data: struct {
 			Username string
 			URL      string
+			Host     string
 		}{
 			Username: usr.Username,
 			URL:      rus,
+			Host:     globals.ExternalURL().Host,
 		},
 	}); err != nil {
 		return "", err
@@ -133,22 +138,21 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	return rus, nil
 }
 
-var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Reset your Sourcegraph password`,
+var setPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Set your Sourcegraph password ({{.Host}})`,
 	Text: `
-Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.
+Your administrator created an account for you on Sourcegraph ({{.Host}}).
 
-To reset the password for {{.Username}} on Sourcegraph, follow this link:
+To set the password for {{.Username}} on Sourcegraph, follow this link:
 
   {{.URL}}
 `,
 	HTML: `
 <p>
-  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
-  on Sourcegraph.
+  Your administrator created an account for you on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
+<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
 `,
 })
 

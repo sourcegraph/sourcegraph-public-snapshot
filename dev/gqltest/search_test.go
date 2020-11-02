@@ -597,16 +597,47 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
 			},
 			{
-				name:  `Dangling right parens, heuristic for literal search`,
-				query: `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+				name:  `Literals, simple not keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
 			},
 			{
-				name:  `Dangling right parens, heuristic for literal search, double parens`,
-				query: `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+				name:  `Literals, not keyword and implicit and inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
 			},
 			{
-				name:  `Dangling right parens, heuristic for literal search, simple group before right paren`,
-				query: `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+				name:  `Literals, not and and keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Dangling right parens, supported via content: filter`,
+				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPath)" and main patterntype:literal`,
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search`,
+				query:      `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
+				},
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search, double parens`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
+				},
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search, simple group before right paren`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
+				},
 			},
 			{
 				name:       `Dangling right parens, heuristic for literal search, cannot succeed, too confusing`,
@@ -614,7 +645,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Error parsing regexp: missing closing ): `(respObj.Size`",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
 				},
 			},
 			{
@@ -723,6 +754,10 @@ func TestSearch(t *testing.T) {
 			{
 				name:  `Or distributive property on repo`,
 				query: `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
+			},
+			{
+				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
+				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 			},
 		}
 		for _, test := range tests {

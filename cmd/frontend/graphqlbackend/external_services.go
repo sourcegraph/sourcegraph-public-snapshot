@@ -37,6 +37,16 @@ type addExternalServiceInput struct {
 	Namespace   *graphql.ID
 }
 
+func currentUserAllowedExternalServices(ctx context.Context) bool {
+	allowUserExternalServices := conf.ExternalServiceUserMode()
+	if !allowUserExternalServices {
+		// The user may have a tag that opts them in
+		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
+		allowUserExternalServices = err == nil
+	}
+	return allowUserExternalServices
+}
+
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
@@ -45,12 +55,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-	allowUserExternalServices := conf.ExternalServiceUserMode()
-	if !allowUserExternalServices {
-		// The user may have a tag that opts them in
-		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
-		allowUserExternalServices = err == nil
-	}
+	allowUserExternalServices := currentUserAllowedExternalServices(ctx)
 	if args.Input.Namespace != nil {
 		if !allowUserExternalServices {
 			return nil, errors.New("allow users to add external services is not enabled")
