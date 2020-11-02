@@ -268,7 +268,7 @@ type monitorActionEventConnection struct {
 func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]MonitorEventResolver, error) {
 	return []MonitorEventResolver{
 			&monitorEvent{id: "314", status: "SUCCESS", message: "", timeStamp: DateTime{time.Now()}},
-			&monitorEvent{id: "315", status: "FAILURE", message: "message not implemented", timeStamp: DateTime{time.Now()}},
+			&monitorEvent{id: "315", status: "ERROR", message: "message not implemented", timeStamp: DateTime{time.Now()}},
 		},
 		nil
 }
