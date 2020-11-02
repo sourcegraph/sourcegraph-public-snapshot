@@ -2,7 +2,7 @@
 
 Language support is an ever-evolving feature of Sourcegraph. Some languages may be better supported than others due to demand or developer bandwidth/expertise. This page clarifies the status of the LSIF indexers which the Sourcegraph team can both recommend to customers and provide support for.
 
-For a more complete description of the LSIF indexer ecosystem, see [LSIF.dev](https://lsif.dev/). A Sourcegraph instance can ingest any LSIF index file confirming to the [LSIF specification](#todo-link). The absence of a third-party indexer on this page is not a quality judgment on that indexer; it is that Sourcegraph engineers may not have the required knowledge to provide deep technical support.
+For a more complete description of the LSIF indexer ecosystem, see [LSIF.dev](https://lsif.dev/). A Sourcegraph instance can ingest any LSIF index file confirming to the [LSIF specification](https://microsoft.github.io/language-server-protocol/specifications/lsif/0.4.0/specification/). The absence of a third-party indexer on this page is not a quality judgment on that indexer; it is that Sourcegraph engineers may not have the required knowledge to provide deep technical support.
 
 ## Quick reference
 
