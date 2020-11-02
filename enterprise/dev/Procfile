@@ -24,8 +24,6 @@ grafana: ./dev/grafana.sh
 postgres_exporter: ./dev/postgres_exporter.sh
 
 # Enterprise executor services
-# TODO: These two services take 20s to shut down on sigint.
-# Fix this and you get to remove the badge of unix shame! :)
 executor-queue: executor-queue
 codeintel-executor: EXECUTOR_QUEUE_NAME=codeintel TMPDIR=~/.sourcegraph/indexer-temp executor
 
