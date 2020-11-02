@@ -375,6 +375,21 @@ func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitor() (MonitorResolver, bool) {
+	n, ok := r.Node.(MonitorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
+	n, ok := r.Node.(MonitorQueryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
+	n, ok := r.Node.(MonitorEmailResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	n, ok := r.Node.(CampaignResolver)
 	return n, ok
