@@ -9,38 +9,38 @@ import (
 
 // GetCampaignsUsageStatistics returns the current site's campaigns usage.
 func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
-	const q = `
+	const changesetCountsQuery = `
 SELECT
     (SELECT COUNT(*) FROM campaigns) AS campaigns_count,
-    COUNT(*) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
-    COUNT(*) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED') AS action_changesets_merged,
+    COUNT(*)                        FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
+    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_added_sum,
+    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_changed_sum,
+    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_deleted_sum,
+    COUNT(*)                        FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED') AS action_changesets_merged,
+    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_added_sum,
+    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_changed_sum,
+    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_deleted_sum,
     COUNT(*) FILTER (WHERE added_to_campaign) AS manual_changesets,
     COUNT(*) FILTER (WHERE added_to_campaign AND external_state = 'MERGED') AS manual_changesets_merged
 FROM changesets;
 `
-	var (
-		campaignsCount         int
-		actionChangesets       int
-		actionChangesetsMerged int
-		manualChangesets       int
-		manualChangesetsMerged int
-	)
+	stats := types.CampaignsUsageStatistics{}
 
-	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
-		&campaignsCount,
-		&actionChangesets,
-		&actionChangesetsMerged,
-		&manualChangesets,
-		&manualChangesetsMerged,
+	if err := dbconn.Global.QueryRowContext(ctx, changesetCountsQuery).Scan(
+		&stats.CampaignsCount,
+		&stats.ActionChangesetsCount,
+		&stats.ActionChangesetsDiffStatAddedSum,
+		&stats.ActionChangesetsDiffStatChangedSum,
+		&stats.ActionChangesetsDiffStatDeletedSum,
+		&stats.ActionChangesetsMergedCount,
+		&stats.ActionChangesetsMergedDiffStatAddedSum,
+		&stats.ActionChangesetsMergedDiffStatChangedSum,
+		&stats.ActionChangesetsMergedDiffStatDeletedSum,
+		&stats.ManualChangesetsCount,
+		&stats.ManualChangesetsMergedCount,
 	); err != nil {
 		return nil, err
 	}
 
-	return &types.CampaignsUsageStatistics{
-		CampaignsCount:              int32(campaignsCount),
-		ActionChangesetsCount:       int32(actionChangesets),
-		ActionChangesetsMergedCount: int32(actionChangesetsMerged),
-		ManualChangesetsCount:       int32(manualChangesets),
-		ManualChangesetsMergedCount: int32(manualChangesetsMerged),
-	}, nil
+	return &stats, nil
 }

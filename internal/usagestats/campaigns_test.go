@@ -82,15 +82,22 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create 4 changesets, 2 tracked, 2 created by a campaign. For each pair, one OPEN, one MERGED.
+	// Create 6 changesets.
+	// 2 tracked: one OPEN, one MERGED.
+	// 4 created by a campaign: 2 open (one with diffstat, one without), 2 merged (one with diffstat, one without)
+	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
 	_, err = dbconn.Global.Exec(`
 		INSERT INTO changesets
-			(id, repo_id, external_service_type, added_to_campaign, owned_by_campaign_id, external_state, publication_state)
+			(id, repo_id, external_service_type, added_to_campaign, owned_by_campaign_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES
-			(1, $1, 'github', true, NULL, 'OPEN', 'PUBLISHED'),
-			(2, $1, 'github', true, NULL, 'MERGED', 'PUBLISHED'),
-			(3, $1, 'github', false, 1, 'OPEN', 'PUBLISHED'),
-			(4, $1, 'github', false, 2, 'MERGED', 'PUBLISHED')
+		    -- tracked
+			(1, $1, 'github', true, NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
+			(2, $1, 'github', true, NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
+			-- created by campaign
+			(4, $1, 'github', false, 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
+			(5, $1, 'github', false, 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
+			(6, $1, 'github', false, 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
+			(7, $1, 'github', false, 2, 'MERGED', 'PUBLISHED', NULL, NULL, NULL)
 	`, repo.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -100,11 +107,17 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &types.CampaignsUsageStatistics{
-		CampaignsCount:              2,
-		ActionChangesetsCount:       2,
-		ActionChangesetsMergedCount: 1,
-		ManualChangesetsCount:       2,
-		ManualChangesetsMergedCount: 1,
+		CampaignsCount:                           2,
+		ActionChangesetsCount:                    4,
+		ActionChangesetsDiffStatAddedSum:         14,
+		ActionChangesetsDiffStatChangedSum:       14,
+		ActionChangesetsDiffStatDeletedSum:       14,
+		ActionChangesetsMergedCount:              2,
+		ActionChangesetsMergedDiffStatAddedSum:   9,
+		ActionChangesetsMergedDiffStatChangedSum: 7,
+		ActionChangesetsMergedDiffStatDeletedSum: 5,
+		ManualChangesetsCount:                    2,
+		ManualChangesetsMergedCount:              1,
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
