@@ -103,6 +103,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create listener: %s", err)
 	}
+	go debugServer.Start()
 
 	routines := []goroutine.BackgroundRoutine{
 		managerRoutine,
@@ -110,7 +111,6 @@ func main() {
 		indexResetter,
 		indexabilityUpdater,
 		scheduler,
-		debugServer,
 	}
 
 	if !disableJanitor {

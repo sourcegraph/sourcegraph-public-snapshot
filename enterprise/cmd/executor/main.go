@@ -39,9 +39,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create listener: %s", err)
 	}
+	go debugServer.Start()
 
 	routines := []goroutine.BackgroundRoutine{
-		debugServer,
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {

@@ -89,6 +89,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create listener: %s", err)
 	}
+	go debugServer.Start()
 
 	goroutine.MonitorBackgroundRoutines(
 		context.Background(),
@@ -96,7 +97,6 @@ func main() {
 		uploadResetter,
 		commitUpdater,
 		worker,
-		debugServer,
 	)
 }
 

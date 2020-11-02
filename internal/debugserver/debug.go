@@ -93,9 +93,11 @@ func NewServerRoutine(extra ...Endpoint) (goroutine.BackgroundRoutine, error) {
 				<a href="debug/requests">Requests</a><br>
 				<a href="debug/events">Events</a><br>
 			`))
+
 			for _, e := range extra {
 				fmt.Fprintf(w, `<a href="%s">%s</a><br>`, strings.TrimPrefix(e.Path, "/"), e.Name)
 			}
+
 			_, _ = w.Write([]byte(`
 				<br>
 				<form method="post" action="gc" style="display: inline;"><input type="submit" value="GC"></form>
