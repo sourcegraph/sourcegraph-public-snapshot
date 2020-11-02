@@ -85,13 +85,18 @@ func main() {
 		observationContext,
 	)
 
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
 	goroutine.MonitorBackgroundRoutines(
 		context.Background(),
 		server,
 		uploadResetter,
 		commitUpdater,
 		worker,
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
+		debugServer,
 	)
 }
 

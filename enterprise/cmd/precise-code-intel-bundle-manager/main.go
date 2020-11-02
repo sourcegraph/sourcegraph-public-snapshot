@@ -85,9 +85,14 @@ func main() {
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, lsifstore.New(codeIntelDB), bundleDir, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
 
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
 	routines := []goroutine.BackgroundRoutine{
 		server,
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
+		debugServer,
 	}
 
 	if !disableJanitor {

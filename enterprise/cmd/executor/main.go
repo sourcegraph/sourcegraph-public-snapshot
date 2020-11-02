@@ -35,8 +35,13 @@ func main() {
 		log.Fatalf("failed to read config: %s", err)
 	}
 
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
 	routines := []goroutine.BackgroundRoutine{
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
+		debugServer,
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
