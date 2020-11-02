@@ -54,8 +54,12 @@ func (p *Provider) Validate() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := p.client.UserPermissions(ctx, p.client.Username)
+	username, err := p.client.Username()
 	if err != nil {
+		return []string{err.Error()}
+	}
+
+	if _, err := p.client.UserPermissions(ctx, username); err != nil {
 		return []string{err.Error()}
 	}
 

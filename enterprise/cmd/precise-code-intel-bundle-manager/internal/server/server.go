@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const Port = 3187
+const addr = ":3187"
 
 type Server struct {
 	bundleDir          string
@@ -18,7 +18,7 @@ type Server struct {
 	observationContext *observation.Context
 }
 
-func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, observationContext *observation.Context) (goroutine.BackgroundRoutine, error) {
 	server := &Server{
 		bundleDir:          bundleDir,
 		storeCache:         storeCache,
@@ -26,5 +26,5 @@ func New(bundleDir string, storeCache cache.StoreCache, codeIntelDB *sql.DB, obs
 		observationContext: observationContext,
 	}
 
-	return httpserver.New(Port, server.setupRoutes)
+	return httpserver.NewFromAddr(addr, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }

@@ -6,10 +6,10 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
     const tokens = useMemo(() => {
         const parsedQuery = parseSearchQuery(query)
         return parsedQuery.type === 'success'
-            ? parsedQuery.token.members.map(({ token, range }) => {
+            ? parsedQuery.token.members.map(token => {
                   if (token.type === 'filter') {
                       return (
-                          <Fragment key={range.start}>
+                          <Fragment key={token.range.start}>
                               <span className="search-keyword">
                                   {query.slice(token.filterType.range.start, token.filterType.range.end)}:
                               </span>
@@ -21,12 +21,12 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
                   }
                   if (token.type === 'operator') {
                       return (
-                          <span className="search-operator" key={range.start}>
-                              {query.slice(range.start, range.end)}
+                          <span className="search-operator" key={token.range.start}>
+                              {query.slice(token.range.start, token.range.end)}
                           </span>
                       )
                   }
-                  return <Fragment key={range.start}>{query.slice(range.start, range.end)}</Fragment>
+                  return <Fragment key={token.range.start}>{query.slice(token.range.start, token.range.end)}</Fragment>
               })
             : [<Fragment key="0">{query}</Fragment>]
     }, [query])

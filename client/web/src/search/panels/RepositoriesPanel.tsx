@@ -129,23 +129,23 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
         const queryFromURL = parseSearchURLQuery(url.search)
         const parsedQuery = parseSearchQuery(queryFromURL || '')
         if (parsedQuery.type === 'success') {
-            for (const member of parsedQuery.token.members) {
+            for (const token of parsedQuery.token.members) {
                 if (
-                    member.token.type === 'filter' &&
-                    (member.token.filterType.token.value === FilterType.repo ||
-                        member.token.filterType.token.value === FILTERS[FilterType.repo].alias)
+                    token.type === 'filter' &&
+                    (token.filterType.value === FilterType.repo ||
+                        token.filterType.value === FILTERS[FilterType.repo].alias)
                 ) {
                     if (
-                        member.token.filterValue?.token.type === 'literal' &&
-                        !recentlySearchedRepos.includes(member.token.filterValue.token.value)
+                        token.filterValue?.type === 'literal' &&
+                        !recentlySearchedRepos.includes(token.filterValue.value)
                     ) {
-                        recentlySearchedRepos.push(member.token.filterValue.token.value)
+                        recentlySearchedRepos.push(token.filterValue.value)
                     }
                     if (
-                        member.token.filterValue?.token.type === 'quoted' &&
-                        !recentlySearchedRepos.includes(member.token.filterValue.token.quotedValue)
+                        token.filterValue?.type === 'quoted' &&
+                        !recentlySearchedRepos.includes(token.filterValue.quotedValue)
                     ) {
-                        recentlySearchedRepos.push(member.token.filterValue.token.quotedValue)
+                        recentlySearchedRepos.push(token.filterValue.quotedValue)
                     }
                 }
             }

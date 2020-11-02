@@ -129,7 +129,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			triggerE2E(c, env),
+			triggerE2EandQA(c, env),
 			addBackendIntegrationTests(c), // ~11m
 			addDockerImages(c, false),     // ~8m
 			addLint,                       // ~4.5m

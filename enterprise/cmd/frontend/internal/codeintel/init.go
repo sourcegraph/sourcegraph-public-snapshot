@@ -2,48 +2,64 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
-	"strconv"
-	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
-var rawHunkCacheSize = env.Get("PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY", "1000", "Maximum number of git diff hunk objects that can be loaded into the hunk cache at once.")
-
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	if err := initOnce(ctx); err != nil {
+	if err := initServices(ctx); err != nil {
 		return err
 	}
 
-	hunkCacheSize, err := strconv.ParseInt(rawHunkCacheSize, 10, 64)
+	resolver, err := newResolver(ctx)
 	if err != nil {
-		return fmt.Errorf("invalid int %q for PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY: %s", rawHunkCacheSize, err)
+		return err
 	}
 
-	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
+	uploadHandler, err := newUploadHandler(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to initialize hunk cache: %s", err)
+		return err
+	}
+
+	routines, err := newBackgroundRoutines()
+	if err != nil {
+		return err
+	}
+
+	enterpriseServices.CodeIntelResolver = resolver
+	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
+
+	// TODO(efritz) - return these to the frontend to run.
+	// Requires refactoring of the frontend server setup
+	// so I'm going to kick that can down the road for a
+	// short while.
+	//
+	// Repo updater is currently doing something similar
+	// here and would also be ripe for a refresher of the
+	// startup flow.
+	go goroutine.MonitorBackgroundRoutines(routines...)
+
+	return nil
+}
+
+func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
+	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
 	}
 
 	resolver := codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
@@ -53,18 +69,21 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		hunkCache,
 	))
 
+	return resolver, err
+}
+
+func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, error) {
 	internalHandler, err := NewCodeIntelUploadHandler(ctx, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	externalHandler, err := NewCodeIntelUploadHandler(ctx, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	enterpriseServices.CodeIntelResolver = resolver
-	enterpriseServices.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+	uploadHandler := func(internal bool) http.Handler {
 		if internal {
 			return internalHandler
 		}
@@ -72,67 +91,29 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return externalHandler
 	}
 
-	return nil
+	return uploadHandler, nil
 }
 
-func NewCodeIntelUploadHandler(ctx context.Context, internal bool) (http.Handler, error) {
-	if err := initOnce(ctx); err != nil {
-		return nil, err
+func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	return codeintelhttpapi.NewUploadHandler(services.store, services.bundleManagerClient, internal), nil
-}
+	metrics := background.NewMetrics(observationContext.Registerer)
 
-var once sync.Once
-var services struct {
-	store               store.Store
-	bundleManagerClient bundles.BundleManagerClient
-	api                 codeintelapi.CodeIntelAPI
-	err                 error
-}
-
-func initOnce(ctx context.Context) error {
-	once.Do(func() {
-		if bundleManagerURL == "" {
-			services.err = fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
-			return
-		}
-
-		observationContext := &observation.Context{
-			Logger:     log15.Root(),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-
-		codeIntelDB := mustInitializeCodeIntelDatabase()
-		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(codeIntelDB, observationContext, bundleManagerURL)
-		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
-
-		services.store = store
-		services.bundleManagerClient = bundleManagerClient
-		services.api = api
-	})
-
-	return services.err
-}
-
-func mustInitializeCodeIntelDatabase() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
-		}
-	})
-
-	db, err := dbconn.New(postgresDSN, "_codeintel")
-	if err != nil {
-		log.Fatalf("failed to connect to codeintel database: %s", err)
+	routines := []goroutine.BackgroundRoutine{
+		background.NewAbandonedUploadJanitor(services.store, config.UploadTimeout, config.BackgroundTaskInterval, metrics),
+		background.NewDeletedRepositoryJanitor(services.store, config.BackgroundTaskInterval, metrics),
+		background.NewHardDeleter(services.store, services.lsifStore, config.BackgroundTaskInterval, metrics),
+		background.NewIndexScheduler(services.store, services.gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
+		background.NewIndexabilityUpdater(services.store, services.gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
+		background.NewRecordExpirer(services.store, config.DataTTL, config.BackgroundTaskInterval, metrics),
+		background.NewUploadResetter(services.store, config.BackgroundTaskInterval, metrics),
+		background.NewIndexResetter(services.store, config.BackgroundTaskInterval, metrics),
+		background.NewCommitUpdater(services.store, commits.NewUpdater(services.store, services.gitserverClient), config.BackgroundTaskInterval),
 	}
 
-	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
-		log.Fatalf("failed to perform codeintel database migration: %s", err)
-	}
-
-	return db
+	return routines, nil
 }

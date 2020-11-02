@@ -207,6 +207,29 @@ If you are seeing this error on large scale deployments with a lot repos to be i
         262144
 1. Ensure the change will persist a system reboot by updating the `vm.max_map_count` setting in `/etc/sysctl.conf`.
 
+#### Scenario: zoekt-webserver is restarting due to watchdog
+
+zoekt-webserver has a built in watchdog which ensures it can respond to search requests. If the watchdog fails, it will panic causing the process to exit with a non-zero exit code. This is like a Kubernetes health check, but works across all our deployment environments.
+
+By default the watchdog runs every 30s. If the watchdog fails 3 consecutive times (with a 30s sleep in-between) it will trigger the panic. This is usually indicative a server which is consistently overloaded. It is recommended to increase the CPU quota assigned to it or horizontally scale to more replicas.
+
+From Sourcegraph 3.22 you can configure the watchdog via environment variables:
+
+- `ZOEKT_WATCHDOG_TICK` :: Duration of how often it runs. (default 30s)
+- `ZOEKT_WATCHDOG_ERRORS` :: Consecutive error count before exit. (default 3)
+
+If either is 0 the watchdog is disabled.
+
+You can further diagnose an overloaded zoekt-webserver via watchdog logs or metrics. See log messages mentioning watchdog, or view the following metrics in grafana:
+
+- `zoekt_webserver_watchdog_errors` :: The current error count for zoekt
+  watchdog.
+- `zoekt_webserver_watchdog_total` :: The total number of requests done by
+  zoekt watchdog.
+- `zoekt_webserver_watchdog_errors_total` :: The total number of errors from
+  zoekt watchdog.
+
+
 ## Actions
 
 This section contains various actions that can be taken to collect information or update Sourcegraph

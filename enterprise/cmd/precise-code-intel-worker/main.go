@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"log"
 
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
+
+const addr = ":3188"
 
 func main() {
 	config := &Config{}
@@ -49,9 +51,20 @@ func main() {
 	codeIntelDB := mustInitializeCodeIntelDatabase()
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
 
+	server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
+
 	goroutine.MonitorBackgroundRoutines(
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
-		httpserver.New(Port, func(router *mux.Router) {}),
+		context.Background(),
+		server,
 		worker.NewWorker(
 			store,
 			codeIntelDB,

@@ -361,3 +361,17 @@ func (e ErrRateLimitUnsupported) Error() string {
 func URN(kind string, id int64) string {
 	return "extsvc:" + strings.ToLower(kind) + ":" + strconv.FormatInt(id, 10)
 }
+
+// DecodeURN returns the kind of the external service and its ID.
+func DecodeURN(urn string) (kind string, id int64) {
+	fields := strings.Split(urn, ":")
+	if len(fields) != 3 {
+		return "", 0
+	}
+
+	id, err := strconv.ParseInt(fields[2], 10, 64)
+	if err != nil {
+		return "", 0
+	}
+	return fields[1], id
+}
