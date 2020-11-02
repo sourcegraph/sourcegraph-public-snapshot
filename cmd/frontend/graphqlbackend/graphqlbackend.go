@@ -390,6 +390,11 @@ func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitorEvent() (MonitorEventResolver, bool) {
+	n, ok := r.Node.(MonitorEventResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	n, ok := r.Node.(CampaignResolver)
 	return n, ok

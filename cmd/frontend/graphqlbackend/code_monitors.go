@@ -203,6 +203,7 @@ type MonitorEmailResolver interface {
 	Priority() string
 	Header() string
 	Recipient(ctx context.Context) (MonitorEmailRecipient, error)
+	Events(ctx context.Context) (MonitorActionEventConnectionResolver, error)
 }
 
 type monitorEmail struct {
@@ -233,6 +234,10 @@ func (m *monitorEmail) ID() graphql.ID {
 	return "monitorEmail ID not implemented"
 }
 
+func (m *monitorEmail) Events(ctx context.Context) (MonitorActionEventConnectionResolver, error) {
+	return &monitorActionEventConnection{}, nil
+}
+
 //
 // MonitorEmailRecipient <<UNION>>
 //
@@ -246,4 +251,65 @@ type monitorEmailRecipient struct {
 
 func (o *monitorEmailRecipient) ToUser() (*UserResolver, bool) {
 	return o.user, o.user != nil
+}
+
+//
+// MonitorActionEventConnection
+//
+type MonitorActionEventConnectionResolver interface {
+	Nodes(ctx context.Context) ([]MonitorEventResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type monitorActionEventConnection struct {
+}
+
+func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]MonitorEventResolver, error) {
+	return []MonitorEventResolver{
+			&monitorEvent{id: "314", status: "SUCCESS", message: "", timeStamp: DateTime{time.Now()}},
+			&monitorEvent{id: "315", status: "FAILURE", message: "message not implemented", timeStamp: DateTime{time.Now()}},
+		},
+		nil
+}
+
+func (a *monitorActionEventConnection) TotalCount(ctx context.Context) (int32, error) {
+	return 1, nil
+}
+
+func (a *monitorActionEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+//
+// MonitorEvent
+//
+type MonitorEventResolver interface {
+	ID() graphql.ID
+	Status() string
+	Message() string
+	TimeStamp() DateTime
+}
+
+type monitorEvent struct {
+	id        graphql.ID
+	status    string
+	message   string
+	timeStamp DateTime
+}
+
+func (m *monitorEvent) ID() graphql.ID {
+	return m.id
+}
+
+func (m *monitorEvent) Status() string {
+	return m.status
+}
+
+func (m *monitorEvent) Message() string {
+	return m.message
+}
+
+func (m *monitorEvent) TimeStamp() DateTime {
+	return m.timeStamp
 }
