@@ -730,7 +730,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			mockCount: func(ctx context.Context, opt db.ExternalServicesListOptions) (int, error) {
 				return 2, nil
 			},
-			wantPageInfo: graphqlutil.NextPageCursor(string(MarshalExternalServiceID(1))),
+			wantPageInfo: graphqlutil.NextPageCursor(string(marshalExternalServiceID(1))),
 		},
 	}
 	for _, test := range tests {

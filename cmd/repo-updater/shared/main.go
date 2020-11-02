@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/golang/gddo/httputil"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
@@ -311,10 +311,13 @@ func Main(enterpriseInit EnterpriseInit) {
 			infos := make([]providerInfo, len(providers))
 			for i, p := range providers {
 				_, id := extsvc.DecodeURN(p.URN())
+
+				// Note that the ID marshalling below replicates code found in `graphqlbackend`.
+				// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
 				infos[i] = providerInfo{
 					ServiceType:        p.ServiceType(),
 					ServiceID:          p.ServiceID(),
-					ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), graphqlbackend.MarshalExternalServiceID(id)),
+					ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
 				}
 			}
 
