@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -71,7 +72,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 		} {
 			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
-				clock := repos.NewFakeClock(time.Now(), time.Second)
+				clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 				now := clock.Now
 				ctx := context.Background()
 
@@ -218,7 +219,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketCloudService.URN()),
 	)
 
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 
 	svcdup := repos.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -585,7 +586,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 
 				now := tc.now
 				if now == nil {
-					clock := repos.NewFakeClock(time.Now(), time.Second)
+					clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 					now = clock.Now
 				}
 
@@ -636,7 +637,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 }
 
 func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), time.Second)
+	clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
 

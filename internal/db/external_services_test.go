@@ -624,7 +624,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	clock := NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 
 	var svcs types.ExternalServices
 	for _, svc := range createExternalServices(t) {
@@ -725,7 +725,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 }
 
 func createExternalServices(t *testing.T) map[string]*types.ExternalService {
-	clock := NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svcs := mkExternalServices(now)
