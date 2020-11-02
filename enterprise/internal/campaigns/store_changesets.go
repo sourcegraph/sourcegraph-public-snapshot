@@ -377,6 +377,8 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	having := &sqlf.Query{}
 
 	if opts.ExternalServiceID != 0 {
+		// We use this to always get the same external service for a given repository,
+		// even if multiple external services point to it in the `external_service_repos` table.
 		having = sqlf.Sprintf("HAVING min(esr.external_service_id) = %s", opts.ExternalServiceID)
 	}
 
