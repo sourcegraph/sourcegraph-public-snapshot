@@ -78,9 +78,18 @@ func main() {
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
-	server := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
+	server, err := server.New(bundleDir, storeCache, codeIntelDB, observationContext)
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(store, lsifstore.New(codeIntelDB), bundleDir, janitorInterval, maxUploadAge, maxUploadPartAge, maxDataAge, janitorMetrics)
+
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
 
 	routines := []goroutine.BackgroundRoutine{
 		server,
@@ -92,7 +101,6 @@ func main() {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	go debugserver.Start()
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 

@@ -25,25 +25,24 @@ export function convertPlainTextToInteractiveQuery(
     let newNavbarQuery = ''
 
     if (parsedQuery.type === 'success') {
-        for (const member of parsedQuery.token.members) {
+        for (const token of parsedQuery.token.members) {
             if (
-                member.token.type === 'filter' &&
-                member.token.filterValue &&
-                validateFilter(member.token.filterType.token.value, member.token.filterValue).valid
+                token.type === 'filter' &&
+                token.filterValue &&
+                validateFilter(token.filterType.value, token.filterValue).valid
             ) {
-                const filterType = member.token.filterType.token.value as FilterType
+                const filterType = token.filterType.value as FilterType
                 newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
-                    value: query.slice(member.token.filterValue.range.start, member.token.filterValue.range.end),
+                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
                     editable: false,
                     negated: isNegatedFilter(filterType),
                 }
             } else if (
-                member.token.type !== 'filter' ||
-                (member.token.type === 'filter' &&
-                    !validateFilter(member.token.filterType.token.value, member.token.filterValue).valid)
+                token.type !== 'filter' ||
+                (token.type === 'filter' && !validateFilter(token.filterType.value, token.filterValue).valid)
             ) {
-                newNavbarQuery = [newNavbarQuery, query.slice(member.range.start, member.range.end)]
+                newNavbarQuery = [newNavbarQuery, query.slice(token.range.start, token.range.end)]
                     .filter(query => query.length > 0)
                     .join('')
             }

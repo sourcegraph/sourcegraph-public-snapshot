@@ -50,9 +50,8 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
 		sqlf.Sprintf(
-			"r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND (commit = %s OR commit_bytea = %s) AND NOT overwritten)",
+			"r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit_bytea = %s AND NOT overwritten)",
 			repositoryID,
-			commit,
 			dbutil.CommitBytea(commit),
 		),
 	}

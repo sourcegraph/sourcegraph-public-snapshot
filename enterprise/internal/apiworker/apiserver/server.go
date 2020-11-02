@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
@@ -10,13 +11,18 @@ import (
 )
 
 // NewServer returns an HTTP job queue server.
-func NewServer(options Options) goroutine.BackgroundRoutine {
+func NewServer(options Options) (goroutine.BackgroundRoutine, error) {
+	addr := fmt.Sprintf(":%d", options.Port)
 	handler := newHandler(options, glock.NewRealClock())
 
-	return goroutine.CombinedRoutine{
-		httpserver.New(options.Port, handler.setupRoutes),
-		goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler}),
+	server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(handler.setupRoutes), httpserver.Options{})
+	if err != nil {
+		return nil, err
 	}
+
+	janitor := goroutine.NewPeriodicGoroutine(context.Background(), options.CleanupInterval, &handlerWrapper{handler})
+
+	return goroutine.CombinedRoutine{server, janitor}, nil
 }
 
 type handlerWrapper struct{ handler *handler }
