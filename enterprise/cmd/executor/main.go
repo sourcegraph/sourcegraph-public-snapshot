@@ -42,7 +42,7 @@ func main() {
 	if !config.DisableHealthServer {
 		server, err := httpserver.NewFromAddr(port, httpserver.NewHandler(nil), httpserver.Options{})
 		if err != nil {
-			log.Fatalf("failed to create listener: %s", err)
+			log.Fatalf("Failed to create listener: %s", err)
 		}
 
 		routines = append(routines, server)
