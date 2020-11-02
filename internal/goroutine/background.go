@@ -34,15 +34,15 @@ type BackgroundRoutine interface {
 // immediately.
 func MonitorBackgroundRoutines(ctx context.Context, routines ...BackgroundRoutine) {
 	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
 	monitorBackgroundRoutines(ctx, signals, routines...)
 }
 
 func monitorBackgroundRoutines(ctx context.Context, signals <-chan os.Signal, routines ...BackgroundRoutine) {
-	var wg sync.WaitGroup
-	startAll(&wg, routines...)
+	wg := &sync.WaitGroup{}
+	startAll(wg, routines...)
 	waitForSignal(ctx, signals)
-	stopAll(&wg, routines...)
+	stopAll(wg, routines...)
 	wg.Wait()
 }
 
@@ -98,23 +98,23 @@ func exitAfterSignals(signals <-chan os.Signal, numSignals int) {
 type CombinedRoutine []BackgroundRoutine
 
 func (r CombinedRoutine) Start() {
-	var wg sync.WaitGroup
-	startAll(&wg, r...)
+	wg := &sync.WaitGroup{}
+	startAll(wg, r...)
 	wg.Wait()
 }
 
 func (r CombinedRoutine) Stop() {
-	var wg sync.WaitGroup
-	stopAll(&wg, r...)
+	wg := &sync.WaitGroup{}
+	stopAll(wg, r...)
 	wg.Wait()
 }
 
-type noopStop struct{ r StartableRoutine }
+type noopRoutine struct{}
 
-func (r noopStop) Start() { r.r.Start() }
-func (r noopStop) Stop()  {}
+func (r noopRoutine) Start() {}
+func (r noopRoutine) Stop()  {}
 
-// NoopStop wraps a startable routine in a type with a noop Stop method.
-func NoopStop(r StartableRoutine) BackgroundRoutine {
-	return noopStop{r}
+// NoopRoutine does nothing for start or stop.
+func NoopRoutine() BackgroundRoutine {
+	return noopRoutine{}
 }

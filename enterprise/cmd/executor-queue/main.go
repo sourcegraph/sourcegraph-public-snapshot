@@ -73,9 +73,14 @@ func main() {
 		log.Fatalf("failed to create listener: %s", err)
 	}
 
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
+
 	goroutine.MonitorBackgroundRoutines(
 		context.Background(),
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
 		server,
 	)
 }

@@ -99,13 +99,18 @@ func main() {
 	janitor := janitor.New(s, janitorInterval, janitorMetrics)
 	managerRoutine := goroutine.NewPeriodicGoroutine(context.Background(), cleanupInterval, indexManager)
 
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
+
 	routines := []goroutine.BackgroundRoutine{
 		managerRoutine,
 		server,
 		indexResetter,
 		indexabilityUpdater,
 		scheduler,
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
 	}
 
 	if !disableJanitor {
