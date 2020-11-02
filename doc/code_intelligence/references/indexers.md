@@ -26,7 +26,19 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
    <tbody>
       <tr>
         <td><a href="https://github.com/sourcegraph/lsif-go">lsif-go</a></td>
-        <td><img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"></td>
+        <td><img src="https://img.shields.io/badge/status-ready-green" alt="Ready"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
+        <td><img src="https://img.shields.io/badge/status-ready-green" alt="Ready"></td>
         <td class="indexer-implemented-y">✓</td> <!-- M1 -->
         <td class="indexer-implemented-y">✓</td> <!-- M2 -->
         <td class="indexer-implemented-y">✓</td> <!-- M3 -->
@@ -38,7 +50,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
-        <td><img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"></td>
+        <td><img src="https://img.shields.io/badge/status-ready-green" alt="Ready"></td>
         <td class="indexer-implemented-y">✓</td> <!-- M1 -->
         <td class="indexer-implemented-y">✓</td> <!-- M2 -->
         <td class="indexer-implemented-y">✓</td> <!-- M3 -->
@@ -50,35 +62,10 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
-        <td><img src="https://camo.githubusercontent.com/8e6bd8a6aba8c088662ec6a11a167ce9815c83e3/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d646576656c6f706d656e742d79656c6c6f77" alt="Development"></td>
+        <td><img src="https://img.shields.io/badge/status-development-white" alt="Development"></td>
         <td class="indexer-implemented-y">✓</td> <!-- M1 -->
         <td class="indexer-implemented-y">✓</td> <!-- M2 -->
         <td class="indexer-implemented-y">✓</td> <!-- M3 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
-        <td class="indexer-implemented-n">✗</td> <!-- M8 -->
-      </tr>
-      <tr>
-        <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
-        <td><img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"></td>
-        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M3 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M8 -->
-      </tr>
-      <tr>
-        <!-- TODO - mark as deprecated. -->
-        <td><a href="https://github.com/sourcegraph/lsif-cpp">lsif-cpp</a></td>
-        <td><img src="https://camo.githubusercontent.com/001ad9e3c9314e4128e94e7bc39fab63e419057e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d626574612d6f72616e67653f7374796c653d666c6174" alt="Beta"></td>
-        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
-        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
-        <td class="indexer-implemented-n">✗</td> <!-- M3 -->
         <td class="indexer-implemented-y">✓</td> <!-- M4 -->
         <td class="indexer-implemented-y">✓</td> <!-- M5 -->
         <td class="indexer-implemented-y">✓</td> <!-- M6 -->
@@ -87,10 +74,22 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td><a href="https://github.com/sourcegraph/lsif-semanticdb">lsif-semanticdb</a></td>
-        <td><img src="https://camo.githubusercontent.com/001ad9e3c9314e4128e94e7bc39fab63e419057e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d626574612d6f72616e67653f7374796c653d666c6174" alt="Beta"></td>
+        <td><img src="https://img.shields.io/badge/status-beta-yellow" alt="Beta"></td>
         <td class="indexer-implemented-y">✓</td> <!-- M1 -->
         <td class="indexer-implemented-y">✓</td> <!-- M2 -->
         <td class="indexer-implemented-y">✓</td> <!-- M3 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M4 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M5 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M6 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M7 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M8 -->
+      </tr>
+      <tr>
+        <td><a href="https://github.com/sourcegraph/lsif-cpp">lsif-cpp</a></td>
+        <td><img src="https://img.shields.io/badge/status-deprecated-red" alt="Deprecated"></td>
+        <td class="indexer-implemented-y">✓</td> <!-- M1 -->
+        <td class="indexer-implemented-y">✓</td> <!-- M2 -->
+        <td class="indexer-implemented-n">✗</td> <!-- M3 -->
         <td class="indexer-implemented-y">✓</td> <!-- M4 -->
         <td class="indexer-implemented-y">✓</td> <!-- M5 -->
         <td class="indexer-implemented-y">✓</td> <!-- M6 -->
@@ -115,10 +114,11 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
 
 An indexer status is:
 
-- <img src="https://camo.githubusercontent.com/8e6bd8a6aba8c088662ec6a11a167ce9815c83e3/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d646576656c6f706d656e742d79656c6c6f77" alt="Development"> (_development_): when we are actively working on implementation.
-- <img src="#todo" alt="Alpha"> (_alpha_): when early adopters can try it with expectations of failure.
-- <img src="https://camo.githubusercontent.com/001ad9e3c9314e4128e94e7bc39fab63e419057e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d626574612d6f72616e67653f7374796c653d666c6174" alt="Beta"> (_beta_): when it could be useful to early adopters despite lack of features.
-- <img src="https://camo.githubusercontent.com/9f1b585e93b63dfd50b3484c8db692233c780f2a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f7374617475732d72656164792d627269676874677265656e" alt="Ready"> (_ready_): when no major features are absent but edge cases remain.
+- <img src="https://img.shields.io/badge/status-ready-green" alt="Ready"> (_ready_): When no major features are absent but edge cases remain.
+- <img src="https://img.shields.io/badge/status-beta-yellow" alt="Beta"> (_beta_): When it could be useful to early adopters despite lack of features.
+- <img src="https://img.shields.io/badge/status-alpha-orange" alt="Alpha"> (_alpha_): When early adopters can try it with expectations of failure.
+- <img src="https://img.shields.io/badge/status-development-white" alt="Development"> (_development_): When we are actively working on implementation.
+- <img src="https://img.shields.io/badge/status-deprecated-red" alt="Deprecated"> (_deprecated_): When we are no longer maintaining a solution. In these cases we will have a migration path to an alternate indexer.
 
 ## Milestone definitions
 
@@ -194,7 +194,7 @@ The next milestone represents the never-finished long tail of feature additions.
 
 #### M10: Support additional language features
 
-We may lack the language expertise or bandwidth to implement certain features on indexers. It may be a good idea to hire a domain expert or outsource additional features when the demand for support is sufficiently high and the implementation is sufficiently difficult.
+We may lack the language expertise or bandwidth to implement certain features on indexers. We will consider investing resources to add additional features when the demand for support is sufficiently high and the implementation is sufficiently difficult.
 
 ## Notes on specific indexers
 
