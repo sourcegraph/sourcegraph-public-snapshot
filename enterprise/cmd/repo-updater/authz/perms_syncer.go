@@ -335,12 +335,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			}
 		}
 
-		// Upsert the record in order to prevent the scheduler keep scheduling this repository.
-		return errors.Wrap(s.permsStore.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  int32(repoID),
-			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-			UserIDs: roaring.NewBitmap(),
-		}), "set repository permissions") // TODO: Use TouchRepoPermissions
+		// We have no authz provider configured for the repository.
+		// However, we need to upsert the dummy record in order to
+		// prevent scheduler keep scheduling this repository.
+		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
 	}
 
 	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
