@@ -353,7 +353,8 @@ JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
 JOIN repo r ON changesets.repo_id = r.id
 LEFT JOIN external_service_repos esr ON r.id = esr.repo_id
 WHERE %s
-GROUP BY changesets.id, r.id %s
+GROUP BY changesets.id, r.id
+%s --- having
 ORDER BY changesets.id ASC
 `
 
