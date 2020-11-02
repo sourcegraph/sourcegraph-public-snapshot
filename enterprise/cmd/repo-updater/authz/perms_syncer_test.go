@@ -217,10 +217,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
 	}
 
-	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
-		calledSetRepoPermissions := false
-		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
-			calledSetRepoPermissions = true
+	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {
+		calledTouchRepoPermissions := false
+		edb.Mocks.Perms.TouchRepoPermissions = func(ctx context.Context, repoID int32) error {
+			calledTouchRepoPermissions = true
 			return nil
 		}
 		defer func() {
@@ -250,8 +250,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !calledSetRepoPermissions {
-			t.Fatal("!calledSetRepoPermissions")
+		if !calledTouchRepoPermissions {
+			t.Fatal("!calledTouchRepoPermissions")
 		}
 	})
 
