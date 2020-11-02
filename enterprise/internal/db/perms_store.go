@@ -1307,7 +1307,9 @@ SELECT id, user_id,
        auth_data, account_data,
        created_at, updated_at
 FROM user_external_accounts
-WHERE user_id = %d
+WHERE
+	user_id = %s
+AND	deleted_at IS NULL
 ORDER BY id ASC
 `, userID)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
