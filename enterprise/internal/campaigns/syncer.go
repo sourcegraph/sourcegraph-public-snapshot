@@ -82,16 +82,9 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 		return
 	}
 
-	sourcer := repos.NewSourcer(s.HTTPFactory)
-	css, err := buildChangesetSource(sourcer, extSvc)
+	baseURL, err := extsvc.ExtractBaseURL(extSvc.Kind, extSvc.Config)
 	if err != nil {
-		log15.Error(err.Error())
-		return
-	}
-
-	normalised, err := externalServiceSyncerKey(extSvc.Kind, extSvc.Config)
-	if err != nil {
-		log15.Error(err.Error())
+		log15.Error("getting normalized URL from service", err)
 		return
 	}
 
@@ -109,7 +102,7 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 		SyncStore:      s.SyncStore,
 		ReposStore:     s.RepoStore,
 		source:         source,
-		codeHostURL:    normalised,
+		codeHostURL:    baseURL.String(),
 		extSvcID:       extSvc.ID,
 		cancel:         cancel,
 		priorityNotify: make(chan []int64, 500),
@@ -201,14 +194,6 @@ func timeIsNilOrZero(t *time.Time) bool {
 		return true
 	}
 	return t.IsZero()
-}
-
-func externalServiceSyncerKey(kind, config string) (string, error) {
-	baseURL, err := extsvc.ExtractBaseURL(kind, config)
-	if err != nil {
-		return "", errors.Wrap(err, "getting normalized URL from service")
-	}
-	return baseURL.String(), nil
 }
 
 // A ChangesetSyncer periodically syncs metadata of changesets
