@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"sync"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 type s3Store struct {
@@ -28,14 +28,25 @@ type s3Store struct {
 
 var _ Store = &s3Store{}
 
-// newS3FromConfig creates a new store backed by AWS Simple Storage Service.
-func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
-	return newS3(config.S3.Bucket, config.S3.TTL, config.ManageBucket)
+type S3Config struct {
+	Region          string
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	SessionToken    string
 }
 
-// newS3 creates a new store backed by AWS Simple Storage Service.
-func newS3(bucket string, ttl time.Duration, manageBucket bool) (Store, error) {
-	sess, err := session.NewSessionWithOptions(awsSessionOptions())
+func (c *S3Config) load(parent *env.BaseConfig) {
+	c.Region = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_REGION", "us-east-1", "The target AWS region.")
+	c.Endpoint = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://minio:9000", "The target AWS endpoint.")
+	c.AccessKeyID = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID", "AKIAIOSFODNN7EXAMPLE", "An AWS access key associated with a user with access to S3.")
+	c.SecretAccessKey = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "An AWS secret key associated with a user with access to S3.")
+	c.SessionToken = parent.GetOptional("PRECISE_CODE_INTEL_UPLOAD_AWS_SESSION_TOKEN", "An optional AWS session token associated with a user with access to S3.")
+}
+
+// newS3FromConfig creates a new store backed by AWS Simple Storage Service.
+func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
+	sess, err := session.NewSessionWithOptions(s3SessionOptions(config.Backend, config.S3))
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +54,7 @@ func newS3(bucket string, ttl time.Duration, manageBucket bool) (Store, error) {
 	s3Client := s3.New(sess)
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{s3manager.NewUploaderWithClient(s3Client)}
-	store := newS3WithClients(api, uploader, bucket, ttl, manageBucket)
-	return store, nil
+	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket), nil
 }
 
 func newS3WithClients(client s3API, uploader s3Uploader, bucket string, ttl time.Duration, manageBucket bool) *s3Store {
@@ -278,47 +288,6 @@ func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []st
 	})
 }
 
-// awsSessionOptions returns the session used to configure the AWS SDK client.
-//
-// Authentication of the client will first prefer environment variables, then will
-// fall back to a credentials file on disk. The following envvars specify an access
-// and secret key, respectively.
-//
-// - AWS_ACCESS_KEY_ID or AWS_ACCESS_KEY
-// - AWS_SECRET_ACCESS_KEY or AWS_SECRET_KEY
-//
-// If these variables are unset, then the client will read the credentails file at
-// the path specified by AWS_SHARED_CREDENTIALS_FILE, or ~/.aws/credentials if not
-// specified. The envvar AWS_PROFILE can be used to specify a non-default profile
-// within the credentails file.
-//
-// To specify a non-default region or endpoint, supply the envvars AWS_REGION and
-// AWS_ENDPOINT, respectively.
-func awsSessionOptions() session.Options {
-	return session.Options{
-		Config: aws.Config{
-			Credentials: credentials.NewCredentials(&credentials.ChainProvider{
-				Providers: []credentials.Provider{
-					&credentials.EnvProvider{},
-					&credentials.SharedCredentialsProvider{},
-				},
-				VerboseErrors: true,
-			}),
-			Endpoint:         awsEnv("AWS_ENDPOINT"),
-			Region:           awsEnv("AWS_REGION"),
-			S3ForcePathStyle: aws.Bool(os.Getenv("AWS_S3_FORCE_PATH_STYLE") != ""),
-		},
-	}
-}
-
-func awsEnv(name string) *string {
-	if value := os.Getenv(name); value != "" {
-		return aws.String(value)
-	}
-
-	return nil
-}
-
 type countingReader struct {
 	r io.Reader
 	n int
@@ -328,4 +297,24 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 	n, err = r.r.Read(p)
 	r.n += n
 	return n, err
+}
+
+func s3SessionOptions(backend string, config S3Config) session.Options {
+	creds := credentials.NewStaticCredentials(
+		config.AccessKeyID,
+		config.SecretAccessKey,
+		config.SessionToken,
+	)
+
+	awsConfig := aws.Config{
+		Credentials: creds,
+		Region:      aws.String(config.Region),
+	}
+
+	if backend == "minio" {
+		awsConfig.Endpoint = aws.String(config.Endpoint)
+		awsConfig.S3ForcePathStyle = aws.Bool(true)
+	}
+
+	return session.Options{Config: awsConfig}
 }

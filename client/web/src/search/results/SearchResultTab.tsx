@@ -47,16 +47,12 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     if (parsedQuery.type === 'success') {
         // Parse any `type:` filter that exists in a query so
         // we can check whether this tab should be active.
-        for (const member of parsedQuery.token.members) {
-            if (
-                member.token.type === 'filter' &&
-                member.token.filterType.token.value === 'type' &&
-                member.token.filterValue
-            ) {
+        for (const token of parsedQuery.token.members) {
+            if (token.type === 'filter' && token.filterType.value === 'type' && token.filterValue) {
                 typeInQuery =
-                    member.token.filterValue.token.type === 'literal'
-                        ? (member.token.filterValue.token.value as SearchType)
-                        : (member.token.filterValue.token.quotedValue as SearchType)
+                    token.filterValue.type === 'literal'
+                        ? (token.filterValue.value as SearchType)
+                        : (token.filterValue.quotedValue as SearchType)
             }
         }
     }

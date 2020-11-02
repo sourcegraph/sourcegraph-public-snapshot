@@ -2,7 +2,7 @@
 
 <style>.markdown-body h2 { margin-top: 50px; }</style>
 
-[Sourcegraph campaigns](../index.md) use [campaign specs](../index.md#campaign-specs) to define campaigns.
+[Sourcegraph campaigns](../index.md) use [campaign specs](../explanations/introduction_to_campaigns.md#campaign-spec) to define campaigns.
 
 This page is a reference guide to the campaign spec YAML format in which campaign specs are defined. If you're new to YAML and want a short introduction, see "[Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/)."
 
@@ -57,7 +57,7 @@ on:
 
 A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
 
-See "[Code search](../code_search/index.md)" for more information on Sourcegraph search queries.
+See "[Code search](../../code_search/index.md)" for more information on Sourcegraph search queries.
 
 ### Examples
 
@@ -124,6 +124,10 @@ steps:
 
 The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> <code>steps.run</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+</aside>
+
 ## [`steps.container`](#steps-run)
 
 The Docker image used to launch the Docker container in which the shell command is run.
@@ -135,6 +139,51 @@ It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src
 ## [`steps.env`](#steps-env)
 
 Environment variables to set in the environment when running this command.
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> The value for each entry in <code>steps.env</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+</aside>
+
+## [`steps.files`](#steps-env)
+
+> NOTE: This feature is only available in Sourcegraph 3.22 and later.
+
+Files to create on the host machine and mount into the container when running `steps.run`.
+
+`steps.files` is an object, where the key is the name of the file _inside the container_ and the value is the content of the file.
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> The value for each entry in <code>steps.files</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+</aside>
+
+### Examples
+
+```yaml
+steps:
+  - run: cat /tmp/my-temp-file.txt >> README.md
+    container: alpine:3
+    files:
+      /tmp/my-temp-file.txt: Hello world!
+```
+
+```yaml
+steps:
+  - run: cat /tmp/global-gitignore >> .gitignore
+    container: alpine:3
+    files:
+      /tmp/global-gitignore: |
+        # Vim
+        *.swp
+        # JetBrains/IntelliJ
+        .idea
+        # Emacs
+        *~
+        \#*\#
+        /.emacs.desktop
+        /.emacs.desktop.lock
+        .\#*
+        .dir-locals.el
+```
 
 ## [`importChangesets`](#importchangesets)
 
