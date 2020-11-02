@@ -44,8 +44,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 	repo := testRepo(t, reposStore, extsvc.KindGitHub)
 	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
 
-	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
+	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
@@ -431,6 +432,39 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if have[0].ID != changesets[cap(changesets)-1].ID {
 				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], changesets[cap(changesets)-1])
+			}
+		}
+
+		{
+			gitlabMR := &gitlab.MergeRequest{
+				ID:        gitlab.ID(1),
+				Title:     "Fix a bunch of bugs",
+				CreatedAt: gitlab.Time{Time: clock.now()},
+				UpdatedAt: gitlab.Time{Time: clock.now()},
+			}
+			gitlabChangeset := &cmpgn.Changeset{
+				Metadata:            gitlabMR,
+				RepoID:              gitlabRepo.ID,
+				ExternalServiceType: extsvc.TypeGitLab,
+			}
+			if err := s.CreateChangeset(ctx, gitlabChangeset); err != nil {
+				t.Fatal(err)
+			}
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: "https://gitlab.com/"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := 1
+			if len(have) != want {
+				t.Fatalf("have %d changesets; want %d", len(have), want)
+			}
+
+			if have[0].ID != gitlabChangeset.ID {
+				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], gitlabChangeset)
+			}
+			if err := s.DeleteChangeset(ctx, gitlabChangeset.ID); err != nil {
+				t.Fatal(err)
 			}
 		}
 
@@ -1017,6 +1051,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		UpdatedAt:    clock.now(),
 		HeadRefName:  "campaigns/test",
 	}
+	gitlabMR := &gitlab.MergeRequest{
+		ID:        gitlab.ID(1),
+		Title:     "Fix a bunch of bugs",
+		CreatedAt: gitlab.Time{Time: clock.now()},
+		UpdatedAt: gitlab.Time{Time: clock.now()},
+	}
 	issueComment := &github.IssueComment{
 		DatabaseID: 443827703,
 		Author: github.Actor{
@@ -1033,8 +1073,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	repo := testRepo(t, reposStore, extsvc.KindGitHub)
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	githubRepo := testRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
+	if err := reposStore.InsertRepos(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1043,7 +1084,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	for i := 0; i < cap(changesets); i++ {
 		ch := &cmpgn.Changeset{
-			RepoID:              repo.ID,
+			RepoID:              githubRepo.ID,
 			CreatedAt:           clock.now(),
 			UpdatedAt:           clock.now(),
 			Metadata:            githubPR,
@@ -1057,6 +1098,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
 			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
+		}
+
+		if i == cap(changesets)-1 {
+			ch.Metadata = gitlabMR
+			ch.ExternalServiceType = extsvc.TypeGitLab
+			ch.RepoID = gitlabRepo.ID
 		}
 
 		if err := s.CreateChangeset(ctx, ch); err != nil {
@@ -1103,7 +1150,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		t.Fatal(err)
 	}
 
-	checkChangesetIDs := func(t *testing.T, hs []cmpgn.ChangesetSyncData, want []int64) {
+	checkChangesetIDs := func(t *testing.T, hs []*cmpgn.ChangesetSyncData, want []int64) {
 		t.Helper()
 
 		haveIDs := []int64{}
@@ -1120,27 +1167,45 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []cmpgn.ChangesetSyncData{
+		want := []*cmpgn.ChangesetSyncData{
 			{
 				ChangesetID:           changesets[0].ID,
 				UpdatedAt:             clock.now(),
 				LatestEvent:           clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
+				RepoExternalServiceID: "https://github.com/",
 			},
 			{
 				ChangesetID:           changesets[1].ID,
 				UpdatedAt:             clock.now(),
 				LatestEvent:           clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
+				RepoExternalServiceID: "https://github.com/",
 			},
 			{
 				// No events
 				ChangesetID:           changesets[2].ID,
 				UpdatedAt:             clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
+				RepoExternalServiceID: "https://gitlab.com/",
+			},
+		}
+		if diff := cmp.Diff(want, hs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("only for specific external service", func(t *testing.T) {
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: "https://gitlab.com/"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*cmpgn.ChangesetSyncData{
+			{
+				ChangesetID:           changesets[2].ID,
+				UpdatedAt:             clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				RepoExternalServiceID: "https://gitlab.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {

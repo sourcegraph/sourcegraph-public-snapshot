@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -83,7 +84,7 @@ func main() {
 	)
 
 	go debugserver.Start()
-	goroutine.MonitorBackgroundRoutines(server, uploadResetter, commitUpdater, worker)
+	goroutine.MonitorBackgroundRoutines(context.Background(), server, uploadResetter, commitUpdater, worker)
 }
 
 func mustInitializeStore() store.Store {

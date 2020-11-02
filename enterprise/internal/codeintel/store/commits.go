@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // scanUploadMeta scans upload metadata grouped by commit from the return value of `*store.query`.
@@ -47,9 +48,9 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
-		WHERE repository_id = %s AND commit = %s AND NOT overwritten
+		WHERE repository_id = %s AND (commit = %s OR commit_bytea = %s) AND NOT overwritten
 		LIMIT 1
-	`, repositoryID, commit)))
+	`, repositoryID, commit, dbutil.CommitBytea(commit))))
 
 	return count > 0, err
 }
@@ -139,6 +140,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		"lsif_nearest_uploads",
 		"repository_id",
 		"commit",
+		"commit_bytea",
 		"upload_id",
 		"distance",
 		"ancestor_visible",
@@ -150,6 +152,7 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 				ctx,
 				repositoryID,
 				commit,
+				dbutil.CommitBytea(commit),
 				uploadMeta.UploadID,
 				uploadMeta.Distance,
 				uploadMeta.AncestorVisible,

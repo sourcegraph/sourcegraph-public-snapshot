@@ -307,19 +307,21 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 type ListChangesetSyncDataOpts struct {
 	// Return only the supplied changesets. If empty, all changesets are returned
 	ChangesetIDs []int64
+
+	ExternalServiceID string
 }
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open campaign.
-func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-	q := listChangesetSyncData(opts)
-	results := make([]campaigns.ChangesetSyncData, 0)
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+	q := listChangesetSyncDataQuery(opts)
+	results := make([]*campaigns.ChangesetSyncData, 0)
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		var h campaigns.ChangesetSyncData
 		if err = scanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
-		results = append(results, h)
+		results = append(results, &h)
 		return err
 	})
 	if err != nil {
@@ -338,22 +340,23 @@ func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
 	)
 }
 
-func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
-	fmtString := `
- SELECT changesets.id,
-        changesets.updated_at,
-        max(ce.updated_at) AS latest_event,
-        changesets.external_updated_at,
-        r.external_service_id
- FROM changesets
- LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
- JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
- JOIN repo r ON changesets.repo_id = r.id
- WHERE %s
- GROUP BY changesets.id, r.id
- ORDER BY changesets.id ASC
+const listChangesetSyncDataQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:ListChangesetSyncData
+SELECT changesets.id,
+	changesets.updated_at,
+	max(ce.updated_at) AS latest_event,
+	changesets.external_updated_at,
+	r.external_service_id
+FROM changesets
+LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
+JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
+JOIN repo r ON changesets.repo_id = r.id
+WHERE %s
+GROUP BY changesets.id, r.id
+ORDER BY changesets.id ASC
 `
 
+func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("campaigns.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
@@ -370,7 +373,11 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
-	return sqlf.Sprintf(fmtString, sqlf.Join(preds, "\n AND"))
+	if opts.ExternalServiceID != "" {
+		preds = append(preds, sqlf.Sprintf("r.external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"))
 }
 
 // ListChangesetsOpts captures the query options needed for
@@ -389,6 +396,7 @@ type ListChangesetsOpts struct {
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
 	OnlySynced           bool
+	ExternalServiceID    string
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -474,6 +482,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 	if opts.OnlySynced {
 		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
+	}
+
+	if opts.ExternalServiceID != "" {
+		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
 	}
 
 	return sqlf.Sprintf(

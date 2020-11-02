@@ -580,7 +580,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				ev := honey.Event("gitserver-exec")
-				ev.SampleRate = honeySampleRate
+				ev.SampleRate = honeySampleRate(cmd)
 				ev.AddField("repo", req.Repo)
 				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
@@ -1088,7 +1088,22 @@ func init() {
 // scaling up of the indexed search cluster. Will require more investigation,
 // but we should probably segment user request path traffic vs internal batch
 // traffic.
-const honeySampleRate = 16
+//
+// 2020-11-02 Dynamically sample. Again hitting very high usage. Same root
+// cause as before, scaling out indexed search cluster. We update our sampling
+// to isntead be dynamic, since "rev-parse" is 12 times more likely than the
+// next most common command.
+func honeySampleRate(cmd string) uint {
+	switch cmd {
+	case "rev-parse":
+		// 1 in 128. In practice 12 times more likely than our next most
+		// common command.
+		return 128
+	default:
+		// 1 in 16
+		return 16
+	}
+}
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
