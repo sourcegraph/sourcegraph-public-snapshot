@@ -62,7 +62,7 @@ const SettingsSchemaJSON = `{
         "showOnboardingTour": {
           "description": "Enables the onboarding tour.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": { "pointer": true }
         },
         "showEnterpriseHomePanels": {
