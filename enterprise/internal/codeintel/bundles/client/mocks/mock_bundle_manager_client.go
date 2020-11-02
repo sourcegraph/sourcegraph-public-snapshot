@@ -71,7 +71,7 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 			},
 		},
 		SendUploadFunc: &BundleManagerClientSendUploadFunc{
-			defaultHook: func(context.Context, int, io.Reader) (int, error) {
+			defaultHook: func(context.Context, int, io.Reader) (int64, error) {
 				return 0, nil
 			},
 		},
@@ -81,7 +81,7 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 			},
 		},
 		StitchPartsFunc: &BundleManagerClientStitchPartsFunc{
-			defaultHook: func(context.Context, int) (int, error) {
+			defaultHook: func(context.Context, int, int) (int64, error) {
 				return 0, nil
 			},
 		},
@@ -667,15 +667,15 @@ func (c BundleManagerClientSendDBFuncCall) Results() []interface{} {
 // SendUpload method of the parent MockBundleManagerClient instance is
 // invoked.
 type BundleManagerClientSendUploadFunc struct {
-	defaultHook func(context.Context, int, io.Reader) (int, error)
-	hooks       []func(context.Context, int, io.Reader) (int, error)
+	defaultHook func(context.Context, int, io.Reader) (int64, error)
+	hooks       []func(context.Context, int, io.Reader) (int64, error)
 	history     []BundleManagerClientSendUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // SendUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) SendUpload(v0 context.Context, v1 int, v2 io.Reader) (int, error) {
+func (m *MockBundleManagerClient) SendUpload(v0 context.Context, v1 int, v2 io.Reader) (int64, error) {
 	r0, r1 := m.SendUploadFunc.nextHook()(v0, v1, v2)
 	m.SendUploadFunc.appendCall(BundleManagerClientSendUploadFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -684,7 +684,7 @@ func (m *MockBundleManagerClient) SendUpload(v0 context.Context, v1 int, v2 io.R
 // SetDefaultHook sets function that is called when the SendUpload method of
 // the parent MockBundleManagerClient instance is invoked and the hook queue
 // is empty.
-func (f *BundleManagerClientSendUploadFunc) SetDefaultHook(hook func(context.Context, int, io.Reader) (int, error)) {
+func (f *BundleManagerClientSendUploadFunc) SetDefaultHook(hook func(context.Context, int, io.Reader) (int64, error)) {
 	f.defaultHook = hook
 }
 
@@ -692,7 +692,7 @@ func (f *BundleManagerClientSendUploadFunc) SetDefaultHook(hook func(context.Con
 // SendUpload method of the parent MockBundleManagerClient instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *BundleManagerClientSendUploadFunc) PushHook(hook func(context.Context, int, io.Reader) (int, error)) {
+func (f *BundleManagerClientSendUploadFunc) PushHook(hook func(context.Context, int, io.Reader) (int64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -700,21 +700,21 @@ func (f *BundleManagerClientSendUploadFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientSendUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, io.Reader) (int, error) {
+func (f *BundleManagerClientSendUploadFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, io.Reader) (int64, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientSendUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, io.Reader) (int, error) {
+func (f *BundleManagerClientSendUploadFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context, int, io.Reader) (int64, error) {
 		return r0, r1
 	})
 }
 
-func (f *BundleManagerClientSendUploadFunc) nextHook() func(context.Context, int, io.Reader) (int, error) {
+func (f *BundleManagerClientSendUploadFunc) nextHook() func(context.Context, int, io.Reader) (int64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -759,7 +759,7 @@ type BundleManagerClientSendUploadFuncCall struct {
 	Arg2 io.Reader
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
+	Result0 int64
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -896,24 +896,24 @@ func (c BundleManagerClientSendUploadPartFuncCall) Results() []interface{} {
 // StitchParts method of the parent MockBundleManagerClient instance is
 // invoked.
 type BundleManagerClientStitchPartsFunc struct {
-	defaultHook func(context.Context, int) (int, error)
-	hooks       []func(context.Context, int) (int, error)
+	defaultHook func(context.Context, int, int) (int64, error)
+	hooks       []func(context.Context, int, int) (int64, error)
 	history     []BundleManagerClientStitchPartsFuncCall
 	mutex       sync.Mutex
 }
 
 // StitchParts delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) StitchParts(v0 context.Context, v1 int) (int, error) {
-	r0, r1 := m.StitchPartsFunc.nextHook()(v0, v1)
-	m.StitchPartsFunc.appendCall(BundleManagerClientStitchPartsFuncCall{v0, v1, r0, r1})
+func (m *MockBundleManagerClient) StitchParts(v0 context.Context, v1 int, v2 int) (int64, error) {
+	r0, r1 := m.StitchPartsFunc.nextHook()(v0, v1, v2)
+	m.StitchPartsFunc.appendCall(BundleManagerClientStitchPartsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the StitchParts method
 // of the parent MockBundleManagerClient instance is invoked and the hook
 // queue is empty.
-func (f *BundleManagerClientStitchPartsFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
+func (f *BundleManagerClientStitchPartsFunc) SetDefaultHook(hook func(context.Context, int, int) (int64, error)) {
 	f.defaultHook = hook
 }
 
@@ -921,7 +921,7 @@ func (f *BundleManagerClientStitchPartsFunc) SetDefaultHook(hook func(context.Co
 // StitchParts method of the parent MockBundleManagerClient instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *BundleManagerClientStitchPartsFunc) PushHook(hook func(context.Context, int) (int, error)) {
+func (f *BundleManagerClientStitchPartsFunc) PushHook(hook func(context.Context, int, int) (int64, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -929,21 +929,21 @@ func (f *BundleManagerClientStitchPartsFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientStitchPartsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (int, error) {
+func (f *BundleManagerClientStitchPartsFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int) (int64, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientStitchPartsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int) (int, error) {
+func (f *BundleManagerClientStitchPartsFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context, int, int) (int64, error) {
 		return r0, r1
 	})
 }
 
-func (f *BundleManagerClientStitchPartsFunc) nextHook() func(context.Context, int) (int, error) {
+func (f *BundleManagerClientStitchPartsFunc) nextHook() func(context.Context, int, int) (int64, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -983,9 +983,12 @@ type BundleManagerClientStitchPartsFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
+	Result0 int64
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -994,7 +997,7 @@ type BundleManagerClientStitchPartsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BundleManagerClientStitchPartsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

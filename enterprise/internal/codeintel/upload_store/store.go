@@ -30,8 +30,9 @@ type Store interface {
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config *Config) (Store, error){
-	"S3":  newS3FromConfig,
-	"GCS": newGCSFromConfig,
+	"s3":    newS3FromConfig,
+	"minio": newS3FromConfig,
+	"gcs":   newGCSFromConfig,
 }
 
 // Create initialize a new store from the given configuration.
