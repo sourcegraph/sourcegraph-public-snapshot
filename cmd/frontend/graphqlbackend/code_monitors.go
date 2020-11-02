@@ -266,9 +266,10 @@ type monitorActionEventConnection struct {
 }
 
 func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]MonitorEventResolver, error) {
+	notImplemented := "message not implemented"
 	return []MonitorEventResolver{
-			&monitorEvent{id: "314", status: "SUCCESS", message: "", timeStamp: DateTime{time.Now()}},
-			&monitorEvent{id: "315", status: "ERROR", message: "message not implemented", timeStamp: DateTime{time.Now()}},
+			&monitorEvent{id: "314", status: "SUCCESS", timestamp: DateTime{time.Now()}},
+			&monitorEvent{id: "315", status: "ERROR", message: &notImplemented, timestamp: DateTime{time.Now()}},
 		},
 		nil
 }
@@ -292,15 +293,15 @@ type ListEventsArgs struct {
 type MonitorEventResolver interface {
 	ID() graphql.ID
 	Status() string
-	Message() string
-	TimeStamp() DateTime
+	Message() *string
+	Timestamp() DateTime
 }
 
 type monitorEvent struct {
 	id        graphql.ID
 	status    string
-	message   string
-	timeStamp DateTime
+	message   *string
+	timestamp DateTime
 }
 
 func (m *monitorEvent) ID() graphql.ID {
@@ -311,10 +312,10 @@ func (m *monitorEvent) Status() string {
 	return m.status
 }
 
-func (m *monitorEvent) Message() string {
+func (m *monitorEvent) Message() *string {
 	return m.message
 }
 
-func (m *monitorEvent) TimeStamp() DateTime {
-	return m.timeStamp
+func (m *monitorEvent) Timestamp() DateTime {
+	return m.timestamp
 }

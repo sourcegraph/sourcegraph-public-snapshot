@@ -3036,11 +3036,11 @@ type MonitorEvent implements Node {
     """
     A message with details regarding the status of the event.
     """
-    message: String!
+    message: String
     """
     The time and date of the event.
     """
-    timeStamp: DateTime!
+    timestamp: DateTime!
 }
 
 """
