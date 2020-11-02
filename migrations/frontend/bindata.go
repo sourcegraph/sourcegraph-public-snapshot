@@ -108,6 +108,8 @@
 // 1528395736_add_index_to_repo_created_at.up.sql (151B)
 // 1528395737_compressed_commits.down.sql (76B)
 // 1528395737_compressed_commits.up.sql (339B)
+// 1528395738_nullable_commit.down.sql (255B)
+// 1528395738_nullable_commit.up.sql (259B)
 
 package migrations
 
@@ -2336,6 +2338,46 @@ func _1528395737_compressed_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395738_nullable_commitDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x08\x76\x0d\x51\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\x52\xb0\x55\x48\xcd\x4b\xce\x4f\x49\xd5\x80\x08\xc4\x27\x55\x96\xa4\x26\xea\x28\xa8\x67\xa4\x56\xa8\x6b\x2a\x84\x7b\xb8\x06\xb9\x22\x14\x7b\x06\x2b\xf8\x85\xfa\xf8\x58\x73\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xe0\xb0\x03\xa2\xc0\xd9\xdf\x27\xd4\xd7\x0f\xa1\x1f\x64\xb3\x9f\x7f\x08\x59\x86\x20\xbb\x4f\xc1\x25\xc8\x3f\x00\xc9\x24\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xc0\x86\xc7\xa8\xff\x00\x00\x00")
+
+func _1528395738_nullable_commitDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_nullable_commitDownSql,
+		"1528395738_nullable_commit.down.sql",
+	)
+}
+
+func _1528395738_nullable_commitDownSql() (*asset, error) {
+	bytes, err := _1528395738_nullable_commitDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_nullable_commit.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcb, 0x3, 0xac, 0x5, 0xdd, 0xc0, 0x1d, 0xe0, 0x58, 0xfc, 0xcb, 0x9d, 0x51, 0x53, 0xd5, 0x3b, 0x81, 0x47, 0x20, 0x6, 0xb5, 0x88, 0x35, 0x81, 0xc6, 0xa5, 0xfe, 0xd0, 0x77, 0x19, 0x5f, 0x62}}
+	return a, nil
+}
+
+var __1528395738_nullable_commitUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x08\x76\x0d\x51\x48\xce\xcf\xcd\xcd\x2c\x89\x4f\xaa\x2c\x49\x4d\x54\xb0\x55\x48\x49\x4d\xce\x4f\x49\xd5\x50\x82\x08\x2b\xe9\x28\xa8\x67\xa4\x56\xa8\x6b\x2a\x84\x7b\xb8\x06\xb9\xa2\x2a\xf6\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\xc1\x61\x0f\x44\x81\xb3\xbf\x4f\xa8\xaf\x9f\x02\xcc\x68\x05\x97\x20\xff\x00\x05\x3f\xff\x10\xb2\x4c\x41\x71\x09\xc8\x1f\x08\x83\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xf8\xf4\xfd\x3c\x03\x01\x00\x00")
+
+func _1528395738_nullable_commitUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_nullable_commitUpSql,
+		"1528395738_nullable_commit.up.sql",
+	)
+}
+
+func _1528395738_nullable_commitUpSql() (*asset, error) {
+	bytes, err := _1528395738_nullable_commitUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_nullable_commit.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc5, 0xd, 0xfe, 0x89, 0xad, 0xcf, 0xe9, 0x1d, 0x2b, 0x3c, 0xa7, 0xed, 0x45, 0x53, 0x2, 0xf4, 0xec, 0xe3, 0xc, 0x8f, 0x75, 0x27, 0xbe, 0xea, 0xba, 0x31, 0xd1, 0xf9, 0x22, 0x50, 0x71, 0xd9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2535,6 +2577,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395736_add_index_to_repo_created_at.up.sql":                               _1528395736_add_index_to_repo_created_atUpSql,
 	"1528395737_compressed_commits.down.sql":                                       _1528395737_compressed_commitsDownSql,
 	"1528395737_compressed_commits.up.sql":                                         _1528395737_compressed_commitsUpSql,
+	"1528395738_nullable_commit.down.sql":                                          _1528395738_nullable_commitDownSql,
+	"1528395738_nullable_commit.up.sql":                                            _1528395738_nullable_commitUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2689,6 +2733,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395736_add_index_to_repo_created_at.up.sql":                               {_1528395736_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
 	"1528395737_compressed_commits.down.sql":                                       {_1528395737_compressed_commitsDownSql, map[string]*bintree{}},
 	"1528395737_compressed_commits.up.sql":                                         {_1528395737_compressed_commitsUpSql, map[string]*bintree{}},
+	"1528395738_nullable_commit.down.sql":                                          {_1528395738_nullable_commitDownSql, map[string]*bintree{}},
+	"1528395738_nullable_commit.up.sql":                                            {_1528395738_nullable_commitUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

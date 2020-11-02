@@ -48,9 +48,9 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
-		WHERE repository_id = %s AND (commit = %s OR commit_bytea = %s) AND NOT overwritten
+		WHERE repository_id = %s AND commit_bytea = %s AND NOT overwritten
 		LIMIT 1
-	`, repositoryID, commit, dbutil.CommitBytea(commit))))
+	`, repositoryID, dbutil.CommitBytea(commit))))
 
 	return count > 0, err
 }
@@ -139,7 +139,6 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		s.Store.Handle().DB(),
 		"lsif_nearest_uploads",
 		"repository_id",
-		"commit",
 		"commit_bytea",
 		"upload_id",
 		"distance",
@@ -151,7 +150,6 @@ func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 			if err := nearestUploadsInserter.Insert(
 				ctx,
 				repositoryID,
-				commit,
 				dbutil.CommitBytea(commit),
 				uploadMeta.UploadID,
 				uploadMeta.Distance,
