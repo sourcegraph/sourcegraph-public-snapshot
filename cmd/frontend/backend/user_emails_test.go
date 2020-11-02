@@ -145,13 +145,13 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		To:       []string{"a@example.com"},
 		Template: verifyEmailTemplates,
 		Data: struct {
-			Email       string
-			URL         string
-			ExternalURL string
+			Email string
+			URL   string
+			Host  string
 		}{
-			Email:       "a@example.com",
-			URL:         "http://example.com/-/verify-email?code=c&email=a%40example.com",
-			ExternalURL: "http://example.com",
+			Email: "a@example.com",
+			URL:   "http://example.com/-/verify-email?code=c&email=a%40example.com",
+			Host:  "example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
@@ -187,15 +187,15 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		To:       []string{"a@example.com"},
 		Template: updateAccountEmailTemplate,
 		Data: struct {
-			Email       string
-			Change      string
-			Username    string
-			ExternalURL string
+			Email    string
+			Change   string
+			Username string
+			Host     string
 		}{
-			Email:       "a@example.com",
-			Change:      "updated password",
-			Username:    "Foo",
-			ExternalURL: "http://example.com",
+			Email:    "a@example.com",
+			Change:   "updated password",
+			Username: "Foo",
+			Host:     "example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
