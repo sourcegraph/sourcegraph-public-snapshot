@@ -67,7 +67,10 @@ func main() {
 		UnreportedIndexMaxAge: cleanupInterval * time.Duration(maximumMissedHeartbeats),
 		DeathThreshold:        cleanupInterval * time.Duration(maximumMissedHeartbeats),
 	})
-	server := server.New(indexManager)
+	server, err := server.New(indexManager)
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
 	indexResetter := resetter.NewIndexResetter(s, resetInterval, resetterMetrics)
 
 	indexabilityUpdater := indexabilityupdater.NewUpdater(
@@ -102,6 +105,7 @@ func main() {
 		indexResetter,
 		indexabilityUpdater,
 		scheduler,
+		goroutine.NoopStop(debugserver.NewServerRoutine()),
 	}
 
 	if !disableJanitor {
@@ -110,7 +114,6 @@ func main() {
 		log15.Warn("Janitor process is disabled.")
 	}
 
-	go debugserver.Start()
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
