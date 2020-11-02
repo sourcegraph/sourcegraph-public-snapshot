@@ -408,7 +408,7 @@ func (e *ExternalService) URN() string {
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
 
-// Update updates ExternalService r with the fields from the given newer ExternalService n,
+// Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
 func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 	if e.ID != n.ID {
@@ -439,7 +439,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 }
 
 // Configuration returns the external service config.
-func (e ExternalService) Configuration() (cfg interface{}, _ error) {
+func (e *ExternalService) Configuration() (cfg interface{}, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 
