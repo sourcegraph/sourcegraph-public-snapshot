@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-const port = ":3192"
+const addr = ":3192"
 
 func main() {
 	config := &Config{}
@@ -40,7 +40,7 @@ func main() {
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		server, err := httpserver.NewFromAddr(port, httpserver.NewHandler(nil), httpserver.Options{})
+		server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
 		if err != nil {
 			log.Fatalf("Failed to create listener: %s", err)
 		}

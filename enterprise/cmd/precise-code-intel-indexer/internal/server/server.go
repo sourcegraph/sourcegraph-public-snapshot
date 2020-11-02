@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 )
 
-const port = ":3189"
+const addr = ":3189"
 
 type Server struct {
 	indexManager indexmanager.Manager
@@ -17,5 +17,5 @@ func New(indexManager indexmanager.Manager) (goroutine.BackgroundRoutine, error)
 		indexManager: indexManager,
 	}
 
-	return httpserver.NewFromAddr(port, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
+	return httpserver.NewFromAddr(addr, httpserver.NewHandler(server.setupRoutes), httpserver.Options{})
 }
