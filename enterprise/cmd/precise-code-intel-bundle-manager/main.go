@@ -26,6 +26,8 @@ func main() {
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
+	
+	sqliteutil.MustRegisterSqlite3WithPcre()i
 
 	if bundleDir == "" {
 		log.Fatalf("invalid value %q for %s: no value supplied", bundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
