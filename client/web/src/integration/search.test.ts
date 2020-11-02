@@ -99,6 +99,11 @@ describe('Search', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const waitAndFocusInput = async () => {
+        await driver.page.waitForSelector('.monaco-editor .view-lines')
+        await driver.page.click('.monaco-editor .view-lines')
+    }
+
     describe('Interactive search mode', () => {
         const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
             ViewerSettings: () => ({
@@ -398,6 +403,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
+            await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
@@ -423,6 +429,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
+            await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
@@ -433,6 +440,7 @@ describe('Search', () => {
                 ...commonSearchGraphQLResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
