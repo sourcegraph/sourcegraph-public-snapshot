@@ -2842,7 +2842,11 @@ type SavedSearch implements Node {
 """
 CODE MONITORS
 """
-type MonitorConnection  {
+
+"""
+A list of monitors
+"""
+type MonitorConnection {
     """
     A list of monitors.
     """
@@ -2859,42 +2863,75 @@ type MonitorConnection  {
     pageInfo: PageInfo!
 }
 
+"""
+A code monitor with one trigger and possibly many actions.
+"""
 type Monitor implements Node {
+    """
+    The code monitor's unique ID.
+    """
     id: ID!
+    """
+    The user who created the code monitor.
+    """
     createdBy: User!
+    """
+    The time at which the code monitor was created.
+    """
     createdAt: DateTime!
+    """
+    A meaningful description of the code monitor.
+    """
     description: String!
+    """
+    Owners can edit the code monitor.
+    """
     owner: Owner!
-    trigger: Trigger
+    """
+    Triggers trigger actions. There can only be one trigger per monitor.
+    """
+    trigger: MonitorTrigger
+    """
+    One or more actions that are triggered by the trigger.
+    """
     actions(
         """
-        Returns the first n actions from the list
+        Returns the first n actions from the list.
         """
         first: Int = 50
         """
         Opaque pagination cursor.
         """
         after: String
-    ): ActionConnection!
+    ): MonitorActionConnection!
 }
 
+"""
+An owner can either be an user or an organization.
+"""
 union Owner = User | Org
 
+"""
+A query that can serve as a trigger for code monitors.
+"""
 type MonitorQuery implements Node {
     id: ID!
     query: String!
 }
 
 """
-Supported triggers for code monitors
+Supported triggers for code monitors.
 """
-union Trigger = MonitorQuery
+union MonitorTrigger = MonitorQuery
 
-type ActionConnection  {
+"""
+A list of code monitors.
+"""
+type MonitorActionConnection {
     """
     A list of actions.
     """
-    nodes: [Action!]!
+    nodes: [MonitorAction!]!
 
     """
     The total number of actions in the connection.
@@ -2908,28 +2945,48 @@ type ActionConnection  {
 }
 
 """
-Supported actions for code monitors
+Supported actions for code monitors.
 """
-union Action = MonitorEmail
+union MonitorAction = MonitorEmail
 
+"""
+Email is one of the supported actions of code monitors.
+"""
 type MonitorEmail implements Node {
+    """
+    The unique id of an email action.
+    """
     id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
     enabled: Boolean!
+    """
+    The priority of the email action.
+    """
     priority: MonitorEmailPriority!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
     header: String!
+    """
+    The recipients of the email.
+    """
     recipient: MonitorEmailRecipient!
 }
-
+    
+"""
+The priority of an email action.
+"""
 enum MonitorEmailPriority {
     NORMAL
     CRITICAL
 }
 
 """
-Supported types of recipients for email actions
+Supported types of recipients for email actions.
 """
 union MonitorEmailRecipient = User
-
 
 """
 A search query description.
@@ -5659,11 +5716,11 @@ type User implements Node & SettingsSubject & Namespace {
     ): CampaignConnection!
 
     """
-    A list of monitors owned by the user or her organization
+    A list of monitors owned by the user or her organization.
     """
     monitors(
         """
-        Returns the first n monitors from the list
+        Returns the first n monitors from the list.
         """
         first: Int = 50
         """
