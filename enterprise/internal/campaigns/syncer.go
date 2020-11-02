@@ -30,8 +30,8 @@ type SyncRegistry struct {
 	priorityNotify chan []int64
 
 	mu sync.Mutex
-	// key is normalised code host url, also called external_service_id on the repo table
-	syncers map[string]*ChangesetSyncer
+	// key is the external service id
+	syncers map[int64]*ChangesetSyncer
 }
 
 type RepoStore interface {
@@ -48,7 +48,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 		RepoStore:      repoStore,
 		HTTPFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
-		syncers:        make(map[string]*ChangesetSyncer),
+		syncers:        make(map[int64]*ChangesetSyncer),
 	}
 
 	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
@@ -74,17 +74,17 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 		return
 	}
 
-	normalised, err := externalServiceSyncerKey(extSvc.Kind, extSvc.Config)
-	if err != nil {
-		log15.Error(err.Error())
-		return
-	}
-
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.syncers[normalised]; ok {
+	if _, ok := s.syncers[extSvc.ID]; ok {
 		// Already added
+		return
+	}
+
+	baseURL, err := extsvc.ExtractBaseURL(extSvc.Kind, extSvc.Config)
+	if err != nil {
+		log15.Error("getting normalized URL from service", err)
 		return
 	}
 
@@ -102,12 +102,13 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 		SyncStore:      s.SyncStore,
 		ReposStore:     s.RepoStore,
 		source:         source,
-		codeHostURL:    normalised,
+		codeHostURL:    baseURL.String(),
+		extSvcID:       extSvc.ID,
 		cancel:         cancel,
 		priorityNotify: make(chan []int64, 500),
 	}
 
-	s.syncers[normalised] = syncer
+	s.syncers[extSvc.ID] = syncer
 
 	go syncer.Run(ctx)
 }
@@ -131,18 +132,18 @@ func (s *SyncRegistry) handlePriorityItems() {
 				continue
 			}
 
-			// Group changesets by code host
-			changesetByHost := make(map[string][]int64)
+			// Group changesets by external service
+			changesetByService := make(map[int64][]int64)
 			for _, d := range syncData {
-				changesetByHost[d.RepoExternalServiceID] = append(changesetByHost[d.RepoExternalServiceID], d.ChangesetID)
+				changesetByService[d.RepoExternalServiceID] = append(changesetByService[d.RepoExternalServiceID], d.ChangesetID)
 			}
 
 			// Anonymous func so we can use defer
 			func() {
 				s.mu.Lock()
 				defer s.mu.Unlock()
-				for host, changesets := range changesetByHost {
-					syncer, ok := s.syncers[host]
+				for svc, changesets := range changesetByService {
+					syncer, ok := s.syncers[svc]
 					if !ok {
 						continue
 					}
@@ -172,14 +173,8 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	normalised, err := externalServiceSyncerKey(es.Kind, es.Config)
-	if err != nil {
-		log15.Error(err.Error())
-		return
-	}
-
 	s.mu.Lock()
-	syncer, exists := s.syncers[normalised]
+	syncer, exists := s.syncers[es.ID]
 	s.mu.Unlock()
 
 	if timeIsNilOrZero(es.DeletedAt) && !exists {
@@ -189,7 +184,7 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if es.DeletedAt != nil && exists {
-		delete(s.syncers, normalised)
+		delete(s.syncers, es.ID)
 		syncer.cancel()
 	}
 }
@@ -201,14 +196,6 @@ func timeIsNilOrZero(t *time.Time) bool {
 	return t.IsZero()
 }
 
-func externalServiceSyncerKey(kind, config string) (string, error) {
-	baseURL, err := extsvc.ExtractBaseURL(kind, config)
-	if err != nil {
-		return "", errors.Wrap(err, "getting normalized URL from service")
-	}
-	return baseURL.String(), nil
-}
-
 // A ChangesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type ChangesetSyncer struct {
@@ -218,6 +205,7 @@ type ChangesetSyncer struct {
 	source repos.ChangesetSource
 
 	codeHostURL string
+	extSvcID    int64
 
 	// scheduleInterval determines how often a new schedule will be computed.
 	// NOTE: It involves a DB query but no communication with code hosts.
@@ -457,7 +445,7 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	syncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
+	syncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: s.extSvcID})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
@@ -479,7 +467,7 @@ func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Conte
 	published := campaigns.ChangesetPublicationStatePublished
 	changesets, _, err := s.SyncStore.ListChangesets(ctx, ListChangesetsOpts{
 		OnlyWithoutDiffStats: true,
-		ExternalServiceID:    s.codeHostURL,
+		ExternalServiceID:    s.extSvcID,
 		PublicationState:     &published,
 		ReconcilerStates:     []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted},
 	})
@@ -502,7 +490,7 @@ func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Conte
 
 // SyncChangeset will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangeset", "id", id)
+	log15.Debug("SyncChangeset", "codeHostURL", s.codeHostURL, "extSvcID", s.extSvcID, "id", id)
 	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
