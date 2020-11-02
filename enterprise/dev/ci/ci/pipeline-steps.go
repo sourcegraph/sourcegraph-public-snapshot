@@ -245,10 +245,6 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e and QA tests on release, patch and main branches
-	runE2EandQA := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" ||
-		c.branch == "ci/sourcegraph-upgrade" // TODO: remove
-
 	var async bool
 	if c.branch == "main" {
 		async = true
@@ -265,14 +261,15 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["DATE"] = commonEnv["DATE"]
 	env["VERSION"] = commonEnv["VERSION"]
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
-	env["CANDIDATE_VERSION"] = "9c98b433090edcd326dc0fcd87bd7ac9c6f129fa_78019_candidate" // temporary hardcoded image
-	// env["CANDIDATE_VERSION"] = candidateImageTag(c)
+
+	// tag for 'us.gcr.io/sourcegraph-dev' images built from this commit
+	env["CANDIDATE_VERSION"] = candidateImageTag(c)
 
 	// for sourcegraph-upgrade
 	env["TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION"] = "3.20.0"
 
 	return func(pipeline *bk.Pipeline) {
-		if !runE2EandQA {
+		if !c.shouldRunE2EandQA() {
 			return
 		}
 
@@ -321,21 +318,36 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 
 	return func(pipeline *bk.Pipeline) {
 		switch {
+		// build all images for tagged releases
 		case c.taggedRelease:
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
+
+		// only build `sourcegraph/server` for release branch updates
 		case c.releaseBranch:
 			addDockerImage(c, "server", false)(pipeline)
-		case c.isMasterDryRun: // replicates `master` build but does not deploy
+
+		// replicates `main` build but does not deploy `insiders` images
+		case c.isMasterDryRun:
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-		case c.branch == "master" || c.branch == "main":
+
+		// deploy `insiders` images for `main`
+		case c.branch == "main":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
 
+		// ensure candidate images are available for testing
+		case c.shouldRunE2EandQA():
+			for _, dockerImage := range allDockerImages {
+				addDockerImage(c, dockerImage, false)(pipeline)
+			}
+
+		// only build candidate image for the specified image in the branch name
+		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
 			addDockerImage(c, c.branch[20:], false)(pipeline)
 		}
