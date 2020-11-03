@@ -40,11 +40,6 @@ func campaignsEnabled() error {
 		return ErrCampaignsDotCom{}
 	}
 
-	// Validate that the instance's licensing tier supports campaigns.
-	if err := checkLicense(); err != nil {
-		return err
-	}
-
 	if enabled := conf.CampaignsEnabled(); enabled {
 		return nil
 	}
@@ -227,6 +222,11 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
+	// Validate that the instance's licensing tier supports campaigns.
+	if err := checkLicense(); err != nil {
+		return nil, err
+	}
+
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
@@ -268,6 +268,11 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	// Validate that the instance's licensing tier supports campaigns.
+	if err := checkLicense(); err != nil {
+		return nil, err
+	}
 
 	if err := campaignsEnabled(); err != nil {
 		return nil, err

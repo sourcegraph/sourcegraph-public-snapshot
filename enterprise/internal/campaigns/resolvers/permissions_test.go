@@ -366,107 +366,93 @@ func TestPermissionLevels(t *testing.T) {
 					currentUser    int32
 					campaignAuthor int32
 					wantAuthErr    bool
+					wantLicenseErr bool
 				}{
 					{
 						name:           "unauthorized",
 						currentUser:    userID,
 						campaignAuthor: adminID,
 						wantAuthErr:    true,
+						wantLicenseErr: false,
 					},
 					{
 						name:           "authorized campaign owner",
 						currentUser:    userID,
 						campaignAuthor: userID,
 						wantAuthErr:    false,
+						wantLicenseErr: false,
 					},
 					{
 						name:           "authorized site-admin",
 						currentUser:    adminID,
 						campaignAuthor: userID,
 						wantAuthErr:    false,
+						wantLicenseErr: false,
 					},
-				}
-
-				tiers := []struct {
-					name             string
-					checkFeatureFn   func(feature licensing.Feature) error
-					wantLicenseError bool
-				}{
-					{
-						name:             "prohibited by tier",
-						checkFeatureFn:   func(feature licensing.Feature) error { return errors.New("test") },
-						wantLicenseError: true,
-					},
-					{
-						name:             "permitted by tier",
-						checkFeatureFn:   func(feature licensing.Feature) error { return nil },
-						wantLicenseError: false,
-					},
-				}
-
-				if !licensing.EnforceTiers {
-					licensing.EnforceTiers = true
-					defer func() { licensing.EnforceTiers = false }()
 				}
 
 				for _, tc := range tests {
-					for _, tier := range tiers {
-						t.Run(fmt.Sprintf("%s %s", tc.name, tier.name), func(t *testing.T) {
-							cleanUpCampaigns(t, store)
+					t.Run(tc.name, func(t *testing.T) {
+						cleanUpCampaigns(t, store)
 
-							licensing.MockCheckFeature = tier.checkFeatureFn
+						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
+
+						// We add the changeset to the campaign. It doesn't matter
+						// for the addChangesetsToCampaign mutation, since that is
+						// idempotent and we want to solely check for auth errors.
+						changeset.CampaignIDs = []int64{campaignID}
+						if err := store.UpdateChangeset(ctx, changeset); err != nil {
+							t.Fatal(err)
+						}
+
+						mutation := m.mutationFunc(
+							string(marshalCampaignID(campaignID)),
+							string(marshalChangesetID(changeset.ID)),
+							string(marshalCampaignSpecRandID(campaignSpecRandID)),
+						)
+
+						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+						// Specific mutations should trigger a license check.
+						if tc.wantLicenseErr {
+							licensing.EnforceTiers = true
+							defer func() { licensing.EnforceTiers = false }()
+
+							licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
 							defer func() { licensing.MockCheckFeature = nil }()
+						}
 
-							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
-							campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
+						var response struct{}
+						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
 
-							// We add the changeset to the campaign. It doesn't matter
-							// for the addChangesetsToCampaign mutation, since that is
-							// idempotent and we want to solely check for auth errors.
-							changeset.CampaignIDs = []int64{campaignID}
-							if err := store.UpdateChangeset(ctx, changeset); err != nil {
-								t.Fatal(err)
+						// Validate that the current license supports the campaign operation.
+						if tc.wantLicenseErr {
+							if len(errs) != 1 {
+								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 							}
-
-							mutation := m.mutationFunc(
-								string(marshalCampaignID(campaignID)),
-								string(marshalChangesetID(changeset.ID)),
-								string(marshalCampaignSpecRandID(campaignSpecRandID)),
-							)
-
-							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-							var response struct{}
-							errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-							// Validate that the current license supports the campaign operation.
-							if tier.wantLicenseError {
+							if !strings.Contains(errs[0].Error(), "license") {
+								t.Fatalf("expected license error, got %q", errs[0])
+							}
+						} else {
+							if tc.wantAuthErr {
 								if len(errs) != 1 {
 									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 								}
-								if !strings.Contains(errs[0].Error(), "license") {
-									t.Fatalf("expected license error, got %q", errs[0])
+								if !strings.Contains(errs[0].Error(), "must be authenticated") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 								}
 							} else {
-								if tc.wantAuthErr {
-									if len(errs) != 1 {
-										t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
-									}
-									if !strings.Contains(errs[0].Error(), "must be authenticated") {
-										t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-									}
-								} else {
-									// We don't care about other errors, we only want to
-									// check that we didn't get an auth error.
-									for _, e := range errs {
-										if strings.Contains(e.Error(), "must be authenticated") {
-											t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
-										}
+								// We don't care about other errors, we only want to
+								// check that we didn't get an auth error.
+								for _, e := range errs {
+									if strings.Contains(e.Error(), "must be authenticated") {
+										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
 									}
 								}
 							}
-						})
-					}
+						}
+					})
 				}
 			})
 		}
