@@ -3080,7 +3080,7 @@ type MonitorActionEventConnection {
     """
     A list of events.
     """
-    nodes: [MonitorEvent!]!
+    nodes: [MonitorActionEvent!]!
     """
     The total number of events in the connection.
     """
@@ -3094,7 +3094,7 @@ type MonitorActionEventConnection {
 """
 An event documents the result of a trigger or an execution of an action.
 """
-type MonitorEvent implements Node {
+type MonitorActionEvent implements Node {
     """
     The unique id of an event.
     """

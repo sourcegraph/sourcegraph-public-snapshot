@@ -199,10 +199,6 @@ func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlu
 //
 // MonitorTriggerEvent
 //
-//type MonitorTriggerEventResolver interface {
-//	Event() (MonitorEventResolver, error)
-//	ActionEvents(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
-//}
 type MonitorTriggerEventResolver interface {
 	ID() graphql.ID
 	Status() string
@@ -352,7 +348,7 @@ func (o *monitorEmailRecipient) ToUser() (*UserResolver, bool) {
 // MonitorActionEventConnection
 //
 type MonitorActionEventConnectionResolver interface {
-	Nodes(ctx context.Context) ([]MonitorEventResolver, error)
+	Nodes(ctx context.Context) ([]MonitorActionEventResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
@@ -360,11 +356,11 @@ type MonitorActionEventConnectionResolver interface {
 type monitorActionEventConnection struct {
 }
 
-func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]MonitorEventResolver, error) {
+func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]MonitorActionEventResolver, error) {
 	notImplemented := "message not implemented"
-	return []MonitorEventResolver{
-			&monitorEvent{id: "314", status: "SUCCESS", timestamp: DateTime{time.Now()}},
-			&monitorEvent{id: "315", status: "ERROR", message: &notImplemented, timestamp: DateTime{time.Now()}},
+	return []MonitorActionEventResolver{
+			&monitorActionEvent{id: "314", status: "SUCCESS", timestamp: DateTime{time.Now()}},
+			&monitorActionEvent{id: "315", status: "ERROR", message: &notImplemented, timestamp: DateTime{time.Now()}},
 		},
 		nil
 }
@@ -385,32 +381,32 @@ type ListEventsArgs struct {
 	After *string
 }
 
-type MonitorEventResolver interface {
+type MonitorActionEventResolver interface {
 	ID() graphql.ID
 	Status() string
 	Message() *string
 	Timestamp() DateTime
 }
 
-type monitorEvent struct {
+type monitorActionEvent struct {
 	id        graphql.ID
 	status    string
 	message   *string
 	timestamp DateTime
 }
 
-func (m *monitorEvent) ID() graphql.ID {
+func (m *monitorActionEvent) ID() graphql.ID {
 	return m.id
 }
 
-func (m *monitorEvent) Status() string {
+func (m *monitorActionEvent) Status() string {
 	return m.status
 }
 
-func (m *monitorEvent) Message() *string {
+func (m *monitorActionEvent) Message() *string {
 	return m.message
 }
 
-func (m *monitorEvent) Timestamp() DateTime {
+func (m *monitorActionEvent) Timestamp() DateTime {
 	return m.timestamp
 }
