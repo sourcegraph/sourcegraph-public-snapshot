@@ -177,12 +177,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of unique users engaging with the panels</li>
                     </ul>
                 </li>
-                <li>
-                    Retention data
-                    <ul>
-                        <li>Weekly user retention data</li>
-                    </ul>
-                </li>
+                <li>Weekly retention rates for user cohorts created in the last 12 weeks</li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>
