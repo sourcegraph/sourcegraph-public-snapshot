@@ -26,12 +26,12 @@ func main() {
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
-	
-	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	if bundleDir == "" {
 		log.Fatalf("invalid value %q for %s: no value supplied", bundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
 	}
+
+	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
 		log.Fatalf("failed to prepare directories: %s", err)
