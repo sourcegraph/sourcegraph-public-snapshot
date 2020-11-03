@@ -946,7 +946,6 @@ func main() {
 		GitHubProxy(),
 		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
-		PreciseCodeIntelIndexer(),
 		QueryRunner(),
 		RepoUpdater(),
 		Searcher(),
