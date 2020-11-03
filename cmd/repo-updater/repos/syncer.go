@@ -754,7 +754,7 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
-	srcs, err := s.Sourcer.For(svcs...)
+	srcs, err := s.Sourcer.ForRead(svcs...)
 	if err != nil {
 		return nil, err
 	}

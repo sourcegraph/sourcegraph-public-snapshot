@@ -92,7 +92,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, nil, cf)
 	if err != nil {
 		t.Fatal(t)
 	}

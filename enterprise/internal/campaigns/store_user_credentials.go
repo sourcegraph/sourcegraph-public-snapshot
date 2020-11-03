@@ -207,7 +207,7 @@ func marshalCredential(a auth.Authenticator) (string, error) {
 		t = credTypeOAuthClient
 	case *auth.BasicAuth:
 		t = credTypeBasicAuth
-	case auth.OAuthBearerToken:
+	case *auth.OAuthBearerToken:
 		t = credTypeOAuthBearerToken
 	case *bitbucketserver.SudoableOAuthClient:
 		t = credTypeBitbucketServerSudoableOAuthClient
@@ -247,7 +247,7 @@ func unmarshalCredential(raw string) (auth.Authenticator, error) {
 	case credTypeBasicAuth:
 		a = &auth.BasicAuth{}
 	case credTypeOAuthBearerToken:
-		a = auth.OAuthBearerToken("")
+		a = &auth.OAuthBearerToken{}
 	case credTypeBitbucketServerSudoableOAuthClient:
 		a = &bitbucketserver.SudoableOAuthClient{}
 	case credTypeGitLabSudoableToken:

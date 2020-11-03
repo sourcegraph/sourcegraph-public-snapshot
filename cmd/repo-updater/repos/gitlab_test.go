@@ -145,7 +145,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 				}),
 			}
 
-			gitlabSrc, err := NewGitLabSource(svc, cf)
+			gitlabSrc, err := NewGitLabSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -176,22 +176,22 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitLabConnection
+		schema *schema.GitLabConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url: "https://gitlab.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:        "https://gitlab.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
 			},
@@ -203,7 +203,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGitLabSource(&svc, test.schmea, nil)
+			s, err := newGitLabSource(&svc, test.schema, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -769,7 +769,7 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 			TargetBranch: "base",
 		},
 		source: &GitLabSource{
-			client: gitlab.NewClientProvider(&url.URL{}, &panicDoer{}).GetClient(),
+			client: gitlab.NewClientProvider(&url.URL{}, &panicDoer{}).GetUnauthenticatedClient(),
 		},
 		t: t,
 	}

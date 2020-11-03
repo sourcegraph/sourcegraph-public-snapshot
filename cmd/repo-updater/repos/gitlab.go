@@ -11,8 +11,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -32,15 +34,15 @@ type GitLabSource struct {
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, account *extsvc.Account, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(svc *ExternalService, credential *campaigns.UserCredential, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(svc, &c, account, cf)
+	return newGitLabSource(svc, &c, credential, cf)
 }
 
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, account *extsvc.Account, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, credential *campaigns.UserCredential, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -77,13 +79,11 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, account *
 		return nil, err
 	}
 
-	token := c.Token
-	if account != nil {
-		_, tok, err := gitlab.GetExternalAccountData(&account.AccountData)
-		if err != nil {
-			return nil, errors.Wrap(err, "extracting user token")
-		}
-		token = tok.AccessToken
+	var a auth.Authenticator
+	if credential != nil {
+		a = credential.Credential
+	} else {
+		a = &auth.OAuthBearerToken{Token: c.Token}
 	}
 
 	return &GitLabSource{
@@ -92,7 +92,7 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, account *
 		exclude:             exclude,
 		baseURL:             baseURL,
 		nameTransformations: nts,
-		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(token, ""),
+		client:              gitlab.NewClientProvider(baseURL, cli).GetAuthenticatedClient(a),
 	}, nil
 }
 

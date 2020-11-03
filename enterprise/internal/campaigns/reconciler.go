@@ -207,22 +207,56 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 }
 
 func (e *executor) buildChangesetSource(ctx context.Context, repo *repos.Repo, extSvc *repos.ExternalService, userID int32) (repos.ChangesetSource, error) {
-	var sources repos.Sources
-	var err error
+	var source repos.Source
 	if userID == 0 {
-		sources, err = e.sourcer.For(extSvc)
+		// No write permissions are required if there's no owning user, so we'll
+		// just grab the read source.
+		sources, err := e.sourcer.ForRead(extSvc)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(sources) != 1 {
+			return nil, errors.New("invalid number of sources for external service")
+		}
+		source = sources[0]
 	} else {
-		sources, err = e.sourcer.ForUser(ctx, userID, extSvc)
-	}
-	if err != nil {
-		return nil, err
+		// We do need write permissions with an owning user.
+		//
+		// The first thing we'll do is see if the user has a credential for this
+		// code host. If they do, then we'll use it, and life is simple.
+		if cred, err := e.tx.GetUserToken(ctx, userID, extSvc.ID); err == ErrNoResults {
+			// Not having a credential isn't necessarily fatal: if the user is a
+			// site admin, then we'll fall back to the global token for the code
+			// host.
+			user, err := db.Users.GetByID(ctx, userID)
+			if err != nil {
+				return nil, errors.Wrap(err, "retrieving user")
+			}
+
+			// 🚨 SECURITY: Check if the applying user is an admin.
+			if user.SiteAdmin {
+				if source, err = e.sourcer.ForAdminWrite(extSvc, nil); err != nil {
+					return nil, errors.Wrap(err, "creating source")
+				}
+			} else {
+				return nil, errors.New("no credential available for user")
+			}
+		} else if err != nil {
+			// Any other errors are... well, errors.
+			return nil, errors.Wrap(err, "retrieving user credential")
+		} else {
+			// Finally, this means that we have a user credential, which means
+			// we don't even need to check if the user is an admin; we can just
+			// get ourselves a Source and move on.
+			if source, err = e.sourcer.ForWrite(extSvc, cred); err != nil {
+				return nil, errors.Wrap(err, "creating source")
+			}
+		}
 	}
 
-	if len(sources) != 1 {
-		return nil, errors.New("invalid number of sources for external service")
-	}
-	src := sources[0]
-	ccs, ok := src.(repos.ChangesetSource)
+	var _ repos.ChangesetSource = source.(repos.ChangesetSource)
+	ccs, ok := source.(repos.ChangesetSource)
 	if !ok {
 		return nil, errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}

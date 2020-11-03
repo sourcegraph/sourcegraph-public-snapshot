@@ -12,6 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -44,15 +45,15 @@ type GithubSource struct {
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, account *extsvc.Account, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, credential *campaigns.UserCredential, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, account, cf)
+	return newGithubSource(svc, &c, credential, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, account *extsvc.Account, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, credential *campaigns.UserCredential, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -106,8 +107,12 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, account *
 		return nil, err
 	}
 
-	token := &auth.OAuthBearerToken{Token: c.Token}
-	// TODO: do something with account.
+	var token auth.Authenticator
+	if credential != nil {
+		token = credential.Credential
+	} else {
+		token = &auth.OAuthBearerToken{Token: c.Token}
+	}
 
 	return &GithubSource{
 		svc:              svc,

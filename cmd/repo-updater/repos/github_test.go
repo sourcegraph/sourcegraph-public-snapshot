@@ -101,7 +101,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -176,7 +176,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -244,7 +244,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -314,7 +314,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -386,7 +386,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -489,7 +489,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -520,22 +520,22 @@ func TestGithubSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitHubConnection
+		schema *schema.GitHubConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url: "https://github.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url:        "https://github.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitHubConnection{
+			schema: &schema.GitHubConnection{
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "gh/{nameWithOwner}",
 			},
@@ -547,7 +547,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schmea, nil)
+			s, err := newGithubSource(&svc, test.schema, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -747,7 +747,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, nil, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

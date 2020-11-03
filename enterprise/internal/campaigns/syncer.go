@@ -594,8 +594,7 @@ func buildChangesetSource(
 	}
 	extSvc := es[0]
 
-	// TODO: can we get the user in here?
-	sources, err := sourcer.For(extSvc)
+	sources, err := sourcer.ForRead(extSvc)
 	if err != nil {
 		return nil, err
 	}

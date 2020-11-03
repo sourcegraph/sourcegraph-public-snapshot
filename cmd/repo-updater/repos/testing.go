@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
@@ -23,7 +24,7 @@ type fakeSourcer struct {
 	srcs []Source
 }
 
-func (s *fakeSourcer) For(svcs ...*ExternalService) (Sources, error) {
+func (s *fakeSourcer) ForRead(svcs ...*ExternalService) (Sources, error) {
 	var errs *multierror.Error
 
 	if s.err != nil {
@@ -38,12 +39,36 @@ func (s *fakeSourcer) For(svcs ...*ExternalService) (Sources, error) {
 	return s.srcs, errs.ErrorOrNil()
 }
 
-func (s *fakeSourcer) ForUser(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error) {
-	return s.For(svcs...)
+func (s *fakeSourcer) ForWrite(svc *ExternalService, credential *campaigns.UserCredential) (Source, error) {
+	srcs, err := s.ForRead(svc)
+	if err != nil {
+		return nil, err
+	}
+	return srcs.Sources()[0], err
 }
 
-func (s *fakeSourcer) ForUserWithFallback(ctx context.Context, userID int32, svcs ...*ExternalService) (Sources, error) {
-	return s.For(svcs...)
+func (s *fakeSourcer) ForAdminWrite(svc *ExternalService, credential *campaigns.UserCredential) (Source, error) {
+	return s.ForWrite(svc, credential)
+}
+
+// CallbackSourcer is similar to fakeSourcer, but instead just does whatever the
+// function within it says to do when sources are requested.
+type CallbackSourcer struct {
+	Callback func(...*ExternalService) (Sources, error)
+}
+
+var _ Sourcer = &CallbackSourcer{}
+
+func (s *CallbackSourcer) ForRead(svcs ...*ExternalService) (Sources, error) {
+	return s.Callback(svcs...)
+}
+
+func (s *CallbackSourcer) ForWrite(svc *ExternalService, credential *campaigns.UserCredential) (Source, error) {
+	return s.ForRead(svc)
+}
+
+func (s *CallbackSourcer) ForAdminWrite(svc *ExternalService, credential *campaigns.UserCredential) (Source, error) {
+	return s.ForRead(svc)
 }
 
 // FakeSource is a fake implementation of Source to be used in tests.

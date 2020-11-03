@@ -98,6 +98,11 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	}
 }
 
+// GetAuthenticatedClient returns an authenticated client.
+func (p *ClientProvider) GetAuthenticatedClient(a auth.Authenticator) *Client {
+	return p.getClient(a)
+}
+
 // GetPATClient returns a client authenticated by the personal access token.
 func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client {
 	if personalAccessToken == "" {
@@ -114,8 +119,8 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
-// GetClient returns an unauthenticated client.
-func (p *ClientProvider) GetClient() *Client {
+// GetUnauthenticatedClient returns an unauthenticated client.
+func (p *ClientProvider) GetUnauthenticatedClient() *Client {
 	return p.getClient(nil)
 }
 

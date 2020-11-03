@@ -1196,7 +1196,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 			}
 
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					if len(services) > 1 {
 						t.Fatalf("Expected 1 service, got %d", len(services))
 					}
@@ -1205,7 +1205,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 						t.Fatalf("sourcer not found: %d", services[0].ID)
 					}
 					return repos.Sources{s}, nil
-				},
+				}},
 				Store:  store,
 				Synced: make(chan repos.Diff),
 				Now:    time.Now,
@@ -1327,10 +1327,10 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, githubRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -1339,10 +1339,10 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 
 			// Sync second service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil, githubRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
@@ -1357,10 +1357,10 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 
 			// Remove the repo from one service and sync again
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -1384,10 +1384,10 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 
 			// Remove the repo from the second service and sync again
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
@@ -1460,10 +1460,10 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, githubRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -1472,10 +1472,10 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 
 			// Sync second service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil, githubRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
@@ -1513,10 +1513,10 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 
 			// Start syncing using tx1
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, updatedRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, tx1, svc1.ID, 10*time.Second); err != nil {
@@ -1528,12 +1528,12 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			go func() {
 				// Start syncing using tx2
 				syncer2 := &repos.Syncer{
-					Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 						s := repos.NewFakeSource(svc2, nil, updatedRepo.With(func(r *repos.Repo) {
 							r.Description = newDescription
 						}))
 						return repos.Sources{s}, nil
-					},
+					}},
 					Now: time.Now,
 				}
 				err := syncer2.SyncExternalService(ctx, &storeWrapper{Store: tx2, onUpsertRepos: func() {
@@ -1626,10 +1626,10 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 
 			// Admin service will sync both repos
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(adminService, nil, publicRepo, privateRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
@@ -1641,10 +1641,10 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 
 			// Unsync the repo to clean things up
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(adminService, nil)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
@@ -1656,10 +1656,10 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 
 			// User service can only sync public code, even if they have access to private code
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
@@ -1671,10 +1671,10 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 
 			// Attempt to add some repos with a per user limit set
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now:                 time.Now,
 				UserReposMaxPerUser: 1,
 			}
@@ -1684,10 +1684,10 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 
 			// Attempt to add some repos with a total limit set
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now:                 time.Now,
 				UserReposMaxPerSite: 1,
 			}
@@ -1753,10 +1753,10 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, githubRepo1)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -1765,10 +1765,10 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 
 			// Sync second service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil, githubRepo2)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
@@ -1851,10 +1851,10 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, githubRepo1)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -1863,10 +1863,10 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 
 			// Sync second service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil, githubRepo2)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
@@ -1949,10 +1949,10 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, githubRepo1)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -1961,10 +1961,10 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 
 			// Sync second service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil, githubRepo2)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
@@ -1978,10 +1978,10 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 
 			// Sync first service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, renamedRepo1)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -2048,10 +2048,10 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 
 			// Sync first service
 			syncer := &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc1, nil, githubRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
@@ -2060,10 +2060,10 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 
 			// Sync second service
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: &repos.CallbackSourcer{Callback: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(svc2, nil, githubRepo)
 					return repos.Sources{s}, nil
-				},
+				}},
 				Now: time.Now,
 			}
 			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
