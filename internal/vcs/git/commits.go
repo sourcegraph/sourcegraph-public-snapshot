@@ -343,21 +343,47 @@ type onelineCommit struct {
 // Once it returns an error the scanner should be disregarded. io.EOF is
 // returned when there is no more data to read.
 func logOnelineScanner(r io.Reader) func() (*onelineCommit, error) {
-	br := bufio.NewReader(r)
+	// Each "log line" contains a source ref. I could not find a bound on the
+	// size of a git ref, so each line can get arbitrarily large. So we use a
+	// bufio.Scanner instead of a bufio.Reader since a Scanner allows growing
+	// the buffer to accomodate the "token" size. This makes the
+	// implementation slightly more complicated (needs a split function
+	// instead of just using ReadBytes).
+	//
+	// Note: Not all source refs correspond to direct arguments, eg if you use
+	// --glob=refs/* any possible ref can be a source ref.
+	//
+	// Note: I check the git source for ref limits, there are none I
+	// found. Linux does have PATH_MAX (4096), but its quite easy to work
+	// around that.
+	//
+	// Note: Scanner does have a max size it will grow to (64kb). If a repo
+	// contains a ref this big, we treat it as an error. This shouldn't happen
+	// in practice, but that is likely famous last words.
+	scanNull := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+		if i := bytes.IndexByte(data, '\x00'); i >= 0 {
+			return i + 1, data[:i], nil
+		}
+		if atEOF {
+			return len(data), data, nil
+		}
+		// Request more data.
+		return 0, nil, nil
+	}
+	scanner := bufio.NewScanner(r)
+	scanner.Split(scanNull)
 	return func() (*onelineCommit, error) {
-		// Keep reading until we encounter an error or a non-empty part.
-		var e []byte
-		for len(e) == 0 {
-			var err error
-			e, err = br.ReadBytes('\x00')
-			if err != nil {
+		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
 				return nil, err
 			}
-			// Reads upto and including delim (\x00). So we strip it out.
-			if l := len(e); l > 0 && e[l-1] == '\x00' {
-				e = e[:l-1]
-			}
+			return nil, io.EOF
 		}
+
+		e := scanner.Bytes()
 
 		// Format: (40-char SHA) \t (source ref)? 'log size '
 		if len(e) <= 40 {
