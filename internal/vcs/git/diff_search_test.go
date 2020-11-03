@@ -118,7 +118,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 	}
 }
 
-func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
+func TestRepository_RawLogDiffSearch_empty(t *testing.T) {
 	t.Parallel()
 
 	gitCommands := []string{
@@ -129,8 +129,16 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 		repo gitserver.Repo
 		want map[*RawLogDiffSearchOptions][]*LogCommitSearchResult
 	}{
-		"git cmd": {
+		"commit": {
 			repo: MakeGitRepository(t, gitCommands...),
+			want: map[*RawLogDiffSearchOptions][]*LogCommitSearchResult{
+				{
+					Paths: PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
+				}: nil, // want no matches
+			},
+		},
+		"repo": {
+			repo: MakeGitRepository(t),
 			want: map[*RawLogDiffSearchOptions][]*LogCommitSearchResult{
 				{
 					Paths: PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
