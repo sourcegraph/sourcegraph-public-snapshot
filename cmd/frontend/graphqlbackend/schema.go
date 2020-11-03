@@ -2959,7 +2959,7 @@ type MonitorTriggerEventConnection {
 """
 A trigger event is an event together with a list of associated actions.
 """
-type MonitorTriggerEvent {
+type MonitorTriggerEvent implements Node {
     """
     The unique id of an event.
     """
