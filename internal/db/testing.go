@@ -10,8 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 )
 
 func assertJSONEqual(t *testing.T, want, got interface{}) {
@@ -34,24 +37,22 @@ func asJSON(t *testing.T, v interface{}) string {
 	return string(b)
 }
 
-// MakeGithubRepo returns a configured Github repository.
-func MakeGithubRepo(services ...*types.ExternalService) *types.Repo {
+func MakeRepo(name, serviceID, serviceType string, services ...*types.ExternalService) *types.Repo {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	repo := types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "AAAAA==",
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "http://github.com",
+			ID:          "1234",
+			ServiceType: serviceType,
+			ServiceID:   serviceID,
 		},
-		Name: "github.com/foo/bar",
+		Name: api.RepoName(name),
 		RepoFields: &types.RepoFields{
-			URI:         "github.com/foo/bar",
+			URI:         name,
 			Description: "The description",
 			CreatedAt:   now,
 			Sources:     make(map[string]*types.SourceInfo),
-			Metadata:    new(github.Repository),
 		},
 	}
 
@@ -64,34 +65,45 @@ func MakeGithubRepo(services ...*types.ExternalService) *types.Repo {
 	return &repo
 }
 
-// MakeGithubRepo returns a configured Gitlab repository.
+// MakeGithubRepo returns a configured Github repository.
+func MakeGithubRepo(services ...*types.ExternalService) *types.Repo {
+	repo := MakeRepo("github.com/foo/bar", "http://github.com", extsvc.TypeGitHub, services...)
+	repo.RepoFields.Metadata = new(github.Repository)
+	return repo
+}
+
+// MakeGitlabRepo returns a configured Gitlab repository.
 func MakeGitlabRepo(services ...*types.ExternalService) *types.Repo {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
-	now := clock.Now()
+	repo := MakeRepo("gitlab.com/foo/bar", "http://gitlab.com", extsvc.TypeGitLab, services...)
+	repo.RepoFields.Metadata = new(gitlab.Project)
+	return repo
+}
 
-	repo := types.Repo{
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "AAAAA==",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "http://gitlab.com",
-		},
-		Name: "gitlab.com/foo/bar",
-		RepoFields: &types.RepoFields{
-			URI:         "gitlab.com/foo/bar",
-			Description: "The description",
-			CreatedAt:   now,
-			Sources:     make(map[string]*types.SourceInfo),
-			Metadata:    new(gitlab.Project),
-		},
-	}
+// MakeBitbucketServerRepo returns a configured Bitbucket Server repository.
+func MakeBitbucketServerRepo(services ...*types.ExternalService) *types.Repo {
+	repo := MakeRepo("bitbucketserver.mycorp.com/foo/bar", "http://bitbucketserver.mycorp.com", extsvc.TypeBitbucketServer, services...)
+	repo.RepoFields.Metadata = new(bitbucketserver.Repo)
+	return repo
+}
 
-	for _, svc := range services {
-		repo.Sources[svc.URN()] = &types.SourceInfo{
-			ID: svc.URN(),
-		}
-	}
+// MakeAWSCodeCommitRepo returns a configured AWS Code Commit repository.
+func MakeAWSCodeCommitRepo(services ...*types.ExternalService) *types.Repo {
+	repo := MakeRepo("git-codecommit.us-west-1.amazonaws.com/stripe-go", "arn:aws:codecommit:us-west-1:999999999999:", extsvc.KindAWSCodeCommit, services...)
+	repo.RepoFields.Metadata = new(awscodecommit.Repository)
+	return repo
+}
 
-	return &repo
+// MakeOtherRepo returns a configured repository from a custom host.
+func MakeOtherRepo(services ...*types.ExternalService) *types.Repo {
+	repo := MakeRepo("git-host.com/org/foo", "https://git-host.com/", extsvc.KindOther, services...)
+	return repo
+}
+
+// MakeGitoliteRepo returns a configured Gitolite repository.
+func MakeGitoliteRepo(services ...*types.ExternalService) *types.Repo {
+	repo := MakeRepo("gitolite.mycorp.com/bar", "git@gitolite.mycorp.com", extsvc.KindGitolite, services...)
+	repo.RepoFields.Metadata = new(gitolite.Repo)
+	return repo
 }
 
 // GenerateRepos takes a list of base repos and generates n ones with different names.
