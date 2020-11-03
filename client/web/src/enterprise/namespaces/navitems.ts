@@ -6,7 +6,6 @@ export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavIte
         to: '/campaigns',
         label: 'Campaigns',
         icon: CampaignsIconNamespaceNav,
-        condition: ({ isSourcegraphDotCom }: { isSourcegraphDotCom: boolean }): boolean =>
-            !isSourcegraphDotCom && window.context.campaignsEnabled,
+        condition: () => window.context.campaignsEnabled,
     },
 ]

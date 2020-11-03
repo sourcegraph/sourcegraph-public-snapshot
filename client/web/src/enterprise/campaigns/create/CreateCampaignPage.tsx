@@ -10,6 +10,7 @@ import goImportsSample from './samples/go-imports.campaign.yaml'
 import minimalSample from './samples/minimal.campaign.yaml'
 import classNames from 'classnames'
 import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
+import { PrivateCodeCta } from '../../../search/input/PrivateCodeCta'
 
 interface SampleTabHeaderProps {
     sample: Sample
@@ -47,11 +48,13 @@ const samples: Sample[] = [
 ]
 
 export interface CreateCampaignPageProps extends BreadcrumbSetters {
-    authenticatedUser: Pick<AuthenticatedUser, 'username'>
+    authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
+    isSourcegraphDotCom: boolean
 }
 
 export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
     authenticatedUser,
+    isSourcegraphDotCom,
     useBreadcrumb,
 }) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
@@ -60,6 +63,56 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
         <>
             <PageTitle title="Create campaign" />
             <PageHeader icon={CampaignsIconFlushLeft} title="Create campaign" />
+            {isSourcegraphDotCom && (
+                <div className="row alert alert-info">
+                    <section className="my-3 col-md-8 col-xs-12">
+                        <p>
+                            <strong>Campaigns are not available on Sourcegraph.com</strong>. Instead, use a private
+                            Sourcegraph instance to try them on your code.
+                        </p>
+                        <ol>
+                            <li>
+                                Install a private Sourcegraph instance using the{' '}
+                                <a href="https://docs.sourcegraph.com/#quickstart-guide" rel="noopener">
+                                    quickstart guide.
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://docs.sourcegraph.com/admin/repo/add">Add repositories</a> from your
+                                code host to Sourcegraph.
+                            </li>
+                            <li>
+                                Follow the{' '}
+                                <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
+                                    quickstart guide for campaigns
+                                </a>{' '}
+                                to enable campaigns on your instance and start using them.
+                            </li>
+                        </ol>
+
+                        <p>
+                            Learn more about campaigns{' '}
+                            <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
+                                in the documentation
+                            </a>
+                            .
+                        </p>
+                        <section className="my-3">
+                            <h2>Ask questions and share feedback</h2>
+                            <p>
+                                Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an
+                                issue in our{' '}
+                                <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or
+                                email <a href="mailto:feedback@sourcegraph.com">feedback@sourcegraph.com</a>. We look
+                                forward to hearing from you!
+                            </p>
+                        </section>
+                    </section>
+                    <div className="offset-md-1 col-md-10 offset-lg-0 col-lg-4">
+                        <PrivateCodeCta />
+                    </div>
+                </div>
+            )}
             <div className="pt-3">
                 <h2>1. Write a campaign spec YAML file</h2>
                 <p>
@@ -95,7 +148,9 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     to preview the commits and changesets that your campaign will make:
                 </p>
                 <CodeSnippet
-                    code={`src campaign preview -namespace ${authenticatedUser.username} -f ${selectedSample.name}`}
+                    code={`src campaign preview -namespace ${authenticatedUser?.username ?? 'USERNAME'} -f ${
+                        selectedSample.name
+                    }`}
                     language="shell"
                     className="mb-3"
                 />

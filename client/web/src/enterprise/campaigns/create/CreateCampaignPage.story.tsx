@@ -7,8 +7,18 @@ const { add } = storiesOf('web/campaigns/CreateCampaignPage', module).addDecorat
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Page', () => (
+add('Page not-dotcom', () => (
     <EnterpriseWebStory>
-        {props => <CreateCampaignPage {...props} authenticatedUser={{ username: 'alice' }} />}
+        {props => (
+            <CreateCampaignPage {...props} isSourcegraphDotCom={false} authenticatedUser={{ username: 'alice' }} />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Page sourcegraph.com', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CreateCampaignPage {...props} isSourcegraphDotCom={true} authenticatedUser={{ username: 'alice' }} />
+        )}
     </EnterpriseWebStory>
 ))

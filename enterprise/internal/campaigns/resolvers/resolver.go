@@ -35,7 +35,8 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 func campaignsEnabled() error {
 	// On Sourcegraph.com nobody can read/create campaign entities
 	if envvar.SourcegraphDotComMode() {
-		return ErrCampaignsDotCom{}
+		// let's go live lol
+		return nil
 	}
 
 	if enabled := conf.CampaignsEnabled(); enabled {
@@ -50,7 +51,8 @@ func campaignsEnabled() error {
 func campaignsCreateAccess(ctx context.Context) error {
 	// On Sourcegraph.com nobody can create campaigns/patchsets/changesets
 	if envvar.SourcegraphDotComMode() {
-		return ErrCampaignsDotCom{}
+		// let's go live lol2
+		return nil
 	}
 
 	// Only site-admins can create campaigns/patchsets/changesets
@@ -460,7 +462,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}
 
 	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
-	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin && !envvar.SourcegraphDotComMode() {
 		return nil, authErr
 	}
 	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin

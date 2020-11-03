@@ -18,7 +18,7 @@ export const EditUserProfilePageGQLFragment = gql`
         displayName
         avatarURL
         viewerCanChangeUsername
-        siteAdmin
+        siteAdmin @include(if: $siteAdmin)
     }
 `
 
