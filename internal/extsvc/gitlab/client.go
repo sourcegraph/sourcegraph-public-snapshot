@@ -67,8 +67,6 @@ type ClientProvider struct {
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
-
-	rateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
 }
 
 type CommonOp struct {
@@ -91,10 +89,9 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	})
 
 	return &ClientProvider{
-		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:       cli,
-		gitlabClients:    make(map[string]*Client),
-		rateLimitMonitor: ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), "hash", &ratelimit.Monitor{}),
+		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:    cli,
+		gitlabClients: make(map[string]*Client),
 	}
 }
 
@@ -131,7 +128,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, a, p.httpClient, p.rateLimitMonitor)
+	c := p.newClient(p.baseURL, a, p.httpClient)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -164,7 +161,7 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer, rateLimit *ratelimit.Monitor) *Client {
+func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(baseURL) && a == nil {
@@ -179,14 +176,15 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), "hash", &ratelimit.Monitor{})
 
 	return &Client{
 		baseURL:          baseURL,
 		httpClient:       httpClient,
 		projCache:        projCache,
 		Auth:             a,
-		rateLimitMonitor: rateLimit,
 		rateLimiter:      rl,
+		rateLimitMonitor: rlm,
 	}
 }
 
