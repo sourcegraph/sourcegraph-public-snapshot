@@ -2884,6 +2884,10 @@ type Monitor implements Node {
     """
     owner: Owner!
     """
+    Whether the code monitor is currently enabled.
+    """
+    enabled: Boolean!
+    """
     Triggers trigger actions. There can only be one trigger per monitor.
     """
     trigger: MonitorTrigger

@@ -56,6 +56,7 @@ type MonitorResolver interface {
 	CreatedAt() DateTime
 	Description() string
 	Owner(ctx context.Context) (Owner, error)
+	Enabled() bool
 	Trigger(ctx context.Context) (MonitorTrigger, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
 }
@@ -78,6 +79,10 @@ func (m *monitor) CreatedAt() DateTime {
 
 func (m *monitor) Description() string {
 	return "description not implemented"
+}
+
+func (*monitor) Enabled() bool {
+	return true
 }
 
 func (m *monitor) Trigger(ctx context.Context) (MonitorTrigger, error) {
