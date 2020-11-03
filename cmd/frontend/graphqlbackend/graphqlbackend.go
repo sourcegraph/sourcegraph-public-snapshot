@@ -390,8 +390,13 @@ func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToMonitorEvent() (MonitorEventResolver, bool) {
-	n, ok := r.Node.(MonitorEventResolver)
+func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
+	n, ok := r.Node.(MonitorActionEventResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, bool) {
+	n, ok := r.Node.(MonitorTriggerEventResolver)
 	return n, ok
 }
 

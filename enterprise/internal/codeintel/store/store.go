@@ -51,7 +51,7 @@ type Store interface {
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 
 	// MarkQueued updates the state of the upload to queued and updates the upload size.
-	MarkQueued(ctx context.Context, uploadID int, uploadSize *int) error
+	MarkQueued(ctx context.Context, uploadID int, uploadSize *int64) error
 
 	// MarkComplete updates the state of the upload to complete.
 	MarkComplete(ctx context.Context, id int) error

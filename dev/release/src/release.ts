@@ -12,7 +12,7 @@ import {
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
-import { formatDate, timezoneLink } from './util'
+import { formatDate, timezoneLink, readLine, getWeekNumber } from './util'
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
@@ -28,8 +28,9 @@ interface Config {
     captainSlackUsername: string
     captainGitHubUsername: string
 
-    majorVersion: string
-    minorVersion: string
+    previousRelease: string
+    upcomingRelease: string
+
     releaseDateTime: string
     oneWorkingDayBeforeRelease: string
     fourWorkingDaysBeforeRelease: string
@@ -41,6 +42,53 @@ interface Config {
         changesets?: boolean
         trackingIssues?: boolean
     }
+}
+
+/**
+ * Convenience function for getting relevant configured releases as semver.SemVer
+ *
+ * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
+ */
+async function releaseVersions(
+    config: Config
+): Promise<{
+    previous: semver.SemVer
+    upcoming: semver.SemVer
+}> {
+    const parseOptions: semver.Options = { loose: false }
+    const parsedPrevious = semver.parse(config.previousRelease, parseOptions)
+    if (!parsedPrevious) {
+        throw new Error(`config.previousRelease '${config.previousRelease}' is not valid semver`)
+    }
+    const parsedUpcoming = semver.parse(config.upcomingRelease, parseOptions)
+    if (!parsedUpcoming) {
+        throw new Error(`config.upcomingRelease '${config.upcomingRelease}' is not valid semver`)
+    }
+
+    // Verify the configured upcoming release. The response is cached and expires in a
+    // week, after which the captain is required to confirm again.
+    const now = new Date()
+    const cachedVersion = `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
+    const confirmVersion = await readLine(
+        `Please confirm the upcoming release version (configured: '${config.upcomingRelease}'): `,
+        cachedVersion
+    )
+    const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
+    if (!parsedConfirmed) {
+        throw new Error(`Provided version '${confirmVersion}' is not valid semver (in ${cachedVersion})`)
+    }
+    if (semver.neq(parsedConfirmed, parsedUpcoming)) {
+        throw new Error(
+            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration`
+        )
+    }
+
+    const versions = {
+        previous: parsedPrevious,
+        upcoming: parsedUpcoming,
+    }
+    console.log(`Using versions: { upcoming: ${versions.upcoming.format()}, previous: ${versions.previous.format()} }`)
+    return versions
 }
 
 type StepID =
@@ -92,6 +140,7 @@ const steps: Step[] = [
         id: 'tracking:release-timeline',
         run: async config => {
             const googleCalendar = await getClient()
+            const { upcoming: release } = await releaseVersions(config)
             const events: EventOptions[] = [
                 {
                     title: 'Release captain: prepare for branch cut (5 working days until release)',
@@ -123,7 +172,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(config.oneWorkingDayBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Cut release branch ${config.majorVersion}.${config.minorVersion}`,
+                    title: `Cut release branch ${release.major}.${release.minor}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
@@ -131,7 +180,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(config.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Release Sourcegraph ${config.majorVersion}.${config.minorVersion}`,
+                    title: `Release Sourcegraph ${release.major}.${release.minor}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
@@ -148,23 +197,23 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:release-issue',
-        run: async ({
-            majorVersion,
-            minorVersion,
-            releaseDateTime,
-            captainGitHubUsername,
-            oneWorkingDayBeforeRelease,
-            fourWorkingDaysBeforeRelease,
-            fiveWorkingDaysBeforeRelease,
+        run: async (config: Config) => {
+            const {
+                releaseDateTime,
+                captainGitHubUsername,
+                oneWorkingDayBeforeRelease,
+                fourWorkingDaysBeforeRelease,
+                fiveWorkingDaysBeforeRelease,
 
-            captainSlackUsername,
-            slackAnnounceChannel,
-            dryRun,
-        }: Config) => {
+                captainSlackUsername,
+                slackAnnounceChannel,
+                dryRun,
+            } = config
+            const { upcoming: release } = await releaseVersions(config)
+
             // Create issue
             const { url, created } = await ensureTrackingIssue({
-                majorVersion,
-                minorVersion,
+                version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
@@ -179,7 +228,7 @@ const steps: Step[] = [
             // Announce issue if issue does not already exist
             if (created) {
                 // Slack markdown links
-                const majorMinor = `${majorVersion}.${minorVersion}`
+                const majorMinor = `${release.major}.${release.minor}`
                 const branchCutDate = new Date(fourWorkingDaysBeforeRelease)
                 const branchCutDateString = `<${timezoneLink(branchCutDate, `${majorMinor} branch cut`)}|${formatDate(
                     branchCutDate
@@ -189,7 +238,7 @@ const steps: Step[] = [
                     releaseDate
                 )}>`
                 await postMessage(
-                    `*${majorVersion}.${minorVersion} Release*
+                    `*${majorMinor} Release*
 
 :captain: Release captain: @${captainSlackUsername}
 :pencil: Tracking issue: ${url}
@@ -204,18 +253,13 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:patch-issue',
-        run: async ({ captainGitHubUsername, slackAnnounceChannel, dryRun }, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-            if (parsedVersion.prerelease.length > 0) {
-                throw new Error(`version ${version} is pre-release`)
-            }
+        run: async config => {
+            const { captainGitHubUsername, slackAnnounceChannel, dryRun } = config
+            const { upcoming: release } = await releaseVersions(config)
 
             // Create issue
             const { url, created } = await ensurePatchReleaseIssue({
-                version: parsedVersion,
+                version: release,
                 assignees: [captainGitHubUsername],
                 dryRun: dryRun.trackingIssues || false,
             })
@@ -226,7 +270,7 @@ const steps: Step[] = [
             // Announce issue if issue does not already exist
             if (created) {
                 await postMessage(
-                    `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
+                    `:captain: Patch release ${release.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
@@ -235,12 +279,9 @@ const steps: Step[] = [
     },
     {
         id: 'changelog:cut',
-        argNames: ['version', 'changelogFile'],
-        run: async ({ dryRun }, version, changelogFile = 'CHANGELOG.md') => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
+        argNames: ['changelogFile'],
+        run: async (config, changelogFile = 'CHANGELOG.md') => {
+            const { upcoming: release } = await releaseVersions(config)
 
             await createChangesets({
                 requiredCommands: [],
@@ -249,16 +290,16 @@ const steps: Step[] = [
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: `release: sourcegraph@${release.version}`,
                         edits: [
                             (directory: string) => {
-                                console.log(`Updating '${changelogFile} for ${parsedVersion.format()}'`)
+                                console.log(`Updating '${changelogFile} for ${release.format()}'`)
                                 const changelogPath = path.join(directory, changelogFile)
                                 let changelogContents = readFileSync(changelogPath).toString()
 
                                 // Convert 'unreleased' to a release
-                                const releaseHeader = `## ${parsedVersion.format()}`
+                                const releaseHeader = `## ${release.format()}`
                                 const unreleasedHeader = '## Unreleased'
                                 changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
 
@@ -272,38 +313,35 @@ const steps: Step[] = [
                                 writeFileSync(changelogPath, changelogContents)
                             },
                         ], // Changes already done
-                        title: `release: sourcegraph@${parsedVersion.version}`,
+                        title: `changelog: cut sourcegraph@${release.version}`,
                     },
                 ],
-                dryRun: dryRun.changesets,
+                dryRun: config.dryRun.changesets,
             })
         },
     },
     {
         id: 'release:status',
-        run: async (config, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-
+        run: async config => {
             const githubClient = await getAuthenticatedGitHubClient()
+            const { upcoming: release } = await releaseVersions(config)
 
             const trackingIssueURL = await getIssueByTitle(
                 githubClient,
-                trackingIssueTitle(config.majorVersion, config.minorVersion)
+                trackingIssueTitle(release.major, release.minor)
             )
             if (!trackingIssueURL) {
-                throw new Error(
-                    `Tracking issue for version ${config.majorVersion}.${config.minorVersion} not found--has it been create yet?`
-                )
+                throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
 
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
 
-            const openQuery = `is:open org:sourcegraph is:issue milestone:${config.majorVersion}.${config.minorVersion}`
+            const releaseMilestone = `${release.major}.${release.minor}${
+                release.patch !== 0 ? `.${release.patch}` : ''
+            }`
+            const openQuery = `is:open org:sourcegraph is:issue milestone:${releaseMilestone}`
             const openIssues = await listIssues(githubClient, openQuery)
             const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
 
@@ -312,7 +350,7 @@ const steps: Step[] = [
                 { name: 'open', issues: openIssues, issuesURL: openIssuesURL },
             ]
 
-            const message = `:captain: ${version} release status update:
+            const message = `:captain: ${release.version} release status update:
 
 - Tracking issue: ${trackingIssueURL}
 ${issueCategories
@@ -329,15 +367,17 @@ ${issueCategories
     },
     {
         id: 'release:create-candidate',
-        argNames: ['version'],
-        run: async (_config, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
+        argNames: ['candidate'],
+        run: async (config, candidate) => {
+            if (!candidate) {
+                throw new Error('Candidate information is required (either "final" or a number)')
             }
-            const tag = JSON.stringify(`v${parsedVersion.version}`)
-            const branch = JSON.stringify(`${parsedVersion.major}.${parsedVersion.minor}`)
-            console.log(`Creating and pushing tag ${tag}`)
+            const { upcoming: release } = await releaseVersions(config)
+
+            const tag = JSON.stringify(`v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`)
+            const branch = JSON.stringify(`${release.major}.${release.minor}`)
+
+            console.log(`Creating and pushing tag ${tag} on ${branch}`)
             await execa(
                 'bash',
                 [
@@ -350,14 +390,9 @@ ${issueCategories
     },
     {
         id: 'release:stage',
-        run: async ({ slackAnnounceChannel, dryRun }, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-            if (parsedVersion.prerelease.length > 0) {
-                throw new Error(`version ${version} is pre-release`)
-            }
+        run: async config => {
+            const { slackAnnounceChannel, dryRun } = config
+            const { upcoming: release } = await releaseVersions(config)
 
             // set up src-cli
             await commandExists('src')
@@ -371,52 +406,52 @@ ${issueCategories
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
-                        title: `release: sourcegraph@${parsedVersion.version}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: `release: sourcegraph@${release.version}`,
+                        title: `release: sourcegraph@${release.version}`,
                         edits: [
-                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
-                            `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${parsedVersion.version}\`/g' doc/index.md`,
-                            parsedVersion.patch === 0
-                                ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${parsedVersion.version}"}} {{$currentReleaseVersion := "${parsedVersion.major}.${parsedVersion.minor}"}}' doc/_resources/templates/document.html`
-                                : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${parsedVersion.version}"' doc/_resources/templates/document.html`,
-                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${release.version}/g' {} +`,
+                            `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${release.version}\`/g' doc/index.md`,
+                            release.patch === 0
+                                ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
+                                : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version}"' doc/_resources/templates/document.html`,
+                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                         ],
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph',
-                        base: `${parsedVersion.major}.${parsedVersion.minor}`,
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
-                        title: `release: sourcegraph@${parsedVersion.version}`,
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: `release: sourcegraph@${release.version}`,
+                        title: `release: sourcegraph@${release.version}`,
                         edits: [
                             // installs version pinned by deploy-sourcegraph
                             'go install github.com/slimsag/update-docker-tags',
-                            `.github/workflows/scripts/update-docker-tags.sh ${parsedVersion.version}`,
+                            `.github/workflows/scripts/update-docker-tags.sh ${release.version}`,
                         ],
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
-                        title: `release: sourcegraph@${parsedVersion.version}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: `release: sourcegraph@${release.version}`,
+                        title: `release: sourcegraph@${release.version}`,
                         edits: [
-                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
                         ],
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-digitalocean',
                         base: 'master',
-                        head: `publish-${parsedVersion.version}`,
-                        commitMessage: `release: sourcegraph@${parsedVersion.version}`,
-                        title: `release: sourcegraph@${parsedVersion.version}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: `release: sourcegraph@${release.version}`,
+                        title: `release: sourcegraph@${release.version}`,
                         edits: [
-                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
                         ],
                     },
                 ],
@@ -430,7 +465,7 @@ ${issueCategories
                     console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
                     publishCampaign = await campaigns.createCampaign(
                         createdChanges,
-                        campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+                        campaigns.releaseTrackingCampaign(release.version, sourcegraphAuth)
                     )
                     console.log(`Created ${publishCampaign}`)
                 } catch (error) {
@@ -440,7 +475,7 @@ ${issueCategories
 
                 // Announce release update in Slack
                 await postMessage(
-                    `:captain: *Sourcegraph ${parsedVersion.version} release has been staged*
+                    `:captain: *Sourcegraph ${release.version} release has been staged*
 
 * Campaign: ${publishCampaign}
 * @stephen: update <https://github.com/sourcegraph/deploy-sourcegraph-docker|deploy-sourcegraph-docker> as needed`,
@@ -451,12 +486,10 @@ ${issueCategories
     },
     {
         id: 'release:add-to-campaign',
-        // Example: yarn run release release:add-to-campaign 3.21.0 sourcegraph/about 1797
-        run: async (_config, version, changeRepo, changeID) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
+        // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
+        argNames: ['changeRepo', 'changeID'],
+        run: async (config, changeRepo, changeID) => {
+            const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
@@ -472,24 +505,23 @@ ${issueCategories
                         pullRequestNumber: parseInt(changeID, 10),
                     },
                 ],
-                campaigns.releaseTrackingCampaign(parsedVersion.version, sourcegraphAuth)
+                campaigns.releaseTrackingCampaign(release.version, sourcegraphAuth)
             )
             console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
         },
     },
     {
         id: 'release:close',
-        run: async ({ slackAnnounceChannel }, version) => {
-            const parsedVersion = semver.parse(version, { loose: false })
-            if (!parsedVersion) {
-                throw new Error(`version ${version} is not valid semver`)
-            }
-            const versionAnchor = parsedVersion.version.replace('.', '-')
+        run: async config => {
+            const { slackAnnounceChannel } = config
+            const { upcoming: release } = await releaseVersions(config)
+
+            const versionAnchor = release.version.replace('.', '-')
             const campaignURL = campaigns.campaignURL(
-                campaigns.releaseTrackingCampaign(parsedVersion.version, await campaigns.sourcegraphAuth())
+                campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
             )
             await postMessage(
-                `:captain: *${parsedVersion.version} has been published*
+                `:captain: *${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
 * Release campaign: ${campaignURL}`,

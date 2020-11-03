@@ -308,7 +308,7 @@ type ListChangesetSyncDataOpts struct {
 	// Return only the supplied changesets. If empty, all changesets are returned
 	ChangesetIDs []int64
 
-	ExternalServiceID string
+	ExternalServiceID int64
 }
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
@@ -346,13 +346,15 @@ SELECT changesets.id,
 	changesets.updated_at,
 	max(ce.updated_at) AS latest_event,
 	changesets.external_updated_at,
-	r.external_service_id
+	min(esr.external_service_id)
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
 JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
 JOIN repo r ON changesets.repo_id = r.id
+LEFT JOIN external_service_repos esr ON r.id = esr.repo_id
 WHERE %s
 GROUP BY changesets.id, r.id
+%s --- having
 ORDER BY changesets.id ASC
 `
 
@@ -373,11 +375,15 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
-	if opts.ExternalServiceID != "" {
-		preds = append(preds, sqlf.Sprintf("r.external_service_id = %s", opts.ExternalServiceID))
+	having := &sqlf.Query{}
+
+	if opts.ExternalServiceID != 0 {
+		// We use this to always get the same external service for a given repository,
+		// even if multiple external services point to it in the `external_service_repos` table.
+		having = sqlf.Sprintf("HAVING min(esr.external_service_id) = %s", opts.ExternalServiceID)
 	}
 
-	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"))
+	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"), having)
 }
 
 // ListChangesetsOpts captures the query options needed for
@@ -396,7 +402,7 @@ type ListChangesetsOpts struct {
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
 	OnlySynced           bool
-	ExternalServiceID    string
+	ExternalServiceID    int64
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -424,8 +430,9 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT %s FROM changesets
-INNER JOIN repo ON repo.id = changesets.repo_id
+%s --- joins
 WHERE %s
+%s --- group by
 ORDER BY id ASC
 `
 
@@ -434,6 +441,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
+	joins := []*sqlf.Query{
+		sqlf.Sprintf("INNER JOIN repo ON repo.id = changesets.repo_id"),
+	}
+	groupBy := &sqlf.Query{}
 
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
@@ -484,14 +495,17 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
 	}
 
-	if opts.ExternalServiceID != "" {
-		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
+	if opts.ExternalServiceID != 0 {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN external_service_repos esr ON repo.id = esr.repo_id"))
+		groupBy = sqlf.Sprintf("GROUP BY changesets.id HAVING min(esr.external_service_id) = %s", opts.ExternalServiceID)
 	}
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
+		groupBy,
 	)
 }
 
