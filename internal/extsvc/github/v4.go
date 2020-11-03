@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
@@ -44,6 +45,50 @@ type V4Client struct {
 
 	// rateLimit is our self imposed rate limiter.
 	rateLimit *rate.Limiter
+}
+
+// NewV4Client creates a new GitHub GraphQL API client with an optional default
+// authenticator.
+//
+// apiURL must point to the base URL of the GitHub API. See the docstring for
+// Client.apiURL.
+func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
+	apiURL = canonicalizedURL(apiURL)
+	if gitHubDisable {
+		cli = disabledClient{}
+	}
+	if cli == nil {
+		cli = httpcli.ExternalDoer()
+	}
+
+	cli = requestCounter.Doer(cli, func(u *url.URL) string {
+		// The first component of the Path mostly maps to the type of API
+		// request we are making. See `curl https://api.github.com` for the
+		// exact mapping
+		var category string
+		if parts := strings.SplitN(u.Path, "/", 3); len(parts) > 1 {
+			category = parts[1]
+		}
+		return category
+	})
+
+	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
+
+	return &V4Client{
+		apiURL:           apiURL,
+		githubDotCom:     urlIsGitHubDotCom(apiURL),
+		auth:             a,
+		httpClient:       cli,
+		rateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
+		rateLimit:        rl,
+	}
+}
+
+// WithAuthenticator returns a new V4Client that uses the same configuration as
+// the current V4Client, except authenticated as the GitHub user with the given
+// authenticator instance (most likely a token).
+func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
+	return NewV4Client(c.apiURL, a, c.httpClient)
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {

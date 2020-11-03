@@ -120,3 +120,9 @@ func IsNotFound(err error) bool {
 	}
 	return false
 }
+
+type disabledClient struct{}
+
+func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
+	return nil, errors.New("http: github communication disabled")
+}

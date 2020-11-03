@@ -328,7 +328,8 @@ repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { 
 repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
 
 	mock := mockHTTPResponseBody{responseBody: ""}
-	c := newTestClient(t, &mock)
+	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+	c := NewV4Client(apiURL, nil, &mock)
 	query, err := c.buildGetReposBatchQuery(repos)
 	if err != nil {
 		t.Fatal(err)
@@ -479,7 +480,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
-			c := newTestClient(t, &mock)
+			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+			c := NewV4Client(apiURL, nil, &mock)
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {

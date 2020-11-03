@@ -2,7 +2,6 @@ package github
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -35,12 +34,6 @@ func IsRateLimitExceeded(err error) bool {
 		}
 	}
 	return false
-}
-
-type disabledClient struct{}
-
-func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
-	return nil, errors.New("http: github communication disabled")
 }
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.

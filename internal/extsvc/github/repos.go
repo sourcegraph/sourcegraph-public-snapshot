@@ -39,41 +39,6 @@ type Repository struct {
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 }
 
-// repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
-// Repository struct.
-func (c *V4Client) repositoryFieldsGraphQLFragment() string {
-	if c.githubDotCom {
-		return `
-fragment RepositoryFields on Repository {
-	id
-	databaseId
-	nameWithOwner
-	description
-	url
-	isPrivate
-	isFork
-	isArchived
-	viewerPermission
-}
-	`
-	}
-	// Some fields are not yet available on GitHub Enterprise yet
-	// or are available but too new to expect our customers to have updated:
-	// - viewerPermission
-	return `
-fragment RepositoryFields on Repository {
-	id
-	databaseId
-	nameWithOwner
-	description
-	url
-	isPrivate
-	isFork
-	isArchived
-}
-	`
-}
-
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
 func nameWithOwnerCacheKey(nameWithOwner string) string { return "0:" + nameWithOwner }
 func nodeIDCacheKey(id string) string                   { return "1:" + id }
@@ -335,6 +300,41 @@ func (c *V4Client) buildGetReposBatchQuery(namesWithOwners []string) (string, er
 	b.WriteString("}")
 
 	return b.String(), nil
+}
+
+// repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
+// Repository struct.
+func (c *V4Client) repositoryFieldsGraphQLFragment() string {
+	if c.githubDotCom {
+		return `
+fragment RepositoryFields on Repository {
+	id
+	databaseId
+	nameWithOwner
+	description
+	url
+	isPrivate
+	isFork
+	isArchived
+	viewerPermission
+}
+	`
+	}
+	// Some fields are not yet available on GitHub Enterprise yet
+	// or are available but too new to expect our customers to have updated:
+	// - viewerPermission
+	return `
+fragment RepositoryFields on Repository {
+	id
+	databaseId
+	nameWithOwner
+	description
+	url
+	isPrivate
+	isFork
+	isArchived
+}
+	`
 }
 
 func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
