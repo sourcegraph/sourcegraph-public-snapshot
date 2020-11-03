@@ -81,7 +81,7 @@ func (m *monitor) Description() string {
 	return "description not implemented"
 }
 
-func (m *monitor) Enabled() bool {
+func (*monitor) Enabled() bool {
 	return true
 }
 
