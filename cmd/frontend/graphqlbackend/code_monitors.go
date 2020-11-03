@@ -86,14 +86,13 @@ func (*monitor) Enabled() bool {
 }
 
 func (m *monitor) Trigger(ctx context.Context) (MonitorTrigger, error) {
-	return &monitorTrigger{&monitorQuery{monitorID: m.ID()}}, nil
+	return &monitorTrigger{&monitorQuery{monitorID: m.ID(), userID: m.userID}}, nil
 }
 
 func (m *monitor) Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error) {
-	// TODO: fetch data
 	return &monitorActionConnection{
 			monitorID: m.ID(),
-			userID:    m.userID}, // TODO: remove this. This is just for the stub implementation.
+			userID:    m.userID},
 		nil
 }
 
@@ -149,6 +148,7 @@ type MonitorQueryResolver interface {
 
 type monitorQuery struct {
 	monitorID graphql.ID
+	userID    graphql.ID // TODO: remove this. Just for stub implementation
 }
 
 func (q *monitorQuery) ID() graphql.ID {
@@ -160,7 +160,7 @@ func (q *monitorQuery) Query() string {
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *ListEventsArgs) MonitorTriggerEventConnectionResolver {
-	return &monitorTriggerEventConnection{}
+	return &monitorTriggerEventConnection{monitorID: q.monitorID, userID: q.userID}
 }
 
 //
@@ -173,10 +173,19 @@ type MonitorTriggerEventConnectionResolver interface {
 }
 
 type monitorTriggerEventConnection struct {
+	monitorID graphql.ID
+	userID    graphql.ID // TODO: remove this. Just for stub implementation
 }
 
 func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]MonitorTriggerEventResolver, error) {
-	return []MonitorTriggerEventResolver{&monitorTriggerEvent{}}, nil
+	return []MonitorTriggerEventResolver{&monitorTriggerEvent{
+		id:        "42",
+		status:    "SUCCESS",
+		message:   nil,
+		timestamp: DateTime{time.Now()},
+		monitorID: a.monitorID,
+		userID:    a.userID,
+	}}, nil
 }
 
 func (a *monitorTriggerEventConnection) TotalCount(ctx context.Context) (int32, error) {
@@ -190,29 +199,48 @@ func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlu
 //
 // MonitorTriggerEvent
 //
+//type MonitorTriggerEventResolver interface {
+//	Event() (MonitorEventResolver, error)
+//	ActionEvents(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+//}
 type MonitorTriggerEventResolver interface {
-	Event() (MonitorEventResolver, error)
-	ActionEvents(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+	ID() graphql.ID
+	Status() string
+	Message() *string
+	Timestamp() DateTime
+	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
 }
 
 type monitorTriggerEvent struct {
+	id        graphql.ID
+	status    string
+	message   *string
+	timestamp DateTime
+	monitorID graphql.ID
+
+	userID graphql.ID // TODO: remove this. Just for stub implementation
 }
 
-func (m monitorTriggerEvent) Event() (MonitorEventResolver, error) {
-	dummy := "trigger status details not implemented"
-	return &monitorEvent{
-		id:        "42",
-		status:    "SUCCESS",
-		message:   &dummy,
-		timestamp: DateTime{time.Now()},
-	}, nil
+func (m *monitorTriggerEvent) ID() graphql.ID {
+	return m.id
 }
 
-func (m monitorTriggerEvent) ActionEvents(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error) {
-	return &monitorActionEventConnection{}, nil
+func (m *monitorTriggerEvent) Status() string {
+	return m.status
 }
 
-//
+func (m *monitorTriggerEvent) Message() *string {
+	return m.message
+}
+
+func (m *monitorTriggerEvent) Timestamp() DateTime {
+	return m.timestamp
+}
+
+func (m *monitorTriggerEvent) Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error) {
+	return MonitorActionConnectionResolver(&monitorActionConnection{userID: m.userID, monitorID: m.monitorID, triggerEventID: &m.id}), nil
+}
+
 // ActionConnection
 //
 type MonitorActionConnectionResolver interface {
@@ -224,6 +252,9 @@ type MonitorActionConnectionResolver interface {
 type monitorActionConnection struct {
 	userID    graphql.ID //  TODO: remove this. This is just for the stub implementation.
 	monitorID graphql.ID
+
+	// triggerEventID is used to link action events to a trigger event
+	triggerEventID *graphql.ID
 }
 
 func (a *monitorActionConnection) Nodes(ctx context.Context) ([]MonitorAction, error) {
@@ -268,6 +299,11 @@ type MonitorEmailResolver interface {
 type monitorEmail struct {
 	userID graphql.ID //  TODO: remove this. This is just for the stub implementation.
 	id     graphql.ID
+
+	// If triggerEventID == nil, all events of this action will be returned.
+	// Otherwise, only those events of this action which are related to the specified
+	// trigger event will be returned.
+	triggerEventID *graphql.ID
 }
 
 func (m *monitorEmail) Recipient(ctx context.Context) (MonitorEmailRecipient, error) {

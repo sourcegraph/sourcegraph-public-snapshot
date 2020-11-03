@@ -2957,17 +2957,29 @@ type MonitorTriggerEventConnection {
 }
 
 """
-A trigger event is a simple monitor event together with a list of events from associated actions
+A trigger event is an event together with a list of associated actions.
 """
 type MonitorTriggerEvent {
     """
-    The trigger event.
+    The unique id of an event.
     """
-    event: MonitorEvent
+    id: ID!
     """
-    A list of events of associated actions.
+    The status of an event.
     """
-    actionEvents(
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+    """
+    A list of actions.
+    """
+    actions(
         """
         Returns the first n events from the list.
         """
@@ -2976,7 +2988,7 @@ type MonitorTriggerEvent {
         Opaque pagination cursor.
         """
         after: String
-    ): MonitorActionEventConnection!
+    ): MonitorActionConnection!
 }
 
 """
