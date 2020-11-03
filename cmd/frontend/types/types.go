@@ -1243,18 +1243,18 @@ type SavedSearches struct {
 // Panel homepage represents interaction data on the
 // enterprise homepage panels.
 type HomepagePanels struct {
-	RecentFilesClickedPercentage           float64
-	RecentSearchClickedPercentage          float64
-	RecentRepositoriesClickedPercentage    float64
-	SavedSearchesClickedPercentage         float64
-	NewSavedSearchesClickedPercentage      float64
-	TotalPanelViews                        float64
-	UsersFilesClickedPercentage            float64
-	UsersSearchClickedPercentage           float64
-	UsersRepositoriesClickedPercentage     float64
-	UsersSavedSearchesClickedPercentage    float64
-	UsersNewSavedSearchesClickedPercentage float64
-	PercentUsersShown                      float64
+	RecentFilesClickedPercentage           *float64
+	RecentSearchClickedPercentage          *float64
+	RecentRepositoriesClickedPercentage    *float64
+	SavedSearchesClickedPercentage         *float64
+	NewSavedSearchesClickedPercentage      *float64
+	TotalPanelViews                        *float64
+	UsersFilesClickedPercentage            *float64
+	UsersSearchClickedPercentage           *float64
+	UsersRepositoriesClickedPercentage     *float64
+	UsersSavedSearchesClickedPercentage    *float64
+	UsersNewSavedSearchesClickedPercentage *float64
+	PercentUsersShown                      *float64
 }
 
 // Secret represents the secrets table
