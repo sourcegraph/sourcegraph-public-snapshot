@@ -41,7 +41,7 @@ type Repository struct {
 
 // repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
 // Repository struct.
-func (c *Client) repositoryFieldsGraphQLFragment() string {
+func (c *V3Client) repositoryFieldsGraphQLFragment() string {
 	if c.githubDotCom {
 		return `
 fragment RepositoryFields on Repository {
@@ -89,7 +89,7 @@ func MockGetRepository_Return(returns *Repository) {
 }
 
 // GetRepository gets a repository from GitHub by owner and repository name.
-func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
+func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
 	if GetRepositoryMock != nil {
 		return GetRepositoryMock(ctx, owner, name)
 	}
@@ -106,7 +106,7 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
+func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
 	if !nocache {
 		if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
 			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
@@ -153,7 +153,7 @@ type cachedRepo struct {
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
+func (c *V3Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
 	b, ok := c.repoCache.Get(strings.ToLower(key))
 	if !ok {
 		return nil
@@ -170,7 +170,7 @@ func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cached
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache keys
 // for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
-func (c *Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
+func (c *V3Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
 	b, err := json.Marshal(repo)
 	if err != nil {
 		return
@@ -182,7 +182,7 @@ func (c *Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
 
 // addRepositoriesToCache will cache repositories that exist
 // under relevant cache keys.
-func (c *Client) addRepositoriesToCache(repos []*Repository) {
+func (c *V3Client) addRepositoriesToCache(repos []*Repository) {
 	for _, repo := range repos {
 		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
 		c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
@@ -208,7 +208,7 @@ type restRepository struct {
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
-func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
+func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
 	// If no token, we must use the older REST API, not the GraphQL API. See
 	// https://platform.github.community/t/anonymous-access/2093/2. This situation occurs on (for
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
@@ -259,7 +259,7 @@ func convertRestRepoPermissions(restRepoPermissions restRepositoryPermissions) s
 // An empty sinceRepoID returns the first page of results.
 // This is only intended to be called for GitHub Enterprise, so no rate limit information is returned.
 // https://developer.github.com/v3/repos/#list-all-public-repositories
-func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
+func (c *V3Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	path := "repositories"
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
@@ -283,7 +283,7 @@ var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too la
 // the conservative step back from 37.
 //
 // This method does not cache.
-func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
+func (c *V3Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
 	if len(namesWithOwners) > 30 {
 		return nil, ErrBatchTooLarge
 	}
@@ -318,7 +318,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 	return repos, nil
 }
 
-func (c *Client) buildGetReposBatchQuery(namesWithOwners []string) (string, error) {
+func (c *V3Client) buildGetReposBatchQuery(namesWithOwners []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")
@@ -337,7 +337,7 @@ func (c *Client) buildGetReposBatchQuery(namesWithOwners []string) (string, erro
 	return b.String(), nil
 }
 
-func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
+func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	repos, err := c.getPublicRepositories(ctx, sinceRepoID)
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ const (
 // ListAffiliatedRepositories lists GitHub repositories affiliated with the client
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
-func (c *Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int) (
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int) (
 	repos []*Repository,
 	hasNextPage bool,
 	rateLimitCost int,
@@ -376,7 +376,7 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, visibility Visi
 // ListOrgRepositories lists GitHub repositories from the specified organization.
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).
-func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+func (c *V3Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100", org, page)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
@@ -384,7 +384,7 @@ func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) 
 
 // ListUserRepositories lists GitHub repositories from the specified user.
 // Pages are 1-indexed (so the first call should be for page 1)
-func (c *Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+func (c *V3Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("users/%s/repos?sort=created&type=owner&page=%d&per_page=100", user, page)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
@@ -403,7 +403,7 @@ type RepositoryListPage struct {
 	HasNextPage bool
 }
 
-func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
+func (c *V3Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
 	urlValues := url.Values{
 		"q":        []string{searchString},
 		"page":     []string{strconv.Itoa(page)},
@@ -435,7 +435,7 @@ type restTopicsResponse struct {
 }
 
 // ListTopicsOnRepository lists topics on the given repository.
-func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
+func (c *V3Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
 	owner, name, err := SplitRepositoryNameWithOwner(ownerAndName)
 	if err != nil {
 		return nil, err
@@ -453,7 +453,7 @@ func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string
 
 // ListInstallationRepositories lists repositories on which the authenticated
 // GitHub App has been installed.
-func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
+func (c *V3Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
 	type response struct {
 		Repositories []restRepository `json:"repositories"`
 	}
@@ -476,7 +476,7 @@ func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repositor
 // - /users/:user/repos
 // - /orgs/:org/repos
 // - /user/repos
-func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
+func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
 	if err := c.requestGet(ctx, requestURI, &restRepos); err != nil {
 		return nil, err

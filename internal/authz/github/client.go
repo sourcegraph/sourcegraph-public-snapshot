@@ -20,12 +20,12 @@ var _ client = (*ClientAdapter)(nil)
 
 // ClientAdapter is an adapter for GitHub API client.
 type ClientAdapter struct {
-	*github.Client
+	*github.V3Client
 }
 
 func (c *ClientAdapter) WithToken(token string) client {
 	return &ClientAdapter{
-		Client: c.Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}),
+		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}),
 	}
 }
 

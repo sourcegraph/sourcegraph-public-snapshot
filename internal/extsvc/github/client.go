@@ -12,56 +12,19 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
-
-// Client is a caching GitHub API client.
-//
-// All instances use a map of rcache.Cache instances for caching (see the `repoCache` field). These
-// separate instances have consistent naming prefixes so that different instances will share the
-// same Redis cache entries (provided they were computed with the same API URL and access
-// token). The cache keys are agnostic of the http.RoundTripper transport.
-type Client struct {
-	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
-	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
-	// GitHub Enterprise.
-	apiURL *url.URL
-
-	// githubDotCom is true if this client connects to github.com.
-	githubDotCom bool
-
-	// auth is used to authenticate requests. May be empty, in which case the
-	// default behavior is to make unauthenticated requests.
-	// 🚨 SECURITY: Should not be changed after client creation to prevent
-	// unauthorized access to the repository cache. Use `WithAuthenticator` to
-	// create a new client with a different authenticator instead.
-	auth auth.Authenticator
-
-	// httpClient is the HTTP client used to make requests to the GitHub API.
-	httpClient httpcli.Doer
-
-	// repoCache is the repository cache associated with the token.
-	repoCache *rcache.Cache
-
-	// rateLimitMonitor is the API rate limit monitor.
-	rateLimitMonitor *ratelimit.Monitor
-
-	// rateLimit is our self imposed rate limiter
-	rateLimit *rate.Limiter
-}
 
 // NewClient creates a new GitHub API client with an optional default
 // authenticator.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // Client.apiURL.
-func NewClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *Client {
+func NewClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -83,7 +46,7 @@ func NewClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *Client 
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
 
-	return &Client{
+	return &V3Client{
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
 		auth:             a,
@@ -97,11 +60,11 @@ func NewClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *Client 
 // WithAuthenticator returns a new Client that uses the same configuration as
 // the current Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return NewClient(c.apiURL, a, c.httpClient)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
+func (c *V3Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
 	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -146,7 +109,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
+func (c *V3Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return err
@@ -171,8 +134,8 @@ func (c *Client) requestGet(ctx context.Context, requestURI string, result inter
 	return c.do(ctx, req, result)
 }
 
-// RateLimitMonitor exposes the rate limit monitor
-func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 

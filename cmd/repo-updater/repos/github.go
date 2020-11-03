@@ -33,10 +33,10 @@ type GithubSource struct {
 	excludeForks    bool
 	githubDotCom    bool
 	baseURL         *url.URL
-	client          *github.Client
+	client          *github.V3Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
-	searchClient *github.Client
+	searchClient *github.V3Client
 
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).

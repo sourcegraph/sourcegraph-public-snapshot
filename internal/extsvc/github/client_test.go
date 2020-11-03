@@ -114,7 +114,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := &Client{
+	old := &V3Client{
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
@@ -532,7 +532,7 @@ func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 	)
 }
 
-func newClient(t testing.TB, name string) (*Client, func()) {
+func newClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
