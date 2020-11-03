@@ -2923,6 +2923,72 @@ type MonitorQuery implements Node {
     A query.
     """
     query: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorTriggerEventConnection!
+}
+
+"""
+A list of trigger events.
+"""
+type MonitorTriggerEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorTriggerEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A trigger event is an event together with a list of associated actions.
+"""
+type MonitorTriggerEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+    """
+    A list of actions.
+    """
+    actions(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
 }
 
 """
@@ -3014,7 +3080,7 @@ type MonitorActionEventConnection {
     """
     A list of events.
     """
-    nodes: [MonitorEvent!]!
+    nodes: [MonitorActionEvent!]!
     """
     The total number of events in the connection.
     """
@@ -3028,7 +3094,7 @@ type MonitorActionEventConnection {
 """
 An event documents the result of a trigger or an execution of an action.
 """
-type MonitorEvent implements Node {
+type MonitorActionEvent implements Node {
     """
     The unique id of an event.
     """
