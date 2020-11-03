@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
@@ -54,27 +56,29 @@ func TestInfo_Plan(t *testing.T) {
 
 func TestInfo_hasUnknownPlan(t *testing.T) {
 	tests := []struct {
-		tags        []string
-		wantTag     string
-		wantUnknown bool
+		tags    []string
+		wantErr string
 	}{
-		{tags: []string{""}, wantUnknown: false},
-		{tags: []string{"foo"}, wantUnknown: false},
-		{tags: []string{"foo", oldEnterpriseStarter.tag()}, wantUnknown: false},
-		{tags: []string{"foo", oldEnterprise.tag()}, wantUnknown: false},
-		{tags: []string{"foo", team.tag()}, wantUnknown: false},
-		{tags: []string{"foo", enterprise.tag()}, wantUnknown: false},
-		{tags: []string{"starter"}, wantUnknown: false},
+		{tags: []string{""}},
+		{tags: []string{"foo"}},
+		{tags: []string{"foo", oldEnterpriseStarter.tag()}},
+		{tags: []string{"foo", oldEnterprise.tag()}},
+		{tags: []string{"foo", team.tag()}},
+		{tags: []string{"foo", enterprise.tag()}},
+		{tags: []string{"starter"}},
 
-		{tags: []string{"foo", "plan:xyz"}, wantTag: "plan:xyz", wantUnknown: true},
+		{tags: []string{"foo", "plan:xyz"}, wantErr: `The license has an unrecognizable plan in tag "plan:xyz", please contact Sourcegraph support.`},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
-			tag, unknown := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
-			if tag != test.wantTag {
-				t.Errorf("Tag: got %q, want %q", tag, test.wantTag)
-			} else if unknown != test.wantUnknown {
-				t.Errorf("Unknown: got %v, want %v", unknown, test.wantUnknown)
+			if test.wantErr == "" {
+				test.wantErr = "<nil>"
+			}
+
+			err := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
+			got := fmt.Sprintf("%v", err)
+			if diff := cmp.Diff(test.wantErr, got); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

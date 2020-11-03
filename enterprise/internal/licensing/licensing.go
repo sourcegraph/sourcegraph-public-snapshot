@@ -119,9 +119,8 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 				return nil, "", err
 			}
 
-			badTag, unknown := info.hasUnknownPlan()
-			if EnforceTiers && unknown {
-				return nil, "", errors.Errorf("The license has an unrecognizable plan in tag %q, please contact Sourcegraph support.", badTag)
+			if err = info.hasUnknownPlan(); EnforceTiers && err != nil {
+				return nil, "", err
 			}
 
 			lastKeyText = keyText
