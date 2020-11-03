@@ -13,11 +13,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store/mocks"
 )
 
 func TestMain(m *testing.M) {
@@ -28,225 +28,21 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestSendUpload(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
-		}
-		if r.URL.Path != "/uploads/42" {
-			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42", r.URL.Path)
-		}
-
-		if content, err := ioutil.ReadAll(r.Body); err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
-		} else if diff := cmp.Diff([]byte("payload\n"), content); diff != "" {
-			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
-		}
-
-		w.Write([]byte(`{"size": 100}`))
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	size, err := client.SendUpload(context.Background(), 42, bytes.NewReader([]byte("payload\n")))
-	if err != nil {
-		t.Fatalf("unexpected error sending upload: %s", err)
-	}
-	if size != 100 {
-		t.Errorf("unexpected size. want=%d have=%d", 100, size)
-	}
-}
-
-func TestSendUploadBadResponse(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	if _, err := client.SendUpload(context.Background(), 42, bytes.NewReader([]byte("payload\n"))); err == nil {
-		t.Fatalf("unexpected nil error sending upload")
-	}
-}
-
-func TestSendUploadRetry(t *testing.T) {
-	var fullContents []byte
-	for i := 0; i < 10000; i++ {
-		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
-	}
-
-	bufSize := 32
-	var payloads [][]byte
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		payload := make([]byte, bufSize)
-		n, err := io.ReadFull(r.Body, payload)
-		payloads = append(payloads, payload[:n])
-		bufSize *= 8
-
-		// ReadFull returns unexpected EOF if it can't fill the buffer
-		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			w.Write([]byte(`{"size": 100}`))
-			return
-		}
-
-		// Simulate a network error
-		conn, _, _ := w.(http.Hijacker).Hijack()
-		conn.Close()
-
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, clock: advancingClock()}
-	size, err := client.SendUpload(context.Background(), 42, bytes.NewReader(fullContents))
-	if err != nil {
-		t.Fatalf("unexpected error sending upload: %s", err)
-	}
-	if size != 100 {
-		t.Errorf("unexpected size. want=%d have=%d", 100, size)
-	}
-
-	if len(payloads) != 5 {
-		t.Errorf("unexpected number of requests. want=%d have=%d", 5, len(payloads))
-	}
-
-	for i := 1; i < len(payloads); i++ {
-		if !bytes.HasPrefix(payloads[i], payloads[i-1]) {
-			t.Errorf("expected payloads[%d] to be a prefix of payloads[%d]", i-1, i)
-		}
-	}
-
-	if diff := cmp.Diff(fullContents, payloads[len(payloads)-1]); diff != "" {
-		t.Errorf("unexpected payload (-want +got):\n%s", diff)
-	}
-}
-
-func TestSendUploadPart(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
-		}
-		if r.URL.Path != "/uploads/42/3" {
-			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42/3", r.URL.Path)
-		}
-
-		if content, err := ioutil.ReadAll(r.Body); err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
-		} else if diff := cmp.Diff([]byte("payload\n"), content); diff != "" {
-			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
-		}
-
-		w.Write([]byte(`{"size": 100}`))
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	err := client.SendUploadPart(context.Background(), 42, 3, bytes.NewReader([]byte("payload\n")))
-	if err != nil {
-		t.Fatalf("unexpected error sending upload: %s", err)
-	}
-}
-
-func TestSendUploadPartBadResponse(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	err := client.SendUploadPart(context.Background(), 42, 3, bytes.NewReader([]byte("payload\n")))
-	if err == nil {
-		t.Fatalf("unexpected nil error sending upload")
-	}
-}
-
-func TestStitchParts(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
-		}
-		if r.URL.Path != "/uploads/42/stitch" {
-			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42/stitch", r.URL.Path)
-		}
-
-		w.Write([]byte(`{"size": 100}`))
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	size, err := client.StitchParts(context.Background(), 42)
-	if err != nil {
-		t.Fatalf("unexpected error sending upload: %s", err)
-	}
-	if size != 100 {
-		t.Errorf("unexpected size. want=%d have=%d", 100, size)
-	}
-}
-
-func TestStitchPartsBadResponse(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-
-	if _, err := client.StitchParts(context.Background(), 42); err == nil {
-		t.Fatalf("unexpected nil error sending upload")
-	}
-}
-
-func TestDeleteUpload(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "DELETE" {
-			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
-		}
-		if r.URL.Path != "/uploads/42" {
-			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42", r.URL.Path)
-		}
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	err := client.DeleteUpload(context.Background(), 42)
-	if err != nil {
-		t.Fatalf("unexpected error sending upload: %s", err)
-	}
-}
-
-func TestDeleteUploadBadResponse(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	err := client.DeleteUpload(context.Background(), 42)
-	if err == nil {
-		t.Fatalf("unexpected nil error sending upload")
-	}
-}
-
 func TestGetUpload(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
 	var fullContents []byte
 	for i := 0; i < 1000; i++ {
 		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
 	}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
-		}
-		if r.URL.Path != "/uploads/42" {
-			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42", r.URL.Path)
-		}
+	uploadStore := mocks.NewMockStore()
+	uploadStore.GetFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader(compress(fullContents))), nil)
 
-		if _, err := w.Write(compress(fullContents)); err != nil {
-			t.Fatalf("unexpected error writing to client: %s", err)
-		}
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: io.Copy}
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, uploadStore: uploadStore, ioCopy: io.Copy}
 	r, err := client.GetUpload(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
@@ -263,19 +59,15 @@ func TestGetUpload(t *testing.T) {
 }
 
 func TestGetUploadTransientErrors(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
 	var fullContents []byte
 	for i := 0; i < 1000; i++ {
 		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
 	}
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seek, _ := strconv.Atoi(r.URL.Query().Get("seek"))
-
-		if _, err := w.Write(compress(fullContents)[seek:]); err != nil {
-			t.Fatalf("unexpected error writing to client: %s", err)
-		}
-	}))
-	defer ts.Close()
 
 	// mockCopy is like io.Copy but it will read 50 bytes and return an error
 	// that appears to be a transient connection error.
@@ -299,7 +91,12 @@ func TestGetUploadTransientErrors(t *testing.T) {
 		return n, readErr
 	}
 
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: mockCopy}
+	uploadStore := mocks.NewMockStore()
+	uploadStore.GetFunc.SetDefaultHook(func(ctx context.Context, key string, seek int64) (io.ReadCloser, error) {
+		return ioutil.NopCloser(bytes.NewReader(compress(fullContents)[seek:])), nil
+	})
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, uploadStore: uploadStore, ioCopy: mockCopy}
 	r, err := client.GetUpload(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
@@ -316,53 +113,29 @@ func TestGetUploadTransientErrors(t *testing.T) {
 }
 
 func TestGetUploadReadNothingLoop(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
 	var fullContents []byte
 	for i := 0; i < 1000; i++ {
 		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
 	}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seek, _ := strconv.Atoi(r.URL.Query().Get("seek"))
-
-		if _, err := w.Write(compress(fullContents)[seek:]); err != nil {
-			t.Fatalf("unexpected error writing to client: %s", err)
-		}
-	}))
-	defer ts.Close()
+	uploadStore := mocks.NewMockStore()
+	uploadStore.GetFunc.SetDefaultHook(func(ctx context.Context, key string, seek int64) (io.ReadCloser, error) {
+		return ioutil.NopCloser(bytes.NewReader(compress(fullContents)[seek:])), nil
+	})
 
 	// Ensure that no progress transient errors do not cause an infinite loop
 	mockCopy := func(w io.Writer, r io.Reader) (int64, error) {
 		return 0, errors.New("read: connection reset by peer")
 	}
 
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: mockCopy}
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, uploadStore: uploadStore, ioCopy: mockCopy}
 	if _, err := client.GetUpload(context.Background(), 42); err != ErrNoDownloadProgress {
 		t.Fatalf("unexpected error getting upload. want=%q have=%q", ErrNoDownloadProgress, err)
-	}
-}
-
-func TestGetUploadNotFound(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	if _, err := client.GetUpload(context.Background(), 42); err != ErrNotFound {
-		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
-	}
-}
-
-func TestGetUploadBadResponse(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-
-	if _, err := client.GetUpload(context.Background(), 42); err == nil {
-		t.Fatalf("unexpected nil reading upload: %s", err)
 	}
 }
 
