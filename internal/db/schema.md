@@ -465,6 +465,7 @@ Foreign-key constraints:
  last_sync_at      | timestamp with time zone | 
  next_sync_at      | timestamp with time zone | 
  namespace_user_id | integer                  | 
+ unrestricted      | boolean                  | not null default false
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
@@ -962,7 +963,6 @@ Referenced by:
  metadata              | jsonb                    | not null default '{}'::jsonb
  private               | boolean                  | not null default false
  cloned                | boolean                  | not null default false
- unrestricted          | boolean                  | not null default false
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
