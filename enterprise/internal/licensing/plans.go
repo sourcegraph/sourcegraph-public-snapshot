@@ -61,3 +61,20 @@ func (info *Info) Plan() Plan {
 	// Backcompat: no tags means it is the old "Enterprise" plan.
 	return oldEnterprise
 }
+
+// hasUnknownPlan returns true and the tag in trouble if the plan is presented in the license tags
+// but unrecognizable. It returns false if there is no tags found for plans.
+func (info *Info) hasUnknownPlan() (string, bool) {
+	for _, tag := range info.Tags {
+		// A tag that begins with "plan:" indicates the license's plan.
+		if !strings.HasPrefix(tag, planTagPrefix) {
+			continue
+		}
+
+		plan := Plan(tag[len(planTagPrefix):])
+		if !plan.isKnown() {
+			return tag, true
+		}
+	}
+	return "", false
+}

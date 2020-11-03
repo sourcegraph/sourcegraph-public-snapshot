@@ -51,3 +51,31 @@ func TestInfo_Plan(t *testing.T) {
 		})
 	}
 }
+
+func TestInfo_hasUnknownPlan(t *testing.T) {
+	tests := []struct {
+		tags        []string
+		wantTag     string
+		wantUnknown bool
+	}{
+		{tags: []string{""}, wantUnknown: false},
+		{tags: []string{"foo"}, wantUnknown: false},
+		{tags: []string{"foo", oldEnterpriseStarter.tag()}, wantUnknown: false},
+		{tags: []string{"foo", oldEnterprise.tag()}, wantUnknown: false},
+		{tags: []string{"foo", team.tag()}, wantUnknown: false},
+		{tags: []string{"foo", enterprise.tag()}, wantUnknown: false},
+		{tags: []string{"starter"}, wantUnknown: false},
+
+		{tags: []string{"foo", "plan:xyz"}, wantTag: "plan:xyz", wantUnknown: true},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
+			tag, unknown := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
+			if tag != test.wantTag {
+				t.Errorf("Tag: got %q, want %q", tag, test.wantTag)
+			} else if unknown != test.wantUnknown {
+				t.Errorf("Unknown: got %v, want %v", unknown, test.wantUnknown)
+			}
+		})
+	}
+}
