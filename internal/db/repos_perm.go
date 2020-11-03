@@ -258,19 +258,29 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 }
 
 const authzQueryCondsFmtstr = `(
-	%s									-- TRUE or FALSE to indicate whether to bypass the check
-OR	(									-- Happy path of unrestricted repositories
-		NOT	%s							-- No happy path when permissions user mapping is enabled
-		AND	repo.unrestricted = TRUE
-	)
-OR	(									-- Restricted repositories require checking permissions
-		SELECT object_ids_ints
-		FROM user_permissions
-		WHERE
-			user_id = %s
-		AND	permission = %s
-		AND	object_type = 'repos'
-	) @> INTSET(repo.id)
+    %s                            -- TRUE or FALSE to indicate whether to bypass the check
+OR  (
+        NOT %s                    -- Disregard unrestricted state when permissions user mapping is enabled
+        AND (
+                NOT repo.private  -- Happy path of non-private repositories
+                OR  (             -- Each external service defines if repositories are unrestricted
+                        SELECT COUNT(*) FROM external_services AS es
+                        JOIN external_service_repos AS esr ON esr.external_service_id = es.id
+                        WHERE
+                            esr.repo_id = repo.id
+                        AND es.unrestricted = TRUE
+                        AND es.deleted_at IS NULL
+                    ) > 0
+            )
+    )
+OR  (                             -- Restricted repositories require checking permissions
+        SELECT object_ids_ints
+        FROM user_permissions
+        WHERE
+            user_id = %s
+        AND permission = %s
+        AND object_type = 'repos'
+    ) @> INTSET(repo.id)
 )
 `
 

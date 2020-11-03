@@ -86,6 +86,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	Unrestricted    bool
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -573,8 +574,6 @@ type Repo struct {
 	Archived bool
 	// Private is whether the repository is private.
 	Private bool
-	// Unrestricted is whether access to the repository is unrestricted.
-	Unrestricted bool
 	// Cloned is whether the repository is cloned.
 	Cloned bool
 	// CreatedAt is when this repository was created on Sourcegraph.
@@ -669,7 +668,6 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Private != n.Private {
 		r.Private, modified = n.Private, true
-		r.Unrestricted = !n.Private // Open or block access immediately
 	}
 
 	if !reflect.DeepEqual(r.Sources, n.Sources) {

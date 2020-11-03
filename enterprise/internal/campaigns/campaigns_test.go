@@ -32,8 +32,9 @@ func testRepo(t *testing.T, store repos.Store, serviceKind string) (*repos.Repo,
 	}
 
 	repo := &repos.Repo{
-		Name: fmt.Sprintf("repo-%d", svc.ID),
-		URI:  fmt.Sprintf("repo-%d", svc.ID),
+		Name:    fmt.Sprintf("repo-%d", svc.ID),
+		URI:     fmt.Sprintf("repo-%d", svc.ID),
+		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
 			ServiceType: extsvc.KindToType(serviceKind),

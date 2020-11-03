@@ -1,5 +1,5 @@
 BEGIN;
 
-ALTER TABLE repo DROP COLUMN IF EXISTS unrestricted;
+ALTER TABLE external_services DROP COLUMN IF EXISTS unrestricted;
 
 COMMIT;

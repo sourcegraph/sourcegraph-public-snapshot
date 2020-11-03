@@ -45,8 +45,8 @@ func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
 	t.Helper()
 
 	op := InsertRepoOp{
-		Name:         repo.Name,
-		Unrestricted: !repo.Private,
+		Name:    repo.Name,
+		Private: repo.Private,
 	}
 
 	if repo.RepoFields != nil {
@@ -99,7 +99,7 @@ type InsertRepoOp struct {
 	Fork         bool
 	Archived     bool
 	Cloned       bool
-	Unrestricted bool
+	Private      bool
 	ExternalRepo api.ExternalRepoSpec
 }
 
@@ -115,7 +115,7 @@ WITH upsert AS (
     external_service_id   = NULLIF(BTRIM($6), ''),
     archived              = $7,
     cloned                = $8,
-    unrestricted          = $9
+    private               = $9
   WHERE name = $1 OR (
     external_id IS NOT NULL
     AND external_service_type IS NOT NULL
@@ -139,7 +139,7 @@ INSERT INTO repo (
   external_service_id,
   archived,
   cloned,
-  unrestricted
+  private
 ) (
   SELECT
     $1 AS name,
@@ -150,7 +150,7 @@ INSERT INTO repo (
     NULLIF(BTRIM($6), '') AS external_service_id,
     $7 AS archived,
     $8 AS cloned,
-    $9 AS unrestricted
+    $9 AS private
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
@@ -194,7 +194,7 @@ func (s *RepoStore) Upsert(ctx context.Context, op InsertRepoOp) error {
 		op.ExternalRepo.ServiceID,
 		op.Archived,
 		op.Cloned,
-		op.Unrestricted,
+		op.Private,
 	)
 
 	return err

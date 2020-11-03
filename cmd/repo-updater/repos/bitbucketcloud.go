@@ -113,10 +113,9 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 			ServiceType: extsvc.TypeBitbucketCloud,
 			ServiceID:   host.String(),
 		},
-		Description:  r.Description,
-		Fork:         r.Parent != nil,
-		Private:      r.IsPrivate,
-		Unrestricted: !r.IsPrivate,
+		Description: r.Description,
+		Fork:        r.Parent != nil,
+		Private:     r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

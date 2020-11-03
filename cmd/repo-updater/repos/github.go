@@ -329,7 +329,6 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
 		Private:      r.IsPrivate,
-		Unrestricted: !r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

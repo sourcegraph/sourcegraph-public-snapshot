@@ -314,26 +314,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	// For non-private repositories, we rely on the fact that the `provider` is
-	// always nil here to only make sure `repo.Unrestricted` is true for these
-	// repositories because we don't restrict access to non-private repositories.
+	// always nil here because we don't restrict access to non-private repositories.
 	if provider == nil {
 		log15.Debug("PermsSyncer.syncRepoPerms.noProvider",
 			"repoID", repo.ID,
 			"private", repo.Private,
-			"unrestricted", repo.Unrestricted)
-
-		if !repo.Unrestricted {
-			// NOTE: Not using transaction here because it is not easy to start transaction
-			// that involves two stores. Being partially succeeded here is OK because:
-			// 	1. We're setting the repository to be unrestricted and the permissions
-			// 		bits no longer important.
-			//	2. Eventually, the syncer will try to sync and run down to here again
-			//		because of the permissions staleness.
-			repo.Unrestricted = true
-			if err := s.reposStore.UpsertRepos(ctx, repo); err != nil {
-				return errors.Wrapf(err, "upsert repo %d", repo.ID)
-			}
-		}
+		)
 
 		// We have no authz provider configured for the repository.
 		// However, we need to upsert the dummy record in order to

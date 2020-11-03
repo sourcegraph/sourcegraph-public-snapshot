@@ -346,7 +346,7 @@ func TestService(t *testing.T) {
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
-			t.Fatalf("expected not-found error but got %s", err)
+			t.Fatalf("expected not-found error but got %v", err)
 		}
 	})
 
@@ -589,7 +589,7 @@ func TestService(t *testing.T) {
 
 			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
 			if !errcode.IsNotFound(err) {
-				t.Fatalf("expected not-found error but got %s", err)
+				t.Fatalf("expected not-found error but got %v", err)
 			}
 		})
 	})
