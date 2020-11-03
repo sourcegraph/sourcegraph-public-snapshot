@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -76,7 +75,7 @@ func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.Rea
 
 func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, complete bool, err error) {
 	sr, err := gitserver.StdoutReader(ctx, cmd)
-	if urlErr, ok := err.(*url.Error); ok && urlErr.Err == context.DeadlineExceeded {
+	if errors.Is(err, context.DeadlineExceeded) {
 		// Continue; the gitserver call exceeded our deadline before the command
 		// produced any output.
 	} else if err != nil {

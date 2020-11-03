@@ -14,6 +14,10 @@ import (
 func TestRepository_RawLogDiffSearch(t *testing.T) {
 	t.Parallel()
 
+	expiredCtx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+	defer cancel()
+	<-expiredCtx.Done()
+
 	repo := MakeGitRepository(t,
 		"echo root > f",
 		"git add f",
@@ -31,9 +35,11 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m branch2 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
 	)
 	tests := []struct {
-		name string
-		opt  RawLogDiffSearchOptions
-		want []*LogCommitSearchResult
+		name       string
+		ctx        context.Context
+		opt        RawLogDiffSearchOptions
+		want       []*LogCommitSearchResult
+		incomplete bool
 	}{{
 		name: "query",
 		opt: RawLogDiffSearchOptions{
@@ -98,16 +104,29 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			},
 		},
 		want: nil, // empty
+	}, {
+		name: "deadline",
+		ctx:  expiredCtx,
+		opt: RawLogDiffSearchOptions{
+			Query: TextSearchOptions{Pattern: "root"},
+			Diff:  true,
+		},
+		incomplete: true,
 	}}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			results, complete, err := RawLogDiffSearch(context.Background(), repo, test.opt)
+			ctx := test.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			results, complete, err := RawLogDiffSearch(ctx, repo, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !complete {
-				t.Fatal("!complete")
+			if complete == test.incomplete {
+				t.Fatalf("complete is %v", complete)
 			}
 			for _, r := range results {
 				r.DiffHighlights = nil // Highlights is tested separately
