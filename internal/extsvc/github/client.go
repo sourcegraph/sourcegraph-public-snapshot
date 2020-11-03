@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
@@ -55,55 +54,6 @@ type Client struct {
 
 	// rateLimit is our self imposed rate limiter
 	rateLimit *rate.Limiter
-}
-
-// APIError is an error type returned by Client when the GitHub API responds with
-// an error.
-type APIError struct {
-	URL              string
-	Code             int
-	Message          string
-	DocumentationURL string `json:"documentation_url"`
-}
-
-func (e *APIError) Error() string {
-	return fmt.Sprintf("request to %s returned status %d: %s", e.URL, e.Code, e.Message)
-}
-
-func urlIsGitHubDotCom(apiURL *url.URL) bool {
-	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
-}
-
-func canonicalizedURL(apiURL *url.URL) *url.URL {
-	if urlIsGitHubDotCom(apiURL) {
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		return githubProxyURL
-	}
-	return apiURL
-}
-
-// newRepoCache creates a new cache for GitHub repository metadata. The backing
-// store is Redis. A checksum of the authenticator and API URL are used as a
-// Redis key prefix to prevent collisions with caches for different
-// authentication and API URLs.
-func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
-	apiURL = canonicalizedURL(apiURL)
-
-	var cacheTTL time.Duration
-	if urlIsGitHubDotCom(apiURL) {
-		cacheTTL = 10 * time.Minute
-	} else {
-		// GitHub Enterprise
-		cacheTTL = 30 * time.Second
-	}
-
-	key := ""
-	if a != nil {
-		key = a.Hash()
-	}
-	return rcache.NewWithTTL("gh_repo:"+key, int(cacheTTL/time.Second))
 }
 
 // NewClient creates a new GitHub API client with an optional default
@@ -196,43 +146,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-// listRepositories is a generic method that unmarshals the given
-// JSON HTTP endpoint into a []restRepository. It will return an
-// error if it fails.
-//
-// This is used to extract repositories from the GitHub API endpoints:
-// - /users/:user/repos
-// - /orgs/:org/repos
-// - /user/repos
-func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
-	var restRepos []restRepository
-	if err := c.requestGet(ctx, requestURI, &restRepos); err != nil {
-		return nil, err
-	}
-	repos := make([]*Repository, 0, len(restRepos))
-	for _, restRepo := range restRepos {
-		repos = append(repos, convertRestRepo(restRepo))
-	}
-	return repos, nil
-}
-
-// ListInstallationRepositories lists repositories on which the authenticated
-// GitHub App has been installed.
-func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
-	type response struct {
-		Repositories []restRepository `json:"repositories"`
-	}
-	var resp response
-	if err := c.requestGet(ctx, "installation/repositories", &resp); err != nil {
-		return nil, err
-	}
-	repos := make([]*Repository, 0, len(resp.Repositories))
-	for _, restRepo := range resp.Repositories {
-		repos = append(repos, convertRestRepo(restRepo))
-	}
-	return repos, nil
-}
-
 func (c *Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
@@ -263,27 +176,6 @@ func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-// unmarshal wraps json.Unmarshal, but includes extra context in the case of
-// json.UnmarshalTypeError
-func unmarshal(data []byte, v interface{}) error {
-	err := json.Unmarshal(data, v)
-	if e, ok := err.(*json.UnmarshalTypeError); ok && e.Offset >= 0 {
-		a := e.Offset - 100
-		b := e.Offset + 100
-		if a < 0 {
-			a = 0
-		}
-		if b > int64(len(data)) {
-			b = int64(len(data))
-		}
-		if e.Offset >= int64(len(data)) {
-			return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q", e.Offset, string(data[a:e.Offset]))
-		}
-		return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q; after %q", e.Offset, string(data[a:e.Offset]), string(data[e.Offset:b]))
-	}
-	return err
-}
-
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
@@ -291,33 +183,6 @@ func HTTPErrorCode(err error) int {
 		return e.Code
 	}
 	return 0
-}
-
-// ErrNotFound is when the requested GitHub repository is not found.
-var ErrNotFound = errors.New("GitHub repository not found")
-
-// IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
-// response error, or HTTP 404.
-func IsNotFound(err error) bool {
-	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
-		return true
-	}
-	if _, ok := err.(ErrPullRequestNotFound); ok {
-		return true
-	}
-	if HTTPErrorCode(err) == http.StatusNotFound {
-		return true
-	}
-	errs, ok := err.(graphqlErrors)
-	if !ok {
-		return false
-	}
-	for _, err := range errs {
-		if err.Type == "NOT_FOUND" {
-			return true
-		}
-	}
-	return false
 }
 
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate

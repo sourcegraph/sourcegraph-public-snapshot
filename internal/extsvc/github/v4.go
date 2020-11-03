@@ -186,3 +186,24 @@ const graphqlErrTypeNotFound = "NOT_FOUND"
 func (e graphqlErrors) Error() string {
 	return fmt.Sprintf("error in GraphQL response: %s", e[0].Message)
 }
+
+// unmarshal wraps json.Unmarshal, but includes extra context in the case of
+// json.UnmarshalTypeError
+func unmarshal(data []byte, v interface{}) error {
+	err := json.Unmarshal(data, v)
+	if e, ok := err.(*json.UnmarshalTypeError); ok && e.Offset >= 0 {
+		a := e.Offset - 100
+		b := e.Offset + 100
+		if a < 0 {
+			a = 0
+		}
+		if b > int64(len(data)) {
+			b = int64(len(data))
+		}
+		if e.Offset >= int64(len(data)) {
+			return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q", e.Offset, string(data[a:e.Offset]))
+		}
+		return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q; after %q", e.Offset, string(data[a:e.Offset]), string(data[e.Offset:b]))
+	}
+	return err
+}

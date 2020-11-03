@@ -450,3 +450,40 @@ func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string
 	}
 	return result.Names, nil
 }
+
+// ListInstallationRepositories lists repositories on which the authenticated
+// GitHub App has been installed.
+func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
+	type response struct {
+		Repositories []restRepository `json:"repositories"`
+	}
+	var resp response
+	if err := c.requestGet(ctx, "installation/repositories", &resp); err != nil {
+		return nil, err
+	}
+	repos := make([]*Repository, 0, len(resp.Repositories))
+	for _, restRepo := range resp.Repositories {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
+	return repos, nil
+}
+
+// listRepositories is a generic method that unmarshals the given
+// JSON HTTP endpoint into a []restRepository. It will return an
+// error if it fails.
+//
+// This is used to extract repositories from the GitHub API endpoints:
+// - /users/:user/repos
+// - /orgs/:org/repos
+// - /user/repos
+func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
+	var restRepos []restRepository
+	if err := c.requestGet(ctx, requestURI, &restRepos); err != nil {
+		return nil, err
+	}
+	repos := make([]*Repository, 0, len(restRepos))
+	for _, restRepo := range restRepos {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
+	return repos, nil
+}
