@@ -1539,7 +1539,7 @@ WHERE
 			WHERE users.deleted_at IS NULL
 		)
 AND	perms.updated_at <= %s
-`, stale) // TODO: Update tests to simulate deleted users
+`, stale)
 	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "users with stale perms")
 	}
@@ -1553,7 +1553,7 @@ WHERE perms.user_id IN
 		SELECT users.id FROM users
 		WHERE users.deleted_at IS NULL
 	)
-`) // TODO: Update tests to simulate deleted users
+`)
 	if err := s.execute(ctx, q, &seconds); err != nil {
 		return nil, errors.Wrap(err, "users perms gap seconds")
 	}
@@ -1569,7 +1569,7 @@ WHERE perms.repo_id IN
 		AND repo.private = TRUE
 	)
 AND perms.updated_at <= %s
-`, stale) // TODO: Update tests to simulate public repos that have rows in repo_permissions
+`, stale)
 	if err := s.execute(ctx, q, &m.ReposWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "repos with stale perms")
 	}
@@ -1584,7 +1584,7 @@ WHERE perms.repo_id IN
 			repo.deleted_at IS NULL
 		AND repo.private = TRUE
 	)
-`) // TODO: Update tests to simulate public repos that have rows in repo_permissions
+`)
 	if err := s.execute(ctx, q, &seconds); err != nil {
 		return nil, errors.Wrap(err, "repos perms gap seconds")
 	}
