@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,6 +41,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 		opt        RawLogDiffSearchOptions
 		want       []*LogCommitSearchResult
 		incomplete bool
+		errorS     string
 	}{{
 		name: "query",
 		opt: RawLogDiffSearchOptions{
@@ -130,6 +132,14 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			Diff:  true,
 		},
 		incomplete: true,
+	}, {
+		name: "not found",
+		opt: RawLogDiffSearchOptions{
+			Query: TextSearchOptions{Pattern: "root"},
+			Diff:  true,
+			Args:  []string{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		},
+		errorS: "fatal: bad object aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}}
 
 	for _, test := range tests {
@@ -141,8 +151,16 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 
 			results, complete, err := RawLogDiffSearch(ctx, repo, test.opt)
 			if err != nil {
-				t.Fatal(err)
+				if test.errorS == "" {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), test.errorS) {
+					t.Fatalf("error should contain %q: %v", test.errorS, err)
+				}
+				return
+			} else if test.errorS != "" {
+				t.Fatal("expected error")
 			}
+
 			if complete == test.incomplete {
 				t.Fatalf("complete is %v", complete)
 			}
