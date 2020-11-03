@@ -1,6 +1,6 @@
 # Sourcegraph extensions
 
-Sourcegraph extensions add code intelligence, test coverage information, trace/log information, and other similar information, to Sourcegraph and (using the [Chrome/Firefox browser extensions](../integration/browser_extension.md)) your code host and review tools.
+Sourcegraph extensions add code intelligence, test coverage information, trace/log information, and other similar information to Sourcegraph and, using the [Chrome/Firefox browser extensions](../integration/browser_extension.md), your code host and review tools.
 
 Sourcegraph extensions are like editor extensions, but they run anywhere you view code in your web browser, not just in a single editor. See all publicly available extensions on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions).
 
@@ -9,10 +9,31 @@ Sourcegraph extensions are like editor extensions, but they run anywhere you vie
 <a href="https://github.com/sourcegraph/sourcegraph-git-extras" target="_blank"><img src="https://user-images.githubusercontent.com/1976/47624533-f3a1e800-dada-11e8-81d9-3d4bd67fc08a.png" style="padding:15px"></a>
 </div>
 
+## Getting started
+
+<div class="getting-started">
+  <a href="../../integration/browser_extension" class="btn" alt="Install the browser extension">
+   <span>Extensions Registry</span>
+   </br>
+   Browse or add popular extensions like git blame, link previews, open-in-editor, Codecov, or Sonarqube.
+  </a>
+
+  <a href="authoring" class="btn" alt="Watch the code intelligence demo video">
+   <span>Authoring Extensions</span>
+   </br>
+   Create your own extension.
+  </a>
+
+  <a href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references" class="btn" alt="Try code intelligence on public code">
+   <span>Security and Privacy</span>
+   </br>
+    What extensions can access and why you can trust them. 
+  </a>
+</div>
+
 ## Extensions documentation
 
 - [**Using extensions**](usage.md)
 - [**Authoring extensions**](authoring/index.md)
 - [Administering extensions on your Sourcegraph instance](../admin/extensions/index.md) (for site admins)
 - [Security and privacy of extensions](security.md)
-- [Principles of the Sourcegraph extension API](principles.md)
