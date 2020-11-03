@@ -3,7 +3,6 @@ package campaigns
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -64,8 +63,6 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 	results := make([]StepResult, len(steps))
 
 	for i, step := range steps {
-		logger.Logf("[Step %d] docker run %s %q", i+1, step.Container, step.Run)
-
 		stepContext := StepContext{Repository: *repo}
 		if i > 0 {
 			stepContext.PreviousStep = results[i-1]
@@ -176,11 +173,8 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 		cmd.Stdout = io.MultiWriter(&stdoutBuffer, logger.PrefixWriter("stdout"))
 		cmd.Stderr = io.MultiWriter(&stderrBuffer, logger.PrefixWriter("stderr"))
 
-		a, err := json.Marshal(cmd.Args)
-		if err != nil {
-			panic(err)
-		}
-		logger.Log(string(a))
+		logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
+		logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
 
 		t0 := time.Now()
 		err = cmd.Run()
