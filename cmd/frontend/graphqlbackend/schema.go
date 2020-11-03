@@ -2882,7 +2882,7 @@ type Monitor implements Node {
     """
     Owners can edit the code monitor.
     """
-    owner: Owner!
+    owner: Namespace!
     """
     Whether the code monitor is currently enabled.
     """
@@ -2905,11 +2905,6 @@ type Monitor implements Node {
         after: String
     ): MonitorActionConnection!
 }
-
-"""
-An owner can either be an user or an organization.
-"""
-union Owner = User | Org
 
 """
 A query that can serve as a trigger for code monitors.
