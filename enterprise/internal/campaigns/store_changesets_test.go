@@ -42,9 +42,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo, _ := testRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo, _ := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo, gitlabExtSvc := testRepo(t, reposStore, extsvc.KindGitLab)
+	repo := testRepo(t, reposStore, extsvc.KindGitHub)
+	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
 
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
@@ -450,7 +450,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			if err := s.CreateChangeset(ctx, gitlabChangeset); err != nil {
 				t.Fatal(err)
 			}
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: gitlabExtSvc.ID})
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: "https://gitlab.com/"})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1073,8 +1073,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	githubRepo, githubExtSvc := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo, gitlabExtSvc := testRepo(t, reposStore, extsvc.KindGitLab)
+	githubRepo := testRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
 	if err := reposStore.InsertRepos(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
@@ -1173,21 +1173,21 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 				UpdatedAt:             clock.now(),
 				LatestEvent:           clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: githubExtSvc.ID,
+				RepoExternalServiceID: "https://github.com/",
 			},
 			{
 				ChangesetID:           changesets[1].ID,
 				UpdatedAt:             clock.now(),
 				LatestEvent:           clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: githubExtSvc.ID,
+				RepoExternalServiceID: "https://github.com/",
 			},
 			{
 				// No events
 				ChangesetID:           changesets[2].ID,
 				UpdatedAt:             clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: gitlabExtSvc.ID,
+				RepoExternalServiceID: "https://gitlab.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {
@@ -1196,7 +1196,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 
 	t.Run("only for specific external service", func(t *testing.T) {
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: gitlabExtSvc.ID})
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: "https://gitlab.com/"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1205,7 +1205,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 				ChangesetID:           changesets[2].ID,
 				UpdatedAt:             clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: gitlabExtSvc.ID,
+				RepoExternalServiceID: "https://gitlab.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {
