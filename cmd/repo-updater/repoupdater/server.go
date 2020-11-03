@@ -456,6 +456,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
 				if err != nil {
 					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+					return
 				}
 
 				// Since we don't support private repositories on Cloud,
