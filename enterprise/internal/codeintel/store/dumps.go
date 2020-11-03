@@ -139,9 +139,8 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 				d.indexer
 			FROM lsif_nearest_uploads u
 			JOIN lsif_dumps_with_repository_name d ON d.id = u.upload_id
-			WHERE u.repository_id = %s AND (u.commit = %s OR u.commit_bytea = %s) AND NOT u.overwritten AND %s
-		`, repositoryID, commit, dbutil.CommitBytea(commit), sqlf.Join(conds, " AND ")),
-	))
+			WHERE u.repository_id = %s AND u.commit_bytea = %s AND NOT u.overwritten AND %s
+		`, repositoryID, dbutil.CommitBytea(commit), sqlf.Join(conds, " AND "))))
 }
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
@@ -152,22 +151,19 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	}
 
 	commits := make([]*sqlf.Query, 0, len(graph))
-	commitByteas := make([]*sqlf.Query, 0, len(graph))
 	for commit := range graph {
 		commits = append(commits, sqlf.Sprintf("%s", commit))
-		commitByteas = append(commitByteas, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
 	}
 
 	uploadMeta, err := scanUploadMeta(s.Store.Query(ctx, sqlf.Sprintf(
 		`
-			SELECT nu.upload_id, nu.commit, u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
+			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
 			FROM lsif_nearest_uploads nu
 			JOIN lsif_uploads u ON u.id = nu.upload_id
-			WHERE nu.repository_id = %s AND (nu.commit IN (%s) OR nu.commit_bytea IN (%s)) AND nu.ancestor_visible
+			WHERE nu.repository_id = %s AND encode(nu.commit_bytea, 'hex') IN (%s) AND nu.ancestor_visible
 		`,
 		repositoryID,
 		sqlf.Join(commits, ", "),
-		sqlf.Join(commitByteas, ", "),
 	)))
 	if err != nil {
 		return nil, err
@@ -180,7 +176,7 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 
 	var ids []*sqlf.Query
 	for _, uploadMeta := range visibleUploads[commit] {
-		if uploadMeta.Overwritten == false {
+		if !uploadMeta.Overwritten {
 			ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 		}
 	}

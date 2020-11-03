@@ -356,7 +356,7 @@ func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) erro
 }
 
 // MarkQueued updates the state of the upload to queued and updates the upload size.
-func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int) error {
+func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 

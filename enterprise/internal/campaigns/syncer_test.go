@@ -383,7 +383,7 @@ func TestSyncRegistry(t *testing.T) {
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
-					RepoExternalServiceID: "https://example.com/",
+					RepoExternalServiceID: extSvc.ID,
 				},
 			}, nil
 		},
@@ -430,6 +430,7 @@ func TestSyncRegistry(t *testing.T) {
 		SyncStore:   syncStore,
 		ReposStore:  repoStore,
 		codeHostURL: "https://example.com/",
+		extSvcID:    extSvc.ID,
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
 			return nil
@@ -440,7 +441,7 @@ func TestSyncRegistry(t *testing.T) {
 
 	// Set the syncer
 	r.mu.Lock()
-	r.syncers["https://example.com/"] = syncer
+	r.syncers[extSvc.ID] = syncer
 	r.mu.Unlock()
 
 	// Send priority items

@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -207,13 +209,13 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Should get back the same one
-	got, err := (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	got, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +238,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	store := &ExternalServicesStore{
+	store := &ExternalServiceStore{
 		PreCreateExternalService: func(ctx context.Context) error {
 			return errcode.NewPresentationError("test plan limit exceeded")
 		},
@@ -262,7 +264,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,13 +274,13 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		DisplayName: strptr("GITHUB (updated) #1"),
 		Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 	}
-	err = (&ExternalServicesStore{}).Update(ctx, nil, es.ID, esUpdate)
+	err = (&ExternalServiceStore{}).Update(ctx, nil, es.ID, esUpdate)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Get and verify update
-	got, err := (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	got, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -380,25 +382,25 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Should be able to get back by its ID
-	_, err = (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	_, err = (&ExternalServiceStore{}).GetByID(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete this external service
-	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
+	err = (&ExternalServiceStore{}).Delete(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Should now get externalServiceNotFoundError
-	_, err = (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	_, err = (&ExternalServiceStore{}).GetByID(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
 	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
 	if gotErr != wantErr {
@@ -449,7 +451,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	}
 
 	t.Run("list all external services", func(t *testing.T) {
-		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -460,8 +462,22 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 	})
 
+	t.Run("list external services with certain IDs", func(t *testing.T) {
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{
+			IDs: []int64{ess[1].ID},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+
+		if diff := cmp.Diff(ess[1:], got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("list external services with no namespace", func(t *testing.T) {
-		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{
 			NoNamespace: true,
 		})
 		if err != nil {
@@ -476,7 +492,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	})
 
 	t.Run("list only test user's external services", func(t *testing.T) {
-		got, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{
 			NamespaceUserID: user.ID,
 		})
 		if err != nil {
@@ -491,7 +507,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	})
 
 	t.Run("list non-exist user's external services", func(t *testing.T) {
-		ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{
+		ess, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{
 			NamespaceUserID: 404,
 		})
 		if err != nil {
@@ -587,12 +603,12 @@ func TestExternalServicesStore_Count(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := (&ExternalServicesStore{}).Count(ctx, ExternalServicesListOptions{})
+	count, err := (&ExternalServiceStore{}).Count(ctx, ExternalServicesListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -602,8 +618,115 @@ func TestExternalServicesStore_Count(t *testing.T) {
 	}
 }
 
+func TestExternalServicesStore_Upsert(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	clock := NewFakeClock(time.Now(), 0)
+
+	var svcs types.ExternalServices
+	for _, svc := range createExternalServices(t) {
+		svcs = append(svcs, svc)
+	}
+	sort.Sort(svcs)
+
+	t.Run("no external services", func(t *testing.T) {
+		if err := ExternalServices.Upsert(ctx); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+	})
+
+	t.Run("many external services", func(t *testing.T) {
+		tx, err := ExternalServices.Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := generateExternalServices(7, svcs...)
+		sort.Sort(want)
+
+		if err := tx.Upsert(ctx, want...); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+
+		for _, e := range want {
+			if e.Kind != strings.ToUpper(e.Kind) {
+				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
+				break
+			}
+		}
+
+		sort.Sort(want)
+
+		have, err := tx.List(ctx, ExternalServicesListOptions{
+			Kinds: svcs.Kinds(),
+		})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		sort.Sort(types.ExternalServices(have))
+
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+			t.Fatalf("List:\n%s", diff)
+		}
+
+		now := clock.Now()
+		suffix := "-updated"
+		for _, r := range want {
+			r.DisplayName += suffix
+			r.Kind += suffix
+			r.Config += suffix
+			r.UpdatedAt = now
+			r.CreatedAt = now
+		}
+
+		if err = tx.Upsert(ctx, want...); err != nil {
+			t.Errorf("Upsert error: %s", err)
+		}
+		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		sort.Sort(types.ExternalServices(have))
+
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("List:\n%s", diff)
+		}
+
+		want.Apply(func(e *types.ExternalService) {
+			e.UpdatedAt = now
+			e.DeletedAt = &now
+		})
+
+		if err = tx.Upsert(ctx, want.Clone()...); err != nil {
+			t.Errorf("Upsert error: %s", err)
+		}
+		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Errorf("List error: %s", err)
+		}
+
+		sort.Sort(types.ExternalServices(have))
+
+		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("List:\n%s", diff)
+		}
+	})
+}
+
 func createExternalServices(t *testing.T) map[string]*types.ExternalService {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svcs := mkExternalServices(now)
@@ -631,6 +754,20 @@ func createExternalServices(t *testing.T) map[string]*types.ExternalService {
 	}
 
 	return servicesPerKind
+}
+
+func generateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
+	if len(base) == 0 {
+		return nil
+	}
+	es := make(types.ExternalServices, 0, n)
+	for i := 0; i < n; i++ {
+		id := strconv.Itoa(i)
+		r := base[i%len(base)].Clone()
+		r.DisplayName += id
+		es = append(es, r)
+	}
+	return es
 }
 
 func mkExternalServices(now time.Time) []*types.ExternalService {

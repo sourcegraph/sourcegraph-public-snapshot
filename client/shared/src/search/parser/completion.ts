@@ -213,7 +213,7 @@ export async function getCompletionItems(
     if (!tokenAtColumn) {
         throw new Error('getCompletionItems: no token at column')
     }
-    const { token, range } = tokenAtColumn
+    const token = tokenAtColumn
     // When the token at column is a literal or whitespace, show
     // static filter type suggestions, followed by dynamic suggestions.
     if (token.type === 'literal' || token.type === 'whitespace') {
@@ -221,7 +221,7 @@ export async function getCompletionItems(
         const staticSuggestions = FILTER_TYPE_COMPLETIONS.map(
             (suggestion): Monaco.languages.CompletionItem => ({
                 ...suggestion,
-                range: toMonacoRange(range),
+                range: toMonacoRange(token.range),
                 command: TRIGGER_SUGGESTIONS,
             })
         )
@@ -244,7 +244,7 @@ export async function getCompletionItems(
                     .filter(isDefined)
                     .map(completionItem => ({
                         ...completionItem,
-                        range: toMonacoRange(range),
+                        range: toMonacoRange(token.range),
                         // Set a sortText so that dynamic suggestions
                         // are shown after filter type suggestions.
                         sortText: '1',
@@ -259,7 +259,7 @@ export async function getCompletionItems(
         if (!completingValue) {
             return null
         }
-        const resolvedFilter = resolveFilter(token.filterType.token.value)
+        const resolvedFilter = resolveFilter(token.filterType.value)
         if (!resolvedFilter) {
             return null
         }
@@ -290,9 +290,7 @@ export async function getCompletionItems(
                         // is a regex pattern, Monaco's filtering might hide some suggestions.
                         filterText:
                             filterValue &&
-                            (filterValue?.token.type === 'literal'
-                                ? filterValue.token.value
-                                : filterValue.token.quotedValue),
+                            (filterValue?.type === 'literal' ? filterValue.value : filterValue.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
                         command: COMPLETION_ITEM_SELECTED,
                     })),

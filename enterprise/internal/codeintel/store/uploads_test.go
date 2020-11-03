@@ -456,7 +456,7 @@ func TestMarkQueued(t *testing.T) {
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
 
-	uploadSize := 300
+	uploadSize := int64(300)
 	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
 		t.Fatalf("unexpected error marking upload as queued: %s", err)
 	}

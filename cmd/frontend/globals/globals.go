@@ -14,9 +14,14 @@ import (
 
 var externalURLWatchers uint32
 
+var defaultexternalURL = &url.URL{
+	Scheme: "http",
+	Host:   "example.com",
+}
+
 var externalURL = func() atomic.Value {
 	var v atomic.Value
-	v.Store(&url.URL{Scheme: "http", Host: "example.com"})
+	v.Store(defaultexternalURL)
 	return v
 }()
 
@@ -27,6 +32,10 @@ var externalURL = func() atomic.Value {
 func WatchExternalURL(defaultURL *url.URL) {
 	if atomic.AddUint32(&externalURLWatchers, 1) != 1 {
 		panic("WatchExternalURL called more than once")
+	}
+
+	if defaultURL == nil {
+		defaultURL = defaultexternalURL
 	}
 
 	conf.Watch(func() {

@@ -108,8 +108,10 @@
 // 1528395736_add_index_to_repo_created_at.up.sql (151B)
 // 1528395737_compressed_commits.down.sql (76B)
 // 1528395737_compressed_commits.up.sql (339B)
-// 1528395738_create_repo_unrestricted_column.down.sql (70B)
-// 1528395738_create_repo_unrestricted_column.up.sql (244B)
+// 1528395738_nullable_commit.down.sql (255B)
+// 1528395738_nullable_commit.up.sql (259B)
+// 1528395739_create_external_service_unrestricted_column.down.sql (70B)
+// 1528395739_create_external_service_unrestricted_column.up.sql (244B)
 
 package migrations
 
@@ -2338,42 +2340,82 @@ func _1528395737_compressed_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395738_create_repo_unrestricted_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xcd\x2b\x4a\x2d\x2e\x29\xca\x4c\x2e\x49\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf3\x55\xba\x84\x46\x00\x00\x00")
+var __1528395738_nullable_commitDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x08\x76\x0d\x51\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\x52\xb0\x55\x48\xcd\x4b\xce\x4f\x49\xd5\x80\x08\xc4\x27\x55\x96\xa4\x26\xea\x28\xa8\x67\xa4\x56\xa8\x6b\x2a\x84\x7b\xb8\x06\xb9\x22\x14\x7b\x06\x2b\xf8\x85\xfa\xf8\x58\x73\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xe0\xb0\x03\xa2\xc0\xd9\xdf\x27\xd4\xd7\x0f\xa1\x1f\x64\xb3\x9f\x7f\x08\x59\x86\x20\xbb\x4f\xc1\x25\xc8\x3f\x00\xc9\x24\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xc0\x86\xc7\xa8\xff\x00\x00\x00")
 
-func _1528395738_create_repo_unrestricted_columnDownSqlBytes() ([]byte, error) {
+func _1528395738_nullable_commitDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395738_create_repo_unrestricted_columnDownSql,
-		"1528395738_create_repo_unrestricted_column.down.sql",
+		__1528395738_nullable_commitDownSql,
+		"1528395738_nullable_commit.down.sql",
 	)
 }
 
-func _1528395738_create_repo_unrestricted_columnDownSql() (*asset, error) {
-	bytes, err := _1528395738_create_repo_unrestricted_columnDownSqlBytes()
+func _1528395738_nullable_commitDownSql() (*asset, error) {
+	bytes, err := _1528395738_nullable_commitDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395738_create_repo_unrestricted_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395738_nullable_commit.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcb, 0x3, 0xac, 0x5, 0xdd, 0xc0, 0x1d, 0xe0, 0x58, 0xfc, 0xcb, 0x9d, 0x51, 0x53, 0xd5, 0x3b, 0x81, 0x47, 0x20, 0x6, 0xb5, 0x88, 0x35, 0x81, 0xc6, 0xa5, 0xfe, 0xd0, 0x77, 0x19, 0x5f, 0x62}}
+	return a, nil
+}
+
+var __1528395738_nullable_commitUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x08\x76\x0d\x51\x48\xce\xcf\xcd\xcd\x2c\x89\x4f\xaa\x2c\x49\x4d\x54\xb0\x55\x48\x49\x4d\xce\x4f\x49\xd5\x50\x82\x08\x2b\xe9\x28\xa8\x67\xa4\x56\xa8\x6b\x2a\x84\x7b\xb8\x06\xb9\xa2\x2a\xf6\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\xc1\x61\x0f\x44\x81\xb3\xbf\x4f\xa8\xaf\x9f\x02\xcc\x68\x05\x97\x20\xff\x00\x05\x3f\xff\x10\xb2\x4c\x41\x71\x09\xc8\x1f\x08\x83\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xf8\xf4\xfd\x3c\x03\x01\x00\x00")
+
+func _1528395738_nullable_commitUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_nullable_commitUpSql,
+		"1528395738_nullable_commit.up.sql",
+	)
+}
+
+func _1528395738_nullable_commitUpSql() (*asset, error) {
+	bytes, err := _1528395738_nullable_commitUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_nullable_commit.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc5, 0xd, 0xfe, 0x89, 0xad, 0xcf, 0xe9, 0x1d, 0x2b, 0x3c, 0xa7, 0xed, 0x45, 0x53, 0x2, 0xf4, 0xec, 0xe3, 0xc, 0x8f, 0x75, 0x27, 0xbe, 0xea, 0xba, 0x31, 0xd1, 0xf9, 0x22, 0x50, 0x71, 0xd9}}
+	return a, nil
+}
+
+var __1528395739_create_external_service_unrestricted_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xcd\x2b\x4a\x2d\x2e\x29\xca\x4c\x2e\x49\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf3\x55\xba\x84\x46\x00\x00\x00")
+
+func _1528395739_create_external_service_unrestricted_columnDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395739_create_external_service_unrestricted_columnDownSql,
+		"1528395739_create_external_service_unrestricted_column.down.sql",
+	)
+}
+
+func _1528395739_create_external_service_unrestricted_columnDownSql() (*asset, error) {
+	bytes, err := _1528395739_create_external_service_unrestricted_columnDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395739_create_external_service_unrestricted_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x76, 0x55, 0x34, 0xb9, 0x43, 0x9d, 0x95, 0xf7, 0xe6, 0xbe, 0x3f, 0xdb, 0xf0, 0x36, 0x59, 0x0, 0xba, 0xf7, 0xf0, 0x6, 0x9b, 0xc3, 0x75, 0xd6, 0x6d, 0xe7, 0x6b, 0x6a, 0x3a, 0xed, 0x1c, 0x5f}}
 	return a, nil
 }
 
-var __1528395738_create_repo_unrestricted_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcd\xb1\x0a\xc2\x30\x10\xc6\xf1\xfd\x9e\xe2\xde\x23\x38\x5c\x9b\x8b\x04\x2e\x89\x98\x0b\xb8\x8a\x66\xe8\xa2\x25\x46\x9f\x5f\x5a\xba\x14\x5c\x5c\x8f\xfb\x7d\xff\x81\x8f\x3e\x1a\x00\x12\xe5\x33\x2a\x0d\xc2\xd8\xea\xfc\x44\xb2\x16\xc7\x24\x25\x44\xf4\x0e\x63\x52\xe4\x8b\xcf\x9a\xf1\xfd\x68\xf5\xd5\xdb\x74\xeb\xf5\x8e\x43\x4a\xc2\x14\x0d\x94\x93\x25\xdd\x68\x66\xdd\x7f\x1d\x56\x3f\xb7\xe9\x73\xed\xd5\xfc\x68\xad\x87\xad\xb6\x93\xcb\x94\x65\x47\x45\x14\x1d\x49\xe6\xbf\xf5\x52\x8e\x45\xc4\x00\x8c\x29\x04\xaf\x06\xbe\x01\x00\x00\xff\xff\x7e\xf9\xeb\xac\xf4\x00\x00\x00")
+var __1528395739_create_external_service_unrestricted_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcd\xb1\x0a\xc2\x30\x10\xc6\xf1\xfd\x9e\xe2\xde\x23\x38\x5c\x9b\x8b\x04\x2e\x89\x98\x0b\xb8\x8a\x66\xe8\xa2\x25\x46\x9f\x5f\x5a\xba\x14\x5c\x5c\x8f\xfb\x7d\xff\x81\x8f\x3e\x1a\x00\x12\xe5\x33\x2a\x0d\xc2\xd8\xea\xfc\x44\xb2\x16\xc7\x24\x25\x44\xf4\x0e\x63\x52\xe4\x8b\xcf\x9a\xf1\xfd\x68\xf5\xd5\xdb\x74\xeb\xf5\x8e\x43\x4a\xc2\x14\x0d\x94\x93\x25\xdd\x68\x66\xdd\x7f\x1d\x56\x3f\xb7\xe9\x73\xed\xd5\xfc\x68\xad\x87\xad\xb6\x93\xcb\x94\x65\x47\x45\x14\x1d\x49\xe6\xbf\xf5\x52\x8e\x45\xc4\x00\x8c\x29\x04\xaf\x06\xbe\x01\x00\x00\xff\xff\x7e\xf9\xeb\xac\xf4\x00\x00\x00")
 
-func _1528395738_create_repo_unrestricted_columnUpSqlBytes() ([]byte, error) {
+func _1528395739_create_external_service_unrestricted_columnUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395738_create_repo_unrestricted_columnUpSql,
-		"1528395738_create_repo_unrestricted_column.up.sql",
+		__1528395739_create_external_service_unrestricted_columnUpSql,
+		"1528395739_create_external_service_unrestricted_column.up.sql",
 	)
 }
 
-func _1528395738_create_repo_unrestricted_columnUpSql() (*asset, error) {
-	bytes, err := _1528395738_create_repo_unrestricted_columnUpSqlBytes()
+func _1528395739_create_external_service_unrestricted_columnUpSql() (*asset, error) {
+	bytes, err := _1528395739_create_external_service_unrestricted_columnUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395738_create_repo_unrestricted_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395739_create_external_service_unrestricted_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x63, 0x3c, 0xbe, 0x50, 0x9a, 0xb1, 0xea, 0xda, 0xed, 0x12, 0x5b, 0x70, 0x33, 0xc4, 0x77, 0x25, 0x72, 0x2, 0xf0, 0x44, 0x5, 0xdc, 0x54, 0xec, 0xe5, 0xf6, 0xa6, 0x2f, 0x12, 0xd5, 0x44, 0xef}}
 	return a, nil
 }
@@ -2577,8 +2619,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395736_add_index_to_repo_created_at.up.sql":                               _1528395736_add_index_to_repo_created_atUpSql,
 	"1528395737_compressed_commits.down.sql":                                       _1528395737_compressed_commitsDownSql,
 	"1528395737_compressed_commits.up.sql":                                         _1528395737_compressed_commitsUpSql,
-	"1528395738_create_repo_unrestricted_column.down.sql":                          _1528395738_create_repo_unrestricted_columnDownSql,
-	"1528395738_create_repo_unrestricted_column.up.sql":                            _1528395738_create_repo_unrestricted_columnUpSql,
+	"1528395738_nullable_commit.down.sql":                                          _1528395738_nullable_commitDownSql,
+	"1528395738_nullable_commit.up.sql":                                            _1528395738_nullable_commitUpSql,
+	"1528395739_create_external_service_unrestricted_column.down.sql":              _1528395739_create_external_service_unrestricted_columnDownSql,
+	"1528395739_create_external_service_unrestricted_column.up.sql":                _1528395739_create_external_service_unrestricted_columnUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2733,8 +2777,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395736_add_index_to_repo_created_at.up.sql":                               {_1528395736_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
 	"1528395737_compressed_commits.down.sql":                                       {_1528395737_compressed_commitsDownSql, map[string]*bintree{}},
 	"1528395737_compressed_commits.up.sql":                                         {_1528395737_compressed_commitsUpSql, map[string]*bintree{}},
-	"1528395738_create_repo_unrestricted_column.down.sql":                          {_1528395738_create_repo_unrestricted_columnDownSql, map[string]*bintree{}},
-	"1528395738_create_repo_unrestricted_column.up.sql":                            {_1528395738_create_repo_unrestricted_columnUpSql, map[string]*bintree{}},
+	"1528395738_nullable_commit.down.sql":                                          {_1528395738_nullable_commitDownSql, map[string]*bintree{}},
+	"1528395738_nullable_commit.up.sql":                                            {_1528395738_nullable_commitUpSql, map[string]*bintree{}},
+	"1528395739_create_external_service_unrestricted_column.down.sql":              {_1528395739_create_external_service_unrestricted_columnDownSql, map[string]*bintree{}},
+	"1528395739_create_external_service_unrestricted_column.up.sql":                {_1528395739_create_external_service_unrestricted_columnUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
