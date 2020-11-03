@@ -59,10 +59,12 @@ func initServices(ctx context.Context) error {
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
 		bundleManagerClient := bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore)
 		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
+		lsifStore := lsifstore.New(codeIntelDB)
 
 		services.store = store
 		services.bundleManagerClient = bundleManagerClient
 		services.api = api
+		services.lsifStore = lsifStore
 	})
 
 	return services.err
