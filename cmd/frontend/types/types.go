@@ -948,6 +948,17 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	return clone
 }
 
+// ToMap returns a map whose key is the external service kind.
+func (es ExternalServices) ToMap() map[string]*ExternalService {
+	m := make(map[string]*ExternalService)
+
+	for _, svc := range es {
+		m[svc.Kind] = svc
+	}
+
+	return m
+}
+
 type GlobalState struct {
 	SiteID      string
 	Initialized bool // whether the initial site admin account has been created

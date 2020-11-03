@@ -423,6 +423,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	if len(svcs) == 0 {
 		return nil
 	}
+	e.ensureStore()
 
 	q := upsertExternalServicesQuery(svcs)
 	rows, err := e.Query(ctx, q)
