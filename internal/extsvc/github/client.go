@@ -6,14 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
-
-// RateLimitMonitor exposes the rate limit monitor.
-func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
-	return c.rateLimitMonitor
-}
 
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
@@ -59,5 +52,5 @@ var ErrPullRequestAlreadyExists = errors.New("GitHub pull request already exists
 type ErrPullRequestNotFound int
 
 func (e ErrPullRequestNotFound) Error() string {
-	return fmt.Sprintf("GitHub pull requests not found: %d", e)
+	return fmt.Sprintf("GitHub pull request not found: %d", e)
 }

@@ -121,7 +121,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	}
 
 	// Be conservative.
-	limitRemaining = float64(limitRemaining) * 0.8
+	limitRemaining *= 0.8
 	timeRemaining := resetAt.Sub(now) + 3*time.Minute
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit

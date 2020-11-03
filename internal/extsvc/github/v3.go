@@ -96,6 +96,11 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return NewV3Client(c.apiURL, a, c.httpClient)
 }
 
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
+}
+
 func (c *V3Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {

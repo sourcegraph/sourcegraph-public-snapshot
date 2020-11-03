@@ -247,7 +247,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		{
 			name: "non-existing-pr",
 			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0},
-			err:  "GitHub pull requests not found: 0",
+			err:  "GitHub pull request not found: 0",
 		},
 		{
 			name: "success",
