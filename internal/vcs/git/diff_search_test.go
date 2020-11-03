@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -101,7 +102,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			results, complete, err := RawLogDiffSearch(ctx, repo, test.opt)
+			results, complete, err := RawLogDiffSearch(context.Background(), repo, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -149,7 +150,7 @@ func TestRepository_RawLogDiffSearch_empty(t *testing.T) {
 
 	for label, test := range tests {
 		for opt, want := range test.want {
-			results, complete, err := RawLogDiffSearch(ctx, test.repo, *opt)
+			results, complete, err := RawLogDiffSearch(context.Background(), test.repo, *opt)
 			if err != nil {
 				t.Errorf("%s: %+v: %s", label, *opt, err)
 				continue
