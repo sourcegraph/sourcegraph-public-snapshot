@@ -25,7 +25,6 @@ type ObservedStore struct {
 	markErroredOperation                           *observation.Operation
 	dequeueOperation                               *observation.Operation
 	requeueOperation                               *observation.Operation
-	getStatesOperation                             *observation.Operation
 	deleteUploadByIDOperation                      *observation.Operation
 	deleteUploadsWithoutRepositoryOperation        *observation.Operation
 	hardDeleteUploadByIDOperation                  *observation.Operation
@@ -33,7 +32,6 @@ type ObservedStore struct {
 	getDumpByIDOperation                           *observation.Operation
 	findClosestDumpsOperation                      *observation.Operation
 	findClosestDumpsFromGraphFragmentOperation     *observation.Operation
-	deleteOldestDumpOperation                      *observation.Operation
 	softDeleteOldDumpsOperation                    *observation.Operation
 	deleteOverlappingDumpsOperation                *observation.Operation
 	getPackageOperation                            *observation.Operation
@@ -142,11 +140,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"requeue"},
 			Metrics:      metrics,
 		}),
-		getStatesOperation: observationContext.Operation(observation.Op{
-			Name:         "store.GetStates",
-			MetricLabels: []string{"get_states"},
-			Metrics:      metrics,
-		}),
 		deleteUploadByIDOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteUploadByID",
 			MetricLabels: []string{"delete_upload_by_id"},
@@ -180,11 +173,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		findClosestDumpsFromGraphFragmentOperation: observationContext.Operation(observation.Op{
 			Name:         "store.FindClosestDumpsFromGraphFragment",
 			MetricLabels: []string{"find_closest_dumps_from_graph_fragment"},
-			Metrics:      metrics,
-		}),
-		deleteOldestDumpOperation: observationContext.Operation(observation.Op{
-			Name:         "store.DeleteOldestDump",
-			MetricLabels: []string{"delete_oldest_dump"},
 			Metrics:      metrics,
 		}),
 		softDeleteOldDumpsOperation: observationContext.Operation(observation.Op{
@@ -377,13 +365,11 @@ func (s *ObservedStore) wrap(other Store) Store {
 		markErroredOperation:                           s.markErroredOperation,
 		dequeueOperation:                               s.dequeueOperation,
 		requeueOperation:                               s.requeueOperation,
-		getStatesOperation:                             s.getStatesOperation,
 		deleteUploadByIDOperation:                      s.deleteUploadByIDOperation,
 		resetStalledOperation:                          s.resetStalledOperation,
 		getDumpByIDOperation:                           s.getDumpByIDOperation,
 		findClosestDumpsOperation:                      s.findClosestDumpsOperation,
 		findClosestDumpsFromGraphFragmentOperation:     s.findClosestDumpsFromGraphFragmentOperation,
-		deleteOldestDumpOperation:                      s.deleteOldestDumpOperation,
 		softDeleteOldDumpsOperation:                    s.softDeleteOldDumpsOperation,
 		deleteOverlappingDumpsOperation:                s.deleteOverlappingDumpsOperation,
 		getPackageOperation:                            s.getPackageOperation,
@@ -533,13 +519,6 @@ func (s *ObservedStore) Requeue(ctx context.Context, id int, after time.Time) (e
 	return s.store.Requeue(ctx, id, after)
 }
 
-// GetStates calls into the inner store and registers the observed results.
-func (s *ObservedStore) GetStates(ctx context.Context, ids []int) (states map[int]string, err error) {
-	ctx, endObservation := s.getStatesOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(states)), observation.Args{}) }()
-	return s.store.GetStates(ctx, ids)
-}
-
 // DeleteUploadByID calls into the inner store and registers the observed results.
 func (s *ObservedStore) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
 	ctx, endObservation := s.deleteUploadByIDOperation.With(ctx, &err, observation.Args{})
@@ -594,13 +573,6 @@ func (s *ObservedStore) FindClosestDumpsFromGraphFragment(ctx context.Context, r
 	ctx, endObservation := s.findClosestDumpsFromGraphFragmentOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
 	return s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer, graph)
-}
-
-// DeleteOldestDump calls into the inner store and registers the observed results.
-func (s *ObservedStore) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error) {
-	ctx, endObservation := s.deleteOldestDumpOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.DeleteOldestDump(ctx)
 }
 
 // SoftDeleteOldDumps calls into the inner store and registers the observed results.

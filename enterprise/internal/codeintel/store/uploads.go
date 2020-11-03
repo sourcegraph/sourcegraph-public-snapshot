@@ -106,27 +106,6 @@ func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, 
 	return scanFirstUpload(rows, err)
 }
 
-// scanStates scans pairs of id/states from the return value of `*store.query`.
-func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	states := map[int]string{}
-	for rows.Next() {
-		var id int
-		var state string
-		if err := rows.Scan(&id, &state); err != nil {
-			return nil, err
-		}
-
-		states[id] = state
-	}
-
-	return states, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
@@ -421,18 +400,6 @@ func (s *store) Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool
 // Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 	return s.makeUploadWorkQueueStore().Requeue(ctx, id, after)
-}
-
-// GetStates returns the states for the uploads with the given identifiers.
-func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	return scanStates(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT id, state FROM lsif_uploads
-		WHERE id IN (%s)
-	`, sqlf.Join(intsToQueries(ids), ", "))))
 }
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
