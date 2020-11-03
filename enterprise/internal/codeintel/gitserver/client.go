@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"regexp"
 	"sort"
@@ -20,23 +19,6 @@ import (
 type Client struct{}
 
 var DefaultClient = &Client{}
-
-// Archive retrieves a tar-formatted archive of the given commit.
-func (c *Client) Archive(ctx context.Context, store store.Store, repositoryID int, commit string) (io.Reader, error) {
-	repo, err := repositoryIDToRepo(ctx, store, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := git.ResolveRevision(ctx, repo, nil, commit, git.ResolveRevisionOptions{}); err != nil {
-		return nil, errors.Wrap(err, "git.ResolveRevision")
-	}
-
-	return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{
-		Treeish: commit,
-		Format:  "tar",
-	})
-}
 
 // Head determines the tip commit of the default branch for the given repository.
 func (c *Client) Head(ctx context.Context, store store.Store, repositoryID int) (string, error) {
@@ -214,37 +196,6 @@ func (c *Client) ListFiles(ctx context.Context, store store.Store, repositoryID 
 	}
 
 	return matching, nil
-}
-
-// Tags returns the git tags associated with the given commit along with a boolean indicating whether
-// or not the tag was attached directly to the commit. If no tags exist at or before this commit, the
-// tag is an empty string.
-func (c *Client) Tags(ctx context.Context, store store.Store, repositoryID int, commit string) (string, bool, error) {
-	tag, err := execGitCommand(ctx, store, repositoryID, "tag", "-l", "--points-at", commit)
-	if err != nil {
-		return "", false, err
-	}
-	if tag != "" {
-		return tag, true, nil
-	}
-
-	// git describe --tags will exit with status 128 (fatal: No names found, cannot describe anything)
-	// when there are no tags known to the given repo. In order to prevent a gitserver error from
-	// occurring, we first check to see if there are any tags and early-exit.
-	tags, err := execGitCommand(ctx, store, repositoryID, "tag")
-	if err != nil {
-		return "", false, err
-	}
-	if tags == "" {
-		return "", false, nil
-	}
-
-	tag, err = execGitCommand(ctx, store, repositoryID, "describe", "--tags", "--abbrev=0", commit)
-	if err != nil {
-		return "", false, err
-	}
-
-	return tag, false, nil
 }
 
 // execGitCommand executes a git command for the given repository by identifier.
