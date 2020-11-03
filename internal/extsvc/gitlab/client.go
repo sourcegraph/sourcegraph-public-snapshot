@@ -94,7 +94,7 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:       cli,
 		gitlabClients:    make(map[string]*Client),
-		rateLimitMonitor: &ratelimit.Monitor{},
+		rateLimitMonitor: ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL, "hash", &ratelimit.Monitor{}),
 	}
 }
 
