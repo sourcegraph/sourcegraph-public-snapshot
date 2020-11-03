@@ -314,7 +314,7 @@
     "string-score": "^1.0.1",
     "tagged-template-noop": "^2.1.1",
     "textarea-caret": "^3.1.0",
-    "ts-key-enum": "^2.0.3",
+    "ts-key-enum": "^2.0.4",
     "tslib": "^2.0.1",
     "utility-types": "^3.10.0",
     "uuid": "^8.3.0",

@@ -22293,10 +22293,10 @@ ts-graphql-plugin@^1.12.1:
     graphql-language-service-interface "^2.0.0"
     graphql-language-service-types "^1.5.2"
 
-ts-key-enum@^2.0.0, ts-key-enum@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.3.tgz#f37dc56d3cd0ce7e667e1780eb76ed7d3bf1ff09"
-  integrity sha512-hdzWAxZDIz1mrXvXHn4WMi6GAzMTnDfeanztDt7nzA5Ck8IEjW/vXrYhA7tXg9XCDGpChCITXQKuCr/997WCWg==
+ts-key-enum@^2.0.0, ts-key-enum@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.4.tgz#31f213dd81047960ccf79ff0d9c7302dd727daeb"
+  integrity sha512-i+B4k8uhZIdM1M1rboqx5S5GavP2T5Cye6/vLkHJp6mH6tgKXkjOw1/CYHLBO04jdeCXu04Y1vWEHaCe19dgGw==
 
 ts-log@^2.1.4:
   version "2.1.4"
