@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
@@ -130,6 +131,8 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	if err := c.rateLimit.WaitN(ctx, cost); err != nil {
 		return errors.Wrap(err, "rate limit")
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
 	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
