@@ -20,9 +20,9 @@ RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/grafana
 RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
 
-# when upgrading the Grafana version, please refer to https://about.sourcegraph.com/handbook/engineering/distribution/observability/monitoring#upgrading-grafana
-FROM grafana/grafana:7.2.0@sha256:b1c8a29dc7972bd5773bce5e564dd4bdcd96723dfeee6f5b754a2b3039e39dcb as production
-LABEL com.sourcegraph.grafana.version=7.0.3
+# when upgrading the Grafana version, please refer to https://about.sourcegraph.com/handbook/engineering/observability/monitoring#upgrading-grafana
+FROM grafana/grafana:7.3.1@sha256:bacfef55980f39817e8497e4d30c918c49cb24b8411bc2d19cb6e74373a0de1f as production
+LABEL com.sourcegraph.grafana.version=7.3.1
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
