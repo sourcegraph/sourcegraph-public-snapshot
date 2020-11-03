@@ -448,7 +448,7 @@ ${additionalChangesHeader}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         body: defaultPRBody,
-                        edits: [`.github/workflows/scripts/update-docker-tags.sh ${release.version}`],
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
                     {
                         owner: 'sourcegraph',
@@ -463,9 +463,7 @@ ${additionalChangesHeader}
 
 * [ ] Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md): cc @${config.captainGitHubUsername}, @slimsag`,
                         draft: true, // This PR requires further action
-                        edits: [
-                            // TODO
-                        ],
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
                     {
                         owner: 'sourcegraph',
