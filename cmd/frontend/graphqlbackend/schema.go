@@ -2924,7 +2924,7 @@ type MonitorQuery implements Node {
     """
     query: String!
     """
-    A list of events
+    A list of events.
     """
     events(
         """
