@@ -94,7 +94,7 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:       cli,
 		gitlabClients:    make(map[string]*Client),
-		rateLimitMonitor: ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL, "hash", &ratelimit.Monitor{}),
+		rateLimitMonitor: ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), "hash", &ratelimit.Monitor{}),
 	}
 }
 
@@ -154,7 +154,7 @@ type Client struct {
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
-	RateLimitMonitor *ratelimit.Monitor
+	rateLimitMonitor *ratelimit.Monitor
 	RateLimiter      *rate.Limiter // Our internal rate limiter
 }
 
@@ -185,7 +185,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		httpClient:       httpClient,
 		projCache:        projCache,
 		Auth:             a,
-		RateLimitMonitor: rateLimit,
+		rateLimitMonitor: rateLimit,
 		RateLimiter:      rl,
 	}
 }
@@ -232,12 +232,17 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.RateLimitMonitor.Update(resp.Header)
+	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, resp.StatusCode, errors.Wrap(HTTPError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
+}
+
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
 }
 
 type HTTPError int
