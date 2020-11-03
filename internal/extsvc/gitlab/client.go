@@ -155,7 +155,7 @@ type Client struct {
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
-	RateLimiter      *rate.Limiter // Our internal rate limiter
+	rateLimiter      *rate.Limiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -186,7 +186,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		projCache:        projCache,
 		Auth:             a,
 		rateLimitMonitor: rateLimit,
-		RateLimiter:      rl,
+		rateLimiter:      rl,
 	}
 }
 
@@ -217,8 +217,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		span.Finish()
 	}()
 
-	if c.RateLimiter != nil {
-		err = c.RateLimiter.Wait(ctx)
+	if c.rateLimiter != nil {
+		err = c.rateLimiter.Wait(ctx)
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "rate limit")
 		}
