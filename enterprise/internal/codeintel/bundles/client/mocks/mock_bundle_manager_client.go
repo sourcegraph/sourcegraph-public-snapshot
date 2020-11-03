@@ -26,9 +26,6 @@ type MockBundleManagerClient struct {
 	// GetUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUpload.
 	GetUploadFunc *BundleManagerClientGetUploadFunc
-	// SendDBFunc is an instance of a mock function object controlling the
-	// behavior of the method SendDB.
-	SendDBFunc *BundleManagerClientSendDBFunc
 	// SendUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method SendUpload.
 	SendUploadFunc *BundleManagerClientSendUploadFunc
@@ -65,11 +62,6 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 				return nil, nil
 			},
 		},
-		SendDBFunc: &BundleManagerClientSendDBFunc{
-			defaultHook: func(context.Context, int, string) error {
-				return nil
-			},
-		},
 		SendUploadFunc: &BundleManagerClientSendUploadFunc{
 			defaultHook: func(context.Context, int, io.Reader) (int64, error) {
 				return 0, nil
@@ -104,9 +96,6 @@ func NewMockBundleManagerClientFrom(i client.BundleManagerClient) *MockBundleMan
 		},
 		GetUploadFunc: &BundleManagerClientGetUploadFunc{
 			defaultHook: i.GetUpload,
-		},
-		SendDBFunc: &BundleManagerClientSendDBFunc{
-			defaultHook: i.SendDB,
 		},
 		SendUploadFunc: &BundleManagerClientSendUploadFunc{
 			defaultHook: i.SendUpload,
@@ -552,115 +541,6 @@ func (c BundleManagerClientGetUploadFuncCall) Args() []interface{} {
 // invocation.
 func (c BundleManagerClientGetUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// BundleManagerClientSendDBFunc describes the behavior when the SendDB
-// method of the parent MockBundleManagerClient instance is invoked.
-type BundleManagerClientSendDBFunc struct {
-	defaultHook func(context.Context, int, string) error
-	hooks       []func(context.Context, int, string) error
-	history     []BundleManagerClientSendDBFuncCall
-	mutex       sync.Mutex
-}
-
-// SendDB delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockBundleManagerClient) SendDB(v0 context.Context, v1 int, v2 string) error {
-	r0 := m.SendDBFunc.nextHook()(v0, v1, v2)
-	m.SendDBFunc.appendCall(BundleManagerClientSendDBFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SendDB method of the
-// parent MockBundleManagerClient instance is invoked and the hook queue is
-// empty.
-func (f *BundleManagerClientSendDBFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SendDB method of the parent MockBundleManagerClient instance inovkes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *BundleManagerClientSendDBFunc) PushHook(hook func(context.Context, int, string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *BundleManagerClientSendDBFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *BundleManagerClientSendDBFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-func (f *BundleManagerClientSendDBFunc) nextHook() func(context.Context, int, string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *BundleManagerClientSendDBFunc) appendCall(r0 BundleManagerClientSendDBFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of BundleManagerClientSendDBFuncCall objects
-// describing the invocations of this function.
-func (f *BundleManagerClientSendDBFunc) History() []BundleManagerClientSendDBFuncCall {
-	f.mutex.Lock()
-	history := make([]BundleManagerClientSendDBFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// BundleManagerClientSendDBFuncCall is an object that describes an
-// invocation of method SendDB on an instance of MockBundleManagerClient.
-type BundleManagerClientSendDBFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c BundleManagerClientSendDBFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c BundleManagerClientSendDBFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // BundleManagerClientSendUploadFunc describes the behavior when the
