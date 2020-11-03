@@ -267,10 +267,6 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 	return c.listRepositories(ctx, path)
 }
 
-// MaxNodeIDs is the maximum number of repository nodes that can be queried in one call to the
-// GitHub GraphQL API.
-var MaxNodeIDs = 100
-
 // ErrBatchTooLarge is when the requested batch of GitHub repositories to fetch
 // is too large and goes over the limit of what can be requested in a single
 // GraphQL call
