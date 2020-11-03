@@ -7,19 +7,26 @@ asdf install
 yarn install
 yarn generate
 
-# Run and initialize an old Sourcegraph release
-IMAGE=sourcegraph/server:$TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION ../../dev/run-server-image.sh -d --name sourcegraph-old
+# Run, initialize, and stop an old Sourcegraph release
+IMAGE=sourcegraph/server:$TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
 pushd test/qa || exit
 go run main.go
 popd || exit
 # shellcheck disable=SC1091
 source /root/.profile
-
-# Upgrade to current candidate image
 docker container stop sourcegraph-old
 sleep 5
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ../../dev/run-server-image.sh -d --name sourcegraph-new
+
+# Upgrade to current candidate image. Capture logs for the attempted upgrade.
+CONTAINER=sourcegraph-new
+docker_logs() {
+  LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
+  cp "$LOGFILE" $CONTAINER.log
+  chmod 744 $CONTAINER.log
+}
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
+trap docker_logs exit
 sleep 15
 
 # Run tests
