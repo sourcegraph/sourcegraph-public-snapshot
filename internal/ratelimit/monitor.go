@@ -33,6 +33,9 @@ func (r *MonitorRegistry) GetOrSet(baseURL, authHash string, monitor *Monitor) *
 	key := baseURL + ":" + authHash
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if _, ok := r.monitors[key]; !ok {
+		r.monitors[key] = monitor
+	}
 	return r.monitors[key]
 }
 
