@@ -6,62 +6,63 @@ expect.addSnapshotSerializer({
 })
 
 describe('scanBalancedPattern()', () => {
+    const scanLiteralBalancedPattern = scanBalancedPattern()
     test('balanced, scans up to whitespace', () => {
-        expect(scanBalancedPattern()('foo OR bar', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('foo OR bar', 0)).toMatchInlineSnapshot(
             '{"type":"success","token":{"type":"pattern","range":{"start":0,"end":3},"kind":1,"value":"foo"}}'
         )
     })
 
     test('balanced, consumes spaces', () => {
-        expect(scanBalancedPattern()('(hello there)', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('(hello there)', 0)).toMatchInlineSnapshot(
             '{"type":"success","token":{"type":"pattern","range":{"start":0,"end":13},"kind":1,"value":"(hello there)"}}'
         )
     })
 
     test('balanced, consumes unrecognized filter-like value', () => {
-        expect(scanBalancedPattern()('( general:kenobi )', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('( general:kenobi )', 0)).toMatchInlineSnapshot(
             '{"type":"success","token":{"type":"pattern","range":{"start":0,"end":18},"kind":1,"value":"( general:kenobi )"}}'
         )
     })
 
     test('not recognized, contains not operator', () => {
-        expect(scanBalancedPattern()('(foo not bar)', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('(foo not bar)', 0)).toMatchInlineSnapshot(
             '{"type":"error","expected":"no recognized filter or operator","at":5}'
         )
     })
 
     test('not recognized, starts with a not operator', () => {
-        expect(scanBalancedPattern()('(not chocolate)', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('(not chocolate)', 0)).toMatchInlineSnapshot(
             '{"type":"error","expected":"no recognized filter or operator","at":1}'
         )
     })
 
     test('not recognized, contains an or operator', () => {
-        expect(scanBalancedPattern()('(foo OR bar)', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('(foo OR bar)', 0)).toMatchInlineSnapshot(
             '{"type":"error","expected":"no recognized filter or operator","at":5}'
         )
     })
 
     test('not recognized, contains an and operator', () => {
-        expect(scanBalancedPattern()('repo:foo AND bar', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('repo:foo AND bar', 0)).toMatchInlineSnapshot(
             '{"type":"error","expected":"no recognized filter or operator","at":0}'
         )
     })
 
     test('not recognized, contains a recognized repo field', () => {
-        expect(scanBalancedPattern()('repo:foo bar', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('repo:foo bar', 0)).toMatchInlineSnapshot(
             '{"type":"error","expected":"no recognized filter or operator","at":0}'
         )
     })
 
     test('balanced, no conflicting tokens', () => {
-        expect(scanBalancedPattern()('(bor band )', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('(bor band )', 0)).toMatchInlineSnapshot(
             '{"type":"success","token":{"type":"pattern","range":{"start":0,"end":11},"kind":1,"value":"(bor band )"}}'
         )
     })
 
     test('not recognized, unbalanced', () => {
-        expect(scanBalancedPattern()('foo(', 0)).toMatchInlineSnapshot(
+        expect(scanLiteralBalancedPattern('foo(', 0)).toMatchInlineSnapshot(
             '{"type":"error","expected":"no unbalanced parentheses","at":4}'
         )
     })
