@@ -18,7 +18,7 @@ WITH
 	/* retrieve the active days for each user, their signup cohort and the number of weeks the event comes after their signup date. Captured last 4 weeks */
 	cohorts AS (
 		SELECT
-			DATE_TRUNC('week', created_at) AS ,
+			DATE_TRUNC('week', created_at) AS cohort_date,
 			COUNT(*) AS cohort_size
 		FROM users
 		GROUP BY cohort_date
