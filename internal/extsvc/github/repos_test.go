@@ -69,7 +69,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewClient(apiURL, auth, cli)
+	return NewV3Client(apiURL, auth, cli)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.

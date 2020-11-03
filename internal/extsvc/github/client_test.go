@@ -546,7 +546,7 @@ func newClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(uri, &auth.OAuthBearerToken{
+	cli := NewV3Client(uri, &auth.OAuthBearerToken{
 		Token: os.Getenv("GITHUB_TOKEN"),
 	}, doer)
 
