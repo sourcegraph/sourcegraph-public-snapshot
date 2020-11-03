@@ -2427,7 +2427,7 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', FALSE, NOW())`),
-			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(4, 'private_repo_4', TRUE, NOW())`),
+			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'private_repo_4', TRUE)`),
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
