@@ -11,8 +11,6 @@ import (
 //
 // NOTE: All methods are sorted in alphabetical order.
 type client interface {
-	GetRepositoryByNodeID(ctx context.Context, id string) (*github.Repository, error)
-	GetRepositoriesByNodeIDFromAPI(ctx context.Context, nodeIDs []string) (map[string]*github.Repository, error)
 	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 	WithToken(token string) client
@@ -34,19 +32,9 @@ func (c *ClientAdapter) WithToken(token string) client {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	MockGetRepositoryByNodeID          func(ctx context.Context, id string) (*github.Repository, error)
-	MockGetRepositoriesByNodeIDFromAPI func(ctx context.Context, nodeIDs []string) (map[string]*github.Repository, error)
-	MockListAffiliatedRepositories     func(ctx context.Context, visibility github.Visibility, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
-	MockListRepositoryCollaborators    func(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
-	MockWithToken                      func(token string) client
-}
-
-func (m *mockClient) GetRepositoryByNodeID(ctx context.Context, id string) (*github.Repository, error) {
-	return m.MockGetRepositoryByNodeID(ctx, id)
-}
-
-func (m *mockClient) GetRepositoriesByNodeIDFromAPI(ctx context.Context, nodeIDs []string) (map[string]*github.Repository, error) {
-	return m.MockGetRepositoriesByNodeIDFromAPI(ctx, nodeIDs)
+	MockListAffiliatedRepositories  func(ctx context.Context, visibility github.Visibility, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	MockListRepositoryCollaborators func(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	MockWithToken                   func(token string) client
 }
 
 func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int) ([]*github.Repository, bool, int, error) {
