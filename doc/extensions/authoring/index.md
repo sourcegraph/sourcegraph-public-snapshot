@@ -8,7 +8,7 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 - [Activation and deactivation](activation.md)
 - [Contribution points (actions, menus, etc.)](contributions.md)
 - [Builtin commands](builtin_commands.md)
-- [Principles of the Sourcegraph extension API](principles.md)
+- [Principles of the Sourcegraph extension API](../principles.md)
 
 ## How-tos
 - [Set up your development environment](development_environment.md)
