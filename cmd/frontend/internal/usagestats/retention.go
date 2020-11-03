@@ -59,7 +59,6 @@ ORDER BY week DESC;
 func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, weeklyRetentionQuery)
 	if err != nil {
-		fmt.Println("ERR", err)
 		return nil, err
 	}
 	defer rows.Close()
