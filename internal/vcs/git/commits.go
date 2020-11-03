@@ -1,9 +1,11 @@
 package git
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -338,26 +340,55 @@ type onelineCommit struct {
 //
 //   git log --oneline -z --source --no-patch
 func parseCommitsFromOnelineLog(data []byte) (commits []*onelineCommit, err error) {
-	entries := bytes.Split(data, []byte{'\x00'})
-	for _, e := range entries {
-		if len(e) == 0 {
-			continue
+	scan := logOnelineScanner(bytes.NewReader(data))
+	for {
+		commit, err := scan()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return commits, err
+		}
+		commits = append(commits, commit)
+	}
+	return commits, nil
+}
+
+// logOnelineScanner parses the commits from the reader of:
+//
+//   git log --oneline -z --source --no-patch
+//
+// Once it returns an error the scanner should be disregarded. io.EOF is
+// returned when there is no more data to read.
+func logOnelineScanner(r io.Reader) func() (*onelineCommit, error) {
+	br := bufio.NewReader(r)
+	return func() (*onelineCommit, error) {
+		// Keep reading until we encounter an error or a non-empty part.
+		var e []byte
+		for len(e) == 0 {
+			var err error
+			e, err = br.ReadBytes('\x00')
+			if err != nil {
+				return nil, err
+			}
+			// Reads upto and including delim (\x00). So we strip it out.
+			if l := len(e); l > 0 && e[l-1] == '\x00' {
+				e = e[:l-1]
+			}
 		}
 
 		// Format: (40-char SHA) \t (source ref)? 'log size '
 		if len(e) <= 40 {
-			return commits, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
+			return nil, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
 		}
 		sha1 := e[:40]
 		i := bytes.Index(e, []byte{' '})
 		if i == -1 {
-			return commits, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
+			return nil, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
 		}
 		sourceRef := e[41:i]
-		commits = append(commits, &onelineCommit{
+		return &onelineCommit{
 			sha1:      string(sha1),
 			sourceRef: string(sourceRef),
-		})
+		}, nil
 	}
-	return commits, nil
 }
