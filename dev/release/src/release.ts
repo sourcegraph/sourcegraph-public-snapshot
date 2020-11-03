@@ -461,7 +461,7 @@ ${additionalChangesHeader}
 
 ${additionalChangesHeader}
 
-* [ ] Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md): cc @${config.captainGitHubUsername}, @slimsag`,
+* [ ] Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR: cc @${config.captainGitHubUsername}`,
                         draft: true, // This PR requires further action
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
