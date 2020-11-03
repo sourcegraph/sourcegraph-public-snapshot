@@ -329,6 +329,13 @@ func TestPermissionLevels(t *testing.T) {
 			wantLicenseErr bool
 		}{
 			{
+				name: "createCampaign",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
+				},
+				wantLicenseErr: true,
+			},
+			{
 				name: "closeCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
