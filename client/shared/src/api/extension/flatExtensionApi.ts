@@ -161,7 +161,7 @@ export const initNewExtensionAPI = (
                     state.documentHighlightProviders,
                     document,
                     provider => provider.provideDocumentHighlights(document, position),
-                    mergeArrayResult
+                    mergeDocumentHighlightResults
                 ).pipe(map(result => (result.isLoading ? [] : result.result)))
             )
         },
@@ -345,10 +345,9 @@ export function mergeHoverResults(results: (typeof LOADING | Hover | null | unde
 }
 
 /**
- * merges TODO
+ * Merges definition result and converts it to client types for sending it to the main thread.
  *
- * @param results
- * @returns TODO
+ * @param results Results from all definition providers.
  */
 export function mergeDefinition(results: (typeof LOADING | sourcegraph.Definition | null | undefined)[]): Location[] {
     return results
@@ -359,11 +358,10 @@ export function mergeDefinition(results: (typeof LOADING | sourcegraph.Definitio
 }
 
 /**
- * merges TODO
- *
- * @param results
- * @returns TODO
+ * @param results latests results from document highlight providers
  */
-export function mergeArrayResult<T>(results: (typeof LOADING | T[] | null | undefined)[]): T[] {
-    return results.filter(isNot(isExactly(LOADING))).flatMap(results => results || [])
+export function mergeDocumentHighlightResults(
+    results: (typeof LOADING | sourcegraph.DocumentHighlight[] | null | undefined)[]
+): sourcegraph.DocumentHighlight[] {
+    return results.filter(isNot(isExactly(LOADING))).flatMap(highlights => highlights || [])
 }
