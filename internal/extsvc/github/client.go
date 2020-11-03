@@ -16,15 +16,6 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-// HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
-// this package. Otherwise it returns 0.
-func HTTPErrorCode(err error) int {
-	if e, ok := errors.Cause(err).(*APIError); ok {
-		return e.Code
-	}
-	return 0
-}
-
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
 func IsRateLimitExceeded(err error) bool {
