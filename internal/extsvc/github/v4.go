@@ -6,15 +6,47 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
 )
 
-func (c *V3Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
+// V4Client is a GitHub GraphQL API client.
+type V4Client struct {
+	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
+	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
+	// GitHub Enterprise.
+	apiURL *url.URL
+
+	// githubDotCom is true if this client connects to github.com.
+	githubDotCom bool
+
+	// auth is used to authenticate requests. May be empty, in which case the
+	// default behavior is to make unauthenticated requests.
+	// 🚨 SECURITY: Should not be changed after client creation to prevent
+	// unauthorized access to the repository cache. Use `WithAuthenticator` to
+	// create a new client with a different authenticator instead.
+	auth auth.Authenticator
+
+	// httpClient is the HTTP client used to make requests to the GitHub API.
+	httpClient httpcli.Doer
+
+	// rateLimitMonitor is the API rate limit monitor.
+	rateLimitMonitor *ratelimit.Monitor
+
+	// rateLimit is our self imposed rate limiter.
+	rateLimit *rate.Limiter
+}
+
+func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`
@@ -54,7 +86,7 @@ func (c *V3Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "rate limit")
 	}
 
-	if err := c.do(ctx, req, &respBody); err != nil {
+	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 

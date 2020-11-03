@@ -41,7 +41,7 @@ type Repository struct {
 
 // repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
 // Repository struct.
-func (c *V3Client) repositoryFieldsGraphQLFragment() string {
+func (c *V4Client) repositoryFieldsGraphQLFragment() string {
 	if c.githubDotCom {
 		return `
 fragment RepositoryFields on Repository {
@@ -283,7 +283,7 @@ var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too la
 // the conservative step back from 37.
 //
 // This method does not cache.
-func (c *V3Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
+func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
 	if len(namesWithOwners) > 30 {
 		return nil, ErrBatchTooLarge
 	}
@@ -318,7 +318,7 @@ func (c *V3Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 	return repos, nil
 }
 
-func (c *V3Client) buildGetReposBatchQuery(namesWithOwners []string) (string, error) {
+func (c *V4Client) buildGetReposBatchQuery(namesWithOwners []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")

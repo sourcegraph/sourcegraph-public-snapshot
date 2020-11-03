@@ -2,13 +2,9 @@ package github
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -16,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // NewClient creates a new GitHub API client with an optional default
@@ -64,51 +59,6 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return NewClient(c.apiURL, a, c.httpClient)
 }
 
-func (c *V3Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
-	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
-	req.URL = c.apiURL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if c.auth != nil {
-		if err := c.auth.Authenticate(req); err != nil {
-			return errors.Wrap(err, "authenticating request")
-		}
-	}
-
-	var resp *http.Response
-
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
-	span.SetTag("URL", req.URL.String())
-	defer func() {
-		if err != nil {
-			span.SetTag("error", err.Error())
-		}
-		if resp != nil {
-			span.SetTag("status", resp.Status)
-		}
-		span.Finish()
-	}()
-
-	resp, err = c.httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	c.rateLimitMonitor.Update(resp.Header)
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		var err APIError
-		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
-			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
-		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
-			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
-		}
-		err.URL = req.URL.String()
-		err.Code = resp.StatusCode
-		return &err
-	}
-	return json.NewDecoder(resp.Body).Decode(result)
-}
-
 func (c *V3Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
@@ -131,7 +81,7 @@ func (c *V3Client) requestGet(ctx context.Context, requestURI string, result int
 		return errors.Wrap(err, "rate limit")
 	}
 
-	return c.do(ctx, req, result)
+	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
