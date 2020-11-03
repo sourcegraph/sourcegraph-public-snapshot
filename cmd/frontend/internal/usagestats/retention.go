@@ -18,10 +18,10 @@ WITH
 	/* retrieve the active days for each user, their signup cohort and the number of weeks the event comes after their signup date. Captured last 4 weeks */
 	cohorts AS (
 		SELECT
-			DATE_TRUNC('week', created_at) AS cohort_date,
+			DATE_TRUNC('week', created_at) AS ,
 			COUNT(*) AS cohort_size
 		FROM users
-		GROUP BY 1
+		GROUP BY cohort_date
 	),
 	sub AS (
 		SELECT
@@ -31,10 +31,10 @@ WITH
 		FROM event_logs
 		JOIN users ON users.id = event_logs.user_id
 		WHERE DATE_TRUNC('week', users.created_at) >= DATE_TRUNC('week', now()) - INTERVAL '11 weeks'
-		GROUP BY 1, 2, 3
+		GROUP BY user_id, cohort_date, weeks_after_signup
 	) /* calculate retention percentages for weeks 0-3 for each of the last 4 weekly cohorts */
 
-	SELECT
+SELECT
 	dates.week_start_date::DATE AS week,
 	cohorts.cohort_size,
 	ROUND(COUNT(DISTINCT user_id) FILTER (WHERE weeks_after_signup = 0 AND cohorts.cohort_date = dates.week_start_date)::DECIMAL/cohorts.cohort_size,3) AS week_0,
@@ -52,8 +52,8 @@ WITH
 FROM dates
 LEFT JOIN cohorts ON dates.week_start_date = cohorts.cohort_date
 LEFT JOIN sub     ON dates.week_start_date = sub.cohort_date
-GROUP BY 1, 2
-ORDER BY 1 DESC;
+GROUP BY week, cohorts.cohort_size
+ORDER BY week DESC;
 `
 
 func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) {
