@@ -336,23 +336,6 @@ type onelineCommit struct {
 	sourceRef string // `git log --source` source ref
 }
 
-// parseCommitsFromOnelineLog parses the commits from the output of:
-//
-//   git log --oneline -z --source --no-patch
-func parseCommitsFromOnelineLog(data []byte) (commits []*onelineCommit, err error) {
-	scan := logOnelineScanner(bytes.NewReader(data))
-	for {
-		commit, err := scan()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return commits, err
-		}
-		commits = append(commits, commit)
-	}
-	return commits, nil
-}
-
 // logOnelineScanner parses the commits from the reader of:
 //
 //   git log --oneline -z --source --no-patch
