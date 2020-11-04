@@ -14,12 +14,10 @@ import (
 func TestDefinitions(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientDefinitions(t, mockBundleClient, "main.go", 10, 50, []bundles.Location{
+	setMockBundleManagerClientDefinitions(t, mockBundleManagerClient, 42, "main.go", 10, 50, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -56,14 +54,12 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientDefinitions(t, mockBundleClient, "main.go", 10, 50, nil)
-	setMockBundleClientMonikersByPosition(t, mockBundleClient, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker2}})
-	setMockBundleClientMonikerResults(t, mockBundleClient, "definition", "gomod", "pad", 0, 100, []bundles.Location{
+	setMockBundleManagerClientDefinitions(t, mockBundleManagerClient, 42, "main.go", 10, 50, nil)
+	setMockBundleManagerClientMonikersByPosition(t, mockBundleManagerClient, 42, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker2}})
+	setMockBundleManagerClientMonikerResults(t, mockBundleManagerClient, 42, "definition", "gomod", "pad", 0, 100, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -88,17 +84,14 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
-	setMockBundleClientDefinitions(t, mockBundleClient1, "main.go", 10, 50, nil)
-	setMockBundleClientMonikersByPosition(t, mockBundleClient1, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
-	setMockBundleClientPackageInformation(t, mockBundleClient1, "main.go", "1234", testPackageInformation)
+	setMockBundleManagerClientDefinitions(t, mockBundleManagerClient, 42, "main.go", 10, 50, nil)
+	setMockBundleManagerClientMonikersByPosition(t, mockBundleManagerClient, 42, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
+	setMockBundleManagerClientPackageInformation(t, mockBundleManagerClient, 42, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleClientMonikerResults(t, mockBundleClient2, "definition", "gomod", "pad", 0, 100, []bundles.Location{
+	setMockBundleManagerClientMonikerResults(t, mockBundleManagerClient, 50, "definition", "gomod", "pad", 0, 100, []bundles.Location{
 		{DumpID: 50, Path: "foo.go", Range: testRange1},
 		{DumpID: 50, Path: "bar.go", Range: testRange2},
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
