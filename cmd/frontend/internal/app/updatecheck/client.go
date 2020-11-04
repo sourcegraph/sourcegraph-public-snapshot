@@ -212,6 +212,7 @@ func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
 	}
 	return json.Marshal(dv)
 }
+
 func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
 	conn, err := dialFunc()
 	if err != nil {
