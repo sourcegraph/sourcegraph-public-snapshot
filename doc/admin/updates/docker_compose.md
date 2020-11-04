@@ -150,7 +150,7 @@ Then on your server:
 
 ```sh
 cd deploy-sourcegraph-docker/docker-compose/
-docker-compose down
+docker-compose down --remove-orphans
 git pull
 docker-compose up -d
 ```
