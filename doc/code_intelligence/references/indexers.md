@@ -200,7 +200,7 @@ We may lack the language expertise or bandwidth to implement certain features on
 
 #### lsif-clang
 
-- The indexer outputs unexpected data in specific scenarios involving more advanced language features.
+- lsif-clang sometimes outputs nonsensical data when trying to index template usages or definitions.
 
 - C/C++ build system ecosystem is extremely fragmented and difficult to support out of the box. We have decided that integrated build tool support will not be a short-term goal of lsif-clang.
 
