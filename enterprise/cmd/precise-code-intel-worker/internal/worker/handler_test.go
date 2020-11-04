@@ -116,7 +116,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	if len(mockStore.MarkRepositoryAsDirtyFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkRepositoryAsDirtyFunc calls. want=%d have=%d", 1, len(mockStore.MarkRepositoryAsDirtyFunc.History()))
+		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockStore.MarkRepositoryAsDirtyFunc.History()))
 	} else if mockStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
 		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
@@ -224,7 +224,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	if len(mockStore.RequeueFunc.History()) != 1 {
-		t.Errorf("unexpected number of RequeueFunc calls. want=%d have=%d", 1, len(mockStore.RequeueFunc.History()))
+		t.Errorf("unexpected number of Requeue calls. want=%d have=%d", 1, len(mockStore.RequeueFunc.History()))
 	}
 }
 
