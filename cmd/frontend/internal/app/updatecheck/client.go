@@ -206,7 +206,7 @@ func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
 	}
 
 	// get postgres version
-	err = dbconn.Global.QueryRowContext(ctx, "SELECT version();").Scan(&dv.PostgresVersion)
+	err = dbconn.Global.QueryRowContext(ctx, "SELECT version()").Scan(&dv.PostgresVersion)
 	if err != nil {
 		log15.Warn("unable to get postgres version", "error", err)
 	}
