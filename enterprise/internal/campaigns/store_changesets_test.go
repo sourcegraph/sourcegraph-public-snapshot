@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -1030,6 +1031,77 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
 			t.Fatalf("wrong changesets returned. diff=%s", diff)
 		}
+	})
+
+	t.Run("GetChangesetsStats", func(t *testing.T) {
+		truncateTables(t, dbconn.Global, "changeset_events", "changesets")
+		var campaignID int64 = 191918
+
+		baseOpts := testChangesetOpts{repo: repo.ID}
+
+		opts1 := baseOpts
+		opts1.campaign = campaignID
+		opts1.externalState = cmpgn.ChangesetExternalStateClosed
+		createChangeset(t, ctx, s, opts1)
+
+		opts2 := baseOpts
+		opts2.campaign = campaignID
+		opts2.externalState = cmpgn.ChangesetExternalStateDeleted
+		createChangeset(t, ctx, s, opts2)
+
+		opts3 := baseOpts
+		opts3.campaign = campaignID
+		opts3.ownedByCampaign = campaignID
+		opts3.externalState = cmpgn.ChangesetExternalStateOpen
+		createChangeset(t, ctx, s, opts3)
+
+		opts4 := baseOpts
+		// In a deleted repository.
+		opts4.repo = deletedRepo.ID
+		opts4.campaign = campaignID
+		opts4.externalState = cmpgn.ChangesetExternalStateOpen
+		createChangeset(t, ctx, s, opts4)
+
+		opts5 := baseOpts
+		// In a different campaign.
+		opts5.campaign = campaignID + 999
+		opts5.externalState = cmpgn.ChangesetExternalStateOpen
+		createChangeset(t, ctx, s, opts5)
+
+		t.Run("global", func(t *testing.T) {
+			haveStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStats := cmpgn.ChangesetsStats{
+				Open:    2,
+				Closed:  1,
+				Deleted: 1,
+				Total:   4,
+			}
+
+			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+				t.Fatalf("wrong stats returned. diff=%s", diff)
+			}
+		})
+		t.Run("single campaign", func(t *testing.T) {
+			haveStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{CampaignID: campaignID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStats := cmpgn.ChangesetsStats{
+				Open:    1,
+				Closed:  1,
+				Deleted: 1,
+				Total:   3,
+			}
+
+			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+				t.Fatalf("wrong stats returned. diff=%s", diff)
+			}
+		})
 	})
 }
 

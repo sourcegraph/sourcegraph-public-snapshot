@@ -773,14 +773,18 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	return nil
 }
 
+// GetChangesetsStatsOpts captures the query options needed for
+// retrieving changesets stats.
 type GetChangesetsStatsOpts struct {
 	CampaignID int64
 }
 
+// GetChangesetsStats returns statistics on all the changesets associated to the given campaign,
+// or all changesets across the instance.
 func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsOpts) (stats campaigns.ChangesetsStats, err error) {
-	q := GetChangesetsStatsQuery(opts)
-	err = s.query(ctx, q, func(sc scanner) (err error) {
-		if err = sc.Scan(
+	q := getChangesetsStatsQuery(opts)
+	err = s.query(ctx, q, func(sc scanner) error {
+		if err := sc.Scan(
 			&stats.Total,
 			&stats.Unpublished,
 			&stats.Closed,
@@ -796,7 +800,7 @@ func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsO
 	if err != nil {
 		return stats, err
 	}
-	return stats, err
+	return stats, nil
 }
 
 const getChangesetStatsFmtstr = `
@@ -815,7 +819,7 @@ WHERE
 	%s
 `
 
-func GetChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
+func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
