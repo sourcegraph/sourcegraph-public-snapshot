@@ -381,7 +381,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		CreatedAt:       now,
 		UpdatedAt:       now,
-		NamespaceUserID: &user.ID,
+		NamespaceUserID: user.ID,
 	}
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
