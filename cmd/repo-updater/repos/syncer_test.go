@@ -1482,6 +1482,9 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			assertSourceCount(ctx, t, db, 2)
 
 			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if len(fromDB) != 1 {
 				t.Fatalf("Expected 1 repo, got %d", len(fromDB))
 			}
@@ -1548,6 +1551,9 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			tx2.Done(nil)
 
 			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if len(fromDB) != 1 {
 				t.Fatalf("Expected 1 repo, got %d", len(fromDB))
 			}
