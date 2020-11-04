@@ -374,6 +374,13 @@ func TestPermissionLevels(t *testing.T) {
 
 		for _, m := range mutations {
 			t.Run(m.name, func(t *testing.T) {
+				// Specific mutations trigger a license check.
+				licensing.EnforceTiers = true
+				defer func() { licensing.EnforceTiers = false }()
+
+				licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
+				defer func() { licensing.MockCheckFeature = nil }()
+
 				tests := []struct {
 					name           string
 					currentUser    int32
@@ -403,15 +410,6 @@ func TestPermissionLevels(t *testing.T) {
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
-
-						// Specific mutations should trigger a license check.
-						if m.wantLicenseErr {
-							licensing.EnforceTiers = true
-							defer func() { licensing.EnforceTiers = false }()
-
-							licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
-							defer func() { licensing.MockCheckFeature = nil }()
-						}
 
 						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
 						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)

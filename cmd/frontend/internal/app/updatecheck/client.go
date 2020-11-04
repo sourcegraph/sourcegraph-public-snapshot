@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -222,6 +222,11 @@ func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
 		return "", err
 	}
 
+	m, err := parseRedisInfo(buf)
+	return m["redis_version"], err
+
+}
+func parseRedisInfo(buf []byte) (map[string]string, error) {
 	var (
 		lines = bytes.Split(buf, []byte("\n"))
 		m     = make(map[string]string, len(lines))
@@ -235,12 +240,12 @@ func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
 
 		parts := bytes.Split(line, []byte(":"))
 		if len(parts) != 2 {
-			return "", fmt.Errorf("expected a key:value line, got '%s'", string(line))
+			return nil, fmt.Errorf("expected a key:value line, got '%s'", string(line))
 		}
 		m[string(parts[0])] = string(parts[1])
 	}
 
-	return m["redis_version"], nil
+	return m, nil
 }
 
 func updateBody(ctx context.Context) (io.Reader, error) {
