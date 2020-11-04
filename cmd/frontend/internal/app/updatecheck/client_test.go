@@ -9,13 +9,13 @@ func TestParseRedisInfo(t *testing.T) {
 	}
 
 	if got, expected := info["redis_version"], "6.0.9"; got != expected {
-		t.Errorf("Got '%s' expected '%s'", got, expected)
+		t.Errorf("Got %q expected %q", got, expected)
 	}
 	if got, expected := info["used_memory"], "3318848"; got != expected {
-		t.Errorf("Got '%s' expected '%s'", got, expected)
+		t.Errorf("Got %q expected %q", got, expected)
 	}
 	if got, expected := info["db0"], "keys=46,expires=17,avg_ttl=1506125315"; got != expected {
-		t.Errorf("Got '%s' expected '%s'", got, expected)
+		t.Errorf("Got %q expected %q", got, expected)
 	}
 }
 

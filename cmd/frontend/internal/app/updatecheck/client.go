@@ -189,52 +189,43 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 }
 
 func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
-	dv := dependencyVersions{}
+	var (
+		err error
+		dv  dependencyVersions
+	)
 	// get redis cache server version
-	cacheConn, err := redispool.Cache.Dial()
+	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
 	if err != nil {
-		return nil, err
+		log15.Warn("unable to connect to redis cache instance", "error", err)
 	}
-	buf, err := redis.Bytes(cacheConn.Do("INFO"))
-	if err != nil {
-		return nil, err
-	}
-	vals, err := parseRedisInfo(buf)
-	if err != nil {
-		return nil, err
-	}
-	dv.RedisCacheVersion = vals["redis_version"]
 
 	// get redis store server version
-	storeConn, err := redispool.Store.Dial()
+	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
 	if err != nil {
-		return nil, err
+		log15.Warn("unable to get redis store version", "error", err)
 	}
-	buf, err = redis.Bytes(storeConn.Do("INFO"))
-	if err != nil {
-		return nil, err
-	}
-	vals, err = parseRedisInfo(buf)
-	if err != nil {
-		return nil, err
-	}
-	dv.RedisStoreVersion = vals["redis_version"]
 
 	// get postgres version
-	tx, err := dbconn.Global.Begin()
+	err = dbconn.Global.QueryRowContext(ctx, "SELECT version();").Scan(&dv.PostgresVersion)
 	if err != nil {
-		return nil, err
-	}
-	err = tx.QueryRowContext(ctx, "SELECT version();").Scan(&dv.PostgresVersion)
-	if err != nil {
-		return nil, err
+		log15.Warn("unable to get postgres version", "error", err)
 	}
 	return json.Marshal(dv)
 }
+func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
+	conn, err := dialFunc()
+	if err != nil {
+		return "", err
+	}
+	buf, err := redis.Bytes(conn.Do("INFO"))
+	if err != nil {
+		return "", err
+	}
 
-func parseRedisInfo(buf []byte) (map[string]string, error) {
-	lines := bytes.Split(buf, []byte("\n"))
-	m := make(map[string]string, len(lines))
+	var (
+		lines = bytes.Split(buf, []byte("\n"))
+		m     = make(map[string]string, len(lines))
+	)
 
 	for _, line := range lines {
 		line = bytes.TrimSpace(line)
@@ -244,12 +235,12 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 
 		parts := bytes.Split(line, []byte(":"))
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("expected a key:value line, got '%s'", string(line))
+			return "", fmt.Errorf("expected a key:value line, got '%s'", string(line))
 		}
 		m[string(parts[0])] = string(parts[1])
 	}
 
-	return m, nil
+	return m["redis_version"], nil
 }
 
 func updateBody(ctx context.Context) (io.Reader, error) {
