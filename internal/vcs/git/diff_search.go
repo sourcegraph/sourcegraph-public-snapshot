@@ -245,9 +245,7 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
 	onelineCmd.Repo = repo
-	ctxLog, cancel := withDeadlinePercentage(ctx, 0.5)
-	defer cancel()
-	onelineReader, err := gitserver.StdoutReader(ctxLog, onelineCmd)
+	onelineReader, err := gitserver.StdoutReader(ctx, onelineCmd)
 	if err != nil {
 		return err
 	}
