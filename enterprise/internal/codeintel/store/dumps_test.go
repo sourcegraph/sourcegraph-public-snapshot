@@ -496,83 +496,6 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	})
 }
 
-func TestDeleteOldestDump(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Cannot prune empty dump set
-	if _, prunable, err := store.DeleteOldestDump(context.Background()); err != nil {
-		t.Fatalf("unexpected error pruning dumps: %s", err)
-	} else if prunable {
-		t.Fatal("unexpectedly prunable")
-	}
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t1.Add(time.Minute * 2)
-	t4 := t1.Add(time.Minute * 3)
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, UploadedAt: t1},
-		Upload{ID: 2, UploadedAt: t2},
-		Upload{ID: 3, UploadedAt: t3, State: "queued"},
-		Upload{ID: 4, UploadedAt: t3},
-		Upload{ID: 5, UploadedAt: t4},
-	)
-	insertVisibleAtTip(t, dbconn.Global, 50, 2)
-
-	// Prune oldest
-	if id, prunable, err := store.DeleteOldestDump(context.Background()); err != nil {
-		t.Fatalf("unexpected error pruning dumps: %s", err)
-	} else if !prunable {
-		t.Fatal("unexpectedly non-prunable")
-	} else if id != 1 {
-		t.Errorf("unexpected pruned identifier. want=%d have=%d", 1, id)
-	}
-
-	// Ensure record was deleted
-	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
-	}
-
-	// Ensure repository was marked as dirty
-	repositoryIDs, err := store.DirtyRepositories(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
-	}
-
-	var keys []int
-	for repositoryID := range repositoryIDs {
-		keys = append(keys, repositoryID)
-	}
-	sort.Ints(keys)
-
-	if len(keys) != 1 || keys[0] != 50 {
-		t.Errorf("expected repository to be marked dirty")
-	}
-
-	// Prune next oldest (skips visible at tip, non-completed uploads)
-	if id, prunable, err := store.DeleteOldestDump(context.Background()); err != nil {
-		t.Fatalf("unexpected error pruning dumps: %s", err)
-	} else if !prunable {
-		t.Fatal("unexpectedly non-prunable")
-	} else if id != 4 {
-		t.Errorf("unexpected pruned identifier. want=%d have=%d", 4, id)
-	}
-
-	// Ensure record was deleted
-	if states, err := store.GetStates(context.Background(), []int{4}); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(map[int]string{4: "deleted"}, states); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
-	}
-}
-
 func TestSoftDeleteOldDumps(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -613,7 +536,7 @@ func TestSoftDeleteOldDumps(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := store.GetStates(context.Background(), []int{1, 2, 3, 4, 5, 6, 7}); err != nil {
+	if states, err := getStates(1, 2, 3, 4, 5, 6, 7); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
@@ -758,7 +681,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+	if states, err := getStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)

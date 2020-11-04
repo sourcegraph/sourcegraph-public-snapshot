@@ -69,740 +69,90 @@ describe('scanBalancedPattern()', () => {
 
 describe('parseSearchQuery()', () => {
     test('empty', () =>
-        expect(parseSearchQuery('')).toMatchObject({
-            token: {
-                range: {
-                    start: 0,
-                    end: 1,
-                },
-                members: [],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[],"range":{"start":0,"end":1}}}'
+        ))
 
     test('whitespace', () =>
-        expect(parseSearchQuery('  ')).toMatchObject({
-            token: {
-                range: {
-                    start: 0,
-                    end: 2,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 2,
-                            start: 0,
-                        },
-                        type: 'whitespace',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('  ')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"whitespace","range":{"start":0,"end":2}}],"range":{"start":0,"end":2}}}'
+        ))
 
     test('literal', () =>
-        expect(parseSearchQuery('a')).toMatchObject({
-            token: {
-                range: {
-                    start: 0,
-                    end: 1,
-                },
-                members: [
-                    {
-                        range: {
-                            start: 0,
-                            end: 1,
-                        },
-                        type: 'literal',
-                        value: 'a',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('a')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"literal","value":"a","range":{"start":0,"end":1}}],"range":{"start":0,"end":1}}}'
+        ))
 
     test('triple quotes', () => {
-        expect(parseSearchQuery('"""')).toMatchObject({
-            token: {
-                range: {
-                    end: 3,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 3,
-                            start: 0,
-                        },
-                        type: 'literal',
-                        value: '"""',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('"""')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"literal","value":"\\"\\"\\"","range":{"start":0,"end":3}}],"range":{"start":0,"end":3}}}'
+        )
     })
 
     test('filter', () =>
-        expect(parseSearchQuery('f:b')).toMatchObject({
-            token: {
-                range: {
-                    end: 3,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 3,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 1,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: 'f',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 3,
-                                start: 2,
-                            },
-                            type: 'literal',
-                            value: 'b',
-                        },
-                        type: 'filter',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('f:b')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":3},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"b","range":{"start":2,"end":3}}}],"range":{"start":0,"end":3}}}'
+        ))
 
     test('negated filter', () =>
-        expect(parseSearchQuery('-f:b')).toMatchObject({
-            token: {
-                range: {
-                    end: 4,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 4,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 2,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: '-f',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 4,
-                                start: 3,
-                            },
-                            type: 'literal',
-                            value: 'b',
-                        },
-                        type: 'filter',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('-f:b')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"-f","range":{"start":0,"end":2}},"filterValue":{"type":"literal","value":"b","range":{"start":3,"end":4}}}],"range":{"start":0,"end":4}}}'
+        ))
 
     test('filter with quoted value', () => {
-        expect(parseSearchQuery('f:"b"')).toMatchObject({
-            token: {
-                range: {
-                    end: 5,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 5,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 1,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: 'f',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 5,
-                                start: 2,
-                            },
-                            quotedValue: 'b',
-                            type: 'quoted',
-                        },
-                        type: 'filter',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('f:"b"')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":5},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"quoted","quotedValue":"b","range":{"start":2,"end":5}}}],"range":{"start":0,"end":5}}}'
+        )
     })
 
     test('filter with a value ending with a colon', () => {
-        expect(parseSearchQuery('f:a:')).toStrictEqual({
-            token: {
-                range: {
-                    end: 4,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 4,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 1,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: 'f',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 4,
-                                start: 2,
-                            },
-                            type: 'literal',
-                            value: 'a:',
-                        },
-                        type: 'filter',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('f:a:')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a:","range":{"start":2,"end":4}}}],"range":{"start":0,"end":4}}}'
+        )
     })
 
     test('filter where the value is a colon', () => {
-        expect(parseSearchQuery('f::')).toStrictEqual({
-            token: {
-                range: {
-                    end: 3,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 3,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 1,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: 'f',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 3,
-                                start: 2,
-                            },
-                            type: 'literal',
-                            value: ':',
-                        },
-                        type: 'filter',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('f:a:')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a:","range":{"start":2,"end":4}}}],"range":{"start":0,"end":4}}}'
+        )
     })
 
     test('quoted, double quotes', () =>
-        expect(parseSearchQuery('"a:b"')).toMatchObject({
-            token: {
-                range: {
-                    end: 5,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 5,
-                            start: 0,
-                        },
-                        quotedValue: 'a:b',
-                        type: 'quoted',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('"a:b"')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"quoted","quotedValue":"a:b","range":{"start":0,"end":5}}],"range":{"start":0,"end":5}}}'
+        ))
 
     test('quoted, single quotes', () =>
-        expect(parseSearchQuery("'a:b'")).toMatchObject({
-            token: {
-                range: {
-                    end: 5,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 5,
-                            start: 0,
-                        },
-                        quotedValue: 'a:b',
-                        type: 'quoted',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery("'a:b'")).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"quoted","quotedValue":"a:b","range":{"start":0,"end":5}}],"range":{"start":0,"end":5}}}'
+        ))
 
     test('quoted (escaped quotes)', () =>
-        expect(parseSearchQuery('"-\\"a\\":b"')).toMatchObject({
-            token: {
-                range: {
-                    end: 10,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 10,
-                            start: 0,
-                        },
-                        quotedValue: '-\\"a\\":b',
-                        type: 'quoted',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('"-\\"a\\":b"')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"quoted","quotedValue":"-\\\\\\"a\\\\\\":b","range":{"start":0,"end":10}}],"range":{"start":0,"end":10}}}'
+        ))
 
     test('complex query', () =>
-        expect(parseSearchQuery('repo:^github\\.com/gorilla/mux$ lang:go -file:mux.go Router')).toMatchObject({
-            token: {
-                range: {
-                    end: 58,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 30,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 4,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: 'repo',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 30,
-                                start: 5,
-                            },
-                            type: 'literal',
-                            value: '^github\\.com/gorilla/mux$',
-                        },
-                        type: 'filter',
-                    },
-                    {
-                        range: {
-                            end: 31,
-                            start: 30,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 38,
-                            start: 31,
-                        },
-                        filterType: {
-                            range: {
-                                end: 35,
-                                start: 31,
-                            },
-                            type: 'literal',
-                            value: 'lang',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 38,
-                                start: 36,
-                            },
-                            type: 'literal',
-                            value: 'go',
-                        },
-                        type: 'filter',
-                    },
-                    {
-                        range: {
-                            end: 39,
-                            start: 38,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 51,
-                            start: 39,
-                        },
-                        filterType: {
-                            range: {
-                                end: 44,
-                                start: 39,
-                            },
-                            type: 'literal',
-                            value: '-file',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 51,
-                                start: 45,
-                            },
-                            type: 'literal',
-                            value: 'mux.go',
-                        },
-                        type: 'filter',
-                    },
-                    {
-                        range: {
-                            end: 52,
-                            start: 51,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 58,
-                            start: 52,
-                        },
-                        type: 'literal',
-                        value: 'Router',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        }))
+        expect(parseSearchQuery('repo:^github\\.com/gorilla/mux$ lang:go -file:mux.go Router')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":30},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"^github\\\\.com/gorilla/mux$","range":{"start":5,"end":30}}},{"type":"whitespace","range":{"start":30,"end":31}},{"type":"filter","range":{"start":31,"end":38},"filterType":{"type":"literal","value":"lang","range":{"start":31,"end":35}},"filterValue":{"type":"literal","value":"go","range":{"start":36,"end":38}}},{"type":"whitespace","range":{"start":38,"end":39}},{"type":"filter","range":{"start":39,"end":51},"filterType":{"type":"literal","value":"-file","range":{"start":39,"end":44}},"filterValue":{"type":"literal","value":"mux.go","range":{"start":45,"end":51}}},{"type":"whitespace","range":{"start":51,"end":52}},{"type":"literal","value":"Router","range":{"start":52,"end":58}}],"range":{"start":0,"end":58}}}'
+        ))
 
     test('parenthesized parameters', () => {
-        expect(parseSearchQuery('repo:a (file:b and c)')).toMatchObject({
-            token: {
-                range: {
-                    end: 21,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 6,
-                            start: 0,
-                        },
-                        filterType: {
-                            range: {
-                                end: 4,
-                                start: 0,
-                            },
-                            type: 'literal',
-                            value: 'repo',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 6,
-                                start: 5,
-                            },
-                            type: 'literal',
-                            value: 'a',
-                        },
-                        type: 'filter',
-                    },
-                    {
-                        range: {
-                            end: 7,
-                            start: 6,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 8,
-                            start: 7,
-                        },
-                        type: 'openingParen',
-                    },
-                    {
-                        range: {
-                            end: 14,
-                            start: 8,
-                        },
-                        filterType: {
-                            range: {
-                                end: 12,
-                                start: 8,
-                            },
-                            type: 'literal',
-                            value: 'file',
-                        },
-                        filterValue: {
-                            range: {
-                                end: 14,
-                                start: 13,
-                            },
-                            type: 'literal',
-                            value: 'b',
-                        },
-                        type: 'filter',
-                    },
-                    {
-                        range: {
-                            end: 15,
-                            start: 14,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 18,
-                            start: 15,
-                        },
-                        type: 'operator',
-                        value: 'and',
-                    },
-                    {
-                        range: {
-                            end: 19,
-                            start: 18,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 20,
-                            start: 19,
-                        },
-                        type: 'literal',
-                        value: 'c',
-                    },
-                    {
-                        range: {
-                            end: 21,
-                            start: 20,
-                        },
-                        type: 'closingParen',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('repo:a (file:b and c)')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":6},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"a","range":{"start":5,"end":6}}},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"filter","range":{"start":8,"end":14},"filterType":{"type":"literal","value":"file","range":{"start":8,"end":12}},"filterValue":{"type":"literal","value":"b","range":{"start":13,"end":14}}},{"type":"whitespace","range":{"start":14,"end":15}},{"type":"operator","value":"and","range":{"start":15,"end":18}},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"literal","value":"c","range":{"start":19,"end":20}},{"type":"closingParen","range":{"start":20,"end":21}}],"range":{"start":0,"end":21}}}'
+        )
     })
 
     test('nested parenthesized parameters', () => {
-        expect(parseSearchQuery('(a and (b or c) and d)')).toMatchObject({
-            token: {
-                range: {
-                    end: 22,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 1,
-                            start: 0,
-                        },
-                        type: 'openingParen',
-                    },
-                    {
-                        range: {
-                            end: 2,
-                            start: 1,
-                        },
-                        type: 'literal',
-                        value: 'a',
-                    },
-                    {
-                        range: {
-                            end: 3,
-                            start: 2,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 6,
-                            start: 3,
-                        },
-                        type: 'operator',
-                    },
-                    {
-                        range: {
-                            end: 7,
-                            start: 6,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 8,
-                            start: 7,
-                        },
-                        type: 'openingParen',
-                    },
-                    {
-                        range: {
-                            end: 9,
-                            start: 8,
-                        },
-                        type: 'literal',
-                        value: 'b',
-                    },
-                    {
-                        range: {
-                            end: 10,
-                            start: 9,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 12,
-                            start: 10,
-                        },
-                        type: 'operator',
-                    },
-                    {
-                        range: {
-                            end: 13,
-                            start: 12,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 14,
-                            start: 13,
-                        },
-                        type: 'literal',
-                        value: 'c',
-                    },
-                    {
-                        range: {
-                            end: 15,
-                            start: 14,
-                        },
-                        type: 'closingParen',
-                    },
-                    {
-                        range: {
-                            end: 16,
-                            start: 15,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 19,
-                            start: 16,
-                        },
-                        type: 'operator',
-                    },
-                    {
-                        range: {
-                            end: 20,
-                            start: 19,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 21,
-                            start: 20,
-                        },
-                        type: 'literal',
-                        value: 'd',
-                    },
-                    {
-                        range: {
-                            end: 22,
-                            start: 21,
-                        },
-                        type: 'closingParen',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('(a and (b or c) and d)')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"literal","value":"a","range":{"start":1,"end":2}},{"type":"whitespace","range":{"start":2,"end":3}},{"type":"operator","value":"and","range":{"start":3,"end":6}},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"literal","value":"b","range":{"start":8,"end":9}},{"type":"whitespace","range":{"start":9,"end":10}},{"type":"operator","value":"or","range":{"start":10,"end":12}},{"type":"whitespace","range":{"start":12,"end":13}},{"type":"literal","value":"c","range":{"start":13,"end":14}},{"type":"closingParen","range":{"start":14,"end":15}},{"type":"whitespace","range":{"start":15,"end":16}},{"type":"operator","value":"and","range":{"start":16,"end":19}},{"type":"whitespace","range":{"start":19,"end":20}},{"type":"literal","value":"d","range":{"start":20,"end":21}},{"type":"closingParen","range":{"start":21,"end":22}}],"range":{"start":0,"end":22}}}'
+        )
     })
 
     test('do not treat links as filters', () => {
-        expect(parseSearchQuery('http://example.com repo:a')).toMatchObject({
-            token: {
-                range: {
-                    end: 25,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            end: 18,
-                            start: 0,
-                        },
-                        type: 'literal',
-                        value: 'http://example.com',
-                    },
-                    {
-                        range: {
-                            end: 19,
-                            start: 18,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            end: 25,
-                            start: 19,
-                        },
-                        filterType: {
-                            range: {
-                                end: 23,
-                                start: 19,
-                            },
-                        },
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('http://example.com repo:a')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"literal","value":"http://example.com","range":{"start":0,"end":18}},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"filter","range":{"start":19,"end":25},"filterType":{"type":"literal","value":"repo","range":{"start":19,"end":23}},"filterValue":{"type":"literal","value":"a","range":{"start":24,"end":25}}}],"range":{"start":0,"end":25}}}'
+        )
     })
 
     test('interpret C-style comments', () => {
@@ -810,123 +160,14 @@ describe('parseSearchQuery()', () => {
 repo:sourcegraph
 // search for thing
 thing`
-        expect(parseSearchQuery(query, true)).toMatchObject({
-            token: {
-                range: {
-                    end: 70,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            start: 0,
-                            end: 27,
-                        },
-                        type: 'comment',
-                        value: '// saucegraph is best graph',
-                    },
-                    {
-                        range: {
-                            start: 27,
-                            end: 28,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            start: 28,
-                            end: 44,
-                        },
-                        filterType: {
-                            range: {
-                                start: 28,
-                                end: 32,
-                            },
-                            type: 'literal',
-                            value: 'repo',
-                        },
-                        filterValue: {
-                            range: {
-                                start: 33,
-                                end: 44,
-                            },
-                            type: 'literal',
-                            value: 'sourcegraph',
-                        },
-                        type: 'filter',
-                    },
-                    {
-                        range: {
-                            start: 44,
-                            end: 45,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            start: 45,
-                            end: 64,
-                        },
-                        type: 'comment',
-                        value: '// search for thing',
-                    },
-                    {
-                        range: {
-                            start: 64,
-                            end: 65,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            start: 65,
-                            end: 70,
-                        },
-                        type: 'literal',
-                        value: 'thing',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery(query, true)).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"comment","value":"// saucegraph is best graph","range":{"start":0,"end":27}},{"type":"whitespace","range":{"start":27,"end":28}},{"type":"filter","range":{"start":28,"end":44},"filterType":{"type":"literal","value":"repo","range":{"start":28,"end":32}},"filterValue":{"type":"literal","value":"sourcegraph","range":{"start":33,"end":44}}},{"type":"whitespace","range":{"start":44,"end":45}},{"type":"comment","value":"// search for thing","range":{"start":45,"end":64}},{"type":"whitespace","range":{"start":64,"end":65}},{"type":"literal","value":"thing","range":{"start":65,"end":70}}],"range":{"start":0,"end":70}}}'
+        )
     })
 
     test('do not interpret C-style comments', () => {
-        expect(parseSearchQuery('// thing')).toMatchObject({
-            token: {
-                range: {
-                    end: 8,
-                    start: 0,
-                },
-                members: [
-                    {
-                        range: {
-                            start: 0,
-                            end: 2,
-                        },
-                        type: 'literal',
-                        value: '//',
-                    },
-                    {
-                        range: {
-                            start: 2,
-                            end: 3,
-                        },
-                        type: 'whitespace',
-                    },
-                    {
-                        range: {
-                            start: 3,
-                            end: 8,
-                        },
-                        type: 'literal',
-                        value: 'thing',
-                    },
-                ],
-                type: 'sequence',
-            },
-            type: 'success',
-        })
+        expect(parseSearchQuery('// thing')).toMatchInlineSnapshot(
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"literal","value":"//","range":{"start":0,"end":2}},{"type":"whitespace","range":{"start":2,"end":3}},{"type":"literal","value":"thing","range":{"start":3,"end":8}}],"range":{"start":0,"end":8}}}'
+        )
     })
 })

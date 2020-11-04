@@ -1531,8 +1531,14 @@ func (s *PermsStore) Metrics(ctx context.Context, staleDur time.Duration) (*Perm
 
 	stale := s.clock().Add(-1 * staleDur)
 	q := sqlf.Sprintf(`
-SELECT COUNT(*) FROM user_permissions
-WHERE updated_at <= %s
+SELECT COUNT(*) FROM user_permissions AS perms
+WHERE
+	perms.user_id IN
+		(
+			SELECT users.id FROM users
+			WHERE users.deleted_at IS NULL
+		)
+AND perms.updated_at <= %s
 `, stale)
 	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "users with stale perms")
@@ -1541,7 +1547,12 @@ WHERE updated_at <= %s
 	var seconds sql.NullFloat64
 	q = sqlf.Sprintf(`
 SELECT EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(updated_at)))
-FROM user_permissions
+FROM user_permissions AS perms
+WHERE perms.user_id IN
+	(
+		SELECT users.id FROM users
+		WHERE users.deleted_at IS NULL
+	)
 `)
 	if err := s.execute(ctx, q, &seconds); err != nil {
 		return nil, errors.Wrap(err, "users perms gap seconds")
@@ -1550,9 +1561,13 @@ FROM user_permissions
 
 	q = sqlf.Sprintf(`
 SELECT COUNT(*) FROM repo_permissions AS perms
-WHERE perms.repo_id NOT IN
-	(SELECT repo.id FROM repo
-	 WHERE repo.deleted_at IS NOT NULL)
+WHERE perms.repo_id IN
+	(
+		SELECT repo.id FROM repo
+		WHERE
+			repo.deleted_at IS NULL
+		AND repo.private = TRUE
+	)
 AND perms.updated_at <= %s
 `, stale)
 	if err := s.execute(ctx, q, &m.ReposWithStalePerms); err != nil {
@@ -1562,9 +1577,13 @@ AND perms.updated_at <= %s
 	q = sqlf.Sprintf(`
 SELECT EXTRACT(EPOCH FROM (MAX(perms.updated_at) - MIN(perms.updated_at)))
 FROM repo_permissions AS perms
-WHERE perms.repo_id NOT IN
-	(SELECT repo.id FROM repo
-	 WHERE repo.deleted_at IS NOT NULL)
+WHERE perms.repo_id IN
+	(
+		SELECT repo.id FROM repo
+		WHERE
+			repo.deleted_at IS NULL
+		AND repo.private = TRUE
+	)
 `)
 	if err := s.execute(ctx, q, &seconds); err != nil {
 		return nil, errors.Wrap(err, "repos perms gap seconds")

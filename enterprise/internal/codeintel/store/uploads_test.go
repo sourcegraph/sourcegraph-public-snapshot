@@ -812,33 +812,6 @@ func TestRequeue(t *testing.T) {
 	}
 }
 
-func TestGetStates(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, State: "queued"},
-		Upload{ID: 2},
-		Upload{ID: 3, State: "processing"},
-		Upload{ID: 4, State: "errored"},
-	)
-
-	expected := map[int]string{
-		1: "queued",
-		2: "completed",
-		4: "errored",
-	}
-
-	if states, err := store.GetStates(context.Background(), []int{1, 2, 4, 6}); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(expected, states); diff != "" {
-		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
-	}
-}
-
 func TestDeleteUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -857,7 +830,7 @@ func TestDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+	if states, err := getStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
@@ -945,7 +918,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := store.GetStates(context.Background(), uploadIDs); err != nil {
+	if states, err := getStates(uploadIDs...); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else {
 		deletedStates := 0
@@ -980,7 +953,7 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+	if states, err := getStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if len(states) != 0 {
 		t.Fatalf("unexpected record")
