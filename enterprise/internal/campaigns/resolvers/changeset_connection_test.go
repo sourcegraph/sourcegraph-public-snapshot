@@ -171,15 +171,6 @@ func TestChangesetConnectionResolver(t *testing.T) {
 			}
 
 			wantChangesets := apitest.ChangesetConnection{
-				// Stats: apitest.ChangesetsStats{
-				// 	Unpublished: 1,
-				// 	Draft:       0,
-				// 	Open:        tc.wantOpen,
-				// 	Merged:      1,
-				// 	Closed:      0,
-				// 	Deleted:     0,
-				// 	Total:       tc.wantTotalCount,
-				// },
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					EndCursor:   wantEndCursor,
