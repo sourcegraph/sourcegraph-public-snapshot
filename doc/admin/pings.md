@@ -17,7 +17,7 @@ Critical telemetry includes only the high-level data below required for billing,
 - Randomly generated site identifier
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
 - Sourcegraph version string (e.g. "vX.X.X")
-- Dependency versions (eg redis: "6.0.9" or postgres: "PostgreSQL 13.0 on x86_64-apple-darwin19.6.0, compiled by Apple clang version 12.0.0 (clang-1200.0.32.2), 64-bit")
+- Dependency versions (eg redis: "6.0.9" or postgres: "PostgreSQL 13.0 on x86_64... etc")
 - Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
 - License key associated with your Sourcegraph subscription
 - Aggregate count of current monthly users
