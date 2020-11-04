@@ -22,6 +22,7 @@ WITH
 			DATE_TRUNC('week', created_at) AS cohort_date,
 			COUNT(*) AS cohort_size
 		FROM users
+		WHERE created_at >= DATE_TRUNC('week', now()) - INTERVAL '11 weeks'
 		GROUP BY cohort_date
 	),
 	sub AS (
@@ -30,8 +31,10 @@ WITH
 			DATE_TRUNC('week', users.created_at) AS cohort_date,
 			FLOOR(DATE_PART('day', event_logs.timestamp::TIMESTAMP - users.created_at::TIMESTAMP)/7) AS weeks_after_signup
 		FROM event_logs
-		JOIN users ON users.id = event_logs.user_id
-		WHERE DATE_TRUNC('week', users.created_at) >= DATE_TRUNC('week', now()) - INTERVAL '11 weeks'
+		JOIN users ON (
+			users.id = event_logs.user_id AND
+			users.created_at >= DATE_TRUNC('week', now()) - INTERVAL '11 weeks'
+		)
 		GROUP BY user_id, cohort_date, weeks_after_signup
 	) /* calculate retention percentages for weeks 0-3 for each of the last 4 weekly cohorts */
 
