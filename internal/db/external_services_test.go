@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -624,13 +623,9 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	clock := NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 
-	var svcs types.ExternalServices
-	for _, svc := range createExternalServices(t) {
-		svcs = append(svcs, svc)
-	}
-	sort.Sort(svcs)
+	svcs := MakeExternalServices()
 
 	t.Run("no external services", func(t *testing.T) {
 		if err := ExternalServices.Upsert(ctx); err != nil {
@@ -650,8 +645,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		want := generateExternalServices(7, svcs...)
-		sort.Sort(want)
+		want := GenerateExternalServices(7, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
@@ -722,117 +716,4 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Errorf("List:\n%s", diff)
 		}
 	})
-}
-
-func createExternalServices(t *testing.T) map[string]*types.ExternalService {
-	clock := NewFakeClock(time.Now(), 0)
-	now := clock.Now()
-
-	svcs := mkExternalServices(now)
-
-	// Create a new external service
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-
-	// create a few external services
-	for _, svc := range svcs {
-		if err := ExternalServices.Create(context.Background(), confGet, svc); err != nil {
-			t.Fatalf("failed to insert external service %v: %v", svc.DisplayName, err)
-		}
-	}
-
-	services, err := ExternalServices.List(context.Background(), ExternalServicesListOptions{})
-	if err != nil {
-		t.Fatal("failed to list external services")
-	}
-
-	servicesPerKind := make(map[string]*types.ExternalService)
-	for _, svc := range services {
-		servicesPerKind[svc.Kind] = svc
-	}
-
-	return servicesPerKind
-}
-
-func generateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
-	if len(base) == 0 {
-		return nil
-	}
-	es := make(types.ExternalServices, 0, n)
-	for i := 0; i < n; i++ {
-		id := strconv.Itoa(i)
-		r := base[i%len(base)].Clone()
-		r.DisplayName += id
-		es = append(es, r)
-	}
-	return es
-}
-
-func mkExternalServices(now time.Time) []*types.ExternalService {
-	githubSvc := types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	gitlabSvc := types.ExternalService{
-		Kind:        extsvc.KindGitLab,
-		DisplayName: "GitLab - Test",
-		Config:      `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	bitbucketServerSvc := types.ExternalService{
-		Kind:        extsvc.KindBitbucketServer,
-		DisplayName: "Bitbucket Server - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	bitbucketCloudSvc := types.ExternalService{
-		Kind:        extsvc.KindBitbucketCloud,
-		DisplayName: "Bitbucket Cloud - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	awsSvc := types.ExternalService{
-		Kind:        extsvc.KindAWSCodeCommit,
-		DisplayName: "AWS Code - Test",
-		Config:      `{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	otherSvc := types.ExternalService{
-		Kind:        extsvc.KindOther,
-		DisplayName: "Other - Test",
-		Config:      `{"url": "https://other.com", "repos": ["none"]}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	gitoliteSvc := types.ExternalService{
-		Kind:        extsvc.KindGitolite,
-		DisplayName: "Gitolite - Test",
-		Config:      `{"prefix": "foo", "host": "bar"}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	return []*types.ExternalService{
-		&githubSvc,
-		&gitlabSvc,
-		&bitbucketServerSvc,
-		&bitbucketCloudSvc,
-		&awsSvc,
-		&otherSvc,
-		&gitoliteSvc,
-	}
 }
