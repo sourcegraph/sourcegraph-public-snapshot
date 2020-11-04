@@ -196,19 +196,19 @@ func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
 	// get redis cache server version
 	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
 	if err != nil {
-		log15.Warn("unable to connect to redis cache instance", "error", err)
+		log15.Warn("updatecheck.getDependencyVersions: unable to connect to redis cache instance", "error", err)
 	}
 
 	// get redis store server version
 	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
 	if err != nil {
-		log15.Warn("unable to get redis store version", "error", err)
+		log15.Warn("updatecheck.getDependencyVersions: unable to get redis store version", "error", err)
 	}
 
 	// get postgres version
 	err = dbconn.Global.QueryRowContext(ctx, "SELECT version()").Scan(&dv.PostgresVersion)
 	if err != nil {
-		log15.Warn("unable to get postgres version", "error", err)
+		log15.Warn("updatecheck.getDependencyVersions: unable to get postgres version", "error", err)
 	}
 	return json.Marshal(dv)
 }
