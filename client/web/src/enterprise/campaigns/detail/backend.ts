@@ -68,16 +68,10 @@ const campaignFragment = gql`
             }
         }
 
-        diffStat {
-            ...DiffStatFields
-        }
-
         currentSpec {
             originalInput
         }
     }
-
-    ${diffStatFields}
 
     ${changesetStatsFragment}
 `

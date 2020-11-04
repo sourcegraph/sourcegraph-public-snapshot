@@ -49,11 +49,6 @@ const campaignDefaults: CampaignFields = {
         url: '/users/alice',
         username: 'alice',
     },
-    diffStat: {
-        added: 10,
-        changed: 8,
-        deleted: 10,
-    },
     id: 'specid',
     url: '/users/alice/campaigns/awesome-campaign',
     namespace: {
