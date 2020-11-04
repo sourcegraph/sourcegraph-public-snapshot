@@ -192,6 +192,10 @@ func (r *Repo) Clone() *Repo {
 		return nil
 	}
 	clone := *r
+	if r.RepoFields != nil {
+		repoFields := *r.RepoFields
+		clone.RepoFields = &repoFields
+	}
 	if r.Sources != nil {
 		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
 		for k, v := range r.Sources {

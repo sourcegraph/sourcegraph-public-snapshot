@@ -191,6 +191,65 @@ ORDER BY id ASC LIMIT %s
 	)
 }
 
+// ListSyncJobs returns all sync jobs.
+func (s *Store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
+	q := sqlf.Sprintf(`
+		SELECT
+			id,
+			state,
+			failure_message,
+			started_at,
+			finished_at,
+			process_after,
+			num_resets,
+			num_failures,
+			log_contents,
+			external_service_id,
+			next_sync_at
+		 FROM external_service_sync_jobs_with_next_sync_at
+	`)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanJobs(rows)
+}
+
+func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
+	var jobs []SyncJob
+
+	for rows.Next() {
+		// required field for the sync worker, but
+		// the value is thrown out here
+		var logContents *string
+
+		var job SyncJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.FailureMessage,
+			&job.StartedAt,
+			&job.FinishedAt,
+			&job.ProcessAfter,
+			&job.NumResets,
+			&job.NumFailures,
+			&logContents,
+			&job.ExternalServiceID,
+			&job.NextSyncAt,
+		); err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}
+
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The ID field is used to distinguish between Repos that need to be updated and Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
