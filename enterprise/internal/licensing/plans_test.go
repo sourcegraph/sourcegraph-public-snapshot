@@ -71,13 +71,13 @@ func TestInfo_hasUnknownPlan(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
-			if test.wantErr == "" {
-				test.wantErr = "<nil>"
+			var gotErr string
+			err := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
+			if err != nil {
+				gotErr = err.Error()
 			}
 
-			err := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
-			got := fmt.Sprintf("%v", err)
-			if diff := cmp.Diff(test.wantErr, got); diff != "" {
+			if diff := cmp.Diff(test.wantErr, gotErr); diff != "" {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
