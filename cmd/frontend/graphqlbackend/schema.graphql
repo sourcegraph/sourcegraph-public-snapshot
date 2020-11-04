@@ -1675,7 +1675,7 @@ type ChangesetConnection {
     pageInfo: PageInfo!
 
     """
-    Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
+    Stats on all the changesets that are in this connection. Pagination and filters have no effect on the stats.
     """
     stats: ChangesetConnectionStats!
 }
