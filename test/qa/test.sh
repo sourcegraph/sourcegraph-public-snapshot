@@ -14,6 +14,7 @@ chmod +x /usr/local/bin/src
 asdf install
 yarn
 yarn generate
+yes | gcloud auth configure-docker
 
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
 

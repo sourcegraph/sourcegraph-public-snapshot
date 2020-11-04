@@ -6,6 +6,7 @@ set -x
 asdf install
 yarn install
 yarn generate
+yes | gcloud auth configure-docker
 
 # Run, initialize, and stop an old Sourcegraph release
 IMAGE=sourcegraph/server:$TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old

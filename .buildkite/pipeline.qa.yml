@@ -11,7 +11,7 @@ steps:
 
 - label: ':docker::arrow_double_up:'
   command:
-  - .buildkite/vagrant-run.sh sourcegraph-upgrade || true
+  - .buildkite/vagrant-run.sh sourcegraph-upgrade
   timeout_in_minutes: 20
   agents:
     queue: 'baremetal'
