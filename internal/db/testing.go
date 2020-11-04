@@ -209,3 +209,15 @@ func GenerateExternalServices(n int, base ...*types.ExternalService) types.Exter
 	}
 	return es
 }
+
+// ExternalServicesToMap is a helper function that returns a map whose key is the external service kind.
+// If two external services have the same kind, only the last one will be stored in the map.
+func ExternalServicesToMap(es types.ExternalServices) map[string]*types.ExternalService {
+	m := make(map[string]*types.ExternalService)
+
+	for _, svc := range es {
+		m[svc.Kind] = svc
+	}
+
+	return m
+}

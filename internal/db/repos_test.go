@@ -320,7 +320,7 @@ func TestRepos_Create(t *testing.T) {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
-	msvcs := svcs.ToMap()
+	msvcs := ExternalServicesToMap(svcs)
 
 	repo1 := MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
 	repo2 := MakeGitlabRepo(msvcs[extsvc.KindGitLab])
