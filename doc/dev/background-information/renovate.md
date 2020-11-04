@@ -31,7 +31,7 @@ Once you assessed these aspects, you can make an informed decision to:
 - Close it
 - Make the needed commits on the branch to migrate, then merge
 - _Request changes_ on the pull request with a summary of the migration work neeeded, postponing that work but signalling that somebody already reviewed this pull request.
-- Everyone should take a look at open Renovate pull requests that have been open for a while regularly.
+  Everyone should take a look at open Renovate pull requests that have been open for a while regularly.
 
 When in doubt, you can ping your team on the pull request to get more eyes on it.
 
