@@ -1,7 +1,8 @@
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 import { map, distinctUntilChanged } from 'rxjs/operators'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { isDefaultSourcegraphUrl } from './context'
+import { isExtension } from '../context'
 
 const OPTION_FLAGS_SYNC_STORAGE_KEY = 'featureFlags'
 
@@ -60,11 +61,16 @@ export function assignOptionFlagValues(values: OptionFlagValues): OptionFlagWith
 export function applyOptionFlagDefaults(values: Partial<OptionFlagValues> | undefined): OptionFlagValues {
     return { ...optionFlagDefaults, ...values }
 }
+
 /**
  * Observe the option flags object, with default values already applied.
  */
-export const observeOptionFlags = (): Observable<OptionFlagValues> =>
-    observeStorageKey('sync', OPTION_FLAGS_SYNC_STORAGE_KEY).pipe(map(applyOptionFlagDefaults))
+export const observeOptionFlags = (): Observable<OptionFlagValues> => {
+    const optionFlagsStorageObservable = isExtension
+        ? observeStorageKey('sync', OPTION_FLAGS_SYNC_STORAGE_KEY)
+        : of(undefined)
+    return optionFlagsStorageObservable.pipe(map(applyOptionFlagDefaults))
+}
 
 /**
  * Observe an option flag value, with default value already applied.
