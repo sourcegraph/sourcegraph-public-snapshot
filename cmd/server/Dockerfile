@@ -50,6 +50,12 @@ RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc
     cd ../../../ && \
     rm -rf target/
 
+# install minio (keep this up to date with docker-images/minio/Dockerfile)
+ENV MINIO_VERSION=RELEASE.2020-10-18T21-54-12Z
+RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
+    chmod +x "minio.$MINIO_VERSION" && \
+    mv "minio.$MINIO_VERSION" /usr/local/bin/minio
+
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 

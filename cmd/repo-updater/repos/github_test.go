@@ -435,10 +435,9 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				t.Helper()
 
 				want := &Repo{
-					Name:         "github.com/sourcegraph/sourcegraph",
-					Description:  "Code search and navigation tool (self-hosted)",
-					URI:          "github.com/sourcegraph/sourcegraph",
-					Unrestricted: true,
+					Name:        "github.com/sourcegraph/sourcegraph",
+					Description: "Code search and navigation tool (self-hosted)",
+					URI:         "github.com/sourcegraph/sourcegraph",
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
 						ServiceType: "github",

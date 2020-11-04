@@ -17,6 +17,43 @@ schema {
 }
 
 """
+This type is not returned by any resolver, but serves to document what an error
+response will look like.
+"""
+type Error {
+    """
+    A string giving more context about the error that ocurred.
+    """
+    message: String!
+    """
+    The GraphQL path to where the error happened. For an error in the query
+    query {
+        user {
+            externalID # This is a nullable field that failed computing.
+        }
+    }
+    the path would be ["user", "externalID"].
+    """
+    path: [String!]!
+    """
+    Optional additional context on the error.
+    """
+    extensions: ErrorExtensions
+}
+
+"""
+Optional additional context on an error returned from a resolver.
+It may also contain more properties, which aren't strictly typed here.
+"""
+type ErrorExtensions {
+    """
+    An error code, which can be asserted on.
+    Possible error codes are communicated in the doc string of the field.
+    """
+    code: String
+}
+
+"""
 Represents a null return value.
 """
 type EmptyResponse {
@@ -548,11 +585,10 @@ type Mutation {
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 
     """
-    CAMPAIGNS
-
-    Create a campaign from a campaign spec and locally computed changeset specs. If a campaign in
-    the same namespace with the same name already exists, an error is returned. The newly created
+    Create a campaign from a campaign spec and locally computed changeset specs. The newly created
     campaign is returned.
+    If a campaign in the same namespace with the same name already exists, an error with the error code
+    ErrMatchingCampaignExists is returned.
     """
     createCampaign(
         """
@@ -565,6 +601,8 @@ type Mutation {
     Create or update a campaign from a campaign spec and locally computed changeset specs. If no
     campaign exists in the namespace with the name given in the campaign spec, a campaign will be
     created. Otherwise, the existing campaign will be updated. The campaign is returned.
+    Closed campaigns cannot be applied to. In that case, an error with the error code ErrApplyClosedCampaign
+    will be returned.
     """
     applyCampaign(
         """
@@ -577,7 +615,7 @@ type Mutation {
         parameters does not match the campaign with this ID. This lets callers use a stable ID
         that refers to a specific campaign during an edit session (and is not susceptible to
         conflicts if the underlying campaign is moved to a different namespace, renamed, or
-        deleted).
+        deleted). The returned error has the error code ErrEnsureCampaignFailed.
         """
         ensureCampaign: ID
     ): Campaign!
@@ -2799,6 +2837,219 @@ type SavedSearch implements Node {
     The Slack webhook URL associated with this saved search, if any.
     """
     slackWebhookURL: String
+}
+
+"""
+A list of code monitors
+"""
+type MonitorConnection {
+    """
+    A list of monitors.
+    """
+    nodes: [Monitor!]!
+
+    """
+    The total number of monitors in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code monitor with one trigger and possibly many actions.
+"""
+type Monitor implements Node {
+    """
+    The code monitor's unique ID.
+    """
+    id: ID!
+    """
+    The user who created the code monitor.
+    """
+    createdBy: User!
+    """
+    The time at which the code monitor was created.
+    """
+    createdAt: DateTime!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Owners can edit the code monitor.
+    """
+    owner: Owner!
+    """
+    Triggers trigger actions. There can only be one trigger per monitor.
+    """
+    trigger: MonitorTrigger
+    """
+    One or more actions that are triggered by the trigger.
+    """
+    actions(
+        """
+        Returns the first n actions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+An owner can either be an user or an organization.
+"""
+union Owner = User | Org
+
+"""
+A query that can serve as a trigger for code monitors.
+"""
+type MonitorQuery implements Node {
+    """
+    The unique id of a trigger query.
+    """
+    id: ID!
+    """
+    A query.
+    """
+    query: String!
+}
+
+"""
+Supported triggers for code monitors.
+"""
+union MonitorTrigger = MonitorQuery
+
+"""
+A list of actions.
+"""
+type MonitorActionConnection {
+    """
+    A list of actions.
+    """
+    nodes: [MonitorAction!]!
+
+    """
+    The total number of actions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Supported actions for code monitors.
+"""
+union MonitorAction = MonitorEmail
+
+"""
+Email is one of the supported actions of code monitors.
+"""
+type MonitorEmail implements Node {
+    """
+    The unique id of an email action.
+    """
+    id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email action.
+    """
+    priority: MonitorEmailPriority!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
+    """
+    The recipients of the email.
+    """
+    recipient: MonitorEmailRecipient!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
+}
+
+"""
+The priority of an email action.
+"""
+enum MonitorEmailPriority {
+    NORMAL
+    CRITICAL
+}
+
+"""
+Supported types of recipients for email actions.
+"""
+union MonitorEmailRecipient = User
+
+"""
+A list of events.
+"""
+type MonitorActionEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An event documents the result of a trigger or an execution of an action.
+"""
+type MonitorEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+}
+
+"""
+Supported status of monitor events.
+"""
+enum EventStatus {
+    PENDING
+    SUCCESS
+    ERROR
 }
 
 """
@@ -5527,6 +5778,20 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    A list of monitors owned by the user or her organization.
+    """
+    monitors(
+        """
+        Returns the first n monitors from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorConnection!
 }
 
 """

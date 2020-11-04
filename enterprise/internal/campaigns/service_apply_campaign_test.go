@@ -491,8 +491,11 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, repos[1].ID)
+			// Skip because non-site admins cannot create campaigns but
+			// site admins bypass repository permissions check.
+			t.Skip()
+
+			ct.MockRepoPermissions(t, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
 			campaignSpec := createCampaignSpec(t, ctx, store, "missing-permissions", admin.ID)
 

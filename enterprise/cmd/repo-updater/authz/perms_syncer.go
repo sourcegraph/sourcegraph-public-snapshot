@@ -314,33 +314,17 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	// For non-private repositories, we rely on the fact that the `provider` is
-	// always nil here to only make sure `repo.Unrestricted` is true for these
-	// repositories because we don't restrict access to non-private repositories.
+	// always nil here because we don't restrict access to non-private repositories.
 	if provider == nil {
 		log15.Debug("PermsSyncer.syncRepoPerms.noProvider",
 			"repoID", repo.ID,
 			"private", repo.Private,
-			"unrestricted", repo.Unrestricted)
+		)
 
-		if !repo.Unrestricted {
-			// NOTE: Not using transaction here because it is not easy to start transaction
-			// that involves two stores. Being partially succeeded here is OK because:
-			// 	1. We're setting the repository to be unrestricted and the permissions
-			// 		bits no longer important.
-			//	2. Eventually, the syncer will try to sync and run down to here again
-			//		because of the permissions staleness.
-			repo.Unrestricted = true
-			if err := s.reposStore.UpsertRepos(ctx, repo); err != nil {
-				return errors.Wrapf(err, "upsert repo %d", repo.ID)
-			}
-		}
-
-		// Upsert the record in order to prevent the scheduler keep scheduling this repository.
-		return errors.Wrap(s.permsStore.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  int32(repoID),
-			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-			UserIDs: roaring.NewBitmap(),
-		}), "set repository permissions") // TODO: Use TouchRepoPermissions
+		// We have no authz provider configured for the repository.
+		// However, we need to upsert the dummy record in order to
+		// prevent scheduler keep scheduling this repository.
+		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
 	}
 
 	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
@@ -358,7 +342,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// return a nil error and log a warning message.
 	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
 		log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
-		return s.permsStore.TouchRepoPermissions(ctx, int32(repoID))
+		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
 	}
 
 	if err != nil {

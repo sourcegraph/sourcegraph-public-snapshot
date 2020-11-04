@@ -118,7 +118,7 @@ export const renderMarkdown = (
                     'class',
                     { name: 'rel', values: ['noopener', 'noreferrer'] },
                 ],
-                img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align'],
+                img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
                 // Support SVGs for code insights.
@@ -143,6 +143,13 @@ export const renderMarkdown = (
                 h6: ['id'],
             },
             allowedStyles: {
+                img: {
+                    padding: ALL_VALUES_ALLOWED,
+                    'padding-left': ALL_VALUES_ALLOWED,
+                    'padding-right': ALL_VALUES_ALLOWED,
+                    'padding-top': ALL_VALUES_ALLOWED,
+                    'padding-bottom': ALL_VALUES_ALLOWED,
+                },
                 // SVGs are usually for charts in code insights.
                 // Allow them to be responsive.
                 svg: {

@@ -342,12 +342,11 @@ func TestService(t *testing.T) {
 			t.Fatal("MockEnqueueChangesetSync not called")
 		}
 
-		// Repo filtered out by authzFilter
-		ct.AuthzFilterRepos(t, rs[0].ID)
+		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
-			t.Fatalf("expected not-found error but got %s", err)
+			t.Fatalf("expected not-found error but got %v", err)
 		}
 	})
 
@@ -432,8 +431,11 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, changesetSpecs[0].RepoID)
+			// Skip because non-site admins cannot create campaigns but
+			// site admins bypass repository permissions check.
+			t.Skip()
+
+			ct.MockRepoPermissions(t, user.ID)
 
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID:      admin.ID,
@@ -583,12 +585,11 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, repo.ID)
+			ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
 			if !errcode.IsNotFound(err) {
-				t.Fatalf("expected not-found error but got %s", err)
+				t.Fatalf("expected not-found error but got %v", err)
 			}
 		})
 	})
@@ -839,7 +840,7 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindGitHub)
+		r, _ := testRepo(t, rstore, extsvc.KindGitHub)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
@@ -872,7 +873,7 @@ func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindBitbucketServer)
+		r, _ := testRepo(t, rstore, extsvc.KindBitbucketServer)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)

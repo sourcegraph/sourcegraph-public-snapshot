@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -349,8 +350,47 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 		},
 	)[0]
 
-	// Set up permissions: alice and bob have access to their own private repositories
+	// Set up another unrestricted private repo from cindy
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	cindyExternalService := &types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		DisplayName:  "GITHUB #1",
+		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Unrestricted: true,
+	}
+	err = ExternalServices.Create(ctx, confGet, cindyExternalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cindyPrivateRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name:    "cindy_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "cindy_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
+		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
+	}
+
 	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%s, %s, '')
+`, cindyExternalService.ID, cindyPrivateRepo.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up permissions: alice and bob have access to their own private repositories
+	q = sqlf.Sprintf(`
 INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
 VALUES
 	(%s, 'read', 'repos', %s, NOW()),
@@ -367,24 +407,24 @@ VALUES
 	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 	defer authz.SetProviders(true, nil)
 
-	// Alice should see "alice_public_repo", "alice_private_repo" and "bob_public_repo"
+	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos.List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo}
+	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, cindyPrivateRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Bob should see "alice_public_repo", "bob_private_repo" and "bob_public_repo"
+	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
 	repos, err = Repos.List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, bobPrivateRepo}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
@@ -395,17 +435,17 @@ VALUES
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo}
+	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// A random user should only see "alice_public_repo" and "bob_public_repo"
+	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
 	repos, err = Repos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}

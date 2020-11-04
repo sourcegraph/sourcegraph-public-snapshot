@@ -2,9 +2,9 @@ package db
 
 var (
 	AccessTokens     = &accessTokens{}
-	ExternalServices = &ExternalServicesStore{}
+	ExternalServices = &ExternalServiceStore{}
 	DefaultRepos     = &defaultRepos{}
-	Repos            = &repos{}
+	Repos            = &RepoStore{}
 	Phabricator      = &phabricator{}
 	QueryRunnerState = &queryRunnerState{}
 	Namespaces       = &namespaces{}

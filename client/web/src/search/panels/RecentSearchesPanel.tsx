@@ -9,6 +9,7 @@ import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { ShowMoreButton } from './ShowMoreButton'
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
@@ -88,7 +89,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             }
                             className="text-monospace"
                         >
-                            lang:c if(:[eval_match]) {'{'} :[statement_match] {'}'}
+                            <SyntaxHighlightedSearchQuery query="lang:c if(:[eval_match]) { :[statement_match] }" />
                         </Link>
                     </small>
                 </li>
@@ -105,7 +106,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             }
                             className="text-monospace"
                         >
-                            lang:java type:diff after:"1 week ago"
+                            <SyntaxHighlightedSearchQuery query='lang:java type:diff after:"1 week ago"' />
                         </Link>
                     </small>
                 </li>
@@ -115,7 +116,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
                             className="text-monospace"
                         >
-                            lang:java
+                            <SyntaxHighlightedSearchQuery query="lang:java" />
                         </Link>
                     </small>
                 </li>
@@ -146,8 +147,8 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         <tr key={index} className="recent-searches-panel__results-table-row">
                             <td>
                                 <small>
-                                    <Link to={recentSearch.url} className="text-monospace" onClick={logSearchClicked}>
-                                        {recentSearch.searchText}
+                                    <Link to={recentSearch.url} onClick={logSearchClicked}>
+                                        <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
                                     </Link>
                                 </small>
                             </td>

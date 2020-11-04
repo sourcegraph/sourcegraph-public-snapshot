@@ -138,7 +138,6 @@ type repoRecord struct {
 	Archived            bool            `json:"archived"`
 	Fork                bool            `json:"fork"`
 	Private             bool            `json:"private"`
-	Unrestricted        bool            `json:"unrestricted"`
 	Metadata            json.RawMessage `json:"metadata"`
 	Sources             json.RawMessage `json:"sources,omitempty"`
 }
@@ -168,7 +167,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		Archived:            r.Archived,
 		Fork:                r.Fork,
 		Private:             r.Private,
-		Unrestricted:        r.Unrestricted,
 		Metadata:            metadata,
 		Sources:             sources,
 	}, nil
@@ -234,7 +232,8 @@ SELECT
   deleted_at,
   last_sync_at,
   next_sync_at,
-  namespace_user_id
+  namespace_user_id,
+  unrestricted
 FROM external_services
 WHERE id > %s
 AND %s
@@ -440,7 +439,6 @@ WITH repos_list AS (
 		archived              boolean,
 		fork                  boolean,
 		private               boolean,
-		unrestricted          boolean,
 		metadata              jsonb,
 		sources               jsonb
 	  )
@@ -461,7 +459,6 @@ inserted_repos AS (
 	archived,
 	fork,
 	private,
-	unrestricted,
 	metadata
   )
   SELECT
@@ -477,7 +474,6 @@ inserted_repos AS (
 	archived,
 	fork,
 	private,
-	unrestricted,
 	metadata
   FROM repos_list
   RETURNING id
@@ -596,7 +592,6 @@ SELECT
   cloned,
   fork,
   private,
-  unrestricted,
   (
 	SELECT
 	  json_agg(
@@ -1198,7 +1193,6 @@ WITH batch AS (
       archived              boolean,
       fork                  boolean,
       private               boolean,
-      unrestricted          boolean,
       metadata              jsonb
     )
   )
@@ -1220,7 +1214,6 @@ SET
   archived              = batch.archived,
   fork                  = batch.fork,
   private               = batch.private,
-  unrestricted          = batch.unrestricted,
   metadata              = batch.metadata
 FROM batch
 WHERE repo.external_service_type = batch.external_service_type
@@ -1256,7 +1249,6 @@ INSERT INTO repo (
   archived,
   fork,
   private,
-  unrestricted,
   metadata
 )
 SELECT
@@ -1272,7 +1264,6 @@ SELECT
   archived,
   fork,
   private,
-  unrestricted,
   metadata
 FROM batch
 ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
@@ -1376,6 +1367,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&dbutil.NullTime{Time: &svc.LastSyncAt},
 		&dbutil.NullTime{Time: &svc.NextSyncAt},
 		&dbutil.NullInt32{N: &svc.NamespaceUserID},
+		&svc.Unrestricted,
 	)
 }
 
@@ -1397,7 +1389,6 @@ func scanRepo(r *Repo, s scanner) error {
 		&r.Cloned,
 		&r.Fork,
 		&r.Private,
-		&r.Unrestricted,
 		&sources,
 		&metadata,
 	)
