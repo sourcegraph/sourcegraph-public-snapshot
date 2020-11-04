@@ -245,41 +245,6 @@ func scanFirstIntPair(rows *sql.Rows, queryErr error) (_ int, _ int, _ bool, err
 	return 0, 0, false, nil
 }
 
-// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
-// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
-// will be marked as dirty so that its commit graph will be updated in the background.
-func (s *store) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error) {
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return 0, false, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	id, repositoryID, deleted, err := scanFirstIntPair(tx.Store.Query(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET state = 'deleted'
-		WHERE id IN (
-			SELECT d.id FROM lsif_dumps_with_repository_name d
-			WHERE NOT EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)
-			ORDER BY d.uploaded_at
-			LIMIT 1
-		)
-		RETURNING id, repository_id
-	`)))
-	if err != nil {
-		return 0, false, err
-	}
-	if !deleted {
-		return 0, false, nil
-	}
-
-	if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
-		return 0, false, err
-	}
-
-	return id, true, nil
-}
-
 // SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
 // background.

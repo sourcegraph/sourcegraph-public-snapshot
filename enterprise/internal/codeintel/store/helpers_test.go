@@ -14,6 +14,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -324,4 +325,38 @@ func normalizeVisibleUploads(uploadMetas map[string][]UploadMeta) map[string][]U
 	}
 
 	return uploadMetas
+}
+
+func getStates(ids ...int) (map[int]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	q := sqlf.Sprintf(
+		`SELECT id, state FROM lsif_uploads WHERE id IN (%s)`,
+		sqlf.Join(intsToQueries(ids), ", "),
+	)
+
+	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
+}
+
+// scanStates scans pairs of id/states from the return value of `*store.query`.
+func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	states := map[int]string{}
+	for rows.Next() {
+		var id int
+		var state string
+		if err := rows.Scan(&id, &state); err != nil {
+			return nil, err
+		}
+
+		states[id] = state
+	}
+
+	return states, nil
 }
