@@ -1538,7 +1538,7 @@ WHERE
 			SELECT users.id FROM users
 			WHERE users.deleted_at IS NULL
 		)
-AND	perms.updated_at <= %s
+AND perms.updated_at <= %s
 `, stale)
 	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "users with stale perms")
