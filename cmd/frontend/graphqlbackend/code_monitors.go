@@ -55,7 +55,7 @@ type MonitorResolver interface {
 	CreatedBy(ctx context.Context) (*UserResolver, error)
 	CreatedAt() DateTime
 	Description() string
-	Owner(ctx context.Context) (Owner, error)
+	Owner(ctx context.Context) (NamespaceResolver, error)
 	Enabled() bool
 	Trigger(ctx context.Context) (MonitorTrigger, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
@@ -96,30 +96,9 @@ func (m *monitor) Actions(ctx context.Context, args *ListActionArgs) (MonitorAct
 		nil
 }
 
-//
-// Owner <<UNION>>
-//
-type Owner interface {
-	ToUser() (*UserResolver, bool)
-	ToOrg() (*OrgResolver, bool)
-}
-
-func (m *monitor) Owner(ctx context.Context) (Owner, error) {
-	user, err := UserByID(ctx, m.userID)
-	return &owner{user: user}, err
-}
-
-type owner struct {
-	user *UserResolver
-	org  *OrgResolver
-}
-
-func (o *owner) ToUser() (*UserResolver, bool) {
-	return o.user, o.user != nil
-}
-
-func (o *owner) ToOrg() (*OrgResolver, bool) {
-	return o.org, o.org != nil
+func (m *monitor) Owner(ctx context.Context) (n NamespaceResolver, err error) {
+	n.Namespace, err = UserByID(ctx, m.userID)
+	return n, err
 }
 
 //

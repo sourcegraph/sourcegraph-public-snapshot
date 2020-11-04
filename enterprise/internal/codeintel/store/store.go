@@ -68,9 +68,6 @@ type Store interface {
 	// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
-	// GetStates returns the states for the uploads with the given identifiers.
-	GetStates(ctx context.Context, ids []int) (map[int]string, error)
-
 	// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
 	// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
 	// the background.
@@ -101,11 +98,6 @@ type Store interface {
 	// FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 	// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error)
-
-	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
-	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
-	// will be marked as dirty so that its commit graph will be updated in the background.
-	DeleteOldestDump(ctx context.Context) (int, bool, error)
 
 	// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
 	// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
