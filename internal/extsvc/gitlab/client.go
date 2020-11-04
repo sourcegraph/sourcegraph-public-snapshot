@@ -170,13 +170,15 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		cacheTTL = 30 * time.Second
 	}
 	key := "gl_proj:"
+	var tokenHash string
 	if a != nil {
-		key = key + a.Hash()
+		tokenHash = a.Hash()
+		key += tokenHash
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), "hash", &ratelimit.Monitor{})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, &ratelimit.Monitor{})
 
 	return &Client{
 		baseURL:          baseURL,

@@ -73,15 +73,21 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		return category
 	})
 
+	var tokenHash string
+	if a != nil {
+		tokenHash = a.Hash()
+	}
+
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
 		auth:             a,
 		httpClient:       cli,
-		rateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
 		rateLimit:        rl,
+		rateLimitMonitor: rlm,
 	}
 }
 
