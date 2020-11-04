@@ -234,11 +234,6 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	var services []repos.ExternalService
-	for _, svc := range servicesPerKind {
-		services = append(services, *svc)
-	}
-
 	type testCase struct {
 		name    string
 		sourcer repos.Sourcer
