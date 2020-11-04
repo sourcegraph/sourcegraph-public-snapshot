@@ -12,7 +12,7 @@ import (
 )
 
 // BundleClient is the interface to the precise-code-intel-bundle-manager service scoped to a particular dump.
-type BundleClient interface {
+type BundleManagerClient interface {
 	// Exists determines if the given path exists in the dump.
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
 
@@ -43,15 +43,15 @@ type BundleClient interface {
 	PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (PackageInformationData, error)
 }
 
-type bundleClientImpl struct {
+type bundleManagerClientImpl struct {
 	codeIntelDB        *sql.DB
 	observationContext *observation.Context
 }
 
-var _ BundleClient = &bundleClientImpl{}
+var _ BundleManagerClient = &bundleManagerClientImpl{}
 
 // Exists determines if the given path exists in the dump.
-func (c *bundleClientImpl) Exists(ctx context.Context, bundleID int, path string) (bool, error) {
+func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleID int, path string) (bool, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return false, err
@@ -61,7 +61,7 @@ func (c *bundleClientImpl) Exists(ctx context.Context, bundleID int, path string
 }
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
-func (c *bundleClientImpl) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]CodeIntelligenceRange, error) {
+func (c *bundleManagerClientImpl) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]CodeIntelligenceRange, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (c *bundleClientImpl) Ranges(ctx context.Context, bundleID int, path string
 }
 
 // Definitions retrieves a list of definition locations for the symbol under the given location.
-func (c *bundleClientImpl) Definitions(ctx context.Context, bundleID int, path string, line, character int) ([]Location, error) {
+func (c *bundleManagerClientImpl) Definitions(ctx context.Context, bundleID int, path string, line, character int) ([]Location, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *bundleClientImpl) Definitions(ctx context.Context, bundleID int, path s
 }
 
 // Definitions retrieves a list of reference locations for the symbol under the given location.
-func (c *bundleClientImpl) References(ctx context.Context, bundleID int, path string, line, character int) ([]Location, error) {
+func (c *bundleManagerClientImpl) References(ctx context.Context, bundleID int, path string, line, character int) ([]Location, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (c *bundleClientImpl) References(ctx context.Context, bundleID int, path st
 }
 
 // Hover retrieves the hover text for the symbol under the given location.
-func (c *bundleClientImpl) Hover(ctx context.Context, bundleID int, path string, line, character int) (string, Range, bool, error) {
+func (c *bundleManagerClientImpl) Hover(ctx context.Context, bundleID int, path string, line, character int) (string, Range, bool, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return "", Range{}, false, err
@@ -105,7 +105,7 @@ func (c *bundleClientImpl) Hover(ctx context.Context, bundleID int, path string,
 }
 
 // Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
-func (c *bundleClientImpl) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) ([]Diagnostic, int, error) {
+func (c *bundleManagerClientImpl) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) ([]Diagnostic, int, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return nil, 0, err
@@ -123,7 +123,7 @@ func (c *bundleClientImpl) Diagnostics(ctx context.Context, bundleID int, prefix
 // MonikersByPosition retrieves a list of monikers attached to the symbol under the given location. There may
 // be multiple ranges enclosing this point. The returned monikers are partitioned such that inner ranges occur
 // first in the result, and outer ranges occur later.
-func (c *bundleClientImpl) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]MonikerData, error) {
+func (c *bundleManagerClientImpl) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]MonikerData, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (c *bundleClientImpl) MonikersByPosition(ctx context.Context, bundleID int,
 }
 
 // MonikerResults retrieves a page of locations attached to a moniker and a total count of such locations.
-func (c *bundleClientImpl) MonikerResults(ctx context.Context, bundleID int, modelType, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (c *bundleManagerClientImpl) MonikerResults(ctx context.Context, bundleID int, modelType, scheme, identifier string, skip, take int) ([]Location, int, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return nil, 0, err
@@ -157,7 +157,7 @@ func (c *bundleClientImpl) MonikerResults(ctx context.Context, bundleID int, mod
 }
 
 // PackageInformation retrieves package information data by its identifier.
-func (c *bundleClientImpl) PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (PackageInformationData, error) {
+func (c *bundleManagerClientImpl) PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (PackageInformationData, error) {
 	db, err := c.openDatabase(ctx, bundleID)
 	if err != nil {
 		return PackageInformationData{}, err
@@ -167,7 +167,7 @@ func (c *bundleClientImpl) PackageInformation(ctx context.Context, bundleID int,
 	return data, err
 }
 
-func (c *bundleClientImpl) openDatabase(ctx context.Context, bundleID int) (database.Database, error) {
+func (c *bundleManagerClientImpl) openDatabase(ctx context.Context, bundleID int) (database.Database, error) {
 	store := persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext)
 
 	if _, err := store.ReadMeta(ctx); err != nil {
@@ -182,13 +182,13 @@ func (c *bundleClientImpl) openDatabase(ctx context.Context, bundleID int) (data
 	return database.NewObserved(db, fmt.Sprintf("upload-%d.lsif.gz", bundleID), c.observationContext), nil
 }
 
-func (c *bundleClientImpl) addBundleIDToLocations(locations []Location, bundleID int) {
+func (c *bundleManagerClientImpl) addBundleIDToLocations(locations []Location, bundleID int) {
 	for i := range locations {
 		locations[i].DumpID = bundleID
 	}
 }
 
-func (c *bundleClientImpl) addBundleIDToDiagnostics(diagnostics []Diagnostic, bundleID int) {
+func (c *bundleManagerClientImpl) addBundleIDToDiagnostics(diagnostics []Diagnostic, bundleID int) {
 	for i := range diagnostics {
 		diagnostics[i].DumpID = bundleID
 	}

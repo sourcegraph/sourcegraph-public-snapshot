@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -14,10 +13,6 @@ import (
 func TestFindClosestDumps(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
-	mockBundleClient3 := bundlemocks.NewMockBundleClient()
-	mockBundleClient4 := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreHasRepository(t, mockStore, 42, true)
@@ -28,16 +23,14 @@ func TestFindClosestDumps(t *testing.T) {
 		{ID: 52, Root: "s1/"},
 		{ID: 53, Root: "s2/"},
 	})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{
-		50: mockBundleClient1,
-		51: mockBundleClient2,
-		52: mockBundleClient3,
-		53: mockBundleClient4,
-	})
-	setMockBundleClientExists(t, mockBundleClient1, "main.go", true)
-	setMockBundleClientExists(t, mockBundleClient2, "main.go", false)
-	setMockBundleClientExists(t, mockBundleClient3, "main.go", true)
-	setMockBundleClientExists(t, mockBundleClient4, "s1/main.go", false)
+	setMultiMockBundleManagerClientExists(
+		t,
+		mockBundleManagerClient,
+		existsSpec{50, "main.go", true},
+		existsSpec{51, "main.go", false},
+		existsSpec{52, "main.go", true},
+		existsSpec{53, "s1/main.go", false},
+	)
 
 	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", true, "idx")
@@ -57,10 +50,6 @@ func TestFindClosestDumps(t *testing.T) {
 func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
-	mockBundleClient3 := bundlemocks.NewMockBundleClient()
-	mockBundleClient4 := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	graph := map[string][]string{
@@ -79,16 +68,14 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 		{ID: 52, Root: "s1/"},
 		{ID: 53, Root: "s2/"},
 	})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{
-		50: mockBundleClient1,
-		51: mockBundleClient2,
-		52: mockBundleClient3,
-		53: mockBundleClient4,
-	})
-	setMockBundleClientExists(t, mockBundleClient1, "main.go", true)
-	setMockBundleClientExists(t, mockBundleClient2, "main.go", false)
-	setMockBundleClientExists(t, mockBundleClient3, "main.go", true)
-	setMockBundleClientExists(t, mockBundleClient4, "s1/main.go", false)
+	setMultiMockBundleManagerClientExists(
+		t,
+		mockBundleManagerClient,
+		existsSpec{50, "main.go", true},
+		existsSpec{51, "main.go", false},
+		existsSpec{52, "main.go", true},
+		existsSpec{53, "s1/main.go", false},
+	)
 
 	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", true, "idx")

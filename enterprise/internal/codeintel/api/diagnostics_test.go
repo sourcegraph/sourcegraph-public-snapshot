@@ -14,7 +14,6 @@ import (
 func TestDiagnostics(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	sourceDiagnostics := []bundles.Diagnostic{
@@ -54,8 +53,7 @@ func TestDiagnostics(t *testing.T) {
 	}
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientDiagnostics(t, mockBundleClient, "sub1", 1, 3, sourceDiagnostics, 5)
+	setMockBundleManagerClientDiagnostics(t, mockBundleManagerClient, 42, "sub1", 1, 3, sourceDiagnostics, 5)
 
 	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	diagnostics, _, err := api.Diagnostics(context.Background(), "sub1", 42, 3, 1)
