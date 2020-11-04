@@ -10,9 +10,11 @@ import (
 const weeklyRetentionQuery = `
 WITH
 	dates AS (
-		SELECT
-			generate_series(DATE_TRUNC('week', now() - INTERVAL '11 weeks')::DATE, DATE_TRUNC('week', now())::DATE, INTERVAL '1 week') AS week_start_date
-		ORDER BY week_start_date DESC
+		SELECT generate_series(
+			DATE_TRUNC('week', now()),
+			DATE_TRUNC('week', now() - INTERVAL '11 weeks'),
+		    INTERVAL '-1 week'
+		) AS week_start_date
 	),
 	/* retrieve the active days for each user, their signup cohort and the number of weeks the event comes after their signup date. Captured last 4 weeks */
 	cohorts AS (
