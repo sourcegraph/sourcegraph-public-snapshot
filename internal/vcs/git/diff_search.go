@@ -168,68 +168,10 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
-	appendCommonQueryArgs := func(args *[]string) {
-		if opt.Query.Pattern != "" {
-			var queryArg string
-			if opt.MatchChangedOccurrenceCount {
-				queryArg = "-S"
-			} else {
-				queryArg = "-G"
-			}
-			*args = append(*args, queryArg+opt.Query.Pattern)
-			if !opt.Query.IsCaseSensitive {
-				*args = append(*args, "--regexp-ignore-case")
-			}
-			if opt.Query.IsRegExp {
-				*args = append(*args, "--pickaxe-regex")
-			}
-		}
-		if opt.Paths.IsRegExp {
-			*args = append(*args, "--extended-regexp")
-		}
-	}
-
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
 		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", args)
-	}
-
-	appendCommonDashDashArgs := func(args *[]string) {
-		// If we have exclude paths, we need to effectively unset the --max-count because we can't
-		// filter out changes that match the exclude path (because there's no way to use full
-		// regexps in git pathspecs).
-		//
-		// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where this is
-		// necessary; see https://git-scm.com/docs/gitglossary.html#def_pathspec.
-		var addMaxCount500 bool
-		if opt.Paths.ExcludePattern != "" {
-			addMaxCount500 = true
-		}
-
-		// Args we append after this don't need to be checked for allowlisting because "--"
-		// precedes them.
-		var pathspecs []string
-		for _, p := range opt.Paths.IncludePatterns {
-			// Roughly try to convert IncludePatterns (regexps) to git pathspecs (globs).
-			glob, equiv := regexpToGlobBestEffort(p)
-			if !opt.Paths.IsCaseSensitive && glob != "" {
-				// This relies on regexpToGlobBestEffort not returning `:`-prefixed globs.
-				glob = ":(icase)" + glob
-			}
-			if !equiv {
-				addMaxCount500 = true
-			}
-			if glob != "" {
-				pathspecs = append(pathspecs, glob)
-			}
-		}
-
-		if addMaxCount500 {
-			*args = append(*args, "--max-count=500") // TODO(sqs): 500 is arbitrary high number
-		}
-		*args = append(*args, "--")
-		*args = append(*args, pathspecs...)
 	}
 
 	// We need to get `git log --source` (the ref by which we reached each commit), but
@@ -247,8 +189,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		"--no-patch",
 		"--no-merges",
 	)
-	appendCommonQueryArgs(&onelineArgs)
-	appendCommonDashDashArgs(&onelineArgs)
+	onelineArgs = append(onelineArgs, logDiffCommonArgs(opt)...)
 
 	// Time out the first `git log` operation prior to the parent context timeout, so we still have time to `git
 	// show` the results it returns. These proportions are untuned guesses.
@@ -331,8 +272,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	if hasPathFilters {
 		showArgs = append(showArgs, "--patch")
 	}
-	appendCommonQueryArgs(&showArgs)
-	appendCommonDashDashArgs(&showArgs)
+	showArgs = append(showArgs, logDiffCommonArgs(opt)...)
 	if !isAllowedGitCmd(showArgs) {
 		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", showArgs)
 	}
@@ -433,6 +373,65 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	}
 
 	return results, complete, nil
+}
+
+func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
+	var args []string
+	if opt.Query.Pattern != "" {
+		var queryArg string
+		if opt.MatchChangedOccurrenceCount {
+			queryArg = "-S"
+		} else {
+			queryArg = "-G"
+		}
+		args = append(args, queryArg+opt.Query.Pattern)
+		if !opt.Query.IsCaseSensitive {
+			args = append(args, "--regexp-ignore-case")
+		}
+		if opt.Query.IsRegExp {
+			args = append(args, "--pickaxe-regex")
+		}
+	}
+	if opt.Paths.IsRegExp {
+		args = append(args, "--extended-regexp")
+	}
+
+	// If we have exclude paths, we need to effectively unset the --max-count because we can't
+	// filter out changes that match the exclude path (because there's no way to use full
+	// regexps in git pathspecs).
+	//
+	// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where this is
+	// necessary; see https://git-scm.com/docs/gitglossary.html#def_pathspec.
+	var addMaxCount500 bool
+	if opt.Paths.ExcludePattern != "" {
+		addMaxCount500 = true
+	}
+
+	// Args we append after this don't need to be checked for allowlisting because "--"
+	// precedes them.
+	var pathspecs []string
+	for _, p := range opt.Paths.IncludePatterns {
+		// Roughly try to convert IncludePatterns (regexps) to git pathspecs (globs).
+		glob, equiv := regexpToGlobBestEffort(p)
+		if !opt.Paths.IsCaseSensitive && glob != "" {
+			// This relies on regexpToGlobBestEffort not returning `:`-prefixed globs.
+			glob = ":(icase)" + glob
+		}
+		if !equiv {
+			addMaxCount500 = true
+		}
+		if glob != "" {
+			pathspecs = append(pathspecs, glob)
+		}
+	}
+
+	if addMaxCount500 {
+		args = append(args, "--max-count=500") // TODO(sqs): 500 is arbitrary high number
+	}
+	args = append(args, "--")
+	args = append(args, pathspecs...)
+
+	return args
 }
 
 // cachedRefResolver is a short-lived cache for ref resolutions. Only use it for the lifetime of a
