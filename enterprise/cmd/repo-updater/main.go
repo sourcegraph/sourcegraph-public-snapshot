@@ -118,7 +118,9 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 				q := sqlf.Sprintf(`
 UPDATE external_services
 SET unrestricted = TRUE
-WHERE id NOT IN (%s)
+WHERE
+	id NOT IN (%s)
+AND NOT unrestricted
 `, sqlf.Join(esIDs, ","))
 				_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				if err != nil {
