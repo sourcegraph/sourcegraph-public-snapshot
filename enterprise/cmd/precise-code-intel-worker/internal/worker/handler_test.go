@@ -13,12 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	persistencemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/mocks"
 	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -37,7 +37,7 @@ func TestHandle(t *testing.T) {
 
 	mockStore := storemocks.NewMockStore()
 	mockPersistenceStore := persistencemocks.NewMockStore()
-	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
 	// Set default transaction behavior
@@ -49,7 +49,7 @@ func TestHandle(t *testing.T) {
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
-	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
+	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
 	// Allowlist all files in dump
 	gitserverClient.DirectoryChildrenFunc.SetDefaultReturn(map[string][]string{
@@ -57,10 +57,10 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	handler := &handler{
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
-		createStore:         func(id int) persistence.Store { return mockPersistenceStore },
+		uploadStore:     mockUploadStore,
+		gitserverClient: gitserverClient,
+		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
+		createStore:     func(id int) persistence.Store { return mockPersistenceStore },
 	}
 
 	requeued, err := handler.handle(context.Background(), mockStore, upload)
@@ -121,8 +121,8 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
 
-	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(bundleManagerClient.DeleteUploadFunc.History()))
+	if len(mockUploadStore.DeleteFunc.History()) != 1 {
+		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 1, len(mockUploadStore.DeleteFunc.History()))
 	}
 }
 
@@ -139,7 +139,7 @@ func TestHandleError(t *testing.T) {
 
 	mockStore := storemocks.NewMockStore()
 	mockPersistenceStore := persistencemocks.NewMockStore()
-	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
 	// Set default transaction behavior
@@ -151,16 +151,16 @@ func TestHandleError(t *testing.T) {
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
-	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
+	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
 	// Set a different tip commit
 	mockStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(fmt.Errorf("uh-oh!"))
 
 	handler := &handler{
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
-		createStore:         func(id int) persistence.Store { return mockPersistenceStore },
+		uploadStore:     mockUploadStore,
+		gitserverClient: gitserverClient,
+		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
+		createStore:     func(id int) persistence.Store { return mockPersistenceStore },
 	}
 
 	requeued, err := handler.handle(context.Background(), mockStore, upload)
@@ -176,8 +176,8 @@ func TestHandleError(t *testing.T) {
 		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockStore.DoneFunc.History()))
 	}
 
-	if len(bundleManagerClient.DeleteUploadFunc.History()) != 0 {
-		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 0, len(bundleManagerClient.DeleteUploadFunc.History()))
+	if len(mockUploadStore.DeleteFunc.History()) != 0 {
+		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 0, len(mockUploadStore.DeleteFunc.History()))
 	}
 }
 
@@ -207,13 +207,13 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	mockStore := storemocks.NewMockStore()
-	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
 	handler := &handler{
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
+		uploadStore:     mockUploadStore,
+		gitserverClient: gitserverClient,
+		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := handler.handle(context.Background(), mockStore, upload)
@@ -231,8 +231,8 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 //
 
-func copyTestDump(ctx context.Context, uploadID int) (io.ReadCloser, error) {
-	return os.Open("../../testdata/dump1.lsif")
+func copyTestDump(ctx context.Context, key string, offsetBytes int64) (io.ReadCloser, error) {
+	return os.Open("../../testdata/dump1.lsif.gz")
 }
 
 func setupRepoMocks(t *testing.T) {
