@@ -58,7 +58,7 @@ func initServices(ctx context.Context) error {
 			log.Fatalf("failed to initialize upload store: %s", err)
 		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore)
+		bundleManagerClient := bundles.New(codeIntelDB, observationContext)
 		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
 		lsifStore := lsifstore.New(codeIntelDB)
 
