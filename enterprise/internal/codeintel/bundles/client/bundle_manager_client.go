@@ -63,9 +63,6 @@ type BundleManagerClient interface {
 	// GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
 	// from the bundle manager.
 	GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error)
-
-	// Exists determines if a file exists on disk for all the supplied identifiers.
-	Exists(ctx context.Context, bundleIDs []int) (map[int]bool, error)
 }
 
 type baseClient interface {
@@ -254,24 +251,6 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 	defer body.Close()
 
 	return c.ioCopy(w, body)
-}
-
-// Exists determines if a file exists on disk for all the supplied identifiers.
-func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, _ error) {
-	var bundleIDStrings []string
-	for _, bundleID := range bundleIDs {
-		bundleIDStrings = append(bundleIDStrings, strconv.Itoa(bundleID))
-	}
-
-	url, err := makeURL(c.bundleManagerURL, "exists", map[string]interface{}{
-		"ids": strings.Join(bundleIDStrings, ","),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.doAndDecode(ctx, "GET", url, nil, &target)
-	return target, err
 }
 
 func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error {
