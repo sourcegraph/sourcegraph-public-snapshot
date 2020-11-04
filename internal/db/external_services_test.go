@@ -433,7 +433,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "GITHUB #1",
 			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			NamespaceUserID: &user.ID,
+			NamespaceUserID: user.ID,
 		},
 		{
 			Kind:        extsvc.KindGitHub,
@@ -699,7 +699,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		want.Apply(func(e *types.ExternalService) {
 			e.UpdatedAt = now
-			e.DeletedAt = &now
+			e.DeletedAt = now
 		})
 
 		if err = tx.Upsert(ctx, want.Clone()...); err != nil {

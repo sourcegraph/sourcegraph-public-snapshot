@@ -177,23 +177,17 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	syncer, exists := s.syncers[es.ID]
 	s.mu.Unlock()
 
-	if timeIsNilOrZero(es.DeletedAt) && !exists {
-		s.Add(extsvcTypeApiToRepos(&es))
+	if es.DeletedAt.IsZero() && !exists {
+		res := (repos.ExternalService)(es)
+		s.Add(&res)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if es.DeletedAt != nil && exists {
+	if !es.DeletedAt.IsZero() && exists {
 		delete(s.syncers, es.ID)
 		syncer.cancel()
 	}
-}
-
-func timeIsNilOrZero(t *time.Time) bool {
-	if t == nil {
-		return true
-	}
-	return t.IsZero()
 }
 
 // A ChangesetSyncer periodically syncs metadata of changesets
@@ -678,29 +672,3 @@ const (
 	priorityNormal priority = iota
 	priorityHigh
 )
-
-// extsvcTypeApiToRepos converts the api.ExternalService to repos.ExternalService.
-// They're basically the same, just some pointers here and there.
-func extsvcTypeApiToRepos(es *api.ExternalService) *repos.ExternalService {
-	extSvc := &repos.ExternalService{
-		ID:          es.ID,
-		Kind:        es.Kind,
-		DisplayName: es.DisplayName,
-		Config:      es.Config,
-		CreatedAt:   es.CreatedAt,
-		UpdatedAt:   es.UpdatedAt,
-	}
-	if es.DeletedAt != nil {
-		extSvc.DeletedAt = *es.DeletedAt
-	}
-	if es.LastSyncAt != nil {
-		extSvc.LastSyncAt = *es.LastSyncAt
-	}
-	if es.NextSyncAt != nil {
-		extSvc.NextSyncAt = *es.NextSyncAt
-	}
-	if es.NamespaceUserID != nil {
-		extSvc.NamespaceUserID = *es.NamespaceUserID
-	}
-	return extSvc
-}

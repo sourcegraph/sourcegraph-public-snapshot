@@ -858,7 +858,7 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)

@@ -607,8 +607,8 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 		URI:                 nullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(&r.UpdatedAt),
-		DeletedAt:           nullTimeColumn(&r.DeletedAt),
+		UpdatedAt:           nullTimeColumn(r.UpdatedAt),
+		DeletedAt:           nullTimeColumn(r.DeletedAt),
 		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
 		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
@@ -620,13 +620,18 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 	}, nil
 }
 
-func nullTimeColumn(t *time.Time) *time.Time {
-	if t == nil || t.IsZero() {
+func nullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
 		return nil
 	}
+	return &t
+}
 
-	ut := t.UTC()
-	return &ut
+func nullInt32Column(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
 
 func nullStringColumn(s string) *string {

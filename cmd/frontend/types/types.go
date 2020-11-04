@@ -393,10 +393,10 @@ type ExternalService struct {
 	Config          string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	DeletedAt       *time.Time
-	LastSyncAt      *time.Time
-	NextSyncAt      *time.Time
-	NamespaceUserID *int32
+	DeletedAt       time.Time
+	LastSyncAt      time.Time
+	NextSyncAt      time.Time
+	NamespaceUserID int32
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -431,7 +431,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.UpdatedAt, modified = n.UpdatedAt, true
 	}
 
-	if (e.DeletedAt == nil && n.DeletedAt != nil) || (e.DeletedAt != nil && (n.DeletedAt == nil || !e.DeletedAt.Equal(*n.DeletedAt))) {
+	if !e.DeletedAt.Equal(n.DeletedAt) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
