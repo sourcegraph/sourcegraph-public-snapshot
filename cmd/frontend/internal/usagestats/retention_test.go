@@ -19,13 +19,13 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
 	eventDate := time.Date(2020, 11, 3, 0, 0, 0, 0, time.UTC)
 
-	events := []db.Event{db.Event{
+	events := []db.Event{{
 		Name:      "ViewHome",
 		URL:       "https://sourcegraph.test:3443/search",
 		UserID:    1,
 		Source:    "WEB",
 		Timestamp: userCreationDate,
-	}, db.Event{
+	}, {
 		Name:      "ViewHome",
 		URL:       "https://sourcegraph.test:3443/search",
 		UserID:    1,
@@ -57,7 +57,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	oneFloat := float64(1)
 	zeroFloat := float64(0)
 	weekly := []*types.WeeklyRetentionStats{
-		&types.WeeklyRetentionStats{
+		{
 			WeekStart:  userCreationDate.Add(time.Hour * time.Duration(168)).UTC(),
 			CohortSize: nil,
 			Week0:      nil,
@@ -73,7 +73,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 			Week10:     nil,
 			Week11:     nil,
 		},
-		&types.WeeklyRetentionStats{
+		{
 			WeekStart:  userCreationDate.UTC(),
 			CohortSize: &one,
 			Week0:      &oneFloat,
