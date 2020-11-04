@@ -13,7 +13,7 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 To upgrade, please perform the changes in the following diff:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/617eb56f1c102f20b6835d176df6797e6f5db53d
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510
 
 ### Note new services
 
