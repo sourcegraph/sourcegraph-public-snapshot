@@ -34,10 +34,12 @@ function observeLocalStorageKey(key: string, defaultValue: string): Observable<s
 }
 
 const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
-    /** Observable of the JSONC string of the settings. */
+    /** Observable of the JSONC string of the settings.
+     *
+     * NOTE: We can't use LocalStorageSubject here because the JSONC string is stored raw in localStorage and LocalStorageSubject also does parsing.
+     * This could be changed, but users already have settings stored, so it would need a migration for little benefit.
+     */
     const storageObservable = isInPage
-        // NOTE: We can't use LocalStorageSubject here because the JSONC string is stored raw in localStorage and LocalStorageSubject also does parsing.
-        // This could be changed, but users already have settings stored, so it would need a migration for little benefit.
         ? observeLocalStorageKey(inPageClientSettingsKey, '{}')
         : observeStorageKey('sync', 'clientSettings')
 
@@ -48,7 +50,7 @@ const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
         viewerCanAdminister: true,
     }
 
-    return storageSubject.pipe(
+    return storageObservable.pipe(
         map(clientSettingsString => parseJSONC(clientSettingsString || '')),
         map(clientSettings => ({
             subjects: [
