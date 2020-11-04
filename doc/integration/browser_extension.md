@@ -58,11 +58,11 @@ To grant these permissions:
 
 ![Configure Sourcegraph Instance](https://sourcegraphstatic.com/ConfigureSourcegraphInstanceUse.gif)
 
-By default, the browser extension communicates with [Sourcegraph.com](https://sourcegraph.com), which has only public code.
+By default, the browser extension communicates with [sourcegraph.com](https://sourcegraph.com), which has only public code.
 
 To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect it to the extension.
 
-Follow the instructions:
+Follow these instructions:
 
 1. [Install Sourcegraph](https://docs.sourcegraph.com/admin/install). Skip this step if you already have a private Sourcegraph instance.
 2. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
