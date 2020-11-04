@@ -45,7 +45,7 @@ To install this search engine shortcut manually, and for more information, see "
 ## Make it work on your code host
 
 - [github.com](https://github.com/) - no action required.
-- GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - additional permissions are needed.
+- GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
 
 To grant these permissions:
 
