@@ -25,11 +25,12 @@ func TestSearch(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
-			URL   string   `json:"url"`
-			Token string   `json:"token"`
-			Repos []string `json:"repos"`
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:   "http://github.com",
+			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
@@ -41,6 +42,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
 		}),
 	})
 	if err != nil {
