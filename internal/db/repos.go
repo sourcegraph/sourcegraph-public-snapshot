@@ -408,6 +408,9 @@ type ReposListOptions struct {
 	// and this may be replaced by the version context name.
 	Names []string
 
+	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
+	ServiceTypes []string
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -890,6 +893,15 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 			return nil, err
 		}
 		conds = append(conds, cond)
+	}
+
+	if len(opt.ServiceTypes) > 0 {
+		ks := make([]*sqlf.Query, 0, len(opt.ServiceTypes))
+		for _, svcType := range opt.ServiceTypes {
+			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(svcType)))
+		}
+		conds = append(conds,
+			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
 	if opt.NoForks {
