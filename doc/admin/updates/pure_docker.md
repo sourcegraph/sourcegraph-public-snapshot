@@ -21,6 +21,8 @@ This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new s
 to store LSIF indices.
 There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
 
+(both of these changes are described exactly in the diff above)
+
 ## 3.19.1 -> 3.20.1
 
 To upgrade, please perform the changes in the following diff:
