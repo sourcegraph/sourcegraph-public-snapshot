@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -22,8 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -185,6 +188,70 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
+func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
+	dv := dependencyVersions{}
+	// get redis cache server version
+	cacheConn, err := redispool.Cache.Dial()
+	if err != nil {
+		return nil, err
+	}
+	buf, err := redis.Bytes(cacheConn.Do("INFO"))
+	if err != nil {
+		return nil, err
+	}
+	vals, err := parseRedisInfo(buf)
+	if err != nil {
+		return nil, err
+	}
+	dv.RedisCacheVersion = vals["redis_version"]
+
+	// get redis store server version
+	storeConn, err := redispool.Store.Dial()
+	if err != nil {
+		return nil, err
+	}
+	buf, err = redis.Bytes(storeConn.Do("INFO"))
+	if err != nil {
+		return nil, err
+	}
+	vals, err = parseRedisInfo(buf)
+	if err != nil {
+		return nil, err
+	}
+	dv.RedisStoreVersion = vals["redis_version"]
+
+	// get postgres version
+	tx, err := dbconn.Global.Begin()
+	if err != nil {
+		return nil, err
+	}
+	err = tx.QueryRowContext(ctx, "SELECT version();").Scan(&dv.PostgresVersion)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(dv)
+}
+
+func parseRedisInfo(buf []byte) (map[string]string, error) {
+	lines := bytes.Split(buf, []byte("\n"))
+	m := make(map[string]string, len(lines))
+
+	for _, line := range lines {
+		line = bytes.TrimSpace(line)
+		if bytes.HasPrefix(line, []byte("#")) || len(line) == 0 {
+			continue
+		}
+
+		parts := bytes.Split(line, []byte(":"))
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("expected a key:value line, got '%s'", string(line))
+		}
+		m[string(parts[0])] = string(parts[1])
+	}
+
+	return m, nil
+}
+
 func updateBody(ctx context.Context) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
@@ -213,6 +280,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+	}
+
+	r.DependencyVersions, err = getDependencyVersions(ctx)
+	if err != nil {
+		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {

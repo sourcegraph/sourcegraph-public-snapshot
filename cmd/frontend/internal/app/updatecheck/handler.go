@@ -169,6 +169,7 @@ type pingRequest struct {
 	LicenseKey           string
 	DeployType           string          `json:"deployType"`
 	ClientVersionString  string          `json:"version"`
+	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
 	AuthProviders        []string        `json:"auth"`
 	ExternalServices     []string        `json:"extsvcs"`
 	BuiltinSignupAllowed bool            `json:"signup"`
@@ -187,6 +188,12 @@ type pingRequest struct {
 	HasRepos             bool            `json:"repos"`
 	EverSearched         bool            `json:"searched"`
 	EverFindRefs         bool            `json:"refs"`
+}
+
+type dependencyVersions struct {
+	PostgresVersion   string `json:"postgresVersion"`
+	RedisCacheVersion string `json:"redisCacheVersion"`
+	RedisStoreVersion string `json:"redisStoreVersion"`
 }
 
 // readPingRequest reads the ping request payload from the request. If the
