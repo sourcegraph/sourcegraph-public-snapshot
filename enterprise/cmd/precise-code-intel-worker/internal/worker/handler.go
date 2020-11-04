@@ -1,7 +1,9 @@
 package worker
 
 import (
+	"compress/gzip"
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -11,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -24,13 +26,13 @@ import (
 )
 
 type handler struct {
-	store               store.Store
-	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserverClient
-	metrics             metrics.WorkerMetrics
-	enableBudget        bool
-	budgetRemaining     int64
-	createStore         func(id int) persistence.Store
+	store           store.Store
+	uploadStore     uploadstore.Store
+	gitserverClient gitserverClient
+	metrics         metrics.WorkerMetrics
+	enableBudget    bool
+	budgetRemaining int64
+	createStore     func(id int) persistence.Store
 }
 
 type gitserverClient interface {
@@ -98,17 +100,27 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return true, nil
 	}
 
-	// Pull raw uploaded data from bundle manager
-	r, err := h.bundleManagerClient.GetUpload(ctx, upload.ID)
+	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", upload.ID)
+
+	// Pull raw uploaded data from bucket
+	rc, err := h.uploadStore.Get(ctx, uploadFilename, 0)
 	if err != nil {
-		return false, errors.Wrap(err, "bundleManager.GetUpload")
+		return false, errors.Wrap(err, "uploadStore.Get")
 	}
+	defer rc.Close()
+
+	rc, err = gzip.NewReader(rc)
+	if err != nil {
+		return false, errors.Wrap(err, "gzip.NewReader")
+	}
+	defer rc.Close()
+
 	defer func() {
 		if err == nil {
-			// Remove upload file after processing - we don't need it anymore. On failure we
-			// may want to retry, so we should keep the upload data around for a bit. The bundle
-			// manager will clean up old uploads periodically.
-			if deleteErr := h.bundleManagerClient.DeleteUpload(ctx, upload.ID); deleteErr != nil {
+			// Remove upload file after processing - we won't need it anymore. On failure we
+			// may want to retry, so we should keep the upload data around for a bit. Older
+			// uploads will be cleaned up periodically.
+			if deleteErr := h.uploadStore.Delete(ctx, uploadFilename); deleteErr != nil {
 				log15.Warn("Failed to delete upload file", "err", err)
 			}
 		}
@@ -122,7 +134,7 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return directoryChildren, nil
 	}
 
-	groupedBundleData, err := correlation.Correlate(ctx, r, upload.ID, upload.Root, getChildren, h.metrics)
+	groupedBundleData, err := correlation.Correlate(ctx, rc, upload.ID, upload.Root, getChildren, h.metrics)
 	if err != nil {
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}

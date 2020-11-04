@@ -25,6 +25,7 @@ import (
 var services struct {
 	store               store.Store
 	lsifStore           lsifstore.Store
+	uploadStore         uploadstore.Store
 	gitserverClient     *gitserver.Client
 	bundleManagerClient bundles.BundleManagerClient
 	api                 codeintelapi.CodeIntelAPI
@@ -62,6 +63,7 @@ func initServices(ctx context.Context) error {
 		lsifStore := lsifstore.New(codeIntelDB)
 
 		services.store = store
+		services.uploadStore = uploadStore
 		services.bundleManagerClient = bundleManagerClient
 		services.api = api
 		services.lsifStore = lsifStore

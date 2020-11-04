@@ -410,15 +410,14 @@ func TestSyncRegistry(t *testing.T) {
 		ID:        1,
 		Kind:      extsvc.KindGitHub,
 		Config:    `{"url": "https://example.com/"}`,
-		DeletedAt: &now,
+		DeletedAt: now,
 	})
 	assertSyncerCount(0)
 
 	// And added again
 	r.HandleExternalServiceSync(api.ExternalService{
-		ID:        1,
-		Kind:      extsvc.KindGitHub,
-		DeletedAt: nil,
+		ID:   1,
+		Kind: extsvc.KindGitHub,
 	})
 	assertSyncerCount(1)
 
