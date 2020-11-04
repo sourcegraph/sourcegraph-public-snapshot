@@ -707,7 +707,7 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
 
-func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
+func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {
 	rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{id}})
 	if err != nil {
 		return nil, err
@@ -718,39 +718,37 @@ func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, 
 	return rs[0], nil
 }
 
-func loadExternalService(ctx context.Context, reposStore repos.Store, repo *repos.Repo) (*repos.ExternalService, error) {
+func loadExternalService(ctx context.Context, reposStore RepoStore, repo *repos.Repo) (*repos.ExternalService, error) {
 	var externalService *repos.ExternalService
-	{
-		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
+	args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
 
-		es, err := reposStore.ListExternalServices(ctx, args)
+	es, err := reposStore.ListExternalServices(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range es {
+		cfg, err := e.Configuration()
 		if err != nil {
 			return nil, err
 		}
 
-		for _, e := range es {
-			cfg, err := e.Configuration()
-			if err != nil {
-				return nil, err
+		switch cfg := cfg.(type) {
+		case *schema.GitHubConnection:
+			if cfg.Token != "" {
+				externalService = e
 			}
-
-			switch cfg := cfg.(type) {
-			case *schema.GitHubConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
-			case *schema.BitbucketServerConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
-			case *schema.GitLabConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
+		case *schema.BitbucketServerConnection:
+			if cfg.Token != "" {
+				externalService = e
 			}
-			if externalService != nil {
-				break
+		case *schema.GitLabConnection:
+			if cfg.Token != "" {
+				externalService = e
 			}
+		}
+		if externalService != nil {
+			break
 		}
 	}
 

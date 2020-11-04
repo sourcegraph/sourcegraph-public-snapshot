@@ -215,7 +215,7 @@ func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
 			var wg sync.WaitGroup
 
 			syncer := &ChangesetSyncer{
-				SyncStore:      MockSyncStore{listChangesets: tc.listChangesets},
+				syncStore:      MockSyncStore{listChangesets: tc.listChangesets},
 				priorityNotify: make(chan []int64),
 			}
 
@@ -278,7 +278,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -313,7 +313,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -337,7 +337,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
@@ -426,8 +426,8 @@ func TestSyncRegistry(t *testing.T) {
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
 	syncer := &ChangesetSyncer{
-		SyncStore:   syncStore,
-		ReposStore:  repoStore,
+		syncStore:   syncStore,
+		reposStore:  repoStore,
 		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id

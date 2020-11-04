@@ -88,20 +88,13 @@ func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
 		return
 	}
 
-	sourcer := repos.NewSourcer(s.HTTPFactory)
-	source, err := buildChangesetSource(sourcer, extSvc)
-	if err != nil {
-		log15.Error(err.Error())
-		return
-	}
-
 	// We need to be able to cancel the syncer if the service is removed
 	ctx, cancel := context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
-		SyncStore:      s.SyncStore,
-		ReposStore:     s.RepoStore,
-		source:         source,
+		syncStore:      s.SyncStore,
+		httpFactory:    s.HTTPFactory,
+		reposStore:     s.RepoStore,
 		codeHostURL:    normalised,
 		cancel:         cancel,
 		priorityNotify: make(chan []int64, 500),
@@ -206,10 +199,9 @@ func externalServiceSyncerKey(kind, config string) (string, error) {
 // A ChangesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type ChangesetSyncer struct {
-	SyncStore  SyncStore
-	ReposStore RepoStore
-
-	source repos.ChangesetSource
+	syncStore   SyncStore
+	httpFactory *httpcli.Factory
+	reposStore  RepoStore
 
 	codeHostURL string
 
@@ -451,7 +443,7 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	syncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
+	syncData, err := s.syncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
@@ -471,7 +463,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Context) error {
 	published := campaigns.ChangesetPublicationStatePublished
-	changesets, _, err := s.SyncStore.ListChangesets(ctx, ListChangesetsOpts{
+	changesets, _, err := s.syncStore.ListChangesets(ctx, ListChangesetsOpts{
 		OnlyWithoutDiffStats: true,
 		ExternalServiceID:    s.codeHostURL,
 		PublicationState:     &published,
@@ -497,26 +489,33 @@ func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Conte
 // SyncChangeset will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "id", id)
-	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
+	cs, err := s.syncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
 	if err != nil {
 		return err
 	}
-	return SyncChangeset(ctx, s.ReposStore, s.SyncStore, s.source, cs)
+	repo, err := loadRepo(ctx, s.reposStore, cs.RepoID)
+	if err != nil {
+		return err
+	}
+
+	externalService, err := loadExternalService(ctx, s.reposStore, repo)
+	if err != nil {
+		return err
+	}
+
+	sourcer := repos.NewSourcer(s.httpFactory)
+	source, err := buildChangesetSource(sourcer, externalService)
+	if err != nil {
+		return err
+	}
+	return SyncChangeset(ctx, s.reposStore, s.syncStore, source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, c *campaigns.Changeset) (err error) {
-	rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
-		IDs: []api.RepoID{c.RepoID},
-	})
-	if err != nil {
-		return err
-	}
-	repo := rs[0]
-
+func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, repo *repos.Repo, c *campaigns.Changeset) (err error) {
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
