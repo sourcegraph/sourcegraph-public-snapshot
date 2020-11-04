@@ -219,6 +219,15 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 			return nil, complete, err
 		}
 	}
+
+	results, complete2, err := rawShowSearch(ctx, repo, opt, onelineCommits)
+	complete = complete && complete2
+	return results, complete, err
+}
+
+// rawShowSearch runs git show on each commit in onelineCommits. We need to do
+// this further filter hunks.
+func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
 	// Build a map of commit -> source ref.
 	commitSourceRefs := make(map[string]string, len(onelineCommits))
 	for _, c := range onelineCommits {
@@ -271,15 +280,12 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	}
 	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
 	showCmd.Repo = repo
-	var complete2 bool
 	ctxShow, cancel := withDeadlinePercentage(ctx, 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
-	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
-	tr.LazyPrintf("git show done: data %d bytes, complete=%v, err=%v", len(data), complete2, err)
+	data, complete, err := readUntilTimeout(ctxShow, showCmd)
 	cancel()
 	if err != nil {
 		return nil, complete, err
 	}
-	complete = complete && complete2
 	var cache refResolveCache
 	for len(data) > 0 {
 		var commit *Commit
