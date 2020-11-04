@@ -170,30 +170,54 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// We do a search with git log returning just the commits (and source sha).
-	onelineCommits, err := rawLogSearch(ctx, repo, opt)
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			complete = false
-		} else {
-			return nil, false, err
+	commitsChan := make(chan []*onelineCommit)
+	logErrChan := make(chan error)
+	go func() {
+		err := rawLogSearch(ctx, repo, opt, commitsChan)
+		close(commitsChan)
+		logErrChan <- err
+	}()
+	defer func() {
+		// ensure we drain and report errors from log
+		cancel()
+		for range commitsChan {
 		}
-	} else {
-		complete = true
+
+		if logErr := <-logErrChan; logErr != nil {
+			if errors.Is(logErr, context.DeadlineExceeded) {
+				complete = false
+			} else {
+				err = logErr
+			}
+		}
+	}()
+
+	// We then search each commit in batches to further filter the results.
+	complete = true
+	for commits := range commitsChan {
+		// TODO we want to share cache between calls to rawShowSearch
+		results2, complete2, err := rawShowSearch(ctx, repo, opt, commits)
+		results = append(results, results2...)
+		complete = complete && complete2
+
+		if err != nil {
+			return results, complete, err
+		}
 	}
 
-	// We then search each commit to further filter the results.
-	results, showComplete, err := rawShowSearch(ctx, repo, opt, onelineCommits)
-	complete = complete && showComplete
-	return results, complete, err
+	return results, complete, nil
 }
 
 // rawLogSearch runs git log to find matching commits.
-func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) ([]*onelineCommit, error) {
+func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, commitsChan chan<- []*onelineCommit) error {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
-		return nil, fmt.Errorf("command failed: %q is not a allowed git command", args)
+		return fmt.Errorf("command failed: %q is not a allowed git command", args)
 	}
 
 	// We need to get `git log --source` (the ref by which we reached each commit), but
@@ -225,11 +249,20 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 	defer cancel()
 	onelineReader, err := gitserver.StdoutReader(ctxLog, onelineCmd)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer onelineReader.Close()
+
+	// To avoid doing thousands of channel sends for each commit, we buffer up
+	// results before sending them down. We send once our buffer has 500
+	// commits or it has been 50ms.
+	bufCap := 500
+	debounce := 50 * time.Millisecond
+
+	nextDeadline := time.Now().Add(debounce)
+	var buf []*onelineCommit
 
 	scan := logOnelineScanner(onelineReader)
-	var onelineCommits []*onelineCommit
 	for {
 		var commit *onelineCommit
 		commit, err = scan()
@@ -239,7 +272,22 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 			}
 			break
 		}
-		onelineCommits = append(onelineCommits, commit)
+		buf = append(buf, commit)
+
+		// Note: we have the possibility of waiting on scan even after our
+		// nextDeadline has been hit. We accept this tradeoff for
+		// implementation simplicity by avoiding extra synchronization.
+		if len(buf) >= bufCap || time.Now().After(nextDeadline) {
+			commitsChan <- buf
+			buf = nil
+			nextDeadline = time.Now().Add(debounce)
+		}
+	}
+
+	// Flush buf
+	if len(buf) > 0 {
+		commitsChan <- buf
+		buf = nil
 	}
 
 	// Don't fail if the repository is empty.
@@ -247,7 +295,7 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 		err = nil
 	}
 
-	return onelineCommits, err
+	return err
 }
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
