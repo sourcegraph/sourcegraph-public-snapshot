@@ -58,7 +58,7 @@ func (c *bundleClientImpl) ID() int {
 
 // Exists determines if the given path exists in the dump.
 func (c *bundleClientImpl) Exists(ctx context.Context, path string) (bool, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -68,7 +68,7 @@ func (c *bundleClientImpl) Exists(ctx context.Context, path string) (bool, error
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
 func (c *bundleClientImpl) Ranges(ctx context.Context, path string, startLine, endLine int) ([]CodeIntelligenceRange, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (c *bundleClientImpl) Ranges(ctx context.Context, path string, startLine, e
 
 // Definitions retrieves a list of definition locations for the symbol under the given location.
 func (c *bundleClientImpl) Definitions(ctx context.Context, path string, line, character int) ([]Location, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (c *bundleClientImpl) Definitions(ctx context.Context, path string, line, c
 
 // Definitions retrieves a list of reference locations for the symbol under the given location.
 func (c *bundleClientImpl) References(ctx context.Context, path string, line, character int) ([]Location, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (c *bundleClientImpl) References(ctx context.Context, path string, line, ch
 
 // Hover retrieves the hover text for the symbol under the given location.
 func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return "", Range{}, false, err
 	}
@@ -112,7 +112,7 @@ func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, charact
 
 // Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
 func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string, skip, take int) ([]Diagnostic, int, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -130,7 +130,7 @@ func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string, skip,
 // be multiple ranges enclosing this point. The returned monikers are partitioned such that inner ranges occur
 // first in the result, and outer ranges occur later.
 func (c *bundleClientImpl) MonikersByPosition(ctx context.Context, path string, line, character int) ([][]MonikerData, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (c *bundleClientImpl) MonikersByPosition(ctx context.Context, path string, 
 
 // MonikerResults retrieves a page of locations attached to a moniker and a total count of such locations.
 func (c *bundleClientImpl) MonikerResults(ctx context.Context, modelType, scheme, identifier string, skip, take int) ([]Location, int, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -164,7 +164,7 @@ func (c *bundleClientImpl) MonikerResults(ctx context.Context, modelType, scheme
 
 // PackageInformation retrieves package information data by its identifier.
 func (c *bundleClientImpl) PackageInformation(ctx context.Context, path, packageInformationID string) (PackageInformationData, error) {
-	db, err := c.request(ctx)
+	db, err := c.openDatabase(ctx)
 	if err != nil {
 		return PackageInformationData{}, err
 	}
@@ -173,7 +173,7 @@ func (c *bundleClientImpl) PackageInformation(ctx context.Context, path, package
 	return data, err
 }
 
-func (c *bundleClientImpl) request(ctx context.Context) (database.Database, error) {
+func (c *bundleClientImpl) openDatabase(ctx context.Context) (database.Database, error) {
 	if _, err := c.store.ReadMeta(ctx); err != nil {
 		return nil, err
 	}
