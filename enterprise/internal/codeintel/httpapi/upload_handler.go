@@ -321,7 +321,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 		err = tx.Done(err)
 	}()
 
-	size, err := h.bundleManagerClient.StitchParts(ctx, upload.ID)
+	size, err := h.bundleManagerClient.StitchParts(ctx, upload.ID, upload.NumParts)
 	if err != nil {
 		return nil, err
 	}

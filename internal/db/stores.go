@@ -2,7 +2,7 @@ package db
 
 var (
 	AccessTokens     = &accessTokens{}
-	ExternalServices = &ExternalServicesStore{}
+	ExternalServices = &ExternalServiceStore{}
 	DefaultRepos     = &defaultRepos{}
 	Repos            = &RepoStore{}
 	Phabricator      = &phabricator{}

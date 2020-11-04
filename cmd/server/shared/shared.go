@@ -150,11 +150,7 @@ func Main() {
 		procfile = append(procfile, monitoringLines...)
 	}
 
-	minioLines, err := maybeMinio()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(minioLines) != 0 {
+	if minioLines := maybeMinio(); len(minioLines) != 0 {
 		procfile = append(procfile, minioLines...)
 	}
 

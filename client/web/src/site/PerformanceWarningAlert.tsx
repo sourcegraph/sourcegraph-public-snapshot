@@ -1,6 +1,5 @@
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -17,11 +16,17 @@ export const PerformanceWarningAlert: React.FunctionComponent = () => (
         <div>
             Search performance and accuracy are limited on single-node Docker deployments. We recommend that instances
             with 100+ repositories&nbsp;
-            <Link className="site-alert__link" to="https://docs.sourcegraph.com/admin/install" onClick={onClickCTA}>
+            <a
+                target="_blank"
+                rel="noopener"
+                className="site-alert__link"
+                href="https://docs.sourcegraph.com/admin/install"
+                onClick={onClickCTA}
+            >
                 deploy to a cluster
-            </Link>
+            </a>
             &nbsp;for optimal performance.&nbsp;
-            <a className="site-alert__link" href="https://about.sourcegraph.com/contact">
+            <a target="_blank" rel="noopener" className="site-alert__link" href="https://about.sourcegraph.com/contact">
                 Contact us
             </a>
             &nbsp;for support or to learn more.

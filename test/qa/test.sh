@@ -17,7 +17,16 @@ yarn generate
 
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
 
-IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name sourcegraph-server
+CONTAINER=sourcegraph-server
+
+docker_logs() {
+  LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
+  cp "$LOGFILE" $CONTAINER.log
+  chmod 744 $CONTAINER.log
+}
+
+IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name $CONTAINER
+trap docker_logs exit
 
 sleep 15
 
@@ -28,6 +37,7 @@ popd || exit
 source /root/.profile
 pushd client/web || exit
 yarn run test:regression:core
+yarn run test:regression:integrations
 popd || exit
 PID=$(pgrep ffmpeg)
 kill "$PID"
