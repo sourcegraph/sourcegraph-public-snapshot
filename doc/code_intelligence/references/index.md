@@ -1,4 +1,4 @@
 # References
 
-- [Sourcegraph recommended indexers](indexers.md)
+- [Sourcegraph recommended indexers](references/indexers.md)
 - [LSIF.dev](https://lsif.dev/)
