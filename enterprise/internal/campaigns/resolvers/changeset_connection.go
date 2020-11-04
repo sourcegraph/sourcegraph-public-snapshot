@@ -75,16 +75,6 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 	return int32(len(cs)), nil
 }
 
-func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	stats, err := r.store.GetChangesetsStats(ctx, ee.GetChangesetsStatsOpts{
-		CampaignID: r.opts.CampaignID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &changesetsConnectionStatsResolver{stats: stats}, nil
-}
-
 // compute loads all changesets matched by r.opts, but without a
 // limit.
 // If r.optsSafe is true, it returns all of them. If not, it filters out the
@@ -156,30 +146,4 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	}
 
 	return graphqlutil.HasNextPage(false), nil
-}
-
-type changesetsConnectionStatsResolver struct {
-	stats campaigns.ChangesetsStats
-}
-
-func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
-	return r.stats.Unpublished
-}
-func (r *changesetsConnectionStatsResolver) Draft() int32 {
-	return r.stats.Draft
-}
-func (r *changesetsConnectionStatsResolver) Open() int32 {
-	return r.stats.Open
-}
-func (r *changesetsConnectionStatsResolver) Merged() int32 {
-	return r.stats.Merged
-}
-func (r *changesetsConnectionStatsResolver) Closed() int32 {
-	return r.stats.Closed
-}
-func (r *changesetsConnectionStatsResolver) Deleted() int32 {
-	return r.stats.Deleted
-}
-func (r *changesetsConnectionStatsResolver) Total() int32 {
-	return r.stats.Total
 }

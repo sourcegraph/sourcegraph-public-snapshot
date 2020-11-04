@@ -1156,6 +1156,11 @@ type Campaign implements Node {
     closedAt: DateTime
 
     """
+    Stats on all the changesets that are tracked in this campaign.
+    """
+    stats: ChangesetsStats!
+
+    """
     The changesets in this campaign that already exist on the code host.
     """
     changesets(
@@ -1631,7 +1636,7 @@ type ExternalChangeset implements Node & Changeset {
 """
 Used in the campaign page for the overview component.
 """
-type ChangesetConnectionStats {
+type ChangesetsStats {
     """
     The count of unpublished changesets.
     """
@@ -1657,7 +1662,7 @@ type ChangesetConnectionStats {
     """
     deleted: Int!
     """
-    The count of all changesets. Equal to totalCount of the connection.
+    The count of all changesets.
     """
     total: Int!
 }
@@ -1680,11 +1685,6 @@ type ChangesetConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-
-    """
-    Stats on all the changesets that are in this connection. Pagination and filters have no effect on the stats.
-    """
-    stats: ChangesetConnectionStats!
 }
 
 """

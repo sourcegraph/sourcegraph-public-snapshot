@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -1034,8 +1033,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("GetChangesetsStats", func(t *testing.T) {
-		truncateTables(t, dbconn.Global, "changeset_events", "changesets")
+		currentStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		var campaignID int64 = 191918
+		currentCampaignStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{CampaignID: campaignID})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		baseOpts := testChangesetOpts{repo: repo.ID}
 
@@ -1074,12 +1080,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal(err)
 			}
 
-			wantStats := cmpgn.ChangesetsStats{
-				Open:    2,
-				Closed:  1,
-				Deleted: 1,
-				Total:   4,
-			}
+			wantStats := currentStats
+			wantStats.Open += 2
+			wantStats.Closed += 1
+			wantStats.Deleted += 1
+			wantStats.Total += 4
 
 			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
 				t.Fatalf("wrong stats returned. diff=%s", diff)
@@ -1091,12 +1096,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal(err)
 			}
 
-			wantStats := cmpgn.ChangesetsStats{
-				Open:    1,
-				Closed:  1,
-				Deleted: 1,
-				Total:   3,
-			}
+			wantStats := currentCampaignStats
+			wantStats.Open += 1
+			wantStats.Closed += 1
+			wantStats.Deleted += 1
+			wantStats.Total += 3
 
 			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
 				t.Fatalf("wrong stats returned. diff=%s", diff)
