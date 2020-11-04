@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -84,7 +83,6 @@ func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) 
 			&w.Week11,
 		)
 		if err != nil {
-			fmt.Println("ERR2", err)
 			return nil, err
 		}
 		weeklyRetentionCohorts = append(weeklyRetentionCohorts, &w)
