@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
@@ -74,7 +73,7 @@ func main() {
 		worker.NewWorker(
 			store,
 			codeIntelDB,
-			bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore),
+			uploadStore,
 			gitserver.DefaultClient,
 			config.WorkerPollInterval,
 			config.WorkerConcurrency,
