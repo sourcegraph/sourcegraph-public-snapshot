@@ -20,7 +20,7 @@ func TestParseRedisInfo(t *testing.T) {
 }
 
 // output of running the INFO command in redis-cli
-var redisInfoCommand = `# Server
+const redisInfoCommand = `# Server
 redis_version:6.0.9
 redis_git_sha1:00000000
 redis_git_dirty:0
