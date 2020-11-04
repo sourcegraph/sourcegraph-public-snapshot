@@ -252,14 +252,3 @@ func (h *handler) updateXrepoData(ctx context.Context, store store.Store, upload
 
 	return nil
 }
-
-func (h *handler) sendDB(ctx context.Context, uploadID int, tempDir string) (err error) {
-	ctx, endOperation := h.metrics.SendDBOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
-	if err := h.bundleManagerClient.SendDB(ctx, uploadID, tempDir); err != nil {
-		return errors.Wrap(err, "bundleManager.SendDB")
-	}
-
-	return nil
-}

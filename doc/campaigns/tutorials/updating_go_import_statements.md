@@ -10,13 +10,20 @@
 
 This campaign rewrites Go import paths for the `log15` package from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15` using [Comby](https://comby.dev/).
 
-It can handle single-package import statements like these
+It can handle single-package import statements like this one:
 
 ```go
 import "gopkg.in/inconshreveable/log15.v2"
 ```
 
-and multi-package import statements like these:
+Single-package imports with an alias:
+
+
+```go
+import log15 "gopkg.in/inconshreveable/log15.v2"
+```
+
+And multi-package import statements with our without an alias:
 
 ```go
 import (
@@ -52,7 +59,7 @@ steps:
   - run: comby -in-place 'import (:[before]"gopkg.in/inconshreveable/log15.v2":[after])' 'import (:[before]"github.com/inconshreveable/log15":[after])' .go -matcher .go -exclude-dir .,vendor
     container: comby/comby
   # ... and when it's a single import line.
-  - run: comby -in-place 'import "gopkg.in/inconshreveable/log15.v2"' 'import "github.com/inconshreveable/log15"' .go -matcher .go -exclude-dir .,vendor
+  - run: comby -in-place 'import:[alias]"gopkg.in/inconshreveable/log15.v2"' 'import:[alias]"github.com/inconshreveable/log15"' .go -matcher .go -exclude-dir .,vendor
     container: comby/comby
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.

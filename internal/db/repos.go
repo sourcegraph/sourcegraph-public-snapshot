@@ -408,6 +408,9 @@ type ReposListOptions struct {
 	// and this may be replaced by the version context name.
 	Names []string
 
+	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
+	ServiceTypes []string
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -604,8 +607,8 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 		URI:                 nullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(&r.UpdatedAt),
-		DeletedAt:           nullTimeColumn(&r.DeletedAt),
+		UpdatedAt:           nullTimeColumn(r.UpdatedAt),
+		DeletedAt:           nullTimeColumn(r.DeletedAt),
 		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
 		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
@@ -617,13 +620,18 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 	}, nil
 }
 
-func nullTimeColumn(t *time.Time) *time.Time {
-	if t == nil || t.IsZero() {
+func nullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
 		return nil
 	}
+	return &t
+}
 
-	ut := t.UTC()
-	return &ut
+func nullInt32Column(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
 
 func nullStringColumn(s string) *string {
@@ -890,6 +898,15 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 			return nil, err
 		}
 		conds = append(conds, cond)
+	}
+
+	if len(opt.ServiceTypes) > 0 {
+		ks := make([]*sqlf.Query, 0, len(opt.ServiceTypes))
+		for _, svcType := range opt.ServiceTypes {
+			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(svcType)))
+		}
+		conds = append(conds,
+			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
 	if opt.NoForks {
