@@ -1065,18 +1065,14 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 				t.Fatal(err)
 			}
 
-			done := make(chan struct{})
+			done := make(chan error)
 			go func() {
-				defer close(done)
-				err := syncer.Run(ctx, db, store, repos.RunOptions{
+				done <- syncer.Run(ctx, db, store, repos.RunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
 					MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 					DequeueInterval: 1 * time.Millisecond,
 				})
-				if err != nil && err != context.Canceled {
-					t.Fatal(err)
-				}
 			}()
 
 			// Ignore fields store adds
@@ -1110,7 +1106,10 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 
 			// Cancel context and the run loop should stop
 			cancel()
-			<-done
+			err := <-done
+			if err != nil && err != context.Canceled {
+				t.Fatal(err)
+			}
 		}
 	}
 }
@@ -1207,18 +1206,14 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 				Now:    time.Now,
 			}
 
-			done := make(chan struct{})
+			done := make(chan error)
 			go func() {
-				defer close(done)
-				err := syncer.Run(ctx, db, store, repos.RunOptions{
+				done <- syncer.Run(ctx, db, store, repos.RunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
 					MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 					DequeueInterval: 1 * time.Millisecond,
 				})
-				if err != nil && err != context.Canceled {
-					t.Fatal(err)
-				}
 			}()
 
 			// Ignore fields store adds
@@ -1276,7 +1271,10 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 
 			// Cancel context and the run loop should stop
 			cancel()
-			<-done
+			err := <-done
+			if err != nil && err != context.Canceled {
+				t.Fatal(err)
+			}
 		}
 	}
 }
