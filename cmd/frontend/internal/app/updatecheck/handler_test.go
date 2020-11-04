@@ -363,6 +363,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"site_activity": {"foo":"bar"},
 		"automation_usage": null,
 		"code_intel_usage": {"Daily":`+period+`,"Weekly":`+period+`,"Monthly":`+period+`},
+		"dependency_versions":    nil,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
