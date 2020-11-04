@@ -519,7 +519,7 @@ func TestRepos_List_cloned(t *testing.T) {
 	}
 }
 
-func TestRepos_List_kinds(t *testing.T) {
+func TestRepos_List_serviceTypes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -543,9 +543,9 @@ func TestRepos_List_kinds(t *testing.T) {
 		opt  ReposListOptions
 		want []*types.Repo
 	}{
-		{"OnlyGithub", ReposListOptions{Kinds: []string{extsvc.TypeGitHub}}, mine},
-		{"OnlyGitlab", ReposListOptions{Kinds: []string{extsvc.TypeGitLab}}, yours},
-		{"Both", ReposListOptions{Kinds: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, both},
+		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, mine},
+		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, yours},
+		{"Both", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, both},
 		{"Default", ReposListOptions{}, all},
 	}
 
