@@ -23,7 +23,7 @@ type MockBundleManagerClient struct {
 func NewMockBundleManagerClient() *MockBundleManagerClient {
 	return &MockBundleManagerClient{
 		BundleClientFunc: &BundleManagerClientBundleClientFunc{
-			defaultHook: func(int) client.BundleClient {
+			defaultHook: func() client.BundleClient {
 				return nil
 			},
 		},
@@ -45,24 +45,24 @@ func NewMockBundleManagerClientFrom(i client.BundleManagerClient) *MockBundleMan
 // BundleClient method of the parent MockBundleManagerClient instance is
 // invoked.
 type BundleManagerClientBundleClientFunc struct {
-	defaultHook func(int) client.BundleClient
-	hooks       []func(int) client.BundleClient
+	defaultHook func() client.BundleClient
+	hooks       []func() client.BundleClient
 	history     []BundleManagerClientBundleClientFuncCall
 	mutex       sync.Mutex
 }
 
 // BundleClient delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) BundleClient(v0 int) client.BundleClient {
-	r0 := m.BundleClientFunc.nextHook()(v0)
-	m.BundleClientFunc.appendCall(BundleManagerClientBundleClientFuncCall{v0, r0})
+func (m *MockBundleManagerClient) BundleClient() client.BundleClient {
+	r0 := m.BundleClientFunc.nextHook()()
+	m.BundleClientFunc.appendCall(BundleManagerClientBundleClientFuncCall{r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the BundleClient method
 // of the parent MockBundleManagerClient instance is invoked and the hook
 // queue is empty.
-func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func(int) client.BundleClient) {
+func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func() client.BundleClient) {
 	f.defaultHook = hook
 }
 
@@ -71,7 +71,7 @@ func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func(int) clie
 // inovkes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *BundleManagerClientBundleClientFunc) PushHook(hook func(int) client.BundleClient) {
+func (f *BundleManagerClientBundleClientFunc) PushHook(hook func() client.BundleClient) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -80,7 +80,7 @@ func (f *BundleManagerClientBundleClientFunc) PushHook(hook func(int) client.Bun
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *BundleManagerClientBundleClientFunc) SetDefaultReturn(r0 client.BundleClient) {
-	f.SetDefaultHook(func(int) client.BundleClient {
+	f.SetDefaultHook(func() client.BundleClient {
 		return r0
 	})
 }
@@ -88,12 +88,12 @@ func (f *BundleManagerClientBundleClientFunc) SetDefaultReturn(r0 client.BundleC
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *BundleManagerClientBundleClientFunc) PushReturn(r0 client.BundleClient) {
-	f.PushHook(func(int) client.BundleClient {
+	f.PushHook(func() client.BundleClient {
 		return r0
 	})
 }
 
-func (f *BundleManagerClientBundleClientFunc) nextHook() func(int) client.BundleClient {
+func (f *BundleManagerClientBundleClientFunc) nextHook() func() client.BundleClient {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -127,9 +127,6 @@ func (f *BundleManagerClientBundleClientFunc) History() []BundleManagerClientBun
 // invocation of method BundleClient on an instance of
 // MockBundleManagerClient.
 type BundleManagerClientBundleClientFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 client.BundleClient
@@ -138,7 +135,7 @@ type BundleManagerClientBundleClientFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BundleManagerClientBundleClientFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
