@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
@@ -54,7 +55,7 @@ func TestExecSafe(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
-			stdout, stderr, exitCode, err := ExecSafe(ctx, repo, test.args)
+			stdout, stderr, exitCode, err := ExecSafe(context.Background(), repo, test.args)
 			if err == nil && test.wantError {
 				t.Errorf("got error %v, want error %v", err, test.wantError)
 			}

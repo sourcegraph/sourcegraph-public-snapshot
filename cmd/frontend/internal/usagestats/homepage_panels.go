@@ -34,6 +34,7 @@ FROM (
     NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'), 0)              :: FLOAT AS savedSearchesPanelLoaded,
     NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS savedSearchesPanelCreateButtonClicked,
 
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name  = 'RecentFilesPanelFileClicked'), 0)          :: FLOAT AS uniqueRecentFilesPanelFileClicked,
     NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelLoaded'), 0)                :: FLOAT AS uniqueRecentFilesPanelLoaded,
     NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked'), 0)      :: FLOAT AS uniqueRecentSearchesPanelSearchClicked,
     NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded'), 0)             :: FLOAT AS uniqueRecentSearchesPanelLoaded,

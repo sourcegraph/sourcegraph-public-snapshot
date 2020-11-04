@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-var ctx = context.Background()
-
 func TestRepository_GetCommit(t *testing.T) {
+	ctx := context.Background()
+
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -83,6 +83,7 @@ func TestRepository_GetCommit(t *testing.T) {
 
 func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	testCases := []struct {
 		commitDates []string
@@ -158,6 +159,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// TODO(sqs): test CommitsOptions.Base
 
@@ -238,6 +240,7 @@ func TestRepository_Commits(t *testing.T) {
 
 func TestRepository_Commits_options(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -322,6 +325,7 @@ func TestRepository_Commits_options(t *testing.T) {
 
 func TestRepository_Commits_options_path(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",

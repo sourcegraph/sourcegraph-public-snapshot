@@ -147,9 +147,11 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		Data: struct {
 			Email string
 			URL   string
+			Host  string
 		}{
 			Email: "a@example.com",
 			URL:   "http://example.com/-/verify-email?code=c&email=a%40example.com",
+			Host:  "example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
@@ -188,10 +190,12 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 			Email    string
 			Change   string
 			Username string
+			Host     string
 		}{
 			Email:    "a@example.com",
 			Change:   "updated password",
 			Username: "Foo",
+			Host:     "example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)

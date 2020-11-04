@@ -104,6 +104,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// In all tests, repo should contain three commits. The first commit
 	// (whose ID is in the 'first' field) has a file at dir1/file1 with the
@@ -296,6 +297,7 @@ func TestRepository_FileSystem(t *testing.T) {
 
 func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// The repo contains 3 files: one whose filename includes a
 	// non-ASCII char, one whose filename contains a double quote, and
@@ -366,6 +368,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 
 func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	submodDir := InitGitRepository(t,
 		"touch f",

@@ -31,7 +31,7 @@ We recommend that use the latest version of Sourcegraph when working with campai
 1. ["Quickstart"](../quickstart.md)
 1. ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md)
 
-### Create the camapign spec
+### Create the campaign spec
 
 Save the following campaign spec YAML as `sprintf-to-itoa.campaign.yaml`:
 
@@ -70,4 +70,4 @@ changesetTemplate:
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
 1. Click the **Apply spec** button to create the campaign.
-1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
+1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../references/campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
