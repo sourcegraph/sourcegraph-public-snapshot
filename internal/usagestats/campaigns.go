@@ -9,6 +9,8 @@ import (
 
 // GetCampaignsUsageStatistics returns the current site's campaigns usage.
 func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
+	stats := types.CampaignsUsageStatistics{}
+
 	const changesetCountsQuery = `
 SELECT
     (SELECT COUNT(*) FROM campaigns) AS campaigns_count,
@@ -24,8 +26,6 @@ SELECT
     COUNT(*) FILTER (WHERE added_to_campaign AND external_state = 'MERGED') AS manual_changesets_merged
 FROM changesets;
 `
-	stats := types.CampaignsUsageStatistics{}
-
 	if err := dbconn.Global.QueryRowContext(ctx, changesetCountsQuery).Scan(
 		&stats.CampaignsCount,
 		&stats.ActionChangesetsCount,
@@ -42,5 +42,18 @@ FROM changesets;
 		return nil, err
 	}
 
-	return &stats, nil
+	const specsCountsQuery = `
+SELECT
+    COUNT(*) AS campaign_specs_created,
+    COALESCE(SUM(jsonb_array_length(argument->'changeset_spec_rand_ids')), 0) AS changeset_specs_created_count
+FROM event_logs
+WHERE name = 'CampaignSpecCreated';
+`
+
+	err := dbconn.Global.QueryRowContext(ctx, specsCountsQuery).Scan(
+		&stats.CampaignSpecsCreatedCount,
+		&stats.ChangesetSpecsCreatedCount,
+	)
+
+	return &stats, err
 }

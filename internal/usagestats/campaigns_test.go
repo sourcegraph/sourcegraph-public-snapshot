@@ -70,6 +70,19 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create two event logs for the campaign specs
+	_, err = dbconn.Global.Exec(`
+		INSERT INTO event_logs
+			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+		VALUES
+			(1, 'CampaignSpecCreated', '{"raw_spec": {}, "namespace_user_id": 1, "changeset_spec_rand_ids": ["one", "two", "three"]}', '', 23, '', 'backend', 'version', now()),
+			(2, 'CampaignSpecCreated', '{"raw_spec": {}, "namespace_org_id": 3, "changeset_spec_rand_ids": ["one"]}', '', 23, '', 'backend', 'version', now()),
+			(3, 'CampaignSpecCreated', '{}', '', 23, '', 'backend', 'version', now())
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Create campaigns 1, 2.
 	_, err = dbconn.Global.Exec(`
 		INSERT INTO campaigns
@@ -118,6 +131,8 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		ActionChangesetsMergedDiffStatDeletedSum: 5,
 		ManualChangesetsCount:                    2,
 		ManualChangesetsMergedCount:              1,
+		CampaignSpecsCreatedCount:                3,
+		ChangesetSpecsCreatedCount:               4,
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

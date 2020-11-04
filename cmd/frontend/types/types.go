@@ -1046,6 +1046,9 @@ type SiteActivityPeriod struct {
 type CampaignsUsageStatistics struct {
 	CampaignsCount int32
 
+	CampaignSpecsCreatedCount  int32
+	ChangesetSpecsCreatedCount int32
+
 	ActionChangesetsCount              int32
 	ActionChangesetsDiffStatAddedSum   int32
 	ActionChangesetsDiffStatChangedSum int32
