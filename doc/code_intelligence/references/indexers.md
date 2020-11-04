@@ -128,7 +128,7 @@ A common set of steps required to build feature-complete LSIF indexers is broadl
 
 #### M1: Can provide a decorated AST
 
-The indexer can read produce an in-memory abstract syntax tree from source code input. Source code may be read from disk independently of a particular build system. This syntax tree should be decorated with symbol and type information (if supported). This step should invest a lot of developer energy upfront to evaluate multiple compiler/analysis frontends supporting the target language. Choosing a feature-incomplete or unreliable library or framework (such as DXR or Spoon) at this point will dead-end feature development and will cost much more developer energy to fix.
+The indexer can read produce an in-memory abstract syntax tree from source code input. Source code may be read from disk independently of a particular build system. This syntax tree should be decorated with symbol and type information (if supported). This is likely the step that will take the longest as the choice of compiler/analysis frontends should be made with care.
 
 #### M2: Emits documents and ranges
 
