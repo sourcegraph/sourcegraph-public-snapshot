@@ -128,10 +128,6 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 // underlying git command (because, e.g., it timed out during execution and only returned partial
 // output).
 func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
-	if Mocks.RawLogDiffSearch != nil {
-		return Mocks.RawLogDiffSearch(opt)
-	}
-
 	deadline, ok := ctx.Deadline()
 	var timeoutLabel string
 	if ok {
