@@ -188,7 +188,7 @@ func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _
 	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
-func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
+func getDependencyVersions(ctx context.Context, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
 		dv  dependencyVersions
@@ -196,19 +196,19 @@ func getDependencyVersions(ctx context.Context) (json.RawMessage, error) {
 	// get redis cache server version
 	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
 	if err != nil {
-		log15.Warn("updatecheck.getDependencyVersions: unable to connect to redis cache instance", "error", err)
+		logFunc("updatecheck.getDependencyVersions: unable to connect to redis cache instance", "error", err)
 	}
 
 	// get redis store server version
 	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
 	if err != nil {
-		log15.Warn("updatecheck.getDependencyVersions: unable to get redis store version", "error", err)
+		logFunc("updatecheck.getDependencyVersions: unable to get redis store version", "error", err)
 	}
 
 	// get postgres version
 	err = dbconn.Global.QueryRowContext(ctx, "SELECT version()").Scan(&dv.PostgresVersion)
 	if err != nil {
-		log15.Warn("updatecheck.getDependencyVersions: unable to get postgres version", "error", err)
+		logFunc("updatecheck.getDependencyVersions: unable to get postgres version", "error", err)
 	}
 	return json.Marshal(dv)
 }
@@ -279,7 +279,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 
-	r.DependencyVersions, err = getDependencyVersions(ctx)
+	r.DependencyVersions, err = getDependencyVersions(ctx, logFunc)
 	if err != nil {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
