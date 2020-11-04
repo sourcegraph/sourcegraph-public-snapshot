@@ -46,9 +46,13 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
 <!-- depends-on-source: ~/internal/usagestats/campaigns.go -->
 - Campaign usage data
+  - Total count of created changeset specs
+  - Total count of created campaign specs
   - Total count of created campaigns
   - Total count of changesets created by campaigns
+  - Aggregate counts of lines changed, added, deleted in changeset
   - Total count of changesets created by campaigns that have been merged
+  - Aggregate counts of lines changed, added, deleted in merged changeset
   - Total count of changesets manually added to a campaign
   - Total count of changesets manually added to a campaign that have been merged
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
