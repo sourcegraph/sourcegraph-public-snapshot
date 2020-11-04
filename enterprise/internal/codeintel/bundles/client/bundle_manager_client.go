@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +16,6 @@ import (
 
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
-	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
@@ -65,10 +63,6 @@ type BundleManagerClient interface {
 	GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error)
 }
 
-type baseClient interface {
-	QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error
-}
-
 var requestMeter = metrics.NewRequestMeter("precise_code_intel_bundle_manager", "Total number of requests sent to precise code intel bundle manager.")
 
 const MaxIdleConnectionsPerHost = 500
@@ -106,7 +100,6 @@ type bundleManagerClientImpl struct {
 }
 
 var _ BundleManagerClient = &bundleManagerClientImpl{}
-var _ baseClient = &bundleManagerClientImpl{}
 
 func New(
 	codeIntelDB *sql.DB,
@@ -131,7 +124,6 @@ func New(
 // BundleClient creates a client that can answer intelligence queries for a single dump.
 func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 	return &bundleClientImpl{
-		base:     c,
 		bundleID: bundleID,
 		store:    persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext),
 		databaseOpener: func(ctx context.Context, filename string, store persistence.Store) (database.Database, error) {
@@ -176,7 +168,7 @@ func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int
 // GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
 // from the bundle manager.
 func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error) {
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
+	url, err := url.Parse(fmt.Sprintf("%s/uploads/%d", c.bundleManagerURL, bundleID))
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +226,7 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 	q.Set("seek", strconv.FormatInt(seek, 10))
 	url.RawQuery = q.Encode()
 
-	body, err := c.do(ctx, "GET", url, nil)
+	body, err := c.do(ctx, url)
 	if err != nil {
 		if err == ErrNotFound {
 			body, err := c.uploadStore.Get(context.Background(), uploadName(bundleID), seek)
@@ -253,28 +245,8 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 	return c.ioCopy(w, body)
 }
 
-func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error {
-	url, err := makeBundleURL(c.bundleManagerURL, bundleID, op, qs)
-	if err != nil {
-		return err
-	}
-
-	return c.doAndDecode(ctx, "GET", url, nil, &target)
-}
-
-// doAndDecode performs an HTTP request to the bundle manager and decodes the body into target.
-func (c *bundleManagerClientImpl) doAndDecode(ctx context.Context, method string, url *url.URL, payload io.Reader, target interface{}) error {
-	body, err := c.do(ctx, method, url, payload)
-	if err != nil {
-		return err
-	}
-	defer body.Close()
-
-	return json.NewDecoder(body).Decode(&target)
-}
-
 // do performs an HTTP request to the bundle manager and returns the body content as a reader.
-func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
+func (c *bundleManagerClientImpl) do(ctx context.Context, url *url.URL) (_ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "BundleManagerClient.do")
 	defer func() {
 		if err != nil {
@@ -284,7 +256,7 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 		span.Finish()
 	}()
 
-	req, err := http.NewRequest(method, url.String(), limitTransferRate(body))
+	req, err := http.NewRequest("GET", url.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -324,37 +296,6 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 	}
 
 	return resp.Body, nil
-}
-
-func makeURL(baseURL, path string, qs map[string]interface{}) (*url.URL, error) {
-	values := url.Values{}
-	for k, v := range qs {
-		values[k] = []string{fmt.Sprintf("%v", v)}
-	}
-
-	url, err := url.Parse(fmt.Sprintf("%s/%s", baseURL, path))
-	if err != nil {
-		return nil, err
-	}
-	url.RawQuery = values.Encode()
-	return url, nil
-}
-
-func makeBundleURL(baseURL string, bundleID int, op string, qs map[string]interface{}) (*url.URL, error) {
-	return makeURL(baseURL, fmt.Sprintf("dbs/%d/%s", bundleID, op), qs)
-}
-
-// limitTransferRate applies a transfer limit to the given reader.
-//
-// In the case that the bundle manager is running on the same host as this service, an unbounded
-// transfer rate can end up being so fast that we harm our own network connectivity. In order to
-// prevent the disruption of other in-flight requests, we cap the transfer rate of r to 1Gbps.
-func limitTransferRate(r io.Reader) io.ReadCloser {
-	if r == nil {
-		return nil
-	}
-
-	return flowrate.NewReader(r, 1000*1000*1000)
 }
 
 func isConnectionError(err error) bool {
