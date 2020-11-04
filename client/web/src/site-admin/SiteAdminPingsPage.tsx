@@ -89,6 +89,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     know who to contact regarding sales, product updates, security updates, and policy updates
                 </li>
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
+                <li>Dependency versions (eg redis & postgres server versions)</li>
                 <li>
                     Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
                 </li>
