@@ -273,7 +273,7 @@ type pingPayload struct {
 	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
 	SavedSearches        json.RawMessage `json:"saved_searches"`
 	HomepagePanels       json.RawMessage `json:"homepage_panels"`
-	RetentionStatistics  json.RawMessage `json:"retentionStatistics"`
+	RetentionStatistics  json.RawMessage `json:"retention_statistics"`
 	Repositories         json.RawMessage `json:"repositories"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
