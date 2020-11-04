@@ -82,7 +82,7 @@ type Campaign struct {
 	UpdatedAt               string
 	ClosedAt                string
 	URL                     string
-	Stats                   ChangesetsStats
+	ChangesetsStats         ChangesetsStats
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat

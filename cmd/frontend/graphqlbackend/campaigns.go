@@ -216,7 +216,7 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	Stats(ctx context.Context) (ChangesetsStatsResolver, error)
+	ChangesetsStats(ctx context.Context) (ChangesetsStatsResolver, error)
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	ClosedAt() *DateTime

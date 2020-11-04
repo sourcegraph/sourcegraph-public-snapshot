@@ -65,15 +65,15 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
         </div>
         <ChangesetStatusOpen
             className="d-block d-sm-flex"
-            label={<span className="text-muted">{node.stats.open} open</span>}
+            label={<span className="text-muted">{node.changesetsStats.open} open</span>}
         />
         <ChangesetStatusClosed
             className="d-block d-sm-flex text-center"
-            label={<span className="text-muted">{node.stats.closed} closed</span>}
+            label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
         />
         <ChangesetStatusMerged
             className="d-block d-sm-flex"
-            label={<span className="text-muted">{node.stats.merged} merged</span>}
+            label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
         />
     </>
 )

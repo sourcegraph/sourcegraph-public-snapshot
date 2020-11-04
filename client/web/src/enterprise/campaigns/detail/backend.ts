@@ -62,7 +62,7 @@ const campaignFragment = gql`
         closedAt
         viewerCanAdminister
 
-        stats {
+        changesetsStats {
             ...ChangesetsStatsFields
         }
 

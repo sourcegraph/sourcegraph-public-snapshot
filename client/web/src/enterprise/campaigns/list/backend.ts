@@ -23,7 +23,7 @@ const ListCampaignFragment = gql`
         description
         createdAt
         closedAt
-        stats {
+        changesetsStats {
             open
             closed
             merged

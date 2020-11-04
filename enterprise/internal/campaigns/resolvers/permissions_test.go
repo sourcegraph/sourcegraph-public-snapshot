@@ -806,7 +806,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.Stats); diff != "" {
+	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
 		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
@@ -829,7 +829,7 @@ query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: Changeset
     ... on Campaign {
 	  id
 
-	  stats { unpublished, open, merged, closed, total }
+	  changesetsStats { unpublished, open, merged, closed, total }
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount

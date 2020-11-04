@@ -1158,7 +1158,7 @@ type Campaign implements Node {
     """
     Stats on all the changesets that are tracked in this campaign.
     """
-    stats: ChangesetsStats!
+    changesetsStats: ChangesetsStats!
 
     """
     The changesets in this campaign that already exist on the code host.

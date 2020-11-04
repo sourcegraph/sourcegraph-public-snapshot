@@ -33,7 +33,7 @@ const now = new Date()
 
 const campaignDefaults: CampaignFields = {
     __typename: 'Campaign',
-    stats: {
+    changesetsStats: {
         closed: 1,
         deleted: 1,
         draft: 1,

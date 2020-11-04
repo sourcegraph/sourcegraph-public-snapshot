@@ -141,7 +141,7 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
-func (r *campaignResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
+func (r *campaignResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
 	stats, err := r.store.GetChangesetsStats(ctx, ee.GetChangesetsStatsOpts{
 		CampaignID: r.Campaign.ID,
 	})

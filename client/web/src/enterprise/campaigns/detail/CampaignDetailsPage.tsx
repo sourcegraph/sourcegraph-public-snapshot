@@ -141,8 +141,12 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 lastApplier={campaign.lastApplier}
                 className="mb-3"
             />
-            <UnpublishedNotice unpublished={campaign.stats.unpublished} total={campaign.stats.total} className="mb-3" />
-            <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.stats} className="mb-3" />
+            <UnpublishedNotice
+                unpublished={campaign.changesetsStats.unpublished}
+                total={campaign.changesetsStats.total}
+                className="mb-3"
+            />
+            <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesetsStats} className="mb-3" />
             <CampaignDescription history={history} description={campaign.description} />
             <CampaignTabs
                 campaign={campaign}
