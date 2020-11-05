@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"net/http"
 	"net/url"
@@ -109,24 +110,11 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 			// if we have a redirect param use that, otherwise we'll try and pull
 			// the 'returnTo' param from the referrer URL, this is usually the login
 			// page where the user has been dumped to after following a link.
-			redirect := req.URL.Query().Get("redirect")
-			if redirect == "" {
-				if referer := req.Referer(); referer != "" {
-					referrerURL, err := url.Parse(referer)
-					if err != nil {
-						log15.Error("Failed to parse URL from Referrer header", "error", err)
-						http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
-						return
-					}
-					returnTo := referrerURL.Query().Get("returnTo")
-					// to prevent open redirect vulnerabilities used for phishing
-					// we limit the redirect URL to only permit certain urls
-					if !canRedirect(returnTo) {
-						log15.Warn("Invalid URL in returnTo parameter", "url", returnTo)
-					} else {
-						redirect = returnTo
-					}
-				}
+			redirect, err := getRedirect(req)
+			if err != nil {
+				log15.Error("Failed to parse URL from Referrer header", "error", err)
+				http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
+				return
 			}
 			// add Cookie with a random state + redirect
 			stateVal, err := LoginState{
@@ -190,6 +178,29 @@ func randomState() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func getRedirect(req *http.Request) (string, error) {
+	redirect := req.URL.Query().Get("redirect")
+	if redirect != "" {
+		return redirect, nil
+	}
+	referer := req.Referer()
+	if referer == "" {
+		return "", nil
+	}
+	referrerURL, err := url.Parse(referer)
+	if err != nil {
+		return "", err
+	}
+	returnTo := referrerURL.Query().Get("returnTo")
+	// to prevent open redirect vulnerabilities used for phishing
+	// we limit the redirect URL to only permit certain urls
+	if !canRedirect(returnTo) {
+		return "", fmt.Errorf("invalid URL in returnTo parameter: %s", returnTo)
+	} else {
+		return returnTo, nil
+	}
 }
 
 // canRedirect is used to limit the set of URLs we will redirect to
