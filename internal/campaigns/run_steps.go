@@ -68,11 +68,24 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 			stepContext.PreviousStep = results[i-1]
 		}
 
+		// Find a location that we can use for a cidfile, which will contain the
+		// container ID that is used below. We can then use this to remove the
+		// container on a successful run, rather than leaving it dangling.
 		cidFile, err := ioutil.TempFile(tempDir, repo.Slug()+"-container-id")
 		if err != nil {
 			return nil, errors.Wrap(err, "Creating a CID file failed")
 		}
-		_ = os.Remove(cidFile.Name()) // docker exits if this file exists upon `docker run` starting
+
+		// However, Docker will fail if the cidfile actually exists, so we need
+		// to remove it. Because Windows can't remove open files, we'll first
+		// close it, even though that's unnecessary elsewhere.
+		cidFile.Close()
+		if err = os.Remove(cidFile.Name()); err != nil {
+			return nil, errors.Wrap(err, "removing cidfile")
+		}
+
+		// Since we went to all that effort, we can now defer a function that
+		// uses the cidfile to clean up after this function is done.
 		defer func() {
 			cid, err := ioutil.ReadFile(cidFile.Name())
 			_ = os.Remove(cidFile.Name())
