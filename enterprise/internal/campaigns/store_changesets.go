@@ -18,10 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-// changesetColumns are used by by the changeset related Store methods and by
+// ChangesetColumns are used by by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
-var changesetColumns = []*sqlf.Query{
+var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
 	sqlf.Sprintf("changesets.created_at"),
@@ -147,7 +147,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		vars = append(vars, c.ID)
 	}
 
-	vars = append(vars, sqlf.Join(changesetColumns, ", "))
+	vars = append(vars, sqlf.Join(ChangesetColumns, ", "))
 
 	return sqlf.Sprintf(q, vars...), nil
 }
@@ -299,7 +299,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetsQueryFmtstr,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -502,7 +502,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 		groupBy,
@@ -523,7 +523,7 @@ AND
   repo.deleted_at IS NULL
 ORDER BY id ASC
 `,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		campaign,
 		campaign,
 	)
@@ -605,9 +605,9 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		reconcilerMaxNumRetries,
+		ReconcilerMaxNumRetries,
 		canceledChangesetFailureMessage,
-		reconcilerMaxNumRetries,
+		ReconcilerMaxNumRetries,
 	)
 	return s.Store.Exec(ctx, q)
 }
@@ -671,7 +671,7 @@ AND
 ;
 `
 
-func scanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
+func ScanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
 	if err != nil || len(changesets) == 0 {
 		return &campaigns.Changeset{}, false, err
