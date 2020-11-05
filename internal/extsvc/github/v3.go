@@ -16,7 +16,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// V3Client is a caching GitHub API client.
+// V3Client is a caching GitHub API client for GitHub's REST API v3.
 //
 // All instances use a map of rcache.Cache instances for caching (see the `repoCache` field). These
 // separate instances have consistent naming prefixes so that different instances will share the
@@ -55,7 +55,7 @@ type V3Client struct {
 // authenticator.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
-// Client.apiURL.
+// V3Client.apiURL.
 func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
