@@ -56,7 +56,7 @@ func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleID int, path
 		return false, err
 	}
 
-	return db.Exists(ctx, path)
+	return db.Exists(ctx, bundleID, path)
 }
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
@@ -66,7 +66,7 @@ func (c *bundleManagerClientImpl) Ranges(ctx context.Context, bundleID int, path
 		return nil, err
 	}
 
-	return db.Ranges(ctx, path, startLine, endLine)
+	return db.Ranges(ctx, bundleID, path, startLine, endLine)
 }
 
 // Definitions retrieves a list of definition locations for the symbol under the given location.
@@ -76,7 +76,7 @@ func (c *bundleManagerClientImpl) Definitions(ctx context.Context, bundleID int,
 		return nil, err
 	}
 
-	locations, err := db.Definitions(ctx, path, line, character)
+	locations, err := db.Definitions(ctx, bundleID, path, line, character)
 	c.addBundleIDToLocations(locations, bundleID)
 	return locations, err
 }
@@ -88,7 +88,7 @@ func (c *bundleManagerClientImpl) References(ctx context.Context, bundleID int, 
 		return nil, err
 	}
 
-	locations, err := db.References(ctx, path, line, character)
+	locations, err := db.References(ctx, bundleID, path, line, character)
 	c.addBundleIDToLocations(locations, bundleID)
 	return locations, err
 }
@@ -100,7 +100,7 @@ func (c *bundleManagerClientImpl) Hover(ctx context.Context, bundleID int, path 
 		return "", Range{}, false, err
 	}
 
-	return db.Hover(ctx, path, line, character)
+	return db.Hover(ctx, bundleID, path, line, character)
 }
 
 // Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
@@ -110,7 +110,7 @@ func (c *bundleManagerClientImpl) Diagnostics(ctx context.Context, bundleID int,
 		return nil, 0, err
 	}
 
-	diagnostics, count, err := db.Diagnostics(ctx, prefix, skip, take)
+	diagnostics, count, err := db.Diagnostics(ctx, bundleID, prefix, skip, take)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -128,7 +128,7 @@ func (c *bundleManagerClientImpl) MonikersByPosition(ctx context.Context, bundle
 		return nil, err
 	}
 
-	return db.MonikersByPosition(ctx, path, line, character)
+	return db.MonikersByPosition(ctx, bundleID, path, line, character)
 }
 
 // MonikerResults retrieves a page of locations attached to a moniker and a total count of such locations.
@@ -146,7 +146,7 @@ func (c *bundleManagerClientImpl) MonikerResults(ctx context.Context, bundleID i
 		tableName = "references"
 	}
 
-	locations, count, err := db.MonikerResults(ctx, tableName, scheme, identifier, skip, take)
+	locations, count, err := db.MonikerResults(ctx, bundleID, tableName, scheme, identifier, skip, take)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -162,23 +162,12 @@ func (c *bundleManagerClientImpl) PackageInformation(ctx context.Context, bundle
 		return PackageInformationData{}, err
 	}
 
-	data, _, err := db.PackageInformation(ctx, path, packageInformationID)
+	data, _, err := db.PackageInformation(ctx, bundleID, path, packageInformationID)
 	return data, err
 }
 
 func (c *bundleManagerClientImpl) openDatabase(ctx context.Context, bundleID int) (database.Database, error) {
-	store := persistence.NewObserved(postgres.NewStore(c.codeIntelDB), c.observationContext)
-
-	if _, err := store.ReadMeta(ctx, bundleID); err != nil {
-		return nil, err
-	}
-
-	db, err := database.OpenDatabase(ctx, bundleID, store)
-	if err != nil {
-		return nil, err
-	}
-
-	return database.NewObserved(db, bundleID, c.observationContext), nil
+	return database.NewObserved(database.OpenDatabase(persistence.NewObserved(postgres.NewStore(c.codeIntelDB), c.observationContext)), c.observationContext), nil
 }
 
 func (c *bundleManagerClientImpl) addBundleIDToLocations(locations []Location, bundleID int) {
