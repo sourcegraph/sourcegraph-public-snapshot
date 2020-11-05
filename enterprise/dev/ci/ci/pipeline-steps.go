@@ -44,7 +44,7 @@ var allDockerImages = []string{
 
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":memo: Check and build docsite", // TODO: Add header
+	pipeline.AddStep(":memo: Check and build docsite",
 		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
 		bk.Cmd("./dev/check/docsite.sh"))
 }
