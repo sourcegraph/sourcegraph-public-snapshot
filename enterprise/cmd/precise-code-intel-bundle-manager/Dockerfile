@@ -13,6 +13,15 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk update && apk add --no-cache \
     tini
 
+# Ensures that a directory with the correct permissions exist in the image. Without this, in Docker Compose	
+# deployments the Docker daemon would first create the volume directory and it would be owned by `root` and	
+# then one of the precise-code-intel processes would be unable to create the `/lsif-storage` because it	
+# would  be trying to do so in a directory owned by `root` as the user `sourcegraph`. And no, this is not	
+# dumb, this is just Docker: https://github.com/docker/compose/issues/3270#issuecomment-363478501.	
+# hadolint ignore=DL3002	
+USER root	
+RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
+
 USER sourcegraph
 EXPOSE 3187
 VOLUME ["/lsif-storage"]
