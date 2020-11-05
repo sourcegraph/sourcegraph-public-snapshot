@@ -267,11 +267,6 @@ function mockCommonGraphQLResponses(
                     url: namespaceURL,
                 },
                 url: `${namespaceURL}/campaigns/test-campaign`,
-                diffStat: {
-                    added: 1000,
-                    changed: 29,
-                    deleted: 817,
-                },
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
                 lastApplier: {

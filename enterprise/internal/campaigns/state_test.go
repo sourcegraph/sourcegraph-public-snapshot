@@ -607,6 +607,12 @@ func TestComputeExternalState(t *testing.T) {
 			want: cmpgn.ChangesetExternalStateDraft,
 		},
 		{
+			name:      "github draft closed",
+			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED")),
+			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: campaigns.ChangesetExternalStateClosed}},
+			want:      cmpgn.ChangesetExternalStateClosed,
+		},
+		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
