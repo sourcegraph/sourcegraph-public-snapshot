@@ -202,24 +202,52 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-	}
-	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	// Should get back the same one
-	got, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name             string
+		externalService  *types.ExternalService
+		wantUnrestricted bool
+	}{
+		{
+			name: "without authorization",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			},
+			wantUnrestricted: true,
+		},
+		{
+			name: "with authorization",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #2",
+				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+			},
+			wantUnrestricted: false,
+		},
 	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ExternalServices.Create(ctx, confGet, test.externalService)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if diff := cmp.Diff(es, got); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
+			// Should get back the same one
+			got, err := ExternalServices.GetByID(ctx, test.externalService.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.externalService, got); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+
+			if test.wantUnrestricted != got.Unrestricted {
+				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+		})
 	}
 }
 
@@ -267,28 +295,54 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Update its name and config
-	esUpdate := &ExternalServiceUpdate{
-		DisplayName: strptr("GITHUB (updated) #1"),
-		Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+	// NOTE: The order of tests matters
+	tests := []struct {
+		name             string
+		update           *ExternalServiceUpdate
+		wantUnrestricted bool
+	}{
+		{
+			name: "update with authorization",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #1"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
+			},
+			wantUnrestricted: false,
+		},
+		{
+			name: "update without authorization",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #2"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+			},
+			wantUnrestricted: true,
+		},
 	}
-	err = (&ExternalServiceStore{}).Update(ctx, nil, es.ID, esUpdate)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err = ExternalServices.Update(ctx, nil, es.ID, test.update)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// Get and verify update
-	got, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+			// Get and verify update
+			got, err := ExternalServices.GetByID(ctx, es.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if diff := cmp.Diff(*esUpdate.DisplayName, got.DisplayName); diff != "" {
-		t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
-	} else if diff = cmp.Diff(*esUpdate.Config, got.Config); diff != "" {
-		t.Fatalf("Config mismatch (-want +got):\n%s", diff)
-	} else if got.UpdatedAt.Equal(es.UpdatedAt) {
-		t.Fatalf("UpdateAt: want to be updated but not")
+			if diff := cmp.Diff(*test.update.DisplayName, got.DisplayName); diff != "" {
+				t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
+			} else if diff = cmp.Diff(*test.update.Config, got.Config); diff != "" {
+				t.Fatalf("Config mismatch (-want +got):\n%s", diff)
+			} else if got.UpdatedAt.Equal(es.UpdatedAt) {
+				t.Fatalf("UpdateAt: want to be updated but not")
+			}
+
+			if test.wantUnrestricted != got.Unrestricted {
+				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+		})
 	}
 }
 
