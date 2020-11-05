@@ -6,12 +6,10 @@ exports[`CampaignNode campaign without description 1`] = `
   history="[History]"
   node={
     Object {
-      "changesets": Object {
-        "stats": Object {
-          "closed": 3,
-          "merged": 0,
-          "open": 1,
-        },
+      "changesetsStats": Object {
+        "closed": 3,
+        "merged": 0,
+        "open": 1,
       },
       "closedAt": null,
       "createdAt": "2019-12-04T23:15:01Z",
@@ -187,12 +185,10 @@ exports[`CampaignNode closed campaign 1`] = `
   history="[History]"
   node={
     Object {
-      "changesets": Object {
-        "stats": Object {
-          "closed": 3,
-          "merged": 0,
-          "open": 1,
-        },
+      "changesetsStats": Object {
+        "closed": 3,
+        "merged": 0,
+        "open": 1,
       },
       "closedAt": "2019-12-04T23:19:01Z",
       "createdAt": "2019-12-04T23:15:01Z",
@@ -380,12 +376,10 @@ exports[`CampaignNode open campaign 1`] = `
   history="[History]"
   node={
     Object {
-      "changesets": Object {
-        "stats": Object {
-          "closed": 3,
-          "merged": 0,
-          "open": 1,
-        },
+      "changesetsStats": Object {
+        "closed": 3,
+        "merged": 0,
+        "open": 1,
       },
       "closedAt": null,
       "createdAt": "2019-12-04T23:15:01Z",
@@ -573,12 +567,10 @@ exports[`CampaignNode open campaign on user page 1`] = `
   history="[History]"
   node={
     Object {
-      "changesets": Object {
-        "stats": Object {
-          "closed": 3,
-          "merged": 0,
-          "open": 1,
-        },
+      "changesetsStats": Object {
+        "closed": 3,
+        "merged": 0,
+        "open": 1,
       },
       "closedAt": null,
       "createdAt": "2019-12-04T23:15:01Z",

@@ -257,6 +257,7 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+	ChangesetsStats(ctx context.Context) (ChangesetsStatsResolver, error)
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	ClosedAt() *DateTime
@@ -270,7 +271,7 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetsConnectionStatsResolver interface {
+type ChangesetsStatsResolver interface {
 	Unpublished() int32
 	Draft() int32
 	Open() int32
@@ -284,7 +285,6 @@ type ChangesetsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Stats(ctx context.Context) (ChangesetsConnectionStatsResolver, error)
 }
 
 type ChangesetLabelResolver interface {

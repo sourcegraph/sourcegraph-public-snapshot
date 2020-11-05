@@ -30,7 +30,7 @@ const campaignListNode: ListCampaign = {
     url: '/users/alice/campaigns/test-campaign',
     name: 'test-campaign',
     createdAt: subDays(new Date(), 5).toISOString(),
-    changesets: { stats: { closed: 4, merged: 10, open: 5 } },
+    changesetsStats: { closed: 4, merged: 10, open: 5 },
     closedAt: null,
     description: null,
     namespace: {
@@ -250,9 +250,7 @@ function mockCommonGraphQLResponses(
             campaign: {
                 __typename: 'Campaign',
                 id: 'campaign123',
-                changesets: {
-                    stats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
-                },
+                changesetsStats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),

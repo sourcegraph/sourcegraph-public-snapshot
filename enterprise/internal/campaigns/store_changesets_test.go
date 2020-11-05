@@ -1031,6 +1031,87 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatalf("wrong changesets returned. diff=%s", diff)
 		}
 	})
+
+	t.Run("GetChangesetsStats", func(t *testing.T) {
+		currentStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var campaignID int64 = 191918
+		currentCampaignStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{CampaignID: campaignID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		baseOpts := testChangesetOpts{repo: repo.ID}
+
+		opts1 := baseOpts
+		opts1.campaign = campaignID
+		opts1.externalState = cmpgn.ChangesetExternalStateClosed
+		opts1.publicationState = cmpgn.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts1)
+
+		opts2 := baseOpts
+		opts2.campaign = campaignID
+		opts2.externalState = cmpgn.ChangesetExternalStateDeleted
+		opts2.publicationState = cmpgn.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts2)
+
+		opts3 := baseOpts
+		opts3.campaign = campaignID
+		opts3.ownedByCampaign = campaignID
+		opts3.externalState = cmpgn.ChangesetExternalStateOpen
+		opts3.publicationState = cmpgn.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts3)
+
+		opts4 := baseOpts
+		// In a deleted repository.
+		opts4.repo = deletedRepo.ID
+		opts4.campaign = campaignID
+		opts4.externalState = cmpgn.ChangesetExternalStateOpen
+		opts4.publicationState = cmpgn.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts4)
+
+		opts5 := baseOpts
+		// In a different campaign.
+		opts5.campaign = campaignID + 999
+		opts5.externalState = cmpgn.ChangesetExternalStateOpen
+		opts5.publicationState = cmpgn.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts5)
+
+		t.Run("global", func(t *testing.T) {
+			haveStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStats := currentStats
+			wantStats.Open += 2
+			wantStats.Closed += 1
+			wantStats.Deleted += 1
+			wantStats.Total += 4
+
+			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+				t.Fatalf("wrong stats returned. diff=%s", diff)
+			}
+		})
+		t.Run("single campaign", func(t *testing.T) {
+			haveStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{CampaignID: campaignID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStats := currentCampaignStats
+			wantStats.Open += 1
+			wantStats.Closed += 1
+			wantStats.Deleted += 1
+			wantStats.Total += 3
+
+			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+				t.Fatalf("wrong stats returned. diff=%s", diff)
+			}
+		})
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {

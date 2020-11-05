@@ -32,16 +32,14 @@ const now = new Date()
 
 const campaignDefaults: CampaignFields = {
     __typename: 'Campaign',
-    changesets: {
-        stats: {
-            closed: 1,
-            deleted: 1,
-            merged: 2,
-            draft: 1,
-            open: 2,
-            total: 10,
-            unpublished: 4,
-        },
+    changesetsStats: {
+        closed: 1,
+        deleted: 1,
+        merged: 2,
+        draft: 1,
+        open: 2,
+        total: 10,
+        unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
     initialApplier: {
