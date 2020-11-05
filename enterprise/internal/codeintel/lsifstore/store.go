@@ -2,26 +2,9 @@ package lsifstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
-
-type Store interface {
-	Clear(ctx context.Context, bundleIDs ...int) error
-}
-
-type store struct {
-	*basestore.Store
-}
-
-func New(db dbutil.DB) Store {
-	return &store{
-		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
-	}
-}
 
 var tableNames = []string{
 	"lsif_data_metadata",

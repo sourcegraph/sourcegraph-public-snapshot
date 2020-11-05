@@ -1,4 +1,4 @@
-package persistence
+package lsifstore
 
 import (
 	"fmt"

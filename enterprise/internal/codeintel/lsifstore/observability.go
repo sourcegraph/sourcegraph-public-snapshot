@@ -1,4 +1,4 @@
-package persistence
+package lsifstore
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 // An ObservedStore wraps another Store with error logging, Prometheus metrics, and tracing.
 type ObservedStore struct {
 	store                      Store
+	clearOperation             *observation.Operation
 	readMetaOperation          *observation.Operation
 	pathsWithPrefixOperation   *observation.Operation
 	readDocumentOperation      *observation.Operation
@@ -45,6 +46,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 
 	return &ObservedStore{
 		store: store,
+		clearOperation: observationContext.Operation(observation.Op{
+			Name:         "Store.Clear",
+			MetricLabels: []string{"clear"},
+			Metrics:      metrics,
+		}),
 		readMetaOperation: observationContext.Operation(observation.Op{
 			Name:         "Store.ReadMeta",
 			MetricLabels: []string{"read_meta"},
@@ -106,6 +112,13 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			Metrics:      metrics,
 		}),
 	}
+}
+
+// Clear calls into the inner Store and registers the observed results.
+func (s *ObservedStore) Clear(ctx context.Context, bundleIDs ...int) (err error) {
+	ctx, endObservation := s.clearOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.Clear(ctx, bundleIDs...)
 }
 
 // ReadMeta calls into the inner Store and registers the observed results.

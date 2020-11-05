@@ -1,4 +1,4 @@
-package persistence
+package lsifstore
 
 import (
 	"context"
@@ -21,6 +21,8 @@ type IndexedResultChunkData struct {
 type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
+
+	Clear(ctx context.Context, bundleIDs ...int) error
 
 	ReadMeta(ctx context.Context, bundleID int) (types.MetaData, error)
 	PathsWithPrefix(ctx context.Context, bundleID int, prefix string) ([]string, error)
