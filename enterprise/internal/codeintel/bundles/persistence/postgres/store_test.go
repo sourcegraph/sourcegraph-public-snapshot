@@ -23,13 +23,13 @@ func TestReadWriteMeta(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42)
+	store := testStore(t)
 
-	if err := store.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
+	if err := store.WriteMeta(ctx, 42, types.MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
 
-	meta, err := store.ReadMeta(ctx)
+	meta, err := store.ReadMeta(ctx, 42)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -45,7 +45,7 @@ func TestReadWriteDocument(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42)
+	store := testStore(t)
 
 	expectedDocumentData := types.DocumentData{
 		Ranges: map[types.ID]types.RangeData{
@@ -73,11 +73,11 @@ func TestReadWriteDocument(t *testing.T) {
 	}
 	close(documentCh)
 
-	if err := store.WriteDocuments(ctx, documentCh); err != nil {
+	if err := store.WriteDocuments(ctx, 42, documentCh); err != nil {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
-	documentData, _, err := store.ReadDocument(ctx, "foo.go")
+	documentData, _, err := store.ReadDocument(ctx, 42, "foo.go")
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -93,7 +93,7 @@ func TestReadWriteResultChunk(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42)
+	store := testStore(t)
 
 	expectedResultChunkData := types.ResultChunkData{
 		DocumentPaths: map[types.ID]string{
@@ -127,11 +127,11 @@ func TestReadWriteResultChunk(t *testing.T) {
 	}
 	close(resultChunkCh)
 
-	if err := store.WriteResultChunks(ctx, resultChunkCh); err != nil {
+	if err := store.WriteResultChunks(ctx, 42, resultChunkCh); err != nil {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
-	resultChunkData, _, err := store.ReadResultChunk(ctx, 7)
+	resultChunkData, _, err := store.ReadResultChunk(ctx, 42, 7)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -147,7 +147,7 @@ func TestReadWriteDefinitions(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42)
+	store := testStore(t)
 
 	expectedDefinitions := []types.Location{
 		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
@@ -163,11 +163,11 @@ func TestReadWriteDefinitions(t *testing.T) {
 	}
 	close(definitionsCh)
 
-	if err := store.WriteDefinitions(ctx, definitionsCh); err != nil {
+	if err := store.WriteDefinitions(ctx, 42, definitionsCh); err != nil {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
 
-	definitions, _, err := store.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
+	definitions, _, err := store.ReadDefinitions(ctx, 42, "scheme A", "ident A", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -183,7 +183,7 @@ func TestReadWriteReferences(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42)
+	store := testStore(t)
 
 	expectedReferences := []types.Location{
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -199,11 +199,11 @@ func TestReadWriteReferences(t *testing.T) {
 	}
 	close(referencesCh)
 
-	if err := store.WriteReferences(ctx, referencesCh); err != nil {
+	if err := store.WriteReferences(ctx, 42, referencesCh); err != nil {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	references, _, err := store.ReadReferences(ctx, "scheme C", "ident C", 0, 100)
+	references, _, err := store.ReadReferences(ctx, 42, "scheme C", "ident C", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -219,7 +219,7 @@ func TestPathsWithPrefix(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42)
+	store := testStore(t)
 
 	documentCh := make(chan persistence.KeyedDocumentData, 5)
 	documentCh <- persistence.KeyedDocumentData{Path: "foo"}        // exact
@@ -229,11 +229,11 @@ func TestPathsWithPrefix(t *testing.T) {
 	documentCh <- persistence.KeyedDocumentData{Path: "bar/baz.go"} // does not contain
 	close(documentCh)
 
-	if err := store.WriteDocuments(ctx, documentCh); err != nil {
+	if err := store.WriteDocuments(ctx, 42, documentCh); err != nil {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
-	paths, err := store.PathsWithPrefix(ctx, "foo")
+	paths, err := store.PathsWithPrefix(ctx, 42, "foo")
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -248,7 +248,7 @@ func TestPathsWithPrefix(t *testing.T) {
 	}
 }
 
-func testStore(t *testing.T, id int) persistence.Store {
+func testStore(t *testing.T) persistence.Store {
 	// Wrap in observed, as that's how it's used in production
-	return persistence.NewObserved(NewStore(dbconn.Global, id), &observation.TestContext)
+	return persistence.NewObserved(NewStore(dbconn.Global), &observation.TestContext)
 }

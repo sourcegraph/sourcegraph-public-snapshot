@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
@@ -168,18 +167,18 @@ func (c *bundleManagerClientImpl) PackageInformation(ctx context.Context, bundle
 }
 
 func (c *bundleManagerClientImpl) openDatabase(ctx context.Context, bundleID int) (database.Database, error) {
-	store := persistence.NewObserved(postgres.NewStore(c.codeIntelDB, bundleID), c.observationContext)
+	store := persistence.NewObserved(postgres.NewStore(c.codeIntelDB), c.observationContext)
 
-	if _, err := store.ReadMeta(ctx); err != nil {
+	if _, err := store.ReadMeta(ctx, bundleID); err != nil {
 		return nil, err
 	}
 
-	db, err := database.OpenDatabase(ctx, fmt.Sprintf("upload-%d.lsif.gz", bundleID), store)
+	db, err := database.OpenDatabase(ctx, bundleID, store)
 	if err != nil {
 		return nil, err
 	}
 
-	return database.NewObserved(db, fmt.Sprintf("upload-%d.lsif.gz", bundleID), c.observationContext), nil
+	return database.NewObserved(db, bundleID, c.observationContext), nil
 }
 
 func (c *bundleManagerClientImpl) addBundleIDToLocations(locations []Location, bundleID int) {

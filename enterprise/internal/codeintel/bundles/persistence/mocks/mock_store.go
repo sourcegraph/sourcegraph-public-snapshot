@@ -65,32 +65,32 @@ func NewMockStore() *MockStore {
 			},
 		},
 		PathsWithPrefixFunc: &StorePathsWithPrefixFunc{
-			defaultHook: func(context.Context, string) ([]string, error) {
+			defaultHook: func(context.Context, int, string) ([]string, error) {
 				return nil, nil
 			},
 		},
 		ReadDefinitionsFunc: &StoreReadDefinitionsFunc{
-			defaultHook: func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+			defaultHook: func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 				return nil, 0, nil
 			},
 		},
 		ReadDocumentFunc: &StoreReadDocumentFunc{
-			defaultHook: func(context.Context, string) (types.DocumentData, bool, error) {
+			defaultHook: func(context.Context, int, string) (types.DocumentData, bool, error) {
 				return types.DocumentData{}, false, nil
 			},
 		},
 		ReadMetaFunc: &StoreReadMetaFunc{
-			defaultHook: func(context.Context) (types.MetaData, error) {
+			defaultHook: func(context.Context, int) (types.MetaData, error) {
 				return types.MetaData{}, nil
 			},
 		},
 		ReadReferencesFunc: &StoreReadReferencesFunc{
-			defaultHook: func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+			defaultHook: func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 				return nil, 0, nil
 			},
 		},
 		ReadResultChunkFunc: &StoreReadResultChunkFunc{
-			defaultHook: func(context.Context, int) (types.ResultChunkData, bool, error) {
+			defaultHook: func(context.Context, int, int) (types.ResultChunkData, bool, error) {
 				return types.ResultChunkData{}, false, nil
 			},
 		},
@@ -100,27 +100,27 @@ func NewMockStore() *MockStore {
 			},
 		},
 		WriteDefinitionsFunc: &StoreWriteDefinitionsFunc{
-			defaultHook: func(context.Context, chan types.MonikerLocations) error {
+			defaultHook: func(context.Context, int, chan types.MonikerLocations) error {
 				return nil
 			},
 		},
 		WriteDocumentsFunc: &StoreWriteDocumentsFunc{
-			defaultHook: func(context.Context, chan persistence.KeyedDocumentData) error {
+			defaultHook: func(context.Context, int, chan persistence.KeyedDocumentData) error {
 				return nil
 			},
 		},
 		WriteMetaFunc: &StoreWriteMetaFunc{
-			defaultHook: func(context.Context, types.MetaData) error {
+			defaultHook: func(context.Context, int, types.MetaData) error {
 				return nil
 			},
 		},
 		WriteReferencesFunc: &StoreWriteReferencesFunc{
-			defaultHook: func(context.Context, chan types.MonikerLocations) error {
+			defaultHook: func(context.Context, int, chan types.MonikerLocations) error {
 				return nil
 			},
 		},
 		WriteResultChunksFunc: &StoreWriteResultChunksFunc{
-			defaultHook: func(context.Context, chan persistence.IndexedResultChunkData) error {
+			defaultHook: func(context.Context, int, chan persistence.IndexedResultChunkData) error {
 				return nil
 			},
 		},
@@ -278,24 +278,24 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 // StorePathsWithPrefixFunc describes the behavior when the PathsWithPrefix
 // method of the parent MockStore instance is invoked.
 type StorePathsWithPrefixFunc struct {
-	defaultHook func(context.Context, string) ([]string, error)
-	hooks       []func(context.Context, string) ([]string, error)
+	defaultHook func(context.Context, int, string) ([]string, error)
+	hooks       []func(context.Context, int, string) ([]string, error)
 	history     []StorePathsWithPrefixFuncCall
 	mutex       sync.Mutex
 }
 
 // PathsWithPrefix delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) PathsWithPrefix(v0 context.Context, v1 string) ([]string, error) {
-	r0, r1 := m.PathsWithPrefixFunc.nextHook()(v0, v1)
-	m.PathsWithPrefixFunc.appendCall(StorePathsWithPrefixFuncCall{v0, v1, r0, r1})
+func (m *MockStore) PathsWithPrefix(v0 context.Context, v1 int, v2 string) ([]string, error) {
+	r0, r1 := m.PathsWithPrefixFunc.nextHook()(v0, v1, v2)
+	m.PathsWithPrefixFunc.appendCall(StorePathsWithPrefixFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the PathsWithPrefix
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StorePathsWithPrefixFunc) SetDefaultHook(hook func(context.Context, string) ([]string, error)) {
+func (f *StorePathsWithPrefixFunc) SetDefaultHook(hook func(context.Context, int, string) ([]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -303,7 +303,7 @@ func (f *StorePathsWithPrefixFunc) SetDefaultHook(hook func(context.Context, str
 // PathsWithPrefix method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StorePathsWithPrefixFunc) PushHook(hook func(context.Context, string) ([]string, error)) {
+func (f *StorePathsWithPrefixFunc) PushHook(hook func(context.Context, int, string) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -312,7 +312,7 @@ func (f *StorePathsWithPrefixFunc) PushHook(hook func(context.Context, string) (
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StorePathsWithPrefixFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) ([]string, error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]string, error) {
 		return r0, r1
 	})
 }
@@ -320,12 +320,12 @@ func (f *StorePathsWithPrefixFunc) SetDefaultReturn(r0 []string, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StorePathsWithPrefixFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, string) ([]string, error) {
+	f.PushHook(func(context.Context, int, string) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *StorePathsWithPrefixFunc) nextHook() func(context.Context, string) ([]string, error) {
+func (f *StorePathsWithPrefixFunc) nextHook() func(context.Context, int, string) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -363,7 +363,10 @@ type StorePathsWithPrefixFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
@@ -375,7 +378,7 @@ type StorePathsWithPrefixFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StorePathsWithPrefixFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -387,24 +390,24 @@ func (c StorePathsWithPrefixFuncCall) Results() []interface{} {
 // StoreReadDefinitionsFunc describes the behavior when the ReadDefinitions
 // method of the parent MockStore instance is invoked.
 type StoreReadDefinitionsFunc struct {
-	defaultHook func(context.Context, string, string, int, int) ([]types.Location, int, error)
-	hooks       []func(context.Context, string, string, int, int) ([]types.Location, int, error)
+	defaultHook func(context.Context, int, string, string, int, int) ([]types.Location, int, error)
+	hooks       []func(context.Context, int, string, string, int, int) ([]types.Location, int, error)
 	history     []StoreReadDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ReadDefinitions(v0 context.Context, v1 string, v2 string, v3 int, v4 int) ([]types.Location, int, error) {
-	r0, r1, r2 := m.ReadDefinitionsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReadDefinitionsFunc.appendCall(StoreReadDefinitionsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockStore) ReadDefinitions(v0 context.Context, v1 int, v2 string, v3 string, v4 int, v5 int) ([]types.Location, int, error) {
+	r0, r1, r2 := m.ReadDefinitionsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReadDefinitionsFunc.appendCall(StoreReadDefinitionsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ReadDefinitions
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreReadDefinitionsFunc) SetDefaultHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
+func (f *StoreReadDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, string, string, int, int) ([]types.Location, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -412,7 +415,7 @@ func (f *StoreReadDefinitionsFunc) SetDefaultHook(hook func(context.Context, str
 // ReadDefinitions method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreReadDefinitionsFunc) PushHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
+func (f *StoreReadDefinitionsFunc) PushHook(hook func(context.Context, int, string, string, int, int) ([]types.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -421,7 +424,7 @@ func (f *StoreReadDefinitionsFunc) PushHook(hook func(context.Context, string, s
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreReadDefinitionsFunc) SetDefaultReturn(r0 []types.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
@@ -429,12 +432,12 @@ func (f *StoreReadDefinitionsFunc) SetDefaultReturn(r0 []types.Location, r1 int,
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreReadDefinitionsFunc) PushReturn(r0 []types.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+	f.PushHook(func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreReadDefinitionsFunc) nextHook() func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+func (f *StoreReadDefinitionsFunc) nextHook() func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -472,16 +475,19 @@ type StoreReadDefinitionsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int
+	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Location
@@ -496,7 +502,7 @@ type StoreReadDefinitionsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreReadDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
@@ -508,23 +514,23 @@ func (c StoreReadDefinitionsFuncCall) Results() []interface{} {
 // StoreReadDocumentFunc describes the behavior when the ReadDocument method
 // of the parent MockStore instance is invoked.
 type StoreReadDocumentFunc struct {
-	defaultHook func(context.Context, string) (types.DocumentData, bool, error)
-	hooks       []func(context.Context, string) (types.DocumentData, bool, error)
+	defaultHook func(context.Context, int, string) (types.DocumentData, bool, error)
+	hooks       []func(context.Context, int, string) (types.DocumentData, bool, error)
 	history     []StoreReadDocumentFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadDocument delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) ReadDocument(v0 context.Context, v1 string) (types.DocumentData, bool, error) {
-	r0, r1, r2 := m.ReadDocumentFunc.nextHook()(v0, v1)
-	m.ReadDocumentFunc.appendCall(StoreReadDocumentFuncCall{v0, v1, r0, r1, r2})
+func (m *MockStore) ReadDocument(v0 context.Context, v1 int, v2 string) (types.DocumentData, bool, error) {
+	r0, r1, r2 := m.ReadDocumentFunc.nextHook()(v0, v1, v2)
+	m.ReadDocumentFunc.appendCall(StoreReadDocumentFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ReadDocument method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreReadDocumentFunc) SetDefaultHook(hook func(context.Context, string) (types.DocumentData, bool, error)) {
+func (f *StoreReadDocumentFunc) SetDefaultHook(hook func(context.Context, int, string) (types.DocumentData, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -532,7 +538,7 @@ func (f *StoreReadDocumentFunc) SetDefaultHook(hook func(context.Context, string
 // ReadDocument method of the parent MockStore instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreReadDocumentFunc) PushHook(hook func(context.Context, string) (types.DocumentData, bool, error)) {
+func (f *StoreReadDocumentFunc) PushHook(hook func(context.Context, int, string) (types.DocumentData, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -541,7 +547,7 @@ func (f *StoreReadDocumentFunc) PushHook(hook func(context.Context, string) (typ
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreReadDocumentFunc) SetDefaultReturn(r0 types.DocumentData, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, string) (types.DocumentData, bool, error) {
+	f.SetDefaultHook(func(context.Context, int, string) (types.DocumentData, bool, error) {
 		return r0, r1, r2
 	})
 }
@@ -549,12 +555,12 @@ func (f *StoreReadDocumentFunc) SetDefaultReturn(r0 types.DocumentData, r1 bool,
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreReadDocumentFunc) PushReturn(r0 types.DocumentData, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, string) (types.DocumentData, bool, error) {
+	f.PushHook(func(context.Context, int, string) (types.DocumentData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreReadDocumentFunc) nextHook() func(context.Context, string) (types.DocumentData, bool, error) {
+func (f *StoreReadDocumentFunc) nextHook() func(context.Context, int, string) (types.DocumentData, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -592,7 +598,10 @@ type StoreReadDocumentFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 types.DocumentData
@@ -607,7 +616,7 @@ type StoreReadDocumentFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreReadDocumentFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -619,23 +628,23 @@ func (c StoreReadDocumentFuncCall) Results() []interface{} {
 // StoreReadMetaFunc describes the behavior when the ReadMeta method of the
 // parent MockStore instance is invoked.
 type StoreReadMetaFunc struct {
-	defaultHook func(context.Context) (types.MetaData, error)
-	hooks       []func(context.Context) (types.MetaData, error)
+	defaultHook func(context.Context, int) (types.MetaData, error)
+	hooks       []func(context.Context, int) (types.MetaData, error)
 	history     []StoreReadMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) ReadMeta(v0 context.Context) (types.MetaData, error) {
-	r0, r1 := m.ReadMetaFunc.nextHook()(v0)
-	m.ReadMetaFunc.appendCall(StoreReadMetaFuncCall{v0, r0, r1})
+func (m *MockStore) ReadMeta(v0 context.Context, v1 int) (types.MetaData, error) {
+	r0, r1 := m.ReadMetaFunc.nextHook()(v0, v1)
+	m.ReadMetaFunc.appendCall(StoreReadMetaFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ReadMeta method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.MetaData, error)) {
+func (f *StoreReadMetaFunc) SetDefaultHook(hook func(context.Context, int) (types.MetaData, error)) {
 	f.defaultHook = hook
 }
 
@@ -643,7 +652,7 @@ func (f *StoreReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.Met
 // ReadMeta method of the parent MockStore instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData, error)) {
+func (f *StoreReadMetaFunc) PushHook(hook func(context.Context, int) (types.MetaData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -652,7 +661,7 @@ func (f *StoreReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreReadMetaFunc) SetDefaultReturn(r0 types.MetaData, r1 error) {
-	f.SetDefaultHook(func(context.Context) (types.MetaData, error) {
+	f.SetDefaultHook(func(context.Context, int) (types.MetaData, error) {
 		return r0, r1
 	})
 }
@@ -660,12 +669,12 @@ func (f *StoreReadMetaFunc) SetDefaultReturn(r0 types.MetaData, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreReadMetaFunc) PushReturn(r0 types.MetaData, r1 error) {
-	f.PushHook(func(context.Context) (types.MetaData, error) {
+	f.PushHook(func(context.Context, int) (types.MetaData, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreReadMetaFunc) nextHook() func(context.Context) (types.MetaData, error) {
+func (f *StoreReadMetaFunc) nextHook() func(context.Context, int) (types.MetaData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -701,6 +710,9 @@ type StoreReadMetaFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 types.MetaData
@@ -712,7 +724,7 @@ type StoreReadMetaFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreReadMetaFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -724,24 +736,24 @@ func (c StoreReadMetaFuncCall) Results() []interface{} {
 // StoreReadReferencesFunc describes the behavior when the ReadReferences
 // method of the parent MockStore instance is invoked.
 type StoreReadReferencesFunc struct {
-	defaultHook func(context.Context, string, string, int, int) ([]types.Location, int, error)
-	hooks       []func(context.Context, string, string, int, int) ([]types.Location, int, error)
+	defaultHook func(context.Context, int, string, string, int, int) ([]types.Location, int, error)
+	hooks       []func(context.Context, int, string, string, int, int) ([]types.Location, int, error)
 	history     []StoreReadReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadReferences delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ReadReferences(v0 context.Context, v1 string, v2 string, v3 int, v4 int) ([]types.Location, int, error) {
-	r0, r1, r2 := m.ReadReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReadReferencesFunc.appendCall(StoreReadReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockStore) ReadReferences(v0 context.Context, v1 int, v2 string, v3 string, v4 int, v5 int) ([]types.Location, int, error) {
+	r0, r1, r2 := m.ReadReferencesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReadReferencesFunc.appendCall(StoreReadReferencesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ReadReferences
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreReadReferencesFunc) SetDefaultHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
+func (f *StoreReadReferencesFunc) SetDefaultHook(hook func(context.Context, int, string, string, int, int) ([]types.Location, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -749,7 +761,7 @@ func (f *StoreReadReferencesFunc) SetDefaultHook(hook func(context.Context, stri
 // ReadReferences method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreReadReferencesFunc) PushHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
+func (f *StoreReadReferencesFunc) PushHook(hook func(context.Context, int, string, string, int, int) ([]types.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -758,7 +770,7 @@ func (f *StoreReadReferencesFunc) PushHook(hook func(context.Context, string, st
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreReadReferencesFunc) SetDefaultReturn(r0 []types.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
@@ -766,12 +778,12 @@ func (f *StoreReadReferencesFunc) SetDefaultReturn(r0 []types.Location, r1 int, 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreReadReferencesFunc) PushReturn(r0 []types.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+	f.PushHook(func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreReadReferencesFunc) nextHook() func(context.Context, string, string, int, int) ([]types.Location, int, error) {
+func (f *StoreReadReferencesFunc) nextHook() func(context.Context, int, string, string, int, int) ([]types.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -809,16 +821,19 @@ type StoreReadReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int
+	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Location
@@ -833,7 +848,7 @@ type StoreReadReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreReadReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
@@ -845,24 +860,24 @@ func (c StoreReadReferencesFuncCall) Results() []interface{} {
 // StoreReadResultChunkFunc describes the behavior when the ReadResultChunk
 // method of the parent MockStore instance is invoked.
 type StoreReadResultChunkFunc struct {
-	defaultHook func(context.Context, int) (types.ResultChunkData, bool, error)
-	hooks       []func(context.Context, int) (types.ResultChunkData, bool, error)
+	defaultHook func(context.Context, int, int) (types.ResultChunkData, bool, error)
+	hooks       []func(context.Context, int, int) (types.ResultChunkData, bool, error)
 	history     []StoreReadResultChunkFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadResultChunk delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ReadResultChunk(v0 context.Context, v1 int) (types.ResultChunkData, bool, error) {
-	r0, r1, r2 := m.ReadResultChunkFunc.nextHook()(v0, v1)
-	m.ReadResultChunkFunc.appendCall(StoreReadResultChunkFuncCall{v0, v1, r0, r1, r2})
+func (m *MockStore) ReadResultChunk(v0 context.Context, v1 int, v2 int) (types.ResultChunkData, bool, error) {
+	r0, r1, r2 := m.ReadResultChunkFunc.nextHook()(v0, v1, v2)
+	m.ReadResultChunkFunc.appendCall(StoreReadResultChunkFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ReadResultChunk
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreReadResultChunkFunc) SetDefaultHook(hook func(context.Context, int) (types.ResultChunkData, bool, error)) {
+func (f *StoreReadResultChunkFunc) SetDefaultHook(hook func(context.Context, int, int) (types.ResultChunkData, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -870,7 +885,7 @@ func (f *StoreReadResultChunkFunc) SetDefaultHook(hook func(context.Context, int
 // ReadResultChunk method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreReadResultChunkFunc) PushHook(hook func(context.Context, int) (types.ResultChunkData, bool, error)) {
+func (f *StoreReadResultChunkFunc) PushHook(hook func(context.Context, int, int) (types.ResultChunkData, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -879,7 +894,7 @@ func (f *StoreReadResultChunkFunc) PushHook(hook func(context.Context, int) (typ
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreReadResultChunkFunc) SetDefaultReturn(r0 types.ResultChunkData, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types.ResultChunkData, bool, error) {
+	f.SetDefaultHook(func(context.Context, int, int) (types.ResultChunkData, bool, error) {
 		return r0, r1, r2
 	})
 }
@@ -887,12 +902,12 @@ func (f *StoreReadResultChunkFunc) SetDefaultReturn(r0 types.ResultChunkData, r1
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreReadResultChunkFunc) PushReturn(r0 types.ResultChunkData, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types.ResultChunkData, bool, error) {
+	f.PushHook(func(context.Context, int, int) (types.ResultChunkData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreReadResultChunkFunc) nextHook() func(context.Context, int) (types.ResultChunkData, bool, error) {
+func (f *StoreReadResultChunkFunc) nextHook() func(context.Context, int, int) (types.ResultChunkData, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -931,6 +946,9 @@ type StoreReadResultChunkFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 types.ResultChunkData
@@ -945,7 +963,7 @@ type StoreReadResultChunkFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreReadResultChunkFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1062,24 +1080,24 @@ func (c StoreTransactFuncCall) Results() []interface{} {
 // StoreWriteDefinitionsFunc describes the behavior when the
 // WriteDefinitions method of the parent MockStore instance is invoked.
 type StoreWriteDefinitionsFunc struct {
-	defaultHook func(context.Context, chan types.MonikerLocations) error
-	hooks       []func(context.Context, chan types.MonikerLocations) error
+	defaultHook func(context.Context, int, chan types.MonikerLocations) error
+	hooks       []func(context.Context, int, chan types.MonikerLocations) error
 	history     []StoreWriteDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) WriteDefinitions(v0 context.Context, v1 chan types.MonikerLocations) error {
-	r0 := m.WriteDefinitionsFunc.nextHook()(v0, v1)
-	m.WriteDefinitionsFunc.appendCall(StoreWriteDefinitionsFuncCall{v0, v1, r0})
+func (m *MockStore) WriteDefinitions(v0 context.Context, v1 int, v2 chan types.MonikerLocations) error {
+	r0 := m.WriteDefinitionsFunc.nextHook()(v0, v1, v2)
+	m.WriteDefinitionsFunc.appendCall(StoreWriteDefinitionsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WriteDefinitions
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, chan types.MonikerLocations) error) {
+func (f *StoreWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, chan types.MonikerLocations) error) {
 	f.defaultHook = hook
 }
 
@@ -1087,7 +1105,7 @@ func (f *StoreWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, ch
 // WriteDefinitions method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreWriteDefinitionsFunc) PushHook(hook func(context.Context, chan types.MonikerLocations) error) {
+func (f *StoreWriteDefinitionsFunc) PushHook(hook func(context.Context, int, chan types.MonikerLocations) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1096,7 +1114,7 @@ func (f *StoreWriteDefinitionsFunc) PushHook(hook func(context.Context, chan typ
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreWriteDefinitionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, chan types.MonikerLocations) error {
+	f.SetDefaultHook(func(context.Context, int, chan types.MonikerLocations) error {
 		return r0
 	})
 }
@@ -1104,12 +1122,12 @@ func (f *StoreWriteDefinitionsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreWriteDefinitionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, chan types.MonikerLocations) error {
+	f.PushHook(func(context.Context, int, chan types.MonikerLocations) error {
 		return r0
 	})
 }
 
-func (f *StoreWriteDefinitionsFunc) nextHook() func(context.Context, chan types.MonikerLocations) error {
+func (f *StoreWriteDefinitionsFunc) nextHook() func(context.Context, int, chan types.MonikerLocations) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1147,7 +1165,10 @@ type StoreWriteDefinitionsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 chan types.MonikerLocations
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan types.MonikerLocations
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1156,7 +1177,7 @@ type StoreWriteDefinitionsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreWriteDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1168,24 +1189,24 @@ func (c StoreWriteDefinitionsFuncCall) Results() []interface{} {
 // StoreWriteDocumentsFunc describes the behavior when the WriteDocuments
 // method of the parent MockStore instance is invoked.
 type StoreWriteDocumentsFunc struct {
-	defaultHook func(context.Context, chan persistence.KeyedDocumentData) error
-	hooks       []func(context.Context, chan persistence.KeyedDocumentData) error
+	defaultHook func(context.Context, int, chan persistence.KeyedDocumentData) error
+	hooks       []func(context.Context, int, chan persistence.KeyedDocumentData) error
 	history     []StoreWriteDocumentsFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDocuments delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) WriteDocuments(v0 context.Context, v1 chan persistence.KeyedDocumentData) error {
-	r0 := m.WriteDocumentsFunc.nextHook()(v0, v1)
-	m.WriteDocumentsFunc.appendCall(StoreWriteDocumentsFuncCall{v0, v1, r0})
+func (m *MockStore) WriteDocuments(v0 context.Context, v1 int, v2 chan persistence.KeyedDocumentData) error {
+	r0 := m.WriteDocumentsFunc.nextHook()(v0, v1, v2)
+	m.WriteDocumentsFunc.appendCall(StoreWriteDocumentsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WriteDocuments
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreWriteDocumentsFunc) SetDefaultHook(hook func(context.Context, chan persistence.KeyedDocumentData) error) {
+func (f *StoreWriteDocumentsFunc) SetDefaultHook(hook func(context.Context, int, chan persistence.KeyedDocumentData) error) {
 	f.defaultHook = hook
 }
 
@@ -1193,7 +1214,7 @@ func (f *StoreWriteDocumentsFunc) SetDefaultHook(hook func(context.Context, chan
 // WriteDocuments method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreWriteDocumentsFunc) PushHook(hook func(context.Context, chan persistence.KeyedDocumentData) error) {
+func (f *StoreWriteDocumentsFunc) PushHook(hook func(context.Context, int, chan persistence.KeyedDocumentData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1202,7 +1223,7 @@ func (f *StoreWriteDocumentsFunc) PushHook(hook func(context.Context, chan persi
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreWriteDocumentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, chan persistence.KeyedDocumentData) error {
+	f.SetDefaultHook(func(context.Context, int, chan persistence.KeyedDocumentData) error {
 		return r0
 	})
 }
@@ -1210,12 +1231,12 @@ func (f *StoreWriteDocumentsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreWriteDocumentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, chan persistence.KeyedDocumentData) error {
+	f.PushHook(func(context.Context, int, chan persistence.KeyedDocumentData) error {
 		return r0
 	})
 }
 
-func (f *StoreWriteDocumentsFunc) nextHook() func(context.Context, chan persistence.KeyedDocumentData) error {
+func (f *StoreWriteDocumentsFunc) nextHook() func(context.Context, int, chan persistence.KeyedDocumentData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1253,7 +1274,10 @@ type StoreWriteDocumentsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 chan persistence.KeyedDocumentData
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan persistence.KeyedDocumentData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1262,7 +1286,7 @@ type StoreWriteDocumentsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreWriteDocumentsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1274,23 +1298,23 @@ func (c StoreWriteDocumentsFuncCall) Results() []interface{} {
 // StoreWriteMetaFunc describes the behavior when the WriteMeta method of
 // the parent MockStore instance is invoked.
 type StoreWriteMetaFunc struct {
-	defaultHook func(context.Context, types.MetaData) error
-	hooks       []func(context.Context, types.MetaData) error
+	defaultHook func(context.Context, int, types.MetaData) error
+	hooks       []func(context.Context, int, types.MetaData) error
 	history     []StoreWriteMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) WriteMeta(v0 context.Context, v1 types.MetaData) error {
-	r0 := m.WriteMetaFunc.nextHook()(v0, v1)
-	m.WriteMetaFunc.appendCall(StoreWriteMetaFuncCall{v0, v1, r0})
+func (m *MockStore) WriteMeta(v0 context.Context, v1 int, v2 types.MetaData) error {
+	r0 := m.WriteMetaFunc.nextHook()(v0, v1, v2)
+	m.WriteMetaFunc.appendCall(StoreWriteMetaFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WriteMeta method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreWriteMetaFunc) SetDefaultHook(hook func(context.Context, types.MetaData) error) {
+func (f *StoreWriteMetaFunc) SetDefaultHook(hook func(context.Context, int, types.MetaData) error) {
 	f.defaultHook = hook
 }
 
@@ -1298,7 +1322,7 @@ func (f *StoreWriteMetaFunc) SetDefaultHook(hook func(context.Context, types.Met
 // WriteMeta method of the parent MockStore instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreWriteMetaFunc) PushHook(hook func(context.Context, types.MetaData) error) {
+func (f *StoreWriteMetaFunc) PushHook(hook func(context.Context, int, types.MetaData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1307,7 +1331,7 @@ func (f *StoreWriteMetaFunc) PushHook(hook func(context.Context, types.MetaData)
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreWriteMetaFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, types.MetaData) error {
+	f.SetDefaultHook(func(context.Context, int, types.MetaData) error {
 		return r0
 	})
 }
@@ -1315,12 +1339,12 @@ func (f *StoreWriteMetaFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreWriteMetaFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, types.MetaData) error {
+	f.PushHook(func(context.Context, int, types.MetaData) error {
 		return r0
 	})
 }
 
-func (f *StoreWriteMetaFunc) nextHook() func(context.Context, types.MetaData) error {
+func (f *StoreWriteMetaFunc) nextHook() func(context.Context, int, types.MetaData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1358,7 +1382,10 @@ type StoreWriteMetaFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.MetaData
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 types.MetaData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1367,7 +1394,7 @@ type StoreWriteMetaFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreWriteMetaFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1379,24 +1406,24 @@ func (c StoreWriteMetaFuncCall) Results() []interface{} {
 // StoreWriteReferencesFunc describes the behavior when the WriteReferences
 // method of the parent MockStore instance is invoked.
 type StoreWriteReferencesFunc struct {
-	defaultHook func(context.Context, chan types.MonikerLocations) error
-	hooks       []func(context.Context, chan types.MonikerLocations) error
+	defaultHook func(context.Context, int, chan types.MonikerLocations) error
+	hooks       []func(context.Context, int, chan types.MonikerLocations) error
 	history     []StoreWriteReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteReferences delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) WriteReferences(v0 context.Context, v1 chan types.MonikerLocations) error {
-	r0 := m.WriteReferencesFunc.nextHook()(v0, v1)
-	m.WriteReferencesFunc.appendCall(StoreWriteReferencesFuncCall{v0, v1, r0})
+func (m *MockStore) WriteReferences(v0 context.Context, v1 int, v2 chan types.MonikerLocations) error {
+	r0 := m.WriteReferencesFunc.nextHook()(v0, v1, v2)
+	m.WriteReferencesFunc.appendCall(StoreWriteReferencesFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WriteReferences
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreWriteReferencesFunc) SetDefaultHook(hook func(context.Context, chan types.MonikerLocations) error) {
+func (f *StoreWriteReferencesFunc) SetDefaultHook(hook func(context.Context, int, chan types.MonikerLocations) error) {
 	f.defaultHook = hook
 }
 
@@ -1404,7 +1431,7 @@ func (f *StoreWriteReferencesFunc) SetDefaultHook(hook func(context.Context, cha
 // WriteReferences method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreWriteReferencesFunc) PushHook(hook func(context.Context, chan types.MonikerLocations) error) {
+func (f *StoreWriteReferencesFunc) PushHook(hook func(context.Context, int, chan types.MonikerLocations) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1413,7 +1440,7 @@ func (f *StoreWriteReferencesFunc) PushHook(hook func(context.Context, chan type
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreWriteReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, chan types.MonikerLocations) error {
+	f.SetDefaultHook(func(context.Context, int, chan types.MonikerLocations) error {
 		return r0
 	})
 }
@@ -1421,12 +1448,12 @@ func (f *StoreWriteReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreWriteReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, chan types.MonikerLocations) error {
+	f.PushHook(func(context.Context, int, chan types.MonikerLocations) error {
 		return r0
 	})
 }
 
-func (f *StoreWriteReferencesFunc) nextHook() func(context.Context, chan types.MonikerLocations) error {
+func (f *StoreWriteReferencesFunc) nextHook() func(context.Context, int, chan types.MonikerLocations) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1464,7 +1491,10 @@ type StoreWriteReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 chan types.MonikerLocations
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan types.MonikerLocations
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1473,7 +1503,7 @@ type StoreWriteReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreWriteReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1485,24 +1515,24 @@ func (c StoreWriteReferencesFuncCall) Results() []interface{} {
 // StoreWriteResultChunksFunc describes the behavior when the
 // WriteResultChunks method of the parent MockStore instance is invoked.
 type StoreWriteResultChunksFunc struct {
-	defaultHook func(context.Context, chan persistence.IndexedResultChunkData) error
-	hooks       []func(context.Context, chan persistence.IndexedResultChunkData) error
+	defaultHook func(context.Context, int, chan persistence.IndexedResultChunkData) error
+	hooks       []func(context.Context, int, chan persistence.IndexedResultChunkData) error
 	history     []StoreWriteResultChunksFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteResultChunks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) WriteResultChunks(v0 context.Context, v1 chan persistence.IndexedResultChunkData) error {
-	r0 := m.WriteResultChunksFunc.nextHook()(v0, v1)
-	m.WriteResultChunksFunc.appendCall(StoreWriteResultChunksFuncCall{v0, v1, r0})
+func (m *MockStore) WriteResultChunks(v0 context.Context, v1 int, v2 chan persistence.IndexedResultChunkData) error {
+	r0 := m.WriteResultChunksFunc.nextHook()(v0, v1, v2)
+	m.WriteResultChunksFunc.appendCall(StoreWriteResultChunksFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WriteResultChunks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreWriteResultChunksFunc) SetDefaultHook(hook func(context.Context, chan persistence.IndexedResultChunkData) error) {
+func (f *StoreWriteResultChunksFunc) SetDefaultHook(hook func(context.Context, int, chan persistence.IndexedResultChunkData) error) {
 	f.defaultHook = hook
 }
 
@@ -1510,7 +1540,7 @@ func (f *StoreWriteResultChunksFunc) SetDefaultHook(hook func(context.Context, c
 // WriteResultChunks method of the parent MockStore instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreWriteResultChunksFunc) PushHook(hook func(context.Context, chan persistence.IndexedResultChunkData) error) {
+func (f *StoreWriteResultChunksFunc) PushHook(hook func(context.Context, int, chan persistence.IndexedResultChunkData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1519,7 +1549,7 @@ func (f *StoreWriteResultChunksFunc) PushHook(hook func(context.Context, chan pe
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreWriteResultChunksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, chan persistence.IndexedResultChunkData) error {
+	f.SetDefaultHook(func(context.Context, int, chan persistence.IndexedResultChunkData) error {
 		return r0
 	})
 }
@@ -1527,12 +1557,12 @@ func (f *StoreWriteResultChunksFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreWriteResultChunksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, chan persistence.IndexedResultChunkData) error {
+	f.PushHook(func(context.Context, int, chan persistence.IndexedResultChunkData) error {
 		return r0
 	})
 }
 
-func (f *StoreWriteResultChunksFunc) nextHook() func(context.Context, chan persistence.IndexedResultChunkData) error {
+func (f *StoreWriteResultChunksFunc) nextHook() func(context.Context, int, chan persistence.IndexedResultChunkData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1570,7 +1600,10 @@ type StoreWriteResultChunksFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 chan persistence.IndexedResultChunkData
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan persistence.IndexedResultChunkData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1579,7 +1612,7 @@ type StoreWriteResultChunksFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreWriteResultChunksFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

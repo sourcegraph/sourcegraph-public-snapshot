@@ -50,7 +50,7 @@ type Database interface {
 }
 
 type databaseImpl struct {
-	filename        string
+	bundleID        int
 	store           persistence.Store // bundle store
 	numResultChunks int               // numResultChunks value from meta row
 }
@@ -77,14 +77,14 @@ type DocumentPathRangeID struct {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, store persistence.Store) (Database, error) {
-	meta, err := store.ReadMeta(ctx)
+func OpenDatabase(ctx context.Context, bundleID int, store persistence.Store) (Database, error) {
+	meta, err := store.ReadMeta(ctx, bundleID)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "store.ReadMeta")
 	}
 
 	return &databaseImpl{
-		filename:        filename,
+		bundleID:        bundleID,
 		store:           store,
 		numResultChunks: meta.NumResultChunks,
 	}, nil
@@ -296,7 +296,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 		for _, monikerID := range r.MonikerIDs {
 			moniker, exists := documentData.Monikers[monikerID]
 			if !exists {
-				log15.Warn("malformed bundle: unknown moniker", "filename", db.filename, "path", path, "id", monikerID)
+				log15.Warn("malformed bundle: unknown moniker", "bundleID", db.bundleID, "path", path, "id", monikerID)
 				continue
 			}
 
@@ -318,7 +318,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
 func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (_ []bundles.Location, _ int, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "MonikerResults")
-	span.SetTag("filename", db.filename)
+	span.SetTag("bundleID", db.bundleID)
 	span.SetTag("tableName", tableName)
 	span.SetTag("scheme", scheme)
 	span.SetTag("identifier", identifier)
@@ -333,11 +333,11 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 	var rows []types.Location
 	var totalCount int
 	if tableName == "definitions" {
-		if rows, totalCount, err = db.store.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
+		if rows, totalCount, err = db.store.ReadDefinitions(ctx, db.bundleID, scheme, identifier, skip, take); err != nil {
 			err = pkgerrors.Wrap(err, "store.ReadDefinitions")
 		}
 	} else if tableName == "references" {
-		if rows, totalCount, err = db.store.ReadReferences(ctx, scheme, identifier, skip, take); err != nil {
+		if rows, totalCount, err = db.store.ReadReferences(ctx, db.bundleID, scheme, identifier, skip, take); err != nil {
 			err = pkgerrors.Wrap(err, "store.ReadReferences")
 		}
 	}
@@ -386,7 +386,7 @@ func (db *databaseImpl) hover(ctx context.Context, path string, documentData typ
 
 	text, exists := documentData.HoverResults[r.HoverResultID]
 	if !exists {
-		log15.Warn("malformed bundle: unknown hover result", "filename", db.filename, "path", path, "id", r.HoverResultID)
+		log15.Warn("malformed bundle: unknown hover result", "bundleID", db.bundleID, "path", path, "id", r.HoverResultID)
 		return "", false, nil
 	}
 
@@ -395,7 +395,7 @@ func (db *databaseImpl) hover(ctx context.Context, path string, documentData typ
 
 func (db *databaseImpl) getPathsWithPrefix(ctx context.Context, prefix string) (_ []string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "getPathsWithPrefix")
-	span.SetTag("filename", db.filename)
+	span.SetTag("bundleID", db.bundleID)
 	span.SetTag("prefix", prefix)
 	defer func() {
 		if err != nil {
@@ -405,13 +405,13 @@ func (db *databaseImpl) getPathsWithPrefix(ctx context.Context, prefix string) (
 		span.Finish()
 	}()
 
-	return db.store.PathsWithPrefix(ctx, prefix)
+	return db.store.PathsWithPrefix(ctx, db.bundleID, prefix)
 }
 
 // getDocumentData fetches and unmarshals the document data or the given path.
 func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ types.DocumentData, _ bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "getDocumentData")
-	span.SetTag("filename", db.filename)
+	span.SetTag("bundleID", db.bundleID)
 	span.SetTag("path", path)
 	defer func() {
 		if err != nil {
@@ -421,7 +421,7 @@ func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ typ
 		span.Finish()
 	}()
 
-	documentData, ok, err := db.store.ReadDocument(ctx, path)
+	documentData, ok, err := db.store.ReadDocument(ctx, db.bundleID, path)
 	if err != nil {
 		return types.DocumentData{}, false, pkgerrors.Wrap(err, "store.ReadDocument")
 	}
@@ -471,7 +471,7 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 			return nil, pkgerrors.Wrap(err, "db.getResultChunkByID")
 		}
 		if !exists {
-			log15.Warn("malformed bundle: unknown result chunk", "filename", db.filename, "index", index)
+			log15.Warn("malformed bundle: unknown result chunk", "bundleID", db.bundleID, "index", index)
 			continue
 		}
 
@@ -486,7 +486,7 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 
 		documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
 		if !exists {
-			log15.Warn("malformed bundle: unknown result", "filename", db.filename, "index", index, "id", id)
+			log15.Warn("malformed bundle: unknown result", "bundleID", db.bundleID, "index", index, "id", id)
 			continue
 		}
 
@@ -494,7 +494,7 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 		for _, documentIDRangeID := range documentIDRangeIDs {
 			path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]
 			if !ok {
-				log15.Warn("malformed bundle: unknown document path", "filename", db.filename, "index", index, "id", documentIDRangeID.DocumentID)
+				log15.Warn("malformed bundle: unknown document path", "bundleID", db.bundleID, "index", index, "id", documentIDRangeID.DocumentID)
 				continue
 			}
 
@@ -513,7 +513,7 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 // getResultChunkByID fetches and unmarshals the result chunk data with the given identifier.
 func (db *databaseImpl) getResultChunkByID(ctx context.Context, id int) (_ types.ResultChunkData, _ bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByID")
-	span.SetTag("filename", db.filename)
+	span.SetTag("bundleID", db.bundleID)
 	span.SetTag("id", id)
 	defer func() {
 		if err != nil {
@@ -523,7 +523,7 @@ func (db *databaseImpl) getResultChunkByID(ctx context.Context, id int) (_ types
 		span.Finish()
 	}()
 
-	resultChunkData, ok, err := db.store.ReadResultChunk(ctx, id)
+	resultChunkData, ok, err := db.store.ReadResultChunk(ctx, db.bundleID, id)
 	if err != nil {
 		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "store.ReadResultChunk")
 	}
@@ -556,7 +556,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, pairs map[
 		}
 
 		if !exists {
-			log15.Warn("malformed bundle: unknown document", "filename", db.filename, "path", path)
+			log15.Warn("malformed bundle: unknown document", "bundleID", db.bundleID, "path", path)
 			continue
 		}
 
@@ -572,7 +572,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, pairs map[
 
 			r, exists := documents[path].Ranges[rangeID]
 			if !exists {
-				log15.Warn("malformed bundle: unknown range", "filename", db.filename, "path", path, "id", id)
+				log15.Warn("malformed bundle: unknown range", "bundleID", db.bundleID, "path", path, "id", id)
 				continue
 			}
 

@@ -204,19 +204,19 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 		err = store.Done(err)
 	}()
 
-	if err := store.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
+	if err := store.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := store.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
+	if err := store.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := store.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
+	if err := store.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "writer.WriteResultChunks")
 	}
-	if err := store.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
+	if err := store.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := store.WriteReferences(ctx, groupedBundleData.References); err != nil {
+	if err := store.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
 
