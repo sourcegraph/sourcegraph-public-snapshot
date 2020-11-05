@@ -68,7 +68,7 @@ func addLint(pipeline *bk.Pipeline) {
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
-	pipeline.AddStep(":eslint:", // TODO: Add header - What does this lint?
+	pipeline.AddStep(":eslint: Lint all Typescript",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:", // TODO: Add header - Similar to the previous step
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
