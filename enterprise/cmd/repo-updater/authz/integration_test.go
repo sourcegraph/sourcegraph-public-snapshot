@@ -64,7 +64,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	token := os.Getenv("GITHUB_TOKEN")
-	cli := extsvcGitHub.NewClient(uri, &auth.OAuthBearerToken{Token: token}, doer)
+	cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 	testDB := dbtest.NewDB(t, *dsn)
 	ctx := context.Background()
