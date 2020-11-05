@@ -16,12 +16,14 @@ import {
     scan,
     mapTo,
 } from 'rxjs/operators'
+import { workspace } from 'sourcegraph'
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
 import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
@@ -92,7 +94,7 @@ export function getHoverActionsContext(
         platformContext: { urlToFile, requestGraphQL },
     }: {
         getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
-        extensionsController: {
+        extensionsController: Pick<Controller, 'extHostAPI'> & {
             services: {
                 textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
             }
@@ -107,10 +109,15 @@ export function getHoverActionsContext(
         part: hoverContext.part,
     }
 
-    const definitionURLOrError = getDefinition(parameters).pipe(
-        getDefinitionURL({ urlToFile, requestGraphQL }, [/* TODO: workspace roots*/], parameters),
-        catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
-        share()
+    const definitionURLOrError = from(extensionsController.extHostAPI).pipe(
+        switchMap(extensionHostAPI => from(extensionHostAPI.getWorkspaceRoots())),
+        switchMap(workspaceRoots =>
+            getDefinition(parameters).pipe(
+                getDefinitionURL({ urlToFile, requestGraphQL }, workspaceRoots, parameters),
+                catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
+                share()
+            )
+        )
     )
 
     return combineLatest([
@@ -184,8 +191,10 @@ export interface UIDefinitionURL {
 }
 
 /**
- * Returns an RxJS operator that emits null if no definitions are found, {url, multiple: false} if exactly 1
- * definition is found, {url: defPanelURL, multiple: true} if multiple definitions are found, or an error.
+ * Operator that takes an observable of locations and returns an observable that
+ * emits null if no definitions are found, {url, multiple: false} if exactly 1
+ * definition is found, {url: defPanelURL, multiple: true} if multiple
+ * definitions are found, or an error.
  *
  * @internal
  */
@@ -369,10 +378,11 @@ export function registerHoverContributions({
             command: 'goToDefinition',
             run: async (parametersString: string) => {
                 const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(parametersString)
-                const { result } = await from(extensionsController.extHostAPI)
+                const extensionHostAPI = await extensionsController.extHostAPI
+                const workspaceRoots = await extensionHostAPI.getWorkspaceRoots()
+                const { result } = await wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
                     .pipe(
-                        switchMap(api => wrapRemoteObservable(api.getDefinition(parameters))),
-                        getDefinitionURL({ urlToFile, requestGraphQL }, [/* TODO: workspace roots */], parameters),
+                        getDefinitionURL({ urlToFile, requestGraphQL }, workspaceRoots, parameters),
                         first(({ isLoading, result }) => !isLoading || result !== null)
                     )
                     .toPromise()
