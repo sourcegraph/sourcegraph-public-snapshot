@@ -7,14 +7,14 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	apimocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api/mocks"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestQueryResolver(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI() // returns no dumps
 
 	resolver := NewResolver(mockStore, mockBundleStore, mockCodeIntelAPI, nil)

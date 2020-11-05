@@ -10,20 +10,29 @@ import (
 
 // An ObservedStore wraps another Store with error logging, Prometheus metrics, and tracing.
 type ObservedStore struct {
-	store                      Store
-	clearOperation             *observation.Operation
-	readMetaOperation          *observation.Operation
-	pathsWithPrefixOperation   *observation.Operation
-	readDocumentOperation      *observation.Operation
-	readResultChunkOperation   *observation.Operation
-	readDefinitionsOperation   *observation.Operation
-	readReferencesOperation    *observation.Operation
-	doneOperation              *observation.Operation
-	writeMetaOperation         *observation.Operation
-	writeDocumentsOperation    *observation.Operation
-	writeResultChunksOperation *observation.Operation
-	writeDefinitionsOperation  *observation.Operation
-	writeReferencesOperation   *observation.Operation
+	store                       Store
+	existsOperation             *observation.Operation
+	rangesOperation             *observation.Operation
+	definitionsOperation        *observation.Operation
+	referencesOperation         *observation.Operation
+	hoverOperation              *observation.Operation
+	diagnosticsOperation        *observation.Operation
+	monikersByPositionOperation *observation.Operation
+	monikerResultsOperation     *observation.Operation
+	packageInformationOperation *observation.Operation
+	clearOperation              *observation.Operation
+	readMetaOperation           *observation.Operation
+	pathsWithPrefixOperation    *observation.Operation
+	readDocumentOperation       *observation.Operation
+	readResultChunkOperation    *observation.Operation
+	readDefinitionsOperation    *observation.Operation
+	readReferencesOperation     *observation.Operation
+	doneOperation               *observation.Operation
+	writeMetaOperation          *observation.Operation
+	writeDocumentsOperation     *observation.Operation
+	writeResultChunksOperation  *observation.Operation
+	writeDefinitionsOperation   *observation.Operation
+	writeReferencesOperation    *observation.Operation
 }
 
 var _ Store = &ObservedStore{}
@@ -46,6 +55,51 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 
 	return &ObservedStore{
 		store: store,
+		existsOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Exists",
+			MetricLabels: []string{"exists"},
+			Metrics:      metrics,
+		}),
+		rangesOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Ranges",
+			MetricLabels: []string{"ranges"},
+			Metrics:      metrics,
+		}),
+		definitionsOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Definitions",
+			MetricLabels: []string{"definitions"},
+			Metrics:      metrics,
+		}),
+		referencesOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.References",
+			MetricLabels: []string{"references"},
+			Metrics:      metrics,
+		}),
+		hoverOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Hover",
+			MetricLabels: []string{"hover"},
+			Metrics:      metrics,
+		}),
+		diagnosticsOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Diagnostics",
+			MetricLabels: []string{"diagnostics"},
+			Metrics:      metrics,
+		}),
+		monikersByPositionOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.MonikersByPosition",
+			MetricLabels: []string{"monikers_by_position"},
+			Metrics:      metrics,
+		}),
+		monikerResultsOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.MonikerResults",
+			MetricLabels: []string{"moniker_results"},
+			Metrics:      metrics,
+		}),
+		packageInformationOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.PackageInformation",
+			MetricLabels: []string{"package_information"},
+			Metrics:      metrics,
+		}),
 		clearOperation: observationContext.Operation(observation.Op{
 			Name:         "Store.Clear",
 			MetricLabels: []string{"clear"},

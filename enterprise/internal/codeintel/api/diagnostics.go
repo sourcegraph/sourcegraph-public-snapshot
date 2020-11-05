@@ -7,7 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -27,9 +27,9 @@ func (api *codeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadI
 	}
 
 	pathInBundle := strings.TrimPrefix(prefix, dump.Root)
-	diagnostics, totalCount, err := api.bundleStore.Diagnostics(ctx, dump.ID, pathInBundle, offset, limit)
+	diagnostics, totalCount, err := api.lsifStore.Diagnostics(ctx, dump.ID, pathInBundle, offset, limit)
 	if err != nil {
-		if err == database.ErrNotFound {
+		if err == lsifstore.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}

@@ -6,7 +6,7 @@ import (
 
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -51,7 +51,7 @@ type QueryResolver interface {
 
 type queryResolver struct {
 	store            store.Store
-	bundleStore      database.Database
+	lsifStore        lsifstore.Store
 	codeIntelAPI     codeintelapi.CodeIntelAPI
 	positionAdjuster PositionAdjuster
 	repositoryID     int
@@ -65,7 +65,7 @@ type queryResolver struct {
 // bundles associated with the given dump objects.
 func NewQueryResolver(
 	store store.Store,
-	bundleStore database.Database,
+	lsifStore lsifstore.Store,
 	codeIntelAPI codeintelapi.CodeIntelAPI,
 	positionAdjuster PositionAdjuster,
 	repositoryID int,
@@ -75,7 +75,7 @@ func NewQueryResolver(
 ) QueryResolver {
 	return &queryResolver{
 		store:            store,
-		bundleStore:      bundleStore,
+		lsifStore:        lsifStore,
 		codeIntelAPI:     codeIntelAPI,
 		positionAdjuster: positionAdjuster,
 		repositoryID:     repositoryID,
@@ -203,7 +203,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			continue
 		}
 
-		cursor, err := codeintelapi.DecodeOrCreateCursor(adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID, rawCursor, r.store, r.bundleStore)
+		cursor, err := codeintelapi.DecodeOrCreateCursor(adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID, rawCursor, r.store, r.lsifStore)
 		if err != nil {
 			return nil, "", err
 		}

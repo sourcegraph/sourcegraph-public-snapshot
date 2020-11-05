@@ -6,8 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -36,13 +36,13 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 		// for the other condition. This should probably look like
 		// an additional parameter on the following exists query.
 		if exactPath {
-			exists, err := api.bundleStore.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+			exists, err := api.lsifStore.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
 			if err != nil {
-				if err == database.ErrNotFound {
+				if err == lsifstore.ErrNotFound {
 					log15.Warn("Bundle does not exist")
 					return nil, nil
 				}
-				return nil, errors.Wrap(err, "bundleStore.BundleClient")
+				return nil, errors.Wrap(err, "lsifStore.BundleClient")
 			}
 			if !exists {
 				continue

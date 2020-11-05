@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -52,7 +52,7 @@ func decodeCursor(rawEncoded string) (Cursor, error) {
 
 // DecodeOrCreateCursor decodes and returns the raw cursor, or creates a new initial page cursor
 // if a raw cursor is not supplied.
-func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, store store.Store, bundleStore database.Database) (Cursor, error) {
+func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, store store.Store, lsifStore lsifstore.Store) (Cursor, error) {
 	if rawCursor != "" {
 		cursor, err := decodeCursor(rawCursor)
 		if err != nil {
@@ -71,7 +71,7 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 	}
 
 	pathInBundle := strings.TrimPrefix(path, dump.Root)
-	rangeMonikers, err := bundleStore.MonikersByPosition(context.Background(), dump.ID, pathInBundle, line, character)
+	rangeMonikers, err := lsifStore.MonikersByPosition(context.Background(), dump.ID, pathInBundle, line, character)
 	if err != nil {
 		return Cursor{}, errors.Wrap(err, "bundleClient.MonikersByPosition")
 	}
