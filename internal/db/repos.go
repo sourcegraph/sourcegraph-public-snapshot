@@ -159,7 +159,7 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 		items[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
-	return s.getReposBySQL(ctx, true, q)
+	return s.getReposBySQL(ctx, true, nil, q)
 }
 
 // GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
@@ -216,9 +216,10 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 
 const getRepoByQueryFmtstr = `
 SELECT %s
-FROM repo
+FROM %%s
 WHERE deleted_at IS NULL
-AND %%s`
+AND %%s
+`
 
 const getSourcesByRepoQueryStr = `
 (
@@ -240,21 +241,21 @@ const getSourcesByRepoQueryStr = `
 `
 
 var getBySQLColumns = []string{
-	"id",
-	"name",
-	"private",
-	"external_id",
-	"external_service_type",
-	"external_service_id",
-	"uri",
-	"description",
-	"fork",
-	"archived",
-	"cloned",
-	"created_at",
-	"updated_at",
-	"deleted_at",
-	"metadata",
+	"repo.id",
+	"repo.name",
+	"repo.private",
+	"repo.external_id",
+	"repo.external_service_type",
+	"repo.external_service_id",
+	"repo.uri",
+	"repo.description",
+	"repo.fork",
+	"repo.archived",
+	"repo.cloned",
+	"repo.created_at",
+	"repo.updated_at",
+	"repo.deleted_at",
+	"repo.metadata",
 	getSourcesByRepoQueryStr,
 }
 
@@ -263,10 +264,14 @@ func minimalColumns(columns []string) []string {
 }
 
 func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, querySuffix)
+	return s.getReposBySQL(ctx, false, nil, querySuffix)
 }
 
-func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	if fromClause == nil {
+		fromClause = sqlf.Sprintf("repo")
+	}
+
 	columns := getBySQLColumns
 	if minimal {
 		columns = minimalColumns(columns)
@@ -274,6 +279,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, querySuffix
 
 	q := sqlf.Sprintf(
 		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
+		fromClause,
 		querySuffix,
 	)
 
@@ -419,6 +425,10 @@ type ReposListOptions struct {
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
+	// ExternalServiceID, if non zero, will only return repos added by the given external service.
+	// The id is that of the external_services table NOT the external_service_id in the repo table
+	ExternalServiceID int64
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -531,6 +541,11 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		return nil, err
 	}
 
+	fromClause := sqlf.Sprintf("repo")
+	if opt.ExternalServiceID != 0 {
+		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON repo.id = e.repo_id")
+	}
+
 	// fetch matching repos
 	predQ := sqlf.Sprintf("TRUE")
 	if len(conds) > 0 {
@@ -544,7 +559,7 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Sprintf("(%s)", predQ), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(fetchSQL))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
+	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, fetchSQL)
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
@@ -977,6 +992,10 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 		}
 	}
 
+	if opt.ExternalServiceID != 0 {
+		conds = append(conds, sqlf.Sprintf("e.external_service_id = %d", opt.ExternalServiceID))
+	}
+
 	return conds, nil
 }
 
@@ -985,11 +1004,6 @@ func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]
 	s.ensureStore()
 
 	columns := minimalColumns(getBySQLColumns)
-	copied := make([]string, len(columns))
-	copy(copied, columns)
-	for i := range copied {
-		copied[i] = "repo." + copied[i]
-	}
 	fmtString := fmt.Sprintf(`
 SELECT %s from repo
 JOIN external_service_repos esr ON repo.id = esr.repo_id
@@ -999,7 +1013,7 @@ WHERE esr.external_service_id IN (
     AND deleted_at IS NULL
 )
 AND repo.deleted_at IS NULL
-`, strings.Join(copied, ","))
+`, strings.Join(columns, ","))
 	q := sqlf.Sprintf(fmtString, userID)
 
 	rows, err := s.Query(ctx, q)

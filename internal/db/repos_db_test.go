@@ -1096,6 +1096,64 @@ func TestRepos_List_useOr(t *testing.T) {
 	}
 }
 
+func TestRepos_List_externalServiceID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	services := MakeExternalServices()
+	service1 := services[0]
+	service2 := services[1]
+	if err := ExternalServices.Create(ctx, confGet, service1); err != nil {
+		t.Fatal(err)
+	}
+	if err := ExternalServices.Create(ctx, confGet, service2); err != nil {
+		t.Fatal(err)
+	}
+
+	mine := types.Repos{MakeGithubRepo(service1)}
+	if err := Repos.Create(ctx, mine...); err != nil {
+		t.Fatal(err)
+	}
+
+	yours := types.Repos{MakeGitlabRepo(service2)}
+	if err := Repos.Create(ctx, yours...); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Some", ReposListOptions{ExternalServiceID: service1.ID}, mine},
+		{"Default", ReposListOptions{}, append(mine, yours...)},
+		{"NonExistant", ReposListOptions{ExternalServiceID: 1000}, nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := Repos.List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
 func TestRepos_createRepo_dupe(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
