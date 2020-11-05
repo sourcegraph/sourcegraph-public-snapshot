@@ -16,14 +16,12 @@ import {
     scan,
     mapTo,
 } from 'rxjs/operators'
-import { workspace } from 'sourcegraph'
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
 import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
-import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
-import { FlatExtensionHostAPI } from '../api/contract'
+import { WorkspaceRootWithMetadata } from '../api/extension/flatExtensionApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'

@@ -9,10 +9,10 @@ import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
 import { ViewerData } from '../client/services/viewerService'
 import { TextModel } from '../client/services/modelService'
-import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 import { FlatExtensionHostAPI } from '../contract'
 import { Remote } from 'comlink'
+import { WorkspaceRootWithMetadata } from '../extension/flatExtensionApi'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -112,7 +112,10 @@ export async function integrationTestContext(
     for (const editor of initModel.viewers) {
         services.viewer.addViewer(editor)
     }
-    services.workspace.roots.next(initModel.roots)
+
+    for (const root of initModel.roots) {
+        await api.addWorkspaceRoot(root)
+    }
 
     // Wait for initModel to be initialized
     if (initModel.viewers.length > 0) {
