@@ -40,6 +40,17 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
         provider => provider.isBuiltin
     )
 
+    function addRedirect(url?: string): string {
+        if (url === undefined) {
+            return ''
+        }
+        const parsedUrl = new URL(url, window.location.origin)
+
+        parsedUrl.searchParams.append('redirect', getReturnTo(props.location))
+
+        return parsedUrl.toString()
+    }
+
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
             <div className="alert alert-info mt-3">
@@ -69,7 +80,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
+                            <a href={addRedirect(provider.authenticationURL)} className="btn btn-secondary btn-block">
                                 {provider.displayName === 'GitHub' && (
                                     <>
                                         <GithubIcon className="icon-inline" />{' '}
