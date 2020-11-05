@@ -196,19 +196,19 @@ func getDependencyVersions(ctx context.Context, logFunc func(string, ...interfac
 	// get redis cache server version
 	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
 	if err != nil {
-		logFunc("updatecheck.getDependencyVersions: unable to connect to redis cache instance", "error", err)
+		logFunc("updatecheck.getDependencyVersions: unable to get Redis cache version", "error", err)
 	}
 
 	// get redis store server version
 	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
 	if err != nil {
-		logFunc("updatecheck.getDependencyVersions: unable to get redis store version", "error", err)
+		logFunc("updatecheck.getDependencyVersions: unable to get Redis store version", "error", err)
 	}
 
 	// get postgres version
-	err = dbconn.Global.QueryRowContext(ctx, "SELECT version()").Scan(&dv.PostgresVersion)
+	err = dbconn.Global.QueryRowContext(ctx, "SHOW server_version").Scan(&dv.PostgresVersion)
 	if err != nil {
-		logFunc("updatecheck.getDependencyVersions: unable to get postgres version", "error", err)
+		logFunc("updatecheck.getDependencyVersions: unable to get Postgres version", "error", err)
 	}
 	return json.Marshal(dv)
 }
@@ -241,7 +241,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 
 		parts := bytes.Split(line, []byte(":"))
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("expected a key:value line, got '%s'", string(line))
+			return nil, fmt.Errorf("expected a key:value line, got %q", string(line))
 		}
 		m[string(parts[0])] = string(parts[1])
 	}
