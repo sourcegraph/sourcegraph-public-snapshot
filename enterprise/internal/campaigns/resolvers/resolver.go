@@ -55,8 +55,11 @@ func campaignsCreateAccess(ctx context.Context) error {
 		return ErrCampaignsDotCom{}
 	}
 
-	// Only site-admins can create campaigns/patchsets/changesets
-	return backend.CheckCurrentUserIsSiteAdmin(ctx)
+	act := actor.FromContext(ctx)
+	if !act.IsAuthenticated() {
+		return backend.ErrNotAuthenticated
+	}
+	return nil
 }
 
 // checkLicense returns a user-facing error if the campaigns feature is not purchased
