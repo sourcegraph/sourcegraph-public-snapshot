@@ -1,11 +1,10 @@
-package postgres
+package persistence
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -66,8 +65,8 @@ func TestReadWriteDocument(t *testing.T) {
 		},
 	}
 
-	documentCh := make(chan persistence.KeyedDocumentData, 1)
-	documentCh <- persistence.KeyedDocumentData{
+	documentCh := make(chan KeyedDocumentData, 1)
+	documentCh <- KeyedDocumentData{
 		Path:     "foo.go",
 		Document: expectedDocumentData,
 	}
@@ -120,8 +119,8 @@ func TestReadWriteResultChunk(t *testing.T) {
 		},
 	}
 
-	resultChunkCh := make(chan persistence.IndexedResultChunkData, 1)
-	resultChunkCh <- persistence.IndexedResultChunkData{
+	resultChunkCh := make(chan IndexedResultChunkData, 1)
+	resultChunkCh <- IndexedResultChunkData{
 		Index:       7,
 		ResultChunk: expectedResultChunkData,
 	}
@@ -221,12 +220,12 @@ func TestPathsWithPrefix(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	documentCh := make(chan persistence.KeyedDocumentData, 5)
-	documentCh <- persistence.KeyedDocumentData{Path: "foo"}        // exact
-	documentCh <- persistence.KeyedDocumentData{Path: "foo.go"}     // file prefix
-	documentCh <- persistence.KeyedDocumentData{Path: "foo/bar.go"} // directory prefix
-	documentCh <- persistence.KeyedDocumentData{Path: "bar/foo.go"} // contains, not prefixed
-	documentCh <- persistence.KeyedDocumentData{Path: "bar/baz.go"} // does not contain
+	documentCh := make(chan KeyedDocumentData, 5)
+	documentCh <- KeyedDocumentData{Path: "foo"}        // exact
+	documentCh <- KeyedDocumentData{Path: "foo.go"}     // file prefix
+	documentCh <- KeyedDocumentData{Path: "foo/bar.go"} // directory prefix
+	documentCh <- KeyedDocumentData{Path: "bar/foo.go"} // contains, not prefixed
+	documentCh <- KeyedDocumentData{Path: "bar/baz.go"} // does not contain
 	close(documentCh)
 
 	if err := store.WriteDocuments(ctx, 42, documentCh); err != nil {
@@ -248,7 +247,7 @@ func TestPathsWithPrefix(t *testing.T) {
 	}
 }
 
-func testStore(t *testing.T) persistence.Store {
+func testStore(t *testing.T) Store {
 	// Wrap in observed, as that's how it's used in production
-	return persistence.NewObserved(NewStore(dbconn.Global), &observation.TestContext)
+	return NewObserved(NewStore(dbconn.Global), &observation.TestContext)
 }
