@@ -14,12 +14,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence)
 // used for unit testing.
 type MockStore struct {
-	// CloseFunc is an instance of a mock function object controlling the
-	// behavior of the method Close.
-	CloseFunc *StoreCloseFunc
-	// CreateTablesFunc is an instance of a mock function object controlling
-	// the behavior of the method CreateTables.
-	CreateTablesFunc *StoreCreateTablesFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *StoreDoneFunc
@@ -65,16 +59,6 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
-		CloseFunc: &StoreCloseFunc{
-			defaultHook: func(error) error {
-				return nil
-			},
-		},
-		CreateTablesFunc: &StoreCreateTablesFunc{
-			defaultHook: func(context.Context) error {
-				return nil
-			},
-		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: func(error) error {
 				return nil
@@ -147,12 +131,6 @@ func NewMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i persistence.Store) *MockStore {
 	return &MockStore{
-		CloseFunc: &StoreCloseFunc{
-			defaultHook: i.Close,
-		},
-		CreateTablesFunc: &StoreCreateTablesFunc{
-			defaultHook: i.CreateTables,
-		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -193,210 +171,6 @@ func NewMockStoreFrom(i persistence.Store) *MockStore {
 			defaultHook: i.WriteResultChunks,
 		},
 	}
-}
-
-// StoreCloseFunc describes the behavior when the Close method of the parent
-// MockStore instance is invoked.
-type StoreCloseFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []StoreCloseFuncCall
-	mutex       sync.Mutex
-}
-
-// Close delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) Close(v0 error) error {
-	r0 := m.CloseFunc.nextHook()(v0)
-	m.CloseFunc.appendCall(StoreCloseFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Close method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreCloseFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Close method of the parent MockStore instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreCloseFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreCloseFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreCloseFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *StoreCloseFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreCloseFunc) appendCall(r0 StoreCloseFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreCloseFuncCall objects describing the
-// invocations of this function.
-func (f *StoreCloseFunc) History() []StoreCloseFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreCloseFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreCloseFuncCall is an object that describes an invocation of method
-// Close on an instance of MockStore.
-type StoreCloseFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreCloseFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreCloseFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// StoreCreateTablesFunc describes the behavior when the CreateTables method
-// of the parent MockStore instance is invoked.
-type StoreCreateTablesFunc struct {
-	defaultHook func(context.Context) error
-	hooks       []func(context.Context) error
-	history     []StoreCreateTablesFuncCall
-	mutex       sync.Mutex
-}
-
-// CreateTables delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) CreateTables(v0 context.Context) error {
-	r0 := m.CreateTablesFunc.nextHook()(v0)
-	m.CreateTablesFunc.appendCall(StoreCreateTablesFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the CreateTables method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreCreateTablesFunc) SetDefaultHook(hook func(context.Context) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CreateTables method of the parent MockStore instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreCreateTablesFunc) PushHook(hook func(context.Context) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreCreateTablesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreCreateTablesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context) error {
-		return r0
-	})
-}
-
-func (f *StoreCreateTablesFunc) nextHook() func(context.Context) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreCreateTablesFunc) appendCall(r0 StoreCreateTablesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreCreateTablesFuncCall objects
-// describing the invocations of this function.
-func (f *StoreCreateTablesFunc) History() []StoreCreateTablesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreCreateTablesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreCreateTablesFuncCall is an object that describes an invocation of
-// method CreateTables on an instance of MockStore.
-type StoreCreateTablesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreCreateTablesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreCreateTablesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreDoneFunc describes the behavior when the Done method of the parent

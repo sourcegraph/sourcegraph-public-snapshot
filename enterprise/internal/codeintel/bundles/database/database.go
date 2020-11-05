@@ -16,9 +16,6 @@ import (
 
 // Database wraps access to a single processed bundle.
 type Database interface {
-	// Close closes the underlying store.
-	Close() error
-
 	// Exists determines if the path exists in the database.
 	Exists(ctx context.Context, path string) (bool, error)
 
@@ -91,11 +88,6 @@ func OpenDatabase(ctx context.Context, filename string, store persistence.Store)
 		store:           store,
 		numResultChunks: meta.NumResultChunks,
 	}, nil
-}
-
-// Close closes the underlying store.
-func (db *databaseImpl) Close() error {
-	return db.store.Close(nil)
 }
 
 // Exists determines if the path exists in the database.

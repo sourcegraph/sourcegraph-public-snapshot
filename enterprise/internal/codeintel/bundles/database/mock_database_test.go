@@ -13,9 +13,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database)
 // used for unit testing.
 type MockDatabase struct {
-	// CloseFunc is an instance of a mock function object controlling the
-	// behavior of the method Close.
-	CloseFunc *DatabaseCloseFunc
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
 	DefinitionsFunc *DatabaseDefinitionsFunc
@@ -49,11 +46,6 @@ type MockDatabase struct {
 // return zero values for all results, unless overwritten.
 func NewMockDatabase() *MockDatabase {
 	return &MockDatabase{
-		CloseFunc: &DatabaseCloseFunc{
-			defaultHook: func() error {
-				return nil
-			},
-		},
 		DefinitionsFunc: &DatabaseDefinitionsFunc{
 			defaultHook: func(context.Context, string, int, int) ([]clienttypes.Location, error) {
 				return nil, nil
@@ -106,9 +98,6 @@ func NewMockDatabase() *MockDatabase {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDatabaseFrom(i Database) *MockDatabase {
 	return &MockDatabase{
-		CloseFunc: &DatabaseCloseFunc{
-			defaultHook: i.Close,
-		},
 		DefinitionsFunc: &DatabaseDefinitionsFunc{
 			defaultHook: i.Definitions,
 		},
@@ -137,105 +126,6 @@ func NewMockDatabaseFrom(i Database) *MockDatabase {
 			defaultHook: i.References,
 		},
 	}
-}
-
-// DatabaseCloseFunc describes the behavior when the Close method of the
-// parent MockDatabase instance is invoked.
-type DatabaseCloseFunc struct {
-	defaultHook func() error
-	hooks       []func() error
-	history     []DatabaseCloseFuncCall
-	mutex       sync.Mutex
-}
-
-// Close delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDatabase) Close() error {
-	r0 := m.CloseFunc.nextHook()()
-	m.CloseFunc.appendCall(DatabaseCloseFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Close method of the
-// parent MockDatabase instance is invoked and the hook queue is empty.
-func (f *DatabaseCloseFunc) SetDefaultHook(hook func() error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Close method of the parent MockDatabase instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DatabaseCloseFunc) PushHook(hook func() error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DatabaseCloseFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DatabaseCloseFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
-		return r0
-	})
-}
-
-func (f *DatabaseCloseFunc) nextHook() func() error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DatabaseCloseFunc) appendCall(r0 DatabaseCloseFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DatabaseCloseFuncCall objects describing
-// the invocations of this function.
-func (f *DatabaseCloseFunc) History() []DatabaseCloseFuncCall {
-	f.mutex.Lock()
-	history := make([]DatabaseCloseFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DatabaseCloseFuncCall is an object that describes an invocation of method
-// Close on an instance of MockDatabase.
-type DatabaseCloseFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DatabaseCloseFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DatabaseCloseFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // DatabaseDefinitionsFunc describes the behavior when the Definitions
