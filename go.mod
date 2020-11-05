@@ -3,9 +3,12 @@ module github.com/sourcegraph/sourcegraph
 go 1.14
 
 require (
+	cloud.google.com/go v0.56.0
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.6.0
+	github.com/Azure/go-autorest/autorest v0.11.1 // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.9.5 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -35,7 +38,9 @@ require (
 	github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac // indirect
 	github.com/efritz/go-mockgen v0.0.0-20200524175724-37e2c732ee40
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
-	github.com/ericchiang/k8s v1.2.0
+	github.com/elazarl/goproxy v0.0.0-20180725130230-947c36da3153 // indirect
+	github.com/ericchiang/k8s v1.2.0 // indirect
+	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
 	github.com/fatih/color v1.9.0
 	github.com/felixge/fgprof v0.9.1
@@ -59,6 +64,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
+	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.2
@@ -66,6 +72,7 @@ require (
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
+	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20200905233945-acf8798be1f7 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/google/zoekt v0.0.0-20200720095054-b48e35d16e83
@@ -183,7 +190,7 @@ require (
 	go.opencensus.io v0.22.4 // indirect
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
-	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
@@ -192,19 +199,23 @@ require (
 	golang.org/x/tools v0.0.0-20200915031644-64986481280e
 	google.golang.org/api v0.29.0
 	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 	google.golang.org/grpc v1.31.1 // indirect
+	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
 	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
+	k8s.io/client-go v0.17.0 // indirect
+	k8s.io/klog/v2 v2.2.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20200923155610-8b5066479488 // indirect
+	k8s.io/utils v0.0.0-20200729134348-d5654de09c73 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.0.2-0.20201001033253-b3cf1e8ff931 // indirect
+	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
 replace (
-	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
-	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
-
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66
