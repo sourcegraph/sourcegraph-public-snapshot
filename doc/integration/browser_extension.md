@@ -18,11 +18,16 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 
 >NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
 
- <video width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
+<video class="theme-dark-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
   <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
-  Sourcegraph browser extension adds code intelligence to your code host
- </video>
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
+  <p>Sourcegraph browser extension adds code intelligence to your code host</p>
+</video>
+<video class="theme-light-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.webm" type="video/webm">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.mp4" type="video/mp4">
+  <p>Sourcegraph browser extension adds code intelligence to your code host</p>
+</video>
 
 ## Features
 
