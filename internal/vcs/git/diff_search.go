@@ -175,8 +175,8 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	}
 
 	// We then search each commit to further filter the results.
-	results, complete2, err := rawShowSearch(ctx, repo, opt, onelineCommits)
-	complete = complete && complete2
+	results, showComplete, err := rawShowSearch(ctx, repo, opt, onelineCommits)
+	complete = complete && showComplete
 	return results, complete, err
 }
 
