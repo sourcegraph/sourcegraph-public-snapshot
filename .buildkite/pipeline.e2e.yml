@@ -9,10 +9,15 @@ env:
   VAGRANT_RUN_ENV: 'CI'
 
 steps:
-  - artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
-    # setting to pass until tests are 100% confirmed as working, so as to avoid disrupting dev workflow on main
-    command:
-      - .buildkite/vagrant-run.sh sourcegraph-e2e || true
-    label: ':docker::arrow_right::chromium:'
+  - label: ':docker::arrow_right::chromium:'
     agents:
       queue: 'baremetal'
+    commands:
+      - cd /sourcegraph
+      - ./test/e2e/test.sh
+    plugins:
+      - ssh://git@github.com/sourcegraph/vagrant-buildkite-plugin.git#main:
+          box: sourcegraph-e2e
+          workdir: test
+          plugins:
+            - vagrant-google
