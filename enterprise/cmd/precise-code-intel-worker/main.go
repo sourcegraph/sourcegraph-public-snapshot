@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -38,8 +37,6 @@ func main() {
 	if err := config.Validate(); err != nil {
 		log.Fatalf("failed to load config: %s", err)
 	}
-
-	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
