@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -15,7 +18,6 @@ func New(
 	observationContext *observation.Context,
 ) BundleManagerClient {
 	return &bundleManagerClientImpl{
-		codeIntelDB:        codeIntelDB,
-		observationContext: observationContext,
+		db: database.NewObserved(database.OpenDatabase(persistence.NewObserved(postgres.NewStore(codeIntelDB), observationContext)), observationContext),
 	}
 }
