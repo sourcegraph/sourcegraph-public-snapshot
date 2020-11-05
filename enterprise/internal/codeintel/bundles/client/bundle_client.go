@@ -76,9 +76,7 @@ func (c *bundleManagerClientImpl) Definitions(ctx context.Context, bundleID int,
 		return nil, err
 	}
 
-	locations, err := db.Definitions(ctx, bundleID, path, line, character)
-	c.addBundleIDToLocations(locations, bundleID)
-	return locations, err
+	return db.Definitions(ctx, bundleID, path, line, character)
 }
 
 // Definitions retrieves a list of reference locations for the symbol under the given location.
@@ -88,9 +86,7 @@ func (c *bundleManagerClientImpl) References(ctx context.Context, bundleID int, 
 		return nil, err
 	}
 
-	locations, err := db.References(ctx, bundleID, path, line, character)
-	c.addBundleIDToLocations(locations, bundleID)
-	return locations, err
+	return db.References(ctx, bundleID, path, line, character)
 }
 
 // Hover retrieves the hover text for the symbol under the given location.
@@ -110,13 +106,7 @@ func (c *bundleManagerClientImpl) Diagnostics(ctx context.Context, bundleID int,
 		return nil, 0, err
 	}
 
-	diagnostics, count, err := db.Diagnostics(ctx, bundleID, prefix, skip, take)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	c.addBundleIDToDiagnostics(diagnostics, bundleID)
-	return diagnostics, count, err
+	return db.Diagnostics(ctx, bundleID, prefix, skip, take)
 }
 
 // MonikersByPosition retrieves a list of monikers attached to the symbol under the given location. There may
@@ -146,13 +136,7 @@ func (c *bundleManagerClientImpl) MonikerResults(ctx context.Context, bundleID i
 		tableName = "references"
 	}
 
-	locations, count, err := db.MonikerResults(ctx, bundleID, tableName, scheme, identifier, skip, take)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	c.addBundleIDToLocations(locations, bundleID)
-	return locations, count, err
+	return db.MonikerResults(ctx, bundleID, tableName, scheme, identifier, skip, take)
 }
 
 // PackageInformation retrieves package information data by its identifier.
@@ -168,16 +152,4 @@ func (c *bundleManagerClientImpl) PackageInformation(ctx context.Context, bundle
 
 func (c *bundleManagerClientImpl) openDatabase(ctx context.Context, bundleID int) (database.Database, error) {
 	return database.NewObserved(database.OpenDatabase(persistence.NewObserved(postgres.NewStore(c.codeIntelDB), c.observationContext)), c.observationContext), nil
-}
-
-func (c *bundleManagerClientImpl) addBundleIDToLocations(locations []Location, bundleID int) {
-	for i := range locations {
-		locations[i].DumpID = bundleID
-	}
-}
-
-func (c *bundleManagerClientImpl) addBundleIDToDiagnostics(diagnostics []Diagnostic, bundleID int) {
-	for i := range diagnostics {
-		diagnostics[i].DumpID = bundleID
-	}
 }
