@@ -7,8 +7,6 @@ require (
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.6.0
-	github.com/Azure/go-autorest/autorest v0.11.1 // indirect
-	github.com/Azure/go-autorest/autorest/adal v0.9.5 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -38,8 +36,6 @@ require (
 	github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac // indirect
 	github.com/efritz/go-mockgen v0.0.0-20200524175724-37e2c732ee40
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
-	github.com/elazarl/goproxy v0.0.0-20180725130230-947c36da3153 // indirect
-	github.com/ericchiang/k8s v1.2.0 // indirect
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
 	github.com/fatih/color v1.9.0
@@ -76,6 +72,7 @@ require (
 	github.com/google/pprof v0.0.0-20200905233945-acf8798be1f7 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/google/zoekt v0.0.0-20200720095054-b48e35d16e83
+	github.com/googleapis/gnostic v0.4.1 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.0
@@ -207,11 +204,10 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
 	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
-	k8s.io/client-go v0.17.0 // indirect
-	k8s.io/klog/v2 v2.2.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20200923155610-8b5066479488 // indirect
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
+	k8s.io/client-go v0.17.0
 	k8s.io/utils v0.0.0-20200729134348-d5654de09c73 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.0.2-0.20201001033253-b3cf1e8ff931 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
