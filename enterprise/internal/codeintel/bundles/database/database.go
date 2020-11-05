@@ -252,6 +252,7 @@ func (db *databaseImpl) Diagnostics(ctx context.Context, bundleID int, prefix st
 			skip--
 			if skip < 0 && len(diagnostics) < take {
 				diagnostics = append(diagnostics, bundles.Diagnostic{
+					DumpID:         bundleID,
 					Path:           path,
 					Severity:       diagnostic.Severity,
 					Code:           diagnostic.Code,
@@ -338,8 +339,9 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, bundleID int, tableN
 	var locations []bundles.Location
 	for _, row := range rows {
 		locations = append(locations, bundles.Location{
-			Path:  row.URI,
-			Range: newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			DumpID: bundleID,
+			Path:   row.URI,
+			Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 		})
 	}
 
@@ -581,8 +583,9 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, bundleID i
 			}
 
 			locations = append(locations, bundles.Location{
-				Path:  path,
-				Range: newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+				DumpID: bundleID,
+				Path:   path,
+				Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			})
 		}
 
