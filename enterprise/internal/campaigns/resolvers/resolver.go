@@ -401,7 +401,12 @@ func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts
 	// See internal/usagestats/campaigns.go.
 	actor := actor.FromContext(ctx)
 
-	arg, err := json.Marshal(opts)
+	type eventArg struct {
+		ChangesetSpecsCount int `json:"changeset_specs_count"`
+	}
+	arg := eventArg{ChangesetSpecsCount: len(opts.ChangesetSpecRandIDs)}
+
+	jsonArg, err := json.Marshal(arg)
 	if err != nil {
 		return err
 	}
@@ -410,7 +415,7 @@ func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts
 		EventName: "CampaignSpecCreated",
 		UserID:    actor.UID,
 		Source:    "backend",
-		Argument:  json.RawMessage(arg),
+		Argument:  json.RawMessage(jsonArg),
 	})
 }
 

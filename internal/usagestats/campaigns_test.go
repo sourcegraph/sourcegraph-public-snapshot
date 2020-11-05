@@ -75,8 +75,8 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
-			(1, 'CampaignSpecCreated', '{"raw_spec": {}, "namespace_user_id": 1, "changeset_spec_rand_ids": ["one", "two", "three"]}', '', 23, '', 'backend', 'version', now()),
-			(2, 'CampaignSpecCreated', '{"raw_spec": {}, "namespace_org_id": 3, "changeset_spec_rand_ids": ["one"]}', '', 23, '', 'backend', 'version', now()),
+			(1, 'CampaignSpecCreated', '{"changeset_specs_count": 3}', '', 23, '', 'backend', 'version', now()),
+			(2, 'CampaignSpecCreated', '{"changeset_specs_count": 1}', '', 23, '', 'backend', 'version', now()),
 			(3, 'CampaignSpecCreated', '{}', '', 23, '', 'backend', 'version', now())
 	`)
 	if err != nil {

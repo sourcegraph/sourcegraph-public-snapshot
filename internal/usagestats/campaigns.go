@@ -45,7 +45,7 @@ FROM changesets;
 	const specsCountsQuery = `
 SELECT
     COUNT(*) AS campaign_specs_created,
-    COALESCE(SUM(jsonb_array_length(argument->'changeset_spec_rand_ids')), 0) AS changeset_specs_created_count
+    COALESCE(SUM((argument->>'changeset_specs_count')::int), 0) AS changeset_specs_created_count
 FROM event_logs
 WHERE name = 'CampaignSpecCreated';
 `
