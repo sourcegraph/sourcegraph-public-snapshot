@@ -1,4 +1,4 @@
-package postgres
+package persistence
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
@@ -22,16 +21,16 @@ type store struct {
 	serializer *serializer
 }
 
-var _ persistence.Store = &store{}
+var _ Store = &store{}
 
-func NewStore(db dbutil.DB) persistence.Store {
+func NewStore(db dbutil.DB) Store {
 	return &store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		serializer: newSerializer(),
 	}
 }
 
-func (s *store) Transact(ctx context.Context) (persistence.Store, error) {
+func (s *store) Transact(ctx context.Context) (Store, error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -181,7 +180,7 @@ func (s *store) WriteMeta(ctx context.Context, bundleID int, meta types.MetaData
 	return inserter.Insert(ctx, bundleID, meta.NumResultChunks)
 }
 
-func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan persistence.KeyedDocumentData) error {
+func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan KeyedDocumentData) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
@@ -200,7 +199,7 @@ func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data"}, inserter)
 }
 
-func (s *store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan persistence.IndexedResultChunkData) error {
+func (s *store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan IndexedResultChunkData) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)

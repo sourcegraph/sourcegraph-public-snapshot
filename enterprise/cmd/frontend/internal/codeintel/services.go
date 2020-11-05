@@ -13,7 +13,6 @@ import (
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -60,7 +59,7 @@ func initServices(ctx context.Context) error {
 			log.Fatalf("failed to initialize upload store: %s", err)
 		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		innerStore := persistence.NewObserved(postgres.NewStore(codeIntelDB), observationContext)
+		innerStore := persistence.NewObserved(persistence.NewStore(codeIntelDB), observationContext)
 		bundleStore := database.NewObserved(database.OpenDatabase(innerStore), observationContext)
 		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleStore, gitserver.DefaultClient), observationContext)
 		lsifStore := lsifstore.New(codeIntelDB)
