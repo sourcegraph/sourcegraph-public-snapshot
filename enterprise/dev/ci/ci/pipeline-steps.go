@@ -44,7 +44,7 @@ var allDockerImages = []string{
 
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":memo:", // TODO: Add header
+	pipeline.AddStep(":memo: Check and build docsite", // TODO: Add header
 		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
 		bk.Cmd("./dev/check/docsite.sh"))
 }
@@ -68,28 +68,28 @@ func addLint(pipeline *bk.Pipeline) {
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
-	pipeline.AddStep(":eslint:", // TODO: Add header
+	pipeline.AddStep(":eslint:", // TODO: Add header - What does this lint?
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:", // TODO: Add header - Similar to the previous step
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
 func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp build
-	pipeline.AddStep(":webpack::globe_with_meridians: ",
+	pipeline.AddStep(":webpack::globe_with_meridians: Build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "0"))
 
 	// Webapp enterprise build
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
+	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"))
 
 	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians:",
+	pipeline.AddStep(":jest::globe_with_meridians: Test",
 		bk.Cmd("dev/ci/yarn-test.sh client/web"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
@@ -133,14 +133,14 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		if !c.isPR() {
 			chromaticCommand += " --auto-accept-changes"
 		}
-		pipeline.AddStep(":chromatic:",
+		pipeline.AddStep(":chromatic:", // TODO: Add header
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
-		pipeline.AddStep(":jest: Test",
+		pipeline.AddStep(":jest: Test", // TODO: What is this testing? Isnt it covered in addWebApp?
 			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 	}
@@ -222,7 +222,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("popd"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
-	pipeline.AddStep(":rocket::firefox:",
+	pipeline.AddStep(":rocket::firefox: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn release:ff"),
@@ -375,7 +375,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, tag)),
 		)
 
-		pipeline.AddStep(":docker: :construction:", cmds...)
+		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
 	}
 }
 
@@ -405,7 +405,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
-		pipeline.AddStep(":docker: :white_check_mark:", bk.Cmd(cmd))
+		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))
 	}
 }
 
