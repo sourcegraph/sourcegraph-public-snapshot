@@ -104,7 +104,6 @@ func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, colu
 	})
 }
 
-
 // invokeN invokes n copies of the given function in different goroutines. See invokeAll
 // for additional notes on semantics.
 func invokeN(n int, f func() error) error {
