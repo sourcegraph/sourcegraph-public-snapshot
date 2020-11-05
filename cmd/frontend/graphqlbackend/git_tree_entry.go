@@ -241,13 +241,13 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
 				rs = reposource.GitHub{GitHubConnection: c}
-				host = rs.(reposource.GitHub).Url
+				host = c.Url
 			case *schema.GitLabConnection:
 				rs = reposource.GitLab{GitLabConnection: c}
-				host = rs.(reposource.GitLab).Url
+				host = c.Url
 			case *schema.BitbucketServerConnection:
 				rs = reposource.BitbucketServer{BitbucketServerConnection: c}
-				host = rs.(reposource.BitbucketServer).Url
+				host = c.Url
 			case *schema.AWSCodeCommitConnection:
 				rs = reposource.AWS{AWSCodeCommitConnection: c}
 				// AWS type does not have URL
