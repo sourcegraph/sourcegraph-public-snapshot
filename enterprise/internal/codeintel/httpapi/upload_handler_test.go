@@ -18,9 +18,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -38,7 +38,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)
 
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
 	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
@@ -66,8 +66,8 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
+		store:       mockStore,
+		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
 
@@ -79,7 +79,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	if len(mockStore.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUploadFunc calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
+		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
 	} else {
 		call := mockStore.InsertUploadFunc.History()[0]
 		if call.Arg1.Commit != testCommit {
@@ -96,12 +96,12 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		}
 	}
 
-	if len(mockBundleManagerClient.SendUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of SendUploadFunc calls. want=%d have=%d", 1, len(mockBundleManagerClient.SendUploadFunc.History()))
+	if len(mockUploadStore.UploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of SendUpload calls. want=%d have=%d", 1, len(mockUploadStore.UploadFunc.History()))
 	} else {
-		call := mockBundleManagerClient.SendUploadFunc.History()[0]
-		if call.Arg1 != 42 {
-			t.Errorf("unexpected bundle id. want=%d have=%d", 42, call.Arg1)
+		call := mockUploadStore.UploadFunc.History()[0]
+		if call.Arg1 != "upload-42.lsif.gz" {
+			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
 		}
 
 		contents, err := ioutil.ReadAll(call.Arg2)
@@ -119,7 +119,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	setupRepoMocks(t)
 
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
 	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
@@ -153,8 +153,8 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
+		store:       mockStore,
+		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
 
@@ -162,12 +162,12 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
 	}
 
-	if len(mockBundleManagerClient.SendUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of SendUploadFunc calls. want=%d have=%d", 1, len(mockBundleManagerClient.SendUploadFunc.History()))
+	if len(mockUploadStore.UploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of Upload calls. want=%d have=%d", 1, len(mockUploadStore.UploadFunc.History()))
 	} else {
-		call := mockBundleManagerClient.SendUploadFunc.History()[0]
-		if call.Arg1 != 42 {
-			t.Errorf("unexpected bundle id. want=%d have=%d", 42, call.Arg1)
+		call := mockUploadStore.UploadFunc.History()[0]
+		if call.Arg1 != "upload-42.lsif.gz" {
+			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
 		}
 
 		contents, err := ioutil.ReadAll(call.Arg2)
@@ -185,7 +185,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	setupRepoMocks(t)
 
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
 	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
@@ -210,8 +210,8 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
+		store:       mockStore,
+		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
 
@@ -223,7 +223,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	if len(mockStore.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUploadFunc calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
+		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
 	} else {
 		call := mockStore.InsertUploadFunc.History()[0]
 		if call.Arg1.Commit != testCommit {
@@ -243,7 +243,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	upload := store.Upload{
 		ID:            42,
@@ -275,8 +275,8 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
+		store:       mockStore,
+		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
 
@@ -285,7 +285,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	if len(mockStore.AddUploadPartFunc.History()) != 1 {
-		t.Errorf("unexpected number of AddUploadPartFunc calls. want=%d have=%d", 1, len(mockStore.AddUploadPartFunc.History()))
+		t.Errorf("unexpected number of AddUploadPart calls. want=%d have=%d", 1, len(mockStore.AddUploadPartFunc.History()))
 	} else {
 		call := mockStore.AddUploadPartFunc.History()[0]
 		if call.Arg1 != 42 {
@@ -296,18 +296,15 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		}
 	}
 
-	if len(mockBundleManagerClient.SendUploadPartFunc.History()) != 1 {
-		t.Errorf("unexpected number of SendUploadPartFunc calls. want=%d have=%d", 1, len(mockBundleManagerClient.SendUploadPartFunc.History()))
+	if len(mockUploadStore.UploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of Upload calls. want=%d have=%d", 1, len(mockUploadStore.UploadFunc.History()))
 	} else {
-		call := mockBundleManagerClient.SendUploadPartFunc.History()[0]
-		if call.Arg1 != 42 {
-			t.Errorf("unexpected bundle id. want=%d have=%d", 42, call.Arg1)
-		}
-		if call.Arg2 != 3 {
-			t.Errorf("unexpected part index. want=%d have=%d", 3, call.Arg1)
+		call := mockUploadStore.UploadFunc.History()[0]
+		if call.Arg1 != "upload-42.3.lsif.gz" {
+			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.3.lsif.gz", call.Arg1)
 		}
 
-		contents, err := ioutil.ReadAll(call.Arg3)
+		contents, err := ioutil.ReadAll(call.Arg2)
 		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
 		}
@@ -320,7 +317,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	upload := store.Upload{
 		ID:            42,
@@ -346,8 +343,8 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
+		store:       mockStore,
+		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
 
@@ -356,25 +353,38 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	if len(mockStore.MarkQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkQueuedFunc calls. want=%d have=%d", 1, len(mockStore.MarkQueuedFunc.History()))
+		t.Errorf("unexpected number of MarkQueued calls. want=%d have=%d", 1, len(mockStore.MarkQueuedFunc.History()))
 	} else {
 		if call := mockStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
 			t.Errorf("unexpected upload id. want=%d have=%d", 42, call.Arg1)
 		}
 	}
 
-	if len(mockBundleManagerClient.StitchPartsFunc.History()) != 1 {
-		t.Errorf("unexpected number of StitchPartsFunc calls. want=%d have=%d", 1, len(mockBundleManagerClient.StitchPartsFunc.History()))
+	if len(mockUploadStore.ComposeFunc.History()) != 1 {
+		t.Errorf("unexpected number of Compose calls. want=%d have=%d", 1, len(mockUploadStore.ComposeFunc.History()))
 	} else {
-		if call := mockBundleManagerClient.StitchPartsFunc.History()[0]; call.Arg1 != 42 {
-			t.Errorf("unexpected bundle id. want=%d have=%d", 42, call.Arg1)
+		call := mockUploadStore.ComposeFunc.History()[0]
+
+		if call.Arg1 != "upload-42.lsif.gz" {
+			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
+		}
+
+		expectedFilenames := []string{
+			"upload-42.0.lsif.gz",
+			"upload-42.1.lsif.gz",
+			"upload-42.2.lsif.gz",
+			"upload-42.3.lsif.gz",
+			"upload-42.4.lsif.gz",
+		}
+		if diff := cmp.Diff(expectedFilenames, call.Arg2); diff != "" {
+			t.Errorf("unexpected source filenames (-want +got):\n%s", diff)
 		}
 	}
 }
 
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	upload := store.Upload{
 		ID:            42,
@@ -399,8 +409,8 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
+		store:       mockStore,
+		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
 

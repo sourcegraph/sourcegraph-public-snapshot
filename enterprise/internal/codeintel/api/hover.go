@@ -20,9 +20,7 @@ func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character
 	}
 
 	pathInBundle := strings.TrimPrefix(file, dump.Root)
-	bundleClient := api.bundleManagerClient.BundleClient(dump.ID)
-
-	text, rn, exists, err := bundleClient.Hover(ctx, pathInBundle, line, character)
+	text, rn, exists, err := api.bundleManagerClient.Hover(ctx, dump.ID, pathInBundle, line, character)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
@@ -34,15 +32,14 @@ func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character
 		return text, rn, true, nil
 	}
 
-	definition, exists, err := api.definitionRaw(ctx, dump, bundleClient, pathInBundle, line, character)
+	definition, exists, err := api.definitionRaw(ctx, dump, pathInBundle, line, character)
 	if err != nil || !exists {
 		return "", bundles.Range{}, false, errors.Wrap(err, "api.definitionRaw")
 	}
 
 	pathInDefinitionBundle := strings.TrimPrefix(definition.Path, definition.Dump.Root)
-	definitionBundleClient := api.bundleManagerClient.BundleClient(definition.Dump.ID)
 
-	text, rn, exists, err = definitionBundleClient.Hover(ctx, pathInDefinitionBundle, definition.Range.Start.Line, definition.Range.Start.Character)
+	text, rn, exists, err = api.bundleManagerClient.Hover(ctx, definition.Dump.ID, pathInDefinitionBundle, definition.Range.Start.Line, definition.Range.Start.Character)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")

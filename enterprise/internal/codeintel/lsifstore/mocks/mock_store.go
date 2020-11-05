@@ -16,9 +16,6 @@ type MockStore struct {
 	// ClearFunc is an instance of a mock function object controlling the
 	// behavior of the method Clear.
 	ClearFunc *StoreClearFunc
-	// DumpIDsFunc is an instance of a mock function object controlling the
-	// behavior of the method DumpIDs.
-	DumpIDsFunc *StoreDumpIDsFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -30,11 +27,6 @@ func NewMockStore() *MockStore {
 				return nil
 			},
 		},
-		DumpIDsFunc: &StoreDumpIDsFunc{
-			defaultHook: func(context.Context, int, int) ([]int, error) {
-				return nil, nil
-			},
-		},
 	}
 }
 
@@ -44,9 +36,6 @@ func NewMockStoreFrom(i lsifstore.Store) *MockStore {
 	return &MockStore{
 		ClearFunc: &StoreClearFunc{
 			defaultHook: i.Clear,
-		},
-		DumpIDsFunc: &StoreDumpIDsFunc{
-			defaultHook: i.DumpIDs,
 		},
 	}
 }
@@ -161,115 +150,4 @@ func (c StoreClearFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreClearFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// StoreDumpIDsFunc describes the behavior when the DumpIDs method of the
-// parent MockStore instance is invoked.
-type StoreDumpIDsFunc struct {
-	defaultHook func(context.Context, int, int) ([]int, error)
-	hooks       []func(context.Context, int, int) ([]int, error)
-	history     []StoreDumpIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// DumpIDs delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) DumpIDs(v0 context.Context, v1 int, v2 int) ([]int, error) {
-	r0, r1 := m.DumpIDsFunc.nextHook()(v0, v1, v2)
-	m.DumpIDsFunc.appendCall(StoreDumpIDsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DumpIDs method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreDumpIDsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DumpIDs method of the parent MockStore instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreDumpIDsFunc) PushHook(hook func(context.Context, int, int) ([]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreDumpIDsFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int) ([]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreDumpIDsFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, int, int) ([]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreDumpIDsFunc) nextHook() func(context.Context, int, int) ([]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreDumpIDsFunc) appendCall(r0 StoreDumpIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreDumpIDsFuncCall objects describing the
-// invocations of this function.
-func (f *StoreDumpIDsFunc) History() []StoreDumpIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreDumpIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreDumpIDsFuncCall is an object that describes an invocation of method
-// DumpIDs on an instance of MockStore.
-type StoreDumpIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreDumpIDsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreDumpIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }

@@ -5,7 +5,7 @@ package mocks
 import (
 	"context"
 	client "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"io"
+	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"sync"
 )
 
@@ -14,24 +14,33 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client)
 // used for unit testing.
 type MockBundleManagerClient struct {
-	// BundleClientFunc is an instance of a mock function object controlling
-	// the behavior of the method BundleClient.
-	BundleClientFunc *BundleManagerClientBundleClientFunc
-	// DeleteUploadFunc is an instance of a mock function object controlling
-	// the behavior of the method DeleteUpload.
-	DeleteUploadFunc *BundleManagerClientDeleteUploadFunc
-	// GetUploadFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUpload.
-	GetUploadFunc *BundleManagerClientGetUploadFunc
-	// SendUploadFunc is an instance of a mock function object controlling
-	// the behavior of the method SendUpload.
-	SendUploadFunc *BundleManagerClientSendUploadFunc
-	// SendUploadPartFunc is an instance of a mock function object
-	// controlling the behavior of the method SendUploadPart.
-	SendUploadPartFunc *BundleManagerClientSendUploadPartFunc
-	// StitchPartsFunc is an instance of a mock function object controlling
-	// the behavior of the method StitchParts.
-	StitchPartsFunc *BundleManagerClientStitchPartsFunc
+	// DefinitionsFunc is an instance of a mock function object controlling
+	// the behavior of the method Definitions.
+	DefinitionsFunc *BundleManagerClientDefinitionsFunc
+	// DiagnosticsFunc is an instance of a mock function object controlling
+	// the behavior of the method Diagnostics.
+	DiagnosticsFunc *BundleManagerClientDiagnosticsFunc
+	// ExistsFunc is an instance of a mock function object controlling the
+	// behavior of the method Exists.
+	ExistsFunc *BundleManagerClientExistsFunc
+	// HoverFunc is an instance of a mock function object controlling the
+	// behavior of the method Hover.
+	HoverFunc *BundleManagerClientHoverFunc
+	// MonikerResultsFunc is an instance of a mock function object
+	// controlling the behavior of the method MonikerResults.
+	MonikerResultsFunc *BundleManagerClientMonikerResultsFunc
+	// MonikersByPositionFunc is an instance of a mock function object
+	// controlling the behavior of the method MonikersByPosition.
+	MonikersByPositionFunc *BundleManagerClientMonikersByPositionFunc
+	// PackageInformationFunc is an instance of a mock function object
+	// controlling the behavior of the method PackageInformation.
+	PackageInformationFunc *BundleManagerClientPackageInformationFunc
+	// RangesFunc is an instance of a mock function object controlling the
+	// behavior of the method Ranges.
+	RangesFunc *BundleManagerClientRangesFunc
+	// ReferencesFunc is an instance of a mock function object controlling
+	// the behavior of the method References.
+	ReferencesFunc *BundleManagerClientReferencesFunc
 }
 
 // NewMockBundleManagerClient creates a new mock of the BundleManagerClient
@@ -39,34 +48,49 @@ type MockBundleManagerClient struct {
 // overwritten.
 func NewMockBundleManagerClient() *MockBundleManagerClient {
 	return &MockBundleManagerClient{
-		BundleClientFunc: &BundleManagerClientBundleClientFunc{
-			defaultHook: func(int) client.BundleClient {
-				return nil
-			},
-		},
-		DeleteUploadFunc: &BundleManagerClientDeleteUploadFunc{
-			defaultHook: func(context.Context, int) error {
-				return nil
-			},
-		},
-		GetUploadFunc: &BundleManagerClientGetUploadFunc{
-			defaultHook: func(context.Context, int) (io.ReadCloser, error) {
+		DefinitionsFunc: &BundleManagerClientDefinitionsFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
 				return nil, nil
 			},
 		},
-		SendUploadFunc: &BundleManagerClientSendUploadFunc{
-			defaultHook: func(context.Context, int, io.Reader) (int64, error) {
-				return 0, nil
+		DiagnosticsFunc: &BundleManagerClientDiagnosticsFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error) {
+				return nil, 0, nil
 			},
 		},
-		SendUploadPartFunc: &BundleManagerClientSendUploadPartFunc{
-			defaultHook: func(context.Context, int, int, io.Reader) error {
-				return nil
+		ExistsFunc: &BundleManagerClientExistsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
 			},
 		},
-		StitchPartsFunc: &BundleManagerClientStitchPartsFunc{
-			defaultHook: func(context.Context, int, int) (int64, error) {
-				return 0, nil
+		HoverFunc: &BundleManagerClientHoverFunc{
+			defaultHook: func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error) {
+				return "", clienttypes.Range{}, false, nil
+			},
+		},
+		MonikerResultsFunc: &BundleManagerClientMonikerResultsFunc{
+			defaultHook: func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error) {
+				return nil, 0, nil
+			},
+		},
+		MonikersByPositionFunc: &BundleManagerClientMonikersByPositionFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error) {
+				return nil, nil
+			},
+		},
+		PackageInformationFunc: &BundleManagerClientPackageInformationFunc{
+			defaultHook: func(context.Context, int, string, string) (clienttypes.PackageInformationData, error) {
+				return clienttypes.PackageInformationData{}, nil
+			},
+		},
+		RangesFunc: &BundleManagerClientRangesFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error) {
+				return nil, nil
+			},
+		},
+		ReferencesFunc: &BundleManagerClientReferencesFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
+				return nil, nil
 			},
 		},
 	}
@@ -77,272 +101,66 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 // implementation, unless overwritten.
 func NewMockBundleManagerClientFrom(i client.BundleManagerClient) *MockBundleManagerClient {
 	return &MockBundleManagerClient{
-		BundleClientFunc: &BundleManagerClientBundleClientFunc{
-			defaultHook: i.BundleClient,
+		DefinitionsFunc: &BundleManagerClientDefinitionsFunc{
+			defaultHook: i.Definitions,
 		},
-		DeleteUploadFunc: &BundleManagerClientDeleteUploadFunc{
-			defaultHook: i.DeleteUpload,
+		DiagnosticsFunc: &BundleManagerClientDiagnosticsFunc{
+			defaultHook: i.Diagnostics,
 		},
-		GetUploadFunc: &BundleManagerClientGetUploadFunc{
-			defaultHook: i.GetUpload,
+		ExistsFunc: &BundleManagerClientExistsFunc{
+			defaultHook: i.Exists,
 		},
-		SendUploadFunc: &BundleManagerClientSendUploadFunc{
-			defaultHook: i.SendUpload,
+		HoverFunc: &BundleManagerClientHoverFunc{
+			defaultHook: i.Hover,
 		},
-		SendUploadPartFunc: &BundleManagerClientSendUploadPartFunc{
-			defaultHook: i.SendUploadPart,
+		MonikerResultsFunc: &BundleManagerClientMonikerResultsFunc{
+			defaultHook: i.MonikerResults,
 		},
-		StitchPartsFunc: &BundleManagerClientStitchPartsFunc{
-			defaultHook: i.StitchParts,
+		MonikersByPositionFunc: &BundleManagerClientMonikersByPositionFunc{
+			defaultHook: i.MonikersByPosition,
+		},
+		PackageInformationFunc: &BundleManagerClientPackageInformationFunc{
+			defaultHook: i.PackageInformation,
+		},
+		RangesFunc: &BundleManagerClientRangesFunc{
+			defaultHook: i.Ranges,
+		},
+		ReferencesFunc: &BundleManagerClientReferencesFunc{
+			defaultHook: i.References,
 		},
 	}
 }
 
-// BundleManagerClientBundleClientFunc describes the behavior when the
-// BundleClient method of the parent MockBundleManagerClient instance is
+// BundleManagerClientDefinitionsFunc describes the behavior when the
+// Definitions method of the parent MockBundleManagerClient instance is
 // invoked.
-type BundleManagerClientBundleClientFunc struct {
-	defaultHook func(int) client.BundleClient
-	hooks       []func(int) client.BundleClient
-	history     []BundleManagerClientBundleClientFuncCall
+type BundleManagerClientDefinitionsFunc struct {
+	defaultHook func(context.Context, int, string, int, int) ([]clienttypes.Location, error)
+	hooks       []func(context.Context, int, string, int, int) ([]clienttypes.Location, error)
+	history     []BundleManagerClientDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
-// BundleClient delegates to the next hook function in the queue and stores
+// Definitions delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) BundleClient(v0 int) client.BundleClient {
-	r0 := m.BundleClientFunc.nextHook()(v0)
-	m.BundleClientFunc.appendCall(BundleManagerClientBundleClientFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the BundleClient method
-// of the parent MockBundleManagerClient instance is invoked and the hook
-// queue is empty.
-func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func(int) client.BundleClient) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BundleClient method of the parent MockBundleManagerClient instance
-// inovkes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *BundleManagerClientBundleClientFunc) PushHook(hook func(int) client.BundleClient) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *BundleManagerClientBundleClientFunc) SetDefaultReturn(r0 client.BundleClient) {
-	f.SetDefaultHook(func(int) client.BundleClient {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *BundleManagerClientBundleClientFunc) PushReturn(r0 client.BundleClient) {
-	f.PushHook(func(int) client.BundleClient {
-		return r0
-	})
-}
-
-func (f *BundleManagerClientBundleClientFunc) nextHook() func(int) client.BundleClient {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *BundleManagerClientBundleClientFunc) appendCall(r0 BundleManagerClientBundleClientFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of BundleManagerClientBundleClientFuncCall
-// objects describing the invocations of this function.
-func (f *BundleManagerClientBundleClientFunc) History() []BundleManagerClientBundleClientFuncCall {
-	f.mutex.Lock()
-	history := make([]BundleManagerClientBundleClientFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// BundleManagerClientBundleClientFuncCall is an object that describes an
-// invocation of method BundleClient on an instance of
-// MockBundleManagerClient.
-type BundleManagerClientBundleClientFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 client.BundleClient
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c BundleManagerClientBundleClientFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c BundleManagerClientBundleClientFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// BundleManagerClientDeleteUploadFunc describes the behavior when the
-// DeleteUpload method of the parent MockBundleManagerClient instance is
-// invoked.
-type BundleManagerClientDeleteUploadFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
-	history     []BundleManagerClientDeleteUploadFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteUpload delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) DeleteUpload(v0 context.Context, v1 int) error {
-	r0 := m.DeleteUploadFunc.nextHook()(v0, v1)
-	m.DeleteUploadFunc.appendCall(BundleManagerClientDeleteUploadFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the DeleteUpload method
-// of the parent MockBundleManagerClient instance is invoked and the hook
-// queue is empty.
-func (f *BundleManagerClientDeleteUploadFunc) SetDefaultHook(hook func(context.Context, int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteUpload method of the parent MockBundleManagerClient instance
-// inovkes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *BundleManagerClientDeleteUploadFunc) PushHook(hook func(context.Context, int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *BundleManagerClientDeleteUploadFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *BundleManagerClientDeleteUploadFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-func (f *BundleManagerClientDeleteUploadFunc) nextHook() func(context.Context, int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *BundleManagerClientDeleteUploadFunc) appendCall(r0 BundleManagerClientDeleteUploadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of BundleManagerClientDeleteUploadFuncCall
-// objects describing the invocations of this function.
-func (f *BundleManagerClientDeleteUploadFunc) History() []BundleManagerClientDeleteUploadFuncCall {
-	f.mutex.Lock()
-	history := make([]BundleManagerClientDeleteUploadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// BundleManagerClientDeleteUploadFuncCall is an object that describes an
-// invocation of method DeleteUpload on an instance of
-// MockBundleManagerClient.
-type BundleManagerClientDeleteUploadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c BundleManagerClientDeleteUploadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c BundleManagerClientDeleteUploadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// BundleManagerClientGetUploadFunc describes the behavior when the
-// GetUpload method of the parent MockBundleManagerClient instance is
-// invoked.
-type BundleManagerClientGetUploadFunc struct {
-	defaultHook func(context.Context, int) (io.ReadCloser, error)
-	hooks       []func(context.Context, int) (io.ReadCloser, error)
-	history     []BundleManagerClientGetUploadFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUpload delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockBundleManagerClient) GetUpload(v0 context.Context, v1 int) (io.ReadCloser, error) {
-	r0, r1 := m.GetUploadFunc.nextHook()(v0, v1)
-	m.GetUploadFunc.appendCall(BundleManagerClientGetUploadFuncCall{v0, v1, r0, r1})
+func (m *MockBundleManagerClient) Definitions(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]clienttypes.Location, error) {
+	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DefinitionsFunc.appendCall(BundleManagerClientDefinitionsFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetUpload method of
-// the parent MockBundleManagerClient instance is invoked and the hook queue
-// is empty.
-func (f *BundleManagerClientGetUploadFunc) SetDefaultHook(hook func(context.Context, int) (io.ReadCloser, error)) {
+// SetDefaultHook sets function that is called when the Definitions method
+// of the parent MockBundleManagerClient instance is invoked and the hook
+// queue is empty.
+func (f *BundleManagerClientDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]clienttypes.Location, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUpload method of the parent MockBundleManagerClient instance inovkes
+// Definitions method of the parent MockBundleManagerClient instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *BundleManagerClientGetUploadFunc) PushHook(hook func(context.Context, int) (io.ReadCloser, error)) {
+func (f *BundleManagerClientDefinitionsFunc) PushHook(hook func(context.Context, int, string, int, int) ([]clienttypes.Location, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -350,21 +168,21 @@ func (f *BundleManagerClientGetUploadFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientGetUploadFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (io.ReadCloser, error) {
+func (f *BundleManagerClientDefinitionsFunc) SetDefaultReturn(r0 []clienttypes.Location, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientGetUploadFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, int) (io.ReadCloser, error) {
+func (f *BundleManagerClientDefinitionsFunc) PushReturn(r0 []clienttypes.Location, r1 error) {
+	f.PushHook(func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
 		return r0, r1
 	})
 }
 
-func (f *BundleManagerClientGetUploadFunc) nextHook() func(context.Context, int) (io.ReadCloser, error) {
+func (f *BundleManagerClientDefinitionsFunc) nextHook() func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -377,137 +195,27 @@ func (f *BundleManagerClientGetUploadFunc) nextHook() func(context.Context, int)
 	return hook
 }
 
-func (f *BundleManagerClientGetUploadFunc) appendCall(r0 BundleManagerClientGetUploadFuncCall) {
+func (f *BundleManagerClientDefinitionsFunc) appendCall(r0 BundleManagerClientDefinitionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of BundleManagerClientGetUploadFuncCall
+// History returns a sequence of BundleManagerClientDefinitionsFuncCall
 // objects describing the invocations of this function.
-func (f *BundleManagerClientGetUploadFunc) History() []BundleManagerClientGetUploadFuncCall {
+func (f *BundleManagerClientDefinitionsFunc) History() []BundleManagerClientDefinitionsFuncCall {
 	f.mutex.Lock()
-	history := make([]BundleManagerClientGetUploadFuncCall, len(f.history))
+	history := make([]BundleManagerClientDefinitionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// BundleManagerClientGetUploadFuncCall is an object that describes an
-// invocation of method GetUpload on an instance of MockBundleManagerClient.
-type BundleManagerClientGetUploadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c BundleManagerClientGetUploadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c BundleManagerClientGetUploadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// BundleManagerClientSendUploadFunc describes the behavior when the
-// SendUpload method of the parent MockBundleManagerClient instance is
-// invoked.
-type BundleManagerClientSendUploadFunc struct {
-	defaultHook func(context.Context, int, io.Reader) (int64, error)
-	hooks       []func(context.Context, int, io.Reader) (int64, error)
-	history     []BundleManagerClientSendUploadFuncCall
-	mutex       sync.Mutex
-}
-
-// SendUpload delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) SendUpload(v0 context.Context, v1 int, v2 io.Reader) (int64, error) {
-	r0, r1 := m.SendUploadFunc.nextHook()(v0, v1, v2)
-	m.SendUploadFunc.appendCall(BundleManagerClientSendUploadFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the SendUpload method of
-// the parent MockBundleManagerClient instance is invoked and the hook queue
-// is empty.
-func (f *BundleManagerClientSendUploadFunc) SetDefaultHook(hook func(context.Context, int, io.Reader) (int64, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SendUpload method of the parent MockBundleManagerClient instance inovkes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *BundleManagerClientSendUploadFunc) PushHook(hook func(context.Context, int, io.Reader) (int64, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *BundleManagerClientSendUploadFunc) SetDefaultReturn(r0 int64, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, io.Reader) (int64, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *BundleManagerClientSendUploadFunc) PushReturn(r0 int64, r1 error) {
-	f.PushHook(func(context.Context, int, io.Reader) (int64, error) {
-		return r0, r1
-	})
-}
-
-func (f *BundleManagerClientSendUploadFunc) nextHook() func(context.Context, int, io.Reader) (int64, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *BundleManagerClientSendUploadFunc) appendCall(r0 BundleManagerClientSendUploadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of BundleManagerClientSendUploadFuncCall
-// objects describing the invocations of this function.
-func (f *BundleManagerClientSendUploadFunc) History() []BundleManagerClientSendUploadFuncCall {
-	f.mutex.Lock()
-	history := make([]BundleManagerClientSendUploadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// BundleManagerClientSendUploadFuncCall is an object that describes an
-// invocation of method SendUpload on an instance of
+// BundleManagerClientDefinitionsFuncCall is an object that describes an
+// invocation of method Definitions on an instance of
 // MockBundleManagerClient.
-type BundleManagerClientSendUploadFuncCall struct {
+type BundleManagerClientDefinitionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -516,10 +224,16 @@ type BundleManagerClientSendUploadFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 io.Reader
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int64
+	Result0 []clienttypes.Location
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -527,47 +241,280 @@ type BundleManagerClientSendUploadFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c BundleManagerClientSendUploadFuncCall) Args() []interface{} {
+func (c BundleManagerClientDefinitionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BundleManagerClientDiagnosticsFunc describes the behavior when the
+// Diagnostics method of the parent MockBundleManagerClient instance is
+// invoked.
+type BundleManagerClientDiagnosticsFunc struct {
+	defaultHook func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error)
+	hooks       []func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error)
+	history     []BundleManagerClientDiagnosticsFuncCall
+	mutex       sync.Mutex
+}
+
+// Diagnostics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBundleManagerClient) Diagnostics(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]clienttypes.Diagnostic, int, error) {
+	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DiagnosticsFunc.appendCall(BundleManagerClientDiagnosticsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Diagnostics method
+// of the parent MockBundleManagerClient instance is invoked and the hook
+// queue is empty.
+func (f *BundleManagerClientDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Diagnostics method of the parent MockBundleManagerClient instance inovkes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *BundleManagerClientDiagnosticsFunc) PushHook(hook func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientDiagnosticsFunc) SetDefaultReturn(r0 []clienttypes.Diagnostic, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientDiagnosticsFunc) PushReturn(r0 []clienttypes.Diagnostic, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BundleManagerClientDiagnosticsFunc) nextHook() func(context.Context, int, string, int, int) ([]clienttypes.Diagnostic, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientDiagnosticsFunc) appendCall(r0 BundleManagerClientDiagnosticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleManagerClientDiagnosticsFuncCall
+// objects describing the invocations of this function.
+func (f *BundleManagerClientDiagnosticsFunc) History() []BundleManagerClientDiagnosticsFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientDiagnosticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientDiagnosticsFuncCall is an object that describes an
+// invocation of method Diagnostics on an instance of
+// MockBundleManagerClient.
+type BundleManagerClientDiagnosticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []clienttypes.Diagnostic
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientDiagnosticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientDiagnosticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// BundleManagerClientExistsFunc describes the behavior when the Exists
+// method of the parent MockBundleManagerClient instance is invoked.
+type BundleManagerClientExistsFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []BundleManagerClientExistsFuncCall
+	mutex       sync.Mutex
+}
+
+// Exists delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBundleManagerClient) Exists(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.ExistsFunc.nextHook()(v0, v1, v2)
+	m.ExistsFunc.appendCall(BundleManagerClientExistsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Exists method of the
+// parent MockBundleManagerClient instance is invoked and the hook queue is
+// empty.
+func (f *BundleManagerClientExistsFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Exists method of the parent MockBundleManagerClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BundleManagerClientExistsFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientExistsFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleManagerClientExistsFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientExistsFunc) appendCall(r0 BundleManagerClientExistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleManagerClientExistsFuncCall objects
+// describing the invocations of this function.
+func (f *BundleManagerClientExistsFunc) History() []BundleManagerClientExistsFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientExistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientExistsFuncCall is an object that describes an
+// invocation of method Exists on an instance of MockBundleManagerClient.
+type BundleManagerClientExistsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientExistsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c BundleManagerClientSendUploadFuncCall) Results() []interface{} {
+func (c BundleManagerClientExistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// BundleManagerClientSendUploadPartFunc describes the behavior when the
-// SendUploadPart method of the parent MockBundleManagerClient instance is
-// invoked.
-type BundleManagerClientSendUploadPartFunc struct {
-	defaultHook func(context.Context, int, int, io.Reader) error
-	hooks       []func(context.Context, int, int, io.Reader) error
-	history     []BundleManagerClientSendUploadPartFuncCall
+// BundleManagerClientHoverFunc describes the behavior when the Hover method
+// of the parent MockBundleManagerClient instance is invoked.
+type BundleManagerClientHoverFunc struct {
+	defaultHook func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error)
+	hooks       []func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error)
+	history     []BundleManagerClientHoverFuncCall
 	mutex       sync.Mutex
 }
 
-// SendUploadPart delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) SendUploadPart(v0 context.Context, v1 int, v2 int, v3 io.Reader) error {
-	r0 := m.SendUploadPartFunc.nextHook()(v0, v1, v2, v3)
-	m.SendUploadPartFunc.appendCall(BundleManagerClientSendUploadPartFuncCall{v0, v1, v2, v3, r0})
-	return r0
+// Hover delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBundleManagerClient) Hover(v0 context.Context, v1 int, v2 string, v3 int, v4 int) (string, clienttypes.Range, bool, error) {
+	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.HoverFunc.appendCall(BundleManagerClientHoverFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
+	return r0, r1, r2, r3
 }
 
-// SetDefaultHook sets function that is called when the SendUploadPart
-// method of the parent MockBundleManagerClient instance is invoked and the
-// hook queue is empty.
-func (f *BundleManagerClientSendUploadPartFunc) SetDefaultHook(hook func(context.Context, int, int, io.Reader) error) {
+// SetDefaultHook sets function that is called when the Hover method of the
+// parent MockBundleManagerClient instance is invoked and the hook queue is
+// empty.
+func (f *BundleManagerClientHoverFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SendUploadPart method of the parent MockBundleManagerClient instance
-// inovkes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *BundleManagerClientSendUploadPartFunc) PushHook(hook func(context.Context, int, int, io.Reader) error) {
+// Hover method of the parent MockBundleManagerClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BundleManagerClientHoverFunc) PushHook(hook func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -575,21 +522,21 @@ func (f *BundleManagerClientSendUploadPartFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientSendUploadPartFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, int, io.Reader) error {
-		return r0
+func (f *BundleManagerClientHoverFunc) SetDefaultReturn(r0 string, r1 clienttypes.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error) {
+		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientSendUploadPartFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, int, io.Reader) error {
-		return r0
+func (f *BundleManagerClientHoverFunc) PushReturn(r0 string, r1 clienttypes.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error) {
+		return r0, r1, r2, r3
 	})
 }
 
-func (f *BundleManagerClientSendUploadPartFunc) nextHook() func(context.Context, int, int, io.Reader) error {
+func (f *BundleManagerClientHoverFunc) nextHook() func(context.Context, int, string, int, int) (string, clienttypes.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -602,27 +549,26 @@ func (f *BundleManagerClientSendUploadPartFunc) nextHook() func(context.Context,
 	return hook
 }
 
-func (f *BundleManagerClientSendUploadPartFunc) appendCall(r0 BundleManagerClientSendUploadPartFuncCall) {
+func (f *BundleManagerClientHoverFunc) appendCall(r0 BundleManagerClientHoverFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of BundleManagerClientSendUploadPartFuncCall
-// objects describing the invocations of this function.
-func (f *BundleManagerClientSendUploadPartFunc) History() []BundleManagerClientSendUploadPartFuncCall {
+// History returns a sequence of BundleManagerClientHoverFuncCall objects
+// describing the invocations of this function.
+func (f *BundleManagerClientHoverFunc) History() []BundleManagerClientHoverFuncCall {
 	f.mutex.Lock()
-	history := make([]BundleManagerClientSendUploadPartFuncCall, len(f.history))
+	history := make([]BundleManagerClientHoverFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// BundleManagerClientSendUploadPartFuncCall is an object that describes an
-// invocation of method SendUploadPart on an instance of
-// MockBundleManagerClient.
-type BundleManagerClientSendUploadPartFuncCall struct {
+// BundleManagerClientHoverFuncCall is an object that describes an
+// invocation of method Hover on an instance of MockBundleManagerClient.
+type BundleManagerClientHoverFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -631,57 +577,439 @@ type BundleManagerClientSendUploadPartFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 io.Reader
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 clienttypes.Range
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c BundleManagerClientSendUploadPartFuncCall) Args() []interface{} {
+func (c BundleManagerClientHoverFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientHoverFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// BundleManagerClientMonikerResultsFunc describes the behavior when the
+// MonikerResults method of the parent MockBundleManagerClient instance is
+// invoked.
+type BundleManagerClientMonikerResultsFunc struct {
+	defaultHook func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error)
+	hooks       []func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error)
+	history     []BundleManagerClientMonikerResultsFuncCall
+	mutex       sync.Mutex
+}
+
+// MonikerResults delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBundleManagerClient) MonikerResults(v0 context.Context, v1 int, v2 string, v3 string, v4 string, v5 int, v6 int) ([]clienttypes.Location, int, error) {
+	r0, r1, r2 := m.MonikerResultsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.MonikerResultsFunc.appendCall(BundleManagerClientMonikerResultsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the MonikerResults
+// method of the parent MockBundleManagerClient instance is invoked and the
+// hook queue is empty.
+func (f *BundleManagerClientMonikerResultsFunc) SetDefaultHook(hook func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MonikerResults method of the parent MockBundleManagerClient instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BundleManagerClientMonikerResultsFunc) PushHook(hook func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientMonikerResultsFunc) SetDefaultReturn(r0 []clienttypes.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientMonikerResultsFunc) PushReturn(r0 []clienttypes.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BundleManagerClientMonikerResultsFunc) nextHook() func(context.Context, int, string, string, string, int, int) ([]clienttypes.Location, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientMonikerResultsFunc) appendCall(r0 BundleManagerClientMonikerResultsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleManagerClientMonikerResultsFuncCall
+// objects describing the invocations of this function.
+func (f *BundleManagerClientMonikerResultsFunc) History() []BundleManagerClientMonikerResultsFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientMonikerResultsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientMonikerResultsFuncCall is an object that describes an
+// invocation of method MonikerResults on an instance of
+// MockBundleManagerClient.
+type BundleManagerClientMonikerResultsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []clienttypes.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientMonikerResultsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientMonikerResultsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// BundleManagerClientMonikersByPositionFunc describes the behavior when the
+// MonikersByPosition method of the parent MockBundleManagerClient instance
+// is invoked.
+type BundleManagerClientMonikersByPositionFunc struct {
+	defaultHook func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error)
+	hooks       []func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error)
+	history     []BundleManagerClientMonikersByPositionFuncCall
+	mutex       sync.Mutex
+}
+
+// MonikersByPosition delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBundleManagerClient) MonikersByPosition(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([][]clienttypes.MonikerData, error) {
+	r0, r1 := m.MonikersByPositionFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.MonikersByPositionFunc.appendCall(BundleManagerClientMonikersByPositionFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MonikersByPosition
+// method of the parent MockBundleManagerClient instance is invoked and the
+// hook queue is empty.
+func (f *BundleManagerClientMonikersByPositionFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MonikersByPosition method of the parent MockBundleManagerClient instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BundleManagerClientMonikersByPositionFunc) PushHook(hook func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientMonikersByPositionFunc) SetDefaultReturn(r0 [][]clienttypes.MonikerData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientMonikersByPositionFunc) PushReturn(r0 [][]clienttypes.MonikerData, r1 error) {
+	f.PushHook(func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleManagerClientMonikersByPositionFunc) nextHook() func(context.Context, int, string, int, int) ([][]clienttypes.MonikerData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientMonikersByPositionFunc) appendCall(r0 BundleManagerClientMonikersByPositionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BundleManagerClientMonikersByPositionFuncCall objects describing the
+// invocations of this function.
+func (f *BundleManagerClientMonikersByPositionFunc) History() []BundleManagerClientMonikersByPositionFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientMonikersByPositionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientMonikersByPositionFuncCall is an object that describes
+// an invocation of method MonikersByPosition on an instance of
+// MockBundleManagerClient.
+type BundleManagerClientMonikersByPositionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 [][]clienttypes.MonikerData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientMonikersByPositionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientMonikersByPositionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BundleManagerClientPackageInformationFunc describes the behavior when the
+// PackageInformation method of the parent MockBundleManagerClient instance
+// is invoked.
+type BundleManagerClientPackageInformationFunc struct {
+	defaultHook func(context.Context, int, string, string) (clienttypes.PackageInformationData, error)
+	hooks       []func(context.Context, int, string, string) (clienttypes.PackageInformationData, error)
+	history     []BundleManagerClientPackageInformationFuncCall
+	mutex       sync.Mutex
+}
+
+// PackageInformation delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBundleManagerClient) PackageInformation(v0 context.Context, v1 int, v2 string, v3 string) (clienttypes.PackageInformationData, error) {
+	r0, r1 := m.PackageInformationFunc.nextHook()(v0, v1, v2, v3)
+	m.PackageInformationFunc.appendCall(BundleManagerClientPackageInformationFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PackageInformation
+// method of the parent MockBundleManagerClient instance is invoked and the
+// hook queue is empty.
+func (f *BundleManagerClientPackageInformationFunc) SetDefaultHook(hook func(context.Context, int, string, string) (clienttypes.PackageInformationData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PackageInformation method of the parent MockBundleManagerClient instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BundleManagerClientPackageInformationFunc) PushHook(hook func(context.Context, int, string, string) (clienttypes.PackageInformationData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientPackageInformationFunc) SetDefaultReturn(r0 clienttypes.PackageInformationData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) (clienttypes.PackageInformationData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientPackageInformationFunc) PushReturn(r0 clienttypes.PackageInformationData, r1 error) {
+	f.PushHook(func(context.Context, int, string, string) (clienttypes.PackageInformationData, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleManagerClientPackageInformationFunc) nextHook() func(context.Context, int, string, string) (clienttypes.PackageInformationData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientPackageInformationFunc) appendCall(r0 BundleManagerClientPackageInformationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BundleManagerClientPackageInformationFuncCall objects describing the
+// invocations of this function.
+func (f *BundleManagerClientPackageInformationFunc) History() []BundleManagerClientPackageInformationFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientPackageInformationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientPackageInformationFuncCall is an object that describes
+// an invocation of method PackageInformation on an instance of
+// MockBundleManagerClient.
+type BundleManagerClientPackageInformationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 clienttypes.PackageInformationData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientPackageInformationFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c BundleManagerClientSendUploadPartFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+func (c BundleManagerClientPackageInformationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
-// BundleManagerClientStitchPartsFunc describes the behavior when the
-// StitchParts method of the parent MockBundleManagerClient instance is
-// invoked.
-type BundleManagerClientStitchPartsFunc struct {
-	defaultHook func(context.Context, int, int) (int64, error)
-	hooks       []func(context.Context, int, int) (int64, error)
-	history     []BundleManagerClientStitchPartsFuncCall
+// BundleManagerClientRangesFunc describes the behavior when the Ranges
+// method of the parent MockBundleManagerClient instance is invoked.
+type BundleManagerClientRangesFunc struct {
+	defaultHook func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error)
+	hooks       []func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error)
+	history     []BundleManagerClientRangesFuncCall
 	mutex       sync.Mutex
 }
 
-// StitchParts delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) StitchParts(v0 context.Context, v1 int, v2 int) (int64, error) {
-	r0, r1 := m.StitchPartsFunc.nextHook()(v0, v1, v2)
-	m.StitchPartsFunc.appendCall(BundleManagerClientStitchPartsFuncCall{v0, v1, v2, r0, r1})
+// Ranges delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBundleManagerClient) Ranges(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]clienttypes.CodeIntelligenceRange, error) {
+	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.RangesFunc.appendCall(BundleManagerClientRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the StitchParts method
-// of the parent MockBundleManagerClient instance is invoked and the hook
-// queue is empty.
-func (f *BundleManagerClientStitchPartsFunc) SetDefaultHook(hook func(context.Context, int, int) (int64, error)) {
+// SetDefaultHook sets function that is called when the Ranges method of the
+// parent MockBundleManagerClient instance is invoked and the hook queue is
+// empty.
+func (f *BundleManagerClientRangesFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// StitchParts method of the parent MockBundleManagerClient instance inovkes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *BundleManagerClientStitchPartsFunc) PushHook(hook func(context.Context, int, int) (int64, error)) {
+// Ranges method of the parent MockBundleManagerClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BundleManagerClientRangesFunc) PushHook(hook func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -689,21 +1017,21 @@ func (f *BundleManagerClientStitchPartsFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientStitchPartsFunc) SetDefaultReturn(r0 int64, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int) (int64, error) {
+func (f *BundleManagerClientRangesFunc) SetDefaultReturn(r0 []clienttypes.CodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientStitchPartsFunc) PushReturn(r0 int64, r1 error) {
-	f.PushHook(func(context.Context, int, int) (int64, error) {
+func (f *BundleManagerClientRangesFunc) PushReturn(r0 []clienttypes.CodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
-func (f *BundleManagerClientStitchPartsFunc) nextHook() func(context.Context, int, int) (int64, error) {
+func (f *BundleManagerClientRangesFunc) nextHook() func(context.Context, int, string, int, int) ([]clienttypes.CodeIntelligenceRange, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -716,27 +1044,26 @@ func (f *BundleManagerClientStitchPartsFunc) nextHook() func(context.Context, in
 	return hook
 }
 
-func (f *BundleManagerClientStitchPartsFunc) appendCall(r0 BundleManagerClientStitchPartsFuncCall) {
+func (f *BundleManagerClientRangesFunc) appendCall(r0 BundleManagerClientRangesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of BundleManagerClientStitchPartsFuncCall
-// objects describing the invocations of this function.
-func (f *BundleManagerClientStitchPartsFunc) History() []BundleManagerClientStitchPartsFuncCall {
+// History returns a sequence of BundleManagerClientRangesFuncCall objects
+// describing the invocations of this function.
+func (f *BundleManagerClientRangesFunc) History() []BundleManagerClientRangesFuncCall {
 	f.mutex.Lock()
-	history := make([]BundleManagerClientStitchPartsFuncCall, len(f.history))
+	history := make([]BundleManagerClientRangesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// BundleManagerClientStitchPartsFuncCall is an object that describes an
-// invocation of method StitchParts on an instance of
-// MockBundleManagerClient.
-type BundleManagerClientStitchPartsFuncCall struct {
+// BundleManagerClientRangesFuncCall is an object that describes an
+// invocation of method Ranges on an instance of MockBundleManagerClient.
+type BundleManagerClientRangesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -745,10 +1072,16 @@ type BundleManagerClientStitchPartsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int64
+	Result0 []clienttypes.CodeIntelligenceRange
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -756,12 +1089,132 @@ type BundleManagerClientStitchPartsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c BundleManagerClientStitchPartsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c BundleManagerClientRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c BundleManagerClientStitchPartsFuncCall) Results() []interface{} {
+func (c BundleManagerClientRangesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BundleManagerClientReferencesFunc describes the behavior when the
+// References method of the parent MockBundleManagerClient instance is
+// invoked.
+type BundleManagerClientReferencesFunc struct {
+	defaultHook func(context.Context, int, string, int, int) ([]clienttypes.Location, error)
+	hooks       []func(context.Context, int, string, int, int) ([]clienttypes.Location, error)
+	history     []BundleManagerClientReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// References delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBundleManagerClient) References(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]clienttypes.Location, error) {
+	r0, r1 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ReferencesFunc.appendCall(BundleManagerClientReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the References method of
+// the parent MockBundleManagerClient instance is invoked and the hook queue
+// is empty.
+func (f *BundleManagerClientReferencesFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]clienttypes.Location, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// References method of the parent MockBundleManagerClient instance inovkes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *BundleManagerClientReferencesFunc) PushHook(hook func(context.Context, int, string, int, int) ([]clienttypes.Location, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientReferencesFunc) SetDefaultReturn(r0 []clienttypes.Location, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientReferencesFunc) PushReturn(r0 []clienttypes.Location, r1 error) {
+	f.PushHook(func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleManagerClientReferencesFunc) nextHook() func(context.Context, int, string, int, int) ([]clienttypes.Location, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientReferencesFunc) appendCall(r0 BundleManagerClientReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleManagerClientReferencesFuncCall
+// objects describing the invocations of this function.
+func (f *BundleManagerClientReferencesFunc) History() []BundleManagerClientReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientReferencesFuncCall is an object that describes an
+// invocation of method References on an instance of
+// MockBundleManagerClient.
+type BundleManagerClientReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []clienttypes.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

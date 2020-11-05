@@ -252,7 +252,6 @@ func TestDefinitions(t *testing.T) {
 func TestReferences(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -261,8 +260,7 @@ func TestReferences(t *testing.T) {
 
 	// Cursor decoding
 	mockStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) { return store.Dump{ID: id}, true, nil })
-	mockBundleManagerClient.BundleClientFunc.SetDefaultReturn(mockBundleClient)
-	mockBundleClient.MonikersByPositionFunc.SetDefaultReturn([][]bundles.MonikerData{{testMoniker1, testMoniker2}}, nil)
+	mockBundleManagerClient.MonikersByPositionFunc.SetDefaultReturn([][]bundles.MonikerData{{testMoniker1, testMoniker2}}, nil)
 
 	// position can be translated for subsequent dumps
 	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", bundles.Position{Line: 20, Character: 15}, true, nil)

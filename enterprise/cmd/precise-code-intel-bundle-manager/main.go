@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -31,8 +30,6 @@ func main() {
 	if bundleDir == "" {
 		log.Fatalf("invalid value %q for %s: no value supplied", bundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
 	}
-
-	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
 		log.Fatalf("failed to prepare directories: %s", err)

@@ -399,7 +399,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		Kind:          es.Kind,
 		Config:        es.Config,
 		AuthProviders: ps,
-		HasNamespace:  es.NamespaceUserID != nil,
+		HasNamespace:  es.NamespaceUserID != 0,
 	}); err != nil {
 		return err
 	}
@@ -418,8 +418,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID, es.Unrestricted,
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
 	).Scan(&es.ID)
 }
 
@@ -431,6 +431,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	if len(svcs) == 0 {
 		return nil
 	}
+	e.ensureStore()
 
 	for _, s := range svcs {
 		s.Unrestricted = !gjson.Get(s.Config, "authorization").Exists()
@@ -445,9 +446,6 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	i := 0
 	for rows.Next() {
-		var deletedAt, lastSyncAt, nextSyncAt sql.NullTime
-		var namespaceUserID sql.NullInt32
-
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
@@ -455,28 +453,16 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&secret.StringValue{S: &svcs[i].Config},
 			&svcs[i].CreatedAt,
 			&dbutil.NullTime{Time: &svcs[i].UpdatedAt},
-			&deletedAt,
-			&lastSyncAt,
-			&nextSyncAt,
-			&namespaceUserID,
+			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
+			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
+			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
+			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
 		)
 		if err != nil {
 			return err
 		}
 
-		if deletedAt.Valid {
-			svcs[i].DeletedAt = &deletedAt.Time
-		}
-		if lastSyncAt.Valid {
-			svcs[i].LastSyncAt = &lastSyncAt.Time
-		}
-		if nextSyncAt.Valid {
-			svcs[i].NextSyncAt = &nextSyncAt.Time
-		}
-		if namespaceUserID.Valid {
-			svcs[i].NamespaceUserID = &namespaceUserID.Int32
-		}
 		i++
 	}
 
@@ -497,7 +483,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 			nullTimeColumn(s.DeletedAt),
 			nullTimeColumn(s.LastSyncAt),
 			nullTimeColumn(s.NextSyncAt),
-			s.NamespaceUserID,
+			nullInt32Column(s.NamespaceUserID),
 			s.Unrestricted,
 		))
 	}
@@ -571,7 +557,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Kind:          externalService.Kind,
 			Config:        *update.Config,
 			AuthProviders: ps,
-			HasNamespace:  externalService.NamespaceUserID != nil,
+			HasNamespace:  externalService.NamespaceUserID != 0,
 		}); err != nil {
 			return err
 		}
@@ -740,16 +726,16 @@ func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, li
 		}
 
 		if deletedAt.Valid {
-			h.DeletedAt = &deletedAt.Time
+			h.DeletedAt = deletedAt.Time
 		}
 		if lastSyncAt.Valid {
-			h.LastSyncAt = &lastSyncAt.Time
+			h.LastSyncAt = lastSyncAt.Time
 		}
 		if nextSyncAt.Valid {
-			h.NextSyncAt = &nextSyncAt.Time
+			h.NextSyncAt = nextSyncAt.Time
 		}
 		if namespaceUserID.Valid {
-			h.NamespaceUserID = &namespaceUserID.Int32
+			h.NamespaceUserID = namespaceUserID.Int32
 		}
 		results = append(results, &h)
 	}

@@ -9,13 +9,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testRepo(t *testing.T, store repos.Store, serviceKind string) (*repos.Repo, *repos.ExternalService) {
 	t.Helper()
 
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svc := &repos.ExternalService{

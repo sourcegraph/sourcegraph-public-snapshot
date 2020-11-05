@@ -15,5 +15,5 @@ func NewCodeIntelUploadHandler(ctx context.Context, internal bool) (http.Handler
 		return nil, err
 	}
 
-	return codeintelhttpapi.NewUploadHandler(services.store, services.bundleManagerClient, internal), nil
+	return codeintelhttpapi.NewUploadHandler(services.store, services.uploadStore, internal), nil
 }

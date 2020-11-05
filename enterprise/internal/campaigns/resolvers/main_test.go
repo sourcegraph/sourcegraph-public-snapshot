@@ -150,7 +150,7 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
 	t.Helper()
 
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svc := repos.ExternalService{
