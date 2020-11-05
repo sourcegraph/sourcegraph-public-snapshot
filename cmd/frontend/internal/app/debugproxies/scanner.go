@@ -115,7 +115,7 @@ func (cs *clusterScanner) watchEndpointEvents() (bool, error) {
 func (cs *clusterScanner) scanCluster() {
 
 	// Get services from all namespaces
-	services, err := cs.client.Services(metav1.NamespaceAll).List(metav1.ListOptions{})
+	services, err := cs.client.Services(cs.namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log15.Error("k8s failed to list services", "error", err)
 	}
@@ -143,7 +143,7 @@ func (cs *clusterScanner) scanCluster() {
 			}
 		}
 
-		endpoints, err := cs.client.Endpoints(metav1.NamespaceAll).Get(svcName, metav1.GetOptions{})
+		endpoints, err := cs.client.Endpoints(cs.namespace).Get(svcName, metav1.GetOptions{})
 		if err != nil {
 			log15.Error("k8s failed to get endpoints", "error", err)
 			return
