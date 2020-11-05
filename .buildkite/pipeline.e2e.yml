@@ -21,3 +21,5 @@ steps:
           workdir: test
           plugins:
             - vagrant-google
+            - vagrant-env
+            - vagrant-scp
