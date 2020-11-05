@@ -195,18 +195,11 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	// show` the results it returns. These proportions are untuned guesses.
 	//
 	// TODO(sqs): this can be made much more efficient in many ways
-	withTimeout := func(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-		if deadline.IsZero() {
-			return ctx, func() {}
-		}
-		return context.WithTimeout(ctx, timeout)
-	}
+
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
 	onelineCmd.Repo = repo
-	logTimeout := time.Until(deadline) / 2
-	tr.LazyPrintf("git log %v with timeout %s", onelineCmd.Args, logTimeout)
-	ctxLog, cancel := withTimeout(ctx, logTimeout)
+	ctxLog, cancel := withDeadlinePercentage(ctx, 0.5)
 	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
 	tr.LazyPrintf("git log done: data %d bytes, complete=%v, err=%v", len(data), complete, err)
 	cancel()
@@ -279,9 +272,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
 	showCmd.Repo = repo
 	var complete2 bool
-	showTimeout := time.Duration(float64(time.Until(deadline)) * 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
-	tr.LazyPrintf("git show %v with timeout %s", showCmd.Args, showTimeout)
-	ctxShow, cancel := withTimeout(ctx, showTimeout)
+	ctxShow, cancel := withDeadlinePercentage(ctx, 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
 	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
 	tr.LazyPrintf("git show done: data %d bytes, complete=%v, err=%v", len(data), complete2, err)
 	cancel()
@@ -490,4 +481,17 @@ func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []strin
 		filtered = append(filtered, ref)
 	}
 	return filtered, nil
+}
+
+// withDeadlinePercentage returns a context which expires once p of the
+// remaining time has passed. p decimal fraction in [0,1]. For example to
+// expire in half the remaining time set p to 0.5. To expire in 80% of the
+// remaining time, set p to 0.8.
+func withDeadlinePercentage(ctx context.Context, p float64) (context.Context, context.CancelFunc) {
+	if deadline, ok := ctx.Deadline(); ok {
+		now := time.Now()
+		d := time.Duration(float64(deadline.Sub(now)) * p)
+		return context.WithDeadline(ctx, now.Add(d))
+	}
+	return context.WithCancel(ctx)
 }
