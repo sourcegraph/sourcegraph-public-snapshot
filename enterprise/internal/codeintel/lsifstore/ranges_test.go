@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
 func TestFindRanges(t *testing.T) {
-	ranges := []types.RangeData{
+	ranges := []RangeData{
 		{
 			StartLine:      0,
 			StartCharacter: 3,
@@ -42,14 +41,14 @@ func TestFindRanges(t *testing.T) {
 		},
 	}
 
-	m := map[types.ID]types.RangeData{}
+	m := map[ID]RangeData{}
 	for i, r := range ranges {
-		m[types.ID(strconv.Itoa(i))] = r
+		m[ID(strconv.Itoa(i))] = r
 	}
 
 	for i, r := range ranges {
 		actual := findRanges(m, i, 4)
-		expected := []types.RangeData{r}
+		expected := []RangeData{r}
 		if diff := cmp.Diff(expected, actual); diff != "" {
 			t.Errorf("unexpected findRanges result %d (-want +got):\n%s", i, diff)
 		}
@@ -57,7 +56,7 @@ func TestFindRanges(t *testing.T) {
 }
 
 func TestFindRangesOrder(t *testing.T) {
-	ranges := []types.RangeData{
+	ranges := []RangeData{
 		{
 			StartLine:      0,
 			StartCharacter: 3,
@@ -90,13 +89,13 @@ func TestFindRangesOrder(t *testing.T) {
 		},
 	}
 
-	m := map[types.ID]types.RangeData{}
+	m := map[ID]RangeData{}
 	for i, r := range ranges {
-		m[types.ID(strconv.Itoa(i))] = r
+		m[ID(strconv.Itoa(i))] = r
 	}
 
 	actual := findRanges(m, 2, 4)
-	expected := []types.RangeData{ranges[2], ranges[1], ranges[0]}
+	expected := []RangeData{ranges[2], ranges[1], ranges[0]}
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected findRanges result (-want +got):\n%s", diff)
 	}
@@ -104,7 +103,7 @@ func TestFindRangesOrder(t *testing.T) {
 }
 
 func TestComparePosition(t *testing.T) {
-	left := types.RangeData{
+	left := RangeData{
 		StartLine:      5,
 		StartCharacter: 11,
 		EndLine:        5,
@@ -144,7 +143,7 @@ func TestRangeIntersectsSpan(t *testing.T) {
 		{startLine: 6, endLine: 7, expected: true},
 	}
 
-	r := types.RangeData{StartLine: 5, StartCharacter: 1, EndLine: 6, EndCharacter: 10}
+	r := RangeData{StartLine: 5, StartCharacter: 1, EndLine: 6, EndCharacter: 10}
 
 	for _, testCase := range testCases {
 		if val := rangeIntersectsSpan(r, testCase.startLine, testCase.endLine); val != testCase.expected {

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -57,7 +57,7 @@ func TestSameRepoPager(t *testing.T) {
 		},
 	})
 
-	expected := []types.PackageReference{
+	expected := []lsifstore.PackageReference{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f1")},
 		{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f2")},
 		{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f3")},
@@ -134,7 +134,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 		},
 	})
 
-	expected := []types.PackageReference{
+	expected := []lsifstore.PackageReference{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f1")},
 		{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f2")},
 		{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f3")},
@@ -199,12 +199,12 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 		},
 	})
 
-	expected := []types.PackageReference{
+	expected := []lsifstore.PackageReference{
 		{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f3")},
 		{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f4")},
 		{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f5")},
 	}
-	insertPackageReferences(t, store, append([]types.PackageReference{
+	insertPackageReferences(t, store, append([]lsifstore.PackageReference{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f1")},
 		{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f2")},
 	}, expected...))
@@ -249,14 +249,14 @@ func TestPackageReferencePager(t *testing.T) {
 	insertVisibleAtTip(t, dbconn.Global, 54, 5)
 	insertVisibleAtTip(t, dbconn.Global, 56, 7)
 
-	expected := []types.PackageReference{
+	expected := []lsifstore.PackageReference{
 		{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f2")},
 		{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f3")},
 		{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f4")},
 		{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f5")},
 		{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f7")},
 	}
-	insertPackageReferences(t, store, append([]types.PackageReference{
+	insertPackageReferences(t, store, append([]lsifstore.PackageReference{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f1")},
 		{DumpID: 6, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f6")},
 	}, expected...))
@@ -324,7 +324,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	insertVisibleAtTip(t, dbconn.Global, 58, 8)
 	insertVisibleAtTip(t, dbconn.Global, 59, 9)
 
-	expected := []types.PackageReference{
+	expected := []lsifstore.PackageReference{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f1")},
 		{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f2")},
 		{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f3")},
@@ -382,7 +382,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := store.UpdatePackageReferences(context.Background(), []types.PackageReference{
+	if err := store.UpdatePackageReferences(context.Background(), []lsifstore.PackageReference{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},
@@ -436,7 +436,7 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := store.UpdatePackageReferences(context.Background(), []types.PackageReference{
+	if err := store.UpdatePackageReferences(context.Background(), []lsifstore.PackageReference{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},
@@ -445,7 +445,7 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	if err := store.UpdatePackageReferences(context.Background(), []types.PackageReference{
+	if err := store.UpdatePackageReferences(context.Background(), []lsifstore.PackageReference{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"}, // two copies
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"}, // two copies
 		{DumpID: 42, Scheme: "s4", Name: "n4", Version: "v4"},

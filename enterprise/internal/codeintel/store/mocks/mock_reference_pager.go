@@ -4,7 +4,7 @@ package mocks
 
 import (
 	"context"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"sync"
 )
@@ -32,7 +32,7 @@ func NewMockReferencePager() *MockReferencePager {
 			},
 		},
 		PageFromOffsetFunc: &ReferencePagerPageFromOffsetFunc{
-			defaultHook: func(context.Context, int) ([]types.PackageReference, error) {
+			defaultHook: func(context.Context, int) ([]lsifstore.PackageReference, error) {
 				return nil, nil
 			},
 		},
@@ -160,15 +160,15 @@ func (c ReferencePagerDoneFuncCall) Results() []interface{} {
 // PageFromOffset method of the parent MockReferencePager instance is
 // invoked.
 type ReferencePagerPageFromOffsetFunc struct {
-	defaultHook func(context.Context, int) ([]types.PackageReference, error)
-	hooks       []func(context.Context, int) ([]types.PackageReference, error)
+	defaultHook func(context.Context, int) ([]lsifstore.PackageReference, error)
+	hooks       []func(context.Context, int) ([]lsifstore.PackageReference, error)
 	history     []ReferencePagerPageFromOffsetFuncCall
 	mutex       sync.Mutex
 }
 
 // PageFromOffset delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockReferencePager) PageFromOffset(v0 context.Context, v1 int) ([]types.PackageReference, error) {
+func (m *MockReferencePager) PageFromOffset(v0 context.Context, v1 int) ([]lsifstore.PackageReference, error) {
 	r0, r1 := m.PageFromOffsetFunc.nextHook()(v0, v1)
 	m.PageFromOffsetFunc.appendCall(ReferencePagerPageFromOffsetFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -177,7 +177,7 @@ func (m *MockReferencePager) PageFromOffset(v0 context.Context, v1 int) ([]types
 // SetDefaultHook sets function that is called when the PageFromOffset
 // method of the parent MockReferencePager instance is invoked and the hook
 // queue is empty.
-func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(context.Context, int) ([]types.PackageReference, error)) {
+func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(context.Context, int) ([]lsifstore.PackageReference, error)) {
 	f.defaultHook = hook
 }
 
@@ -185,7 +185,7 @@ func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(context.Cont
 // PageFromOffset method of the parent MockReferencePager instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(context.Context, int) ([]types.PackageReference, error)) {
+func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(context.Context, int) ([]lsifstore.PackageReference, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -193,21 +193,21 @@ func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ReferencePagerPageFromOffsetFunc) SetDefaultReturn(r0 []types.PackageReference, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]types.PackageReference, error) {
+func (f *ReferencePagerPageFromOffsetFunc) SetDefaultReturn(r0 []lsifstore.PackageReference, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]lsifstore.PackageReference, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ReferencePagerPageFromOffsetFunc) PushReturn(r0 []types.PackageReference, r1 error) {
-	f.PushHook(func(context.Context, int) ([]types.PackageReference, error) {
+func (f *ReferencePagerPageFromOffsetFunc) PushReturn(r0 []lsifstore.PackageReference, r1 error) {
+	f.PushHook(func(context.Context, int) ([]lsifstore.PackageReference, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReferencePagerPageFromOffsetFunc) nextHook() func(context.Context, int) ([]types.PackageReference, error) {
+func (f *ReferencePagerPageFromOffsetFunc) nextHook() func(context.Context, int) ([]lsifstore.PackageReference, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -248,7 +248,7 @@ type ReferencePagerPageFromOffsetFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.PackageReference
+	Result0 []lsifstore.PackageReference
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

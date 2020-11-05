@@ -4,53 +4,52 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
 func TestDocumentData(t *testing.T) {
-	expected := types.DocumentData{
-		Ranges: map[types.ID]types.RangeData{
-			types.ID("7864"): {
+	expected := DocumentData{
+		Ranges: map[ID]RangeData{
+			ID("7864"): {
 				StartLine:          541,
 				StartCharacter:     10,
 				EndLine:            541,
 				EndCharacter:       12,
-				DefinitionResultID: types.ID("1266"),
-				ReferenceResultID:  types.ID("15871"),
-				HoverResultID:      types.ID("1269"),
+				DefinitionResultID: ID("1266"),
+				ReferenceResultID:  ID("15871"),
+				HoverResultID:      ID("1269"),
 				MonikerIDs:         nil,
 			},
-			types.ID("8265"): {
+			ID("8265"): {
 				StartLine:          266,
 				StartCharacter:     10,
 				EndLine:            266,
 				EndCharacter:       16,
-				DefinitionResultID: types.ID("311"),
-				ReferenceResultID:  types.ID("15500"),
-				HoverResultID:      types.ID("317"),
-				MonikerIDs:         []types.ID{types.ID("314")},
+				DefinitionResultID: ID("311"),
+				ReferenceResultID:  ID("15500"),
+				HoverResultID:      ID("317"),
+				MonikerIDs:         []ID{ID("314")},
 			},
 		},
-		HoverResults: map[types.ID]string{
-			types.ID("1269"): "```go\nvar id string\n```",
-			types.ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
+		HoverResults: map[ID]string{
+			ID("1269"): "```go\nvar id string\n```",
+			ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
 		},
-		Monikers: map[types.ID]types.MonikerData{
-			types.ID("314"): {
+		Monikers: map[ID]MonikerData{
+			ID("314"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
 				Identifier:           "github.com/sourcegraph/lsif-go/protocol:Vertex",
-				PackageInformationID: types.ID("213"),
+				PackageInformationID: ID("213"),
 			},
-			types.ID("2494"): {
+			ID("2494"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
 				Identifier:           "github.com/sourcegraph/lsif-go/protocol:VertexLabel",
-				PackageInformationID: types.ID("213"),
+				PackageInformationID: ID("213"),
 			},
 		},
-		PackageInformation: map[types.ID]types.PackageInformationData{
-			types.ID("213"): {
+		PackageInformation: map[ID]PackageInformationData{
+			ID("213"): {
 				Name:    "github.com/sourcegraph/lsif-go",
 				Version: "v0.0.0-ad3507cbeb18",
 			},
@@ -75,24 +74,24 @@ func TestDocumentData(t *testing.T) {
 }
 
 func TestResultChunkData(t *testing.T) {
-	expected := types.ResultChunkData{
-		DocumentPaths: map[types.ID]string{
-			types.ID("4"):   "internal/gomod/module.go",
-			types.ID("302"): "protocol/protocol.go",
-			types.ID("305"): "protocol/writer.go",
+	expected := ResultChunkData{
+		DocumentPaths: map[ID]string{
+			ID("4"):   "internal/gomod/module.go",
+			ID("302"): "protocol/protocol.go",
+			ID("305"): "protocol/writer.go",
 		},
-		DocumentIDRangeIDs: map[types.ID][]types.DocumentIDRangeID{
-			types.ID("34"): {
-				{DocumentID: types.ID("4"), RangeID: types.ID("31")},
+		DocumentIDRangeIDs: map[ID][]DocumentIDRangeID{
+			ID("34"): {
+				{DocumentID: ID("4"), RangeID: ID("31")},
 			},
-			types.ID("14040"): {
-				{DocumentID: types.ID("3978"), RangeID: types.ID("4544")},
+			ID("14040"): {
+				{DocumentID: ID("3978"), RangeID: ID("4544")},
 			},
-			types.ID("14051"): {
-				{DocumentID: types.ID("3978"), RangeID: types.ID("4568")},
-				{DocumentID: types.ID("3978"), RangeID: types.ID("9224")},
-				{DocumentID: types.ID("3978"), RangeID: types.ID("9935")},
-				{DocumentID: types.ID("3978"), RangeID: types.ID("9996")},
+			ID("14051"): {
+				{DocumentID: ID("3978"), RangeID: ID("4568")},
+				{DocumentID: ID("3978"), RangeID: ID("9224")},
+				{DocumentID: ID("3978"), RangeID: ID("9935")},
+				{DocumentID: ID("3978"), RangeID: ID("9996")},
 			},
 		},
 	}
@@ -115,7 +114,7 @@ func TestResultChunkData(t *testing.T) {
 }
 
 func TestLocations(t *testing.T) {
-	expected := []types.Location{
+	expected := []Location{
 		{
 			URI:            "internal/index/indexer.go",
 			StartLine:      36,

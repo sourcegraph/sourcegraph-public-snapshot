@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	lsifstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -70,7 +69,7 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	expectedPackages := []bundletypes.Package{
+	expectedPackages := []lsifstore.Package{
 		{
 			DumpID:  42,
 			Scheme:  "scheme B",
@@ -88,7 +87,7 @@ func TestHandle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating filter: %s", err)
 	}
-	expectedPackageReferences := []bundletypes.PackageReference{
+	expectedPackageReferences := []lsifstore.PackageReference{
 		{
 			DumpID:  42,
 			Scheme:  "scheme A",

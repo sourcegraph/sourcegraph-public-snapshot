@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -62,7 +62,7 @@ func TestGetPackage(t *testing.T) {
 	})
 	insertVisibleAtTip(t, dbconn.Global, 50, 1)
 
-	if err := store.UpdatePackages(context.Background(), []types.Package{
+	if err := store.UpdatePackages(context.Background(), []lsifstore.Package{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
 	}); err != nil {
@@ -88,7 +88,7 @@ func TestUpdatePackages(t *testing.T) {
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := store.UpdatePackages(context.Background(), []types.Package{
+	if err := store.UpdatePackages(context.Background(), []lsifstore.Package{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},

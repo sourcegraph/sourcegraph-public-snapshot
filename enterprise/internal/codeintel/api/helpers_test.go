@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -188,8 +188,8 @@ func setMockStoreHasCommit(t *testing.T, mockStore *storemocks.MockStore, expect
 	})
 }
 
-func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *storemocks.MockReferencePager, expectedOffset int, references []types.PackageReference) {
-	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(ctx context.Context, offset int) ([]types.PackageReference, error) {
+func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *storemocks.MockReferencePager, expectedOffset int, references []lsifstore.PackageReference) {
+	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)
 		}

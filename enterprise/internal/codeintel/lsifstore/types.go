@@ -1,4 +1,4 @@
-package types
+package lsifstore
 
 type ID string
 
