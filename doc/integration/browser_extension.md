@@ -18,7 +18,11 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 
 >NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
 
-![Sourcegraph browser extension](https://sourcegraphstatic.com/BrowserExtension.gif)
+ <video width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
+  Sourcegraph browser extension adds code intelligence to your code host
+ </video>
 
 ## Features
 
@@ -32,7 +36,11 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 
 ### Search shortcut in URL location bar
 
-![Sourcegraph search shortcut](https://sourcegraphstatic.com/SearchShortcut2.gif)
+ <video width="1196" height="720" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.mp4" type="video/mp4">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.webm" type="video/webm">
+  Sourcegraph search shortcut
+ </video>
 
 The Sourcegraph extension adds a search engine shortcut to your web browser that performs a search on your Sourcegraph instance. After you've installed it (see above), use the search shortcut it provides to perform a search:
 
@@ -43,6 +51,12 @@ The Sourcegraph extension adds a search engine shortcut to your web browser that
 To install this search engine shortcut manually, and for more information, see "[Browser search engine shortcuts](browser_search_engine.md)".
 
 ## Make it work on your code host
+
+<video width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.mp4" type="video/mp4">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.webm" type="video/webm">
+  Grant permissions
+ </video>
 
 - [github.com](https://github.com/) - no action required.
 - GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
@@ -56,7 +70,11 @@ To grant these permissions:
 
 ## Make it work for private code
 
-![Configure Sourcegraph Instance](https://sourcegraphstatic.com/ConfigureSourcegraphInstanceUse.gif)
+<video width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.mp4" type="video/mp4">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.webm" type="video/webm">
+  Configure browser extension for your private Sourcegraph instance
+ </video>
 
 By default, the browser extension communicates with [sourcegraph.com](https://sourcegraph.com), which has only public code.
 
