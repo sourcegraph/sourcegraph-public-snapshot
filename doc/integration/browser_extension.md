@@ -41,11 +41,16 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 
 ### Search shortcut in URL location bar
 
- <video width="1196" height="720" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.mp4" type="video/mp4">
+<video class="theme-dark-only" width="1196" height="720" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
   <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.webm" type="video/webm">
-  Sourcegraph search shortcut
- </video>
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.mp4" type="video/mp4">
+  <p>Sourcegraph search shortcut</p>
+</video>
+<video class="theme-light-only" width="1196" height="720" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.webm" type="video/webm">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.mp4" type="video/mp4">
+  <p>Sourcegraph search shortcut</p>
+</video>
 
 The Sourcegraph extension adds a search engine shortcut to your web browser that performs a search on your Sourcegraph instance. After you've installed it (see above), use the search shortcut it provides to perform a search:
 
