@@ -10,7 +10,7 @@ steps:
       queue: 'baremetal'
   - artifact_paths:
     command:
-      - .buildkite/vagrant-run.sh sourcegraph-code-intel
+      - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
     label: ':docker::arrow_right::chromium:'
     agents:
       queue: 'baremetal'
