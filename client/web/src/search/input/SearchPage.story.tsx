@@ -46,6 +46,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     showRepogroupHomepage: false,
     showEnterpriseHomePanels: false,
     showOnboardingTour: false,
+    showQueryBuilder: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
@@ -58,7 +59,7 @@ const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
         type: 'figma',
         url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
     },
-    chromatic: { viewports: [769, 993, 1200] },
+    chromatic: { viewports: [544, 577, 769, 993, 1200] },
 })
 
 add('Cloud with panels', () => (
@@ -81,6 +82,16 @@ add('Cloud with repogroups', () => (
 
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
+add('Server without panels, with query builder', () => (
+    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showQueryBuilder={true} />}</WebStory>
+))
+
 add('Server with panels', () => (
     <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} />}</WebStory>
+))
+
+add('Server with panels and query builder', () => (
+    <WebStory>
+        {webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} showQueryBuilder={true} />}
+    </WebStory>
 ))

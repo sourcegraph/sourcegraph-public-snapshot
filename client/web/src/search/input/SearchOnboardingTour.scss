@@ -1,8 +1,6 @@
 .search-onboarding-tour {
     &__structural-next-button {
-        .theme-dark & {
-            border-color: $gray-12;
-        }
+        border-color: var(--border-color);
     }
 }
 
@@ -16,7 +14,7 @@
 }
 
 .shepherd-element {
-    background: $gray-19;
+    background: var(--color-bg-3);
 }
 
 .shepherd-arrow::after {
@@ -27,7 +25,10 @@
     box-sizing: border-box;
     // stylelint-disable-next-line declaration-property-unit-whitelist
     border: 8px solid #000000;
-    border-color: transparent transparent $gray-19 transparent;
+    border-top-color: transparent;
+    border-right-color: transparent;
+    border-bottom-color: var(--color-bg-3);
+    border-left-color: transparent;
     transform-origin: 0 0;
     margin-left: -0.5rem;
 }
@@ -44,13 +45,4 @@
 
 .shepherd-modal-overlay-container {
     display: none;
-}
-
-.theme-light {
-    .shepherd-element {
-        background: $white;
-    }
-    .shepherd-arrow::after {
-        border-color: transparent transparent $white transparent;
-    }
 }

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
+import { GraphQLResult, requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 
 const getHeaders = (): { [header: string]: string } => ({

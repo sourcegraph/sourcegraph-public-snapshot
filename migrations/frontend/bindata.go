@@ -92,6 +92,24 @@
 // 1528395728_lsif_index_configuration.up.sql (204B)
 // 1528395729_add_external_services_namespace_user_id_index.down.sql (69B)
 // 1528395729_add_external_services_namespace_user_id_index.up.sql (113B)
+// 1528395730_lsif_index_log_contents.down.sql (68B)
+// 1528395730_lsif_index_log_contents.up.sql (72B)
+// 1528395731_add_nearest_upload_direction.down.sql (138B)
+// 1528395731_add_nearest_upload_direction.up.sql (510B)
+// 1528395732_add_external_services_sync_jobs_state_index.down.sql (76B)
+// 1528395732_add_external_services_sync_jobs_state_index.up.sql (120B)
+// 1528395733_add_permissions_object_ids_default.down.sql (297B)
+// 1528395733_add_permissions_object_ids_default.up.sql (313B)
+// 1528395734_repo_updater_log_contents.down.sql (544B)
+// 1528395734_repo_updater_log_contents.up.sql (565B)
+// 1528395735_drop_language_from_repo.down.sql (74B)
+// 1528395735_drop_language_from_repo.up.sql (66B)
+// 1528395736_add_index_to_repo_created_at.down.sql (124B)
+// 1528395736_add_index_to_repo_created_at.up.sql (151B)
+// 1528395737_compressed_commits.down.sql (76B)
+// 1528395737_compressed_commits.up.sql (339B)
+// 1528395738_nullable_commit.down.sql (255B)
+// 1528395738_nullable_commit.up.sql (259B)
 
 package migrations
 
@@ -2000,6 +2018,366 @@ func _1528395729_add_external_services_namespace_user_id_indexUpSql() (*asset, e
 	return a, nil
 }
 
+var __1528395730_lsif_index_log_contentsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xc9\x4f\x8f\x4f\xce\xcf\x2b\x49\xcd\x2b\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xda\x03\x04\xf8\x44\x00\x00\x00")
+
+func _1528395730_lsif_index_log_contentsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395730_lsif_index_log_contentsDownSql,
+		"1528395730_lsif_index_log_contents.down.sql",
+	)
+}
+
+func _1528395730_lsif_index_log_contentsDownSql() (*asset, error) {
+	bytes, err := _1528395730_lsif_index_log_contentsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395730_lsif_index_log_contents.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x60, 0xd4, 0xc3, 0x4b, 0x12, 0x36, 0x50, 0xba, 0x76, 0x31, 0x40, 0x90, 0xe1, 0x83, 0x6c, 0xb4, 0x89, 0x34, 0x4d, 0x2f, 0x1f, 0x4c, 0x79, 0x3a, 0xc4, 0x5f, 0x95, 0x3f, 0x37, 0xfa, 0xbd, 0xb6}}
+	return a, nil
+}
+
+var __1528395730_lsif_index_log_contentsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xc9\x4f\x8f\x4f\xce\xcf\x2b\x49\xcd\x2b\x29\x56\x08\x71\x8d\x08\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x9f\x08\x1a\xc1\x48\x00\x00\x00")
+
+func _1528395730_lsif_index_log_contentsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395730_lsif_index_log_contentsUpSql,
+		"1528395730_lsif_index_log_contents.up.sql",
+	)
+}
+
+func _1528395730_lsif_index_log_contentsUpSql() (*asset, error) {
+	bytes, err := _1528395730_lsif_index_log_contentsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395730_lsif_index_log_contents.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5b, 0x6c, 0xdd, 0x99, 0x66, 0xd4, 0x72, 0x24, 0x53, 0x6e, 0x7, 0xdf, 0x74, 0x3a, 0x7e, 0x1d, 0x21, 0xec, 0xde, 0x9d, 0xc, 0x90, 0xf8, 0xa4, 0x28, 0xbf, 0xc2, 0x53, 0x21, 0x4a, 0x80, 0xdc}}
+	return a, nil
+}
+
+var __1528395731_add_nearest_upload_directionDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcc\x4b\x4e\x2d\x2e\xc9\x2f\x8a\x2f\xcb\x2c\xce\x4c\xca\x49\xb5\x26\x4d\x7b\x7e\x59\x6a\x51\x79\x51\x66\x49\x49\x6a\x9e\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x69\xe5\xe8\xb4\x8a\x00\x00\x00")
+
+func _1528395731_add_nearest_upload_directionDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395731_add_nearest_upload_directionDownSql,
+		"1528395731_add_nearest_upload_direction.down.sql",
+	)
+}
+
+func _1528395731_add_nearest_upload_directionDownSql() (*asset, error) {
+	bytes, err := _1528395731_add_nearest_upload_directionDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395731_add_nearest_upload_direction.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x26, 0x4, 0x94, 0xa1, 0x59, 0x86, 0x52, 0xf0, 0x52, 0x6f, 0xe7, 0x73, 0x8f, 0x71, 0xe2, 0x9d, 0xfc, 0x28, 0xf8, 0xf5, 0x4c, 0xe1, 0x9c, 0xa2, 0x3, 0x8b, 0x3f, 0x39, 0x4f, 0xaf, 0xb4, 0x67}}
+	return a, nil
+}
+
+var __1528395731_add_nearest_upload_directionUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x90\x41\x4b\xc3\x40\x14\x84\xef\xfb\x2b\xe6\xae\x3d\x78\x0e\x1e\xd2\x26\x48\x61\x93\x88\x6e\xce\x61\x6b\x5f\xc8\xd2\x35\x5b\xde\x7b\x36\xf8\xef\xa5\x51\xb0\x41\x0a\xf6\xb8\xc3\xec\x37\xf3\x66\x5d\x3e\x6d\xeb\xcc\x98\xdc\xba\xf2\x05\x2e\x5f\xdb\x12\x51\x42\xdf\x8d\xe4\x99\x44\xbb\x8f\x63\x4c\x7e\x2f\xc8\x8b\x02\x9b\xc6\xb6\x55\x0d\x3f\xbe\x91\x68\xe2\xee\x14\x24\xec\x22\x61\x97\x52\x24\x3f\x66\x37\x51\xd2\x89\x78\xe2\xa0\x4a\xe3\x2f\xa0\x7d\x2e\x72\x77\xe5\xef\x6b\xe9\xfe\x46\x3f\xa2\xf7\x51\xe8\x7e\x81\xfb\x11\xff\xd3\x67\x36\x5c\xbb\xeb\x9c\x58\x37\x0e\x75\x6b\xed\xad\xb0\xcb\x3e\x4b\x8e\x59\xad\x50\x79\x3e\xc0\xc7\x08\xa6\x63\x92\xa0\x89\x03\x09\xbc\x60\x1f\x58\x3f\x21\x09\x3a\x78\xc5\x44\x98\xc2\xec\xea\x99\x64\x80\x0e\xf4\xbe\xd8\x68\xb6\x77\x0b\xc8\x39\xec\x5b\xd6\x74\x98\xc7\xb8\x7c\xdd\xe1\x21\x33\x66\xd3\x54\xd5\xd6\x65\xe6\x2b\x00\x00\xff\xff\x18\x8e\x6b\x99\xfe\x01\x00\x00")
+
+func _1528395731_add_nearest_upload_directionUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395731_add_nearest_upload_directionUpSql,
+		"1528395731_add_nearest_upload_direction.up.sql",
+	)
+}
+
+func _1528395731_add_nearest_upload_directionUpSql() (*asset, error) {
+	bytes, err := _1528395731_add_nearest_upload_directionUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395731_add_nearest_upload_direction.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd9, 0x19, 0xf0, 0x4e, 0x71, 0x24, 0x50, 0x1b, 0x7d, 0x3, 0xb5, 0xb9, 0xa2, 0xef, 0x4d, 0x30, 0xc, 0xb4, 0xe, 0x26, 0xe8, 0x18, 0x8a, 0x80, 0x2e, 0x46, 0x13, 0x41, 0x70, 0x38, 0x1, 0xb}}
+	return a, nil
+}
+
+var __1528395732_add_external_services_sync_jobs_state_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xae\xcc\x4b\x8e\xcf\xca\x4f\x2a\x8e\x2f\x2e\x49\x2c\x49\x8d\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x67\x6a\xe0\x8d\x4c\x00\x00\x00")
+
+func _1528395732_add_external_services_sync_jobs_state_indexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395732_add_external_services_sync_jobs_state_indexDownSql,
+		"1528395732_add_external_services_sync_jobs_state_index.down.sql",
+	)
+}
+
+func _1528395732_add_external_services_sync_jobs_state_indexDownSql() (*asset, error) {
+	bytes, err := _1528395732_add_external_services_sync_jobs_state_indexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395732_add_external_services_sync_jobs_state_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x77, 0xbe, 0x1f, 0x9e, 0xd6, 0x2f, 0x8d, 0x80, 0x5b, 0x27, 0x5, 0x54, 0x34, 0xdd, 0xa2, 0xe7, 0x12, 0x1, 0x29, 0xbd, 0x2c, 0x7a, 0xff, 0x36, 0x14, 0x0, 0xf9, 0xf3, 0x84, 0x16, 0x4b, 0xcc}}
+	return a, nil
+}
+
+var __1528395732_add_external_services_sync_jobs_state_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xae\xcc\x4b\x8e\xcf\xca\x4f\x2a\x8e\x2f\x2e\x49\x2c\x49\x8d\xcf\x4c\xa9\x50\xf0\xf7\xc3\xa3\x4e\x41\x03\xac\x50\x13\x64\x8f\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x09\x1d\xe1\xc0\x78\x00\x00\x00")
+
+func _1528395732_add_external_services_sync_jobs_state_indexUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395732_add_external_services_sync_jobs_state_indexUpSql,
+		"1528395732_add_external_services_sync_jobs_state_index.up.sql",
+	)
+}
+
+func _1528395732_add_external_services_sync_jobs_state_indexUpSql() (*asset, error) {
+	bytes, err := _1528395732_add_external_services_sync_jobs_state_indexUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395732_add_external_services_sync_jobs_state_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa0, 0x23, 0xe4, 0xbb, 0x3d, 0xb6, 0x5b, 0xce, 0x7c, 0x96, 0x4b, 0xc, 0x3f, 0x38, 0x13, 0x32, 0x91, 0x10, 0x4, 0xa8, 0x4c, 0xb3, 0x97, 0x3e, 0xc2, 0x40, 0xb1, 0xaf, 0xe7, 0xfb, 0xc8, 0x50}}
+	return a, nil
+}
+
+var __1528395733_add_permissions_object_ids_defaultDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x8f\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x80\x48\x3a\xfb\xfb\x84\xfa\xfa\x29\x94\x16\xa7\x16\xc5\x67\xa6\x14\x2b\xb8\x04\xf9\x07\x28\xb8\xb8\xba\x39\x86\xfa\x84\x58\xa3\x18\x00\x56\x82\xd3\x80\xfc\xa4\xac\xd4\xe4\x12\x02\x46\x40\xdd\x90\x97\x92\x99\x97\x4e\x0d\xb7\x10\x30\x08\xa7\x9b\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xd7\x70\x8a\xe9\x29\x01\x00\x00")
+
+func _1528395733_add_permissions_object_ids_defaultDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395733_add_permissions_object_ids_defaultDownSql,
+		"1528395733_add_permissions_object_ids_default.down.sql",
+	)
+}
+
+func _1528395733_add_permissions_object_ids_defaultDownSql() (*asset, error) {
+	bytes, err := _1528395733_add_permissions_object_ids_defaultDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395733_add_permissions_object_ids_default.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x21, 0x47, 0x84, 0x12, 0xbd, 0x21, 0xc, 0x7, 0x24, 0xd8, 0x73, 0x42, 0x1f, 0x58, 0xbd, 0x17, 0x48, 0xd3, 0x25, 0xeb, 0xab, 0x25, 0xbf, 0x32, 0x32, 0x85, 0xc6, 0xaf, 0x2a, 0xf3, 0x10, 0x30}}
+	return a, nil
+}
+
+var __1528395733_add_permissions_object_ids_defaultUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x8f\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x80\x48\x3a\xfb\xfb\x84\xfa\xfa\x29\x94\x16\xa7\x16\xc5\x67\xa6\x14\x2b\x04\xbb\x86\x28\xb8\xb8\xba\x39\x86\xfa\x84\x28\xa8\xc7\x54\xa8\x5b\xa3\x18\x02\x56\x86\xd3\x90\xfc\xa4\xac\xd4\xe4\x12\x22\x8c\x81\xba\x25\x2f\x25\x33\x2f\x9d\x5a\x6e\x22\x60\x18\x5e\xb7\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xa0\x76\x6b\x75\x39\x01\x00\x00")
+
+func _1528395733_add_permissions_object_ids_defaultUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395733_add_permissions_object_ids_defaultUpSql,
+		"1528395733_add_permissions_object_ids_default.up.sql",
+	)
+}
+
+func _1528395733_add_permissions_object_ids_defaultUpSql() (*asset, error) {
+	bytes, err := _1528395733_add_permissions_object_ids_defaultUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395733_add_permissions_object_ids_default.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbc, 0xca, 0x93, 0xad, 0x9e, 0xbc, 0xa0, 0xaa, 0xb4, 0xef, 0xbc, 0x96, 0x3, 0x26, 0x9f, 0x0, 0xe6, 0x56, 0x11, 0xa5, 0x67, 0x0, 0x3a, 0x72, 0x77, 0x2b, 0x2c, 0x87, 0x1d, 0x54, 0x30, 0x7c}}
+	return a, nil
+}
+
+var __1528395734_repo_updater_log_contentsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\xd1\x4e\xb4\x30\x14\x84\xef\xfb\x14\xe7\x01\xfe\xf0\x02\xe4\xbf\x60\xb1\x1a\x0c\xd0\x4d\x17\xf5\xb2\xa9\xe5\x2c\x94\xb0\xc5\xf4\x9c\xd5\xf5\xed\x4d\x56\xd9\xa0\x6b\x48\xbc\xec\x97\x69\x67\xa6\xb3\x91\x77\x45\x9d\x0a\x71\xa3\xd5\x16\x1e\x0b\xf9\x04\x78\x62\x8c\xc1\x8e\x86\x30\xbe\x7a\x87\x86\xde\x83\x33\xc3\xf4\x4c\xe6\xcd\x73\x6f\x02\x9e\xf8\x93\x59\x4e\x85\xc8\xca\x46\x6a\x68\xb2\x4d\x29\x57\xae\xc2\xf9\xfd\x5c\x95\x0f\x55\x0d\xe3\xd4\x19\x37\x05\xc6\xc0\x94\x0a\x91\x6b\x99\x35\x12\x94\x06\x2d\xb7\x65\x96\xcb\xbf\xe7\x80\x6c\x07\x3b\x59\xca\xbc\x81\x21\xf1\xed\x3f\x01\x00\x30\x24\xc4\x96\x71\x3e\xec\xad\x1f\x8f\x11\xcd\x01\x89\x6c\x87\x0b\x4d\x64\x6c\x8d\xe5\x8b\xd0\x07\x4f\xfd\x37\xf4\x12\x27\x87\x44\xc6\xee\x19\xe3\x0c\xc3\xf1\x60\x22\x12\x32\x2d\xc9\x97\xcd\x85\x5d\xd5\x98\xe3\x61\xb2\x6c\x20\x6e\xb5\xaa\xae\x3a\x13\x20\xdc\xab\xa2\x5e\xfb\xd9\x01\x54\x0d\x98\xf8\x16\xfe\xff\x6e\xf7\x63\x24\xd7\xdb\xd0\x9d\x63\xaf\x8e\xa2\xaa\xaa\x68\x52\xf1\x11\x00\x00\xff\xff\xd3\xbe\xee\x49\x20\x02\x00\x00")
+
+func _1528395734_repo_updater_log_contentsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395734_repo_updater_log_contentsDownSql,
+		"1528395734_repo_updater_log_contents.down.sql",
+	)
+}
+
+func _1528395734_repo_updater_log_contentsDownSql() (*asset, error) {
+	bytes, err := _1528395734_repo_updater_log_contentsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395734_repo_updater_log_contents.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xae, 0xc6, 0xae, 0xab, 0xd2, 0xb9, 0xaa, 0x1, 0x6c, 0xcc, 0xc9, 0xaf, 0x88, 0xf5, 0xf7, 0xfa, 0xa8, 0x28, 0xa9, 0x35, 0x61, 0xc6, 0xc2, 0x98, 0x5e, 0x44, 0xf1, 0x87, 0xf8, 0x2f, 0x70, 0x84}}
+	return a, nil
+}
+
+var __1528395734_repo_updater_log_contentsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\xd1\x4e\xac\x30\x10\x86\xef\xfb\x14\xf3\x00\x27\xbc\x00\x39\x17\x2c\x54\x83\x01\x6a\x58\xd4\xcb\xa6\x96\x59\x28\x61\x8b\xe9\xcc\x2a\xbe\xbd\x51\x97\x0d\xba\x66\x8d\x77\xed\x97\x69\x67\xbe\xf9\x37\xf2\x3a\xaf\x62\x21\xb2\x5a\xdd\xc2\x7d\x2e\x1f\x00\x67\xc6\xe0\xcd\xa8\x09\xc3\xb3\xb3\xa8\xe9\xd5\x5b\x3d\x4c\x8f\xa4\x5f\x1c\xf7\xda\xe3\xcc\x9f\xcc\x70\x2c\x44\x52\x34\xb2\x86\x26\xd9\x14\xf2\xc2\x53\x48\xb2\x0c\x52\x55\xdc\x95\x15\x8c\x53\xa7\xed\xe4\x19\x3d\x13\x30\xce\xef\xbf\xa4\xb5\x4c\x1a\xf9\xf7\x01\x20\xd9\xc2\x56\x16\x32\x6d\x04\x00\xc0\x10\xb9\xf6\xdf\xf1\x44\x6c\x18\x97\xcb\xce\xb8\xf1\x10\x50\xef\x91\xc8\x74\xb8\xaa\x09\x8c\xad\x36\x7c\x2a\x74\xde\x51\xff\x05\x3d\x85\xc9\x22\x91\x36\x3b\xc6\xb0\x40\x7f\xd8\xeb\x80\x84\x4c\x6b\x72\x6c\x73\x62\x6b\xd5\x85\x9d\xe9\x2d\x23\x63\xb4\x36\x13\x57\xb5\x2a\xcf\x76\x41\x80\x70\xa3\xf2\xea\xd2\xaa\x07\x50\x15\x60\xe4\x5a\xf8\xff\x73\xbb\x6f\xa9\xd9\xde\xf8\xee\x43\xe5\xd7\x94\x54\x59\xe6\x4d\x2c\xde\x02\x00\x00\xff\xff\x34\x28\x46\xbc\x35\x02\x00\x00")
+
+func _1528395734_repo_updater_log_contentsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395734_repo_updater_log_contentsUpSql,
+		"1528395734_repo_updater_log_contents.up.sql",
+	)
+}
+
+func _1528395734_repo_updater_log_contentsUpSql() (*asset, error) {
+	bytes, err := _1528395734_repo_updater_log_contentsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395734_repo_updater_log_contents.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa3, 0x61, 0xd2, 0xdb, 0x3a, 0x17, 0x61, 0x29, 0x2b, 0xd9, 0x1a, 0x6d, 0xda, 0x20, 0xe7, 0x24, 0x6f, 0x61, 0x3b, 0x92, 0x77, 0x7c, 0xea, 0x7b, 0x40, 0xc3, 0x56, 0xd6, 0xfb, 0xed, 0x7f, 0xca}}
+	return a, nil
+}
+
+var __1528395735_drop_language_from_repoDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x39\x0a\xc3\x30\x10\x05\xd0\x7e\x4e\xf1\xef\xa1\x4a\xcb\x24\x0c\x68\x81\xe8\x07\xd4\xaa\x10\x6a\x42\x6c\x0c\xbe\xbf\x5f\xd0\xb7\x55\x27\xe2\x33\xf5\x03\xfa\x90\x15\xd7\x3a\x0f\xf8\x94\x10\x5b\xfe\x96\x0a\x7b\xa1\x36\x42\x87\x75\x76\xfc\xe6\x7f\xdf\x73\x2f\x50\x07\x9d\x48\x6c\xa5\x18\x9d\x3c\x01\x00\x00\xff\xff\xb1\xd0\xb9\xe6\x4a\x00\x00\x00")
+
+func _1528395735_drop_language_from_repoDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395735_drop_language_from_repoDownSql,
+		"1528395735_drop_language_from_repo.down.sql",
+	)
+}
+
+func _1528395735_drop_language_from_repoDownSql() (*asset, error) {
+	bytes, err := _1528395735_drop_language_from_repoDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395735_drop_language_from_repo.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x43, 0x58, 0xf, 0x2a, 0x9d, 0x3d, 0xc2, 0xc6, 0x6e, 0xf9, 0x51, 0x65, 0x27, 0x10, 0xe0, 0x74, 0x76, 0xe3, 0xfc, 0xa, 0xe9, 0x3f, 0x18, 0xcf, 0xfd, 0xea, 0x4, 0xb9, 0x34, 0xba, 0x92, 0x0}}
+	return a, nil
+}
+
+var __1528395735_drop_language_from_repoUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x49\xcc\x4b\x2f\x4d\x4c\x4f\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd7\x04\x64\xf9\x42\x00\x00\x00")
+
+func _1528395735_drop_language_from_repoUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395735_drop_language_from_repoUpSql,
+		"1528395735_drop_language_from_repo.up.sql",
+	)
+}
+
+func _1528395735_drop_language_from_repoUpSql() (*asset, error) {
+	bytes, err := _1528395735_drop_language_from_repoUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395735_drop_language_from_repo.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4d, 0xd7, 0x13, 0x7c, 0x41, 0xf, 0xec, 0x7f, 0xc7, 0x0, 0x91, 0xbd, 0xb3, 0xb2, 0xee, 0xb2, 0xf, 0xad, 0xe8, 0x48, 0x22, 0xa1, 0xa6, 0x6, 0x4a, 0x0, 0xc6, 0x85, 0x95, 0xd9, 0xe6, 0xac}}
+	return a, nil
+}
+
+var __1528395736_add_index_to_repo_created_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xd1\x09\xc2\x30\x10\x06\xe0\xf7\x4c\xf1\x2f\xd0\x05\xf4\xb1\x8d\x10\x90\x54\xd2\x0a\xf5\xa9\x9c\xe9\x3d\x04\xe5\x4e\x2e\xe7\xfe\x4e\xe0\x00\xdf\x30\x20\xab\xf3\x09\x53\x99\x6f\x48\x79\x8a\x1b\xc6\x39\x8f\xf7\x52\x62\x5e\xaf\x0f\x54\x12\x51\x87\x7d\x05\x4d\x7a\x3b\x18\x04\x37\x92\x4e\xd5\x9b\x0a\x9e\x6f\xad\xaf\x10\xfe\xf1\x74\x41\xdc\xd2\xb2\x2e\x30\xfe\xe8\x5e\x8d\xc9\xf9\xd8\xc9\xcf\x21\xfc\x02\x00\x00\xff\xff\x4d\xbc\x9c\x8f\x7c\x00\x00\x00")
+
+func _1528395736_add_index_to_repo_created_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395736_add_index_to_repo_created_atDownSql,
+		"1528395736_add_index_to_repo_created_at.down.sql",
+	)
+}
+
+func _1528395736_add_index_to_repo_created_atDownSql() (*asset, error) {
+	bytes, err := _1528395736_add_index_to_repo_created_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395736_add_index_to_repo_created_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8a, 0x9b, 0x1d, 0x2a, 0xe8, 0x36, 0xb, 0x25, 0x5c, 0xb7, 0x56, 0x17, 0xa8, 0xbc, 0x96, 0xa5, 0xb7, 0x15, 0xed, 0x81, 0xc2, 0x5f, 0xd7, 0xe4, 0x73, 0xe8, 0x1, 0x6d, 0xab, 0x8d, 0xa5, 0x1d}}
+	return a, nil
+}
+
+var __1528395736_add_index_to_repo_created_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\xb1\x0a\xc2\x30\x10\x06\xe0\x3d\x4f\xf1\x8f\x3a\xf4\x05\x74\x92\x18\x21\x20\x17\x48\x23\xd4\xa9\x9c\x69\x86\xa0\x5c\x24\x3d\xdf\x5f\x70\x71\xea\xfa\x0d\xdf\x30\x80\x9a\x96\x03\x6c\x74\xa7\xe4\xe0\xe9\xec\x26\xd8\x40\xf6\x16\xa3\xa3\x74\xbd\x23\xb3\x48\x53\xf4\x8f\xa0\xca\x5a\x97\x02\x86\x76\x96\x95\xb3\xd6\x26\x78\xbc\x5a\x7e\x1a\xb3\x1d\xf8\x0b\x28\x24\xb8\xc9\x8f\x69\x44\x2f\xef\x36\xe7\x5e\x58\xcb\x32\xb3\x22\xd0\x8f\x76\x7f\xda\x1f\xcd\x37\x00\x00\xff\xff\x96\x47\xb7\x7a\x97\x00\x00\x00")
+
+func _1528395736_add_index_to_repo_created_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395736_add_index_to_repo_created_atUpSql,
+		"1528395736_add_index_to_repo_created_at.up.sql",
+	)
+}
+
+func _1528395736_add_index_to_repo_created_atUpSql() (*asset, error) {
+	bytes, err := _1528395736_add_index_to_repo_created_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395736_add_index_to_repo_created_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8, 0x8d, 0xc5, 0xdd, 0xca, 0xff, 0x9d, 0x79, 0xce, 0x93, 0xb4, 0x10, 0x4e, 0xd3, 0x50, 0x6c, 0x8c, 0x54, 0x92, 0xaf, 0x76, 0xaa, 0xee, 0x56, 0x7b, 0x98, 0x8a, 0x98, 0x95, 0xab, 0x5e, 0x3a}}
+	return a, nil
+}
+
+var __1528395737_compressed_commitsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xce\xcf\xcd\xcd\x2c\x89\x4f\xaa\x2c\x49\x4d\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x37\x89\xd4\x87\x4c\x00\x00\x00")
+
+func _1528395737_compressed_commitsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395737_compressed_commitsDownSql,
+		"1528395737_compressed_commits.down.sql",
+	)
+}
+
+func _1528395737_compressed_commitsDownSql() (*asset, error) {
+	bytes, err := _1528395737_compressed_commitsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395737_compressed_commits.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x53, 0x22, 0xaf, 0x85, 0xb1, 0xb8, 0x37, 0x13, 0x81, 0xa2, 0x25, 0x5f, 0xbc, 0x93, 0x69, 0x3e, 0x7f, 0xa6, 0xf0, 0xa8, 0x7c, 0x72, 0x4c, 0x58, 0x7e, 0x6a, 0x96, 0xfc, 0x2d, 0x31, 0x73, 0x29}}
+	return a, nil
+}
+
+var __1528395737_compressed_commitsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x8e\x31\x6b\xc3\x30\x10\x46\x77\xfd\x8a\x6f\x6c\x69\x33\x74\x16\x1d\x1c\x5b\x04\x83\x2d\x97\x44\x86\x6e\x42\xa9\x2f\x58\xc4\x8e\x82\x74\x25\xf8\xdf\x97\xba\x50\x10\x78\x39\x38\x78\xf7\xee\xed\xd5\xa1\xd6\x52\x88\xa2\x31\xea\x08\x53\xec\x1b\x85\x29\xf9\x8b\xbd\x91\x8b\x94\xd8\x7e\xdf\xa7\xe0\x86\x84\xa2\xaa\x50\x76\x4d\xdf\x6a\x7c\x85\x79\xf6\x6c\xcf\x0b\x93\xc3\x3a\xa5\x28\x8f\xaa\x30\x0a\xb5\xae\xd4\xe7\xa6\xc0\x46\xba\x87\xe4\x39\xc4\xc5\xfa\xc1\x66\x8e\x4e\x6f\xff\xec\x4f\xb5\x3e\xe0\xcc\x91\x08\x4f\xd9\xfd\x6b\x16\xf1\x2c\x85\xd8\xed\xd0\xba\x78\x85\x9b\x26\xfc\xa3\x9e\x12\x5c\xc2\xe0\x23\x2f\x48\x01\x3c\x3a\xc6\x83\xf0\xf0\x2b\x75\x89\x94\x46\xf0\x48\xb3\xe8\x3f\xaa\xdf\xfe\x35\x63\xc5\x6d\x26\x39\x29\xf3\x67\xb1\x1c\xae\x74\xc3\x7b\xb6\xbd\xe0\x4d\x0a\x51\x76\x6d\x5b\x1b\x29\x7e\x02\x00\x00\xff\xff\x56\x47\x41\x5f\x53\x01\x00\x00")
+
+func _1528395737_compressed_commitsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395737_compressed_commitsUpSql,
+		"1528395737_compressed_commits.up.sql",
+	)
+}
+
+func _1528395737_compressed_commitsUpSql() (*asset, error) {
+	bytes, err := _1528395737_compressed_commitsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395737_compressed_commits.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8b, 0x9, 0xe7, 0x74, 0x62, 0x6d, 0x77, 0xd6, 0x3b, 0xe, 0xc9, 0xd4, 0x35, 0x4c, 0x8e, 0x33, 0x38, 0xec, 0xd7, 0x40, 0x1b, 0x6e, 0x1f, 0xda, 0xbf, 0x46, 0x11, 0xc4, 0xea, 0x47, 0xb, 0x9d}}
+	return a, nil
+}
+
+var __1528395738_nullable_commitDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x08\x76\x0d\x51\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\x52\xb0\x55\x48\xcd\x4b\xce\x4f\x49\xd5\x80\x08\xc4\x27\x55\x96\xa4\x26\xea\x28\xa8\x67\xa4\x56\xa8\x6b\x2a\x84\x7b\xb8\x06\xb9\x22\x14\x7b\x06\x2b\xf8\x85\xfa\xf8\x58\x73\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xe0\xb0\x03\xa2\xc0\xd9\xdf\x27\xd4\xd7\x0f\xa1\x1f\x64\xb3\x9f\x7f\x08\x59\x86\x20\xbb\x4f\xc1\x25\xc8\x3f\x00\xc9\x24\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xc0\x86\xc7\xa8\xff\x00\x00\x00")
+
+func _1528395738_nullable_commitDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_nullable_commitDownSql,
+		"1528395738_nullable_commit.down.sql",
+	)
+}
+
+func _1528395738_nullable_commitDownSql() (*asset, error) {
+	bytes, err := _1528395738_nullable_commitDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_nullable_commit.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcb, 0x3, 0xac, 0x5, 0xdd, 0xc0, 0x1d, 0xe0, 0x58, 0xfc, 0xcb, 0x9d, 0x51, 0x53, 0xd5, 0x3b, 0x81, 0x47, 0x20, 0x6, 0xb5, 0x88, 0x35, 0x81, 0xc6, 0xa5, 0xfe, 0xd0, 0x77, 0x19, 0x5f, 0x62}}
+	return a, nil
+}
+
+var __1528395738_nullable_commitUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x08\x76\x0d\x51\x48\xce\xcf\xcd\xcd\x2c\x89\x4f\xaa\x2c\x49\x4d\x54\xb0\x55\x48\x49\x4d\xce\x4f\x49\xd5\x50\x82\x08\x2b\xe9\x28\xa8\x67\xa4\x56\xa8\x6b\x2a\x84\x7b\xb8\x06\xb9\xa2\x2a\xf6\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\xc1\x61\x0f\x44\x81\xb3\xbf\x4f\xa8\xaf\x9f\x02\xcc\x68\x05\x97\x20\xff\x00\x05\x3f\xff\x10\xb2\x4c\x41\x71\x09\xc8\x1f\x08\x83\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xf8\xf4\xfd\x3c\x03\x01\x00\x00")
+
+func _1528395738_nullable_commitUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395738_nullable_commitUpSql,
+		"1528395738_nullable_commit.up.sql",
+	)
+}
+
+func _1528395738_nullable_commitUpSql() (*asset, error) {
+	bytes, err := _1528395738_nullable_commitUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395738_nullable_commit.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc5, 0xd, 0xfe, 0x89, 0xad, 0xcf, 0xe9, 0x1d, 0x2b, 0x3c, 0xa7, 0xed, 0x45, 0x53, 0x2, 0xf4, 0xec, 0xe3, 0xc, 0x8f, 0x75, 0x27, 0xbe, 0xea, 0xba, 0x31, 0xd1, 0xf9, 0x22, 0x50, 0x71, 0xd9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2183,6 +2561,24 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395728_lsif_index_configuration.up.sql":                                   _1528395728_lsif_index_configurationUpSql,
 	"1528395729_add_external_services_namespace_user_id_index.down.sql":            _1528395729_add_external_services_namespace_user_id_indexDownSql,
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              _1528395729_add_external_services_namespace_user_id_indexUpSql,
+	"1528395730_lsif_index_log_contents.down.sql":                                  _1528395730_lsif_index_log_contentsDownSql,
+	"1528395730_lsif_index_log_contents.up.sql":                                    _1528395730_lsif_index_log_contentsUpSql,
+	"1528395731_add_nearest_upload_direction.down.sql":                             _1528395731_add_nearest_upload_directionDownSql,
+	"1528395731_add_nearest_upload_direction.up.sql":                               _1528395731_add_nearest_upload_directionUpSql,
+	"1528395732_add_external_services_sync_jobs_state_index.down.sql":              _1528395732_add_external_services_sync_jobs_state_indexDownSql,
+	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                _1528395732_add_external_services_sync_jobs_state_indexUpSql,
+	"1528395733_add_permissions_object_ids_default.down.sql":                       _1528395733_add_permissions_object_ids_defaultDownSql,
+	"1528395733_add_permissions_object_ids_default.up.sql":                         _1528395733_add_permissions_object_ids_defaultUpSql,
+	"1528395734_repo_updater_log_contents.down.sql":                                _1528395734_repo_updater_log_contentsDownSql,
+	"1528395734_repo_updater_log_contents.up.sql":                                  _1528395734_repo_updater_log_contentsUpSql,
+	"1528395735_drop_language_from_repo.down.sql":                                  _1528395735_drop_language_from_repoDownSql,
+	"1528395735_drop_language_from_repo.up.sql":                                    _1528395735_drop_language_from_repoUpSql,
+	"1528395736_add_index_to_repo_created_at.down.sql":                             _1528395736_add_index_to_repo_created_atDownSql,
+	"1528395736_add_index_to_repo_created_at.up.sql":                               _1528395736_add_index_to_repo_created_atUpSql,
+	"1528395737_compressed_commits.down.sql":                                       _1528395737_compressed_commitsDownSql,
+	"1528395737_compressed_commits.up.sql":                                         _1528395737_compressed_commitsUpSql,
+	"1528395738_nullable_commit.down.sql":                                          _1528395738_nullable_commitDownSql,
+	"1528395738_nullable_commit.up.sql":                                            _1528395738_nullable_commitUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2321,6 +2717,24 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395728_lsif_index_configuration.up.sql":                                   {_1528395728_lsif_index_configurationUpSql, map[string]*bintree{}},
 	"1528395729_add_external_services_namespace_user_id_index.down.sql":            {_1528395729_add_external_services_namespace_user_id_indexDownSql, map[string]*bintree{}},
 	"1528395729_add_external_services_namespace_user_id_index.up.sql":              {_1528395729_add_external_services_namespace_user_id_indexUpSql, map[string]*bintree{}},
+	"1528395730_lsif_index_log_contents.down.sql":                                  {_1528395730_lsif_index_log_contentsDownSql, map[string]*bintree{}},
+	"1528395730_lsif_index_log_contents.up.sql":                                    {_1528395730_lsif_index_log_contentsUpSql, map[string]*bintree{}},
+	"1528395731_add_nearest_upload_direction.down.sql":                             {_1528395731_add_nearest_upload_directionDownSql, map[string]*bintree{}},
+	"1528395731_add_nearest_upload_direction.up.sql":                               {_1528395731_add_nearest_upload_directionUpSql, map[string]*bintree{}},
+	"1528395732_add_external_services_sync_jobs_state_index.down.sql":              {_1528395732_add_external_services_sync_jobs_state_indexDownSql, map[string]*bintree{}},
+	"1528395732_add_external_services_sync_jobs_state_index.up.sql":                {_1528395732_add_external_services_sync_jobs_state_indexUpSql, map[string]*bintree{}},
+	"1528395733_add_permissions_object_ids_default.down.sql":                       {_1528395733_add_permissions_object_ids_defaultDownSql, map[string]*bintree{}},
+	"1528395733_add_permissions_object_ids_default.up.sql":                         {_1528395733_add_permissions_object_ids_defaultUpSql, map[string]*bintree{}},
+	"1528395734_repo_updater_log_contents.down.sql":                                {_1528395734_repo_updater_log_contentsDownSql, map[string]*bintree{}},
+	"1528395734_repo_updater_log_contents.up.sql":                                  {_1528395734_repo_updater_log_contentsUpSql, map[string]*bintree{}},
+	"1528395735_drop_language_from_repo.down.sql":                                  {_1528395735_drop_language_from_repoDownSql, map[string]*bintree{}},
+	"1528395735_drop_language_from_repo.up.sql":                                    {_1528395735_drop_language_from_repoUpSql, map[string]*bintree{}},
+	"1528395736_add_index_to_repo_created_at.down.sql":                             {_1528395736_add_index_to_repo_created_atDownSql, map[string]*bintree{}},
+	"1528395736_add_index_to_repo_created_at.up.sql":                               {_1528395736_add_index_to_repo_created_atUpSql, map[string]*bintree{}},
+	"1528395737_compressed_commits.down.sql":                                       {_1528395737_compressed_commitsDownSql, map[string]*bintree{}},
+	"1528395737_compressed_commits.up.sql":                                         {_1528395737_compressed_commitsUpSql, map[string]*bintree{}},
+	"1528395738_nullable_commit.down.sql":                                          {_1528395738_nullable_commitDownSql, map[string]*bintree{}},
+	"1528395738_nullable_commit.up.sql":                                            {_1528395738_nullable_commitUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

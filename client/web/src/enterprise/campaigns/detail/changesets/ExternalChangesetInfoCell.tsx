@@ -10,19 +10,22 @@ import { ChangesetLabel } from './ChangesetLabel'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { ChangesetReconcilerState } from '../../../../../../shared/src/graphql/schema'
+import classNames from 'classnames'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
+    className?: string
 }
 
 export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangesetInfoCellProps> = ({
     node,
     viewerCanAdminister,
+    className,
 }) => (
-    <div className="d-flex flex-column">
-        <div className="m-0 mb-2">
-            <h3 className="m-0 d-inline">
+    <div className={classNames('d-flex flex-column', className)}>
+        <div className="m-0">
+            <h3 className="m-0 d-block d-md-inline">
                 <LinkOrSpan
                     /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                     to={
@@ -32,14 +35,15 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     }
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="mr-2"
                 >
-                    {isImporting(node) && (
+                    {(isImporting(node) || importingFailed(node)) && (
                         <>
                             Importing changeset
                             {node.externalID && <> #{node.externalID} </>}
                         </>
                     )}
-                    {!isImporting(node) && (
+                    {!isImporting(node) && !importingFailed(node) && (
                         <>
                             {node.title}
                             {node.externalID && <> (#{node.externalID}) </>}
@@ -54,7 +58,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 </LinkOrSpan>
             </h3>
             {node.labels.length > 0 && (
-                <span className="ml-2">
+                <span className="d-block d-md-inline-block">
                     {node.labels.map(label => (
                         <ChangesetLabel label={label} key={label.text} />
                     ))}
@@ -62,7 +66,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             )}
         </div>
         <div>
-            <span className="mr-2">
+            <span className="mr-2 d-block d-mdinline-block">
                 <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                     {node.repository.name}
                 </Link>
@@ -79,4 +83,8 @@ function isImporting(node: ExternalChangesetFields): boolean {
         [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING].includes(node.reconcilerState) &&
         !node.title
     )
+}
+
+function importingFailed(node: ExternalChangesetFields): boolean {
+    return node.reconcilerState === ChangesetReconcilerState.ERRORED && !node.title
 }

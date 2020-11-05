@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -30,7 +31,7 @@ import (
 func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		clock := repos.NewFakeClock(time.Now(), 0)
+		clock := dbtesting.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
 		t.Run("", transact(ctx, store, func(t testing.TB, tx repos.Store) {
@@ -118,7 +119,7 @@ func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(
 
 func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) func(*testing.T) {
 	return func(t *testing.T, store repos.Store) func(*testing.T) {
-		clock := repos.NewFakeClock(time.Now(), 0)
+		clock := dbtesting.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
 		github := repos.ExternalService{
@@ -353,7 +354,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 }
 
 func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -482,7 +483,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 }
 
 func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -492,7 +493,6 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -516,7 +516,6 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -566,7 +565,7 @@ func testStoreInsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 }
 
 func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -576,7 +575,6 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -600,7 +598,6 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -652,7 +649,7 @@ func testStoreDeleteRepos(t *testing.T, store repos.Store) func(*testing.T) {
 }
 
 func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -671,7 +668,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -691,7 +687,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -711,7 +706,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "bitbucketserver.mycorp.com/foo/bar",
 			URI:         "bitbucketserver.mycorp.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -731,7 +725,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			URI:         "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -831,7 +824,6 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 				r.Name += suffix
 				r.URI += suffix
 				r.Description += suffix
-				r.Language += suffix
 				r.UpdatedAt = now
 				r.CreatedAt = now
 				r.Archived = !r.Archived
@@ -988,7 +980,7 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 }
 
 func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	servicesPerKind := createExternalServices(t, store)
@@ -998,7 +990,6 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -1018,7 +1009,6 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
-			Language:    "barlang",
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -1416,7 +1406,7 @@ func hasID(ids ...api.RepoID) func(r *repos.Repo) bool {
 }
 
 func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	servicesPerKind := createExternalServices(t, store)
@@ -1745,7 +1735,7 @@ func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
 }
 
 func testStoreListReposPagination(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	servicesPerKind := createExternalServices(t, store)
@@ -1754,7 +1744,6 @@ func testStoreListReposPagination(t *testing.T, store repos.Store) func(*testing
 		Name:        "foo/bar",
 		URI:         "github.com/foo/bar",
 		Description: "The description",
-		Language:    "barlang",
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",
@@ -1816,13 +1805,13 @@ func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore rep
 
 			// Insert test repositories
 			_, err := db.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, language, fork, external_id, external_service_type, external_service_id, deleted_at)
+INSERT INTO repo (id, name, description, fork, external_id, external_service_type, external_service_id, deleted_at)
 VALUES
-	(1, 'github.com/user/repo1', '', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
-	(2, 'github.com/user/repo2', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
-	(3, 'github.com/user/repo3', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
-	(4, 'github.com/user/repo4', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
-	(5, 'github.com/user/repo5', '', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
+	(1, 'github.com/user/repo1', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
+	(2, 'github.com/user/repo2', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
+	(3, 'github.com/user/repo3', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
+	(4, 'github.com/user/repo4', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
+	(5, 'github.com/user/repo5', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
 `)
 			if err != nil {
 				t.Fatal(err)
@@ -1847,7 +1836,7 @@ VALUES
 }
 
 func testSyncRateLimiters(t *testing.T, store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -1901,7 +1890,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 	return func(t *testing.T, _ repos.Store) func(*testing.T) {
 		t.Helper()
 
-		clock := repos.NewFakeClock(time.Now(), 0)
+		clock := dbtesting.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
 		services := generateExternalServices(10, mkExternalServices(now)...)
@@ -2015,25 +2004,6 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 	}
 }
 
-func testDBStoreTransact(store *repos.DBStore) func(*testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
-
-		txstore, err := store.Transact(ctx)
-		if err != nil {
-			t.Fatal("expected DBStore to support transactions", err)
-		}
-		defer txstore.Done()
-
-		_, err = txstore.(repos.Transactor).Transact(ctx)
-		have := fmt.Sprintf("%s", err)
-		want := "dbstore: already in a transaction"
-		if have != want {
-			t.Errorf("error:\nhave: %v\nwant: %v", have, want)
-		}
-	}
-}
-
 func mkRepos(n int, base ...*repos.Repo) repos.Repos {
 	if len(base) == 0 {
 		return nil
@@ -2075,7 +2045,7 @@ func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.St
 			if err != nil {
 				t.Fatalf("failed to start transaction: %v", err)
 			}
-			defer txstore.Done(&errRollback)
+			defer txstore.Done(errRollback)
 			s = &noopTxStore{TB: t, Store: txstore}
 		}
 
@@ -2098,20 +2068,22 @@ func (tx *noopTxStore) Transact(context.Context) (repos.TxStore, error) {
 	return tx, nil
 }
 
-func (tx *noopTxStore) Done(errs ...*error) {
+func (tx *noopTxStore) Done(err error) error {
 	tx.Helper()
 
 	if tx.count != 1 {
 		tx.Fatal("no current transactions")
 	}
-	if len(errs) > 0 && *errs[0] != nil {
-		tx.Fatal(fmt.Sprintf("unexpected error in noopTxStore: %v", *errs[0]))
+	if err != nil {
+		tx.Fatal(fmt.Sprintf("unexpected error in noopTxStore: %v", err))
 	}
 	tx.count--
+
+	return nil
 }
 
 func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.ExternalService {
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svcs := mkExternalServices(now)

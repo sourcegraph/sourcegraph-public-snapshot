@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -71,7 +72,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 		} {
 			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
-				clock := repos.NewFakeClock(time.Now(), time.Second)
+				clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 				now := clock.Now
 				ctx := context.Background()
 
@@ -218,7 +219,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketCloudService.URN()),
 	)
 
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 
 	svcdup := repos.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -231,11 +232,6 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	// create a few external services
 	if err := s.UpsertExternalServices(context.Background(), &svcdup); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
-	}
-
-	var services []repos.ExternalService
-	for _, svc := range servicesPerKind {
-		services = append(services, *svc)
 	}
 
 	type testCase struct {
@@ -585,7 +581,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 
 				now := tc.now
 				if now == nil {
-					clock := repos.NewFakeClock(time.Now(), time.Second)
+					clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 					now = clock.Now
 				}
 
@@ -636,7 +632,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 }
 
 func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), time.Second)
+	clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
 
@@ -644,7 +640,6 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 		ID:          0, // explicitly make default value for sourced repo
 		Name:        "github.com/foo/bar",
 		Description: "The description",
-		Language:    "barlang",
 		Archived:    false,
 		Fork:        false,
 		ExternalRepo: api.ExternalRepoSpec{
@@ -1070,18 +1065,14 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 				t.Fatal(err)
 			}
 
-			done := make(chan struct{})
+			done := make(chan error)
 			go func() {
-				defer close(done)
-				err := syncer.Run(ctx, db, store, repos.RunOptions{
+				done <- syncer.Run(ctx, db, store, repos.RunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
-					MinSyncInterval: 1 * time.Millisecond,
+					MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 					DequeueInterval: 1 * time.Millisecond,
 				})
-				if err != nil && err != context.Canceled {
-					t.Fatal(err)
-				}
 			}()
 
 			// Ignore fields store adds
@@ -1115,7 +1106,10 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 
 			// Cancel context and the run loop should stop
 			cancel()
-			<-done
+			err := <-done
+			if err != nil && err != context.Canceled {
+				t.Fatal(err)
+			}
 		}
 	}
 }
@@ -1212,18 +1206,14 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 				Now:    time.Now,
 			}
 
-			done := make(chan struct{})
+			done := make(chan error)
 			go func() {
-				defer close(done)
-				err := syncer.Run(ctx, db, store, repos.RunOptions{
+				done <- syncer.Run(ctx, db, store, repos.RunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
-					MinSyncInterval: 1 * time.Minute,
+					MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 					DequeueInterval: 1 * time.Millisecond,
 				})
-				if err != nil && err != context.Canceled {
-					t.Fatal(err)
-				}
 			}()
 
 			// Ignore fields store adds
@@ -1281,7 +1271,10 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 
 			// Cancel context and the run loop should stop
 			cancel()
-			<-done
+			err := <-done
+			if err != nil && err != context.Canceled {
+				t.Fatal(err)
+			}
 		}
 	}
 }
@@ -1487,6 +1480,9 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			assertSourceCount(ctx, t, db, 2)
 
 			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if len(fromDB) != 1 {
 				t.Fatalf("Expected 1 repo, got %d", len(fromDB))
 			}
@@ -1544,15 +1540,18 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}()
 
 			<-upsertCalledCh
-			tx1.Done()
+			tx1.Done(nil)
 
 			err = <-errChan
 			if err != nil {
 				t.Fatalf("Error in syncer2: %v", err)
 			}
-			tx2.Done()
+			tx2.Done(nil)
 
 			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if len(fromDB) != 1 {
 				t.Fatalf("Expected 1 repo, got %d", len(fromDB))
 			}

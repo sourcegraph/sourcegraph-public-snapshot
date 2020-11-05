@@ -178,10 +178,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                             ? extension.registryExtension.extensionIDWithoutRegistry
                                             : extension.id
                                     }`}
-                                    className={classNames(
-                                        'font-weight-bold',
-                                        change === 'enabled' ? 'alert-link' : 'extension-card__link'
-                                    )}
+                                    className={classNames('font-weight-bold', change === 'enabled' ? 'alert-link' : '')}
                                 >
                                     {name}
                                 </Link>

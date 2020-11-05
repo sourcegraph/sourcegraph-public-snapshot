@@ -109,7 +109,7 @@ func (fm *FileMatchResolver) LimitHit() bool {
 
 func (fm *FileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (fm *FileMatchResolver) ToFileMatch() (*FileMatchResolver, bool)   { return fm, true }
-func (fm *FileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
 	return nil, false
 }
 
@@ -123,6 +123,7 @@ func (fm *FileMatchResolver) path() string {
 // counts and limit.
 func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
+	fm.symbols = append(fm.symbols, src.symbols...)
 	fm.MatchCount += src.MatchCount
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }

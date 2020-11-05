@@ -418,9 +418,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		return nil, nil
 	}
 
-	// Only return diffs for open changesets, otherwise we can't guarantee that
-	// we have the refs on gitserver
-	if r.changeset.ExternalState != campaigns.ChangesetExternalStateOpen {
+	if !r.changeset.HasDiff() {
 		return nil, nil
 	}
 

@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
+    ShowQueryBuilderProps,
 } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -30,6 +31,7 @@ import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
@@ -45,7 +47,8 @@ export interface RepogroupPageProps
         InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -112,7 +115,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                         hiddenQueryPrefix={repogroupQuery}
                         source="repogroupPage"
                         hideVersionContexts={true}
-                        hideQueryBuilder={true}
+                        showQueryBuilder={false}
                     />
                 ) : (
                     <SearchPageInput {...props} queryPrefix={repogroupQuery} source="repogroupPage" />
@@ -132,8 +135,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
                                     <small className="repogroup-page__example-bar form-control text-monospace ">
-                                        <span className="search-keyword">repogroup:</span>
-                                        {props.repogroupMetadata.name} {example.exampleQuery}
+                                        <SyntaxHighlightedSearchQuery query={`${repogroupQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
                                         <button
@@ -141,7 +143,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                             type="button"
                                             aria-label="Search"
                                             onClick={onSubmitExample(
-                                                `${repogroupQuery} ${example.rawQuery}`,
+                                                `${repogroupQuery} ${example.query}`,
                                                 example.patternType
                                             )}
                                         >

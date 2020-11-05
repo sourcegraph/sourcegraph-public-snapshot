@@ -8,13 +8,9 @@
 @import '../panels/HomePanels.scss';
 
 .search-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: flex-start;
     width: 100%;
     overflow: auto;
-    padding-bottom: 4rem;
 
     &__logo {
         flex: 0 0 auto;
@@ -25,11 +21,6 @@
         max-width: 90%;
         // Reserve the image's height to avoid jitter before it loads.
         min-height: 54px;
-    }
-
-    &__cloud-tag-line {
-        margin-top: 1rem;
-        color: $gray-07;
     }
 
     &__search-container {
@@ -49,6 +40,7 @@
 
         &--with-content-below {
             flex-grow: 0;
+            margin-bottom: 5rem;
         }
     }
 
@@ -100,20 +92,8 @@
     &__repogroup-listing-title {
         margin-bottom: 0.25rem;
     }
-}
 
-.theme-light {
-    .search-page {
-        &__cloud-tag-line {
-            color: $gray-11;
-        }
-    }
-}
-
-.theme-dark {
-    .search-page {
-        &__web-link {
-            color: #1c7cd6;
-        }
+    &__footer {
+        margin-top: 2rem;
     }
 }

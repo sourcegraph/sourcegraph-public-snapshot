@@ -16,10 +16,11 @@
     position: relative; // for sidebar toggle
 
     &__sidebar {
-        background: #1c2736;
+        background: var(--color-bg-2);
 
         &-toggle {
-            background: #1c2736;
+            background: var(--color-bg-3);
+            color: var(--text-muted);
 
             position: absolute;
             top: 0;
@@ -37,6 +38,7 @@
     }
 
     &__content {
+        isolation: isolate;
         flex: 1 1 auto;
 
         display: flex;
@@ -44,26 +46,6 @@
         min-height: 0;
         min-width: 0;
 
-        background-color: #0e121b;
-    }
-}
-
-.theme-light {
-    .repo-revision-container {
-        &__sidebar {
-            background: $color-light-bg-2;
-
-            &-toggle {
-                background: $color-light-bg-2;
-
-                &:hover {
-                    color: $color-light-text-5;
-                }
-            }
-        }
-
-        &__content {
-            background-color: $color-light-bg-1;
-        }
+        background-color: var(--body-bg);
     }
 }

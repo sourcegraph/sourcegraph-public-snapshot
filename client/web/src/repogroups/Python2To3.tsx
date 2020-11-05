@@ -1,5 +1,4 @@
 import { RepogroupMetadata } from './types'
-import * as React from 'react'
 import { SearchPatternType } from '../graphql-operations'
 
 export const python2To3Metadata: RepogroupMetadata = {
@@ -9,44 +8,24 @@ export const python2To3Metadata: RepogroupMetadata = {
     description:
         'The examples below help you find Python 2 code that requires refactoring, and review examples of the new Python 3 syntax, across popular Python repositories.',
     examples: [
-        //         {
-        //             title: 'Implicit relative imports in Python 2 and absolute imports:',
-        //             description: `A relative import specifies the resource to be imported relative to the current location, where the import statement is.
-        //             An absolute import specifies the resource to be imported using its full path from the project's root folder. The search below returns all implicit
-        //             relative imports (without leading dots) in Python 2 and absolute imports in both Python 2 and Python 3.`,
-        //             exampleQuery: <>/from [^.].+ import \w+/</>,
-        //             rawQuery: '/from [^.].+ import \\w+/',
-        //             patternType: SearchPatternType.regexp,
-        //         },
         {
             title: 'Python 3 explicit relative imports',
             description:
                 'Python 3 requires you to explicitly specify package location relative to the current folder, and deprecates implicit relative reports. The search below returns usages of explicit relative imports. For example, an import with one leading dot signifies that the package resides in the current folder, and with two leading dots tells Python that the package is one directory up from the current one.',
-            exampleQuery: <>from \B\.\w+ import \w+</>,
-            rawQuery: 'from \\B\\.\\w+ import \\w+',
+            query: 'from \\B\\.\\w+ import \\w+',
             patternType: SearchPatternType.regexp,
         },
         {
             title: 'Python 2 style print statements',
             description: 'Find print statements with double quotes like print "Hello, World!".',
-            exampleQuery: (
-                <>
-                    <span className="search-keyword">lang:</span>python print ":[string]"
-                </>
-            ),
-            rawQuery: 'lang:python print ":[string]"',
+            query: 'lang:python print ":[string]"',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'Python 3 style print statements',
             description:
                 'Convert print statements to the print( ) function like print("Hello, World!"). These will work with both Python 2 and Python 3.',
-            exampleQuery: (
-                <>
-                    <span className="search-keyword">lang:</span>python print(":[string]")
-                </>
-            ),
-            rawQuery: 'lang:python print(":[string]")',
+            query: 'lang:python print(":[string]")',
             patternType: SearchPatternType.structural,
         },
         {
@@ -54,20 +33,14 @@ export const python2To3Metadata: RepogroupMetadata = {
             description: `In Python 2, the division operator / rounds down the result to the nearest integer. To get a result with a floating point number,
             you need to convert the numbers to float and then perform the division. Python 3 no longer needs an explicit conversion to float by using 2 different
             operators: / for float division and // for integer division.`,
-            exampleQuery: <>float(:[numerator]) / float(:[denominator])</>,
-            rawQuery: 'float(:[numerator]) / float(:[denominator])',
+            query: 'float(:[numerator]) / float(:[denominator])',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'Python 2 and Python 3 integer conversion',
             description: `Both Python 2 and 3 have built-in methods to allow you to easily convert integers to floats and floats to integers. For example,
             int(100.8) will be converted to 100.`,
-            exampleQuery: (
-                <>
-                    <span className="search-keyword">lang:</span>python \\sint\\(-*\\d+\\)
-                </>
-            ),
-            rawQuery: 'lang:python \\sint\\(-*\\d+\\)',
+            query: 'lang:python \\sint\\(-*\\d+\\)',
             patternType: SearchPatternType.regexp,
         },
     ],

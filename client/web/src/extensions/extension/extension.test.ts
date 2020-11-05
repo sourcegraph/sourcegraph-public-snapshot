@@ -18,10 +18,10 @@ describe('splitExtensionID', () => {
 })
 
 describe('validCategories', () => {
-    test('selects only known categories, sorts, and dedupes', () =>
+    test('selects only known categories and dedupes', () =>
         expect(validCategories(['Programming languages', 'Other', 'x', 'Other'])).toEqual([
-            'Other',
             'Programming languages',
+            'Other',
         ]))
 
     test('returns undefined for undefined', () => expect(validCategories(undefined)).toEqual(undefined))

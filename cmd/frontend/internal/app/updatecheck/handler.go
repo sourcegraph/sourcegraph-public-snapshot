@@ -34,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.20.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.21.2")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.20.1")
+	latestReleaseKubernetesBuild = newBuild("3.21.2")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.20.1")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.21.2")
 )
 
 func getLatestRelease(deployType string) build {
@@ -169,6 +169,7 @@ type pingRequest struct {
 	LicenseKey           string
 	DeployType           string          `json:"deployType"`
 	ClientVersionString  string          `json:"version"`
+	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
 	AuthProviders        []string        `json:"auth"`
 	ExternalServices     []string        `json:"extsvcs"`
 	BuiltinSignupAllowed bool            `json:"signup"`
@@ -178,6 +179,7 @@ type pingRequest struct {
 	CampaignsUsage       json.RawMessage `json:"automationUsage"`
 	GrowthStatistics     json.RawMessage `json:"growthStatistics"`
 	SavedSearches        json.RawMessage `json:"savedSearches"`
+	HomepagePanels       json.RawMessage `json:"homepagePanels"`
 	Repositories         json.RawMessage `json:"repositories"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
@@ -186,6 +188,12 @@ type pingRequest struct {
 	HasRepos             bool            `json:"repos"`
 	EverSearched         bool            `json:"searched"`
 	EverFindRefs         bool            `json:"refs"`
+}
+
+type dependencyVersions struct {
+	PostgresVersion   string `json:"postgresVersion"`
+	RedisCacheVersion string `json:"redisCacheVersion"`
+	RedisStoreVersion string `json:"redisStoreVersion"`
 }
 
 // readPingRequest reads the ping request payload from the request. If the
@@ -270,7 +278,9 @@ type pingPayload struct {
 	SearchUsage          json.RawMessage `json:"search_usage"`
 	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
 	SavedSearches        json.RawMessage `json:"saved_searches"`
+	HomepagePanels       json.RawMessage `json:"homepage_panels"`
 	Repositories         json.RawMessage `json:"repositories"`
+	DependencyVersions   json.RawMessage `json:"dependency_versions"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
@@ -347,8 +357,10 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		SearchUsage:          searchUsage,
 		GrowthStatistics:     pr.GrowthStatistics,
 		SavedSearches:        pr.SavedSearches,
+		HomepagePanels:       pr.HomepagePanels,
 		Repositories:         pr.Repositories,
 		InstallerEmail:       pr.InitialAdminEmail,
+		DependencyVersions:   pr.DependencyVersions,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),

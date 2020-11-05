@@ -160,7 +160,12 @@ export class ExtensionStatusPopover extends React.PureComponent<Props> {
                 <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
                     <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
                 </button>
-                <UncontrolledPopover placement="auto-end" target="extension-status-popover">
+                <UncontrolledPopover
+                    placement="auto-end"
+                    target="extension-status-popover"
+                    hideArrow={true}
+                    popperClassName="border-0"
+                >
                     <ExtensionStatus {...this.props} />
                 </UncontrolledPopover>
             </>

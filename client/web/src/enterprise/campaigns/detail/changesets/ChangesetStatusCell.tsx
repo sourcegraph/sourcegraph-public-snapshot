@@ -14,32 +14,40 @@ export interface ChangesetStatusCellProps {
     changeset: Pick<ChangesetFields, 'publicationState' | 'externalState' | 'reconcilerState'>
 }
 
-export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({ changeset }) => {
+export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
+    changeset,
+    className = 'd-flex',
+}) => {
     switch (computeChangesetUIState(changeset)) {
         case ChangesetUIState.ERRORED:
-            return <ChangesetStatusError />
+            return <ChangesetStatusError className={className} />
         case ChangesetUIState.PROCESSING:
-            return <ChangesetStatusProcessing />
+            return <ChangesetStatusProcessing className={className} />
         case ChangesetUIState.UNPUBLISHED:
-            return <ChangesetStatusUnpublished />
+            return <ChangesetStatusUnpublished className={className} />
         case ChangesetUIState.OPEN:
-            return <ChangesetStatusOpen />
+            return <ChangesetStatusOpen className={className} />
+        case ChangesetUIState.DRAFT:
+            return <ChangesetStatusDraft className={className} />
         case ChangesetUIState.CLOSED:
-            return <ChangesetStatusClosed />
+            return <ChangesetStatusClosed className={className} />
         case ChangesetUIState.MERGED:
-            return <ChangesetStatusMerged />
+            return <ChangesetStatusMerged className={className} />
         case ChangesetUIState.DELETED:
-            return <ChangesetStatusDeleted />
+            return <ChangesetStatusDeleted className={className} />
     }
 }
 
-const iconClassNames = 'm-0 text-nowrap d-flex flex-column align-items-center justify-content-center'
+const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
 
 export const ChangesetStatusUnpublished: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
     label = <span className="text-muted">Unpublished</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-muted', className)}>
+    <div
+        className={classNames(iconClassNames, 'text-muted', className)}
+        data-tooltip="Set published: true to publish to code host"
+    >
         <SourceBranchIcon />
         {label}
     </div>
@@ -67,6 +75,15 @@ export const ChangesetStatusOpen: React.FunctionComponent<{ label?: JSX.Element;
     className,
 }) => (
     <div className={classNames(iconClassNames, 'text-success', className)}>
+        <SourcePullIcon />
+        {label}
+    </div>
+)
+export const ChangesetStatusDraft: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+    label = <span className="text-muted">Draft</span>,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, 'text-muted', className)}>
         <SourcePullIcon />
         {label}
     </div>

@@ -2,13 +2,50 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { VisibleChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
+import { VisibleChangesetSpecFields, ChangesetSpecType, Scalars } from '../../../graphql-operations'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
 ))
+
+const baseChangeset: (published: Scalars['PublishedValue']) => VisibleChangesetSpecFields = published => ({
+    __typename: 'VisibleChangesetSpec',
+    id: 'someidv2',
+    expiresAt: addDays(new Date(), 7).toISOString(),
+    type: ChangesetSpecType.EXISTING,
+    description: {
+        __typename: 'GitBranchChangesetDescription',
+        baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
+        baseRef: 'master',
+        headRef: 'cool-branch',
+        body: 'Body text',
+        commits: [
+            {
+                subject: 'This is the first line of the commit message',
+                body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
+                author: {
+                    avatarURL: null,
+                    displayName: 'john',
+                    email: 'john@test.not',
+                    user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
+                },
+            },
+        ],
+        diffStat: {
+            added: 10,
+            changed: 8,
+            deleted: 2,
+        },
+        title: 'Add prettier to repository',
+        published,
+    },
+})
 
 export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFields> = {
     'Import changeset': {
@@ -22,78 +59,9 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFie
             externalID: '123',
         },
     },
-    'Create changeset published': {
-        __typename: 'VisibleChangesetSpec',
-        id: 'someidv2',
-        expiresAt: addDays(new Date(), 7).toISOString(),
-        type: ChangesetSpecType.EXISTING,
-        description: {
-            __typename: 'GitBranchChangesetDescription',
-            baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
-            baseRef: 'master',
-            headRef: 'cool-branch',
-            body: 'Body text',
-            commits: [
-                {
-                    subject: 'This is the first line of the commit message',
-                    body: `And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
-                    author: {
-                        avatarURL: null,
-                        displayName: 'john',
-                        email: 'john@test.not',
-                        user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
-                    },
-                },
-            ],
-            diffStat: {
-                added: 10,
-                changed: 8,
-                deleted: 2,
-            },
-            published: true,
-            title: 'Add prettier to repository',
-        },
-    },
-    'Create changeset not published': {
-        __typename: 'VisibleChangesetSpec',
-        id: 'someidv3',
-        expiresAt: addDays(new Date(), 7).toISOString(),
-        type: ChangesetSpecType.EXISTING,
-        description: {
-            __typename: 'GitBranchChangesetDescription',
-            baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
-            baseRef: 'master',
-            headRef: 'cool-branch',
-            body: 'Body text',
-            commits: [
-                {
-                    subject: 'This is the first line of the commit message',
-                    body: `And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body. And the more explanatory body.
-And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
-                    author: {
-                        avatarURL: null,
-                        displayName: 'john',
-                        email: 'john@test.not',
-                        user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
-                    },
-                },
-            ],
-            diffStat: {
-                added: 10,
-                changed: 8,
-                deleted: 2,
-            },
-            published: false,
-            title: 'Add prettier to repository',
-        },
-    },
+    'Create changeset published': baseChangeset(true),
+    'Create changeset draft': baseChangeset('draft'),
+    'Create changeset not published': baseChangeset(false),
 }
 
 const queryEmptyFileDiffs = () =>

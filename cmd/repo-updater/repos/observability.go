@@ -97,6 +97,9 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 		}
 		count++
 	}
+	if errs != nil {
+		err = errs.ErrorOrNil()
+	}
 }
 
 // NewObservedStore wraps the given Store with error logging,
@@ -398,7 +401,7 @@ func (o *ObservedStore) With(db dbutil.DB) Store {
 }
 
 // Done calls into the inner Store Done method.
-func (o *ObservedStore) Done(errs ...*error) {
+func (o *ObservedStore) Done(err error) error {
 	tr := o.txtrace
 	tr.LogFields(otlog.String("event", "Store.Done"))
 
@@ -406,13 +409,11 @@ func (o *ObservedStore) Done(errs ...*error) {
 		secs := time.Since(began).Seconds()
 		done := false
 
-		for _, err := range errs {
-			if err != nil && *err != nil {
-				done = true
-				tr.SetError(*err)
-				o.metrics.Done.Observe(secs, 1, err)
-				logging.Log(o.log, "store.done", err)
-			}
+		if err != nil {
+			done = true
+			tr.SetError(err)
+			o.metrics.Done.Observe(secs, 1, &err)
+			logging.Log(o.log, "store.done", &err)
 		}
 
 		if !done {
@@ -422,7 +423,7 @@ func (o *ObservedStore) Done(errs ...*error) {
 		tr.Finish()
 	}(time.Now())
 
-	o.store.(TxStore).Done(errs...)
+	return o.store.(TxStore).Done(err)
 }
 
 // ListExternalServices calls into the inner Store and registers the observed results.

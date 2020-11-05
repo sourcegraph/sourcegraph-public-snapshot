@@ -156,6 +156,56 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	}
 }
 
+func TestDeleteUploadsStuckUploading(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute * 1)
+	t3 := t1.Add(time.Minute * 2)
+	t4 := t1.Add(time.Minute * 3)
+	t5 := t1.Add(time.Minute * 4)
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // not uploading
+		Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // deleted
+		Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // deleted
+		Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // old, not uploading
+		Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // old
+	)
+
+	count, err := store.DeleteUploadsStuckUploading(context.Background(), t1.Add(time.Minute*3))
+	if err != nil {
+		t.Fatalf("unexpected error deleting uploads stuck uploading: %s", err)
+	}
+	if count != 2 {
+		t.Errorf("unexpected count. want=%d have=%d", 2, count)
+	}
+
+	uploads, totalCount, err := store.GetUploads(context.Background(), GetUploadsOptions{Limit: 5})
+	if err != nil {
+		t.Fatalf("unexpected error getting uploads: %s", err)
+	}
+
+	var ids []int
+	for _, upload := range uploads {
+		ids = append(ids, upload.ID)
+	}
+	sort.Ints(ids)
+
+	expectedIDs := []int{1, 4, 5}
+
+	if totalCount != len(expectedIDs) {
+		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
+	}
+	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
+		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+	}
+}
+
 func TestGetUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -406,7 +456,7 @@ func TestMarkQueued(t *testing.T) {
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
 
-	uploadSize := 300
+	uploadSize := int64(300)
 	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
 		t.Fatalf("unexpected error marking upload as queued: %s", err)
 	}
@@ -762,33 +812,6 @@ func TestRequeue(t *testing.T) {
 	}
 }
 
-func TestGetStates(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, State: "queued"},
-		Upload{ID: 2},
-		Upload{ID: 3, State: "processing"},
-		Upload{ID: 4, State: "errored"},
-	)
-
-	expected := map[int]string{
-		1: "queued",
-		2: "completed",
-		4: "errored",
-	}
-
-	if states, err := store.GetStates(context.Background(), []int{1, 2, 4, 6}); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(expected, states); diff != "" {
-		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
-	}
-}
-
 func TestDeleteUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -807,7 +830,7 @@ func TestDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+	if states, err := getStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
@@ -895,7 +918,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := store.GetStates(context.Background(), uploadIDs); err != nil {
+	if states, err := getStates(uploadIDs...); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else {
 		deletedStates := 0
@@ -930,7 +953,7 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := store.GetStates(context.Background(), []int{1}); err != nil {
+	if states, err := getStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if len(states) != 0 {
 		t.Fatalf("unexpected record")

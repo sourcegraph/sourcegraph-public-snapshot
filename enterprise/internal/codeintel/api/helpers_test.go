@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -96,6 +98,30 @@ func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore,
 	})
 }
 
+func setMockStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, expectedGraph map[string][]string, dumps []store.Dump) {
+	mockStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]store.Dump, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+		if commit != expectedCommit {
+			t.Errorf("unexpected commit for FindClosestDumps. want=%s have=%s", expectedCommit, commit)
+		}
+		if file != expectedFile {
+			t.Errorf("unexpected file for FindClosestDumps. want=%s have=%s", expectedFile, file)
+		}
+		if rootMustEnclosePath != expectedrootMustEnclosePath {
+			t.Errorf("unexpected rootMustEnclosePath for FindClosestDumps. want=%v have=%v", expectedrootMustEnclosePath, rootMustEnclosePath)
+		}
+		if indexer != expectedIndexer {
+			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)
+		}
+		if diff := cmp.Diff(expectedGraph, graph); diff != "" {
+			t.Errorf("unexpected graph (-want +got):\n%s", diff)
+		}
+		return dumps, nil
+	})
+}
+
 func setMockStoreSameRepoPager(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager store.ReferencePager) {
 	mockStore.SameRepoPagerFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, store.ReferencePager, error) {
 		if repositoryID != expectedRepositoryID {
@@ -171,19 +197,11 @@ func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *store
 	})
 }
 
-func setMockBundleManagerClientBundleClient(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, bundleClients map[int]bundles.BundleClient) {
-	mockBundleManagerClient.BundleClientFunc.SetDefaultHook(func(bundleID int) bundles.BundleClient {
-		bundleClient, ok := bundleClients[bundleID]
-		if !ok {
-			t.Errorf("unexpected bundle id for BundleClient: %d", bundleID)
+func setMockBundleManagerClientExists(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath string, exists bool) {
+	mockBundleManagerClient.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for Exists. want=%d have=%d", expectedDumpID, dumpID)
 		}
-
-		return bundleClient
-	})
-}
-
-func setMockBundleClientExists(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, exists bool) {
-	mockBundleClient.ExistsFunc.SetDefaultHook(func(ctx context.Context, path string) (bool, error) {
 		if path != expectedPath {
 			t.Errorf("unexpected path for Exists. want=%s have=%s", expectedPath, path)
 		}
@@ -191,8 +209,30 @@ func setMockBundleClientExists(t *testing.T, mockBundleClient *bundlemocks.MockB
 	})
 }
 
-func setMockBundleClientRanges(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
-	mockBundleClient.RangesFunc.SetDefaultHook(func(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
+type existsSpec struct {
+	dumpID int
+	path   string
+	exists bool
+}
+
+func setMultiMockBundleManagerClientExists(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, specs ...existsSpec) {
+	mockBundleManagerClient.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
+		for _, spec := range specs {
+			if dumpID == spec.dumpID && path == spec.path {
+				return spec.exists, nil
+			}
+		}
+
+		t.Errorf("unexpected args for Exists. dumpID=%d path=%s", dumpID, path)
+		return false, nil
+	})
+}
+
+func setMockBundleManagerClientRanges(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
+	mockBundleManagerClient.RangesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for Ranges. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if path != expectedPath {
 			t.Errorf("unexpected path for Ranges. want=%s have=%s", expectedPath, path)
 		}
@@ -206,8 +246,11 @@ func setMockBundleClientRanges(t *testing.T, mockBundleClient *bundlemocks.MockB
 	})
 }
 
-func setMockBundleClientDefinitions(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
-	mockBundleClient.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([]bundles.Location, error) {
+func setMockBundleManagerClientDefinitions(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
+	mockBundleManagerClient.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]bundles.Location, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for Definitions. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if path != expectedPath {
 			t.Errorf("unexpected path for Definitions. want=%s have=%s", expectedPath, path)
 		}
@@ -221,8 +264,11 @@ func setMockBundleClientDefinitions(t *testing.T, mockBundleClient *bundlemocks.
 	})
 }
 
-func setMockBundleClientReferences(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
-	mockBundleClient.ReferencesFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([]bundles.Location, error) {
+func setMockBundleManagerClientReferences(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
+	mockBundleManagerClient.ReferencesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]bundles.Location, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for References. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if path != expectedPath {
 			t.Errorf("unexpected path for References. want=%s have=%s", expectedPath, path)
 		}
@@ -236,8 +282,11 @@ func setMockBundleClientReferences(t *testing.T, mockBundleClient *bundlemocks.M
 	})
 }
 
-func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
-	mockBundleClient.HoverFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) (string, bundles.Range, bool, error) {
+func setMockBundleManagerClientHover(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
+	mockBundleManagerClient.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, bundles.Range, bool, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for Hover. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if path != expectedPath {
 			t.Errorf("unexpected path for Hover. want=%s have=%s", expectedPath, path)
 		}
@@ -251,8 +300,34 @@ func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBu
 	})
 }
 
-func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []bundles.Diagnostic, totalCount int) {
-	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string, skip, take int) ([]bundles.Diagnostic, int, error) {
+type hoverSpec struct {
+	dumpID    int
+	path      string
+	line      int
+	character int
+	text      string
+	r         bundles.Range
+	exists    bool
+}
+
+func setMultiMockBundleManagerClientHover(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, specs ...hoverSpec) {
+	mockBundleManagerClient.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, bundles.Range, bool, error) {
+		for _, spec := range specs {
+			if dumpID == spec.dumpID && path == spec.path && line == spec.line && character == spec.character {
+				return spec.text, spec.r, spec.exists, nil
+			}
+		}
+
+		t.Errorf("unexpected args for Hover. dumpID=%d path=%s line=%d character=%d", dumpID, path, line, character)
+		return "", bundles.Range{}, false, nil
+	})
+}
+
+func setMockBundleManagerClientDiagnostics(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []bundles.Diagnostic, totalCount int) {
+	mockBundleManagerClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, prefix string, skip, take int) ([]bundles.Diagnostic, int, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for Diagnostics. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if prefix != expectedPrefix {
 			t.Errorf("unexpected prefix for Diagnostics. want=%s have=%s", expectedPrefix, prefix)
 		}
@@ -266,8 +341,11 @@ func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.
 	})
 }
 
-func setMockBundleClientMonikersByPosition(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, monikers [][]bundles.MonikerData) {
-	mockBundleClient.MonikersByPositionFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([][]bundles.MonikerData, error) {
+func setMockBundleManagerClientMonikersByPosition(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, monikers [][]bundles.MonikerData) {
+	mockBundleManagerClient.MonikersByPositionFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([][]bundles.MonikerData, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for MonikersByPosition. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if path != expectedPath {
 			t.Fatalf("unexpected path for MonikersByPosition. want=%s have=%s", expectedPath, path)
 		}
@@ -282,8 +360,11 @@ func setMockBundleClientMonikersByPosition(t *testing.T, mockBundleClient *bundl
 	})
 }
 
-func setMockBundleClientMonikerResults(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []bundles.Location, totalCount int) {
-	mockBundleClient.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, modelType, scheme, identifier string, skip, take int) ([]bundles.Location, int, error) {
+func setMockBundleManagerClientMonikerResults(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []bundles.Location, totalCount int) {
+	mockBundleManagerClient.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]bundles.Location, int, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for MonikerResults. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if modelType != expectedModelType {
 			t.Errorf("unexpected model type for MonikerResults. want=%s have=%s", expectedModelType, modelType)
 		}
@@ -303,8 +384,35 @@ func setMockBundleClientMonikerResults(t *testing.T, mockBundleClient *bundlemoc
 	})
 }
 
-func setMockBundleClientPackageInformation(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath, expectedPackageInformationID string, packageInformation bundles.PackageInformationData) {
-	mockBundleClient.PackageInformationFunc.SetDefaultHook(func(ctx context.Context, path, packageInformationID string) (bundles.PackageInformationData, error) {
+type monikerResultsSpec struct {
+	dumpID     int
+	modelType  string
+	scheme     string
+	identifier string
+	skip       int
+	take       int
+	locations  []bundles.Location
+	totalCount int
+}
+
+func setMultiMockBundleManagerClientMonikerResults(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, specs ...monikerResultsSpec) {
+	mockBundleManagerClient.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]bundles.Location, int, error) {
+		for _, spec := range specs {
+			if dumpID == spec.dumpID && modelType == spec.modelType && scheme == spec.scheme && identifier == spec.identifier && skip == spec.skip && take == spec.take {
+				return spec.locations, spec.totalCount, nil
+			}
+		}
+
+		t.Errorf("unexpected args for MonikerResults. dumpID=%d modelType=%s scheme=%s identifier=%s skip=%d take=%d", dumpID, modelType, scheme, identifier, skip, take)
+		return nil, 0, nil
+	})
+}
+
+func setMockBundleManagerClientPackageInformation(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, expectedDumpID int, expectedPath, expectedPackageInformationID string, packageInformation bundles.PackageInformationData) {
+	mockBundleManagerClient.PackageInformationFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path, packageInformationID string) (bundles.PackageInformationData, error) {
+		if dumpID != expectedDumpID {
+			t.Errorf("unexpected id for PackageInformation. want=%d have=%d", expectedDumpID, dumpID)
+		}
 		if path != expectedPath {
 			t.Errorf("unexpected path for PackageInformation. want=%s have=%s", expectedPath, path)
 		}
@@ -327,4 +435,14 @@ func readTestFilter(t *testing.T, dirname, filename string) []byte {
 	}
 
 	return raw
+}
+
+func setMockGitserverCommitGraph(t *testing.T, mockGitserverClient *MockGitserverClient, expectedRepositoryID int, graph map[string][]string) {
+	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, s store.Store, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository identifier for CommitGraph. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+
+		return graph, nil
+	})
 }

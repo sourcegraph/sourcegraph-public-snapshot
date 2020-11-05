@@ -214,7 +214,7 @@ func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)
@@ -362,7 +362,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 }
 
 func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
-	if req.ExternalService.DeletedAt != nil {
+	if !req.ExternalService.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
 	}
@@ -429,11 +429,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+	list, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {
 		return nil, err
+	}
+	var repo *repos.Repo
+	if len(list) > 0 {
+		repo = list[0]
 	}
 
 	// If we are sourcegraph.com we don't run a global Sync since there are
@@ -443,15 +447,28 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {
 		// TODO a queue with single flighting to speak to remote for args.Repo?
-		if len(repos) == 1 {
+		if repo != nil {
 			// We have (potentially stale) data we can return to the user right
 			// now. Do that rather than blocking.
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
-				_, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
+				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
 				if err != nil {
 					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+					return
+				}
+
+				// Since we don't support private repositories on Cloud,
+				// we can safely assume that when a repository stored in the database is not accessible anymore,
+				// no other external service should have access to it, we can then remove it.
+				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
+					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
+						r.DeletedAt = s.Now()
+					}))
+					if err != nil {
+						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
+					}
 				}
 			}()
 		} else {
@@ -461,13 +478,13 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 	}
 
-	if len(repos) != 1 {
+	if repo == nil {
 		return &protocol.RepoLookupResult{
 			ErrorNotFound: true,
 		}, nil
 	}
 
-	repoInfo, err := newRepoInfo(repos[0])
+	repoInfo, err := newRepoInfo(repo)
 	if err != nil {
 		return nil, err
 	}

@@ -53,8 +53,7 @@ var DefaultEnv = map[string]string{
 	// enables the debug proxy (/-/debug)
 	"SRC_PROF_HTTP": "",
 
-	"LOGO":          "t",
-	"SRC_LOG_LEVEL": "warn",
+	"LOGO": "t",
 
 	// TODO other bits
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
@@ -149,6 +148,10 @@ func Main() {
 	}
 	if len(monitoringLines) != 0 {
 		procfile = append(procfile, monitoringLines...)
+	}
+
+	if minioLines := maybeMinio(); len(minioLines) != 0 {
+		procfile = append(procfile, minioLines...)
 	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()

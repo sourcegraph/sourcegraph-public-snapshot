@@ -1,5 +1,5 @@
 import { from } from 'rxjs'
-import { requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import { requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
 
@@ -21,7 +21,7 @@ export const requestGraphQlHelper = (isExtension: boolean, baseUrl: string) => <
         ? from(
               background.requestGraphQL<T, V>({ request, variables })
           )
-        : requestGraphQL<T, V>({
+        : requestGraphQLCommon<T, V>({
               request,
               variables,
               baseUrl,

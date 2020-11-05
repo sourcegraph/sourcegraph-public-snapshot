@@ -25,11 +25,12 @@ func TestSearch(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
-			URL   string   `json:"url"`
-			Token string   `json:"token"`
-			Repos []string `json:"repos"`
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:   "http://github.com",
+			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
@@ -41,6 +42,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
 		}),
 	})
 	if err != nil {
@@ -597,16 +599,47 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
 			},
 			{
-				name:  `Dangling right parens, heuristic for literal search`,
-				query: `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+				name:  `Literals, simple not keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
 			},
 			{
-				name:  `Dangling right parens, heuristic for literal search, double parens`,
-				query: `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+				name:  `Literals, not keyword and implicit and inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
 			},
 			{
-				name:  `Dangling right parens, heuristic for literal search, simple group before right paren`,
-				query: `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+				name:  `Literals, not and and keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Dangling right parens, supported via content: filter`,
+				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPath)" and main patterntype:literal`,
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search`,
+				query:      `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
+				},
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search, double parens`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
+				},
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search, simple group before right paren`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
+				},
 			},
 			{
 				name:       `Dangling right parens, heuristic for literal search, cannot succeed, too confusing`,
@@ -614,7 +647,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Error parsing regexp: missing closing ): `(respObj.Size`",
+					Description: "Unbalanced expression: unmatched closing parenthesis )",
 				},
 			},
 			{
@@ -667,6 +700,66 @@ func TestSearch(t *testing.T) {
 			{
 				name:  `Dedupe union operation`,
 				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
+
+	t.Run("And/Or search expression queries", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+			wantAlert  *gqltestutil.SearchAlert
+		}{
+			{
+				name:  `Or distributive property on content and file`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (Fetches OR file:language-server.ts)`,
+			},
+			{
+				name:  `Or distributive property on nested file on content`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ ((file:^renovate\.json extends) or file:progress.ts createProgressProvider)`,
+			},
+			{
+				name:  `Or distributive property on commit`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
+			},
+			{
+				name:  `Or distributive property on rev`,
+				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr) file:README.md`,
+			},
+			{
+				name:  `Or distributive property on rev`,
+				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr)`,
+			},
+			{
+				name:  `Or distributive property on repo`,
+				query: `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
+			},
+			{
+				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
+				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 			},
 		}
 		for _, test := range tests {

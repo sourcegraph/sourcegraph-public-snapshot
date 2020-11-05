@@ -1,6 +1,7 @@
 @import '../components/ConnectionPopover';
 
 .revisions-popover {
+    isolation: isolate;
     width: 35rem;
 
     &-git-commit-node {
@@ -15,20 +16,10 @@
             padding: 0 0.5rem;
         }
         &__link:not(:hover) &__message {
-            color: $color-text;
+            color: var(--body-color);
         }
         &__oid {
             margin-bottom: -0.125rem;
-        }
-    }
-}
-
-.theme-light {
-    .revisions-popover {
-        &-git-commit-node {
-            &__link:not(:hover) .revisions-popover-git-commit-node__message {
-                color: $color-light-text-1;
-            }
         }
     }
 }

@@ -18,7 +18,6 @@ type ObservedStore struct {
 	readDefinitionsOperation   *observation.Operation
 	readReferencesOperation    *observation.Operation
 	doneOperation              *observation.Operation
-	createTablesOperation      *observation.Operation
 	writeMetaOperation         *observation.Operation
 	writeDocumentsOperation    *observation.Operation
 	writeResultChunksOperation *observation.Operation
@@ -38,7 +37,7 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
 		return metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"bundle_store",
+			"code_intel_codeintel_db_store",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of results returned"),
 		)
@@ -81,11 +80,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"done"},
 			Metrics:      metrics,
 		}),
-		createTablesOperation: observationContext.Operation(observation.Op{
-			Name:         "Store.CreateTables",
-			MetricLabels: []string{"create_tables"},
-			Metrics:      metrics,
-		}),
 		writeMetaOperation: observationContext.Operation(observation.Op{
 			Name:         "Store.WriteMeta",
 			MetricLabels: []string{"write_meta"},
@@ -115,45 +109,45 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 }
 
 // ReadMeta calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
+func (s *ObservedStore) ReadMeta(ctx context.Context, bundleID int) (_ types.MetaData, err error) {
 	ctx, endObservation := s.readMetaOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.ReadMeta(ctx)
+	return s.store.ReadMeta(ctx, bundleID)
 }
 
 // PathsWithPrefix calls into the inner Store and registers the observed results.
-func (s *ObservedStore) PathsWithPrefix(ctx context.Context, prefix string) (_ []string, err error) {
+func (s *ObservedStore) PathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
 	ctx, endObservation := s.pathsWithPrefixOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.PathsWithPrefix(ctx, prefix)
+	return s.store.PathsWithPrefix(ctx, bundleID, prefix)
 }
 
 // ReadDocument calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadDocument(ctx context.Context, path string) (_ types.DocumentData, _ bool, err error) {
+func (s *ObservedStore) ReadDocument(ctx context.Context, bundleID int, path string) (_ types.DocumentData, _ bool, err error) {
 	ctx, endObservation := s.readDocumentOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.ReadDocument(ctx, path)
+	return s.store.ReadDocument(ctx, bundleID, path)
 }
 
 // ReadResultChunk calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadResultChunk(ctx context.Context, id int) (_ types.ResultChunkData, _ bool, err error) {
+func (s *ObservedStore) ReadResultChunk(ctx context.Context, bundleID int, id int) (_ types.ResultChunkData, _ bool, err error) {
 	ctx, endObservation := s.readResultChunkOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.ReadResultChunk(ctx, id)
+	return s.store.ReadResultChunk(ctx, bundleID, id)
 }
 
 // ReadDefinitions calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) (locations []types.Location, _ int, err error) {
+func (s *ObservedStore) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (locations []types.Location, _ int, err error) {
 	ctx, endObservation := s.readDefinitionsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
-	return s.store.ReadDefinitions(ctx, scheme, identifier, skip, take)
+	return s.store.ReadDefinitions(ctx, bundleID, scheme, identifier, skip, take)
 }
 
 // ReadReferences calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) (locations []types.Location, _ int, err error) {
+func (s *ObservedStore) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (locations []types.Location, _ int, err error) {
 	ctx, endObservation := s.readReferencesOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
-	return s.store.ReadReferences(ctx, scheme, identifier, skip, take)
+	return s.store.ReadReferences(ctx, bundleID, scheme, identifier, skip, take)
 }
 
 // Transact calls into the inner Store and registers the observed result.
@@ -172,7 +166,6 @@ func (s *ObservedStore) Transact(ctx context.Context) (_ Store, err error) {
 		readDefinitionsOperation:   s.readDefinitionsOperation,
 		readReferencesOperation:    s.readReferencesOperation,
 		doneOperation:              s.doneOperation,
-		createTablesOperation:      s.createTablesOperation,
 		writeMetaOperation:         s.writeMetaOperation,
 		writeDocumentsOperation:    s.writeDocumentsOperation,
 		writeResultChunksOperation: s.writeResultChunksOperation,
@@ -195,48 +188,37 @@ func (s *ObservedStore) Done(e error) error {
 	return err
 }
 
-// CreateTables calls into the inner Store and registers the observed result.
-func (s *ObservedStore) CreateTables(ctx context.Context) (err error) {
-	ctx, endObservation := s.createTablesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.CreateTables(ctx)
-}
-
 // WriteMeta calls into the inner Store and registers the observed result.
-func (s *ObservedStore) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
+func (s *ObservedStore) WriteMeta(ctx context.Context, bundleID int, meta types.MetaData) (err error) {
 	ctx, endObservation := s.writeMetaOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.WriteMeta(ctx, meta)
+	return s.store.WriteMeta(ctx, bundleID, meta)
 }
 
 // WriteDocuments calls into the inner Store and registers the observed result.
-func (s *ObservedStore) WriteDocuments(ctx context.Context, documents chan KeyedDocumentData) (err error) {
+func (s *ObservedStore) WriteDocuments(ctx context.Context, bundleID int, documents chan KeyedDocumentData) (err error) {
 	ctx, endObservation := s.writeDocumentsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.WriteDocuments(ctx, documents)
+	return s.store.WriteDocuments(ctx, bundleID, documents)
 }
 
 // WriteResultChunks calls into the inner Store and registers the observed result.
-func (s *ObservedStore) WriteResultChunks(ctx context.Context, resultChunks chan IndexedResultChunkData) (err error) {
+func (s *ObservedStore) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan IndexedResultChunkData) (err error) {
 	ctx, endObservation := s.writeResultChunksOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.WriteResultChunks(ctx, resultChunks)
+	return s.store.WriteResultChunks(ctx, bundleID, resultChunks)
 }
 
 // WriteDefinitions calls into the inner Store and registers the observed result.
-func (s *ObservedStore) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) (err error) {
+func (s *ObservedStore) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan types.MonikerLocations) (err error) {
 	ctx, endObservation := s.writeDefinitionsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.WriteDefinitions(ctx, monikerLocations)
+	return s.store.WriteDefinitions(ctx, bundleID, monikerLocations)
 }
 
 // WriteReferences calls into the inner Store and registers the observed result.
-func (s *ObservedStore) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) (err error) {
+func (s *ObservedStore) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan types.MonikerLocations) (err error) {
 	ctx, endObservation := s.writeReferencesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.WriteReferences(ctx, monikerLocations)
-}
-
-func (s *ObservedStore) Close(err error) error {
-	return s.store.Close(err)
+	return s.store.WriteReferences(ctx, bundleID, monikerLocations)
 }

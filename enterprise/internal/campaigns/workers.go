@@ -29,8 +29,7 @@ func RunWorkers(
 ) {
 	r := &reconciler{gitserverClient: gitClient, sourcer: sourcer, store: s}
 
-	options := dbworker.WorkerOptions{
-		Handler:     r.HandlerFunc(),
+	options := workerutil.WorkerOptions{
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
 		Metrics: workerutil.WorkerMetrics{
@@ -56,7 +55,7 @@ func RunWorkers(
 		MaxNumRetries: reconcilerMaxNumRetries,
 	})
 
-	worker := dbworker.NewWorker(ctx, workerStore, options)
+	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
 	worker.Start()
 }
 

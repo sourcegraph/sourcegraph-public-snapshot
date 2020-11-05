@@ -4,6 +4,8 @@
 // 1000000000_init.up.sql (19B)
 // 1000000001_init.down.sql (233B)
 // 1000000001_init.up.sql (611B)
+// 1000000002_add_indexes.down.sql (399B)
+// 1000000002_add_indexes.up.sql (369B)
 
 package migrations
 
@@ -152,6 +154,46 @@ func _1000000001_initUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1000000002_add_indexesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\xce\x4d\xaa\xc3\x20\x14\xc5\xf1\xb9\xab\x70\x1f\x8e\x4c\x9e\x3c\x84\x44\x8b\x75\x2e\x62\xae\x54\x92\x98\x12\x75\xd0\xdd\x97\x42\x3f\x28\xb4\xb7\xb3\x33\xf8\xf3\xe3\x74\xe2\x5f\x2a\x46\x08\x1f\xac\x30\xd4\xf2\x6e\x10\x74\x29\x29\xba\xc9\x57\xef\x56\xa8\xfe\x36\xe8\x9f\xd1\x07\xda\x6b\x75\xb4\x86\x4b\x65\x3f\x24\xee\x3c\xc3\x85\x7d\x71\xa6\x2d\xb4\x15\x72\x2d\x08\xf4\x6c\x50\x69\x87\xd2\x96\xea\xc2\xa9\xe5\x19\xd3\xde\x3a\xfc\x1b\xc4\x94\x53\x4d\x5b\x46\xdf\xbd\xaa\x1f\xff\x22\xec\x90\x03\xe0\xe7\x1e\xd1\xdd\x22\xbd\x1e\x47\x69\x19\xb9\x06\x00\x00\xff\xff\xc1\x8c\x87\x89\x8f\x01\x00\x00")
+
+func _1000000002_add_indexesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000002_add_indexesDownSql,
+		"1000000002_add_indexes.down.sql",
+	)
+}
+
+func _1000000002_add_indexesDownSql() (*asset, error) {
+	bytes, err := _1000000002_add_indexesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000002_add_indexes.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x93, 0xee, 0x39, 0x5a, 0x7b, 0x6, 0x8a, 0xa6, 0x8f, 0x3d, 0x19, 0x4b, 0x83, 0x87, 0xb, 0xd4, 0xf3, 0x81, 0x4b, 0x12, 0x4, 0x67, 0x66, 0x43, 0xe6, 0xf1, 0xe4, 0x1, 0x82, 0x3c, 0x2d, 0x8e}}
+	return a, nil
+}
+
+var __1000000002_add_indexesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xce\x41\xaa\x83\x30\x10\xc6\xf1\x7d\x4e\x31\xcb\xf7\xa0\x37\x70\x15\x6b\x28\x52\x6d\x8b\xb8\x71\x15\x42\x32\xc1\xa1\x26\x8a\x99\x40\x8f\x5f\x3c\x40\x84\xee\xbe\xcd\xf7\xe3\x5f\xab\x5b\xfb\xa8\x84\x90\xdd\xa8\x06\x18\x65\xdd\x29\x58\x12\x79\xed\x0c\x1b\x1d\x90\xcd\x31\x40\x36\x0d\xbc\x86\xb6\x97\xc3\x04\x77\x35\xc1\x9f\xcb\x61\xd3\xe4\xfe\xab\xc2\xd3\xad\x36\x07\x8c\x9c\x8a\xd7\x0b\x6c\x86\xe7\x22\xb0\x63\xca\x0b\x6b\x3b\xe7\xf8\x3e\x43\xc8\x7d\xca\x11\xe8\x29\x12\xd3\x1a\xcf\x84\x64\x67\x0c\x78\x48\x18\x99\x3c\xe1\x7e\x12\xe5\x71\xc7\x68\xf1\x67\x4f\x5c\x9f\x7d\xdf\x8e\x95\xf8\x06\x00\x00\xff\xff\x1a\xdb\xd6\xb5\x71\x01\x00\x00")
+
+func _1000000002_add_indexesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000002_add_indexesUpSql,
+		"1000000002_add_indexes.up.sql",
+	)
+}
+
+func _1000000002_add_indexesUpSql() (*asset, error) {
+	bytes, err := _1000000002_add_indexesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000002_add_indexes.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5a, 0xe0, 0x76, 0x5f, 0x41, 0x20, 0x0, 0x49, 0x2b, 0x9f, 0x69, 0xf1, 0x8c, 0x4b, 0x83, 0xe1, 0xd2, 0x8f, 0x69, 0xbf, 0x54, 0xae, 0x3, 0x14, 0xac, 0x3a, 0x66, 0x45, 0x46, 0xd6, 0x5e, 0xfd}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -243,10 +285,12 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"1000000000_init.down.sql": _1000000000_initDownSql,
-	"1000000000_init.up.sql":   _1000000000_initUpSql,
-	"1000000001_init.down.sql": _1000000001_initDownSql,
-	"1000000001_init.up.sql":   _1000000001_initUpSql,
+	"1000000000_init.down.sql":        _1000000000_initDownSql,
+	"1000000000_init.up.sql":          _1000000000_initUpSql,
+	"1000000001_init.down.sql":        _1000000001_initDownSql,
+	"1000000001_init.up.sql":          _1000000001_initUpSql,
+	"1000000002_add_indexes.down.sql": _1000000002_add_indexesDownSql,
+	"1000000002_add_indexes.up.sql":   _1000000002_add_indexesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -293,10 +337,12 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"1000000000_init.down.sql": {_1000000000_initDownSql, map[string]*bintree{}},
-	"1000000000_init.up.sql":   {_1000000000_initUpSql, map[string]*bintree{}},
-	"1000000001_init.down.sql": {_1000000001_initDownSql, map[string]*bintree{}},
-	"1000000001_init.up.sql":   {_1000000001_initUpSql, map[string]*bintree{}},
+	"1000000000_init.down.sql":        {_1000000000_initDownSql, map[string]*bintree{}},
+	"1000000000_init.up.sql":          {_1000000000_initUpSql, map[string]*bintree{}},
+	"1000000001_init.down.sql":        {_1000000001_initDownSql, map[string]*bintree{}},
+	"1000000001_init.up.sql":          {_1000000001_initUpSql, map[string]*bintree{}},
+	"1000000002_add_indexes.down.sql": {_1000000002_add_indexesDownSql, map[string]*bintree{}},
+	"1000000002_add_indexes.up.sql":   {_1000000002_add_indexesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

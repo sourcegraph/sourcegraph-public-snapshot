@@ -5,19 +5,12 @@ import (
 	"crypto/rand"
 	"io/ioutil"
 	"os"
-	"path"
 	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-)
-
-const (
-	// #nosec G101
-	sourcegraphSecretfileEnvvar = "SOURCEGRAPH_SECRET_FILE"
-	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
 
 // gatherKeys splits the comma-separated encryption data into its potential two components:
@@ -55,102 +48,50 @@ func MockDefaultEncryptor() {
 	defaultEncryptor = newAESGCMEncodedEncryptor(mustGenerateRandomAESKey(), nil)
 }
 
+const sourcegraphSecretFile = "SOURCEGRAPH_SECRET_FILE"
+
 func initDefaultEncryptor() error {
-	var encryptionKey []byte
+	// NOTE: Previously in 3.20, we auto-generated this file for single-image instances.
+	// Now we clean this up and it is OK to do this on every start as we haven't advertised
+	// the secrets encryption feature to any customer.
+	// TODO(jchen): Delete this once 3.22 is released.
+	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+		_ = os.Remove("/var/lib/sourcegraph/token")
+	}
 
-	// set the default location if none exists
-	secretFile := os.Getenv(sourcegraphSecretfileEnvvar)
+	secretFile := os.Getenv(sourcegraphSecretFile)
 	if secretFile == "" {
-		// #nosec G101
-		secretFile = "/var/lib/sourcegraph/token"
-	}
-
-	// reading from a file is first order
-	fileInfo, err := os.Stat(secretFile)
-	if err == nil {
-		perm := fileInfo.Mode().Perm()
-		if perm != os.FileMode(0400) {
-			return errors.New("key file permissions are not 0400")
-		}
-
-		contents, readErr := ioutil.ReadFile(secretFile)
-		if readErr != nil {
-			return errors.Wrapf(readErr, "couldn't read file %s", sourcegraphSecretfileEnvvar)
-		}
-		if len(contents) < requiredKeyLength {
-			return errors.Errorf("key length of %d characters is required", requiredKeyLength)
-		}
-		encryptionKey = contents
-
-		primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
-		if err != nil {
-			return err
-		}
-
-		defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
-		return nil
-	}
-
-	envCryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
-	// environment is second order
-	if cryptOK {
-		if len(envCryptKey) != requiredKeyLength {
-			return errors.Errorf("encryption key must be %d characters", requiredKeyLength)
-		}
-		primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
-		if err != nil {
-			return err
-		}
-
-		defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
-		return nil
-	}
-
-	// for the single docker case, we generate the secret
-	deployType := conf.DeployType()
-	if conf.IsDeployTypeSingleDockerContainer(deployType) {
-		b, err := generateRandomAESKey()
-		if err != nil {
-			return errors.Wrap(err, "unable to generate random key")
-		}
-
-		err = os.MkdirAll(path.Dir(secretFile), os.ModePerm)
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(secretFile, b, 0600)
-		if err != nil {
-			return err
-		}
-
-		err = os.Chmod(secretFile, 0400)
-		if err != nil {
-			return errors.Wrap(err, "unable to change key file permissions to 0400")
-		}
-		newKey, _, err := gatherKeys(b)
-		if err != nil {
-			return err
-		}
-
-		defaultEncryptor = newAESGCMEncodedEncryptor(newKey, nil)
-		return nil
-	}
-
-	// wrapping in deploytype check so that we can still compile and test locally
-	if os.Getenv("CI") != "" || conf.IsDev(deployType) {
 		defaultEncryptor = noOpEncryptor{}
+		log15.Warn("No encryption initialized")
 		return nil
 	}
 
-	log15.Warn("no encryption option enabled")
-	return nil
+	fileInfo, err := os.Stat(secretFile)
+	if err != nil {
+		return errors.Wrapf(err, "stat file %q", secretFile)
+	}
 
-	// TODO: Enable this once docs are in place for
-	// for k8s & docker compose, expect a secret to be provided
-	//return errors.Errorf("Either specify environment variable %s or provide the secrets file %s",
-	//	sourcegraphCryptEnvvar,
-	//	sourcegraphSecretfileEnvvar)
+	perm := fileInfo.Mode().Perm()
+	if perm != os.FileMode(0400) {
+		return errors.New("key file permissions are not 0400")
+	}
+
+	encryptionKey, err := ioutil.ReadFile(secretFile)
+	if err != nil {
+		return errors.Wrapf(err, "read file %q", secretFile)
+	}
+	if len(encryptionKey) < requiredKeyLength {
+		return errors.Errorf("key length of %d characters is required", requiredKeyLength)
+	}
+
+	primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
+	if err != nil {
+		return errors.Wrap(err, "gather keys")
+	}
+
+	defaultEncryptor = newAESGCMEncodedEncryptor(primaryKey, secondaryKey)
+	log15.Info("Database secrets encryption initialized")
+	return nil
 }
 
 // generateRandomAESKey generates a random key that can be used for AES-256 encryption.

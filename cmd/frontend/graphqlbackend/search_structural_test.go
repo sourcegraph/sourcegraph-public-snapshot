@@ -163,7 +163,7 @@ func TestStructuralPatToRegexpQuery(t *testing.T) {
 		{
 			Name:    "Regex holes extracts regex",
 			Pattern: `:[x~[yo]]`,
-			Want:    `(yo)`,
+			Want:    `([yo])`,
 		},
 		{
 			Name:    "Regex holes with escaped space",
@@ -189,6 +189,26 @@ func TestStructuralPatToRegexpQuery(t *testing.T) {
 			Name:    "Not well-formed is undefined",
 			Pattern: ":[[",
 			Want:    `(.|\s)*?`,
+		},
+		{
+			Name:    "Complex regex with character class",
+			Pattern: `:[chain~[^(){}\[\],]+\n( +\..*\n)+]`,
+			Want:    `([^(){}\[\],]+\n( +\..*\n)+)`,
+		},
+		{
+			Name:    "Colon regex",
+			Pattern: `:[~:]`,
+			Want:    `(:)`,
+		},
+		{
+			Name:    "Colon prefix",
+			Pattern: `::[version]bar`,
+			Want:    `(:)(.|\s)*?(bar)`,
+		},
+		{
+			Name:    "Colon prefix",
+			Pattern: `::::[version]bar`,
+			Want:    `(:::)(.|\s)*?(bar)`,
 		},
 	}
 	for _, tt := range cases {

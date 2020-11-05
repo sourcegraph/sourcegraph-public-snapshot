@@ -25,6 +25,8 @@ The document content can set class names and IDs on elements (for example, Markd
 
     --note-color: #bce8f1;
     --warning-color: #faebcc;
+    --experimental-color: #b200f8;
+
     --table-row-bg-1: var(--body-bg);
 }
 
@@ -122,9 +124,11 @@ pre, code, kbd {
 }
 
 code {
-    background-color: rgba(200,200,200,0.2);
-    padding: 0.2em;
+    background-color: var(--code-bg);
+    padding: .2em .4em;
     border-radius: 0.2em;
+    margin: 0;
+    font-size: 85%;
 }
 
 /* LAYOUT */
@@ -211,6 +215,7 @@ body > #sidebar #logo a {
 }
 body > #sidebar #logo img {
     width: 170px;
+    height: 22.8px;
 }
 body.theme-dark > #sidebar #logo img.theme-light, body.theme-light > #sidebar #logo img.theme-dark {
     display: none;
@@ -407,6 +412,24 @@ body > #page > main > #content {
 	color: inherit;
 }
 
+.badge {
+    display: inline-block;
+    padding: 0.3em;
+    border-radius: 4px;
+    font-size: 85%;
+    font-weight: bold;
+    color: inherit;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+}
+
+.badge-experimental {
+    color: #ffffff;
+    background-color: var(--experimental-color);
+}
+
 /* MARKDOWN */
 .markdown-body {
   text-size-adjust: 100%;
@@ -526,6 +549,9 @@ body > #page > main > #content {
 .markdown-body aside.warning {
     border-color: var(--warning-color);
 }
+.markdown-body aside.experimental {
+    border-color: var(--experimental-color);
+}
 .markdown-body table {
     display: block;
     width: 100%;
@@ -554,6 +580,42 @@ body > #page > main > #content {
 .markdown-body > *:last-child {
     margin-bottom: 0 !important;
 }
+
+.markdown-body .subtitle {
+  font-weight: 600;
+  margin-top: -0.5em;
+  font-size: 1.3rem;
+  color: var(--text-muted);
+}
+
+.markdown-body .lead {
+  font-size: 1.15rem;
+}
+
+.markdown-body .btn {
+  display: inline-block;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  text-decoration: none;
+  -webkit-appearance: none;
+  -webkit-font-smoothing: antialiased;
+  border: 1px solid var(--sidebar-nav-active-bg);
+}
+
+.markdown-body .btn-primary {
+  background-color: var(--sidebar-nav-active-bg);
+}
+
+.markdown-body .btn:hover {
+  opacity: 0.85;
+  text-decoration: none;
+}
+
+.markdown-body .cta-group {
+  margin: 3em 0;
+}
+
 
 /* SEARCH RESULT */
 .search-result {
@@ -774,3 +836,29 @@ body.theme-dark .markdown-body .chroma .vg { color: #f8f8f2 } /* Name.Variable.G
 body.theme-dark .markdown-body .chroma .vi { color: #f8f8f2 } /* Name.Variable.Instance */
 body.theme-dark .markdown-body .chroma .vm { color: #f8f8f2 } /* Name.Variable.Magic */
 body.theme-dark .markdown-body .chroma .il { color: #ae81ff } /* Literal.Number.Integer.Long */
+
+/* Getting started links */
+/* See campaign docs for examles */
+
+.markdown-body .getting-started {
+  display: flex;
+  align-items: stretch;
+}
+
+.markdown-body .getting-started .btn {
+  flex: 1;
+  margin: 0.5em;
+  padding: 1rem 1.25rem;
+  color: var(--text-color);
+  border-radius: 4px;
+  border: 1px solid var(--sidebar-nav-active-bg);
+}
+
+.markdown-body .getting-started .btn:hover {
+  color: var(--link-color);
+}
+
+.markdown-body .getting-started .btn span {
+  color: var(--link-color);
+  font-weight: bold;
+}

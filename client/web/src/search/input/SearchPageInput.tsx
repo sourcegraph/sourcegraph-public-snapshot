@@ -28,7 +28,7 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
-import { submitSearch, SubmitSearchParams } from '../helpers'
+import { submitSearch, SubmitSearchParameters } from '../helpers'
 import {
     generateStepTooltip,
     createStep1Tooltip,
@@ -40,6 +40,7 @@ import { useLocalStorage } from '../../util/useLocalStorage'
 import Shepherd from 'shepherd.js'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { daysActiveCount } from '../../marketing/util'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -54,7 +55,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         InteractiveSearchProps,
         CopyQueryButtonProps,
-        Pick<SubmitSearchParams, 'source'>,
+        Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
@@ -65,14 +66,14 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
+    /** Show the query builder link. */
+    showQueryBuilder: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
-    /** Don't show the query builder link. */
-    hideQueryBuilder?: boolean
     autoFocus?: boolean
 }
 
@@ -102,7 +103,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         [props.location.pathname, props.location.search]
     )
 
-    const showOnboardingTour = props.showOnboardingTour && isHomepage && !hasSeenTour && !hasCancelledTour
+    const showOnboardingTour =
+        props.showOnboardingTour && isHomepage && daysActiveCount === 1 && !hasSeenTour && !hasCancelledTour
 
     const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
 
@@ -209,7 +211,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     useEffect(() => {
         if (showOnboardingTour) {
             setTourWasActive(true)
-            tour.start()
             eventLogger.log('ViewOnboardingTour')
         }
         return
@@ -286,12 +287,12 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                 queryState={userQueryState}
                                 onChange={setUserQueryState}
                                 onSubmit={onSubmit}
-                                autoFocus={props.autoFocus !== false}
+                                autoFocus={showOnboardingTour ? tour.isActive() : props.autoFocus !== false}
                                 tour={showOnboardingTour ? tour : undefined}
                             />
                             <SearchButton />
                         </div>
-                        {!props.hideQueryBuilder && !props.splitSearchModes && (
+                        {props.showQueryBuilder && !props.splitSearchModes && (
                             <div className="search-page__input-sub-container">
                                 <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
                                     Query builder

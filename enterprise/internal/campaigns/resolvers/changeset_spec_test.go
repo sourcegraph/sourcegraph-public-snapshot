@@ -99,7 +99,62 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: false,
+						Published: campaigns.PublishedValue{Val: false},
+						Diff: struct{ FileDiffs apitest.FileDiffs }{
+							FileDiffs: apitest.FileDiffs{
+								DiffStat: apitest.DiffStat{
+									Added:   1,
+									Deleted: 1,
+									Changed: 2,
+								},
+							},
+						},
+						DiffStat: apitest.DiffStat{
+							Added:   1,
+							Deleted: 1,
+							Changed: 2,
+						},
+					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+				}
+			},
+		},
+		{
+			name:    "GitBranchChangesetDescription Draft",
+			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
+			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
+				return apitest.ChangesetSpec{
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+					Description: apitest.ChangesetSpecDescription{
+						Typename: "GitBranchChangesetDescription",
+						BaseRepository: apitest.Repository{
+							ID: string(spec.Spec.BaseRepository),
+						},
+						ExternalID: "",
+						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						HeadRepository: apitest.Repository{
+							ID: string(spec.Spec.HeadRepository),
+						},
+						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						Title:   spec.Spec.Title,
+						Body:    spec.Spec.Body,
+						Commits: []apitest.GitCommitDescription{
+							{
+								Author: apitest.Person{
+									Email: spec.Spec.Commits[0].AuthorEmail,
+									Name:  user.Username,
+									User: &apitest.User{
+										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+									},
+								},
+								Diff:    spec.Spec.Commits[0].Diff,
+								Message: spec.Spec.Commits[0].Message,
+								Subject: "git commit message",
+								Body:    "and some more content in a second paragraph.",
+							},
+						},
+						Published: campaigns.PublishedValue{Val: "draft"},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
@@ -132,7 +187,6 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: string(spec.Spec.BaseRepository),
 						},
 						ExternalID: spec.Spec.ExternalID,
-						Published:  false,
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}

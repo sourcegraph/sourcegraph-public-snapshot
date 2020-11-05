@@ -4,13 +4,18 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -150,6 +155,39 @@ func TestRepos_Count(t *testing.T) {
 	}
 }
 
+func TestRepos_Delete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if want := 1; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	repos, err := Repos.List(ctx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Repos.Delete(ctx, repos[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
 func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -263,4 +301,56 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 			}
 		}
 	}
+}
+
+func hasNoID(r *types.Repo) bool {
+	return r.ID == 0
+}
+
+func TestRepos_Create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	svcs := MakeExternalServices()
+	if err := ExternalServices.Upsert(ctx, svcs...); err != nil {
+		t.Fatalf("Upsert error: %s", err)
+	}
+
+	msvcs := ExternalServicesToMap(svcs)
+
+	repo1 := MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
+	repo2 := MakeGitlabRepo(msvcs[extsvc.KindGitLab])
+
+	t.Run("no repos should not fail", func(t *testing.T) {
+		if err := Repos.Create(ctx); err != nil {
+			t.Fatalf("Create error: %s", err)
+		}
+	})
+
+	t.Run("many repos", func(t *testing.T) {
+		want := GenerateRepos(7, repo1, repo2)
+
+		if err := Repos.Create(ctx, want...); err != nil {
+			t.Fatalf("Create error: %s", err)
+		}
+
+		sort.Sort(want)
+
+		if noID := want.Filter(hasNoID); len(noID) > 0 {
+			t.Fatalf("Create didn't assign an ID to all repos: %v", noID.Names())
+		}
+
+		have, err := Repos.List(ctx, ReposListOptions{})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		if diff := cmp.Diff(have, []*types.Repo(want), cmpopts.EquateEmpty()); diff != "" {
+			t.Fatalf("List:\n%s", diff)
+		}
+	})
 }

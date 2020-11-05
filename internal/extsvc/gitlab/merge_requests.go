@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -23,21 +24,22 @@ const (
 )
 
 type MergeRequest struct {
-	ID           ID                `json:"id"`
-	IID          ID                `json:"iid"`
-	ProjectID    ID                `json:"project_id"`
-	Title        string            `json:"title"`
-	Description  string            `json:"description"`
-	State        MergeRequestState `json:"state"`
-	CreatedAt    Time              `json:"created_at"`
-	UpdatedAt    Time              `json:"updated_at"`
-	MergedAt     *Time             `json:"merged_at"`
-	ClosedAt     *Time             `json:"closed_at"`
-	HeadPipeline *Pipeline         `json:"head_pipeline"`
-	Labels       []string          `json:"labels"`
-	SourceBranch string            `json:"source_branch"`
-	TargetBranch string            `json:"target_branch"`
-	WebURL       string            `json:"web_url"`
+	ID             ID                `json:"id"`
+	IID            ID                `json:"iid"`
+	ProjectID      ID                `json:"project_id"`
+	Title          string            `json:"title"`
+	Description    string            `json:"description"`
+	State          MergeRequestState `json:"state"`
+	CreatedAt      Time              `json:"created_at"`
+	UpdatedAt      Time              `json:"updated_at"`
+	MergedAt       *Time             `json:"merged_at"`
+	ClosedAt       *Time             `json:"closed_at"`
+	HeadPipeline   *Pipeline         `json:"head_pipeline"`
+	Labels         []string          `json:"labels"`
+	SourceBranch   string            `json:"source_branch"`
+	TargetBranch   string            `json:"target_branch"`
+	WebURL         string            `json:"web_url"`
+	WorkInProgress bool              `json:"work_in_progress"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
@@ -47,6 +49,20 @@ type MergeRequest struct {
 	// to do it the old fashioned way with lots of REST requests.
 	Notes     []*Note
 	Pipelines []*Pipeline
+}
+
+func SetWIP(title string) string {
+	if !strings.HasPrefix(title, "WIP:") {
+		return "WIP: " + title
+	}
+	return title
+}
+
+func UnsetWIP(title string) string {
+	if strings.HasPrefix(title, "WIP: ") {
+		return strings.TrimPrefix(title, "WIP: ")
+	}
+	return title
 }
 
 type DiffRefs struct {

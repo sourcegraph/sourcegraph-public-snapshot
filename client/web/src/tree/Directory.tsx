@@ -11,8 +11,8 @@ interface TreeChildProps extends TreeLayerProps {
     maxEntries: number
     loading: boolean
     handleTreeClick: () => void
-    noopRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
-    linkRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
+    noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 /**

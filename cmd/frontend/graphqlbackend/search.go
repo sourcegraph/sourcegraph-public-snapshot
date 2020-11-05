@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/neelance/parallel"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -280,12 +280,13 @@ type resolvedRepositories struct {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery  string                // the raw string of the original search query
-	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType    query.SearchType
-	versionContext *string
-	userSettings   *schema.Settings
+	query               query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery       string                // the raw string of the original search query
+	pagination          *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType         query.SearchType
+	versionContext      *string
+	userSettings        *schema.Settings
+	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex
@@ -378,7 +379,7 @@ func (r RepoRegexpPattern) String() string {
 
 var mockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
 
-func resolveRepoGroups(settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
+func resolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
@@ -395,7 +396,7 @@ func resolveRepoGroups(settings *schema.Settings) (groups map[string][]RepoGroup
 				if stringRegex, ok := path["regex"].(string); ok {
 					repos = append(repos, RepoRegexpPattern(stringRegex))
 				} else {
-					log15.Warn("ignoring repo group value because regex not specfied", "regex-string", path["regex"])
+					log15.Warn("ignoring repo group value because regex not specified", "regex-string", path["regex"])
 				}
 			default:
 				log15.Warn("ignoring repo group value of unrecognized type", "value", value, "type", fmt.Sprintf("%T", value))
@@ -403,6 +404,28 @@ func resolveRepoGroups(settings *schema.Settings) (groups map[string][]RepoGroup
 		}
 		groups[name] = repos
 	}
+
+	if !currentUserAllowedExternalServices(ctx) {
+		return groups, nil
+	}
+
+	a := actor.FromContext(ctx)
+	names, err := db.Repos.GetUserAddedRepoNames(ctx, a.UID)
+	if err != nil {
+		log15.Warn("getting user added repos", "err", err)
+		return groups, nil
+	}
+
+	if len(names) == 0 {
+		return groups, nil
+	}
+
+	values := make([]RepoGroupValue, 0, len(names))
+	for _, name := range names {
+		values = append(values, RepoPath(name))
+	}
+	groups["my"] = values
+
 	return groups, nil
 }
 
@@ -821,7 +844,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
 	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
-		groups, err := resolveRepoGroups(op.userSettings)
+		groups, err := resolveRepoGroups(ctx, op.userSettings)
 		if err != nil {
 			return resolvedRepositories{}, err
 		}

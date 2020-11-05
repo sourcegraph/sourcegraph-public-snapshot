@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { isEmpty, noop } from 'lodash'
@@ -89,6 +89,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     know who to contact regarding sales, product updates, security updates, and policy updates
                 </li>
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
+                <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                 <li>
                     Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
                 </li>
@@ -99,10 +100,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
             <h3>Other telemetry</h3>
             <p>
                 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
-                personal or specific information is ever included. Starting in May 2020 (Sourcegraph version 3.16),
-                Sourcegraph admins can disable the telemetry items below by setting the{' '}
-                <code>DisableNonCriticalTelemetry</code> setting to <code>true</code> on the{' '}
-                <Link to="/site-admin/configuration">Site configuration page</Link>.
+                personal or specific information is ever included.
             </p>
             <ul>
                 <li>Whether the instance is deployed on localhost (true/false)</li>
@@ -123,18 +121,11 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     Aggregate counts of current daily, weekly, and monthly users, by:
                     <ul>
                         <li>Whether they are using code host integrations</li>
-                        <li>
-                            Product area (site management, code search and navigation, code review, saved searches, diff
-                            searches)
-                        </li>
                         <li>Search modes used (interactive search, plain-text search)</li>
                         <li>Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
-                <li>
-                    Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover
-                    tooltips) and search queries
-                </li>
+                <li>Aggregate daily, weekly, and monthly latencies (in ms) of search queries</li>
                 <li>
                     Aggregate daily, weekly, and monthly counts of:
                     <ul>
@@ -178,6 +169,13 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     <ul>
                         <li>Total size of git repositories stored in bytes</li>
                         <li>Total number of lines of code stored in text search index</li>
+                    </ul>
+                </li>
+                <li>
+                    Homepage panel engagement
+                    <ul>
+                        <li>Percentage of panel clicks (out of total views)</li>
+                        <li>Total count of unique users engaging with the panels</li>
                     </ul>
                 </li>
             </ul>

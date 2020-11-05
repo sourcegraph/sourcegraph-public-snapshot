@@ -9,9 +9,9 @@ export interface HiddenChangesetSpecNodeProps {
 
 export const HiddenChangesetSpecNode: React.FunctionComponent<HiddenChangesetSpecNodeProps> = ({ node }) => (
     <>
-        <span />
-        <ChangesetSpecAction spec={node} />
-        <div className="d-flex flex-column">
+        <span className="d-none d-sm-block" />
+        <ChangesetSpecAction spec={node} className="hidden-changeset-spec-node__action" />
+        <div className="d-flex flex-column hidden-changeset-spec-node__information">
             <h3 className="text-muted">
                 {node.type === ChangesetSpecType.EXISTING && <>Import changeset from a private repository</>}
                 {node.type === ChangesetSpecType.BRANCH && <>Create changeset in a private repository</>}

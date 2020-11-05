@@ -106,27 +106,6 @@ func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, 
 	return scanFirstUpload(rows, err)
 }
 
-// scanStates scans pairs of id/states from the return value of `*store.query`.
-func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	states := map[int]string{}
-	for rows.Next() {
-		var id int
-		var state string
-		if err := rows.Scan(&id, &state); err != nil {
-			return nil, err
-		}
-
-		states[id] = state
-	}
-
-	return states, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
@@ -190,6 +169,24 @@ type GetUploadsOptions struct {
 	UploadedBefore *time.Time
 	Limit          int
 	Offset         int
+}
+
+// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
+func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error) {
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(`
+			WITH deleted AS (
+				UPDATE lsif_uploads
+				SET state = 'deleted'
+				WHERE state = 'uploading' AND uploaded_at < %s
+				RETURNING repository_id
+			)
+			SELECT count(*) FROM deleted
+		`, uploadedBefore),
+	))
+
+	return count, err
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -338,7 +335,7 @@ func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) erro
 }
 
 // MarkQueued updates the state of the upload to queued and updates the upload size.
-func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int) error {
+func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 
@@ -405,14 +402,6 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 	return s.makeUploadWorkQueueStore().Requeue(ctx, id, after)
 }
 
-// GetStates returns the states for the uploads with the given identifiers.
-func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error) {
-	return scanStates(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT id, state FROM lsif_uploads
-		WHERE id IN (%s)
-	`, sqlf.Join(intsToQueries(ids), ", "))))
-}
-
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
 // was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
 // the background.
@@ -475,8 +464,17 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 }
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
-func (s *store) HardDeleteUploadByID(ctx context.Context, id int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, id))
+func (s *store) HardDeleteUploadByID(ctx context.Context, ids ...int) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	var idQueries []*sqlf.Query
+	for _, id := range ids {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id IN (%s)`, sqlf.Join(idQueries, ", ")))
 }
 
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an

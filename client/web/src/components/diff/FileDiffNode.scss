@@ -25,7 +25,7 @@
             text-overflow: ellipsis;
             overflow: hidden;
             font-family: $code-font-family;
-            color: $color-text-2;
+            color: var(--body-color);
             font-size: $code-font-size;
         }
         &-stat {
@@ -44,15 +44,5 @@
 
     &__hunks {
         flex: 1 1 auto;
-    }
-}
-
-.theme-light {
-    .file-diff-node {
-        &__header {
-            &-path {
-                color: $color-light-text-5;
-            }
-        }
     }
 }

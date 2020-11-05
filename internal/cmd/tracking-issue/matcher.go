@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Matcher struct {
 	labels     []string
 	milestone  string
@@ -24,7 +26,7 @@ func (m *Matcher) Issue(issue *Issue) bool {
 		!contains(issue.Labels, "tracking"),
 		m.testAssignee(issue.Assignees...),
 		m.testLabels(issue.Labels),
-		m.testMilestone(issue.Milestone),
+		m.testMilestone(issue.Milestone, issue.Labels),
 	)
 }
 
@@ -33,7 +35,7 @@ func (m *Matcher) PullRequest(pullRequest *PullRequest) bool {
 	return testAll(
 		m.testAssignee(pullRequest.Author),
 		m.testLabels(pullRequest.Labels),
-		m.testMilestone(pullRequest.Milestone),
+		m.testMilestone(pullRequest.Milestone, pullRequest.Labels),
 	)
 }
 
@@ -64,9 +66,10 @@ func (m *Matcher) testLabels(labels []string) bool {
 }
 
 // testMilestone returns true if the given milestone matches the milestone the matcher
-// was configured with, or the milestone on the tracking issue is not restricted.
-func (m *Matcher) testMilestone(milestone string) bool {
-	return m.milestone == "" || milestone == m.milestone
+// was configured with, if the given labels contains a planned/{milestone} label, or
+// the milestone on the tracking issue is not restricted.
+func (m *Matcher) testMilestone(milestone string, labels []string) bool {
+	return m.milestone == "" || milestone == m.milestone || contains(labels, fmt.Sprintf("planned/%s", m.milestone))
 }
 
 // testAll returns true if all of the given values are true.

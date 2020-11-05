@@ -97,6 +97,7 @@ const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
     repogroupMetadata: python2To3Metadata,
     globbing: false,
     showOnboardingTour: false,
+    showQueryBuilder: false,
 })
 
 add('Refactor Python 2 to 3', () => (

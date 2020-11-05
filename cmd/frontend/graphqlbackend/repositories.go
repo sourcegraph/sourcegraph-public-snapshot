@@ -28,6 +28,7 @@ func (r *schemaResolver) Repositories(args *struct {
 	NotIndexed bool
 	OrderBy    string
 	Descending bool
+	After      *string
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		OrderBy: db.RepoListOrderBy{{
@@ -40,6 +41,23 @@ func (r *schemaResolver) Repositories(args *struct {
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query
+	}
+	if args.After != nil {
+		cursor, err := unmarshalRepositoryCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		opt.CursorColumn = cursor.Column
+		opt.CursorValue = cursor.Value
+		opt.CursorDirection = cursor.Direction
+	} else {
+		opt.CursorColumn = string(toDBRepoListColumn(args.OrderBy))
+		opt.CursorValue = ""
+		if args.Descending {
+			opt.CursorDirection = "prev"
+		} else {
+			opt.CursorDirection = "next"
+		}
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
@@ -123,10 +141,20 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		for {
+			// Cursor-based pagination requires that we fetch limit+1 records, so
+			// that we know whether or not there's an additional page (or more)
+			// beyond the current one. We reset the limit immediately afterward for
+			// any subsequent calculations.
+			if opt2.LimitOffset != nil {
+				opt2.LimitOffset.Limit++
+			}
 			repos, err := backend.Repos.List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
+			}
+			if opt2.LimitOffset != nil {
+				opt2.LimitOffset.Limit--
 			}
 			reposFromDB := len(repos)
 
@@ -221,9 +249,29 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) >= r.opt.Limit), nil
+	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	var value string
+	switch r.opt.CursorColumn {
+	case string(db.RepoListName):
+		value = string(repos[len(repos)-1].Name)
+	case string(db.RepoListCreatedAt):
+		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
+	}
+	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
+		&repositoryCursor{
+			Column:    r.opt.CursorColumn,
+			Value:     value,
+			Direction: r.opt.CursorDirection,
+		},
+	)), nil
 }
 
+// SetRepositoryEnabled is a deprecated in our API. However, as of Oct 2020 we
+// still have a customer integrating permissions via this mutation. Before
+// removing check with the distribution team.
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
 	Repository graphql.ID
 	Enabled    bool

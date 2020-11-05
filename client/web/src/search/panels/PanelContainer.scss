@@ -22,12 +22,8 @@
         text-align: center;
         padding: 3rem;
         justify-content: center;
-        background: $color-bg-2;
+        background: var(--color-bg-2);
         height: 100%;
-
-        .theme-light & {
-            background: $color-light-bg-2;
-        }
     }
 
     &__loading-container {
@@ -40,10 +36,6 @@
     }
 
     &__footer {
-        background: rgba($color-bg-2, 0.4);
-
-        .theme-light & {
-            background: rgba($color-light-bg-2, 0.4);
-        }
+        background: var(--color-bg-2);
     }
 }

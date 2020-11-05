@@ -39,6 +39,7 @@ import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { HoverThresholdProps } from '../RepoContainer'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -97,6 +98,7 @@ interface Props
         TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
+        HoverThresholdProps,
         BreadcrumbSetters {
     location: H.Location
     history: H.History

@@ -21,9 +21,13 @@ import { subDays } from 'date-fns'
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module)
+    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+        },
+    })
 
 const now = new Date()
 
@@ -32,21 +36,18 @@ const campaignDefaults: CampaignFields = {
     changesets: {
         stats: {
             closed: 1,
+            deleted: 1,
+            draft: 1,
             merged: 2,
-            open: 3,
+            open: 2,
             total: 10,
-            unpublished: 5,
+            unpublished: 4,
         },
     },
     createdAt: subDays(now, 5).toISOString(),
     initialApplier: {
         url: '/users/alice',
         username: 'alice',
-    },
-    diffStat: {
-        added: 10,
-        changed: 8,
-        deleted: 10,
     },
     id: 'specid',
     url: '/users/alice/campaigns/awesome-campaign',
@@ -80,11 +81,11 @@ const queryChangesets: typeof _queryChangesets = () =>
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                externalState: null,
                 id: 'someh1',
                 nextSyncAt: null,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
-                reconcilerState: ChangesetReconcilerState.QUEUED,
+                reconcilerState: ChangesetReconcilerState.COMPLETED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
@@ -201,8 +202,9 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             date: subDays(new Date('2020-08-10'), 5).toISOString(),
             closed: 0,
             merged: 0,
-            openPending: 10,
+            openPending: 5,
             total: 10,
+            draft: 5,
             openChangesRequested: 0,
             openApproved: 0,
         },
@@ -210,8 +212,9 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             date: subDays(new Date('2020-08-10'), 4).toISOString(),
             closed: 0,
             merged: 0,
-            openPending: 7,
+            openPending: 4,
             total: 10,
+            draft: 3,
             openChangesRequested: 0,
             openApproved: 3,
         },
@@ -221,6 +224,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             merged: 2,
             openPending: 5,
             total: 10,
+            draft: 0,
             openChangesRequested: 0,
             openApproved: 3,
         },
@@ -230,6 +234,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             merged: 3,
             openPending: 3,
             total: 10,
+            draft: 0,
             openChangesRequested: 1,
             openApproved: 3,
         },
@@ -239,6 +244,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             merged: 5,
             openPending: 2,
             total: 10,
+            draft: 0,
             openChangesRequested: 0,
             openApproved: 2,
         },
@@ -248,6 +254,7 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
             merged: 5,
             openPending: 0,
             total: 10,
+            draft: 0,
             openChangesRequested: 0,
             openApproved: 4,
         },

@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -797,7 +798,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					t.Fatal(err)
 				}
 
-				clock := repos.NewFakeClock(time.Now(), 0)
+				clock := dbtesting.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
 					Now: clock.Now,
 				}
@@ -857,7 +858,7 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)
@@ -870,7 +871,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
-			clock := repos.NewFakeClock(time.Now(), 0)
+			clock := dbtesting.NewFakeClock(time.Now(), 0)
 			now := clock.Now()
 
 			githubSource := repos.ExternalService{
@@ -893,7 +894,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			githubRepository := &repos.Repo{
 				Name:        "github.com/foo/bar",
 				Description: "The description",
-				Language:    "barlang",
 				Archived:    false,
 				Fork:        false,
 				CreatedAt:   now,
@@ -921,7 +921,6 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			awsCodeCommitRepository := &repos.Repo{
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 				Description: "The stripe-go lib",
-				Language:    "barlang",
 				Archived:    false,
 				Fork:        false,
 				CreatedAt:   now,
@@ -986,6 +985,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 				githubDotComSource *fakeRepoSource
 				gitlabDotComSource *fakeRepoSource
 				assert             repos.ReposAssertion
+				assertDelay        time.Duration
 				err                string
 			}{
 				{
@@ -1208,6 +1208,34 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					result: &protocol.RepoLookupResult{ErrorNotFound: true},
 					err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName(githubRepository.Name), true),
 				},
+				{
+					name: "Private repos that used to be public should be removed asynchronously",
+					args: protocol.RepoLookupArgs{
+						Repo: api.RepoName(githubRepository.Name),
+					},
+					githubDotComSource: &fakeRepoSource{
+						err: github.ErrNotFound,
+					},
+					stored: []*repos.Repo{githubRepository},
+					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+						ExternalRepo: api.ExternalRepoSpec{
+							ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+							ServiceType: extsvc.TypeGitHub,
+							ServiceID:   "https://github.com/",
+						},
+						Name:        "github.com/foo/bar",
+						Description: "The description",
+						VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+						Links: &protocol.RepoLinks{
+							Root:   "github.com/foo/bar",
+							Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+							Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+							Commit: "github.com/foo/bar/commit/{commit}",
+						},
+					}},
+					assertDelay: time.Second,
+					assert:      repos.Assert.ReposEqual(),
+				},
 			}
 
 			for _, tc := range testCases {
@@ -1277,6 +1305,9 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					}
 
 					if tc.assert != nil {
+						if tc.assertDelay != 0 {
+							time.Sleep(tc.assertDelay)
+						}
 						rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
 						if err != nil {
 							t.Fatal(err)

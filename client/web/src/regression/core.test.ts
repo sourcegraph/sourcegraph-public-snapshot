@@ -125,13 +125,9 @@ describe('Core functionality regression test suite', () => {
             )
         }
 
-        // When you type (or paste) "{" into the empty user settings editor it adds a "}". That's why
-        // we cannot type all the previous text, because then we would have two "}" at the end.
-        const textToTypeFromPrevious = previousSettings.replace(/}$/, '')
-        // Restore old settings
         await driver.replaceText({
             selector: '.test-settings-file .monaco-editor',
-            newText: textToTypeFromPrevious,
+            newText: previousSettings,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
@@ -159,11 +155,11 @@ describe('Core functionality regression test suite', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__display-name',
+            selector: '.test-UserProfileFormFields__displayName',
             newText: displayName,
         })
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__avatar_url',
+            selector: '.test-UserProfileFormFields__avatarURL',
             newText: aviURL,
             enterTextMethod: 'paste',
         })

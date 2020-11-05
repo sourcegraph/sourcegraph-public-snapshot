@@ -16,7 +16,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker:
 -->
 
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.20.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
+<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.21.2<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`. Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
@@ -54,22 +54,22 @@ We actively maintain the two most recent monthly releases of Sourcegraph.
 Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are
 running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
 
-> The Docker server image tags follow SemVer semantics, so version `3.20.1` can be found at `sourcegraph/server:3.20.1`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
+> The Docker server image tags follow SemVer semantics, so version `3.21.2` can be found at `sourcegraph/server:3.21.2`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
 
 ### Core documentation
 
 - [Install](admin/install/index.md) or [update](admin/updates.md) Sourcegraph 
-- [Using Sourcegraph](user/index.md)
+- [Using Sourcegraph](getting-started/index.md)
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)
 
 ### Features and tutorials
 
-- [Tour](user/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
 - [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
-- [Query syntax reference](user/search/queries.md)
+- [Query syntax reference](code_search/reference/queries.md)
 - [GraphQL API](api/graphql/index.md)
 
 ## Sourcegraph subscriptions

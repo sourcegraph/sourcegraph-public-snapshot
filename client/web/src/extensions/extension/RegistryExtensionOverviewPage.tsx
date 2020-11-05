@@ -1,6 +1,6 @@
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
-import { isObject, truncate } from 'lodash'
+import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -64,13 +64,13 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                 <aside className="registry-extension-overview-page__sidebar">
                     {categories && (
                         <div className="mb-3">
-                            <h3 className="mb-0">Categories</h3>
-                            <ul className="list-inline registry-extension-overview-page__categories">
-                                {categories.map((category, index) => (
-                                    <li key={index} className="list-inline-item mb-2 small">
+                            <h3>Categories</h3>
+                            <ul className="list-inline test-registry-extension-categories">
+                                {categories.map(category => (
+                                    <li key={category} className="list-inline-item mb-2">
                                         <Link
                                             to={urlToExtensionsQuery(extensionsQuery({ category }))}
-                                            className="rounded border p-1 btm-sm btn-outline extension-area-link"
+                                            className="btn btn-outline-secondary btn-sm"
                                         >
                                             {category}
                                         </Link>
@@ -84,15 +84,15 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                         this.props.extension.manifest.tags &&
                         this.props.extension.manifest.tags.length > 0 && (
                             <div className="mb-3">
-                                <h3 className="mb-0">Tags</h3>
-                                <ul className="list-inline registry-extension-overview-page__tags">
-                                    {this.props.extension.manifest.tags.map((tag, index) => (
-                                        <li key={index} className="list-inline-item mb-2 small">
+                                <h3>Tags</h3>
+                                <ul className="list-inline">
+                                    {this.props.extension.manifest.tags.map(tag => (
+                                        <li key={tag} className="list-inline-item mb-2">
                                             <Link
                                                 to={urlToExtensionsQuery(extensionsQuery({ tag }))}
-                                                className="rounded border p-1 btn-outline btn-sm extension-area-link"
+                                                className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
                                             >
-                                                {truncate(tag, { length: 24 })}
+                                                {tag}
                                             </Link>
                                         </li>
                                     ))}

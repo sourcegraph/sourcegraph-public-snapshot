@@ -25,18 +25,19 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Repository permissions](repo/permissions.md)
 - [PostgreSQL configuration](postgres-conf.md)
 - [Upgrading PostgreSQL](postgres.md)
-- [Using external databases (PostgreSQL and Redis)](external_database.md)
+- [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - [User data deletion](user_data_deletion.md)
+- [Validation](validation.md) **Experimental**
 
 ## Features
 
-- [Code intelligence and language servers](../user/code_intelligence/index.md)
+- [Code intelligence and language servers](../code_intelligence/index.md)
 - [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Search](search.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
-- [Usage statistics](../user/usage_statistics.md)
-- [User feedback surveys](../user/user_surveys.md)
+- [Usage statistics](usage_statistics.md)
+- [User feedback surveys](user_surveys.md)
 
 ## Integrations
 

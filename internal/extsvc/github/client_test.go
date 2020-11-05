@@ -2,8 +2,6 @@ package github
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -71,13 +70,12 @@ func TestNewRepoCache(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
 	t.Run("GitHub.com", func(t *testing.T) {
 		url, _ := url.Parse("https://www.github.com")
-		token := "asdf"
+		token := &auth.OAuthBearerToken{Token: "asdf"}
 
 		// github.com caches should:
 		// (1) use githubProxyURL for the prefix hash rather than the given url
 		// (2) have a TTL of 10 minutes
-		key := sha256.Sum256([]byte(token + ":" + githubProxyURL.String()))
-		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
+		prefix := "gh_repo:" + token.Hash()
 		got := newRepoCache(url, token)
 		want := rcache.NewWithTTL(prefix, 600)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
@@ -87,13 +85,12 @@ func TestNewRepoCache(t *testing.T) {
 
 	t.Run("GitHub Enterprise", func(t *testing.T) {
 		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := "asdf"
+		token := &auth.OAuthBearerToken{Token: "asdf"}
 
 		// GitHub Enterprise caches should:
 		// (1) use the given URL for the prefix hash
 		// (2) have a TTL of 30 seconds
-		key := sha256.Sum256([]byte(token + ":" + url.String()))
-		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
+		prefix := "gh_repo:" + token.Hash()
 		got := newRepoCache(url, token)
 		want := rcache.NewWithTTL(prefix, 30)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
@@ -111,7 +108,7 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
-func TestClient_WithToken(t *testing.T) {
+func TestClient_WithAuthenticator(t *testing.T) {
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
@@ -119,17 +116,17 @@ func TestClient_WithToken(t *testing.T) {
 
 	old := &Client{
 		apiURL: uri,
-		token:  "old_token",
+		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
-	newToken := "new_token"
-	new := old.WithToken(newToken)
+	newToken := &auth.OAuthBearerToken{Token: "new_token"}
+	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.token != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.token)
+	if new.auth != newToken {
+		t.Fatalf("token: want %q but got %q", newToken, new.auth)
 	}
 }
 
@@ -232,34 +229,33 @@ func TestClient_ListAffiliatedRepositories(t *testing.T) {
 	}
 }
 
-func TestClient_LoadPullRequests(t *testing.T) {
-	cli, save := newClient(t, "LoadPullRequests")
+func TestClient_LoadPullRequest(t *testing.T) {
+	cli, save := newClient(t, "LoadPullRequest")
 	defer save()
 
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
-		prs  []*PullRequest
+		pr   *PullRequest
 		err  string
 	}{
 		{
 			name: "non-existing-repo",
-			prs:  []*PullRequest{{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550}},
-			err:  "error in GraphQL response: Could not resolve to a Repository with the name 'sourcegraph'.",
+			pr:   &PullRequest{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550},
+			err:  "GitHub repository not found",
 		},
 		{
 			name: "non-existing-pr",
-			prs:  []*PullRequest{{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0}},
-			err:  "error in GraphQL response: Could not resolve to a PullRequest with the number of 0.",
+			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0},
+			err:  "GitHub pull requests not found: 0",
 		},
 		{
 			name: "success",
-			prs: []*PullRequest{
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5834},
-				{RepoWithOwner: "tsenart/vegeta", Number: 50},
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 7352},
-			},
+			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
+		},
+		{
+			name: "with more than 250 events",
+			pr:   &PullRequest{RepoWithOwner: "sourcegraph/sourcegraph", Number: 596},
 		},
 	} {
 		tc := tc
@@ -272,7 +268,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err := cli.LoadPullRequests(tc.ctx, tc.prs...)
+			err := cli.LoadPullRequest(tc.ctx, tc.pr)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -282,9 +278,9 @@ func TestClient_LoadPullRequests(t *testing.T) {
 			}
 
 			testutil.AssertGolden(t,
-				"testdata/golden/LoadPullRequests-"+strconv.Itoa(i),
-				update("LoadPullRequests"),
-				tc.prs,
+				"testdata/golden/LoadPullRequest-"+strconv.Itoa(i),
+				update("LoadPullRequest"),
+				tc.pr,
 			)
 		})
 	}
@@ -335,6 +331,17 @@ func TestClient_CreatePullRequest(t *testing.T) {
 				Title:        "Test",
 			},
 			err: "error in GraphQL response: Head sha can't be blank, Base sha can't be blank, No commits between master and this-head-ref-should-not-exist, Head ref must be a branch",
+		},
+		{
+			name: "draft-pr",
+			input: &CreatePullRequestInput{
+				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				BaseRefName:  "master",
+				HeadRefName:  "test-pr-4",
+				Title:        "This is a test PR, feel free to ignore",
+				Body:         "I'm opening this PR to test something. Please ignore.",
+				Draft:        true,
+			},
 		},
 	} {
 		tc := tc
@@ -433,7 +440,6 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 		name string
 		ctx  context.Context
 		pr   *PullRequest
-		err  string
 	}{
 		{
 			name: "success",
@@ -444,7 +450,6 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 			name: "already open",
 			// https://github.com/sourcegraph/automation-testing/pull/355
 			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NDg4NjA0NTQ5"},
-			// Doesn't return an error
 		},
 	} {
 		tc := tc
@@ -453,22 +458,57 @@ func TestClient_ReopenPullRequest(t *testing.T) {
 				tc.ctx = context.Background()
 			}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
 			err := cli.ReopenPullRequest(tc.ctx, tc.pr)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
 			if err != nil {
-				return
+				t.Fatalf("ReopenPullRequest returned unexpected error: %s", err)
 			}
 
 			testutil.AssertGolden(t,
 				"testdata/golden/ReopenPullRequest-"+strconv.Itoa(i),
 				update("ReopenPullRequest"),
+				tc.pr,
+			)
+		})
+	}
+}
+
+func TestClient_MarkPullRequestReadyForReview(t *testing.T) {
+	cli, save := newClient(t, "MarkPullRequestReadyForReview")
+	defer save()
+
+	// Repository used: sourcegraph/automation-testing
+	// The requests here cannot be easily rerun with `-update` since you can
+	// only get the success response if the changeset is in draft mode.
+	for i, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   *PullRequest
+	}{
+		{
+			name: "success",
+			// https://github.com/sourcegraph/automation-testing/pull/361
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDczNDU1"},
+		},
+		{
+			name: "already ready for review",
+			// https://github.com/sourcegraph/automation-testing/pull/362
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2"},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			err := cli.MarkPullRequestReadyForReview(tc.ctx, tc.pr)
+			if err != nil {
+				t.Fatalf("MarkPullRequestReadyForReview returned unexpected error: %s", err)
+			}
+
+			testutil.AssertGolden(t,
+				"testdata/golden/MarkPullRequestReadyForReview-"+strconv.Itoa(i),
+				update("MarkPullRequestReadyForReview"),
 				tc.pr,
 			)
 		})
@@ -506,7 +546,9 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer)
+	cli := NewClient(uri, &auth.OAuthBearerToken{
+		Token: os.Getenv("GITHUB_TOKEN"),
+	}, doer)
 
 	return cli, save
 }

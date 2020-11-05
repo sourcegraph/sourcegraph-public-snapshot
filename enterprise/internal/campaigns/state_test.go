@@ -133,12 +133,20 @@ func TestComputeGithubCheckState(t *testing.T) {
 			want: cmpgn.ChangesetCheckStatePassed,
 		},
 		{
-			name: "suites with zero runs should be ignored",
+			name: "queued suites with zero runs should be ignored",
 			events: []*cmpgn.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "QUEUED", ""),
 			},
 			want: cmpgn.ChangesetCheckStatePassed,
+		},
+		{
+			name: "completed suites with zero runs should be ignored",
+			events: []*cmpgn.ChangesetEvent{
+				commitEvent(1, "ctx1", "ERROR"),
+				checkSuiteEvent(1, "cs1", "COMPLETED", ""),
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
 		},
 	}
 
@@ -577,6 +585,34 @@ func TestComputeExternalState(t *testing.T) {
 			want: cmpgn.ChangesetExternalStateDeleted,
 		},
 		{
+			name:      "github draft - no events",
+			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN")),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft - changeset newer than events",
+			changeset: setDraft(githubChangeset(daysAgo(0), "OPEN")),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "github draft closed",
+			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED")),
+			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: campaigns.ChangesetExternalStateClosed}},
+			want:      cmpgn.ChangesetExternalStateClosed,
+		},
+		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
@@ -645,6 +681,28 @@ func TestComputeExternalState(t *testing.T) {
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateMerged,
+		},
+		{
+			name:      "gitlab draft - no events",
+			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "gitlab draft - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
+		},
+		{
+			name:      "gitlab draft - changeset newer than events",
+			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
+			},
+			want: cmpgn.ChangesetExternalStateDraft,
 		},
 	}
 

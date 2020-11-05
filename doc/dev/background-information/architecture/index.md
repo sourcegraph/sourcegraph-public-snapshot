@@ -3,8 +3,11 @@
 This is a high level overview of Sourcegraph's architecture so you can understand how our systems fit together.
 You can click on each component to jump to its respective code repository or subtree.
 
-<object data="/dev/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
+<object data="/dev/background-information/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
 </object>
+
+Note that almost every service has a link back to the frontend, from which is gathers configuration updates.
+These edges are omitted for clarity.
 
 ## Clients
 
@@ -25,9 +28,9 @@ These clients generally communicate with a Sourcegraph instance (either https://
 
 Our backend is composed of multiple services:
 
-- Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) folder.
-- [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
+- Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) and [enterprise/cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/cmd) folders.
 - [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) and [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) provide indexed search. They are written in Go.
+- [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
 
 ## Infrastructure
 
@@ -45,9 +48,9 @@ Here are some references to help you understand how multiple systems fit togethe
 - [Life of a ping](life-of-a-ping.md)
 - [Search pagination](search-pagination.md)
 - Code intelligence
-  - [Uploads](../codeintel/queries.md)
+  - [Uploads](../codeintel/uploads.md)
   - [Queries](../codeintel/queries.md)
-  - [Extensions](../codeintel/queries.md)
+  - [Extensions](../codeintel/extensions.md)
 - Future topics we will cover here:
   - Sourcegraph extension architecture
   - Web app and browser extension architecture

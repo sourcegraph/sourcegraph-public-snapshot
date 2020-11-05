@@ -54,6 +54,7 @@ describe('SearchPage', () => {
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,
+        showQueryBuilder: false,
         isLightTheme: true,
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),

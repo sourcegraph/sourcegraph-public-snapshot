@@ -86,6 +86,13 @@ const CampaignSpecSchemaJSON = `{
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "files": {
+            "type": "object",
+            "description": "Files that should be mounted into or be created inside the Docker container.",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       }
@@ -161,7 +168,7 @@ const CampaignSpecSchemaJSON = `{
           "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.",
           "oneOf": [
             {
-              "type": "boolean",
+              "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }],
               "description": "A single flag to control the publishing state for the entire campaign."
             },
             {
@@ -170,7 +177,9 @@ const CampaignSpecSchemaJSON = `{
               "items": {
                 "type": "object",
                 "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
-                "additionalProperties": { "type": "boolean" },
+                "additionalProperties": {
+                  "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }]
+                },
                 "minProperties": 1,
                 "maxProperties": 1
               }

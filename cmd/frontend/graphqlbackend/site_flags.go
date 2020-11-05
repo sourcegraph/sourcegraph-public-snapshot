@@ -42,14 +42,6 @@ func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
 	return count == 0, nil
 }
 
-func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
-	// With 3.4 the Enabled/Disabled fields on repositories have been
-	// deprecated with the result being that all repositories are "enabled" by
-	// default.
-	// So instead of removing this flag and breaking the API we always return false
-	return false, nil
-}
-
 func (*siteResolver) DisableBuiltInSearches() bool {
 	return conf.Get().DisableBuiltInSearches
 }

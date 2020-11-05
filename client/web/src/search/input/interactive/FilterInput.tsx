@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Form } from '../../../components/Form'
+import { Form } from '../../../../../branded/src/components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import MinusIcon from 'mdi-react/MinusIcon'
@@ -81,7 +81,7 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
      * Callback that handles a filter input being submitted. Triggers a search
      * with the new query value.
      */
-    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+    onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
 
     /**
      * Callback to handle the filter's value being updated.

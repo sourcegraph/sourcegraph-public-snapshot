@@ -7,6 +7,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 // changesetHistory is a collection of external changeset states
@@ -53,7 +55,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 	var (
 		states = []changesetStatesAtTime{}
 
-		currentExtState    = campaigns.ChangesetExternalStateOpen
+		currentExtState    = initialExternalState(ch, ce)
 		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
@@ -95,9 +97,31 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			currentExtState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
+		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress:
+			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
+			if currentExtState == campaigns.ChangesetExternalStateOpen {
+				currentExtState = campaigns.ChangesetExternalStateDraft
+				pushStates(et)
+			}
+
+		case campaigns.ChangesetEventKindGitHubConvertToDraft:
+			// Merged is a final state. We can ignore everything after.
+			if currentExtState != campaigns.ChangesetExternalStateMerged {
+				currentExtState = campaigns.ChangesetExternalStateDraft
+				pushStates(et)
+			}
+
+		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
+			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
+			if currentExtState == campaigns.ChangesetExternalStateDraft {
+				currentExtState = campaigns.ChangesetExternalStateOpen
+				pushStates(et)
+			}
+
 		case campaigns.ChangesetEventKindGitHubReopened,
 			campaigns.ChangesetEventKindBitbucketServerReopened,
-			campaigns.ChangesetEventKindGitLabReopened:
+			campaigns.ChangesetEventKindGitLabReopened,
+			campaigns.ChangesetEventKindGitHubReadyForReview:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateOpen
@@ -121,10 +145,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 				continue
 			}
 
-			author, err := e.ReviewAuthor()
-			if err != nil {
-				return nil, err
-			}
+			author := e.ReviewAuthor()
+			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
 			if author == "" {
 				continue
 			}
@@ -160,10 +182,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
 			campaigns.ChangesetEventKindBitbucketServerDismissed,
 			campaigns.ChangesetEventKindGitLabUnapproved:
-			author, err := e.ReviewAuthor()
-			if err != nil {
-				return nil, err
-			}
+			author := e.ReviewAuthor()
+			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
 			if author == "" {
 				continue
 			}
@@ -220,4 +240,37 @@ func reduceReviewStates(statesByAuthor map[string]campaigns.ChangesetReviewState
 		states[s] = true
 	}
 	return selectReviewState(states)
+}
+
+// initialExternalState infers from the changeset state and the list of events in which
+// ChangesetExternalState the changeset must have been when it has been created.
+func initialExternalState(ch *campaigns.Changeset, ce ChangesetEvents) campaigns.ChangesetExternalState {
+	open := true
+	switch m := ch.Metadata.(type) {
+	case *github.PullRequest:
+		if m.IsDraft {
+			open = false
+		}
+
+	case *gitlab.MergeRequest:
+		if m.WorkInProgress {
+			open = false
+		}
+	default:
+		return campaigns.ChangesetExternalStateOpen
+	}
+	// Walk the events backwards, since we need to look from the current time to the past.
+	for i := len(ce) - 1; i >= 0; i-- {
+		e := ce[i]
+		switch e.Metadata.(type) {
+		case *gitlab.UnmarkWorkInProgressEvent, *github.ReadyForReviewEvent:
+			open = false
+		case *gitlab.MarkWorkInProgressEvent, *github.ConvertToDraftEvent:
+			open = true
+		}
+	}
+	if open {
+		return campaigns.ChangesetExternalStateOpen
+	}
+	return campaigns.ChangesetExternalStateDraft
 }

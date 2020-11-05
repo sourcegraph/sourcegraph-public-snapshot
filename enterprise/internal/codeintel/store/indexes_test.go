@@ -385,6 +385,27 @@ func TestMarkIndexErrored(t *testing.T) {
 	}
 }
 
+func TestSetIndexLogContents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	// Add index for updating
+	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
+
+	if err := store.SetIndexLogContents(context.Background(), 1, "test payload"); err != nil {
+		t.Fatalf("unexpected error setting index log contents: %s", err)
+	}
+
+	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT log_contents FROM lsif_indexes WHERE id = 1")); err != nil {
+		t.Errorf("unexpected error getting log contents: %s", err)
+	} else if state != "test payload" {
+		t.Errorf("unexpected log contents. want=%s have=%s", "test payload", state)
+	}
+}
+
 func TestDequeueIndexProcessSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

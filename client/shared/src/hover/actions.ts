@@ -20,7 +20,7 @@ import { Context } from '../api/client/context/context'
 import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
-import { ContributableMenu, TextDocumentPositionParams } from '../api/protocol'
+import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
@@ -59,13 +59,13 @@ export function getHoverActions(
  *
  * @internal Exported for testing only.
  */
-export interface HoverActionsContext extends Context<TextDocumentPositionParams> {
+export interface HoverActionsContext extends Context<TextDocumentPositionParameters> {
     ['goToDefinition.showLoading']: boolean
     ['goToDefinition.url']: string | null
     ['goToDefinition.notFound']: boolean
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
-    hoverPosition: TextDocumentPositionParams & URLToFileContext
+    hoverPosition: TextDocumentPositionParameters & URLToFileContext
 }
 
 /**
@@ -92,8 +92,8 @@ export function getHoverActionsContext(
               platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
           },
     hoverContext: HoveredToken & HoverContext
-): Observable<Context<TextDocumentPositionParams>> {
-    const parameters: TextDocumentPositionParams & URLToFileContext = {
+): Observable<Context<TextDocumentPositionParameters>> {
+    const parameters: TextDocumentPositionParameters & URLToFileContext = {
         textDocument: { uri: makeRepoURI(hoverContext) },
         position: { line: hoverContext.line - 1, character: hoverContext.character - 1 },
         part: hoverContext.part,
@@ -194,7 +194,7 @@ export function getDefinitionURL(
         }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
-    parameters: TextDocumentPositionParams & URLToFileContext
+    parameters: TextDocumentPositionParameters & URLToFileContext
 ): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
     return textDocumentDefinition.getLocations(parameters).pipe(
         switchMap(
@@ -374,7 +374,7 @@ export function registerHoverContributions({
         extensionsController.services.commands.registerCommand({
             command: 'goToDefinition',
             run: async (parametersString: string) => {
-                const parameters: TextDocumentPositionParams & URLToFileContext = JSON.parse(parametersString)
+                const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(parametersString)
                 const { result } = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,

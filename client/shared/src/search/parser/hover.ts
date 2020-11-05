@@ -9,12 +9,12 @@ export const getHoverResult = (
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>
 ): Monaco.languages.Hover | null => {
-    const tokenAtColumn = members.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column)
-    if (!tokenAtColumn || tokenAtColumn.token.type !== 'filter') {
+    const tokenAtColumn = members.find(({ range }) => range.start + 1 <= column && range.end >= column)
+    if (!tokenAtColumn || tokenAtColumn.type !== 'filter') {
         return null
     }
-    const { filterType } = tokenAtColumn.token
-    const resolvedFilter = resolveFilter(filterType.token.value)
+    const token = tokenAtColumn
+    const resolvedFilter = resolveFilter(token.filterType.value)
     if (!resolvedFilter) {
         return null
     }

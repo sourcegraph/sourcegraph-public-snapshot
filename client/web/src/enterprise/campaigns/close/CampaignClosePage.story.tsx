@@ -20,9 +20,13 @@ import {
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module)
+    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+        },
+    })
 
 const now = new Date()
 
@@ -31,21 +35,18 @@ const campaignDefaults: CampaignFields = {
     changesets: {
         stats: {
             closed: 1,
+            deleted: 1,
             merged: 2,
-            open: 3,
+            draft: 1,
+            open: 2,
             total: 10,
-            unpublished: 5,
+            unpublished: 4,
         },
     },
     createdAt: subDays(now, 5).toISOString(),
     initialApplier: {
         url: '/users/alice',
         username: 'alice',
-    },
-    diffStat: {
-        added: 10,
-        changed: 8,
-        deleted: 10,
     },
     id: 'specid',
     url: '/users/alice/campaigns/specid',

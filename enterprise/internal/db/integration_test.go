@@ -26,6 +26,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
 		{"SetUserPermissions", testPermsStore_SetUserPermissions(db)},
 		{"SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},
+		{"TouchRepoPermissions", testPermsStore_TouchRepoPermissions(db)},
 		{"LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
 		{"ListPendingUsers", testPermsStore_ListPendingUsers(db)},
@@ -34,8 +35,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"DeleteAllUserPermissions", testPermsStore_DeleteAllUserPermissions(db)},
 		{"DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
-		{"FallbackToOldFormat", testPermsStore_FallbackToOldFormat(db)},
-		{"MigrateBinaryToIntarray", testPermsStore_MigrateBinaryToIntarray(db)},
 
 		{"ListExternalAccounts", testPermsStore_ListExternalAccounts(db)},
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},

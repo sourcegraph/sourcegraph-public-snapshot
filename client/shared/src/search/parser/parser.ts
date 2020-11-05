@@ -21,6 +21,19 @@ export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
     endColumn: end + 1,
 })
 
+enum PatternKind {
+    Literal = 1,
+    Regexp,
+    Structural,
+}
+
+export interface Pattern {
+    type: 'pattern'
+    range: CharacterRange
+    kind: PatternKind
+    value: string
+}
+
 /**
  * Represents a literal in a search query.
  *
@@ -28,6 +41,7 @@ export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
  */
 export interface Literal {
     type: 'literal'
+    range: CharacterRange
     value: string
 }
 
@@ -38,8 +52,9 @@ export interface Literal {
  */
 export interface Filter {
     type: 'filter'
-    filterType: Pick<ParseSuccess<Literal>, 'range' | 'token'>
-    filterValue: Pick<ParseSuccess<Literal | Quoted>, 'range' | 'token'> | undefined
+    range: CharacterRange
+    filterType: Literal
+    filterValue: Quoted | Literal | undefined
 }
 
 /**
@@ -49,6 +64,7 @@ export interface Filter {
  */
 export interface Operator {
     type: 'operator'
+    range: CharacterRange
     value: string
 }
 
@@ -57,7 +73,8 @@ export interface Operator {
  */
 export interface Sequence {
     type: 'sequence'
-    members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[]
+    range: CharacterRange
+    members: Token[]
 }
 
 /**
@@ -67,6 +84,7 @@ export interface Sequence {
  */
 export interface Quoted {
     type: 'quoted'
+    range: CharacterRange
     quotedValue: string
 }
 
@@ -77,19 +95,28 @@ export interface Quoted {
  */
 export interface Comment {
     type: 'comment'
+    range: CharacterRange
     value: string
 }
 
-export type Token =
-    | { type: 'whitespace' }
-    | { type: 'openingParen' }
-    | { type: 'closingParen' }
-    | { type: 'operator' }
-    | Comment
-    | Literal
-    | Filter
-    | Sequence
-    | Quoted
+export interface Whitespace {
+    type: 'whitespace'
+    range: CharacterRange
+}
+
+export interface OpeningParen {
+    type: 'openingParen'
+    range: CharacterRange
+}
+
+export interface ClosingParen {
+    type: 'closingParen'
+    range: CharacterRange
+}
+
+export type Token = Whitespace | OpeningParen | ClosingParen | Operator | Comment | Literal | Pattern | Filter | Quoted
+
+export type Term = Token | Sequence
 
 /**
  * Represents the failed result of running a {@link Parser} on a search query.
@@ -112,33 +139,28 @@ interface ParseError {
 /**
  * Represents the successful result of running a {@link Parser} on a search query.
  */
-export interface ParseSuccess<T = Token> {
+export interface ParseSuccess<T = Term> {
     type: 'success'
 
     /**
-     * The parsed token.
+     * The resulting term.
      */
     token: T
-
-    /**
-     * The character range that was successfully parsed.
-     */
-    range: CharacterRange
 }
 
 /**
  * Represents the result of running a {@link Parser} on a search query.
  */
-export type ParserResult<T = Token> = ParseError | ParseSuccess<T>
+export type ParserResult<T = Term> = ParseError | ParseSuccess<T>
 
-type Parser<T = Token> = (input: string, start: number) => ParserResult<T>
+type Parser<T = Term> = (input: string, start: number) => ParserResult<T>
 
 /**
  * Returns a {@link Parser} that succeeds if zero or more tokens parsed
  * by the given `parseToken` parsers are found in a search query.
  */
-const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
+const zeroOrMore = (parseToken: Parser<Term>): Parser<Sequence> => (input, start) => {
+    const members: Token[] = []
     let adjustedStart = start
     let end = start + 1
     while (input[adjustedStart] !== undefined) {
@@ -151,16 +173,14 @@ const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
                 members.push(member)
             }
         } else {
-            const { range, token } = result
-            members.push({ range, token })
+            members.push(result.token)
         }
-        end = result.range.end
+        end = result.token.range.end
         adjustedStart = end
     }
     return {
         type: 'success',
-        range: { start, end },
-        token: { type: 'sequence', members },
+        token: { type: 'sequence', members, range: { start, end } },
     }
 }
 
@@ -184,24 +204,24 @@ const oneOf = <T>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
 }
 
 /**
- * A {@link Parser} that will attempt to parse quoted strings in a search query.
+ * A {@link Parser} that will attempt to parse delimited strings for an arbitrary
+ * delimiter. `\` is treated as an escape character for the delimited string.
  */
-const quoted: Parser<Quoted> = (input, start) => {
-    if (input[start] !== '"') {
-        return { type: 'error', expected: '"', at: start }
+const quoted = (delimiter: string): Parser<Quoted> => (input, start) => {
+    if (input[start] !== delimiter) {
+        return { type: 'error', expected: delimiter, at: start }
     }
     let end = start + 1
-    while (input[end] && (input[end] !== '"' || input[end - 1] === '\\')) {
+    while (input[end] && (input[end] !== delimiter || input[end - 1] === '\\')) {
         end = end + 1
     }
     if (!input[end]) {
-        return { type: 'error', expected: '"', at: end }
+        return { type: 'error', expected: delimiter, at: end }
     }
     return {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
-        range: { start, end: end + 1 },
-        token: { type: 'quoted', quotedValue: input.slice(start + 1, end) },
+        token: { type: 'quoted', quotedValue: input.slice(start + 1, end), range: { start, end: end + 1 } },
     }
 }
 
@@ -215,8 +235,7 @@ const character = (character: string): Parser<Literal> => (input, start) => {
     }
     return {
         type: 'success',
-        range: { start, end: start + 1 },
-        token: { type: 'literal', value: character },
+        token: { type: 'literal', value: character, range: { start, end: start + 1 } },
     }
 }
 
@@ -224,7 +243,7 @@ const character = (character: string): Parser<Literal> => (input, start) => {
  * Returns a {@link Parser} that will attempt to parse
  * tokens matching the given RegExp pattern in a search query.
  */
-const pattern = <T extends Token = Literal>(
+const scanToken = <T extends Term = Literal>(
     regexp: RegExp,
     output?: T | ((input: string, range: CharacterRange) => T),
     expected?: string
@@ -244,67 +263,68 @@ const pattern = <T extends Token = Literal>(
         const range = { start, end: start + match[0].length }
         return {
             type: 'success',
-            range,
             token: output
                 ? typeof output === 'function'
                     ? output(input, range)
                     : output
-                : ({ type: 'literal', value: match[0] } as T),
+                : ({ type: 'literal', value: match[0], range } as T),
         }
     }
 }
 
-const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
+const whitespace = scanToken(
+    /\s+/,
+    (_input, range): Whitespace => ({
+        type: 'whitespace',
+        range,
+    })
+)
 
-const literal = pattern(/[^\s)]+/)
+const literal = scanToken(/[^\s)]+/)
 
-const operator = pattern(
+const operator = scanToken(
     /(and|AND|or|OR|not|NOT)/,
-    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
+    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end), range: { start, end } })
 )
 
-const comment = pattern(
+const comment = scanToken(
     /\/\/.*/,
-    (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end) })
+    (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end), range: { start, end } })
 )
 
-const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
+const filterKeyword = scanToken(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
 
 const filterDelimiter = character(':')
 
-const filterValue = oneOf<Quoted | Literal>(quoted, literal)
+const filterValue = oneOf<Quoted | Literal>(quoted('"'), quoted("'"), literal)
 
-const openingParen = pattern(/\(/, { type: 'openingParen' as const })
+const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: 'openingParen', range }))
 
-const closingParen = pattern(/\)/, { type: 'closingParen' as const })
+const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
 /**
  * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
-const followedBy = (
-    parseToken: Parser<Exclude<Token, Sequence>>,
-    parseNext: Parser<Exclude<Token, Sequence>>
-): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
+const followedBy = (parseToken: Parser<Token>, parseNext: Parser<Token>): Parser<Sequence> => (input, start) => {
+    const members: Token[] = []
     const tokenResult = parseToken(input, start)
     if (tokenResult.type === 'error') {
         return tokenResult
     }
-    members.push({ token: tokenResult.token, range: tokenResult.range })
-    let { end } = tokenResult.range
+    members.push(tokenResult.token)
+    let { end } = tokenResult.token.range
     if (input[end] !== undefined) {
         const separatorResult = parseNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
-        members.push({ token: separatorResult.token, range: separatorResult.range })
-        end = separatorResult.range.end
+        members.push(separatorResult.token)
+        end = separatorResult.token.range.end
     }
     return {
         type: 'success',
-        range: { start, end },
-        token: { type: 'sequence', members },
+        token: { type: 'sequence', members, range: { start, end } },
     }
 }
 
@@ -318,37 +338,150 @@ const filter: Parser<Filter> = (input, start) => {
     if (parsedKeyword.type === 'error') {
         return parsedKeyword
     }
-    const parsedDelimiter = filterDelimiter(input, parsedKeyword.range.end)
+    const parsedDelimiter = filterDelimiter(input, parsedKeyword.token.range.end)
     if (parsedDelimiter.type === 'error') {
         return parsedDelimiter
     }
     const parsedValue =
-        input[parsedDelimiter.range.end] === undefined ? undefined : filterValue(input, parsedDelimiter.range.end)
+        input[parsedDelimiter.token.range.end] === undefined
+            ? undefined
+            : filterValue(input, parsedDelimiter.token.range.end)
     if (parsedValue && parsedValue.type === 'error') {
         return parsedValue
     }
     return {
         type: 'success',
-        range: { start, end: parsedValue ? parsedValue.range.end : parsedDelimiter.range.end },
         token: {
             type: 'filter',
-            filterType: parsedKeyword,
-            filterValue: parsedValue,
+            range: { start, end: parsedValue ? parsedValue.token.range.end : parsedDelimiter.token.range.end },
+            filterType: parsedKeyword.token,
+            filterValue: parsedValue?.token,
         },
     }
 }
 
-const baseTerms = [operator, filter, quoted, literal]
+const scanFilterOrOperator = oneOf<Literal | Sequence>(filterKeyword, followedBy(operator, whitespace))
+const keepScanning = (input: string, start: number): boolean => scanFilterOrOperator(input, start).type !== 'success'
 
-const createParser = (terms: Parser<Exclude<Token, Sequence>>[]): Parser<Sequence> =>
+/**
+ * ScanBalancedPattern attempts to scan balanced parentheses as literal patterns. This
+ * ensures that we interpret patterns containing parentheses _as patterns_ and not
+ * groups. For example, it accepts these patterns:
+ *
+ * ((a|b)|c)              - a regular expression with balanced parentheses for grouping
+ * myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
+ * foo(...)               - a structural search pattern
+ *
+ * If it weren't for this scanner, the above parentheses would have to be
+ * interpreted as part of the query language group syntax, like these:
+ *
+ * (foo or (bar and baz))
+ *
+ * So, this scanner detects parentheses as patterns without needing the user to
+ * explicitly escape them. As such, there are cases where this scanner should
+ * not succeed:
+ *
+ * (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
+ * (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
+ */
+export const scanBalancedPattern: Parser<Literal> = (input, start) => {
+    let adjustedStart = start
+    let balanced = 0
+    let current = ''
+    const result: string[] = []
+
+    const nextChar = (): void => {
+        current = input[adjustedStart]
+        adjustedStart += 1
+    }
+
+    if (!keepScanning(input, start)) {
+        return {
+            type: 'error',
+            expected: 'no recognized filter or operator',
+            at: start,
+        }
+    }
+
+    while (input[adjustedStart] !== undefined) {
+        nextChar()
+        if (current === ' ' && balanced === 0) {
+            // Stop scanning a potential pattern when we see whitespace in a balanced state.
+            adjustedStart -= 1 // Backtrack.
+            break
+        } else if (current === '(') {
+            if (!keepScanning(input, adjustedStart)) {
+                return {
+                    type: 'error',
+                    expected: 'no recognized filter or operator',
+                    at: adjustedStart,
+                }
+            }
+            balanced += 1
+            result.push(current)
+        } else if (current === ')') {
+            balanced -= 1
+            if (balanced < 0) {
+                // This paren is an unmatched closing paren, so we stop treating it as a potential
+                // pattern here--it might be closing a group.
+                adjustedStart -= 1 // Backtrack.
+                balanced = 0 // Pattern is balanced up to this point
+                break
+            }
+            result.push(current)
+        } else if (current === ' ') {
+            if (!keepScanning(input, adjustedStart)) {
+                return {
+                    type: 'error',
+                    expected: 'no recognized filter or operator',
+                    at: adjustedStart,
+                }
+            }
+            result.push(current)
+        } else if (current === '\\') {
+            if (input[adjustedStart] !== undefined) {
+                nextChar()
+                // Accept anything anything escaped. The point is to consume escaped spaces like "\ "
+                // so that we don't recognize it as terminating a pattern.
+                result.push('\\', current)
+                continue
+            }
+            result.push(current)
+        } else {
+            result.push(current)
+        }
+    }
+
+    if (balanced !== 0) {
+        return {
+            type: 'error',
+            expected: 'no unbalanced parentheses',
+            at: adjustedStart,
+        }
+    }
+
+    return {
+        type: 'success',
+        token: {
+            type: 'literal',
+            range: {
+                start,
+                end: adjustedStart,
+            },
+            value: result.join(''),
+        },
+    }
+}
+
+const baseTerms: Parser<Token>[] = [operator, filter, quoted('"'), quoted("'"), literal]
+
+const createParser = (terms: Parser<Token>[]): Parser<Sequence> =>
     zeroOrMore(
-        oneOf<Token>(
+        oneOf<Term>(
             whitespace,
             openingParen,
             closingParen,
-            ...terms.map(token =>
-                followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
-            )
+            ...terms.map(token => followedBy(token, oneOf<Whitespace | ClosingParen>(whitespace, closingParen)))
         )
     )
 

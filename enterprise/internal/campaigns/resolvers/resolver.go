@@ -7,11 +7,13 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,10 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
-
-var ErrIDIsZero = errors.New("invalid node id")
-var ErrCampaignsDisabled = errors.New("campaigns are disabled. Set 'campaigns.enabled' in the site configuration to enable the feature.")
-var ErrCampaignsDotCom = errors.New("access to campaigns on Sourcegraph.com is currently not available")
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
@@ -39,14 +37,14 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 func campaignsEnabled() error {
 	// On Sourcegraph.com nobody can read/create campaign entities
 	if envvar.SourcegraphDotComMode() {
-		return ErrCampaignsDotCom
+		return ErrCampaignsDotCom{}
 	}
 
 	if enabled := conf.CampaignsEnabled(); enabled {
 		return nil
 	}
 
-	return ErrCampaignsDisabled
+	return ErrCampaignsDisabled{}
 }
 
 // campaignsCreateAccess returns true if the current user can create
@@ -54,11 +52,29 @@ func campaignsEnabled() error {
 func campaignsCreateAccess(ctx context.Context) error {
 	// On Sourcegraph.com nobody can create campaigns/patchsets/changesets
 	if envvar.SourcegraphDotComMode() {
-		return ErrCampaignsDotCom
+		return ErrCampaignsDotCom{}
 	}
 
 	// Only site-admins can create campaigns/patchsets/changesets
 	return backend.CheckCurrentUserIsSiteAdmin(ctx)
+}
+
+// checkLicense returns a user-facing error if the campaigns feature is not purchased
+// with the current license or any error occurred while validating the license.
+func checkLicense() error {
+	if !licensing.EnforceTiers {
+		return nil
+	}
+
+	err := licensing.Check(licensing.FeatureCampaigns)
+	if err != nil {
+		if licensing.IsFeatureNotActivated(err) {
+			return err
+		}
+		log15.Error("campaigns.Resolver.checkLicense", "err", err)
+		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	}
+	return nil
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
@@ -206,6 +222,11 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
+	// Validate that the instance's licensing tier supports campaigns.
+	if err := checkLicense(); err != nil {
+		return nil, err
+	}
+
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
@@ -221,12 +242,19 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	if opts.CampaignSpecRandID == "" {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
+		if err == ee.ErrEnsureCampaignFailed {
+			return nil, ErrEnsureCampaignFailed{}
+		} else if err == ee.ErrApplyClosedCampaign {
+			return nil, ErrApplyClosedCampaign{}
+		} else if err == ee.ErrMatchingCampaignExists {
+			return nil, ErrMatchingCampaignExists{}
+		}
 		return nil, err
 	}
 
@@ -241,6 +269,11 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.Finish()
 	}()
 
+	// Validate that the instance's licensing tier supports campaigns.
+	if err := checkLicense(); err != nil {
+		return nil, err
+	}
+
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
@@ -253,7 +286,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	}
 
 	if opts.CampaignSpecRandID == "" {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	if args.EnsureCampaign != nil {
@@ -268,6 +301,13 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	// apply the campaign spec
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
+		if err == ee.ErrEnsureCampaignFailed {
+			return nil, ErrEnsureCampaignFailed{}
+		} else if err == ee.ErrApplyClosedCampaign {
+			return nil, ErrApplyClosedCampaign{}
+		} else if err == ee.ErrMatchingCampaignExists {
+			return nil, ErrMatchingCampaignExists{}
+		}
 		return nil, err
 	}
 
@@ -374,7 +414,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 	}
 
 	if campaignID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	var opts ee.MoveCampaignOpts
@@ -416,7 +456,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	}
 
 	if campaignID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -575,7 +615,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	}
 
 	if campaignID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -604,7 +644,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	}
 
 	if changesetID == 0 {
-		return nil, ErrIDIsZero
+		return nil, ErrIDIsZero{}
 	}
 
 	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.

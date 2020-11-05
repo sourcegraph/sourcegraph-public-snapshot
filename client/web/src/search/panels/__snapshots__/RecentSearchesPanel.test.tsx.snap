@@ -33,10 +33,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 className="text-monospace"
                 to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
               >
-                lang:c if(:[eval_match]) 
-                {
-                 :[statement_match] 
-                }
+                <SyntaxHighlightedSearchQuery
+                  query="lang:c if(:[eval_match]) { :[statement_match] }"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -48,7 +47,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 className="text-monospace"
                 to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
               >
-                lang:java type:diff after:"1 week ago"
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java type:diff after:\\"1 week ago\\""
+                />
               </AnchorLink>
             </small>
           </li>
@@ -60,7 +61,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 className="text-monospace"
                 to="/search?q=lang:java&patternType=literal"
               >
-                lang:java
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -83,11 +86,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -104,23 +102,15 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -137,23 +127,15 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -202,11 +184,6 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -224,28 +201,25 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="recent-searches-panel__results-table-row"
               key="0"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -271,28 +245,31 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="recent-searches-panel__results-table-row"
               key="1"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -372,10 +349,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 className="text-monospace"
                 to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
               >
-                lang:c if(:[eval_match]) 
-                {
-                 :[statement_match] 
-                }
+                <SyntaxHighlightedSearchQuery
+                  query="lang:c if(:[eval_match]) { :[statement_match] }"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -387,7 +363,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 className="text-monospace"
                 to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
               >
-                lang:java type:diff after:"1 week ago"
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java type:diff after:\\"1 week ago\\""
+                />
               </AnchorLink>
             </small>
           </li>
@@ -399,7 +377,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 className="text-monospace"
                 to="/search?q=lang:java&patternType=literal"
               >
-                lang:java
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -422,11 +402,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -443,23 +418,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -476,23 +443,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -509,23 +468,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -542,23 +493,15 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -603,11 +546,6 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -625,28 +563,25 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="0"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -672,28 +607,31 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="1"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -719,28 +657,25 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="2"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -766,28 +701,31 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="recent-searches-panel__results-table-row"
               key="3"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -850,10 +788,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 className="text-monospace"
                 to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
               >
-                lang:c if(:[eval_match]) 
-                {
-                 :[statement_match] 
-                }
+                <SyntaxHighlightedSearchQuery
+                  query="lang:c if(:[eval_match]) { :[statement_match] }"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -865,7 +802,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 className="text-monospace"
                 to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
               >
-                lang:java type:diff after:"1 week ago"
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java type:diff after:\\"1 week ago\\""
+                />
               </AnchorLink>
             </small>
           </li>
@@ -877,7 +816,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 className="text-monospace"
                 to="/search?q=lang:java&patternType=literal"
               >
-                lang:java
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -900,11 +841,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -921,23 +857,15 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -954,23 +882,15 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             <tr
               className="recent-searches-panel__results-table-row"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -1015,11 +935,6 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             >
               <th>
                 <small>
-                  Count
-                </small>
-              </th>
-              <th>
-                <small>
                   Search
                 </small>
               </th>
@@ -1037,28 +952,25 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="recent-searches-panel__results-table-row"
               key="0"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  1
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -1084,28 +996,31 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="recent-searches-panel__results-table-row"
               key="1"
             >
-              <td
-                className="recent-searches-panel__results-table-count-col"
-              >
-                <span
-                  className="recent-searches-panel__results-table-count btn btn-secondary d-inline-flex justify-content-center align-items-center"
-                >
-                  2
-                </span>
-              </td>
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>

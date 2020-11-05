@@ -5,7 +5,7 @@ import { TextModelUpdate } from '../../client/services/modelService'
 import { ExtensionDocument } from './textDocument'
 
 /** @internal */
-export interface ExtDocumentsAPI extends ProxyMarked {
+export interface ExtensionDocumentsAPI extends ProxyMarked {
     $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
 }
 
@@ -18,7 +18,7 @@ class DocumentNotFoundError extends Error {
 }
 
 /** @internal */
-export class ExtensionDocuments implements ExtDocumentsAPI, ProxyMarked {
+export class ExtensionDocuments implements ExtensionDocumentsAPI, ProxyMarked {
     public readonly [proxyMarker] = true
 
     private documents = new Map<string, ExtensionDocument>()

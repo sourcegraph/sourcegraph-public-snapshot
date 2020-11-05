@@ -26,6 +26,8 @@ const changesetStatsFragment = gql`
     fragment ChangesetStatsFields on ChangesetConnectionStats {
         total
         closed
+        deleted
+        draft
         merged
         open
         unpublished
@@ -66,16 +68,10 @@ const campaignFragment = gql`
             }
         }
 
-        diffStat {
-            ...DiffStatFields
-        }
-
         currentSpec {
             originalInput
         }
     }
-
-    ${diffStatFields}
 
     ${changesetStatsFragment}
 `
@@ -378,6 +374,7 @@ const changesetCountsOverTimeFragment = gql`
         date
         merged
         closed
+        draft
         openApproved
         openChangesRequested
         openPending

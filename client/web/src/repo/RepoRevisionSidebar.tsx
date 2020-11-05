@@ -10,7 +10,7 @@ import {
     Tab,
     TabBorderClassName,
     TabsWithLocalStorageViewStatePersistence,
-} from '../../../shared/src/components/Tabs'
+} from '../../../branded/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { AbsoluteRepoFile } from '../../../shared/src/util/url'
@@ -76,7 +76,7 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                     onClick={this.onSidebarToggle}
                     data-tooltip="Show sidebar (Alt+S/Opt+S)"
                 >
-                    <FormatListBulletedIcon />
+                    <FormatListBulletedIcon className="icon-inline" />
                 </button>
             )
         }

@@ -14,6 +14,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 type printableRank struct{ value *int }
@@ -217,12 +219,20 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	var rows []*sqlf.Query
 	for commit, metas := range uploads {
 		for _, meta := range metas {
-			rows = append(rows, sqlf.Sprintf("(%s, %s, %s, %s)", repositoryID, commit, meta.UploadID, meta.Distance))
+			rows = append(rows, sqlf.Sprintf(
+				"(%s, %s, %s, %s, %s, %s)",
+				repositoryID,
+				dbutil.CommitBytea(commit),
+				meta.UploadID,
+				meta.Distance,
+				meta.AncestorVisible,
+				meta.Overwritten,
+			))
 		}
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance) VALUES %s`,
+		`INSERT INTO lsif_nearest_uploads (repository_id, commit_bytea, upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -273,7 +283,7 @@ func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMe
 
 func getVisibleUploads(t *testing.T, db *sql.DB, repositoryID int) map[string][]UploadMeta {
 	query := sqlf.Sprintf(
-		`SELECT commit, upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s ORDER BY upload_id`,
+		`SELECT encode(commit_bytea, 'hex'), upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s AND NOT overwritten ORDER BY upload_id`,
 		repositoryID,
 	)
 	uploads, err := scanVisibleUploads(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
@@ -298,12 +308,55 @@ func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
 	return ids
 }
 
-func normalizeVisibleUploads(uploads map[string][]UploadMeta) map[string][]UploadMeta {
-	for _, metas := range uploads {
-		sort.Slice(metas, func(i, j int) bool {
-			return metas[i].UploadID-metas[j].UploadID < 0
+func normalizeVisibleUploads(uploadMetas map[string][]UploadMeta) map[string][]UploadMeta {
+	for commit, uploads := range uploadMetas {
+		var filtered []UploadMeta
+		for _, upload := range uploads {
+			if !upload.Overwritten {
+				filtered = append(filtered, upload)
+			}
+		}
+
+		sort.Slice(filtered, func(i, j int) bool {
+			return filtered[i].UploadID-filtered[j].UploadID < 0
 		})
+
+		uploadMetas[commit] = filtered
 	}
 
-	return uploads
+	return uploadMetas
+}
+
+func getStates(ids ...int) (map[int]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	q := sqlf.Sprintf(
+		`SELECT id, state FROM lsif_uploads WHERE id IN (%s)`,
+		sqlf.Join(intsToQueries(ids), ", "),
+	)
+
+	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
+}
+
+// scanStates scans pairs of id/states from the return value of `*store.query`.
+func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	states := map[int]string{}
+	for rows.Next() {
+		var id int
+		var state string
+		if err := rows.Scan(&id, &state); err != nil {
+			return nil, err
+		}
+
+		states[id] = state
+	}
+
+	return states, nil
 }

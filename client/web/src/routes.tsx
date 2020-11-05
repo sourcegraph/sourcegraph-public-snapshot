@@ -13,30 +13,35 @@ import { android } from './repogroups/Android'
 import { stanford } from './repogroups/Stanford'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
+import { ExtensionAlertProps } from './repo/RepoContainer'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
+const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
-interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
-    extends RouteComponentProps<Params>,
+interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
+    extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
-        BreadcrumbSetters {}
+        BreadcrumbSetters,
+        ExtensionAlertProps {}
 
-export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
+export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
     path: string
     exact?: boolean
-    render: (props: LayoutRouteComponentProps<Params>) => React.ReactNode
+    render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps<Params>) => boolean
+    condition?: (props: LayoutRouteComponentProps<Parameters_>) => boolean
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
@@ -74,7 +79,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/query-builder',
-        render: lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage'),
+        render: props =>
+            props.showQueryBuilder ? (
+                lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage')(props)
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {
@@ -96,12 +106,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/sign-in',
-        render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
+        render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
     },
     {
         path: '/sign-up',
-        render: lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'),
+        render: props => <SignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
@@ -124,7 +134,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage'),
+        render: props => <SiteInitPage {...props} context={window.context} />,
     },
     {
         path: '/site-admin',
@@ -178,6 +188,14 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeInsights,
+    },
+    {
+        path: '/code-monitoring',
+        exact: true,
+        render: lazyComponent(() => import('./code-monitoring/CodeMonitoringPage'), 'CodeMonitoringPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.codeMonitoring,
     },
     {
         path: '/views',

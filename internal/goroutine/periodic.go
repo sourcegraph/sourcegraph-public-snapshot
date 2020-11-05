@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
+	"github.com/inconshreveable/log15"
 )
 
 // PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
@@ -38,6 +39,32 @@ type ErrorHandler interface {
 type Finalizer interface {
 	// OnShutdown is called after the last call to Handle during a graceful shutdown.
 	OnShutdown()
+}
+
+// HandlerFunc wraps a function so it can be used as a Handler.
+type HandlerFunc func(ctx context.Context) error
+
+func (f HandlerFunc) Handle(ctx context.Context) error {
+	return f(ctx)
+}
+
+type simpleHandler struct {
+	name    string
+	handler HandlerFunc
+}
+
+// NewHandlerWithErrorMessage wraps the given function to be used as a handler, and
+// prints a canned failure message containing the given name.
+func NewHandlerWithErrorMessage(name string, handler func(ctx context.Context) error) Handler {
+	return &simpleHandler{handler: handler, name: name}
+}
+
+func (h *simpleHandler) Handle(ctx context.Context) error {
+	return h.handler(ctx)
+}
+
+func (h *simpleHandler) HandleError(err error) {
+	log15.Error("An error occurred in a background task", "handler", h.name, "error", err)
 }
 
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler.
