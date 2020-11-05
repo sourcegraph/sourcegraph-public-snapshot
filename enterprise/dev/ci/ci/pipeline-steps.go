@@ -140,7 +140,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
-		pipeline.AddStep(":jest: Test", // TODO: What is this testing? Isnt it covered in addWebApp?
+		pipeline.AddStep(":jest: Test shared client code",
 			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 	}
