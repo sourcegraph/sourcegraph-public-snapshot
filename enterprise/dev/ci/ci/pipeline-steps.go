@@ -133,7 +133,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		if !c.isPR() {
 			chromaticCommand += " --auto-accept-changes"
 		}
-		pipeline.AddStep(":chromatic:", // TODO: Add header
+		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
