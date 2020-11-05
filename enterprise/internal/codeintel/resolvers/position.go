@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -26,13 +26,13 @@ type PositionAdjuster interface {
 	// target commit. The adjusted path and position are returned, along with a boolean flag
 	// indicating that the translation was successful. If revese is true, then the source and
 	// target commits are swapped.
-	AdjustPosition(ctx context.Context, commit, path string, px bundles.Position, reverse bool) (string, bundles.Position, bool, error)
+	AdjustPosition(ctx context.Context, commit, path string, px lsifstore.Position, reverse bool) (string, lsifstore.Position, bool, error)
 
 	// AdjustRange translates the given range from the source commit into the given target
 	// commit. The adjusted path and range are returned, along with a boolean flag indicating
 	// that the translation was successful. If revese is true, then the source and target commits
 	// are swapped.
-	AdjustRange(ctx context.Context, commit, path string, rx bundles.Range, reverse bool) (string, bundles.Range, bool, error)
+	AdjustRange(ctx context.Context, commit, path string, rx lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error)
 }
 
 type positionAdjuster struct {
@@ -60,10 +60,10 @@ func (p *positionAdjuster) AdjustPath(ctx context.Context, commit, path string, 
 // target commit. The adjusted path and position are returned, along with a boolean flag
 // indicating that the translation was successful. If revese is true, then the source and
 // target commits are swapped.
-func (p *positionAdjuster) AdjustPosition(ctx context.Context, commit, path string, px bundles.Position, reverse bool) (string, bundles.Position, bool, error) {
+func (p *positionAdjuster) AdjustPosition(ctx context.Context, commit, path string, px lsifstore.Position, reverse bool) (string, lsifstore.Position, bool, error) {
 	hunks, err := p.readHunksCached(ctx, p.repo, p.commit, commit, path, reverse)
 	if err != nil {
-		return "", bundles.Position{}, false, err
+		return "", lsifstore.Position{}, false, err
 	}
 
 	adjusted, ok := adjustPosition(hunks, px)
@@ -74,10 +74,10 @@ func (p *positionAdjuster) AdjustPosition(ctx context.Context, commit, path stri
 // commit. The adjusted path and range are returned, along with a boolean flag indicating
 // that the translation was successful. If revese is true, then the source and target commits
 // are swapped.
-func (p *positionAdjuster) AdjustRange(ctx context.Context, commit, path string, rx bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
+func (p *positionAdjuster) AdjustRange(ctx context.Context, commit, path string, rx lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error) {
 	hunks, err := p.readHunksCached(ctx, p.repo, p.commit, commit, path, reverse)
 	if err != nil {
-		return "", bundles.Range{}, false, err
+		return "", lsifstore.Range{}, false, err
 	}
 
 	adjusted, ok := adjustRange(hunks, rx)
@@ -153,13 +153,13 @@ func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sour
 // number of additions and deletions that occur before that line. This function returns a
 // boolean flag indicating that the translation is successful. A translation fails when the
 // line indicated by the position has been edited.
-func adjustPosition(hunks []*diff.Hunk, pos bundles.Position) (bundles.Position, bool) {
+func adjustPosition(hunks []*diff.Hunk, pos lsifstore.Position) (lsifstore.Position, bool) {
 	line, ok := adjustLine(hunks, pos.Line)
 	if !ok {
-		return bundles.Position{}, false
+		return lsifstore.Position{}, false
 	}
 
-	return bundles.Position{Line: line, Character: pos.Character}, true
+	return lsifstore.Position{Line: line, Character: pos.Character}, true
 }
 
 // adjustLine translates the given line nubmerbased on the number of additions and deletions
@@ -249,18 +249,18 @@ func findHunk(hunks []*diff.Hunk, line int) *diff.Hunk {
 // adjustRange translates the given range by calling adjustPosition on both of hte range's
 // endpoints. This function returns a boolean flag indicating that the translation was
 // successful (which occurs when both endpoints of the range can be translated).
-func adjustRange(hunks []*diff.Hunk, r bundles.Range) (bundles.Range, bool) {
+func adjustRange(hunks []*diff.Hunk, r lsifstore.Range) (lsifstore.Range, bool) {
 	start, ok := adjustPosition(hunks, r.Start)
 	if !ok {
-		return bundles.Range{}, false
+		return lsifstore.Range{}, false
 	}
 
 	end, ok := adjustPosition(hunks, r.End)
 	if !ok {
-		return bundles.Range{}, false
+		return lsifstore.Range{}, false
 	}
 
-	return bundles.Range{Start: start, End: end}, true
+	return lsifstore.Range{Start: start, End: end}, true
 }
 
 func makeKey(parts ...string) string {

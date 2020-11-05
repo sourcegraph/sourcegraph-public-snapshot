@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -95,7 +95,7 @@ func (api *ObservedCodeIntelAPI) References(ctx context.Context, repositoryID in
 }
 
 // Hover calls into the inner CodeIntelAPI and registers the observed results.
-func (api *ObservedCodeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (_ string, _ bundles.Range, _ bool, err error) {
+func (api *ObservedCodeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (_ string, _ lsifstore.Range, _ bool, err error) {
 	ctx, endObservation := api.hoverOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return api.codeIntelAPI.Hover(ctx, file, line, character, uploadID)

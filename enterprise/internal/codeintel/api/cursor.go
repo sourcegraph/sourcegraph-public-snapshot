@@ -7,29 +7,28 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // Cursor holds the complete state necessary to page through a reference result set.
 type Cursor struct {
-	Phase                  string                // common
-	DumpID                 int                   // common
-	Path                   string                // same-dump/same-dump-monikers/definition-monikers
-	Line                   int                   // same-dump/same-dump-monikers
-	Character              int                   // same-dump/same-dump-monikers
-	Monikers               []bundles.MonikerData // same-dump/same-dump-monikers/definition-monikers
-	SkipResults            int                   // same-dump/same-dump-monikers/definition-monikers
-	Identifier             string                // same-repo/remote-repo
-	Scheme                 string                // same-repo/remote-repo
-	Name                   string                // same-repo/remote-repo
-	Version                string                // same-repo/remote-repo
-	DumpIDs                []int                 // same-repo/remote-repo
-	TotalDumpsWhenBatching int                   // same-repo/remote-repo
-	SkipDumpsWhenBatching  int                   // same-repo/remote-repo
-	SkipDumpsInBatch       int                   // same-repo/remote-repo
-	SkipResultsInDump      int                   // same-repo/remote-repo
+	Phase                  string                  // common
+	DumpID                 int                     // common
+	Path                   string                  // same-dump/same-dump-monikers/definition-monikers
+	Line                   int                     // same-dump/same-dump-monikers
+	Character              int                     // same-dump/same-dump-monikers
+	Monikers               []lsifstore.MonikerData // same-dump/same-dump-monikers/definition-monikers
+	SkipResults            int                     // same-dump/same-dump-monikers/definition-monikers
+	Identifier             string                  // same-repo/remote-repo
+	Scheme                 string                  // same-repo/remote-repo
+	Name                   string                  // same-repo/remote-repo
+	Version                string                  // same-repo/remote-repo
+	DumpIDs                []int                   // same-repo/remote-repo
+	TotalDumpsWhenBatching int                     // same-repo/remote-repo
+	SkipDumpsWhenBatching  int                     // same-repo/remote-repo
+	SkipDumpsInBatch       int                     // same-repo/remote-repo
+	SkipResultsInDump      int                     // same-repo/remote-repo
 }
 
 // EncodeCursor returns an encoding of the given cursor suitable for a URL.
@@ -76,7 +75,7 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 		return Cursor{}, errors.Wrap(err, "bundleClient.MonikersByPosition")
 	}
 
-	var flattened []bundles.MonikerData
+	var flattened []lsifstore.MonikerData
 	for _, monikers := range rangeMonikers {
 		flattened = append(flattened, monikers...)
 	}

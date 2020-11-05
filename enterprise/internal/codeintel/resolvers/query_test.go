@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	apimocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api/mocks"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -28,21 +28,21 @@ func TestRanges(t *testing.T) {
 	// second requested dump (dump 44) has some data
 	mockCodeIntelAPI.RangesFunc.PushReturn([]codeintelapi.ResolvedCodeIntelligenceRange{
 		{
-			Range:       bundles.Range{Start: bundles.Position{Line: 11, Character: 12}, End: bundles.Position{Line: 13, Character: 14}},
-			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p1.go", Range: bundles.Range{Start: bundles.Position{Line: 111, Character: 121}, End: bundles.Position{Line: 131, Character: 141}}}},
-			References:  []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p1.go", Range: bundles.Range{Start: bundles.Position{Line: 112, Character: 122}, End: bundles.Position{Line: 132, Character: 142}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{Line: 11, Character: 12}, End: lsifstore.Position{Line: 13, Character: 14}},
+			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p1.go", Range: lsifstore.Range{Start: lsifstore.Position{Line: 111, Character: 121}, End: lsifstore.Position{Line: 131, Character: 141}}}},
+			References:  []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p1.go", Range: lsifstore.Range{Start: lsifstore.Position{Line: 112, Character: 122}, End: lsifstore.Position{Line: 132, Character: 142}}}},
 			HoverText:   "ht1",
 		},
 		{
-			Range:       bundles.Range{Start: bundles.Position{Line: 21, Character: 22}, End: bundles.Position{Line: 23, Character: 24}},
-			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p2.go", Range: bundles.Range{Start: bundles.Position{Line: 211, Character: 221}, End: bundles.Position{Line: 231, Character: 241}}}},
-			References:  []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p2.go", Range: bundles.Range{Start: bundles.Position{Line: 212, Character: 222}, End: bundles.Position{Line: 232, Character: 242}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{Line: 21, Character: 22}, End: lsifstore.Position{Line: 23, Character: 24}},
+			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p2.go", Range: lsifstore.Range{Start: lsifstore.Position{Line: 211, Character: 221}, End: lsifstore.Position{Line: 231, Character: 241}}}},
+			References:  []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p2.go", Range: lsifstore.Range{Start: lsifstore.Position{Line: 212, Character: 222}, End: lsifstore.Position{Line: 232, Character: 242}}}},
 			HoverText:   "ht2",
 		},
 		{
-			Range:       bundles.Range{Start: bundles.Position{Line: 31, Character: 32}, End: bundles.Position{Line: 33, Character: 34}},
-			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p3.go", Range: bundles.Range{Start: bundles.Position{Line: 311, Character: 321}, End: bundles.Position{Line: 331, Character: 341}}}},
-			References:  []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p3.go", Range: bundles.Range{Start: bundles.Position{Line: 312, Character: 322}, End: bundles.Position{Line: 332, Character: 342}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{Line: 31, Character: 32}, End: lsifstore.Position{Line: 33, Character: 34}},
+			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p3.go", Range: lsifstore.Range{Start: lsifstore.Position{Line: 311, Character: 321}, End: lsifstore.Position{Line: 331, Character: 341}}}},
+			References:  []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p3.go", Range: lsifstore.Range{Start: lsifstore.Position{Line: 312, Character: 322}, End: lsifstore.Position{Line: 332, Character: 342}}}},
 			HoverText:   "ht3",
 		},
 	}, nil)
@@ -50,10 +50,10 @@ func TestRanges(t *testing.T) {
 	// first requested dump (dump 43) has no data
 	mockCodeIntelAPI.RangesFunc.PushReturn(nil, nil)
 
-	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
-		return path, bundles.Range{
-			Start: bundles.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
-			End:   bundles.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
+	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error) {
+		return path, lsifstore.Range{
+			Start: lsifstore.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
+			End:   lsifstore.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
 		}, true, nil
 	})
 
@@ -80,13 +80,13 @@ func TestRanges(t *testing.T) {
 
 	expectedRanges := []AdjustedCodeIntelligenceRange{
 		{
-			Range: bundles.Range{Start: bundles.Position{Line: 110, Character: 120}, End: bundles.Position{Line: 130, Character: 140}},
+			Range: lsifstore.Range{Start: lsifstore.Position{Line: 110, Character: 120}, End: lsifstore.Position{Line: 130, Character: 140}},
 			Definitions: []AdjustedLocation{
 				{
 					Dump:           store.Dump{ID: 44, RepositoryID: 50},
 					Path:           "p1.go",
 					AdjustedCommit: "deadbeef2",
-					AdjustedRange:  bundles.Range{Start: bundles.Position{Line: 1110, Character: 1210}, End: bundles.Position{Line: 1310, Character: 1410}},
+					AdjustedRange:  lsifstore.Range{Start: lsifstore.Position{Line: 1110, Character: 1210}, End: lsifstore.Position{Line: 1310, Character: 1410}},
 				},
 			},
 			References: []AdjustedLocation{
@@ -94,19 +94,19 @@ func TestRanges(t *testing.T) {
 					Dump:           store.Dump{ID: 44, RepositoryID: 50},
 					Path:           "p1.go",
 					AdjustedCommit: "deadbeef2",
-					AdjustedRange:  bundles.Range{Start: bundles.Position{Line: 1120, Character: 1220}, End: bundles.Position{Line: 1320, Character: 1420}},
+					AdjustedRange:  lsifstore.Range{Start: lsifstore.Position{Line: 1120, Character: 1220}, End: lsifstore.Position{Line: 1320, Character: 1420}},
 				},
 			},
 			HoverText: "ht1",
 		},
 		{
-			Range: bundles.Range{Start: bundles.Position{Line: 210, Character: 220}, End: bundles.Position{Line: 230, Character: 240}},
+			Range: lsifstore.Range{Start: lsifstore.Position{Line: 210, Character: 220}, End: lsifstore.Position{Line: 230, Character: 240}},
 			Definitions: []AdjustedLocation{
 				{
 					Dump:           store.Dump{ID: 44, RepositoryID: 50},
 					Path:           "p2.go",
 					AdjustedCommit: "deadbeef2",
-					AdjustedRange:  bundles.Range{Start: bundles.Position{Line: 2110, Character: 2210}, End: bundles.Position{Line: 2310, Character: 2410}},
+					AdjustedRange:  lsifstore.Range{Start: lsifstore.Position{Line: 2110, Character: 2210}, End: lsifstore.Position{Line: 2310, Character: 2410}},
 				},
 			},
 			References: []AdjustedLocation{
@@ -114,19 +114,19 @@ func TestRanges(t *testing.T) {
 					Dump:           store.Dump{ID: 44, RepositoryID: 50},
 					Path:           "p2.go",
 					AdjustedCommit: "deadbeef2",
-					AdjustedRange:  bundles.Range{Start: bundles.Position{Line: 2120, Character: 2220}, End: bundles.Position{Line: 2320, Character: 2420}},
+					AdjustedRange:  lsifstore.Range{Start: lsifstore.Position{Line: 2120, Character: 2220}, End: lsifstore.Position{Line: 2320, Character: 2420}},
 				},
 			},
 			HoverText: "ht2",
 		},
 		{
-			Range: bundles.Range{Start: bundles.Position{Line: 310, Character: 320}, End: bundles.Position{Line: 330, Character: 340}},
+			Range: lsifstore.Range{Start: lsifstore.Position{Line: 310, Character: 320}, End: lsifstore.Position{Line: 330, Character: 340}},
 			Definitions: []AdjustedLocation{
 				{
 					Dump:           store.Dump{ID: 44, RepositoryID: 50},
 					Path:           "p3.go",
 					AdjustedCommit: "deadbeef2",
-					AdjustedRange:  bundles.Range{Start: bundles.Position{Line: 3110, Character: 3210}, End: bundles.Position{Line: 3310, Character: 3410}},
+					AdjustedRange:  lsifstore.Range{Start: lsifstore.Position{Line: 3110, Character: 3210}, End: lsifstore.Position{Line: 3310, Character: 3410}},
 				},
 			},
 			References: []AdjustedLocation{
@@ -134,7 +134,7 @@ func TestRanges(t *testing.T) {
 					Dump:           store.Dump{ID: 44, RepositoryID: 50},
 					Path:           "p3.go",
 					AdjustedCommit: "deadbeef2",
-					AdjustedRange:  bundles.Range{Start: bundles.Position{Line: 3120, Character: 3220}, End: bundles.Position{Line: 3320, Character: 3420}},
+					AdjustedRange:  lsifstore.Range{Start: lsifstore.Position{Line: 3120, Character: 3220}, End: lsifstore.Position{Line: 3320, Character: 3420}},
 				},
 			},
 			HoverText: "ht3",
@@ -152,34 +152,34 @@ func TestDefinitions(t *testing.T) {
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	// position can be translated for subsequent dumps
-	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", bundles.Position{Line: 20, Character: 15}, true, nil)
+	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", lsifstore.Position{Line: 20, Character: 15}, true, nil)
 
 	// first requested dump (dump 42) has no equivalent position
-	mockPositionAdjuster.AdjustPositionFunc.PushReturn("", bundles.Position{}, false, nil)
+	mockPositionAdjuster.AdjustPositionFunc.PushReturn("", lsifstore.Position{}, false, nil)
 
 	mockCodeIntelAPI.DefinitionsFunc.SetDefaultReturn([]codeintelapi.ResolvedLocation{
 		{
 			Dump: store.Dump{ID: 44, RepositoryID: 50},
 			Path: "p1.go",
-			Range: bundles.Range{
-				Start: bundles.Position{Line: 11, Character: 12},
-				End:   bundles.Position{Line: 13, Character: 14},
+			Range: lsifstore.Range{
+				Start: lsifstore.Position{Line: 11, Character: 12},
+				End:   lsifstore.Position{Line: 13, Character: 14},
 			},
 		},
 		{
 			Dump: store.Dump{ID: 44, RepositoryID: 50},
 			Path: "p2.go",
-			Range: bundles.Range{
-				Start: bundles.Position{Line: 21, Character: 22},
-				End:   bundles.Position{Line: 23, Character: 24},
+			Range: lsifstore.Range{
+				Start: lsifstore.Position{Line: 21, Character: 22},
+				End:   lsifstore.Position{Line: 23, Character: 24},
 			},
 		},
 		{
 			Dump: store.Dump{ID: 44, RepositoryID: 50},
 			Path: "p3.go",
-			Range: bundles.Range{
-				Start: bundles.Position{Line: 31, Character: 32},
-				End:   bundles.Position{Line: 33, Character: 34},
+			Range: lsifstore.Range{
+				Start: lsifstore.Position{Line: 31, Character: 32},
+				End:   lsifstore.Position{Line: 33, Character: 34},
 			},
 		},
 	}, nil)
@@ -187,10 +187,10 @@ func TestDefinitions(t *testing.T) {
 	// first requested dump (dump 43) has no definitions
 	mockCodeIntelAPI.DefinitionsFunc.PushReturn(nil, nil)
 
-	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
-		return path, bundles.Range{
-			Start: bundles.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
-			End:   bundles.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
+	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error) {
+		return path, lsifstore.Range{
+			Start: lsifstore.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
+			End:   lsifstore.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
 		}, true, nil
 	})
 
@@ -220,27 +220,27 @@ func TestDefinitions(t *testing.T) {
 			Dump:           store.Dump{ID: 44, RepositoryID: 50},
 			Path:           "p1.go",
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 110, Character: 120},
-				End:   bundles.Position{Line: 130, Character: 140},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 110, Character: 120},
+				End:   lsifstore.Position{Line: 130, Character: 140},
 			},
 		},
 		{
 			Dump:           store.Dump{ID: 44, RepositoryID: 50},
 			Path:           "p2.go",
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 210, Character: 220},
-				End:   bundles.Position{Line: 230, Character: 240},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 210, Character: 220},
+				End:   lsifstore.Position{Line: 230, Character: 240},
 			},
 		},
 		{
 			Dump:           store.Dump{ID: 44, RepositoryID: 50},
 			Path:           "p3.go",
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 310, Character: 320},
-				End:   bundles.Position{Line: 330, Character: 340},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 310, Character: 320},
+				End:   lsifstore.Position{Line: 330, Character: 340},
 			},
 		},
 	}
@@ -255,18 +255,18 @@ func TestReferences(t *testing.T) {
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
-	testMoniker1 := bundles.MonikerData{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
-	testMoniker2 := bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
+	testMoniker1 := lsifstore.MonikerData{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
+	testMoniker2 := lsifstore.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
 
 	// Cursor decoding
 	mockStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) { return store.Dump{ID: id}, true, nil })
-	mockBundleStore.MonikersByPositionFunc.SetDefaultReturn([][]bundles.MonikerData{{testMoniker1, testMoniker2}}, nil)
+	mockBundleStore.MonikersByPositionFunc.SetDefaultReturn([][]lsifstore.MonikerData{{testMoniker1, testMoniker2}}, nil)
 
 	// position can be translated for subsequent dumps
-	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", bundles.Position{Line: 20, Character: 15}, true, nil)
+	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", lsifstore.Position{Line: 20, Character: 15}, true, nil)
 
 	// first requested dump (dump 42) has no equivalent position
-	mockPositionAdjuster.AdjustPositionFunc.PushReturn("", bundles.Position{}, false, nil)
+	mockPositionAdjuster.AdjustPositionFunc.PushReturn("", lsifstore.Position{}, false, nil)
 
 	// default behavior is empty result set
 	mockCodeIntelAPI.ReferencesFunc.SetDefaultReturn(nil, codeintelapi.Cursor{}, false, nil)
@@ -279,9 +279,9 @@ func TestReferences(t *testing.T) {
 		{
 			Dump: store.Dump{ID: 43, RepositoryID: 50},
 			Path: "p1.go",
-			Range: bundles.Range{
-				Start: bundles.Position{Line: 11, Character: 12},
-				End:   bundles.Position{Line: 13, Character: 14},
+			Range: lsifstore.Range{
+				Start: lsifstore.Position{Line: 11, Character: 12},
+				End:   lsifstore.Position{Line: 13, Character: 14},
 			},
 		},
 	}, cursorOut1, true, nil)
@@ -293,9 +293,9 @@ func TestReferences(t *testing.T) {
 		{
 			Dump: store.Dump{ID: 44, RepositoryID: 50},
 			Path: "p2.go",
-			Range: bundles.Range{
-				Start: bundles.Position{Line: 21, Character: 22},
-				End:   bundles.Position{Line: 23, Character: 24},
+			Range: lsifstore.Range{
+				Start: lsifstore.Position{Line: 21, Character: 22},
+				End:   lsifstore.Position{Line: 23, Character: 24},
 			},
 		},
 	}, codeintelapi.Cursor{}, false, nil)
@@ -308,17 +308,17 @@ func TestReferences(t *testing.T) {
 		{
 			Dump: store.Dump{ID: 46, RepositoryID: 50},
 			Path: "p3.go",
-			Range: bundles.Range{
-				Start: bundles.Position{Line: 31, Character: 32},
-				End:   bundles.Position{Line: 33, Character: 34},
+			Range: lsifstore.Range{
+				Start: lsifstore.Position{Line: 31, Character: 32},
+				End:   lsifstore.Position{Line: 33, Character: 34},
 			},
 		},
 	}, cursorOut3, true, nil)
 
-	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
-		return path, bundles.Range{
-			Start: bundles.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
-			End:   bundles.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
+	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error) {
+		return path, lsifstore.Range{
+			Start: lsifstore.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
+			End:   lsifstore.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
 		}, true, nil
 	})
 
@@ -372,27 +372,27 @@ func TestReferences(t *testing.T) {
 			Dump:           store.Dump{ID: 43, RepositoryID: 50},
 			Path:           "p1.go",
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 110, Character: 120},
-				End:   bundles.Position{Line: 130, Character: 140},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 110, Character: 120},
+				End:   lsifstore.Position{Line: 130, Character: 140},
 			},
 		},
 		{
 			Dump:           store.Dump{ID: 44, RepositoryID: 50},
 			Path:           "p2.go",
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 210, Character: 220},
-				End:   bundles.Position{Line: 230, Character: 240},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 210, Character: 220},
+				End:   lsifstore.Position{Line: 230, Character: 240},
 			},
 		},
 		{
 			Dump:           store.Dump{ID: 46, RepositoryID: 50},
 			Path:           "p3.go",
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 310, Character: 320},
-				End:   bundles.Position{Line: 330, Character: 340},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 310, Character: 320},
+				End:   lsifstore.Position{Line: 330, Character: 340},
 			},
 		},
 	}
@@ -430,23 +430,23 @@ func TestHover(t *testing.T) {
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	// position can be translated for subsequent dumps
-	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", bundles.Position{Line: 20, Character: 15}, true, nil)
+	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", lsifstore.Position{Line: 20, Character: 15}, true, nil)
 
 	// first requested dump (dump 42) has no equivalent position
-	mockPositionAdjuster.AdjustPositionFunc.PushReturn("", bundles.Position{}, false, nil)
+	mockPositionAdjuster.AdjustPositionFunc.PushReturn("", lsifstore.Position{}, false, nil)
 
-	mockCodeIntelAPI.HoverFunc.SetDefaultReturn("hover text", bundles.Range{
-		Start: bundles.Position{Line: 11, Character: 12},
-		End:   bundles.Position{Line: 13, Character: 14},
+	mockCodeIntelAPI.HoverFunc.SetDefaultReturn("hover text", lsifstore.Range{
+		Start: lsifstore.Position{Line: 11, Character: 12},
+		End:   lsifstore.Position{Line: 13, Character: 14},
 	}, true, nil)
 
 	// first requested dump (dump 43) has no defined hover
-	mockCodeIntelAPI.HoverFunc.PushReturn("", bundles.Range{}, false, nil)
+	mockCodeIntelAPI.HoverFunc.PushReturn("", lsifstore.Range{}, false, nil)
 
-	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
-		return path, bundles.Range{
-			Start: bundles.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
-			End:   bundles.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
+	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error) {
+		return path, lsifstore.Range{
+			Start: lsifstore.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
+			End:   lsifstore.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
 		}, true, nil
 	})
 
@@ -478,9 +478,9 @@ func TestHover(t *testing.T) {
 		t.Errorf("unexpected text. want=%q have=%q", "hover text", text)
 	}
 
-	expectedRange := bundles.Range{
-		Start: bundles.Position{Line: 110, Character: 120},
-		End:   bundles.Position{Line: 130, Character: 140},
+	expectedRange := lsifstore.Range{
+		Start: lsifstore.Position{Line: 110, Character: 120},
+		End:   lsifstore.Position{Line: 130, Character: 140},
 	}
 	if diff := cmp.Diff(expectedRange, r); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
@@ -503,16 +503,18 @@ func TestDiagnostics(t *testing.T) {
 	mockCodeIntelAPI.DiagnosticsFunc.PushReturn([]codeintelapi.ResolvedDiagnostic{
 		{
 			Dump: store.Dump{ID: 43, RepositoryID: 50},
-			Diagnostic: bundles.Diagnostic{
-				Path:           "p1",
-				Severity:       1,
-				Code:           "c1",
-				Message:        "m1",
-				Source:         "s1",
-				StartLine:      11,
-				StartCharacter: 12,
-				EndLine:        13,
-				EndCharacter:   14,
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "p1",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       1,
+					Code:           "c1",
+					Message:        "m1",
+					Source:         "s1",
+					StartLine:      11,
+					StartCharacter: 12,
+					EndLine:        13,
+					EndCharacter:   14,
+				},
 			},
 		},
 	}, 1, nil)
@@ -521,30 +523,34 @@ func TestDiagnostics(t *testing.T) {
 	mockCodeIntelAPI.DiagnosticsFunc.PushReturn([]codeintelapi.ResolvedDiagnostic{
 		{
 			Dump: store.Dump{ID: 44, RepositoryID: 50},
-			Diagnostic: bundles.Diagnostic{
-				Path:           "p2",
-				Severity:       2,
-				Code:           "c2",
-				Message:        "m2",
-				Source:         "s2",
-				StartLine:      21,
-				StartCharacter: 22,
-				EndLine:        23,
-				EndCharacter:   24,
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "p2",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       2,
+					Code:           "c2",
+					Message:        "m2",
+					Source:         "s2",
+					StartLine:      21,
+					StartCharacter: 22,
+					EndLine:        23,
+					EndCharacter:   24,
+				},
 			},
 		},
 		{
 			Dump: store.Dump{ID: 44, RepositoryID: 50},
-			Diagnostic: bundles.Diagnostic{
-				Path:           "p3",
-				Severity:       3,
-				Code:           "c3",
-				Message:        "m3",
-				Source:         "s3",
-				StartLine:      31,
-				StartCharacter: 32,
-				EndLine:        33,
-				EndCharacter:   34,
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "p3",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       3,
+					Code:           "c3",
+					Message:        "m3",
+					Source:         "s3",
+					StartLine:      31,
+					StartCharacter: 32,
+					EndLine:        33,
+					EndCharacter:   34,
+				},
 			},
 		},
 	}, 14, nil)
@@ -552,10 +558,10 @@ func TestDiagnostics(t *testing.T) {
 	// third requested dump (dump 45) returns only total count
 	mockCodeIntelAPI.DiagnosticsFunc.SetDefaultReturn(nil, 3, nil)
 
-	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
-		return path, bundles.Range{
-			Start: bundles.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
-			End:   bundles.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
+	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error) {
+		return path, lsifstore.Range{
+			Start: lsifstore.Position{Line: r.Start.Line * 10, Character: r.Start.Character * 10},
+			End:   lsifstore.Position{Line: r.End.Line * 10, Character: r.End.Character * 10},
 		}, true, nil
 	})
 
@@ -586,60 +592,66 @@ func TestDiagnostics(t *testing.T) {
 
 	expectedDiagnostics := []AdjustedDiagnostic{
 		{
-			Diagnostic: bundles.Diagnostic{
-				Path:           "p1",
-				Severity:       1,
-				Code:           "c1",
-				Message:        "m1",
-				Source:         "s1",
-				StartLine:      11,
-				StartCharacter: 12,
-				EndLine:        13,
-				EndCharacter:   14,
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "p1",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       1,
+					Code:           "c1",
+					Message:        "m1",
+					Source:         "s1",
+					StartLine:      11,
+					StartCharacter: 12,
+					EndLine:        13,
+					EndCharacter:   14,
+				},
 			},
 			Dump:           store.Dump{ID: 43, RepositoryID: 50},
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 110, Character: 120},
-				End:   bundles.Position{Line: 130, Character: 140},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 110, Character: 120},
+				End:   lsifstore.Position{Line: 130, Character: 140},
 			},
 		},
 		{
-			Diagnostic: bundles.Diagnostic{
-				Path:           "p2",
-				Severity:       2,
-				Code:           "c2",
-				Message:        "m2",
-				Source:         "s2",
-				StartLine:      21,
-				StartCharacter: 22,
-				EndLine:        23,
-				EndCharacter:   24,
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "p2",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       2,
+					Code:           "c2",
+					Message:        "m2",
+					Source:         "s2",
+					StartLine:      21,
+					StartCharacter: 22,
+					EndLine:        23,
+					EndCharacter:   24,
+				},
 			},
 			Dump:           store.Dump{ID: 44, RepositoryID: 50},
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 210, Character: 220},
-				End:   bundles.Position{Line: 230, Character: 240},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 210, Character: 220},
+				End:   lsifstore.Position{Line: 230, Character: 240},
 			},
 		},
 		{
-			Diagnostic: bundles.Diagnostic{
-				Path:           "p3",
-				Severity:       3,
-				Code:           "c3",
-				Message:        "m3",
-				Source:         "s3",
-				StartLine:      31,
-				StartCharacter: 32,
-				EndLine:        33,
-				EndCharacter:   34,
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "p3",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       3,
+					Code:           "c3",
+					Message:        "m3",
+					Source:         "s3",
+					StartLine:      31,
+					StartCharacter: 32,
+					EndLine:        33,
+					EndCharacter:   34,
+				},
 			},
 			Dump:           store.Dump{ID: 44, RepositoryID: 50},
 			AdjustedCommit: "deadbeef2",
-			AdjustedRange: bundles.Range{
-				Start: bundles.Position{Line: 310, Character: 320},
-				End:   bundles.Position{Line: 330, Character: 340},
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position{Line: 310, Character: 320},
+				End:   lsifstore.Position{Line: 330, Character: 340},
 			},
 		},
 	}

@@ -91,7 +91,7 @@ type DocumentIDRangeID struct {
 
 // Loocation represents a range within a particular document relative to its
 // containing bundle.
-type Location struct {
+type LocationData struct {
 	URI            string
 	StartLine      int
 	StartCharacter int
@@ -104,7 +104,7 @@ type Location struct {
 type MonikerLocations struct {
 	Scheme     string
 	Identifier string
-	Locations  []Location
+	Locations  []LocationData
 }
 
 // Package pairs a package name and the dump that provides it.
@@ -122,4 +122,39 @@ type PackageReference struct {
 	Name    string
 	Version string
 	Filter  []byte // a bloom filter of identifiers imported by this dependent
+}
+
+// Location is an LSP-like location scoped to a dump.
+type Location struct {
+	DumpID int
+	Path   string
+	Range  Range
+}
+
+// Range is an inclusive bounds within a file.
+type Range struct {
+	Start Position
+	End   Position
+}
+
+// Position is a unique position within a file.
+type Position struct {
+	Line      int
+	Character int
+}
+
+// Diagnostic describes diagnostic information attached to a location within a
+// particular dump.
+type Diagnostic struct {
+	DumpID int
+	Path   string
+	DiagnosticData
+}
+
+// CodeIntelligenceRange pairs a range with its definitions, reference, and hover text.
+type CodeIntelligenceRange struct {
+	Range       Range
+	Definitions []Location
+	References  []Location
+	HoverText   string
 }

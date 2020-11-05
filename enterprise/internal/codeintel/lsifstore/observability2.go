@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -19,7 +18,7 @@ func (db *ObservedStore) Exists(ctx context.Context, bundleID int, path string) 
 }
 
 // Ranges calls into the inner Database and registers the observed results.
-func (db *ObservedStore) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (ranges []bundles.CodeIntelligenceRange, err error) {
+func (db *ObservedStore) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (ranges []CodeIntelligenceRange, err error) {
 	ctx, endObservation := db.rangesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -33,7 +32,7 @@ func (db *ObservedStore) Ranges(ctx context.Context, bundleID int, path string, 
 }
 
 // Definitions calls into the inner Database and registers the observed results.
-func (db *ObservedStore) Definitions(ctx context.Context, bundleID int, path string, line, character int) (definitions []bundles.Location, err error) {
+func (db *ObservedStore) Definitions(ctx context.Context, bundleID int, path string, line, character int) (definitions []Location, err error) {
 	ctx, endObservation := db.definitionsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -47,7 +46,7 @@ func (db *ObservedStore) Definitions(ctx context.Context, bundleID int, path str
 }
 
 // References calls into the inner Database and registers the observed results.
-func (db *ObservedStore) References(ctx context.Context, bundleID int, path string, line, character int) (references []bundles.Location, err error) {
+func (db *ObservedStore) References(ctx context.Context, bundleID int, path string, line, character int) (references []Location, err error) {
 	ctx, endObservation := db.referencesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -61,7 +60,7 @@ func (db *ObservedStore) References(ctx context.Context, bundleID int, path stri
 }
 
 // Hover calls into the inner Database and registers the observed results.
-func (db *ObservedStore) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ bundles.Range, _ bool, err error) {
+func (db *ObservedStore) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ Range, _ bool, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -75,7 +74,7 @@ func (db *ObservedStore) Hover(ctx context.Context, bundleID int, path string, l
 }
 
 // Diagnostics calls into the inner Database and registers the observed results.
-func (db *ObservedStore) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) (diagnostics []bundles.Diagnostic, _ int, err error) {
+func (db *ObservedStore) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) (diagnostics []Diagnostic, _ int, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -87,7 +86,7 @@ func (db *ObservedStore) Diagnostics(ctx context.Context, bundleID int, prefix s
 }
 
 // MonikersByPosition calls into the inner Database and registers the observed results.
-func (db *ObservedStore) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (monikers [][]bundles.MonikerData, err error) {
+func (db *ObservedStore) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (monikers [][]MonikerData, err error) {
 	ctx, endObservation := db.monikersByPositionOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -109,7 +108,7 @@ func (db *ObservedStore) MonikersByPosition(ctx context.Context, bundleID int, p
 }
 
 // MonikerResults calls into the inner Database and registers the observed results.
-func (db *ObservedStore) MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) (locations []bundles.Location, _ int, err error) {
+func (db *ObservedStore) MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) (locations []Location, _ int, err error) {
 	ctx, endObservation := db.monikerResultsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),
@@ -123,7 +122,7 @@ func (db *ObservedStore) MonikerResults(ctx context.Context, bundleID int, table
 }
 
 // PackageInformation calls into the inner Database and registers the observed results.
-func (db *ObservedStore) PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (_ bundles.PackageInformationData, _ bool, err error) {
+func (db *ObservedStore) PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (_ PackageInformationData, _ bool, err error) {
 	ctx, endObservation := db.packageInformationOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("bundleID", bundleID),

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -16,22 +15,22 @@ type AdjustedLocation struct {
 	Dump           store.Dump
 	Path           string
 	AdjustedCommit string
-	AdjustedRange  bundles.Range
+	AdjustedRange  lsifstore.Range
 }
 
 // AdjustedDiagnostic is similar to a codeintelapi.ResolvedDiagnostic, but with fields denoting
 // the commit and range adjusted for the target commit (when the requested commit is not indexed).
 type AdjustedDiagnostic struct {
-	bundles.Diagnostic
+	lsifstore.Diagnostic
 	Dump           store.Dump
 	AdjustedCommit string
-	AdjustedRange  bundles.Range
+	AdjustedRange  lsifstore.Range
 }
 
 // AdjustedCodeIntelligenceRange is similar to a codeintelapi.CodeIntelligenceRange,
 // but with adjusted definition and reference locations.
 type AdjustedCodeIntelligenceRange struct {
-	Range       bundles.Range
+	Range       lsifstore.Range
 	Definitions []AdjustedLocation
 	References  []AdjustedLocation
 	HoverText   string
@@ -45,7 +44,7 @@ type QueryResolver interface {
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
-	Hover(ctx context.Context, line, character int) (string, bundles.Range, bool, error)
+	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 }
 
@@ -138,7 +137,7 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) ([]A
 // bundles associated with this resolver, the definitions from the first bundle with any results will
 // be returned.
 func (r *queryResolver) Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error) {
-	position := bundles.Position{Line: line, Character: character}
+	position := lsifstore.Position{Line: line, Character: character}
 
 	for i := range r.uploads {
 		adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, r.uploads[i].Commit, r.path, position, false)
@@ -167,7 +166,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) ([
 // This may include references from other dumps and repositories. If there are multiple bundles
 // associated with this resolver, results from all bundles will be concatenated and returned.
 func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error) {
-	position := bundles.Position{Line: line, Character: character}
+	position := lsifstore.Position{Line: line, Character: character}
 
 	// Decode a map of upload ids to the next url that serves
 	// the new page of results. This may not include an entry
@@ -235,13 +234,13 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 // Hover returns the hover text and range for the symbol at the given position. If there are
 // multiple bundles associated with this resolver, the hover text and range from the first
 // bundle with any results will be returned.
-func (r *queryResolver) Hover(ctx context.Context, line, character int) (string, bundles.Range, bool, error) {
-	position := bundles.Position{Line: line, Character: character}
+func (r *queryResolver) Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error) {
+	position := lsifstore.Position{Line: line, Character: character}
 
 	for i := range r.uploads {
 		adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, r.uploads[i].Commit, r.path, position, false)
 		if err != nil {
-			return "", bundles.Range{}, false, err
+			return "", lsifstore.Range{}, false, err
 		}
 		if !ok {
 			continue
@@ -249,14 +248,14 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (string,
 
 		text, rn, exists, err := r.codeIntelAPI.Hover(ctx, adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID)
 		if err != nil {
-			return "", bundles.Range{}, false, err
+			return "", lsifstore.Range{}, false, err
 		}
 		if !exists || text == "" {
 			continue
 		}
 
 		if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, r.uploads[i].Commit, r.path, rn, true); err != nil {
-			return "", bundles.Range{}, false, err
+			return "", lsifstore.Range{}, false, err
 		} else if ok {
 			return text, adjustedRange, true, nil
 		}
@@ -269,7 +268,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (string,
 		continue
 	}
 
-	return "", bundles.Range{}, false, nil
+	return "", lsifstore.Range{}, false, nil
 }
 
 // Diagnostics returns the diagnostics for documents with the given path prefix. If there are
@@ -303,9 +302,9 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) ([]AdjustedD
 
 	adjustedDiagnostics := make([]AdjustedDiagnostic, 0, len(allDiagnostics))
 	for i := range allDiagnostics {
-		clientRange := bundles.Range{
-			Start: bundles.Position{Line: allDiagnostics[i].Diagnostic.StartLine, Character: allDiagnostics[i].Diagnostic.StartCharacter},
-			End:   bundles.Position{Line: allDiagnostics[i].Diagnostic.EndLine, Character: allDiagnostics[i].Diagnostic.EndCharacter},
+		clientRange := lsifstore.Range{
+			Start: lsifstore.Position{Line: allDiagnostics[i].Diagnostic.StartLine, Character: allDiagnostics[i].Diagnostic.StartCharacter},
+			End:   lsifstore.Position{Line: allDiagnostics[i].Diagnostic.EndLine, Character: allDiagnostics[i].Diagnostic.EndCharacter},
 		}
 
 		adjustedCommit, adjustedRange, err := r.adjustRange(ctx, allDiagnostics[i].Dump.RepositoryID, allDiagnostics[i].Dump.Commit, allDiagnostics[i].Diagnostic.Path, clientRange)
@@ -346,14 +345,14 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []codeint
 }
 
 // adjustRange translates a range (relative to the indexed commit) into an equivalent range in the requested commit.
-func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rx bundles.Range) (string, bundles.Range, error) {
+func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rx lsifstore.Range) (string, lsifstore.Range, error) {
 	if repositoryID != r.repositoryID {
 		// No diffs exist for translation between repos
 		return commit, rx, nil
 	}
 
 	if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, commit, path, rx, true); err != nil {
-		return "", bundles.Range{}, err
+		return "", lsifstore.Range{}, err
 	} else if ok {
 		return r.commit, adjustedRange, nil
 	}

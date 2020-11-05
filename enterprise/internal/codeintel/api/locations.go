@@ -1,17 +1,17 @@
 package api
 
 import (
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type ResolvedLocation struct {
 	Dump  store.Dump
 	Path  string
-	Range bundles.Range
+	Range lsifstore.Range
 }
 
-func sliceLocations(locations []bundles.Location, lo, hi int) []bundles.Location {
+func sliceLocations(locations []lsifstore.Location, lo, hi int) []lsifstore.Location {
 	if lo >= len(locations) {
 		return nil
 	}
@@ -21,7 +21,7 @@ func sliceLocations(locations []bundles.Location, lo, hi int) []bundles.Location
 	return locations[lo:hi]
 }
 
-func resolveLocationsWithDump(dump store.Dump, locations []bundles.Location) []ResolvedLocation {
+func resolveLocationsWithDump(dump store.Dump, locations []lsifstore.Location) []ResolvedLocation {
 	var resolvedLocations []ResolvedLocation
 	for _, location := range locations {
 		resolvedLocations = append(resolvedLocations, ResolvedLocation{

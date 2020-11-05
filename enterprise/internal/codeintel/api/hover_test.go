@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -55,10 +55,10 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
 	setMockBundleStoreDefinitions(t, mockBundleStore, 42, "main.go", 10, 50, nil)
-	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
+	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]lsifstore.MonikerData{{testMoniker1}})
 	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "definitions", "gomod", "pad", 0, 100, []bundles.Location{
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "definitions", "gomod", "pad", 0, 100, []lsifstore.Location{
 		{DumpID: 50, Path: "foo.go", Range: testRange1},
 		{DumpID: 50, Path: "bar.go", Range: testRange2},
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -66,7 +66,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 	setMultiMockBundleStoreHover(
 		t,
 		mockBundleStore,
-		hoverSpec{42, "main.go", 10, 50, "", bundles.Range{}, false},
+		hoverSpec{42, "main.go", 10, 50, "", lsifstore.Range{}, false},
 		hoverSpec{50, "foo.go", 10, 50, "text", testRange4, true},
 	)
 
@@ -93,9 +93,9 @@ func TestHoverUnknownDefinition(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreHover(t, mockBundleStore, 42, "main.go", 10, 50, "", bundles.Range{}, false)
+	setMockBundleStoreHover(t, mockBundleStore, 42, "main.go", 10, 50, "", lsifstore.Range{}, false)
 	setMockBundleStoreDefinitions(t, mockBundleStore, 42, "main.go", 10, 50, nil)
-	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
+	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]lsifstore.MonikerData{{testMoniker1}})
 	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
 

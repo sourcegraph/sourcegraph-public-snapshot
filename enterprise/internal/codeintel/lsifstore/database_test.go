@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -66,13 +65,13 @@ func TestDatabaseRanges(t *testing.T) {
 	if actual, err := db.Ranges(context.Background(), testBundleID, "protocol/writer.go", 21, 24); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := []bundles.CodeIntelligenceRange{
+		expected := []CodeIntelligenceRange{
 			{
 				Range: newRange(21, 9, 21, 15),
-				Definitions: []bundles.Location{
+				Definitions: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(12, 5, 12, 11)},
 				},
-				References: []bundles.Location{
+				References: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(12, 5, 12, 11)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(20, 47, 20, 53)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(21, 9, 21, 15)},
@@ -106,10 +105,10 @@ func TestDatabaseRanges(t *testing.T) {
 			},
 			{
 				Range: newRange(22, 2, 22, 3),
-				Definitions: []bundles.Location{
+				Definitions: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(13, 1, 13, 2)},
 				},
-				References: []bundles.Location{
+				References: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(13, 1, 13, 2)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(22, 2, 22, 3)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(38, 26, 38, 27)},
@@ -118,10 +117,10 @@ func TestDatabaseRanges(t *testing.T) {
 			},
 			{
 				Range: newRange(22, 15, 22, 16),
-				Definitions: []bundles.Location{
+				Definitions: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(20, 15, 20, 16)},
 				},
-				References: []bundles.Location{
+				References: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(20, 15, 20, 16)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(22, 15, 22, 16)},
 				},
@@ -129,10 +128,10 @@ func TestDatabaseRanges(t *testing.T) {
 			},
 			{
 				Range: newRange(23, 2, 23, 13),
-				Definitions: []bundles.Location{
+				Definitions: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(14, 1, 14, 12)},
 				},
-				References: []bundles.Location{
+				References: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(14, 1, 14, 12)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(23, 2, 23, 13)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(63, 6, 63, 17)},
@@ -141,10 +140,10 @@ func TestDatabaseRanges(t *testing.T) {
 			},
 			{
 				Range: newRange(23, 15, 23, 26),
-				Definitions: []bundles.Location{
+				Definitions: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(20, 28, 20, 39)},
 				},
-				References: []bundles.Location{
+				References: []Location{
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(20, 28, 20, 39)},
 					{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(23, 15, 23, 26)},
 				},
@@ -171,7 +170,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	if actual, err := db.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := []bundles.Location{
+		expected := []Location{
 			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(20, 1, 20, 6)},
 		}
 
@@ -200,7 +199,7 @@ func TestDatabaseReferences(t *testing.T) {
 	if actual, err := db.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := []bundles.Location{
+		expected := []Location{
 			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
 			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
 			{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
@@ -255,7 +254,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	if actual, err := db.MonikersByPosition(context.Background(), testBundleID, "protocol/protocol.go", 92, 10); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := [][]bundles.MonikerData{
+		expected := [][]MonikerData{
 			{
 				{
 					Kind:                 "export",
@@ -279,12 +278,12 @@ func TestDatabaseMonikerResults(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := openTestDatabase(t)
 
-	edgeDefinitionLocations := []bundles.Location{
+	edgeDefinitionLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(411, 1, 411, 8)},
 	}
 
-	edgeReferenceLocations := []bundles.Location{
+	edgeReferenceLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(507, 1, 507, 5)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(530, 1, 530, 5)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(516, 8, 516, 12)},
@@ -293,7 +292,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		{DumpID: testBundleID, Path: "internal/index/helper.go", Range: newRange(78, 8, 78, 12)},
 	}
 
-	markdownReferenceLocations := []bundles.Location{
+	markdownReferenceLocations := []Location{
 		{DumpID: testBundleID, Path: "internal/index/helper.go", Range: newRange(78, 6, 78, 16)},
 	}
 
@@ -303,7 +302,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		identifier         string
 		skip               int
 		take               int
-		expectedLocations  []bundles.Location
+		expectedLocations  []Location
 		expectedTotalCount int
 	}{
 		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 5, edgeDefinitionLocations, 2},
@@ -341,7 +340,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	} else if !exists {
 		t.Errorf("no package information")
 	} else {
-		expected := bundles.PackageInformationData{
+		expected := PackageInformationData{
 			Name:    "github.com/sourcegraph/lsif-go",
 			Version: "v0.0.0-ad3507cbeb18",
 		}

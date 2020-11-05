@@ -6,14 +6,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type ResolvedDiagnostic struct {
 	Dump       store.Dump
-	Diagnostic bundles.Diagnostic
+	Diagnostic lsifstore.Diagnostic
 }
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
@@ -39,7 +38,7 @@ func (api *codeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadI
 	return resolveDiagnosticsWithDump(dump, diagnostics), totalCount, nil
 }
 
-func resolveDiagnosticsWithDump(dump store.Dump, diagnostics []bundles.Diagnostic) []ResolvedDiagnostic {
+func resolveDiagnosticsWithDump(dump store.Dump, diagnostics []lsifstore.Diagnostic) []ResolvedDiagnostic {
 	var resolvedDiagnostics []ResolvedDiagnostic
 	for _, diagnostic := range diagnostics {
 		diagnostic.Path = dump.Root + diagnostic.Path
