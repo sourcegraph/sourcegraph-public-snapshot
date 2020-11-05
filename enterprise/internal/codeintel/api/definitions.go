@@ -32,7 +32,7 @@ func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, cha
 }
 
 func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
-	locations, err := api.bundleManagerClient.Definitions(ctx, dump.ID, pathInBundle, line, character)
+	locations, err := api.bundleStore.Definitions(ctx, dump.ID, pathInBundle, line, character)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
@@ -44,7 +44,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 		return resolveLocationsWithDump(dump, locations), nil
 	}
 
-	rangeMonikers, err := api.bundleManagerClient.MonikersByPosition(context.Background(), dump.ID, pathInBundle, line, character)
+	rangeMonikers, err := api.bundleStore.MonikersByPosition(context.Background(), dump.ID, pathInBundle, line, character)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
@@ -56,7 +56,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
 			if moniker.Kind == "import" {
-				locations, _, err := lookupMoniker(api.store, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, DefintionMonikersLimit)
+				locations, _, err := lookupMoniker(api.store, api.bundleStore, dump.ID, pathInBundle, "definitions", moniker, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, err
 				}
@@ -68,7 +68,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 				// of our own bundle in case there was a definition that wasn't properly attached
 				// to a result set but did have the correct monikers attached.
 
-				locations, _, err := api.bundleManagerClient.MonikerResults(context.Background(), dump.ID, "definition", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
+				locations, _, err := api.bundleStore.MonikerResults(context.Background(), dump.ID, "definitions", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
 				if err != nil {
 					if err == bundles.ErrNotFound {
 						log15.Warn("Bundle does not exist")

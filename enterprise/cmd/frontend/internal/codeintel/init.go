@@ -64,7 +64,7 @@ func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
 
 	resolver := codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
 		services.store,
-		services.bundleManagerClient,
+		services.bundleStore,
 		services.api,
 		hunkCache,
 	))

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -37,9 +38,9 @@ type CodeIntelAPI interface {
 }
 
 type codeIntelAPI struct {
-	store               store.Store
-	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserverClient
+	store           store.Store
+	bundleStore     database.Database
+	gitserverClient gitserverClient
 }
 
 type gitserverClient interface {
@@ -50,10 +51,10 @@ var _ CodeIntelAPI = &codeIntelAPI{}
 
 var ErrMissingDump = errors.New("missing dump")
 
-func New(store store.Store, bundleManagerClient bundles.BundleManagerClient, gitserverClient gitserverClient) CodeIntelAPI {
+func New(store store.Store, bundleStore database.Database, gitserverClient gitserverClient) CodeIntelAPI {
 	return &codeIntelAPI{
-		store:               store,
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
+		store:           store,
+		bundleStore:     bundleStore,
+		gitserverClient: gitserverClient,
 	}
 }

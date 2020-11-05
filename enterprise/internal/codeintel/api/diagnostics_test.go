@@ -6,14 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestDiagnostics(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockGitserverClient := NewMockGitserverClient()
 
 	sourceDiagnostics := []bundles.Diagnostic{
@@ -53,9 +53,9 @@ func TestDiagnostics(t *testing.T) {
 	}
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientDiagnostics(t, mockBundleManagerClient, 42, "sub1", 1, 3, sourceDiagnostics, 5)
+	setMockBundleStoreDiagnostics(t, mockBundleStore, 42, "sub1", 1, 3, sourceDiagnostics, 5)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
 	diagnostics, _, err := api.Diagnostics(context.Background(), "sub1", 42, 3, 1)
 	if err != nil {
 		t.Fatalf("expected error getting diagnostics: %s", err)
@@ -121,11 +121,11 @@ func TestDiagnostics(t *testing.T) {
 
 func TestDiagnosticsUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockGitserverClient := NewMockGitserverClient()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
 	if _, _, err := api.Diagnostics(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting diagnostics. want=%q have=%q", ErrMissingDump, err)
 	}

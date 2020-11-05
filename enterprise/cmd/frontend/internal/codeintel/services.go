@@ -11,7 +11,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -23,13 +25,13 @@ import (
 )
 
 var services struct {
-	store               store.Store
-	lsifStore           lsifstore.Store
-	uploadStore         uploadstore.Store
-	gitserverClient     *gitserver.Client
-	bundleManagerClient bundles.BundleManagerClient
-	api                 codeintelapi.CodeIntelAPI
-	err                 error
+	store           store.Store
+	lsifStore       lsifstore.Store
+	uploadStore     uploadstore.Store
+	gitserverClient *gitserver.Client
+	bundleStore     database.Database
+	api             codeintelapi.CodeIntelAPI
+	err             error
 }
 
 var once sync.Once
@@ -58,13 +60,14 @@ func initServices(ctx context.Context) error {
 			log.Fatalf("failed to initialize upload store: %s", err)
 		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(codeIntelDB, observationContext)
-		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
+		innerStore := persistence.NewObserved(postgres.NewStore(codeIntelDB), observationContext)
+		bundleStore := database.NewObserved(database.OpenDatabase(innerStore), observationContext)
+		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleStore, gitserver.DefaultClient), observationContext)
 		lsifStore := lsifstore.New(codeIntelDB)
 
 		services.store = store
 		services.uploadStore = uploadStore
-		services.bundleManagerClient = bundleManagerClient
+		services.bundleStore = bundleStore
 		services.api = api
 		services.lsifStore = lsifStore
 	})

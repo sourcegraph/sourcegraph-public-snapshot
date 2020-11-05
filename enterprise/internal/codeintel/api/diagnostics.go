@@ -26,7 +26,7 @@ func (api *codeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadI
 	}
 
 	pathInBundle := strings.TrimPrefix(prefix, dump.Root)
-	diagnostics, totalCount, err := api.bundleManagerClient.Diagnostics(ctx, dump.ID, pathInBundle, offset, limit)
+	diagnostics, totalCount, err := api.bundleStore.Diagnostics(ctx, dump.ID, pathInBundle, offset, limit)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
