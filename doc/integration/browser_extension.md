@@ -52,11 +52,16 @@ To install this search engine shortcut manually, and for more information, see "
 
 ## Make it work on your code host
 
-<video width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.mp4" type="video/mp4">
+<video class="theme-dark-only" width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
   <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.webm" type="video/webm">
-  Grant permissions
- </video>
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.mp4" type="video/mp4">
+  <p>Grant permissions</p>
+</video>
+<video class="theme-light-only" width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.webm" type="video/webm">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.mp4" type="video/mp4">
+  <p>Grant permissions</p>
+</video>
 
 - [github.com](https://github.com/) - no action required.
 - GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
@@ -70,11 +75,16 @@ To grant these permissions:
 
 ## Make it work for private code
 
-<video width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.mp4" type="video/mp4">
+<video class="theme-dark-only" width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
   <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.webm" type="video/webm">
-  Configure browser extension for your private Sourcegraph instance
- </video>
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.mp4" type="video/mp4">
+  <p>Configure browser extension for your private Sourcegraph instance</p>
+</video>
+<video class="theme-light-only" width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; max-width: 50rem">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.webm" type="video/webm">
+  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.mp4" type="video/mp4">
+  <p>Configure browser extension for your private Sourcegraph instance</p>
+</video>
 
 By default, the browser extension communicates with [sourcegraph.com](https://sourcegraph.com), which has only public code.
 

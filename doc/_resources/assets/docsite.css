@@ -62,7 +62,7 @@ body.theme-dark {
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #191929;
-  --table-row-bg-2: #080820; 
+  --table-row-bg-2: #080820;
   --text-muted: #7c7c9f;
   --search-result-path-color: #e89fff;
 }
@@ -105,6 +105,12 @@ nav.links a {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* Use to provide different videos for dark and light theme */
+.theme-light .theme-dark-only,
+.theme-dark .theme-light-only {
+    display: none !important;
 }
 
 /* FONTS */
