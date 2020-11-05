@@ -494,5 +494,5 @@ func withDeadlinePercentage(ctx context.Context, p float64) (context.Context, co
 		d := time.Duration(float64(deadline.Sub(now)) * p)
 		return context.WithDeadline(ctx, now.Add(d))
 	}
-	return ctx, func() {}
+	return context.WithCancel(ctx)
 }
