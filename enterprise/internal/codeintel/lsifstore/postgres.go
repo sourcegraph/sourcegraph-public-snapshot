@@ -121,15 +121,15 @@ func (s *store) ReadResultChunk(ctx context.Context, bundleID int, id int) (Resu
 	return resultChunkData, true, nil
 }
 
-func (s *store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (s *store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
 	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_definitions", scheme, identifier, skip, take)
 }
 
-func (s *store) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (s *store) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
 	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_references", scheme, identifier, skip, take)
 }
 
-func (s *store) readDefinitionReferences(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (s *store) readDefinitionReferences(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(

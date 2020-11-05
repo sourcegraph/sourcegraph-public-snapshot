@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -19,7 +18,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []bundles.Location{
+	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
@@ -46,7 +45,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 0,
 		})
 		if err != nil {
@@ -70,7 +69,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 5,
 		}
 		if !hasNewCursor {
@@ -87,7 +86,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 5,
 		})
 		if err != nil {
@@ -110,7 +109,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 0,
 		}
 		if !hasNewCursor {
@@ -126,7 +125,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []bundles.Location{
+	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
@@ -141,7 +140,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 0, 5, []lsifstore.Location{
 			{DumpID: 42, Path: "foo.go", Range: testRange1},
 			{DumpID: 42, Path: "foo.go", Range: testRange2},
 			{DumpID: 42, Path: "bar.go", Range: testRange2},
@@ -155,7 +154,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 0,
 		})
 		if err != nil {
@@ -177,7 +176,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 5,
 		}
 		if !hasNewCursor {
@@ -188,7 +187,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 5, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 5, 5, []lsifstore.Location{
 			{DumpID: 42, Path: "baz.go", Range: testRange1},
 			{DumpID: 42, Path: "baz.go", Range: testRange2},
 		}, 7)
@@ -199,7 +198,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 			Path:        "main.go",
 			Line:        23,
 			Character:   34,
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 5,
 		})
 		if err != nil {
@@ -218,7 +217,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 			Phase:       "definition-monikers",
 			DumpID:      42,
 			Path:        "main.go",
-			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
 			SkipResults: 0,
 		}
 		if !hasNewCursor {
@@ -246,7 +245,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 0, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -258,7 +257,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			Phase:       "definition-monikers",
 			DumpID:      42,
 			Path:        "main.go",
-			Monikers:    []bundles.MonikerData{{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}},
 			SkipResults: 0,
 		})
 		if err != nil {
@@ -280,7 +279,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			Phase:       "definition-monikers",
 			DumpID:      42,
 			Path:        "main.go",
-			Monikers:    []bundles.MonikerData{{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}},
 			SkipResults: 5,
 		}
 		if !hasNewCursor {
@@ -291,7 +290,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 5, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 5, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -303,7 +302,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			Phase:       "definition-monikers",
 			DumpID:      42,
 			Path:        "main.go",
-			Monikers:    []bundles.MonikerData{{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}},
+			Monikers:    []lsifstore.MonikerData{{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}},
 			SkipResults: 5,
 		})
 		if err != nil {
@@ -351,7 +350,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 	})
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 51, Path: "baz.go", Range: testRange3},
@@ -417,7 +416,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			mockBundleStore,
 			monikerResultsSpec{
 				50, "references", "gomod", "bar", 0, 5,
-				[]bundles.Location{
+				[]lsifstore.Location{
 					{DumpID: 50, Path: "foo.go", Range: testRange1},
 					{DumpID: 50, Path: "bar.go", Range: testRange2},
 				},
@@ -425,7 +424,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			},
 			monikerResultsSpec{
 				51, "references", "gomod", "bar", 0, 3,
-				[]bundles.Location{
+				[]lsifstore.Location{
 					{DumpID: 51, Path: "baz.go", Range: testRange3},
 					{DumpID: 51, Path: "bonk.go", Range: testRange4},
 				},
@@ -433,7 +432,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			},
 			monikerResultsSpec{
 				52, "references", "gomod", "bar", 0, 1,
-				[]bundles.Location{
+				[]lsifstore.Location{
 					{DumpID: 52, Path: "quux.go", Range: testRange5},
 				},
 				1,
@@ -499,7 +498,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []bundles.Location{
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
@@ -577,7 +576,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 	})
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 51, Path: "baz.go", Range: testRange3},
@@ -643,7 +642,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			mockBundleStore,
 			monikerResultsSpec{
 				50, "references", "gomod", "bar", 0, 5,
-				[]bundles.Location{
+				[]lsifstore.Location{
 					{DumpID: 50, Path: "foo.go", Range: testRange1},
 					{DumpID: 50, Path: "bar.go", Range: testRange2},
 				},
@@ -651,7 +650,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			},
 			monikerResultsSpec{
 				51, "references", "gomod", "bar", 0, 3,
-				[]bundles.Location{
+				[]lsifstore.Location{
 					{DumpID: 51, Path: "baz.go", Range: testRange3},
 					{DumpID: 51, Path: "bonk.go", Range: testRange4},
 				},
@@ -659,7 +658,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			},
 			monikerResultsSpec{
 				52, "references", "gomod", "bar", 0, 1,
-				[]bundles.Location{
+				[]lsifstore.Location{
 					{DumpID: 52, Path: "quux.go", Range: testRange5},
 				},
 				1,
@@ -714,7 +713,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []bundles.Location{
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)

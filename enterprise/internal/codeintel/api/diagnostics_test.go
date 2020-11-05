@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -16,39 +16,45 @@ func TestDiagnostics(t *testing.T) {
 	mockBundleStore := bundlemocks.NewMockStore()
 	mockGitserverClient := NewMockGitserverClient()
 
-	sourceDiagnostics := []bundles.Diagnostic{
+	sourceDiagnostics := []lsifstore.Diagnostic{
 		{
-			Path:           "internal/foo.go",
-			Severity:       1,
-			Code:           "c1",
-			Message:        "m1",
-			Source:         "s1",
-			StartLine:      11,
-			StartCharacter: 12,
-			EndLine:        13,
-			EndCharacter:   14,
+			Path: "internal/foo.go",
+			DiagnosticData: lsifstore.DiagnosticData{
+				Severity:       1,
+				Code:           "c1",
+				Message:        "m1",
+				Source:         "s1",
+				StartLine:      11,
+				StartCharacter: 12,
+				EndLine:        13,
+				EndCharacter:   14,
+			},
 		},
 		{
-			Path:           "internal/bar.go",
-			Severity:       2,
-			Code:           "c2",
-			Message:        "m2",
-			Source:         "s2",
-			StartLine:      21,
-			StartCharacter: 22,
-			EndLine:        23,
-			EndCharacter:   24,
+			Path: "internal/bar.go",
+			DiagnosticData: lsifstore.DiagnosticData{
+				Severity:       2,
+				Code:           "c2",
+				Message:        "m2",
+				Source:         "s2",
+				StartLine:      21,
+				StartCharacter: 22,
+				EndLine:        23,
+				EndCharacter:   24,
+			},
 		},
 		{
-			Path:           "internal/baz.go",
-			Severity:       3,
-			Code:           "c3",
-			Message:        "m3",
-			Source:         "s3",
-			StartLine:      31,
-			StartCharacter: 32,
-			EndLine:        33,
-			EndCharacter:   34,
+			Path: "internal/baz.go",
+			DiagnosticData: lsifstore.DiagnosticData{
+				Severity:       3,
+				Code:           "c3",
+				Message:        "m3",
+				Source:         "s3",
+				StartLine:      31,
+				StartCharacter: 32,
+				EndLine:        33,
+				EndCharacter:   34,
+			},
 		},
 	}
 
@@ -67,51 +73,54 @@ func TestDiagnostics(t *testing.T) {
 				ID:   42,
 				Root: "sub1/",
 			},
-			Diagnostic: bundles.Diagnostic{
-				Path:           "sub1/internal/foo.go",
-				Severity:       1,
-				Code:           "c1",
-				Message:        "m1",
-				Source:         "s1",
-				StartLine:      11,
-				StartCharacter: 12,
-				EndLine:        13,
-				EndCharacter:   14,
-			},
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "sub1/internal/foo.go",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       1,
+					Code:           "c1",
+					Message:        "m1",
+					Source:         "s1",
+					StartLine:      11,
+					StartCharacter: 12,
+					EndLine:        13,
+					EndCharacter:   14,
+				}},
 		},
 		{
 			Dump: store.Dump{
 				ID:   42,
 				Root: "sub1/",
 			},
-			Diagnostic: bundles.Diagnostic{
-				Path:           "sub1/internal/bar.go",
-				Severity:       2,
-				Code:           "c2",
-				Message:        "m2",
-				Source:         "s2",
-				StartLine:      21,
-				StartCharacter: 22,
-				EndLine:        23,
-				EndCharacter:   24,
-			},
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "sub1/internal/bar.go",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       2,
+					Code:           "c2",
+					Message:        "m2",
+					Source:         "s2",
+					StartLine:      21,
+					StartCharacter: 22,
+					EndLine:        23,
+					EndCharacter:   24,
+				}},
 		},
 		{
 			Dump: store.Dump{
 				ID:   42,
 				Root: "sub1/",
 			},
-			Diagnostic: bundles.Diagnostic{
-				Path:           "sub1/internal/baz.go",
-				Severity:       3,
-				Code:           "c3",
-				Message:        "m3",
-				Source:         "s3",
-				StartLine:      31,
-				StartCharacter: 32,
-				EndLine:        33,
-				EndCharacter:   34,
-			},
+			Diagnostic: lsifstore.Diagnostic{
+				Path: "sub1/internal/baz.go",
+				DiagnosticData: lsifstore.DiagnosticData{
+					Severity:       3,
+					Code:           "c3",
+					Message:        "m3",
+					Source:         "s3",
+					StartLine:      31,
+					StartCharacter: 32,
+					EndLine:        33,
+					EndCharacter:   34,
+				}},
 		},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, diagnostics); diff != "" {

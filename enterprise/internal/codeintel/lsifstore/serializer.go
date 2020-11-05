@@ -13,7 +13,7 @@ import (
 func init() {
 	gob.Register(&DocumentData{})
 	gob.Register(&ResultChunkData{})
-	gob.Register(&Location{})
+	gob.Register(&LocationData{})
 }
 
 type serializer struct {
@@ -39,7 +39,7 @@ func (s *serializer) MarshalResultChunkData(resultChunks ResultChunkData) ([]byt
 }
 
 // MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
-func (s *serializer) MarshalLocations(locations []Location) ([]byte, error) {
+func (s *serializer) MarshalLocations(locations []LocationData) ([]byte, error) {
 	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&locations) })
 }
 
@@ -79,7 +79,7 @@ func (s *serializer) UnmarshalResultChunkData(data []byte) (resultChunk ResultCh
 }
 
 // UnmarshalLocations is the inverse of MarshalLocations.
-func (s *serializer) UnmarshalLocations(data []byte) (locations []Location, err error) {
+func (s *serializer) UnmarshalLocations(data []byte) (locations []LocationData, err error) {
 	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&locations) })
 	return locations, err
 }

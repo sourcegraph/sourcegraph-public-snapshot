@@ -147,7 +147,7 @@ func TestReadWriteDefinitions(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	expectedDefinitions := []Location{
+	expectedDefinitions := []LocationData{
 		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -183,7 +183,7 @@ func TestReadWriteReferences(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	expectedReferences := []Location{
+	expectedReferences := []LocationData{
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 		{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},

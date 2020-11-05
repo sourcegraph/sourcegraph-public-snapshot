@@ -262,7 +262,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
 			for identifier, ids := range idsByIdentifier {
-				var locations []lsifstore.Location
+				var locations []lsifstore.LocationData
 				for _, id := range ids {
 					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 						uri := state.DocumentData[documentID]
@@ -273,7 +273,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 						rangeIDs.Each(func(id int) {
 							r := state.RangeData[id]
 
-							locations = append(locations, lsifstore.Location{
+							locations = append(locations, lsifstore.LocationData{
 								URI:            uri,
 								StartLine:      r.StartLine,
 								StartCharacter: r.StartCharacter,

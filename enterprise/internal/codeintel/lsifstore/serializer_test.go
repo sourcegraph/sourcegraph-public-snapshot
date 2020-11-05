@@ -114,7 +114,7 @@ func TestResultChunkData(t *testing.T) {
 }
 
 func TestLocations(t *testing.T) {
-	expected := []Location{
+	expected := []LocationData{
 		{
 			URI:            "internal/index/indexer.go",
 			StartLine:      36,

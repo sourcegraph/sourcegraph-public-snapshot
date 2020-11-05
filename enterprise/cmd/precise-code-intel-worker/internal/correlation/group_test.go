@@ -544,7 +544,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme A",
 			Identifier: "ident A",
-			Locations: []lsifstore.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -553,7 +553,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme B",
 			Identifier: "ident B",
-			Locations: []lsifstore.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -574,7 +574,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme C",
 			Identifier: "ident C",
-			Locations: []lsifstore.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -583,7 +583,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme D",
 			Identifier: "ident D",
-			Locations: []lsifstore.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -635,7 +635,7 @@ func sortMonikerLocations(monikerLocations []lsifstore.MonikerLocations) {
 	}
 }
 
-func sortLocations(locations []lsifstore.Location) {
+func sortLocations(locations []lsifstore.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
 		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
 			return cmp < 0

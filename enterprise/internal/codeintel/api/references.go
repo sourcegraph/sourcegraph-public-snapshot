@@ -8,7 +8,6 @@ import (
 	"github.com/inconshreveable/log15"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -160,7 +159,7 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	}
 
 	var totalCount int
-	var locations []bundles.Location
+	var locations []lsifstore.Location
 
 	// Search the references table of the current dump. This search is necessary because
 	// we want a 'Find References' operation on a reference to also return references to
@@ -221,7 +220,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 			continue
 		}
 
-		packageInformation, _, err := s.lsifStore.PackageInformation(ctx, cursor.DumpID, cursor.Path, moniker.PackageInformationID)
+		packageInformation, _, err := s.lsifStore.PackageInformation(ctx, cursor.DumpID, cursor.Path, string(moniker.PackageInformationID))
 		if err != nil {
 			if err == lsifstore.ErrNotFound {
 				log15.Warn("Bundle does not exist")
@@ -420,7 +419,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 	return nil, Cursor{}, false, nil
 }
 
-func hashLocation(location bundles.Location) string {
+func hashLocation(location lsifstore.Location) string {
 	return fmt.Sprintf(
 		"%s:%d:%d:%d:%d",
 		location.Path,

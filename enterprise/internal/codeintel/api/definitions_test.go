@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -17,7 +17,7 @@ func TestDefinitions(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreDefinitions(t, mockBundleStore, 42, "main.go", 10, 50, []bundles.Location{
+	setMockBundleStoreDefinitions(t, mockBundleStore, 42, "main.go", 10, 50, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -58,8 +58,8 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleStoreDefinitions(t, mockBundleStore, 42, "main.go", 10, 50, nil)
-	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker2}})
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "definitions", "gomod", "pad", 0, 100, []bundles.Location{
+	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]lsifstore.MonikerData{{testMoniker2}})
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "definitions", "gomod", "pad", 0, 100, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -88,10 +88,10 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
 	setMockBundleStoreDefinitions(t, mockBundleStore, 42, "main.go", 10, 50, nil)
-	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
+	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 50, [][]lsifstore.MonikerData{{testMoniker1}})
 	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "definitions", "gomod", "pad", 0, 100, []bundles.Location{
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "definitions", "gomod", "pad", 0, 100, []lsifstore.Location{
 		{DumpID: 50, Path: "foo.go", Range: testRange1},
 		{DumpID: 50, Path: "bar.go", Range: testRange2},
 		{DumpID: 50, Path: "baz.go", Range: testRange3},

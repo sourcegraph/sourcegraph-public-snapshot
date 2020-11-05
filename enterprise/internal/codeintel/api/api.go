@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -31,7 +30,7 @@ type CodeIntelAPI interface {
 	References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error)
 
 	// Hover returns the hover text and range for the symbol at the given position.
-	Hover(ctx context.Context, file string, line, character, uploadID int) (string, bundles.Range, bool, error)
+	Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error)
 
 	// Diagnostics returns the diagnostics for documents with the given path prefix.
 	Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error)

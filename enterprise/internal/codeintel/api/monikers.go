@@ -5,7 +5,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -16,7 +15,7 @@ func lookupMoniker(
 	dumpID int,
 	path string,
 	modelType string,
-	moniker bundles.MonikerData,
+	moniker lsifstore.MonikerData,
 	skip int,
 	take int,
 ) ([]ResolvedLocation, int, error) {
@@ -24,7 +23,7 @@ func lookupMoniker(
 		return nil, 0, nil
 	}
 
-	pid, _, err := lsifStore.PackageInformation(context.Background(), dumpID, path, moniker.PackageInformationID)
+	pid, _, err := lsifStore.PackageInformation(context.Background(), dumpID, path, string(moniker.PackageInformationID))
 	if err != nil {
 		if err == lsifstore.ErrNotFound {
 			log15.Warn("Bundle does not exist")

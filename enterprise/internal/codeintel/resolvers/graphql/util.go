@@ -2,8 +2,7 @@ package graphql
 
 import (
 	"github.com/sourcegraph/go-lsp"
-
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 )
 
 // strPtr creates a pointer to the given value. If the value is an
@@ -64,7 +63,7 @@ func derefBool(val *bool, defaultValue bool) bool {
 }
 
 // convertRange creates an LSP range from a bundle range.
-func convertRange(r bundles.Range) lsp.Range {
+func convertRange(r lsifstore.Range) lsp.Range {
 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
 }
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -16,23 +16,23 @@ func TestRanges(t *testing.T) {
 	mockBundleStore := bundlemocks.NewMockStore()
 	mockGitserverClient := NewMockGitserverClient()
 
-	sourceRanges := []bundles.CodeIntelligenceRange{
+	sourceRanges := []lsifstore.CodeIntelligenceRange{
 		{
-			Range:       bundles.Range{Start: bundles.Position{1, 2}, End: bundles.Position{3, 4}},
-			Definitions: []bundles.Location{},
-			References:  []bundles.Location{},
+			Range:       lsifstore.Range{Start: lsifstore.Position{1, 2}, End: lsifstore.Position{3, 4}},
+			Definitions: []lsifstore.Location{},
+			References:  []lsifstore.Location{},
 			HoverText:   "",
 		},
 		{
-			Range:       bundles.Range{Start: bundles.Position{2, 3}, End: bundles.Position{4, 5}},
-			Definitions: []bundles.Location{{Path: "foo.go", Range: bundles.Range{Start: bundles.Position{10, 20}, End: bundles.Position{30, 40}}}},
-			References:  []bundles.Location{{Path: "bar.go", Range: bundles.Range{Start: bundles.Position{100, 200}, End: bundles.Position{300, 400}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{2, 3}, End: lsifstore.Position{4, 5}},
+			Definitions: []lsifstore.Location{{Path: "foo.go", Range: lsifstore.Range{Start: lsifstore.Position{10, 20}, End: lsifstore.Position{30, 40}}}},
+			References:  []lsifstore.Location{{Path: "bar.go", Range: lsifstore.Range{Start: lsifstore.Position{100, 200}, End: lsifstore.Position{300, 400}}}},
 			HoverText:   "ht2",
 		},
 		{
-			Range:       bundles.Range{Start: bundles.Position{3, 4}, End: bundles.Position{5, 6}},
-			Definitions: []bundles.Location{{Path: "bar.go", Range: bundles.Range{Start: bundles.Position{11, 21}, End: bundles.Position{31, 41}}}},
-			References:  []bundles.Location{{Path: "foo.go", Range: bundles.Range{Start: bundles.Position{101, 201}, End: bundles.Position{301, 401}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{3, 4}, End: lsifstore.Position{5, 6}},
+			Definitions: []lsifstore.Location{{Path: "bar.go", Range: lsifstore.Range{Start: lsifstore.Position{11, 21}, End: lsifstore.Position{31, 41}}}},
+			References:  []lsifstore.Location{{Path: "foo.go", Range: lsifstore.Range{Start: lsifstore.Position{101, 201}, End: lsifstore.Position{301, 401}}}},
 			HoverText:   "ht3",
 		},
 	}
@@ -48,21 +48,21 @@ func TestRanges(t *testing.T) {
 
 	expectedRanges := []ResolvedCodeIntelligenceRange{
 		{
-			Range:       bundles.Range{Start: bundles.Position{1, 2}, End: bundles.Position{3, 4}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{1, 2}, End: lsifstore.Position{3, 4}},
 			Definitions: nil,
 			References:  nil,
 			HoverText:   "",
 		},
 		{
-			Range:       bundles.Range{Start: bundles.Position{2, 3}, End: bundles.Position{4, 5}},
-			Definitions: []ResolvedLocation{{Dump: testDump1, Path: "sub1/foo.go", Range: bundles.Range{Start: bundles.Position{10, 20}, End: bundles.Position{30, 40}}}},
-			References:  []ResolvedLocation{{Dump: testDump1, Path: "sub1/bar.go", Range: bundles.Range{Start: bundles.Position{100, 200}, End: bundles.Position{300, 400}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{2, 3}, End: lsifstore.Position{4, 5}},
+			Definitions: []ResolvedLocation{{Dump: testDump1, Path: "sub1/foo.go", Range: lsifstore.Range{Start: lsifstore.Position{10, 20}, End: lsifstore.Position{30, 40}}}},
+			References:  []ResolvedLocation{{Dump: testDump1, Path: "sub1/bar.go", Range: lsifstore.Range{Start: lsifstore.Position{100, 200}, End: lsifstore.Position{300, 400}}}},
 			HoverText:   "ht2",
 		},
 		{
-			Range:       bundles.Range{Start: bundles.Position{3, 4}, End: bundles.Position{5, 6}},
-			Definitions: []ResolvedLocation{{Dump: testDump1, Path: "sub1/bar.go", Range: bundles.Range{Start: bundles.Position{11, 21}, End: bundles.Position{31, 41}}}},
-			References:  []ResolvedLocation{{Dump: testDump1, Path: "sub1/foo.go", Range: bundles.Range{Start: bundles.Position{101, 201}, End: bundles.Position{301, 401}}}},
+			Range:       lsifstore.Range{Start: lsifstore.Position{3, 4}, End: lsifstore.Position{5, 6}},
+			Definitions: []ResolvedLocation{{Dump: testDump1, Path: "sub1/bar.go", Range: lsifstore.Range{Start: lsifstore.Position{11, 21}, End: lsifstore.Position{31, 41}}}},
+			References:  []ResolvedLocation{{Dump: testDump1, Path: "sub1/foo.go", Range: lsifstore.Range{Start: lsifstore.Position{101, 201}, End: lsifstore.Position{301, 401}}}},
 			HoverText:   "ht3",
 		},
 	}

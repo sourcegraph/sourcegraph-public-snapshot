@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -17,7 +17,7 @@ func TestSerializationRoundTrip(t *testing.T) {
 		Path:      "/foo/bar/baz.go",
 		Line:      10,
 		Character: 50,
-		Monikers: []bundles.MonikerData{
+		Monikers: []lsifstore.MonikerData{
 			{Kind: "k1", Scheme: "s1", Identifier: "i1", PackageInformationID: "pid1"},
 			{Kind: "k2", Scheme: "s2", Identifier: "i2", PackageInformationID: "pid2"},
 			{Kind: "k3", Scheme: "s3", Identifier: "i3", PackageInformationID: "pid3"},
@@ -49,7 +49,7 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 20, [][]bundles.MonikerData{{testMoniker1}, {testMoniker2}})
+	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 20, [][]lsifstore.MonikerData{{testMoniker1}, {testMoniker2}})
 
 	expectedCursor := Cursor{
 		Phase:     "same-dump",
@@ -57,7 +57,7 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 		Path:      "main.go",
 		Line:      10,
 		Character: 20,
-		Monikers:  []bundles.MonikerData{testMoniker1, testMoniker2},
+		Monikers:  []lsifstore.MonikerData{testMoniker1, testMoniker2},
 	}
 
 	if cursor, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockStore, mockBundleStore); err != nil {
@@ -84,7 +84,7 @@ func TestDecodeOrCreateCursorExisting(t *testing.T) {
 		Path:      "/foo/bar/baz.go",
 		Line:      10,
 		Character: 50,
-		Monikers: []bundles.MonikerData{
+		Monikers: []lsifstore.MonikerData{
 			{Kind: "k1", Scheme: "s1", Identifier: "i1", PackageInformationID: "pid1"},
 			{Kind: "k2", Scheme: "s2", Identifier: "i2", PackageInformationID: "pid2"},
 			{Kind: "k3", Scheme: "s3", Identifier: "i3", PackageInformationID: "pid3"},

@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -43,7 +43,7 @@ func TestAdjustPosition(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	posIn := bundles.Position{Line: 302, Character: 15}
+	posIn := lsifstore.Position{Line: 302, Character: 15}
 
 	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
 	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, false)
@@ -58,7 +58,7 @@ func TestAdjustPosition(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := bundles.Position{Line: 294, Character: 15}
+	expectedPos := lsifstore.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
@@ -72,7 +72,7 @@ func TestAdjustPositionEmptyDiff(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader(nil)), nil
 	}
 
-	posIn := bundles.Position{Line: 10, Character: 15}
+	posIn := lsifstore.Position{Line: 10, Character: 15}
 
 	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
 	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, false)
@@ -104,7 +104,7 @@ func TestAdjustPositionReverse(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	posIn := bundles.Position{Line: 302, Character: 15}
+	posIn := lsifstore.Position{Line: 302, Character: 15}
 
 	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
 	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, true)
@@ -119,7 +119,7 @@ func TestAdjustPositionReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := bundles.Position{Line: 294, Character: 15}
+	expectedPos := lsifstore.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
@@ -138,9 +138,9 @@ func TestAdjustRange(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	rIn := bundles.Range{
-		Start: bundles.Position{Line: 302, Character: 15},
-		End:   bundles.Position{Line: 305, Character: 20},
+	rIn := lsifstore.Range{
+		Start: lsifstore.Position{Line: 302, Character: 15},
+		End:   lsifstore.Position{Line: 305, Character: 20},
 	}
 
 	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
@@ -156,9 +156,9 @@ func TestAdjustRange(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := bundles.Range{
-		Start: bundles.Position{Line: 294, Character: 15},
-		End:   bundles.Position{Line: 297, Character: 20},
+	expectedRange := lsifstore.Range{
+		Start: lsifstore.Position{Line: 294, Character: 15},
+		End:   lsifstore.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -173,9 +173,9 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader(nil)), nil
 	}
 
-	rIn := bundles.Range{
-		Start: bundles.Position{Line: 302, Character: 15},
-		End:   bundles.Position{Line: 305, Character: 20},
+	rIn := lsifstore.Range{
+		Start: lsifstore.Position{Line: 302, Character: 15},
+		End:   lsifstore.Position{Line: 305, Character: 20},
 	}
 
 	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
@@ -208,9 +208,9 @@ func TestAdjustRangeReverse(t *testing.T) {
 		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	rIn := bundles.Range{
-		Start: bundles.Position{Line: 302, Character: 15},
-		End:   bundles.Position{Line: 305, Character: 20},
+	rIn := lsifstore.Range{
+		Start: lsifstore.Position{Line: 302, Character: 15},
+		End:   lsifstore.Position{Line: 305, Character: 20},
 	}
 
 	adjuster := NewPositionAdjuster(&types.Repo{ID: 50}, "deadbeef1", nil)
@@ -226,9 +226,9 @@ func TestAdjustRangeReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := bundles.Range{
-		Start: bundles.Position{Line: 294, Character: 15},
-		End:   bundles.Position{Line: 297, Character: 20},
+	expectedRange := lsifstore.Range{
+		Start: lsifstore.Position{Line: 294, Character: 15},
+		End:   lsifstore.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -359,7 +359,7 @@ func TestRawAdjustPosition(t *testing.T) {
 			}
 			hunks := diff.Hunks
 
-			pos := bundles.Position{
+			pos := lsifstore.Position{
 				Line:      testCase.line - 1, // 1-index -> 0-index
 				Character: 10,
 			}

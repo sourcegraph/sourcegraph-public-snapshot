@@ -203,14 +203,14 @@ func (s *ObservedStore) ReadResultChunk(ctx context.Context, bundleID int, id in
 }
 
 // ReadDefinitions calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (locations []Location, _ int, err error) {
+func (s *ObservedStore) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (locations []LocationData, _ int, err error) {
 	ctx, endObservation := s.readDefinitionsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
 	return s.store.ReadDefinitions(ctx, bundleID, scheme, identifier, skip, take)
 }
 
 // ReadReferences calls into the inner Store and registers the observed results.
-func (s *ObservedStore) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (locations []Location, _ int, err error) {
+func (s *ObservedStore) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (locations []LocationData, _ int, err error) {
 	ctx, endObservation := s.readReferencesOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
 	return s.store.ReadReferences(ctx, bundleID, scheme, identifier, skip, take)

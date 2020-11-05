@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -236,10 +236,10 @@ func TestResolveLocations(t *testing.T) {
 		return &git.Commit{ID: commitID}, nil
 	}
 
-	r1 := bundles.Range{Start: bundles.Position{Line: 11, Character: 12}, End: bundles.Position{Line: 13, Character: 14}}
-	r2 := bundles.Range{Start: bundles.Position{Line: 21, Character: 22}, End: bundles.Position{Line: 23, Character: 24}}
-	r3 := bundles.Range{Start: bundles.Position{Line: 31, Character: 32}, End: bundles.Position{Line: 33, Character: 34}}
-	r4 := bundles.Range{Start: bundles.Position{Line: 41, Character: 42}, End: bundles.Position{Line: 43, Character: 44}}
+	r1 := lsifstore.Range{Start: lsifstore.Position{Line: 11, Character: 12}, End: lsifstore.Position{Line: 13, Character: 14}}
+	r2 := lsifstore.Range{Start: lsifstore.Position{Line: 21, Character: 22}, End: lsifstore.Position{Line: 23, Character: 24}}
+	r3 := lsifstore.Range{Start: lsifstore.Position{Line: 31, Character: 32}, End: lsifstore.Position{Line: 33, Character: 34}}
+	r4 := lsifstore.Range{Start: lsifstore.Position{Line: 41, Character: 42}, End: lsifstore.Position{Line: 43, Character: 44}}
 
 	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(), []resolvers.AdjustedLocation{
 		{Dump: store.Dump{RepositoryID: 50}, AdjustedCommit: "deadbeef1", AdjustedRange: r1, Path: "p1"},
