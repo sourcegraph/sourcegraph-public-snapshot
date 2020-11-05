@@ -109,10 +109,10 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 			migrateExternalServiceUnrestricted.Do(func() {
 				// Collect IDs of external services which enforce repository permissions
 				// and set others' `external_services.unrestricted` to `true`.
-				esIDs := make([]*sqlf.Query, 0, len(authzProviders))
-				for _, p := range authzProviders {
+				esIDs := make([]*sqlf.Query, len(authzProviders))
+				for i, p := range authzProviders {
 					_, id := extsvc.DecodeURN(p.URN())
-					esIDs = append(esIDs, sqlf.Sprintf("%s", id))
+					esIDs[i] = sqlf.Sprintf("%s", id)
 				}
 
 				q := sqlf.Sprintf(`
