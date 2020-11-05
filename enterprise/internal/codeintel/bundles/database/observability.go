@@ -93,11 +93,6 @@ func NewObserved(database Database, filename string, observationContext *observa
 	}
 }
 
-// Close calls into the inner Database.
-func (db *ObservedDatabase) Close() error {
-	return db.database.Close()
-}
-
 // Exists calls into the inner Database and registers the observed results.
 func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, err error) {
 	ctx, endObservation := db.existsOperation.With(ctx, &err, observation.Args{LogFields: []log.Field{

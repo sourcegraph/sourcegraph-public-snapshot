@@ -18,7 +18,6 @@ type ObservedStore struct {
 	readDefinitionsOperation   *observation.Operation
 	readReferencesOperation    *observation.Operation
 	doneOperation              *observation.Operation
-	createTablesOperation      *observation.Operation
 	writeMetaOperation         *observation.Operation
 	writeDocumentsOperation    *observation.Operation
 	writeResultChunksOperation *observation.Operation
@@ -79,11 +78,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		doneOperation: observationContext.Operation(observation.Op{
 			Name:         "Store.Done",
 			MetricLabels: []string{"done"},
-			Metrics:      metrics,
-		}),
-		createTablesOperation: observationContext.Operation(observation.Op{
-			Name:         "Store.CreateTables",
-			MetricLabels: []string{"create_tables"},
 			Metrics:      metrics,
 		}),
 		writeMetaOperation: observationContext.Operation(observation.Op{
@@ -172,7 +166,6 @@ func (s *ObservedStore) Transact(ctx context.Context) (_ Store, err error) {
 		readDefinitionsOperation:   s.readDefinitionsOperation,
 		readReferencesOperation:    s.readReferencesOperation,
 		doneOperation:              s.doneOperation,
-		createTablesOperation:      s.createTablesOperation,
 		writeMetaOperation:         s.writeMetaOperation,
 		writeDocumentsOperation:    s.writeDocumentsOperation,
 		writeResultChunksOperation: s.writeResultChunksOperation,
@@ -193,13 +186,6 @@ func (s *ObservedStore) Done(e error) error {
 		observedErr = err
 	}
 	return err
-}
-
-// CreateTables calls into the inner Store and registers the observed result.
-func (s *ObservedStore) CreateTables(ctx context.Context) (err error) {
-	ctx, endObservation := s.createTablesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.CreateTables(ctx)
 }
 
 // WriteMeta calls into the inner Store and registers the observed result.
@@ -235,8 +221,4 @@ func (s *ObservedStore) WriteReferences(ctx context.Context, monikerLocations ch
 	ctx, endObservation := s.writeReferencesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.WriteReferences(ctx, monikerLocations)
-}
-
-func (s *ObservedStore) Close(err error) error {
-	return s.store.Close(err)
 }

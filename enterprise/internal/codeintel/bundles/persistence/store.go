@@ -21,8 +21,6 @@ type IndexedResultChunkData struct {
 type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
-	CreateTables(ctx context.Context) error
-	Close(err error) error
 
 	ReadMeta(ctx context.Context) (types.MetaData, error)
 	PathsWithPrefix(ctx context.Context, prefix string) ([]string, error)

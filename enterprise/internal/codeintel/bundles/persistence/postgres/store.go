@@ -51,14 +51,6 @@ func (s *store) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *store) CreateTables(ctx context.Context) error {
-	return nil // no-op
-}
-
-func (s *store) Close(err error) error {
-	return err
-}
-
 func (s *store) ReadMeta(ctx context.Context) (types.MetaData, error) {
 	numResultChunks, ok, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
