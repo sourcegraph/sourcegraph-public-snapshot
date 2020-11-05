@@ -73,20 +73,21 @@ type ChangesetEventsConnectionArgs struct {
 	After *string
 }
 
-type CreateCampaignsUserTokenArgs struct {
+type CreateCampaignsCredentialArgs struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
 	User                graphql.ID
-	Token               string
+	Credential          string
 }
 
-type DeleteCampaignsUserTokenArgs struct {
-	CampaignsUserToken graphql.ID
+type DeleteCampaignsCredentialArgs struct {
+	CampaignsCredential graphql.ID
 }
 
-type ListConfiguredExternalServicesArgs struct {
-	First int32
-	After *string
+type ListCampaignsCodeHostsArgs struct {
+	First  int32
+	After  *string
+	UserID int64
 }
 
 type CampaignsResolver interface {
@@ -99,8 +100,8 @@ type CampaignsResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
-	CreateCampaignsUserToken(ctx context.Context, args *CreateCampaignsUserTokenArgs) (CampaignsUserTokenResolver, error)
-	DeleteCampaignsUserToken(ctx context.Context, args *DeleteCampaignsUserTokenArgs) (*EmptyResponse, error)
+	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
+	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 
 	// Queries
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
@@ -111,8 +112,8 @@ type CampaignsResolver interface {
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
 
-	CampaignsUserTokenByID(ctx context.Context, id graphql.ID) (CampaignsUserTokenResolver, error)
-	ConfiguredExternalServices(ctx context.Context, userID graphql.ID) (ConfiguredExternalServicesConnectionResolver, error)
+	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
+	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignSpecResolver interface {
@@ -208,19 +209,19 @@ type GitCommitDescriptionResolver interface {
 	Diff() string
 }
 
-type ConfiguredExternalServicesConnectionResolver interface {
-	Nodes(ctx context.Context) ([]ConfiguredExternalServiceResolver, error)
+type CampaignsCodeHostConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CampaignsCodeHostResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ConfiguredExternalServiceResolver interface {
+type CampaignsCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	ConfiguredToken() CampaignsUserTokenResolver
+	Credential() CampaignsCredentialResolver
 }
 
-type CampaignsUserTokenResolver interface {
+type CampaignsCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
@@ -405,11 +406,11 @@ func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *Delete
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CreateCampaignsUserToken(ctx context.Context, args *CreateCampaignsUserTokenArgs) (CampaignsUserTokenResolver, error) {
+func (defaultCampaignsResolver) CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) DeleteCampaignsUserToken(ctx context.Context, args *DeleteCampaignsUserTokenArgs) (*EmptyResponse, error) {
+func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -438,10 +439,10 @@ func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphq
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CampaignsUserTokenByID(ctx context.Context, id graphql.ID) (CampaignsUserTokenResolver, error) {
+func (defaultCampaignsResolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ConfiguredExternalServices(ctx context.Context, userID graphql.ID) (ConfiguredExternalServicesConnectionResolver, error) {
+func (defaultCampaignsResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }

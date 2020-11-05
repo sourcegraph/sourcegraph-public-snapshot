@@ -11,70 +11,70 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func (r *Resolver) CreateCampaignsUserToken(ctx context.Context, args *graphqlbackend.CreateCampaignsUserTokenArgs) (graphqlbackend.CampaignsUserTokenResolver, error) {
-	return &campaignsUserTokenResolver{}, errors.New("not implemented")
+func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlbackend.CreateCampaignsCredentialArgs) (graphqlbackend.CampaignsCredentialResolver, error) {
+	return &campaignsCredentialResolver{}, errors.New("not implemented")
 }
 
-func (r *Resolver) DeleteCampaignsUserToken(ctx context.Context, args *graphqlbackend.DeleteCampaignsUserTokenArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlbackend.DeleteCampaignsCredentialArgs) (*graphqlbackend.EmptyResponse, error) {
 	return &graphqlbackend.EmptyResponse{}, errors.New("not implemented")
 }
 
-func (r *Resolver) CampaignsUserTokenByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsUserTokenResolver, error) {
-	return &campaignsUserTokenResolver{}, nil
+func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
+	return &campaignsCredentialResolver{}, nil
 }
 
-func (r *Resolver) ConfiguredExternalServices(ctx context.Context, userID graphql.ID) (graphqlbackend.ConfiguredExternalServicesConnectionResolver, error) {
-	return &configuredExternalServicesConnectionResolver{}, nil
+func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	return &campaignsCodeHostConnectionResolver{}, nil
 }
 
-type campaignsUserTokenResolver struct{}
+type campaignsCredentialResolver struct{}
 
-var _ graphqlbackend.CampaignsUserTokenResolver = &campaignsUserTokenResolver{}
+var _ graphqlbackend.CampaignsCredentialResolver = &campaignsCredentialResolver{}
 
-func (c *campaignsUserTokenResolver) ID() graphql.ID {
+func (c *campaignsCredentialResolver) ID() graphql.ID {
 	return graphql.ID("stub")
 }
 
-func (c *campaignsUserTokenResolver) ExternalServiceKind() string {
+func (c *campaignsCredentialResolver) ExternalServiceKind() string {
 	return extsvc.KindGitHub
 }
 
-func (c *campaignsUserTokenResolver) ExternalServiceURL() string {
+func (c *campaignsCredentialResolver) ExternalServiceURL() string {
 	return "https://github.com/"
 }
 
-func (c *campaignsUserTokenResolver) CreatedAt() graphqlbackend.DateTime {
+func (c *campaignsCredentialResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: time.Now()}
 }
 
-type configuredExternalServiceResolver struct{}
+type campaignsCodeHostResolver struct{}
 
-var _ graphqlbackend.ConfiguredExternalServiceResolver = &configuredExternalServiceResolver{}
+var _ graphqlbackend.CampaignsCodeHostResolver = &campaignsCodeHostResolver{}
 
-func (c *configuredExternalServiceResolver) ExternalServiceKind() string {
+func (c *campaignsCodeHostResolver) ExternalServiceKind() string {
 	return extsvc.KindGitHub
 }
 
-func (c *configuredExternalServiceResolver) ExternalServiceURL() string {
+func (c *campaignsCodeHostResolver) ExternalServiceURL() string {
 	return "https://github.com/"
 }
 
-func (c *configuredExternalServiceResolver) ConfiguredToken() graphqlbackend.CampaignsUserTokenResolver {
-	return &campaignsUserTokenResolver{}
+func (c *campaignsCodeHostResolver) Credential() graphqlbackend.CampaignsCredentialResolver {
+	return &campaignsCredentialResolver{}
 }
 
-type configuredExternalServicesConnectionResolver struct{}
+type campaignsCodeHostConnectionResolver struct{}
 
-var _ graphqlbackend.ConfiguredExternalServicesConnectionResolver = &configuredExternalServicesConnectionResolver{}
+var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
 
-func (c *configuredExternalServicesConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	return 1, nil
 }
 
-func (c *configuredExternalServicesConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (c *configuredExternalServicesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ConfiguredExternalServiceResolver, error) {
-	return []graphqlbackend.ConfiguredExternalServiceResolver{&configuredExternalServiceResolver{}}, nil
+func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
+	return []graphqlbackend.CampaignsCodeHostResolver{&campaignsCodeHostResolver{}}, nil
 }
