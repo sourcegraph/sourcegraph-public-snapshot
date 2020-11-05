@@ -27,9 +27,7 @@ func (api *codeIntelAPI) Ranges(ctx context.Context, file string, startLine, end
 	}
 
 	pathInBundle := strings.TrimPrefix(file, dump.Root)
-	bundleClient := api.bundleManagerClient.BundleClient(dump.ID)
-
-	ranges, err := bundleClient.Ranges(ctx, pathInBundle, startLine, endLine)
+	ranges, err := api.bundleManagerClient.Ranges(ctx, dump.ID, pathInBundle, startLine, endLine)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")

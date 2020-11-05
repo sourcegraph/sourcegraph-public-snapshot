@@ -13,13 +13,10 @@ import (
 func TestLookupMoniker(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
-	setMockBundleClientPackageInformation(t, mockBundleClient1, "sub2/main.go", "1234", testPackageInformation)
+	setMockBundleManagerClientPackageInformation(t, mockBundleManagerClient, 42, "sub2/main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleClientMonikerResults(t, mockBundleClient2, "definition", "gomod", "pad", 10, 5, []bundles.Location{
+	setMockBundleManagerClientMonikerResults(t, mockBundleManagerClient, 50, "definition", "gomod", "pad", 10, 5, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -63,10 +60,8 @@ func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 func TestLookupMonikerNoPackage(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
 
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientPackageInformation(t, mockBundleClient, "main.go", "1234", testPackageInformation)
+	setMockBundleManagerClientPackageInformation(t, mockBundleManagerClient, 42, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
 
 	_, totalCount, err := lookupMoniker(mockStore, mockBundleManagerClient, 42, "main.go", "definition", testMoniker1, 10, 5)

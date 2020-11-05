@@ -14,7 +14,6 @@ import (
 func TestRanges(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := NewMockGitserverClient()
 
 	sourceRanges := []bundles.CodeIntelligenceRange{
@@ -39,8 +38,7 @@ func TestRanges(t *testing.T) {
 	}
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientRanges(t, mockBundleClient, "main.go", 10, 20, sourceRanges)
+	setMockBundleManagerClientRanges(t, mockBundleManagerClient, 42, "main.go", 10, 20, sourceRanges)
 
 	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
 	ranges, err := api.Ranges(context.Background(), "sub1/main.go", 10, 20, 42)

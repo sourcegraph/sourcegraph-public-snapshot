@@ -13,19 +13,6 @@ import (
 // queries for a commit we are unaware of (a commit newer than our latest LSIF upload), and
 // after processing an upload for a repository.
 type Updater interface {
-	// Update pulls the commit graph for the given repository from gitserver, pulls the set of
-	// LSIF upload objects for the given repository from Postgres, and correlates them into a
-	// visibility graph. This graph is then upserted back into Postgres for use by find closest
-	// dumps queries.
-	//
-	// This method will block until an advisory lock can be acquired to give exclusive access
-	// to the update procedure for this repository. If a check function is supplied, it is called
-	// after acquiring the lock but before updating the commit graph. This can be used to check
-	// that an update is still necessary depending on the triggering conditions. Returning false
-	// from this function will cause the function to return without updating. A null function can
-	// be passed to skip this check.
-	Update(ctx context.Context, repositoryID int, check CheckFunc) error
-
 	// TryUpdate pulls the commit graph for the given repository from gitserver, pulls the set
 	// of LSIF upload objects for the given repository from Postgres, and correlates them into a
 	// visibility graph. This graph is then upserted back into Postgres for use by find closest
@@ -38,10 +25,6 @@ type Updater interface {
 	// before the update completes.
 	TryUpdate(ctx context.Context, repositoryID, dirtyToken int) error
 }
-
-// CheckFunc is the shape of the function invoked to determine if an update is necessary
-// after successfully acquiring a lock.
-type CheckFunc func(ctx context.Context) (bool, error)
 
 type updater struct {
 	store           store.Store
@@ -58,35 +41,6 @@ func NewUpdater(store store.Store, gitserverClient gitserverClient) Updater {
 		store:           store,
 		gitserverClient: gitserverClient,
 	}
-}
-
-// Update pulls the commit graph for the given repository from gitserver, pulls the set of
-// LSIF upload objects for the given repository from Postgres, and correlates them into a
-// visibility graph. This graph is then upserted back into Postgres for use by find closest
-// dumps queries.
-//
-// This method will block until an advisory lock can be acquired to give exclusive access
-// to the update procedure for this repository. If a check function is supplied, it is called
-// after acquiring the lock but before updating the commit graph. This can be used to check
-// that an update is still necessary depending on the triggering conditions. Returning false
-// from this function will cause the function to return without updating. A null function can
-// be passed to skip this check.
-func (u *updater) Update(ctx context.Context, repositoryID int, check CheckFunc) error {
-	ok, unlock, err := u.store.Lock(ctx, repositoryID, true)
-	if err != nil || !ok {
-		return errors.Wrap(err, "store.Lock")
-	}
-	defer func() {
-		err = unlock(err)
-	}()
-
-	if check != nil {
-		if ok, err := check(ctx); err != nil || !ok {
-			return err
-		}
-	}
-
-	return u.update(ctx, repositoryID, 0)
 }
 
 // Try Update pulls the commit graph for the given repository from gitserver, pulls the set

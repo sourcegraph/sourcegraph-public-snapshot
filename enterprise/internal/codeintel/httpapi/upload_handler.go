@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -25,16 +25,16 @@ import (
 )
 
 type UploadHandler struct {
-	store               store.Store
-	bundleManagerClient bundles.BundleManagerClient
-	internal            bool
+	store       store.Store
+	uploadStore uploadstore.Store
+	internal    bool
 }
 
-func NewUploadHandler(store store.Store, bundleManagerClient bundles.BundleManagerClient, internal bool) http.Handler {
+func NewUploadHandler(store store.Store, uploadStore uploadstore.Store, internal bool) http.Handler {
 	handler := &UploadHandler{
-		store:               store,
-		bundleManagerClient: bundleManagerClient,
-		internal:            internal,
+		store:       store,
+		uploadStore: uploadStore,
+		internal:    internal,
 	}
 
 	return http.HandlerFunc(handler.handleEnqueue)
@@ -230,7 +230,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		return nil, err
 	}
 
-	size, err := h.bundleManagerClient.SendUpload(ctx, id, r.Body)
+	size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), r.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload sto
 	if err := tx.AddUploadPart(ctx, upload.ID, partIndex); err != nil {
 		return nil, err
 	}
-	if err := h.bundleManagerClient.SendUploadPart(ctx, upload.ID, partIndex, r.Body); err != nil {
+	if _, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", upload.ID, partIndex), r.Body); err != nil {
 		return nil, err
 	}
 
@@ -321,7 +321,12 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 		err = tx.Done(err)
 	}()
 
-	size, err := h.bundleManagerClient.StitchParts(ctx, upload.ID, upload.NumParts)
+	var sources []string
+	for partNumber := 0; partNumber < upload.NumParts; partNumber++ {
+		sources = append(sources, fmt.Sprintf("upload-%d.%d.lsif.gz", upload.ID, partNumber))
+	}
+
+	size, err := h.uploadStore.Compose(ctx, fmt.Sprintf("upload-%d.lsif.gz", upload.ID), sources...)
 	if err != nil {
 		return nil, err
 	}

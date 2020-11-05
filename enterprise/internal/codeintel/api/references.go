@@ -96,9 +96,8 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 	if !exists {
 		return nil, Cursor{}, false, ErrMissingDump
 	}
-	bundleClient := s.bundleManagerClient.BundleClient(dump.ID)
 
-	locations, err := bundleClient.References(ctx, cursor.Path, cursor.Line, cursor.Character)
+	locations, err := s.bundleManagerClient.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
@@ -142,12 +141,11 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	if !exists {
 		return nil, Cursor{}, false, ErrMissingDump
 	}
-	bundleClient := s.bundleManagerClient.BundleClient(dump.ID)
 
 	// Get the references that we've seen from the graph-encoded portion of the bundle. We
 	// need to know what we've returned previously so that we can filter out duplicate locations
 	// that are also encoded as monikers.
-	previousLocations, err := bundleClient.References(ctx, cursor.Path, cursor.Line, cursor.Character)
+	previousLocations, err := s.bundleManagerClient.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
@@ -169,7 +167,7 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	// the governing definition, and those may not be fully linked in the LSIF data. This
 	// method returns a cursor if there are reference rows remaining for a subsequent page.
 	for _, moniker := range cursor.Monikers {
-		results, count, err := bundleClient.MonikerResults(ctx, "reference", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
+		results, count, err := s.bundleManagerClient.MonikerResults(ctx, dump.ID, "reference", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
 		if err != nil {
 			if err == bundles.ErrNotFound {
 				log15.Warn("Bundle does not exist")
@@ -223,7 +221,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 			continue
 		}
 
-		packageInformation, err := s.bundleManagerClient.BundleClient(cursor.DumpID).PackageInformation(ctx, cursor.Path, moniker.PackageInformationID)
+		packageInformation, err := s.bundleManagerClient.PackageInformation(ctx, cursor.DumpID, cursor.Path, moniker.PackageInformationID)
 		if err != nil {
 			if err == bundles.ErrNotFound {
 				log15.Warn("Bundle does not exist")
@@ -381,9 +379,8 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		if !exists {
 			continue
 		}
-		bundleClient := s.bundleManagerClient.BundleClient(batchDumpID)
 
-		results, count, err := bundleClient.MonikerResults(ctx, "reference", scheme, identifier, cursor.SkipResultsInDump, limit)
+		results, count, err := s.bundleManagerClient.MonikerResults(ctx, batchDumpID, "reference", scheme, identifier, cursor.SkipResultsInDump, limit)
 		if err != nil {
 			if err == bundles.ErrNotFound {
 				log15.Warn("Bundle does not exist")

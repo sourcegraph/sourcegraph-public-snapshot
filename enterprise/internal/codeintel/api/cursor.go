@@ -70,9 +70,7 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 	}
 
 	pathInBundle := strings.TrimPrefix(path, dump.Root)
-	bundleClient := bundleManagerClient.BundleClient(dump.ID)
-
-	rangeMonikers, err := bundleClient.MonikersByPosition(context.Background(), pathInBundle, line, character)
+	rangeMonikers, err := bundleManagerClient.MonikersByPosition(context.Background(), dump.ID, pathInBundle, line, character)
 	if err != nil {
 		return Cursor{}, errors.Wrap(err, "bundleClient.MonikersByPosition")
 	}

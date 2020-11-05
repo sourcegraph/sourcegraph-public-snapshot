@@ -25,6 +25,7 @@ import (
 var services struct {
 	store               store.Store
 	lsifStore           lsifstore.Store
+	uploadStore         uploadstore.Store
 	gitserverClient     *gitserver.Client
 	bundleManagerClient bundles.BundleManagerClient
 	api                 codeintelapi.CodeIntelAPI
@@ -57,11 +58,12 @@ func initServices(ctx context.Context) error {
 			log.Fatalf("failed to initialize upload store: %s", err)
 		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore)
+		bundleManagerClient := bundles.New(codeIntelDB, observationContext)
 		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
 		lsifStore := lsifstore.New(codeIntelDB)
 
 		services.store = store
+		services.uploadStore = uploadStore
 		services.bundleManagerClient = bundleManagerClient
 		services.api = api
 		services.lsifStore = lsifStore

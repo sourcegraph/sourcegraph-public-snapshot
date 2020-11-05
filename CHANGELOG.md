@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - If the `HEAD` file in a cloned repo is absent or truncated, background cleanup activities will use a best-effort default to remedy the situation. [#14962](https://github.com/sourcegraph/sourcegraph/pull/14962)
 - Search input will always show suggestions. Previously we only showed suggestions for letters and some special characters. [#14982](https://github.com/sourcegraph/sourcegraph/pull/14982)
 - Fixed an issue where `not` keywords were not recognized inside expression groups, and treated incorrectly as patterns. [#15139](https://github.com/sourcegraph/sourcegraph/pull/15139)
+- Fixed an issue where hover pop-ups would not show on the first character of a valid hover range in search queries. [#15410](https://github.com/sourcegraph/sourcegraph/pull/15410)
 
 ### Removed
 

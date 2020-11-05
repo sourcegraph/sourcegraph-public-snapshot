@@ -10,7 +10,6 @@ import (
 )
 
 type Store interface {
-	DumpIDs(ctx context.Context, limit, offset int) ([]int, error)
 	Clear(ctx context.Context, bundleIDs ...int) error
 }
 
@@ -22,10 +21,6 @@ func New(db dbutil.DB) Store {
 	return &store{
 		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 	}
-}
-
-func (s *store) DumpIDs(ctx context.Context, limit, offset int) ([]int, error) {
-	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf("SELECT dump_id FROM lsif_data_metadata ORDER BY dump_id LIMIT %s OFFSET %s", limit, offset)))
 }
 
 var tableNames = []string{
