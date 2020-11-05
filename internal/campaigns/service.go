@@ -17,9 +17,9 @@ import (
 )
 
 type Service struct {
-	allowUnsupported   bool
-	client             api.Client
-	useGzipCompression bool
+	allowUnsupported bool
+	client           api.Client
+	features         featureFlags
 }
 
 type ServiceOpts struct {
@@ -71,17 +71,11 @@ func (svc *Service) DetermineFeatureFlags(ctx context.Context) error {
 		return errors.Wrap(err, "failed to query Sourcegraph version to check for available features")
 	}
 
-	supportsGzip, err := api.CheckSourcegraphVersion(version, ">= 3.21.0", "2020-10-12")
-	if err != nil {
-		return errors.Wrap(err, "failed to check version returned by Sourcegraph")
-	}
-	svc.useGzipCompression = supportsGzip
-
-	return nil
+	return svc.features.setFromVersion(version)
 }
 
 func (svc *Service) newRequest(query string, vars map[string]interface{}) api.Request {
-	if svc.useGzipCompression {
+	if svc.features.useGzipCompression {
 		return svc.client.NewGzippedRequest(query, vars)
 	}
 	return svc.client.NewRequest(query, vars)
@@ -201,7 +195,7 @@ type ExecutorOpts struct {
 }
 
 func (svc *Service) NewExecutor(opts ExecutorOpts) Executor {
-	return newExecutor(opts, svc.client)
+	return newExecutor(opts, svc.client, svc.features)
 }
 
 func (svc *Service) NewWorkspaceCreator(dir string, cleanArchives bool) *WorkspaceCreator {

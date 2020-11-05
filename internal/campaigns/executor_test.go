@@ -144,7 +144,7 @@ func TestExecutor_Integration(t *testing.T) {
 				opts.Timeout = 5 * time.Second
 			}
 
-			executor := newExecutor(opts, client)
+			executor := newExecutor(opts, client, featuresAllEnabled())
 
 			template := &ChangesetTemplate{}
 			for _, r := range tc.repos {

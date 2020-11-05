@@ -28,6 +28,6 @@ type CreatedChangeset struct {
 type GitCommitDescription struct {
 	Message     string `json:"message"`
 	Diff        string `json:"diff"`
-	AuthorName  string `json:"authorName"`
-	AuthorEmail string `json:"authorEmail"`
+	AuthorName  string `json:"authorName,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
 }

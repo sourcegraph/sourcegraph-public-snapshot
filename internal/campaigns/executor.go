@@ -85,12 +85,13 @@ func (ts *TaskStatus) IsCompleted() bool {
 type executor struct {
 	ExecutorOpts
 
-	cache   ExecutionCache
-	client  api.Client
-	logger  *LogManager
-	creator *WorkspaceCreator
-	tasks   sync.Map
-	tempDir string
+	cache    ExecutionCache
+	client   api.Client
+	features featureFlags
+	logger   *LogManager
+	creator  *WorkspaceCreator
+	tasks    sync.Map
+	tempDir  string
 
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
@@ -99,12 +100,13 @@ type executor struct {
 	specsMu sync.Mutex
 }
 
-func newExecutor(opts ExecutorOpts, client api.Client) *executor {
+func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *executor {
 	return &executor{
 		ExecutorOpts:  opts,
 		cache:         opts.Cache,
 		creator:       opts.Creator,
 		client:        client,
+		features:      features,
 		doneEnqueuing: make(chan struct{}),
 		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
 		tempDir:       opts.TempDir,
@@ -208,7 +210,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 				diff = result.Commits[0].Diff
 			}
 
-			spec := createChangesetSpec(task, diff)
+			spec := createChangesetSpec(task, diff, x.features)
 
 			status.Cached = true
 			status.ChangesetSpec = spec
@@ -267,7 +269,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}
 
 	// Build the changeset spec.
-	spec := createChangesetSpec(task, string(diff))
+	spec := createChangesetSpec(task, string(diff), x.features)
 
 	status.ChangesetSpec = spec
 	x.updateTaskStatus(task, status)
@@ -305,16 +307,18 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	return errors.Is(err, context.DeadlineExceeded)
 }
 
-func createChangesetSpec(task *Task, diff string) *ChangesetSpec {
+func createChangesetSpec(task *Task, diff string, features featureFlags) *ChangesetSpec {
 	repo := task.Repository.Name
 
 	var authorName string
 	var authorEmail string
 
 	if task.Template.Commit.Author == nil {
-		// user did not provide author info, so use defaults
-		authorName = "Sourcegraph"
-		authorEmail = "campaigns@sourcegraph.com"
+		if features.includeAutoAuthorDetails {
+			// user did not provide author info, so use defaults
+			authorName = "Sourcegraph"
+			authorEmail = "campaigns@sourcegraph.com"
+		}
 	} else {
 		authorName = task.Template.Commit.Author.Name
 		authorEmail = task.Template.Commit.Author.Email
