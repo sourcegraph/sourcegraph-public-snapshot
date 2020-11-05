@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -112,7 +111,7 @@ func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
 		background.NewRecordExpirer(services.store, config.DataTTL, config.BackgroundTaskInterval, metrics),
 		background.NewUploadResetter(services.store, config.BackgroundTaskInterval, metrics),
 		background.NewIndexResetter(services.store, config.BackgroundTaskInterval, metrics),
-		background.NewCommitUpdater(services.store, commits.NewUpdater(services.store, services.gitserverClient), config.BackgroundTaskInterval),
+		background.NewCommitUpdater(services.store, services.gitserverClient, config.BackgroundTaskInterval),
 	}
 
 	return routines, nil
