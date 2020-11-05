@@ -107,9 +107,6 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 			return
 		}
 		if isLogin {
-			// if we have a redirect param use that, otherwise we'll try and pull
-			// the 'returnTo' param from the referrer URL, this is usually the login
-			// page where the user has been dumped to after following a link.
 			redirect, err := getRedirect(req)
 			if err != nil {
 				log15.Error("Failed to parse URL from Referrer header", "error", err)
@@ -180,6 +177,9 @@ func randomState() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
+// if we have a redirect param use that, otherwise we'll try and pull
+// the 'returnTo' param from the referrer URL, this is usually the login
+// page where the user has been dumped to after following a link.
 func getRedirect(req *http.Request) (string, error) {
 	redirect := req.URL.Query().Get("redirect")
 	if redirect != "" {
