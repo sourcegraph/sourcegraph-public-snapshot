@@ -1,4 +1,4 @@
-package gob
+package postgres
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestDocumentData(t *testing.T) {
 		},
 	}
 
-	serializer := New()
+	serializer := newSerializer()
 
 	recompressed, err := serializer.MarshalDocumentData(expected)
 	if err != nil {
@@ -97,7 +97,7 @@ func TestResultChunkData(t *testing.T) {
 		},
 	}
 
-	serializer := New()
+	serializer := newSerializer()
 
 	recompressed, err := serializer.MarshalResultChunkData(expected)
 	if err != nil {
@@ -188,7 +188,7 @@ func TestLocations(t *testing.T) {
 		},
 	}
 
-	serializer := New()
+	serializer := newSerializer()
 
 	recompressed, err := serializer.MarshalLocations(expected)
 	if err != nil {

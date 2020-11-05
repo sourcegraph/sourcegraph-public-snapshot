@@ -9,8 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
-	gobserializer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization/gob"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -23,7 +21,7 @@ var ErrNoMetadata = errors.New("no rows in meta table")
 type store struct {
 	*basestore.Store
 	dumpID     int
-	serializer serialization.Serializer
+	serializer *serializer
 }
 
 var _ persistence.Store = &store{}
@@ -32,7 +30,7 @@ func NewStore(db dbutil.DB, dumpID int) persistence.Store {
 	return &store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		dumpID:     dumpID,
-		serializer: gobserializer.New(),
+		serializer: newSerializer(),
 	}
 }
 
