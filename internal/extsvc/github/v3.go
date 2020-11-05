@@ -102,6 +102,14 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 	return NewV3Client(c.apiURL, a, c.httpClient)
 }
 
+// WithSeparateRateLimitMonitor returns a new V3Client that uses the same configuration as
+// the current V3Client, except the rate limit monitor not from the global shared pool.
+func (c *V3Client) WithSeparateRateLimitMonitor() *V3Client {
+	client := NewV3Client(c.apiURL, c.auth, c.httpClient)
+	client.rateLimitMonitor = &ratelimit.Monitor{HeaderPrefix: "X-"}
+	return client
+}
+
 // RateLimitMonitor exposes the rate limit monitor.
 func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
