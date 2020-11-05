@@ -182,8 +182,9 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	return results, complete, err
 }
 
-// rawLogSearch runs git log to find matching commits.
-func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) ([]*onelineCommit, bool, error) {
+// rawLogSearch runs git log to find matching commits. complete is true if we
+// parsed all the output from git without encountering a timeout.
+func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (_ []*onelineCommit, complete bool, _ error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
