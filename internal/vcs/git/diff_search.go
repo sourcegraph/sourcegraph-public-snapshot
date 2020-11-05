@@ -168,6 +168,20 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
+	// We do a search with git log returning just the commits (and source sha).
+	onelineCommits, complete, err := rawLogSearch(ctx, repo, opt)
+	if err != nil {
+		return nil, complete, err
+	}
+
+	// We then search each commit to further filter the results.
+	results, showComplete, err := rawShowSearch(ctx, repo, opt, onelineCommits)
+	complete = complete && showComplete
+	return results, complete, err
+}
+
+// rawLogSearch runs git log to find matching commits.
+func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) ([]*onelineCommit, bool, error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
@@ -201,7 +215,6 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	onelineCmd.Repo = repo
 	ctxLog, cancel := withDeadlinePercentage(ctx, 0.5)
 	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
-	tr.LazyPrintf("git log done: data %d bytes, complete=%v, err=%v", len(data), complete, err)
 	cancel()
 	if err != nil {
 		// Don't fail if the repository is empty.
@@ -219,6 +232,16 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 			return nil, complete, err
 		}
 	}
+	return onelineCommits, complete, nil
+}
+
+// rawShowSearch runs git show on each commit in onelineCommits. We need to do
+// this to further filter hunks.
+func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
+	if len(onelineCommits) == 0 {
+		return nil, true, nil
+	}
+
 	// Build a map of commit -> source ref.
 	commitSourceRefs := make(map[string]string, len(onelineCommits))
 	for _, c := range onelineCommits {
@@ -271,15 +294,12 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	}
 	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
 	showCmd.Repo = repo
-	var complete2 bool
 	ctxShow, cancel := withDeadlinePercentage(ctx, 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
-	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
-	tr.LazyPrintf("git show done: data %d bytes, complete=%v, err=%v", len(data), complete2, err)
+	data, complete, err := readUntilTimeout(ctxShow, showCmd)
 	cancel()
 	if err != nil {
 		return nil, complete, err
 	}
-	complete = complete && complete2
 	var cache refResolveCache
 	for len(data) > 0 {
 		var commit *Commit
