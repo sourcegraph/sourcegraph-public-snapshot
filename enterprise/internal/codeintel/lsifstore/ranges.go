@@ -1,8 +1,6 @@
 package lsifstore
 
-import (
-	"sort"
-)
+import "sort"
 
 // findRanges filters the given ranges and returns those that contain the position constructed
 // from line and character. The order of the output slice is "outside-in", so that earlier

@@ -9,12 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "lsif-database"
-}
 
 const testBundleID = 447
 
@@ -23,7 +18,8 @@ func TestDatabaseExists(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	testCases := []struct {
 		path     string
@@ -35,7 +31,7 @@ func TestDatabaseExists(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if exists, err := db.Exists(context.Background(), testBundleID, testCase.path); err != nil {
+		if exists, err := store.Exists(context.Background(), testBundleID, testCase.path); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if exists != testCase.expected {
 			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
@@ -48,7 +44,8 @@ func TestDatabaseRanges(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	//   20: // NewWriter creates a new Writer.
 	//   21: func NewWriter(w io.Writer, addContents bool) *Writer {
@@ -62,7 +59,7 @@ func TestDatabaseRanges(t *testing.T) {
 	//   29:     return w.numElements
 	//   30: }
 
-	if actual, err := db.Ranges(context.Background(), testBundleID, "protocol/writer.go", 21, 24); err != nil {
+	if actual, err := store.Ranges(context.Background(), testBundleID, "protocol/writer.go", 21, 24); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []CodeIntelligenceRange{
@@ -162,12 +159,13 @@ func TestDatabaseDefinitions(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
 
-	if actual, err := db.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22); err != nil {
+	if actual, err := store.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -185,7 +183,8 @@ func TestDatabaseReferences(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
 	//                   ^^^^^^^^^
@@ -196,7 +195,7 @@ func TestDatabaseReferences(t *testing.T) {
 	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
 	//                              ^^^^^^^^^
 
-	if actual, err := db.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20); err != nil {
+	if actual, err := store.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -216,12 +215,13 @@ func TestDatabaseHover(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	// `\tcontents, err := findContents(pkgs, p, f, obj)`
 	//                     ^^^^^^^^^^^^
 
-	if actualText, actualRange, exists, err := db.Hover(context.Background(), testBundleID, "internal/index/indexer.go", 628, 20); err != nil {
+	if actualText, actualRange, exists, err := store.Hover(context.Background(), testBundleID, "internal/index/indexer.go", 628, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no hover found")
@@ -246,12 +246,13 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
 
-	if actual, err := db.MonikersByPosition(context.Background(), testBundleID, "protocol/protocol.go", 92, 10); err != nil {
+	if actual, err := store.MonikersByPosition(context.Background(), testBundleID, "protocol/protocol.go", 92, 10); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := [][]MonikerData{
@@ -276,7 +277,8 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
 	edgeDefinitionLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
@@ -314,7 +316,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		if actual, totalCount, err := db.MonikerResults(context.Background(), testBundleID, testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
+		if actual, totalCount, err := store.MonikerResults(context.Background(), testBundleID, testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
 			t.Fatalf("unexpected error for test case #%d: %s", i, err)
 		} else {
 			if totalCount != testCase.expectedTotalCount {
@@ -333,9 +335,10 @@ func TestDatabasePackageInformation(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := openTestDatabase(t)
+	populateTestStore(t)
+	store := testStore()
 
-	if actual, exists, err := db.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "60"); err != nil {
+	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "60"); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")
@@ -351,22 +354,31 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
-func openTestDatabase(t *testing.T) Store {
+func populateTestStore(t *testing.T) Store {
 	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}
+
+	tx, err := dbconn.Global.Begin()
+	if err != nil {
+		t.Fatalf("unexpected error starting transaction: %s", err)
+	}
+	defer func() {
+		if err := tx.Commit(); err != nil {
+			t.Fatalf("unexpected error finishing transaction: %s", err)
+		}
+	}()
 
 	for _, line := range strings.Split(string(contents), "\n") {
 		if line == "" || strings.HasPrefix(line, "---") {
 			continue
 		}
 
-		// TODO(efritz) - use txn
-		if _, err := dbconn.Global.Exec(line); err != nil {
+		if _, err := tx.Exec(line); err != nil {
 			t.Fatalf("unexpected error loading database data: %s", err)
 		}
 	}
 
-	return NewObserved(NewStore(dbconn.Global), &observation.TestContext)
+	return testStore()
 }
