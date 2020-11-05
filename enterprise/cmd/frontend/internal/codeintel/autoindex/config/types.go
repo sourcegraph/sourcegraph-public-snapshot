@@ -1,4 +1,4 @@
-package index
+package config
 
 type IndexConfiguration struct {
 	SharedSteps []DockerStep

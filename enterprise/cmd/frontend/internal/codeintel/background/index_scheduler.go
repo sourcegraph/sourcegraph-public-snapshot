@@ -6,8 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/index"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -175,7 +175,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInDatabase(ctx context.Con
 		return nil, false, nil
 	}
 
-	indexConfiguration, err := index.UnmarshalJSON(indexConfigurationRecord.Data)
+	indexConfiguration, err := config.UnmarshalJSON(indexConfigurationRecord.Data)
 	if err != nil {
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the database should always take precedence, even
@@ -201,7 +201,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInRepository(ctx context.C
 		return nil, false, errors.Wrap(err, "gitserver.RawContents")
 	}
 
-	indexConfiguration, err := index.UnmarshalYAML(content)
+	indexConfiguration, err := config.UnmarshalYAML(content)
 	if err != nil {
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the repository should always take precedence over
@@ -241,7 +241,7 @@ func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
 	return repositoryIDs
 }
 
-func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration index.IndexConfiguration) (indexes []store.Index) {
+func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []store.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
 		var dockerSteps []store.DockerStep
 		for _, dockerStep := range indexConfiguration.SharedSteps {
