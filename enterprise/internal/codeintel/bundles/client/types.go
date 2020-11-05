@@ -1,6 +1,14 @@
 package client
 
-import clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+import (
+	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types_types"
+)
+
+//
+// TODO - get rid of all of this
+//
+
+var ErrNotFound = clienttypes.ErrNotFound
 
 type Location = clienttypes.Location
 type Range = clienttypes.Range

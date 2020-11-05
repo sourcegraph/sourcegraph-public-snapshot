@@ -5,7 +5,7 @@ package mocks
 import (
 	"context"
 	api "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types_types"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"sync"
 )

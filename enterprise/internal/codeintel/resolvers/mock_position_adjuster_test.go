@@ -4,7 +4,7 @@ package resolvers
 
 import (
 	"context"
-	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	clienttypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types_types"
 	"sync"
 )
 
