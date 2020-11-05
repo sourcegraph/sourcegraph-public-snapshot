@@ -142,6 +142,31 @@ func KindToType(kind string) string {
 	}
 }
 
+// TypeToKind returns a Kind constants given a Type
+// It will panic when given an unknown type.
+func TypeToKind(t string) string {
+	switch t {
+	case TypeAWSCodeCommit:
+		return KindAWSCodeCommit
+	case TypeBitbucketServer:
+		return KindBitbucketServer
+	case TypeBitbucketCloud:
+		return KindBitbucketCloud
+	case TypeGitHub:
+		return KindGitHub
+	case TypeGitLab:
+		return KindGitLab
+	case TypeGitolite:
+		return KindGitolite
+	case TypePhabricator:
+		return KindPhabricator
+	case TypeOther:
+		return KindOther
+	default:
+		panic(fmt.Sprintf("unknown type: %q", t))
+	}
+}
+
 var (
 	// Precompute these for use in ParseServiceType below since the constants are mixed case
 	bbsLower = strings.ToLower(TypeBitbucketServer)
@@ -360,4 +385,18 @@ func (e ErrRateLimitUnsupported) Error() string {
 // URN returns a unique resource identifier of an external service by given kind and ID.
 func URN(kind string, id int64) string {
 	return "extsvc:" + strings.ToLower(kind) + ":" + strconv.FormatInt(id, 10)
+}
+
+// DecodeURN returns the kind of the external service and its ID.
+func DecodeURN(urn string) (kind string, id int64) {
+	fields := strings.Split(urn, ":")
+	if len(fields) != 3 {
+		return "", 0
+	}
+
+	id, err := strconv.ParseInt(fields[2], 10, 64)
+	if err != nil {
+		return "", 0
+	}
+	return fields[1], id
 }

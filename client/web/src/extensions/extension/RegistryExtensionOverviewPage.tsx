@@ -81,7 +81,8 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                     )}
                     {this.props.extension.manifest &&
                         !isErrorLike(this.props.extension.manifest) &&
-                        this.props.extension.manifest.tags?.length && (
+                        this.props.extension.manifest.tags &&
+                        this.props.extension.manifest.tags.length > 0 && (
                             <div className="mb-3">
                                 <h3>Tags</h3>
                                 <ul className="list-inline">

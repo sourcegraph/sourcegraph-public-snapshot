@@ -9,6 +9,34 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.20.1 -> 3.21.2
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510
+
+### Note new services
+
+This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new service `minio` (`deploy-minio.sh`) 
+to store LSIF indices.
+There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
+
+(both of these changes are described exactly in the diff above)
+
+## 3.19.1 -> 3.20.1
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274
+
+### Confirm file permissions
+
+Confirm that `lsif-server-disk` has the correct file permissions:
+
+```
+sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
+```
+
 ## 3.18.0 -> 3.19.1
 
 To upgrade, please perform the changes in the following diff:

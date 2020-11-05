@@ -10,14 +10,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-func TestChangesetEvents(t *testing.T) {
+func TestChangesetEvent(t *testing.T) {
 	type testCase struct {
 		name      string
 		changeset Changeset
 		events    []*ChangesetEvent
 	}
 
-	var cases []testCase
+	bbsActivity := &bitbucketserver.Activity{
+		ID:     1,
+		Action: bitbucketserver.OpenedActivityAction,
+	}
+
+	cases := []testCase{{
+		name: "removes duplicates",
+		changeset: Changeset{
+			Metadata: &bitbucketserver.PullRequest{
+				Activities: []*bitbucketserver.Activity{
+					bbsActivity,
+					bbsActivity,
+				},
+			},
+		},
+		events: []*ChangesetEvent{
+			{
+				Kind:     ChangesetEventKindBitbucketServerOpened,
+				Key:      "1",
+				Metadata: bbsActivity,
+			},
+		},
+	}}
 
 	{ // Github
 

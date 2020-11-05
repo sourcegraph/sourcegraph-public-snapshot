@@ -68,7 +68,7 @@ func TestNullIDResilience(t *testing.T) {
 		if len(errs) == 0 {
 			t.Fatalf("expected errors but none returned (mutation: %q)", m)
 		}
-		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero.Error()); have != want {
+		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero{}); have != want {
 			t.Fatalf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
 		}
 	}

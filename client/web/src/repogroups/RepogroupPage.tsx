@@ -31,6 +31,7 @@ import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
@@ -134,8 +135,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
                                     <small className="repogroup-page__example-bar form-control text-monospace ">
-                                        <span className="search-keyword">repogroup:</span>
-                                        {props.repogroupMetadata.name} {example.exampleQuery}
+                                        <SyntaxHighlightedSearchQuery query={`${repogroupQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
                                         <button
@@ -143,7 +143,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                             type="button"
                                             aria-label="Search"
                                             onClick={onSubmitExample(
-                                                `${repogroupQuery} ${example.rawQuery}`,
+                                                `${repogroupQuery} ${example.query}`,
                                                 example.patternType
                                             )}
                                         >

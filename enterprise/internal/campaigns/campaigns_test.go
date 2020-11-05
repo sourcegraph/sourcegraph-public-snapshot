@@ -3,18 +3,20 @@ package campaigns
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 	t.Helper()
 
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svc := repos.ExternalService{
@@ -36,7 +38,7 @@ func testRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
 			ServiceType: extsvc.KindToType(serviceKind),
-			ServiceID:   "https://example.com/",
+			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
 		},
 		Sources: map[string]*repos.SourceInfo{
 			svc.URN(): {

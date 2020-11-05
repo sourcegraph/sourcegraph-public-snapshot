@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -378,8 +379,20 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
-// Events returns the list of ChangesetEvents from the Changeset's metadata.
+// Events returns the deduplicated list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
+	uniqueEvents := make(map[string]struct{}, 0)
+
+	appendEvent := func(e *ChangesetEvent) {
+		k := string(e.Kind) + e.Key
+		if _, ok := uniqueEvents[k]; ok {
+			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+			return
+		}
+		uniqueEvents[k] = struct{}{}
+		events = append(events, e)
+	}
+
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
@@ -393,7 +406,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Key = c.Key()
 					ev.Kind = ChangesetEventKindFor(c)
 					ev.Metadata = c
-					events = append(events, &ev)
+					appendEvent(&ev)
 				}
 
 			case *github.ReviewRequestedEvent:
@@ -406,20 +419,20 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 				ev.Key = e.Key()
 				ev.Kind = ChangesetEventKindFor(e)
 				ev.Metadata = e
-				events = append(events, &ev)
+				appendEvent(&ev)
 
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
 				ev.Metadata = ti.Item
-				events = append(events, &ev)
+				appendEvent(&ev)
 			}
 		}
 
 	case *bitbucketserver.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
 		addEvent := func(e Keyer) {
-			events = append(events, &ChangesetEvent{
+			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         e.Key(),
 				Kind:        ChangesetEventKindFor(e),
@@ -438,7 +451,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 
 		for _, note := range m.Notes {
 			if event := note.ToEvent(); event != nil {
-				events = append(events, &ChangesetEvent{
+				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,
 					Key:         event.(Keyer).Key(),
 					Kind:        ChangesetEventKindFor(event),
@@ -448,7 +461,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 		for _, pipeline := range m.Pipelines {
-			events = append(events, &ChangesetEvent{
+			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         pipeline.Key(),
 				Kind:        ChangesetEventKindFor(pipeline),
@@ -632,6 +645,11 @@ func WithCurrentSpecID(id int64) func(*Changeset) bool {
 // Changesets.Filter/Find, etc.
 func WithExternalID(id string) func(*Changeset) bool {
 	return func(c *Changeset) bool { return c.ExternalID == id }
+}
+
+// ChangesetsStats holds stats information on a list of changesets.
+type ChangesetsStats struct {
+	Unpublished, Draft, Open, Merged, Closed, Deleted, Total int32
 }
 
 // ChangesetEventKindFor returns the ChangesetEventKind for the given

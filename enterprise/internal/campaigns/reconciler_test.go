@@ -667,7 +667,7 @@ func TestReconcilerProcess(t *testing.T) {
 				failureMessage:   &notFoundErrMsg,
 				externalID:       "100000",
 				reconcilerState:  campaigns.ReconcilerStateErrored,
-				numFailures:      reconcilerMaxNumRetries + 999,
+				numFailures:      ReconcilerMaxNumRetries + 999,
 				unsynced:         true,
 			},
 		},
@@ -737,11 +737,11 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
-			rec := reconciler{
+			rec := Reconciler{
 				noSleepBeforeSync: true,
-				gitserverClient:   gitClient,
-				sourcer:           sourcer,
-				store:             store,
+				GitserverClient:   gitClient,
+				Sourcer:           sourcer,
+				Store:             store,
 			}
 			if err := rec.process(ctx, store, changeset); err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
@@ -1044,10 +1044,10 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 
 	// Run the reconciler
-	rec := reconciler{
+	rec := Reconciler{
 		noSleepBeforeSync: true,
-		sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
-		store:             store,
+		Sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
+		Store:             store,
 	}
 	haveErr := rec.process(ctx, store, otherChangeset)
 	if !errors.Is(haveErr, ErrPublishSameBranch) {

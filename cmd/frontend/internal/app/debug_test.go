@@ -1,10 +1,18 @@
 package app
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -97,4 +105,53 @@ func Test_prometheusValidator(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGrafanaLicensing(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Run("licensed requests succeed", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		PreMountGrafanaHook = func() error { return nil }
+		defer func() { PreMountGrafanaHook = nil }()
+
+		router := mux.NewRouter()
+		addGrafana(router)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
+
+		if got, want := rec.Code, http.StatusOK; got != want {
+			t.Fatalf("status code: got %d, want %d", got, want)
+		}
+	})
+
+	t.Run("non-licensed requests fail", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		PreMountGrafanaHook = func() error { return errors.New("test fail") }
+		defer func() { PreMountGrafanaHook = nil }()
+
+		router := mux.NewRouter()
+		addGrafana(router)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
+
+		if got, want := rec.Code, http.StatusUnauthorized; got != want {
+			t.Fatalf("status code: got %d, want %d", got, want)
+		}
+		// http.Error appends a trailing newline that won't be present in
+		// the error message itself, so we need to remove it.
+		if diff := cmp.Diff(strings.TrimSuffix(rec.Body.String(), "\n"), errMonitoringNotLicensed); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }

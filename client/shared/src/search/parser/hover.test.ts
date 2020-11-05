@@ -18,6 +18,19 @@ describe('getHoverResult()', () => {
                 startLineNumber: 1,
             },
         })
+        expect(getHoverResult(parsedQuery, { column: 18 })).toStrictEqual({
+            contents: [
+                {
+                    value: 'Include only results from files matching the given search pattern.',
+                },
+            ],
+            range: {
+                endColumn: 40,
+                endLineNumber: 1,
+                startColumn: 18,
+                startLineNumber: 1,
+            },
+        })
         expect(getHoverResult(parsedQuery, { column: 30 })).toStrictEqual({
             contents: [
                 {

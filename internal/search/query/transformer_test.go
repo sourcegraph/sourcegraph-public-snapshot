@@ -271,6 +271,11 @@ func TestSubstituteConcat(t *testing.T) {
 			concat: fuzzyRegexp,
 			want:   `"(a).*?(b)" (and "c" "d") "(e).*?(f)" (or "g" "h") "(i j k)"`,
 		},
+		{
+			input:  "(a not b not c d)",
+			concat: space,
+			want:   `"a" (not "b") (not "c") "d"`,
+		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {

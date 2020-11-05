@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,7 +43,10 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
 	t.Helper()
 
-	op := InsertRepoOp{Name: repo.Name}
+	op := InsertRepoOp{
+		Name:         repo.Name,
+		ExternalRepo: repo.ExternalRepo,
+	}
 
 	if repo.RepoFields != nil {
 		op.Description = repo.Description
@@ -131,7 +136,7 @@ INSERT INTO repo (
 //
 // Upsert exists for testing purposes only. Repository mutations are managed
 // by repo-updater.
-func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
+func (s *RepoStore) Upsert(ctx context.Context, op InsertRepoOp) error {
 	insert := false
 
 	// We optimistically assume the repo is already in the table, so first
@@ -339,6 +344,97 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
+func Test_GetUserAddedRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+
+	// Create a user
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: user.ID,
+	})
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "Github - Test",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		NamespaceUserID: user.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:    "github.com/sourcegraph/sourcegraph",
+		Private: true,
+		RepoFields: &types.RepoFields{
+			URI:         "uri",
+			Description: "description",
+			Fork:        true,
+			Archived:    true,
+			Cloned:      true,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				service.URN(): {
+					ID:       service.URN(),
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+		},
+	}
+	err = Repos.Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []api.RepoName{
+		repo.Name,
+	}
+
+	have, err := Repos.GetUserAddedRepoNames(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+}
+
 func TestRepos_List_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -410,6 +506,47 @@ func TestRepos_List_cloned(t *testing.T) {
 		{"NoCloned", ReposListOptions{NoCloned: true}, mine},
 		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
 		{"Default", ReposListOptions{}, append(append([]*types.Repo(nil), mine...), yours...)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := Repos.List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
+func TestRepos_List_serviceTypes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	mine := mustCreate(ctx, t, MakeGithubRepo())
+	yours := mustCreate(ctx, t, MakeGitlabRepo())
+	others := mustCreate(ctx, t, MakeGitoliteRepo())
+	both := append(mine, yours...)
+	all := append(both, others...)
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, mine},
+		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, yours},
+		{"Both", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, both},
+		{"Default", ReposListOptions{}, all},
 	}
 
 	for _, test := range tests {
@@ -850,7 +987,7 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	})
 }
 
-func TestRepos_Create(t *testing.T) {
+func TestRepos_createRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -876,7 +1013,7 @@ func TestRepos_Create(t *testing.T) {
 	}
 }
 
-func TestRepos_Create_dupe(t *testing.T) {
+func TestRepos_createRepo_dupe(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

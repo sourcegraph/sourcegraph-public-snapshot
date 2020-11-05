@@ -10,11 +10,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -322,43 +324,63 @@ func TestPermissionLevels(t *testing.T) {
 
 	t.Run("mutations", func(t *testing.T) {
 		mutations := []struct {
-			name         string
-			mutationFunc func(campaignID, changesetID, campaignSpecID string) string
+			name           string
+			mutationFunc   func(campaignID, changesetID, campaignSpecID string) string
+			wantLicenseErr bool
 		}{
+			{
+				name: "createCampaign",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
+				},
+				wantLicenseErr: true,
+			},
 			{
 				name: "closeCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
 				},
+				wantLicenseErr: false,
 			},
 			{
 				name: "deleteCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } } `, campaignID)
 				},
+				wantLicenseErr: false,
 			},
 			{
 				name: "syncChangeset",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
 				},
+				wantLicenseErr: false,
 			},
 			{
 				name: "applyCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
 				},
+				wantLicenseErr: true,
 			},
 			{
 				name: "moveCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaignID)
 				},
+				wantLicenseErr: false,
 			},
 		}
 
 		for _, m := range mutations {
 			t.Run(m.name, func(t *testing.T) {
+				// Specific mutations trigger a license check.
+				licensing.EnforceTiers = true
+				defer func() { licensing.EnforceTiers = false }()
+
+				licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
+				defer func() { licensing.MockCheckFeature = nil }()
+
 				tests := []struct {
 					name           string
 					currentUser    int32
@@ -411,19 +433,29 @@ func TestPermissionLevels(t *testing.T) {
 						var response struct{}
 						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
 
-						if tc.wantAuthErr {
+						// Validate that the current license supports the campaign operation.
+						if m.wantLicenseErr {
 							if len(errs) != 1 {
 								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 							}
-							if !strings.Contains(errs[0].Error(), "must be authenticated") {
-								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+							if !strings.Contains(errs[0].Error(), "license") {
+								t.Fatalf("expected license error, got %q", errs[0])
 							}
 						} else {
-							// We don't care about other errors, we only want to
-							// check that we didn't get an auth error.
-							for _, e := range errs {
-								if strings.Contains(e.Error(), "must be authenticated") {
-									t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+							if tc.wantAuthErr {
+								if len(errs) != 1 {
+									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+								}
+								if !strings.Contains(errs[0].Error(), "must be authenticated") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+								}
+							} else {
+								// We don't care about other errors, we only want to
+								// check that we didn't get an auth error.
+								for _, e := range errs {
+									if strings.Contains(e.Error(), "must be authenticated") {
+										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+									}
 								}
 							}
 						}
@@ -616,7 +648,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -641,7 +673,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -668,7 +700,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
-		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -757,7 +788,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
-	changesetStats   apitest.ChangesetConnectionStats
+	changesetStats   apitest.ChangesetsStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -775,7 +806,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
 		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
@@ -796,11 +827,12 @@ const queryCampaignPermLevels = `
 query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
     ... on Campaign {
-      id
+	  id
+
+	  changesetsStats { unpublished, open, merged, closed, total }
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
-		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {

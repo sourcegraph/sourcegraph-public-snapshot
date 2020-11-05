@@ -375,6 +375,31 @@ func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitor() (MonitorResolver, bool) {
+	n, ok := r.Node.(MonitorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
+	n, ok := r.Node.(MonitorQueryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
+	n, ok := r.Node.(MonitorEmailResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
+	n, ok := r.Node.(MonitorActionEventResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, bool) {
+	n, ok := r.Node.(MonitorTriggerEventResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	n, ok := r.Node.(CampaignResolver)
 	return n, ok
@@ -420,6 +445,11 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 		return nil, ok
 	}
 	return n.ToVisibleChangesetSpec()
+}
+
+func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
+	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
@@ -548,6 +578,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":
 		return r.ChangesetByID(ctx, id)
+	case "CampaignsCredential":
+		return r.CampaignsCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

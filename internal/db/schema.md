@@ -631,13 +631,15 @@ Check constraints:
       Column      |  Type   | Modifiers 
 ------------------+---------+-----------
  repository_id    | integer | not null
- commit           | text    | not null
+ commit           | text    | 
  upload_id        | integer | not null
  distance         | integer | not null
  ancestor_visible | boolean | not null
  overwritten      | boolean | not null
+ commit_bytea     | bytea   | not null
 Indexes:
     "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
+    "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
 
@@ -966,6 +968,7 @@ Indexes:
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
     "repo_cloned" btree (cloned)
+    "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")

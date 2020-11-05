@@ -1,7 +1,9 @@
 package worker
 
 import (
+	"compress/gzip"
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -11,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -24,13 +26,13 @@ import (
 )
 
 type handler struct {
-	store               store.Store
-	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserverClient
-	metrics             metrics.WorkerMetrics
-	enableBudget        bool
-	budgetRemaining     int64
-	createStore         func(id int) persistence.Store
+	store           store.Store
+	uploadStore     uploadstore.Store
+	gitserverClient gitserverClient
+	metrics         metrics.WorkerMetrics
+	enableBudget    bool
+	budgetRemaining int64
+	createStore     func(id int) persistence.Store
 }
 
 type gitserverClient interface {
@@ -98,17 +100,27 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return true, nil
 	}
 
-	// Pull raw uploaded data from bundle manager
-	r, err := h.bundleManagerClient.GetUpload(ctx, upload.ID)
+	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", upload.ID)
+
+	// Pull raw uploaded data from bucket
+	rc, err := h.uploadStore.Get(ctx, uploadFilename, 0)
 	if err != nil {
-		return false, errors.Wrap(err, "bundleManager.GetUpload")
+		return false, errors.Wrap(err, "uploadStore.Get")
 	}
+	defer rc.Close()
+
+	rc, err = gzip.NewReader(rc)
+	if err != nil {
+		return false, errors.Wrap(err, "gzip.NewReader")
+	}
+	defer rc.Close()
+
 	defer func() {
 		if err == nil {
-			// Remove upload file after processing - we don't need it anymore. On failure we
-			// may want to retry, so we should keep the upload data around for a bit. The bundle
-			// manager will clean up old uploads periodically.
-			if deleteErr := h.bundleManagerClient.DeleteUpload(ctx, upload.ID); deleteErr != nil {
+			// Remove upload file after processing - we won't need it anymore. On failure we
+			// may want to retry, so we should keep the upload data around for a bit. Older
+			// uploads will be cleaned up periodically.
+			if deleteErr := h.uploadStore.Delete(ctx, uploadFilename); deleteErr != nil {
 				log15.Warn("Failed to delete upload file", "err", err)
 			}
 		}
@@ -122,7 +134,7 @@ func (h *handler) handle(ctx context.Context, store store.Store, upload store.Up
 		return directoryChildren, nil
 	}
 
-	groupedBundleData, err := correlation.Correlate(ctx, r, upload.ID, upload.Root, getChildren, h.metrics)
+	groupedBundleData, err := correlation.Correlate(ctx, rc, upload.ID, upload.Root, getChildren, h.metrics)
 	if err != nil {
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}
@@ -192,22 +204,19 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 		err = store.Done(err)
 	}()
 
-	if err := store.CreateTables(ctx); err != nil {
-		return errors.Wrap(err, "store.CreateTables")
-	}
-	if err := store.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
+	if err := store.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := store.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
+	if err := store.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := store.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
+	if err := store.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "writer.WriteResultChunks")
 	}
-	if err := store.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
+	if err := store.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := store.WriteReferences(ctx, groupedBundleData.References); err != nil {
+	if err := store.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
 
@@ -248,17 +257,6 @@ func (h *handler) updateXrepoData(ctx context.Context, store store.Store, upload
 	// of uploads for the same repo re-calculate nearly identical data multiple times.
 	if err := store.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
 		return errors.Wrap(err, "store.MarkRepositoryDirty")
-	}
-
-	return nil
-}
-
-func (h *handler) sendDB(ctx context.Context, uploadID int, tempDir string) (err error) {
-	ctx, endOperation := h.metrics.SendDBOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
-	if err := h.bundleManagerClient.SendDB(ctx, uploadID, tempDir); err != nil {
-		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
 	return nil

@@ -6,7 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 )
 
 type ResolvedCodeIntelligenceRange struct {
@@ -27,11 +28,9 @@ func (api *codeIntelAPI) Ranges(ctx context.Context, file string, startLine, end
 	}
 
 	pathInBundle := strings.TrimPrefix(file, dump.Root)
-	bundleClient := api.bundleManagerClient.BundleClient(dump.ID)
-
-	ranges, err := bundleClient.Ranges(ctx, pathInBundle, startLine, endLine)
+	ranges, err := api.bundleStore.Ranges(ctx, dump.ID, pathInBundle, startLine, endLine)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, nil
 		}

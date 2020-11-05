@@ -25,6 +25,8 @@ The document content can set class names and IDs on elements (for example, Markd
 
     --note-color: #bce8f1;
     --warning-color: #faebcc;
+    --experimental-color: #b200f8;
+
     --table-row-bg-1: var(--body-bg);
 }
 
@@ -117,8 +119,10 @@ pre, code, kbd {
 
 code {
     background-color: var(--code-bg);
-    padding: 0.2em;
+    padding: .2em .4em;
     border-radius: 0.2em;
+    margin: 0;
+    font-size: 85%;
 }
 
 /* LAYOUT */
@@ -402,6 +406,24 @@ body > #page > main > #content {
 	color: inherit;
 }
 
+.badge {
+    display: inline-block;
+    padding: 0.3em;
+    border-radius: 4px;
+    font-size: 85%;
+    font-weight: bold;
+    color: inherit;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+}
+
+.badge-experimental {
+    color: #ffffff;
+    background-color: var(--experimental-color);
+}
+
 /* MARKDOWN */
 .markdown-body {
   text-size-adjust: 100%;
@@ -520,6 +542,9 @@ body > #page > main > #content {
 }
 .markdown-body aside.warning {
     border-color: var(--warning-color);
+}
+.markdown-body aside.experimental {
+    border-color: var(--experimental-color);
 }
 .markdown-body table {
     display: block;

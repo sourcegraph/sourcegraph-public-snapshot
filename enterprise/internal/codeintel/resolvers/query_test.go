@@ -7,15 +7,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	apimocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api/mocks"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestRanges(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -59,7 +59,7 @@ func TestRanges(t *testing.T) {
 
 	queryResolver := NewQueryResolver(
 		mockStore,
-		mockBundleManagerClient,
+		mockBundleStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -147,7 +147,7 @@ func TestRanges(t *testing.T) {
 
 func TestDefinitions(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -196,7 +196,7 @@ func TestDefinitions(t *testing.T) {
 
 	queryResolver := NewQueryResolver(
 		mockStore,
-		mockBundleManagerClient,
+		mockBundleStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -251,8 +251,7 @@ func TestDefinitions(t *testing.T) {
 
 func TestReferences(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -261,8 +260,7 @@ func TestReferences(t *testing.T) {
 
 	// Cursor decoding
 	mockStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) { return store.Dump{ID: id}, true, nil })
-	mockBundleManagerClient.BundleClientFunc.SetDefaultReturn(mockBundleClient)
-	mockBundleClient.MonikersByPositionFunc.SetDefaultReturn([][]bundles.MonikerData{{testMoniker1, testMoniker2}}, nil)
+	mockBundleStore.MonikersByPositionFunc.SetDefaultReturn([][]bundles.MonikerData{{testMoniker1, testMoniker2}}, nil)
 
 	// position can be translated for subsequent dumps
 	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", bundles.Position{Line: 20, Character: 15}, true, nil)
@@ -326,7 +324,7 @@ func TestReferences(t *testing.T) {
 
 	queryResolver := NewQueryResolver(
 		mockStore,
-		mockBundleManagerClient,
+		mockBundleStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -427,7 +425,7 @@ func TestReferences(t *testing.T) {
 
 func TestHover(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -454,7 +452,7 @@ func TestHover(t *testing.T) {
 
 	queryResolver := NewQueryResolver(
 		mockStore,
-		mockBundleManagerClient,
+		mockBundleStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -491,7 +489,7 @@ func TestHover(t *testing.T) {
 
 func TestDiagnostics(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -563,7 +561,7 @@ func TestDiagnostics(t *testing.T) {
 
 	queryResolver := NewQueryResolver(
 		mockStore,
-		mockBundleManagerClient,
+		mockBundleStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,

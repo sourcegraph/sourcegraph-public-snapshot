@@ -5,16 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestRanges(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockGitserverClient := NewMockGitserverClient()
 
 	sourceRanges := []bundles.CodeIntelligenceRange{
@@ -39,10 +38,9 @@ func TestRanges(t *testing.T) {
 	}
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientRanges(t, mockBundleClient, "main.go", 10, 20, sourceRanges)
+	setMockBundleStoreRanges(t, mockBundleStore, 42, "main.go", 10, 20, sourceRanges)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
 	ranges, err := api.Ranges(context.Background(), "sub1/main.go", 10, 20, 42)
 	if err != nil {
 		t.Fatalf("expected error getting ranges: %s", err)
@@ -75,11 +73,11 @@ func TestRanges(t *testing.T) {
 
 func TestRangesUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockGitserverClient := NewMockGitserverClient()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
-	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
 	if _, err := api.Ranges(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting ranges. want=%q have=%q", ErrMissingDump, err)
 	}

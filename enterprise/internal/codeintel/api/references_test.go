@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -16,12 +16,10 @@ import (
 
 func TestHandleSameDumpCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientReferences(t, mockBundleClient, "main.go", 23, 34, []bundles.Location{
+	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
@@ -34,11 +32,11 @@ func TestHandleSameDumpCursor(t *testing.T) {
 	})
 
 	rpr := &ReferencePageResolver{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
-		repositoryID:        100,
-		commit:              testCommit,
-		limit:               5,
+		store:        mockStore,
+		bundleStore:  mockBundleStore,
+		repositoryID: 100,
+		commit:       testCommit,
+		limit:        5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
@@ -125,27 +123,25 @@ func TestHandleSameDumpCursor(t *testing.T) {
 
 func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientReferences(t, mockBundleClient, "main.go", 23, 34, []bundles.Location{
+	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
 	})
 
 	rpr := &ReferencePageResolver{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
-		repositoryID:        100,
-		commit:              testCommit,
-		limit:               5,
+		store:        mockStore,
+		bundleStore:  mockBundleStore,
+		repositoryID: 100,
+		commit:       testCommit,
+		limit:        5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient, "reference", "gomod", "pad", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 0, 5, []bundles.Location{
 			{DumpID: 42, Path: "foo.go", Range: testRange1},
 			{DumpID: 42, Path: "foo.go", Range: testRange2},
 			{DumpID: 42, Path: "bar.go", Range: testRange2},
@@ -192,7 +188,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient, "reference", "gomod", "pad", 5, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 5, 5, []bundles.Location{
 			{DumpID: 42, Path: "baz.go", Range: testRange1},
 			{DumpID: 42, Path: "baz.go", Range: testRange2},
 		}, 7)
@@ -235,25 +231,22 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 
 func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
-	setMockBundleClientPackageInformation(t, mockBundleClient1, "main.go", "1234", testPackageInformation)
+	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
 	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
 
 	rpr := &ReferencePageResolver{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
-		repositoryID:        100,
-		commit:              testCommit,
-		limit:               5,
+		store:        mockStore,
+		bundleStore:  mockBundleStore,
+		repositoryID: 100,
+		commit:       testCommit,
+		limit:        5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient2, "reference", "gomod", "pad", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 0, 5, []bundles.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -298,7 +291,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient2, "reference", "gomod", "pad", 5, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 5, 5, []bundles.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -346,14 +339,10 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 
 func TestHandleSameRepoCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
-	mockBundleClient3 := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{50: mockBundleClient1, 51: mockBundleClient2, 52: mockBundleClient3})
 	setMockStoreSameRepoPager(t, mockStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 5, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
@@ -362,7 +351,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 	})
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient1, "reference", "gomod", "bar", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []bundles.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 51, Path: "baz.go", Range: testRange3},
@@ -371,12 +360,12 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		}, 10)
 
 		rpr := &ReferencePageResolver{
-			store:               mockStore,
-			bundleManagerClient: mockBundleManagerClient,
-			repositoryID:        100,
-			commit:              testCommit,
-			remoteDumpLimit:     5,
-			limit:               5,
+			store:           mockStore,
+			bundleStore:     mockBundleStore,
+			repositoryID:    100,
+			commit:          testCommit,
+			remoteDumpLimit: 5,
+			limit:           5,
 		}
 
 		references, newCursor, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
@@ -423,25 +412,41 @@ func TestHandleSameRepoCursor(t *testing.T) {
 	})
 
 	t.Run("multiple pages", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient1, "reference", "gomod", "bar", 0, 5, []bundles.Location{
-			{DumpID: 50, Path: "foo.go", Range: testRange1},
-			{DumpID: 50, Path: "bar.go", Range: testRange2},
-		}, 2)
-		setMockBundleClientMonikerResults(t, mockBundleClient2, "reference", "gomod", "bar", 0, 3, []bundles.Location{
-			{DumpID: 51, Path: "baz.go", Range: testRange3},
-			{DumpID: 51, Path: "bonk.go", Range: testRange4},
-		}, 2)
-		setMockBundleClientMonikerResults(t, mockBundleClient3, "reference", "gomod", "bar", 0, 1, []bundles.Location{
-			{DumpID: 52, Path: "quux.go", Range: testRange5},
-		}, 1)
+		setMultiMockBundleStoreMonikerResults(
+			t,
+			mockBundleStore,
+			monikerResultsSpec{
+				50, "references", "gomod", "bar", 0, 5,
+				[]bundles.Location{
+					{DumpID: 50, Path: "foo.go", Range: testRange1},
+					{DumpID: 50, Path: "bar.go", Range: testRange2},
+				},
+				2,
+			},
+			monikerResultsSpec{
+				51, "references", "gomod", "bar", 0, 3,
+				[]bundles.Location{
+					{DumpID: 51, Path: "baz.go", Range: testRange3},
+					{DumpID: 51, Path: "bonk.go", Range: testRange4},
+				},
+				2,
+			},
+			monikerResultsSpec{
+				52, "references", "gomod", "bar", 0, 1,
+				[]bundles.Location{
+					{DumpID: 52, Path: "quux.go", Range: testRange5},
+				},
+				1,
+			},
+		)
 
 		rpr := &ReferencePageResolver{
-			store:               mockStore,
-			bundleManagerClient: mockBundleManagerClient,
-			repositoryID:        100,
-			commit:              testCommit,
-			remoteDumpLimit:     5,
-			limit:               5,
+			store:           mockStore,
+			bundleStore:     mockBundleStore,
+			repositoryID:    100,
+			commit:          testCommit,
+			remoteDumpLimit: 5,
+			limit:           5,
 		}
 
 		references, newCursor, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
@@ -485,29 +490,27 @@ func TestHandleSameRepoCursor(t *testing.T) {
 
 func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{51: mockBundleClient})
 	setMockStoreSameRepoPager(t, mockStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 2, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
-	setMockBundleClientMonikerResults(t, mockBundleClient, "reference", "gomod", "bar", 0, 5, []bundles.Location{
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []bundles.Location{
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
 
 	rpr := &ReferencePageResolver{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
-		repositoryID:        100,
-		commit:              testCommit,
-		remoteDumpLimit:     2,
-		limit:               5,
+		store:           mockStore,
+		bundleStore:     mockBundleStore,
+		repositoryID:    100,
+		commit:          testCommit,
+		remoteDumpLimit: 2,
+		limit:           5,
 	}
 
 	references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
@@ -562,14 +565,10 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 
 func TestHandleRemoteRepoCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient1 := bundlemocks.NewMockBundleClient()
-	mockBundleClient2 := bundlemocks.NewMockBundleClient()
-	mockBundleClient3 := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{50: mockBundleClient1, 51: mockBundleClient2, 52: mockBundleClient3})
 	setMockStorePackageReferencePager(t, mockStore, "gomod", "leftpad", "0.1.0", 100, 5, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
@@ -578,7 +577,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 	})
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient1, "reference", "gomod", "bar", 0, 5, []bundles.Location{
+		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []bundles.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 51, Path: "baz.go", Range: testRange3},
@@ -587,12 +586,12 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		}, 10)
 
 		rpr := &ReferencePageResolver{
-			store:               mockStore,
-			bundleManagerClient: mockBundleManagerClient,
-			repositoryID:        100,
-			commit:              testCommit,
-			remoteDumpLimit:     5,
-			limit:               5,
+			store:           mockStore,
+			bundleStore:     mockBundleStore,
+			repositoryID:    100,
+			commit:          testCommit,
+			remoteDumpLimit: 5,
+			limit:           5,
 		}
 
 		references, newCursor, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
@@ -639,25 +638,41 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 	})
 
 	t.Run("multiple pages", func(t *testing.T) {
-		setMockBundleClientMonikerResults(t, mockBundleClient1, "reference", "gomod", "bar", 0, 5, []bundles.Location{
-			{DumpID: 50, Path: "foo.go", Range: testRange1},
-			{DumpID: 50, Path: "bar.go", Range: testRange2},
-		}, 2)
-		setMockBundleClientMonikerResults(t, mockBundleClient2, "reference", "gomod", "bar", 0, 3, []bundles.Location{
-			{DumpID: 51, Path: "baz.go", Range: testRange3},
-			{DumpID: 51, Path: "bonk.go", Range: testRange4},
-		}, 2)
-		setMockBundleClientMonikerResults(t, mockBundleClient3, "reference", "gomod", "bar", 0, 1, []bundles.Location{
-			{DumpID: 52, Path: "quux.go", Range: testRange5},
-		}, 1)
+		setMultiMockBundleStoreMonikerResults(
+			t,
+			mockBundleStore,
+			monikerResultsSpec{
+				50, "references", "gomod", "bar", 0, 5,
+				[]bundles.Location{
+					{DumpID: 50, Path: "foo.go", Range: testRange1},
+					{DumpID: 50, Path: "bar.go", Range: testRange2},
+				},
+				2,
+			},
+			monikerResultsSpec{
+				51, "references", "gomod", "bar", 0, 3,
+				[]bundles.Location{
+					{DumpID: 51, Path: "baz.go", Range: testRange3},
+					{DumpID: 51, Path: "bonk.go", Range: testRange4},
+				},
+				2,
+			},
+			monikerResultsSpec{
+				52, "references", "gomod", "bar", 0, 1,
+				[]bundles.Location{
+					{DumpID: 52, Path: "quux.go", Range: testRange5},
+				},
+				1,
+			},
+		)
 
 		rpr := &ReferencePageResolver{
-			store:               mockStore,
-			bundleManagerClient: mockBundleManagerClient,
-			repositoryID:        100,
-			commit:              testCommit,
-			remoteDumpLimit:     5,
-			limit:               5,
+			store:           mockStore,
+			bundleStore:     mockBundleStore,
+			repositoryID:    100,
+			commit:          testCommit,
+			remoteDumpLimit: 5,
+			limit:           5,
 		}
 
 		references, _, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
@@ -690,29 +705,27 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 
 func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockBundleStore := bundlemocks.NewMockDatabase()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{51: mockBundleClient})
 	setMockStorePackageReferencePager(t, mockStore, "gomod", "leftpad", "0.1.0", 100, 2, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
-	setMockBundleClientMonikerResults(t, mockBundleClient, "reference", "gomod", "bar", 0, 5, []bundles.Location{
+	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []bundles.Location{
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
 
 	rpr := &ReferencePageResolver{
-		store:               mockStore,
-		bundleManagerClient: mockBundleManagerClient,
-		repositoryID:        100,
-		commit:              testCommit,
-		remoteDumpLimit:     2,
-		limit:               5,
+		store:           mockStore,
+		bundleStore:     mockBundleStore,
+		repositoryID:    100,
+		commit:          testCommit,
+		remoteDumpLimit: 2,
+		limit:           5,
 	}
 
 	references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
