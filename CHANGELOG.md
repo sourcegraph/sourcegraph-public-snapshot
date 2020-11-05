@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Campaign steps run in a container that does not run as root could fail on systems that do not map the running user ID to the container, most notably desktop Linux. This has been fixed: temporary files and workspaces mounted into the container now have sufficient permissions to allow the container user to execute the step. [#366](https://github.com/sourcegraph/src-cli/pull/366)
+
 ## 3.21.5
 
 ### Added
