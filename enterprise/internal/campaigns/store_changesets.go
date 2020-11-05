@@ -808,11 +808,11 @@ const getChangesetStatsFmtstr = `
 SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED') AS unpublished,
-	COUNT(*) FILTER (WHERE changesets.external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE changesets.external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE changesets.external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE changesets.external_state = 'OPEN') AS open,
-	COUNT(*) FILTER (WHERE changesets.external_state = 'DELETED') AS deleted
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DELETED') AS deleted
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
