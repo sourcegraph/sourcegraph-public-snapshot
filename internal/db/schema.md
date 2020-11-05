@@ -480,6 +480,22 @@ Triggers:
 
 ```
 
+# Table "public.gitserver_repos"
+```
+   Column   |           Type           |       Modifiers        
+------------+--------------------------+------------------------
+ id         | integer                  | not null
+ shard_id   | text                     | not null
+ state      | text                     | not null
+ error      | text                     | 
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "gitserver_repos_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "gitserver_repos_id_fkey" FOREIGN KEY (id) REFERENCES repo(id)
+
+```
+
 # Table "public.global_state"
 ```
          Column          |  Type   |         Modifiers         
@@ -984,6 +1000,7 @@ Referenced by:
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_id_fkey" FOREIGN KEY (id) REFERENCES repo(id)
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()

@@ -110,6 +110,8 @@
 // 1528395737_compressed_commits.up.sql (339B)
 // 1528395738_nullable_commit.down.sql (255B)
 // 1528395738_nullable_commit.up.sql (259B)
+// 1528395739_add_gitserver_repos_table.down.sql (87B)
+// 1528395739_add_gitserver_repos_table.up.sql (341B)
 
 package migrations
 
@@ -2378,6 +2380,46 @@ func _1528395738_nullable_commitUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395739_add_gitserver_repos_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xcf\x2c\x29\x4e\x2d\x2a\x4b\x2d\x8a\x2f\x4a\x2d\xc8\x2f\xb6\x86\xaa\x8a\x0c\x70\x45\x93\x8a\x2f\x2e\x49\x2c\x49\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x4a\x93\xa2\x8c\x57\x00\x00\x00")
+
+func _1528395739_add_gitserver_repos_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395739_add_gitserver_repos_tableDownSql,
+		"1528395739_add_gitserver_repos_table.down.sql",
+	)
+}
+
+func _1528395739_add_gitserver_repos_tableDownSql() (*asset, error) {
+	bytes, err := _1528395739_add_gitserver_repos_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395739_add_gitserver_repos_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x36, 0x3, 0x3e, 0xdf, 0x98, 0xad, 0x25, 0xb7, 0xa2, 0x7, 0xb3, 0xa, 0x6d, 0x91, 0xfd, 0xf1, 0xbf, 0xa3, 0x59, 0xc5, 0xb4, 0x63, 0x8, 0x39, 0xb7, 0x88, 0xf0, 0x85, 0xd4, 0x8d, 0x2d, 0x6a}}
+	return a, nil
+}
+
+var __1528395739_add_gitserver_repos_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8f\xcd\x6e\x83\x30\x10\x84\xef\x3c\xc5\xdc\x02\x12\x79\x82\x9c\x48\xba\x54\xa8\x60\x22\x30\x6a\x39\x21\x54\x5b\xa9\xa5\x06\x23\x7b\x5b\x55\x7d\xfa\xca\x26\xea\xdf\x71\x66\xb4\xdf\xcc\x1e\xe9\xbe\x12\x87\x24\x39\x75\x54\x48\x82\x1c\xcf\x84\x8b\x61\xaf\xdd\xbb\x76\x93\xd3\xab\x9d\x3c\xcf\xac\x51\xf4\x20\x31\x34\x48\x13\x00\xd8\x2d\x96\xa7\xe7\x57\xbb\x68\xb5\xdb\x8c\x20\xcc\x72\xd9\xe5\x3f\x32\x64\xd9\x2f\x76\x71\xac\x09\x55\x09\xd1\x4a\xd0\x53\xd5\xcb\xfe\x5f\x95\x8f\x74\xa3\x60\x16\x46\x47\x25\x75\x24\x4e\xd4\x23\x64\xa9\x51\x19\xce\x5d\xd5\x14\xdd\x88\x07\x1a\x43\x8f\x7f\x99\x9d\x9a\x8c\x02\xeb\x0f\x8e\x58\x31\xd4\x75\x4c\xe2\xe6\xbf\x36\xf6\x7b\x2c\x96\xb1\x4d\xcb\x71\x5b\x9c\xdf\x8c\x04\xd0\xce\x59\x17\xaf\x02\xe3\x6d\x55\x33\x6b\x35\xcd\x0c\x36\x57\xed\x79\xbe\xae\xfc\xf9\xcd\xc3\x1d\x95\xc5\x50\x4b\x88\xf6\x31\xcd\xb6\x47\xdb\xa6\xa9\xe4\x21\xf9\x0a\x00\x00\xff\xff\x01\x4b\x63\x9f\x55\x01\x00\x00")
+
+func _1528395739_add_gitserver_repos_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395739_add_gitserver_repos_tableUpSql,
+		"1528395739_add_gitserver_repos_table.up.sql",
+	)
+}
+
+func _1528395739_add_gitserver_repos_tableUpSql() (*asset, error) {
+	bytes, err := _1528395739_add_gitserver_repos_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395739_add_gitserver_repos_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf5, 0x85, 0x9e, 0xe2, 0xfe, 0xaa, 0x61, 0xb7, 0x5d, 0x1d, 0x20, 0x3b, 0x39, 0x72, 0x18, 0x4b, 0xdd, 0x73, 0x39, 0x6, 0xa7, 0xfe, 0xe8, 0xb1, 0xed, 0x5d, 0x85, 0x2, 0x3b, 0x2d, 0x88, 0xaa}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2579,6 +2621,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395737_compressed_commits.up.sql":                                         _1528395737_compressed_commitsUpSql,
 	"1528395738_nullable_commit.down.sql":                                          _1528395738_nullable_commitDownSql,
 	"1528395738_nullable_commit.up.sql":                                            _1528395738_nullable_commitUpSql,
+	"1528395739_add_gitserver_repos_table.down.sql":                                _1528395739_add_gitserver_repos_tableDownSql,
+	"1528395739_add_gitserver_repos_table.up.sql":                                  _1528395739_add_gitserver_repos_tableUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2735,6 +2779,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395737_compressed_commits.up.sql":                                         {_1528395737_compressed_commitsUpSql, map[string]*bintree{}},
 	"1528395738_nullable_commit.down.sql":                                          {_1528395738_nullable_commitDownSql, map[string]*bintree{}},
 	"1528395738_nullable_commit.up.sql":                                            {_1528395738_nullable_commitUpSql, map[string]*bintree{}},
+	"1528395739_add_gitserver_repos_table.down.sql":                                {_1528395739_add_gitserver_repos_tableDownSql, map[string]*bintree{}},
+	"1528395739_add_gitserver_repos_table.up.sql":                                  {_1528395739_add_gitserver_repos_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
