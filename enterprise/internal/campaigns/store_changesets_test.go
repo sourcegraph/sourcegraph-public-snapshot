@@ -1048,17 +1048,20 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		opts1 := baseOpts
 		opts1.campaign = campaignID
 		opts1.externalState = cmpgn.ChangesetExternalStateClosed
+		opts1.publicationState = cmpgn.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts1)
 
 		opts2 := baseOpts
 		opts2.campaign = campaignID
 		opts2.externalState = cmpgn.ChangesetExternalStateDeleted
+		opts2.publicationState = cmpgn.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts2)
 
 		opts3 := baseOpts
 		opts3.campaign = campaignID
 		opts3.ownedByCampaign = campaignID
 		opts3.externalState = cmpgn.ChangesetExternalStateOpen
+		opts3.publicationState = cmpgn.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts3)
 
 		opts4 := baseOpts
@@ -1066,12 +1069,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		opts4.repo = deletedRepo.ID
 		opts4.campaign = campaignID
 		opts4.externalState = cmpgn.ChangesetExternalStateOpen
+		opts4.publicationState = cmpgn.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts4)
 
 		opts5 := baseOpts
 		// In a different campaign.
 		opts5.campaign = campaignID + 999
 		opts5.externalState = cmpgn.ChangesetExternalStateOpen
+		opts5.publicationState = cmpgn.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts5)
 
 		t.Run("global", func(t *testing.T) {
