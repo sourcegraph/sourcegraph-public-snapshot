@@ -46,7 +46,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         g.disk_size = 20
         g.disk_type = 'pd-ssd'
         g.scopes = [
-            "compute-rw"
+            "compute-rw",
+            "storage-ro"
         ]
 
         o.ssh.username = username
