@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Restored backward compatibility when creating campaigns against Sourcegraph 3.19, provided author details are not provided in the campaign spec. [#370](https://github.com/sourcegraph/src-cli/pull/370)
-
 ### Removed
+
+## 3.21.7
+
+### Fixed
+
+- Restored backward compatibility when creating campaigns against Sourcegraph 3.19, provided author details are not provided in the campaign spec. [#370](https://github.com/sourcegraph/src-cli/pull/370)
 
 ## 3.21.6
 
