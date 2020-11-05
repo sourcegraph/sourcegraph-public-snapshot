@@ -1,4 +1,4 @@
-package database
+package lsifstore
 
 import (
 	"context"
@@ -76,11 +76,6 @@ func newRange(startLine, startCharacter, endLine, endCharacter int) bundles.Rang
 type DocumentPathRangeID struct {
 	Path    string
 	RangeID types.ID
-}
-
-// OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(store lsifstore.Store) Database {
-	return &databaseImpl{store: store}
 }
 
 // Exists determines if the path exists in the database.

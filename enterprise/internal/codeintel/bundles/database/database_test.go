@@ -1,4 +1,4 @@
-package database
+package lsifstore
 
 import (
 	"context"
@@ -370,5 +370,5 @@ func openTestDatabase(t *testing.T) Database {
 		}
 	}
 
-	return NewObserved(OpenDatabase(lsifstore.NewStore(dbconn.Global)), &observation.TestContext)
+	return NewObserved(&databaseImpl{store: lsifstore.NewStore(dbconn.Global)}, &observation.TestContext)
 }
