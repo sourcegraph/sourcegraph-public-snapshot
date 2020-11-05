@@ -17,7 +17,7 @@ for i in "${plugins[@]}"; do
   fi
 done
 
-trap cleanup EXIT
+# trap cleanup EXIT
 vagrant up "$box" --provider=google
 
 vagrant scp "${box}:/sourcegraph/puppeteer/*.png" ../
