@@ -1,14 +1,5 @@
 package clientclient
 
-import "errors"
-
-//
-// TODO - move this into the database package
-//
-
-// ErrNotFound occurs when data does not exist for a requested bundle.
-var ErrNotFound = errors.New("data does not exist")
-
 // Location is an LSP-like location scoped to a dump.
 type Location struct {
 	DumpID int

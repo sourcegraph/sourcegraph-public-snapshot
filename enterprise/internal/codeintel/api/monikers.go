@@ -26,7 +26,7 @@ func lookupMoniker(
 
 	pid, _, err := bundleStore.PackageInformation(context.Background(), dumpID, path, moniker.PackageInformationID)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}
@@ -40,7 +40,7 @@ func lookupMoniker(
 
 	locations, count, err := bundleStore.MonikerResults(context.Background(), dump.ID, modelType, moniker.Scheme, moniker.Identifier, skip, take)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}
