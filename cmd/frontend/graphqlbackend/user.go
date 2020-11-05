@@ -330,6 +330,11 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+func (r *UserResolver) ConfiguredExternalServices(ctx context.Context, args *ListConfiguredExternalServicesArgs) (ConfiguredExternalServicesConnectionResolver, error) {
+	userID := r.ID()
+	return EnterpriseResolvers.campaignsResolver.ConfiguredExternalServices(ctx, userID)
+}
+
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false

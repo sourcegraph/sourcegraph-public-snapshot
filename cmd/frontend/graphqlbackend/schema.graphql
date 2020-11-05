@@ -694,6 +694,35 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
+    Create a new credential for the user for the given external service kind/URL tuple.
+    If another token for that code host already exists, an error with the error code
+    ErrDuplicateToken is returned.
+    """
+    createCampaignsUserToken(
+        """
+        The user that'll be owning the campaigns user token.
+        """
+        user: ID!
+        """
+        The kind of external service being configured.
+        """
+        externalServiceKind: ExternalServiceKind!
+        """
+        The URL of the external service being configured.
+        """
+        externalServiceURL: String!
+        """
+        The user token. This can never be retrieved through the API and will be stored encrypted.
+        """
+        token: String!
+    ): CampaignsUserToken!
+
+    """
+    Hard-deletes a given campaigns user token.
+    """
+    deleteCampaignsUserToken(campaignsUserToken: ID!): EmptyResponse!
+
+    """
     OBSERVABILITY
 
     Set the status of a test alert of the specified parameters - useful for validating
@@ -719,6 +748,66 @@ enum ChangesetSpecType {
     References a branch and a patch to be applied to create the changeset from.
     """
     BRANCH
+}
+
+"""
+A connection of all configured external services accessible by the user this is requested on.
+"""
+type ConfiguredExternalServicesConnection {
+    """
+    A list of configured external services.
+    """
+    nodes: [ConfiguredExternalService!]!
+
+    """
+    The total number of configured external services in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A configured external service. This service is accessible by the user it belongs to.
+"""
+type ConfiguredExternalService {
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+    """
+    The configured token, if any.
+    """
+    configuredToken: CampaignsUserToken
+}
+
+"""
+A user token configured for campaigns use on the specified code host.
+"""
+type CampaignsUserToken implements Node {
+    """
+    A globally unique identifier.
+    """
+    id: ID!
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+    """
+    The date and time this token has been created at.
+    """
+    createdAt: DateTime!
 }
 
 """
@@ -5836,6 +5925,23 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    Returns a connection of configured external services accessible by this user.
+    That are, all external services configured on the Sourcegraph instance on which the
+    user can access at least one repository. They are connected to CampaignsUserToken resources,
+    if one has been created for the user/code host connection tuple before.
+    """
+    configuredExternalServices(
+        """
+        Returns the first n configured external services from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ConfiguredExternalServicesConnection!
 
     """
     A list of monitors owned by the user or her organization.

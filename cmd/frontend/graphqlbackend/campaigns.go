@@ -73,6 +73,22 @@ type ChangesetEventsConnectionArgs struct {
 	After *string
 }
 
+type CreateCampaignsUserTokenArgs struct {
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	User                graphql.ID
+	Token               string
+}
+
+type DeleteCampaignsUserTokenArgs struct {
+	CampaignsUserToken graphql.ID
+}
+
+type ListConfiguredExternalServicesArgs struct {
+	First int32
+	After *string
+}
+
 type CampaignsResolver interface {
 	// Mutations
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
@@ -83,6 +99,8 @@ type CampaignsResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
+	CreateCampaignsUserToken(ctx context.Context, args *CreateCampaignsUserTokenArgs) (CampaignsUserTokenResolver, error)
+	DeleteCampaignsUserToken(ctx context.Context, args *DeleteCampaignsUserTokenArgs) (*EmptyResponse, error)
 
 	// Queries
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
@@ -92,6 +110,9 @@ type CampaignsResolver interface {
 
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
+
+	CampaignsUserTokenByID(ctx context.Context, id graphql.ID) (CampaignsUserTokenResolver, error)
+	ConfiguredExternalServices(ctx context.Context, userID graphql.ID) (ConfiguredExternalServicesConnectionResolver, error)
 }
 
 type CampaignSpecResolver interface {
@@ -185,6 +206,25 @@ type GitCommitDescriptionResolver interface {
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
+}
+
+type ConfiguredExternalServicesConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ConfiguredExternalServiceResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type ConfiguredExternalServiceResolver interface {
+	ExternalServiceKind() string
+	ExternalServiceURL() string
+	ConfiguredToken() CampaignsUserTokenResolver
+}
+
+type CampaignsUserTokenResolver interface {
+	ID() graphql.ID
+	ExternalServiceKind() string
+	ExternalServiceURL() string
+	CreatedAt() DateTime
 }
 
 type ChangesetCountsArgs struct {
@@ -365,6 +405,14 @@ func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *Delete
 	return nil, campaignsOnlyInEnterprise
 }
 
+func (defaultCampaignsResolver) CreateCampaignsUserToken(ctx context.Context, args *CreateCampaignsUserTokenArgs) (CampaignsUserTokenResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) DeleteCampaignsUserToken(ctx context.Context, args *DeleteCampaignsUserTokenArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
 // Queries
 func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
@@ -387,5 +435,13 @@ func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql
 }
 
 func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CampaignsUserTokenByID(ctx context.Context, id graphql.ID) (CampaignsUserTokenResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ConfiguredExternalServices(ctx context.Context, userID graphql.ID) (ConfiguredExternalServicesConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
