@@ -9,7 +9,6 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -334,7 +333,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		limit := s.remoteDumpLimit
 		newOffset := offset
 
-		var packageReferences []types.PackageReference
+		var packageReferences []lsifstore.PackageReference
 		for len(packageReferences) < limit && newOffset < totalCount {
 			page, err := pager.PageFromOffset(ctx, newOffset)
 			if err != nil {
@@ -432,8 +431,8 @@ func hashLocation(location bundles.Location) string {
 	)
 }
 
-func applyBloomFilter(packageReferences []types.PackageReference, identifier string, limit int) ([]types.PackageReference, int) {
-	var filteredReferences []types.PackageReference
+func applyBloomFilter(packageReferences []lsifstore.PackageReference, identifier string, limit int) ([]lsifstore.PackageReference, int) {
+	var filteredReferences []lsifstore.PackageReference
 	for i, ref := range packageReferences {
 		test, err := bloomfilter.DecodeAndTestFilter([]byte(ref.Filter), identifier)
 		if err != nil || !test {

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,7 +23,7 @@ func TestReadWriteMeta(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	if err := store.WriteMeta(ctx, 42, types.MetaData{NumResultChunks: 7}); err != nil {
+	if err := store.WriteMeta(ctx, 42, MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
 
@@ -46,20 +45,20 @@ func TestReadWriteDocument(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	expectedDocumentData := types.DocumentData{
-		Ranges: map[types.ID]types.RangeData{
-			"r01": {StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4, DefinitionResultID: "x01", MonikerIDs: []types.ID{"m01", "m02"}},
-			"r02": {StartLine: 2, StartCharacter: 3, EndLine: 4, EndCharacter: 5, ReferenceResultID: "x06", MonikerIDs: []types.ID{"m03", "m04"}},
+	expectedDocumentData := DocumentData{
+		Ranges: map[ID]RangeData{
+			"r01": {StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4, DefinitionResultID: "x01", MonikerIDs: []ID{"m01", "m02"}},
+			"r02": {StartLine: 2, StartCharacter: 3, EndLine: 4, EndCharacter: 5, ReferenceResultID: "x06", MonikerIDs: []ID{"m03", "m04"}},
 			"r03": {StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6, DefinitionResultID: "x02"},
 		},
-		HoverResults: map[types.ID]string{},
-		Monikers: map[types.ID]types.MonikerData{
+		HoverResults: map[ID]string{},
+		Monikers: map[ID]MonikerData{
 			"m01": {Kind: "import", Scheme: "scheme A", Identifier: "ident A", PackageInformationID: "p01"},
 			"m02": {Kind: "import", Scheme: "scheme B", Identifier: "ident B"},
 			"m03": {Kind: "export", Scheme: "scheme C", Identifier: "ident C", PackageInformationID: "p02"},
 			"m04": {Kind: "export", Scheme: "scheme D", Identifier: "ident D"},
 		},
-		PackageInformation: map[types.ID]types.PackageInformationData{
+		PackageInformation: map[ID]PackageInformationData{
 			"p01": {Name: "pkg A", Version: "0.1.0"},
 			"p02": {Name: "pkg B", Version: "1.2.3"},
 		},
@@ -94,13 +93,13 @@ func TestReadWriteResultChunk(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	expectedResultChunkData := types.ResultChunkData{
-		DocumentPaths: map[types.ID]string{
+	expectedResultChunkData := ResultChunkData{
+		DocumentPaths: map[ID]string{
 			"d01": "foo.go",
 			"d02": "bar.go",
 			"d03": "baz.go",
 		},
-		DocumentIDRangeIDs: map[types.ID][]types.DocumentIDRangeID{
+		DocumentIDRangeIDs: map[ID][]DocumentIDRangeID{
 			"x01": {
 				{DocumentID: "d01", RangeID: "r03"},
 				{DocumentID: "d02", RangeID: "r04"},
@@ -148,14 +147,14 @@ func TestReadWriteDefinitions(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	expectedDefinitions := []types.Location{
+	expectedDefinitions := []Location{
 		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 	}
 
-	definitionsCh := make(chan types.MonikerLocations, 1)
-	definitionsCh <- types.MonikerLocations{
+	definitionsCh := make(chan MonikerLocations, 1)
+	definitionsCh <- MonikerLocations{
 		Scheme:     "scheme A",
 		Identifier: "ident A",
 		Locations:  expectedDefinitions,
@@ -184,14 +183,14 @@ func TestReadWriteReferences(t *testing.T) {
 	ctx := context.Background()
 	store := testStore(t)
 
-	expectedReferences := []types.Location{
+	expectedReferences := []Location{
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 		{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 	}
 
-	referencesCh := make(chan types.MonikerLocations, 1)
-	referencesCh <- types.MonikerLocations{
+	referencesCh := make(chan MonikerLocations, 1)
+	referencesCh <- MonikerLocations{
 		Scheme:     "scheme C",
 		Identifier: "ident C",
 		Locations:  expectedReferences,

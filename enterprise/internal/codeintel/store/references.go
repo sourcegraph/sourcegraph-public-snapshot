@@ -5,22 +5,22 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // scanPackageReferences scans a slice of package references from the return value of `*store.query`.
-func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []types.PackageReference, err error) {
+func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []lsifstore.PackageReference, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var references []types.PackageReference
+	var references []lsifstore.PackageReference
 	for rows.Next() {
-		var reference types.PackageReference
+		var reference lsifstore.PackageReference
 		if err := rows.Scan(
 			&reference.DumpID,
 			&reference.Scheme,
@@ -64,7 +64,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		return 0, nil, tx.Done(err)
 	}
 
-	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
+	pageFromOffset := func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 		return scanPackageReferences(tx.Store.Query(
 			ctx,
 			sqlf.Sprintf(`
@@ -107,7 +107,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		return 0, nil, tx.Done(err)
 	}
 
-	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
+	pageFromOffset := func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 		return scanPackageReferences(tx.Store.Query(ctx, sqlf.Sprintf(`
 			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
 			LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
@@ -119,7 +119,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 }
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
-func (s *store) UpdatePackageReferences(ctx context.Context, references []types.PackageReference) (err error) {
+func (s *store) UpdatePackageReferences(ctx context.Context, references []lsifstore.PackageReference) (err error) {
 	if len(references) == 0 {
 		return nil
 	}

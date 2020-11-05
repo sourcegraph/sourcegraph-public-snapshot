@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -344,7 +344,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockStoreSameRepoPager(t, mockStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 5, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 52, Filter: readTestFilter(t, "normal", "1")},
@@ -495,7 +495,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockStoreSameRepoPager(t, mockStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 2, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
@@ -570,7 +570,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockStorePackageReferencePager(t, mockStore, "gomod", "leftpad", "0.1.0", 100, 5, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 52, Filter: readTestFilter(t, "normal", "1")},
@@ -710,7 +710,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockStorePackageReferencePager(t, mockStore, "gomod", "leftpad", "0.1.0", 100, 2, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
@@ -774,7 +774,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 }
 
 func TestApplyBloomFilter(t *testing.T) {
-	references := []types.PackageReference{
+	references := []lsifstore.PackageReference{
 		{DumpID: 1, Filter: readTestFilter(t, "normal", "1")},   // bar
 		{DumpID: 2, Filter: readTestFilter(t, "normal", "2")},   // no bar
 		{DumpID: 3, Filter: readTestFilter(t, "normal", "3")},   // bar

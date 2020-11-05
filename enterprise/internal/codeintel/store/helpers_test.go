@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -191,7 +191,7 @@ func insertRepo(t *testing.T, db *sql.DB, id int, name string) {
 }
 
 // insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t *testing.T, store Store, packageReferences []types.PackageReference) {
+func insertPackageReferences(t *testing.T, store Store, packageReferences []lsifstore.PackageReference) {
 	if err := store.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}

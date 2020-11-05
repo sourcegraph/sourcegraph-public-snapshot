@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -597,7 +597,7 @@ func (s *ObservedStore) GetPackage(ctx context.Context, scheme, name, version st
 }
 
 // UpdatePackages calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdatePackages(ctx context.Context, packages []types.Package) (err error) {
+func (s *ObservedStore) UpdatePackages(ctx context.Context, packages []lsifstore.Package) (err error) {
 	ctx, endObservation := s.updatePackagesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.UpdatePackages(ctx, packages)
@@ -611,7 +611,7 @@ func (s *ObservedStore) SameRepoPager(ctx context.Context, repositoryID int, com
 }
 
 // UpdatePackageReferences calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdatePackageReferences(ctx context.Context, packageReferences []types.PackageReference) (err error) {
+func (s *ObservedStore) UpdatePackageReferences(ctx context.Context, packageReferences []lsifstore.PackageReference) (err error) {
 	ctx, endObservation := s.updatePackageReferencesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.UpdatePackageReferences(ctx, packageReferences)

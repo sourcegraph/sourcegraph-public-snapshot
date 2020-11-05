@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 )
 
@@ -36,7 +36,7 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 }
 
 // UpdatePackages upserts package data tied to the given upload.
-func (s *store) UpdatePackages(ctx context.Context, packages []types.Package) (err error) {
+func (s *store) UpdatePackages(ctx context.Context, packages []lsifstore.Package) (err error) {
 	if len(packages) == 0 {
 		return nil
 	}

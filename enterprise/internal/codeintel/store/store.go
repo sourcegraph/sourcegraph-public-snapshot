@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
@@ -113,14 +113,14 @@ type Store interface {
 	GetPackage(ctx context.Context, scheme, name, version string) (Dump, bool, error)
 
 	// UpdatePackages bulk upserts package data.
-	UpdatePackages(ctx context.Context, packages []types.Package) error
+	UpdatePackages(ctx context.Context, packages []lsifstore.Package) error
 
 	// SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 	// given scheme, name, and version.
 	SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, ReferencePager, error)
 
 	// UpdatePackageReferences bulk inserts package reference data.
-	UpdatePackageReferences(ctx context.Context, packageReferences []types.PackageReference) error
+	UpdatePackageReferences(ctx context.Context, packageReferences []lsifstore.PackageReference) error
 
 	// PackageReferencePager returns a ReferencePager for dumps that belong to a remote repository (distinct from the given repository id)
 	// and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's

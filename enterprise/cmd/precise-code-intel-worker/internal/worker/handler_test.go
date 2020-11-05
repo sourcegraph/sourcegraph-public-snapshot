@@ -10,10 +10,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	lsifstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -70,7 +68,7 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	expectedPackages := []bundletypes.Package{
+	expectedPackages := []bundlelsifstore.Package{
 		{
 			DumpID:  42,
 			Scheme:  "scheme B",
@@ -88,7 +86,7 @@ func TestHandle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating filter: %s", err)
 	}
-	expectedPackageReferences := []bundletypes.PackageReference{
+	expectedPackageReferences := []bundlelsifstore.PackageReference{
 		{
 			DumpID:  42,
 			Scheme:  "scheme A",
@@ -187,14 +185,14 @@ func TestHandleCloneInProgress(t *testing.T) {
 		backend.Mocks.Repos.ResolveRev = nil
 	})
 
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*lsifstore.Repo, error) {
 		if repoID != api.RepoID(50) {
 			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
 		}
-		return &types.Repo{ID: repoID}, nil
+		return &lsifstore.Repo{ID: repoID}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *lsifstore.Repo, rev string) (api.CommitID, error) {
 		return api.CommitID(""), &vcs.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	}
 
@@ -241,14 +239,14 @@ func setupRepoMocks(t *testing.T) {
 		backend.Mocks.Repos.ResolveRev = nil
 	})
 
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*lsifstore.Repo, error) {
 		if repoID != api.RepoID(50) {
 			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
 		}
-		return &types.Repo{ID: repoID}, nil
+		return &lsifstore.Repo{ID: repoID}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *lsifstore.Repo, rev string) (api.CommitID, error) {
 		if rev != "deadbeef" {
 			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
 		}

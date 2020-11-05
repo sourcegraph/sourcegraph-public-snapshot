@@ -4,7 +4,7 @@ package mocks
 
 import (
 	"context"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"sync"
@@ -456,12 +456,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		UpdatePackageReferencesFunc: &StoreUpdatePackageReferencesFunc{
-			defaultHook: func(context.Context, []types.PackageReference) error {
+			defaultHook: func(context.Context, []lsifstore.PackageReference) error {
 				return nil
 			},
 		},
 		UpdatePackagesFunc: &StoreUpdatePackagesFunc{
-			defaultHook: func(context.Context, []types.Package) error {
+			defaultHook: func(context.Context, []lsifstore.Package) error {
 				return nil
 			},
 		},
@@ -6408,15 +6408,15 @@ func (c StoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 // UpdatePackageReferences method of the parent MockStore instance is
 // invoked.
 type StoreUpdatePackageReferencesFunc struct {
-	defaultHook func(context.Context, []types.PackageReference) error
-	hooks       []func(context.Context, []types.PackageReference) error
+	defaultHook func(context.Context, []lsifstore.PackageReference) error
+	hooks       []func(context.Context, []lsifstore.PackageReference) error
 	history     []StoreUpdatePackageReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackageReferences delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdatePackageReferences(v0 context.Context, v1 []types.PackageReference) error {
+func (m *MockStore) UpdatePackageReferences(v0 context.Context, v1 []lsifstore.PackageReference) error {
 	r0 := m.UpdatePackageReferencesFunc.nextHook()(v0, v1)
 	m.UpdatePackageReferencesFunc.appendCall(StoreUpdatePackageReferencesFuncCall{v0, v1, r0})
 	return r0
@@ -6425,7 +6425,7 @@ func (m *MockStore) UpdatePackageReferences(v0 context.Context, v1 []types.Packa
 // SetDefaultHook sets function that is called when the
 // UpdatePackageReferences method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, []types.PackageReference) error) {
+func (f *StoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, []lsifstore.PackageReference) error) {
 	f.defaultHook = hook
 }
 
@@ -6433,7 +6433,7 @@ func (f *StoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Cont
 // UpdatePackageReferences method of the parent MockStore instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, []types.PackageReference) error) {
+func (f *StoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, []lsifstore.PackageReference) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6442,7 +6442,7 @@ func (f *StoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, [
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []types.PackageReference) error {
+	f.SetDefaultHook(func(context.Context, []lsifstore.PackageReference) error {
 		return r0
 	})
 }
@@ -6450,12 +6450,12 @@ func (f *StoreUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreUpdatePackageReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []types.PackageReference) error {
+	f.PushHook(func(context.Context, []lsifstore.PackageReference) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdatePackageReferencesFunc) nextHook() func(context.Context, []types.PackageReference) error {
+func (f *StoreUpdatePackageReferencesFunc) nextHook() func(context.Context, []lsifstore.PackageReference) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6493,7 +6493,7 @@ type StoreUpdatePackageReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []types.PackageReference
+	Arg1 []lsifstore.PackageReference
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -6514,15 +6514,15 @@ func (c StoreUpdatePackageReferencesFuncCall) Results() []interface{} {
 // StoreUpdatePackagesFunc describes the behavior when the UpdatePackages
 // method of the parent MockStore instance is invoked.
 type StoreUpdatePackagesFunc struct {
-	defaultHook func(context.Context, []types.Package) error
-	hooks       []func(context.Context, []types.Package) error
+	defaultHook func(context.Context, []lsifstore.Package) error
+	hooks       []func(context.Context, []lsifstore.Package) error
 	history     []StoreUpdatePackagesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) UpdatePackages(v0 context.Context, v1 []types.Package) error {
+func (m *MockStore) UpdatePackages(v0 context.Context, v1 []lsifstore.Package) error {
 	r0 := m.UpdatePackagesFunc.nextHook()(v0, v1)
 	m.UpdatePackagesFunc.appendCall(StoreUpdatePackagesFuncCall{v0, v1, r0})
 	return r0
@@ -6531,7 +6531,7 @@ func (m *MockStore) UpdatePackages(v0 context.Context, v1 []types.Package) error
 // SetDefaultHook sets function that is called when the UpdatePackages
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, []types.Package) error) {
+func (f *StoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, []lsifstore.Package) error) {
 	f.defaultHook = hook
 }
 
@@ -6539,7 +6539,7 @@ func (f *StoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, []ty
 // UpdatePackages method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreUpdatePackagesFunc) PushHook(hook func(context.Context, []types.Package) error) {
+func (f *StoreUpdatePackagesFunc) PushHook(hook func(context.Context, []lsifstore.Package) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6548,7 +6548,7 @@ func (f *StoreUpdatePackagesFunc) PushHook(hook func(context.Context, []types.Pa
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreUpdatePackagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []types.Package) error {
+	f.SetDefaultHook(func(context.Context, []lsifstore.Package) error {
 		return r0
 	})
 }
@@ -6556,12 +6556,12 @@ func (f *StoreUpdatePackagesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreUpdatePackagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []types.Package) error {
+	f.PushHook(func(context.Context, []lsifstore.Package) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdatePackagesFunc) nextHook() func(context.Context, []types.Package) error {
+func (f *StoreUpdatePackagesFunc) nextHook() func(context.Context, []lsifstore.Package) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6599,7 +6599,7 @@ type StoreUpdatePackagesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []types.Package
+	Arg1 []lsifstore.Package
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

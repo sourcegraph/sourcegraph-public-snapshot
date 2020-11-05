@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 )
 
 // DoneFunc is the function type of store's Done method.
@@ -13,7 +13,7 @@ type DoneFunc func(err error) error
 // each page requested has a consistent view into the underlying database.
 type ReferencePager interface {
 	// PageFromOffset returns the page of package references that starts at the given offset.
-	PageFromOffset(ctx context.Context, offset int) ([]types.PackageReference, error)
+	PageFromOffset(ctx context.Context, offset int) ([]lsifstore.PackageReference, error)
 
 	// Done closes the underlying transaction. If the reference pager was called on a
 	// store instance that was already in a transaction, this method does nothing.
@@ -21,10 +21,10 @@ type ReferencePager interface {
 }
 
 // PageFromOffsetFunc is the function type of ReferencePager's PageFromOffset method.
-type PageFromOffsetFunc func(ctx context.Context, offset int) ([]types.PackageReference, error)
+type PageFromOffsetFunc func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error)
 
 // noopPageFromOffsetFunc is a behaviorless PageFromOffsetFunc.
-func noopPageFromOffsetFunc(ctx context.Context, offset int) ([]types.PackageReference, error) {
+func noopPageFromOffsetFunc(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 	return nil, nil
 }
 
@@ -35,7 +35,7 @@ type referencePager struct {
 }
 
 // PageFromOffset returns the page of package references that starts at the given offset.
-func (rp *referencePager) PageFromOffset(ctx context.Context, offset int) ([]types.PackageReference, error) {
+func (rp *referencePager) PageFromOffset(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 	return rp.pageFromOffset(ctx, offset)
 }
 
