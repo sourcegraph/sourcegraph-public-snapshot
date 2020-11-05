@@ -52,9 +52,9 @@ func (e *RepoNotFoundErr) NotFound() bool {
 
 // RepoStore is a DB-backed implementation of the Repos.
 type RepoStore struct {
-	*basestore.Store
+	once sync.Once
 
-	mu sync.Mutex
+	*basestore.Store
 }
 
 // NewRepoStoreWithDB instantiates and returns a new RepoStore with prepared statements.
@@ -75,12 +75,11 @@ func (s *RepoStore) Transact(ctx context.Context) (*RepoStore, error) {
 // This function ensures access to dbconn happens after the rest of the code or tests have
 // initialized it.
 func (s *RepoStore) ensureStore() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.Store == nil {
-		s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-	}
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
 }
 
 // Get returns metadata for the request repository ID. It fetches data

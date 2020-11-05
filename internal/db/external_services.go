@@ -33,6 +33,8 @@ import (
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
 type ExternalServiceStore struct {
+	once sync.Once
+
 	*basestore.Store
 
 	GitHubValidators          []func(*schema.GitHubConnection) error
@@ -42,8 +44,6 @@ type ExternalServiceStore struct {
 	// PreCreateExternalService (if set) is invoked as a hook prior to creating a
 	// new external service in the database.
 	PreCreateExternalService func(context.Context) error
-
-	mu sync.Mutex
 }
 
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
@@ -64,12 +64,11 @@ func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceSt
 // This function ensures access to dbconn happens after the rest of the code or tests have
 // initialized it.
 func (e *ExternalServiceStore) ensureStore() {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	if e.Store == nil {
-		e.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-	}
+	e.once.Do(func() {
+		if e.Store == nil {
+			e.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
