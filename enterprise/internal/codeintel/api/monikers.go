@@ -5,7 +5,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -26,7 +26,7 @@ func lookupMoniker(
 
 	pid, _, err := bundleStore.PackageInformation(context.Background(), dumpID, path, moniker.PackageInformationID)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}
@@ -40,7 +40,7 @@ func lookupMoniker(
 
 	locations, count, err := bundleStore.MonikerResults(context.Background(), dump.ID, modelType, moniker.Scheme, moniker.Identifier, skip, take)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}

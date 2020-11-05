@@ -6,7 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -38,7 +38,7 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 		if exactPath {
 			exists, err := api.bundleStore.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
 			if err != nil {
-				if err == bundles.ErrNotFound {
+				if err == database.ErrNotFound {
 					log15.Warn("Bundle does not exist")
 					return nil, nil
 				}

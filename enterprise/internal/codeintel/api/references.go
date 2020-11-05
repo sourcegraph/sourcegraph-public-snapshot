@@ -8,7 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -100,7 +100,7 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 
 	locations, err := s.bundleStore.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, Cursor{}, false, nil
 		}
@@ -148,7 +148,7 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	// that are also encoded as monikers.
 	previousLocations, err := s.bundleStore.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
-		if err == bundles.ErrNotFound {
+		if err == database.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, Cursor{}, false, nil
 		}
@@ -170,7 +170,7 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	for _, moniker := range cursor.Monikers {
 		results, count, err := s.bundleStore.MonikerResults(ctx, dump.ID, "references", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
 		if err != nil {
-			if err == bundles.ErrNotFound {
+			if err == database.ErrNotFound {
 				log15.Warn("Bundle does not exist")
 				return nil, Cursor{}, false, nil
 			}
@@ -224,7 +224,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 
 		packageInformation, _, err := s.bundleStore.PackageInformation(ctx, cursor.DumpID, cursor.Path, moniker.PackageInformationID)
 		if err != nil {
-			if err == bundles.ErrNotFound {
+			if err == database.ErrNotFound {
 				log15.Warn("Bundle does not exist")
 				return nil, Cursor{}, false, nil
 			}
@@ -383,7 +383,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		results, count, err := s.bundleStore.MonikerResults(ctx, batchDumpID, "references", scheme, identifier, cursor.SkipResultsInDump, limit)
 		if err != nil {
-			if err == bundles.ErrNotFound {
+			if err == database.ErrNotFound {
 				log15.Warn("Bundle does not exist")
 				return nil, Cursor{}, false, nil
 			}

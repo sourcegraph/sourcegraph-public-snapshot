@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strings"
 
@@ -13,6 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
+
+// ErrNotFound occurs when data does not exist for a requested bundle.
+var ErrNotFound = errors.New("data does not exist")
 
 // Database wraps access to a single processed bundle.
 type Database interface {
