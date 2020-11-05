@@ -5,14 +5,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "lsif-bundles"
-}
 
 func TestReadWriteMeta(t *testing.T) {
 	if testing.Short() {
@@ -21,7 +15,7 @@ func TestReadWriteMeta(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t)
+	store := testStore()
 
 	if err := store.WriteMeta(ctx, 42, MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
@@ -43,7 +37,7 @@ func TestReadWriteDocument(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t)
+	store := testStore()
 
 	expectedDocumentData := DocumentData{
 		Ranges: map[ID]RangeData{
@@ -91,7 +85,7 @@ func TestReadWriteResultChunk(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t)
+	store := testStore()
 
 	expectedResultChunkData := ResultChunkData{
 		DocumentPaths: map[ID]string{
@@ -145,7 +139,7 @@ func TestReadWriteDefinitions(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t)
+	store := testStore()
 
 	expectedDefinitions := []LocationData{
 		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
@@ -181,7 +175,7 @@ func TestReadWriteReferences(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t)
+	store := testStore()
 
 	expectedReferences := []LocationData{
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -217,7 +211,7 @@ func TestPathsWithPrefix(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t)
+	store := testStore()
 
 	documentCh := make(chan KeyedDocumentData, 5)
 	documentCh <- KeyedDocumentData{Path: "foo"}        // exact
@@ -244,9 +238,4 @@ func TestPathsWithPrefix(t *testing.T) {
 	if diff := cmp.Diff(expectedPaths, paths); diff != "" {
 		t.Errorf("unexpected paths (-want +got):\n%s", diff)
 	}
-}
-
-func testStore(t *testing.T) Store {
-	// Wrap in observed, as that's how it's used in production
-	return NewObserved(NewStore(dbconn.Global), &observation.TestContext)
 }

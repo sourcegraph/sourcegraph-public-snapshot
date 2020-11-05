@@ -89,6 +89,12 @@ type DocumentIDRangeID struct {
 	RangeID ID
 }
 
+// DocumentPathRangeID denotes a range qualified by its containing document.
+type DocumentPathRangeID struct {
+	Path    string
+	RangeID ID
+}
+
 // Loocation represents a range within a particular document relative to its
 // containing bundle.
 type LocationData struct {
@@ -157,4 +163,16 @@ type CodeIntelligenceRange struct {
 	Definitions []Location
 	References  []Location
 	HoverText   string
+}
+
+// KeyedDocumentData pairs a document with its path.
+type KeyedDocumentData struct {
+	Path     string
+	Document DocumentData
+}
+
+// IndexedResultChunkData pairs a result chunk with its index.
+type IndexedResultChunkData struct {
+	Index       int
+	ResultChunk ResultChunkData
 }
