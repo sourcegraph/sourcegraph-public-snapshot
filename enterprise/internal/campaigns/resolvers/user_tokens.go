@@ -27,7 +27,11 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 	return &campaignsCodeHostConnectionResolver{}, nil
 }
 
-type campaignsCredentialResolver struct{}
+type campaignsCredentialResolver struct {
+	externalServiceKind string
+	externalServiceURL  string
+	createdAt           time.Time
+}
 
 var _ graphqlbackend.CampaignsCredentialResolver = &campaignsCredentialResolver{}
 
@@ -36,31 +40,38 @@ func (c *campaignsCredentialResolver) ID() graphql.ID {
 }
 
 func (c *campaignsCredentialResolver) ExternalServiceKind() string {
-	return extsvc.KindGitHub
+	return c.externalServiceKind
 }
 
 func (c *campaignsCredentialResolver) ExternalServiceURL() string {
-	return "https://github.com/"
+	return c.externalServiceURL
 }
 
 func (c *campaignsCredentialResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: time.Now()}
+	return graphqlbackend.DateTime{Time: c.createdAt}
 }
 
-type campaignsCodeHostResolver struct{}
+type campaignsCodeHostResolver struct {
+	externalServiceKind string
+	externalServiceURL  string
+	credential          *credential
+}
 
 var _ graphqlbackend.CampaignsCodeHostResolver = &campaignsCodeHostResolver{}
 
 func (c *campaignsCodeHostResolver) ExternalServiceKind() string {
-	return extsvc.KindGitHub
+	return c.externalServiceKind
 }
 
 func (c *campaignsCodeHostResolver) ExternalServiceURL() string {
-	return "https://github.com/"
+	return c.externalServiceURL
 }
 
 func (c *campaignsCodeHostResolver) Credential() graphqlbackend.CampaignsCredentialResolver {
-	return &campaignsCredentialResolver{}
+	if c.credential != nil {
+		return &campaignsCredentialResolver{externalServiceKind: c.externalServiceKind, externalServiceURL: c.externalServiceURL, createdAt: c.credential.createdAt}
+	}
+	return nil
 }
 
 type campaignsCodeHostConnectionResolver struct{}
@@ -68,7 +79,7 @@ type campaignsCodeHostConnectionResolver struct{}
 var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
 
 func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return 1, nil
+	return 4, nil
 }
 
 func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
@@ -76,5 +87,24 @@ func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*gr
 }
 
 func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
-	return []graphqlbackend.CampaignsCodeHostResolver{&campaignsCodeHostResolver{}}, nil
+	return []graphqlbackend.CampaignsCodeHostResolver{&campaignsCodeHostResolver{
+		externalServiceKind: extsvc.KindGitHub,
+		externalServiceURL:  "https://github.com/",
+		credential:          &credential{createdAt: time.Now()},
+	}, &campaignsCodeHostResolver{
+		externalServiceKind: extsvc.KindGitLab,
+		externalServiceURL:  "https://gitlab.com/",
+		credential:          &credential{createdAt: time.Now()},
+	}, &campaignsCodeHostResolver{
+		externalServiceKind: extsvc.KindBitbucketServer,
+		externalServiceURL:  "https://bitbucket.sgdev.org/",
+		credential:          &credential{createdAt: time.Now()},
+	}, &campaignsCodeHostResolver{
+		externalServiceKind: extsvc.KindGitHub,
+		externalServiceURL:  "https://ghe.sgdev.org/",
+	}}, nil
+}
+
+type credential struct {
+	createdAt time.Time
 }
