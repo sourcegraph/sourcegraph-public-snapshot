@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
@@ -250,7 +249,7 @@ func (s *store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 var numWriterRoutines = runtime.GOMAXPROCS(0)
 
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) error {
-	return util.InvokeN(numWriterRoutines, func() (err error) {
+	return invokeN(numWriterRoutines, func() (err error) {
 		inserter := batch.NewBatchInserter(ctx, db, tableName, columns...)
 
 		defer func() {

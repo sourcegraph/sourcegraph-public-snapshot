@@ -1,4 +1,4 @@
-package util
+package postgres
 
 import (
 	"sync"
@@ -6,10 +6,21 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// InvokeAll invokes each of the given functions in a different goroutine and blocks
+// invokeN invokes n copies of the given function in different goroutines. See invokeAll
+// for additional notes on semantics.
+func invokeN(n int, f func() error) error {
+	fns := make([]func() error, n)
+	for i := 0; i < n; i++ {
+		fns[i] = f
+	}
+
+	return invokeAll(fns...)
+}
+
+// invokeAll invokes each of the given functions in a different goroutine and blocks
 // until all goroutines have finished. The return value is the multierror composed of
 // error values from each invocation.
-func InvokeAll(fns ...func() error) (err error) {
+func invokeAll(fns ...func() error) (err error) {
 	var wg sync.WaitGroup
 	errs := make(chan error, len(fns))
 
@@ -32,15 +43,4 @@ func InvokeAll(fns ...func() error) (err error) {
 		err = multierror.Append(err, e)
 	}
 	return err
-}
-
-// InvokeN invokes n copies of the given function in different goroutines. See InvokeAll
-// for additional notes on semantics.
-func InvokeN(n int, f func() error) error {
-	fns := make([]func() error, n)
-	for i := 0; i < n; i++ {
-		fns[i] = f
-	}
-
-	return InvokeAll(fns...)
 }
