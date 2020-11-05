@@ -236,7 +236,7 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 }
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
-// this further filter hunks.
+// this to further filter hunks.
 func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
 	if len(onelineCommits) == 0 {
 		return nil, true, nil
