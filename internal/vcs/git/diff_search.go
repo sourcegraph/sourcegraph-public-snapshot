@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"regexp"
 	"sort"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -180,8 +182,9 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	return results, complete, err
 }
 
-// rawLogSearch runs git log to find matching commits.
-func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) ([]*onelineCommit, bool, error) {
+// rawLogSearch runs git log to find matching commits. complete is true if we
+// parsed all the output from git without encountering a timeout.
+func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (_ []*onelineCommit, complete bool, _ error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
@@ -214,25 +217,37 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
 	onelineCmd.Repo = repo
 	ctxLog, cancel := withDeadlinePercentage(ctx, 0.5)
-	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
-	cancel()
+	defer cancel()
+	onelineReader, err := gitserver.StdoutReader(ctxLog, onelineCmd)
 	if err != nil {
-		// Don't fail if the repository is empty.
-		if strings.Contains(err.Error(), "does not have any commits yet") {
-			return nil, true, nil
+		if errors.Is(err, context.DeadlineExceeded) {
+			// the gitserver call exceeded our deadline before the command
+			// produced any output.
+			return nil, false, nil
 		}
+		return nil, false, err
+	}
 
-		return nil, complete, err
-	}
-	onelineCommits, err := parseCommitsFromOnelineLog(data)
-	if err != nil {
-		if !complete {
-			// Tolerate parse errors when we received incomplete data.
-		} else {
-			return nil, complete, err
+	scan := logOnelineScanner(onelineReader)
+	var onelineCommits []*onelineCommit
+	for {
+		var commit *onelineCommit
+		commit, err = scan()
+		if err != nil {
+			break
 		}
+		onelineCommits = append(onelineCommits, commit)
 	}
-	return onelineCommits, complete, nil
+
+	if err == io.EOF {
+		return onelineCommits, true, nil
+	} else if errors.Is(err, context.DeadlineExceeded) {
+		return onelineCommits, false, nil
+	} else if strings.Contains(err.Error(), "does not have any commits yet") {
+		// Don't fail if the repository is empty.
+		return nil, true, nil
+	}
+	return nil, false, err
 }
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
