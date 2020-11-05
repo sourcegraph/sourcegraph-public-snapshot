@@ -9,8 +9,8 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -29,7 +29,7 @@ func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commi
 
 	rpr := &ReferencePageResolver{
 		store:           api.store,
-		bundleStore:     api.bundleStore,
+		lsifStore:       api.lsifStore,
 		repositoryID:    repositoryID,
 		commit:          commit,
 		remoteDumpLimit: RemoteDumpLimit,
@@ -41,7 +41,7 @@ func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commi
 
 type ReferencePageResolver struct {
 	store           store.Store
-	bundleStore     database.Database
+	lsifStore       lsifstore.Store
 	repositoryID    int
 	commit          string
 	remoteDumpLimit int
@@ -98,9 +98,9 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 		return nil, Cursor{}, false, ErrMissingDump
 	}
 
-	locations, err := s.bundleStore.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
+	locations, err := s.lsifStore.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
-		if err == database.ErrNotFound {
+		if err == lsifstore.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, Cursor{}, false, nil
 		}
@@ -146,9 +146,9 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	// Get the references that we've seen from the graph-encoded portion of the bundle. We
 	// need to know what we've returned previously so that we can filter out duplicate locations
 	// that are also encoded as monikers.
-	previousLocations, err := s.bundleStore.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
+	previousLocations, err := s.lsifStore.References(ctx, dump.ID, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
-		if err == database.ErrNotFound {
+		if err == lsifstore.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, Cursor{}, false, nil
 		}
@@ -168,9 +168,9 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	// the governing definition, and those may not be fully linked in the LSIF data. This
 	// method returns a cursor if there are reference rows remaining for a subsequent page.
 	for _, moniker := range cursor.Monikers {
-		results, count, err := s.bundleStore.MonikerResults(ctx, dump.ID, "references", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
+		results, count, err := s.lsifStore.MonikerResults(ctx, dump.ID, "references", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
 		if err != nil {
-			if err == database.ErrNotFound {
+			if err == lsifstore.ErrNotFound {
 				log15.Warn("Bundle does not exist")
 				return nil, Cursor{}, false, nil
 			}
@@ -222,13 +222,13 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 			continue
 		}
 
-		packageInformation, _, err := s.bundleStore.PackageInformation(ctx, cursor.DumpID, cursor.Path, moniker.PackageInformationID)
+		packageInformation, _, err := s.lsifStore.PackageInformation(ctx, cursor.DumpID, cursor.Path, moniker.PackageInformationID)
 		if err != nil {
-			if err == database.ErrNotFound {
+			if err == lsifstore.ErrNotFound {
 				log15.Warn("Bundle does not exist")
 				return nil, Cursor{}, false, nil
 			}
-			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleStore.PackageInformation")
+			return nil, Cursor{}, false, pkgerrors.Wrap(err, "lsifStore.PackageInformation")
 		}
 
 		hasNextPhaseCursor = true
@@ -253,7 +253,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 			continue
 		}
 
-		locations, count, err := lookupMoniker(s.store, s.bundleStore, cursor.DumpID, cursor.Path, "references", moniker, cursor.SkipResults, s.limit)
+		locations, count, err := lookupMoniker(s.store, s.lsifStore, cursor.DumpID, cursor.Path, "references", moniker, cursor.SkipResults, s.limit)
 		if err != nil {
 			return nil, Cursor{}, false, err
 		}
@@ -381,9 +381,9 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 			continue
 		}
 
-		results, count, err := s.bundleStore.MonikerResults(ctx, batchDumpID, "references", scheme, identifier, cursor.SkipResultsInDump, limit)
+		results, count, err := s.lsifStore.MonikerResults(ctx, batchDumpID, "references", scheme, identifier, cursor.SkipResultsInDump, limit)
 		if err != nil {
-			if err == database.ErrNotFound {
+			if err == lsifstore.ErrNotFound {
 				log15.Warn("Bundle does not exist")
 				return nil, Cursor{}, false, nil
 			}

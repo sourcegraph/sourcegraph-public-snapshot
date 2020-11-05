@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -46,7 +46,7 @@ func TestSerializationRoundTrip(t *testing.T) {
 
 func TestDecodeOrCreateCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleStoreMonikersByPosition(t, mockBundleStore, 42, "main.go", 10, 20, [][]bundles.MonikerData{{testMoniker1}, {testMoniker2}})
@@ -69,7 +69,7 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 
 func TestDecodeOrCreateCursorUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
 	if _, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockStore, mockBundleStore); err != ErrMissingDump {
@@ -102,7 +102,7 @@ func TestDecodeOrCreateCursorExisting(t *testing.T) {
 	}
 
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 
 	if cursor, err := DecodeOrCreateCursor("", 0, 0, 0, EncodeCursor(expectedCursor), mockStore, mockBundleStore); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)

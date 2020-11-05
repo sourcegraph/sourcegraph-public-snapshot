@@ -6,14 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestDefinitions(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
@@ -41,7 +41,7 @@ func TestDefinitions(t *testing.T) {
 
 func TestDefinitionsUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockGitserverClient := NewMockGitserverClient()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
@@ -53,7 +53,7 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 
 func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
@@ -83,7 +83,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 
 func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockGitserverClient := NewMockGitserverClient()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})

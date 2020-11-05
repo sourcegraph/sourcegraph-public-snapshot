@@ -1,4 +1,4 @@
-package database
+package lsifstore
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -353,7 +352,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
-func openTestDatabase(t *testing.T) Database {
+func openTestDatabase(t *testing.T) Store {
 	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
@@ -370,5 +369,5 @@ func openTestDatabase(t *testing.T) Database {
 		}
 	}
 
-	return NewObserved(OpenDatabase(lsifstore.NewStore(dbconn.Global)), &observation.TestContext)
+	return NewObserved(NewStore(dbconn.Global), &observation.TestContext)
 }

@@ -8,14 +8,14 @@ import (
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	apimocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestRanges(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -147,7 +147,7 @@ func TestRanges(t *testing.T) {
 
 func TestDefinitions(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -251,7 +251,7 @@ func TestDefinitions(t *testing.T) {
 
 func TestReferences(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -425,7 +425,7 @@ func TestReferences(t *testing.T) {
 
 func TestHover(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
@@ -489,7 +489,7 @@ func TestHover(t *testing.T) {
 
 func TestDiagnostics(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 

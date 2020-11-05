@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
@@ -197,7 +197,7 @@ func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *store
 	})
 }
 
-func setMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath string, exists bool) {
+func setMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, exists bool) {
 	mockBundleStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Exists. want=%d have=%d", expectedDumpID, dumpID)
@@ -215,7 +215,7 @@ type existsSpec struct {
 	exists bool
 }
 
-func setMultiMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, specs ...existsSpec) {
+func setMultiMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.MockStore, specs ...existsSpec) {
 	mockBundleStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
 		for _, spec := range specs {
 			if dumpID == spec.dumpID && path == spec.path {
@@ -228,7 +228,7 @@ func setMultiMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.Mo
 	})
 }
 
-func setMockBundleStoreRanges(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
+func setMockBundleStoreRanges(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
 	mockBundleStore.RangesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Ranges. want=%d have=%d", expectedDumpID, dumpID)
@@ -246,7 +246,7 @@ func setMockBundleStoreRanges(t *testing.T, mockBundleStore *bundlemocks.MockDat
 	})
 }
 
-func setMockBundleStoreDefinitions(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
+func setMockBundleStoreDefinitions(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
 	mockBundleStore.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]bundles.Location, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Definitions. want=%d have=%d", expectedDumpID, dumpID)
@@ -264,7 +264,7 @@ func setMockBundleStoreDefinitions(t *testing.T, mockBundleStore *bundlemocks.Mo
 	})
 }
 
-func setMockBundleStoreReferences(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
+func setMockBundleStoreReferences(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
 	mockBundleStore.ReferencesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]bundles.Location, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for References. want=%d have=%d", expectedDumpID, dumpID)
@@ -282,7 +282,7 @@ func setMockBundleStoreReferences(t *testing.T, mockBundleStore *bundlemocks.Moc
 	})
 }
 
-func setMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
+func setMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
 	mockBundleStore.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, bundles.Range, bool, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Hover. want=%d have=%d", expectedDumpID, dumpID)
@@ -310,7 +310,7 @@ type hoverSpec struct {
 	exists    bool
 }
 
-func setMultiMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, specs ...hoverSpec) {
+func setMultiMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.MockStore, specs ...hoverSpec) {
 	mockBundleStore.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, bundles.Range, bool, error) {
 		for _, spec := range specs {
 			if dumpID == spec.dumpID && path == spec.path && line == spec.line && character == spec.character {
@@ -323,7 +323,7 @@ func setMultiMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.Moc
 	})
 }
 
-func setMockBundleStoreDiagnostics(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []bundles.Diagnostic, totalCount int) {
+func setMockBundleStoreDiagnostics(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []bundles.Diagnostic, totalCount int) {
 	mockBundleStore.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, prefix string, skip, take int) ([]bundles.Diagnostic, int, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Diagnostics. want=%d have=%d", expectedDumpID, dumpID)
@@ -341,7 +341,7 @@ func setMockBundleStoreDiagnostics(t *testing.T, mockBundleStore *bundlemocks.Mo
 	})
 }
 
-func setMockBundleStoreMonikersByPosition(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, monikers [][]bundles.MonikerData) {
+func setMockBundleStoreMonikersByPosition(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, monikers [][]bundles.MonikerData) {
 	mockBundleStore.MonikersByPositionFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([][]bundles.MonikerData, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for MonikersByPosition. want=%d have=%d", expectedDumpID, dumpID)
@@ -360,7 +360,7 @@ func setMockBundleStoreMonikersByPosition(t *testing.T, mockBundleStore *bundlem
 	})
 }
 
-func setMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []bundles.Location, totalCount int) {
+func setMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []bundles.Location, totalCount int) {
 	mockBundleStore.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]bundles.Location, int, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for MonikerResults. want=%d have=%d", expectedDumpID, dumpID)
@@ -395,7 +395,7 @@ type monikerResultsSpec struct {
 	totalCount int
 }
 
-func setMultiMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, specs ...monikerResultsSpec) {
+func setMultiMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundlemocks.MockStore, specs ...monikerResultsSpec) {
 	mockBundleStore.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]bundles.Location, int, error) {
 		for _, spec := range specs {
 			if dumpID == spec.dumpID && modelType == spec.modelType && scheme == spec.scheme && identifier == spec.identifier && skip == spec.skip && take == spec.take {
@@ -408,7 +408,7 @@ func setMultiMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundle
 	})
 }
 
-func setMockBundleStorePackageInformation(t *testing.T, mockBundleStore *bundlemocks.MockDatabase, expectedDumpID int, expectedPath, expectedPackageInformationID string, packageInformation bundles.PackageInformationData) {
+func setMockBundleStorePackageInformation(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath, expectedPackageInformationID string, packageInformation bundles.PackageInformationData) {
 	mockBundleStore.PackageInformationFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path, packageInformationID string) (bundles.PackageInformationData, bool, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for PackageInformation. want=%d have=%d", expectedDumpID, dumpID)

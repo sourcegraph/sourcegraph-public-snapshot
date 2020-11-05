@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
@@ -16,7 +16,7 @@ import (
 
 func TestHandleSameDumpCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []bundles.Location{
@@ -33,7 +33,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 
 	rpr := &ReferencePageResolver{
 		store:        mockStore,
-		bundleStore:  mockBundleStore,
+		lsifStore:    mockBundleStore,
 		repositoryID: 100,
 		commit:       testCommit,
 		limit:        5,
@@ -123,7 +123,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 
 func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []bundles.Location{
@@ -134,7 +134,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 
 	rpr := &ReferencePageResolver{
 		store:        mockStore,
-		bundleStore:  mockBundleStore,
+		lsifStore:    mockBundleStore,
 		repositoryID: 100,
 		commit:       testCommit,
 		limit:        5,
@@ -231,7 +231,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 
 func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
 	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
@@ -239,7 +239,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 
 	rpr := &ReferencePageResolver{
 		store:        mockStore,
-		bundleStore:  mockBundleStore,
+		lsifStore:    mockBundleStore,
 		repositoryID: 100,
 		commit:       testCommit,
 		limit:        5,
@@ -339,7 +339,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 
 func TestHandleSameRepoCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -361,7 +361,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 
 		rpr := &ReferencePageResolver{
 			store:           mockStore,
-			bundleStore:     mockBundleStore,
+			lsifStore:       mockBundleStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -442,7 +442,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 
 		rpr := &ReferencePageResolver{
 			store:           mockStore,
-			bundleStore:     mockBundleStore,
+			lsifStore:       mockBundleStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -490,7 +490,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 
 func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -506,7 +506,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 
 	rpr := &ReferencePageResolver{
 		store:           mockStore,
-		bundleStore:     mockBundleStore,
+		lsifStore:       mockBundleStore,
 		repositoryID:    100,
 		commit:          testCommit,
 		remoteDumpLimit: 2,
@@ -565,7 +565,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 
 func TestHandleRemoteRepoCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -587,7 +587,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 
 		rpr := &ReferencePageResolver{
 			store:           mockStore,
-			bundleStore:     mockBundleStore,
+			lsifStore:       mockBundleStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -668,7 +668,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 
 		rpr := &ReferencePageResolver{
 			store:           mockStore,
-			bundleStore:     mockBundleStore,
+			lsifStore:       mockBundleStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -705,7 +705,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 
 func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockDatabase()
+	mockBundleStore := bundlemocks.NewMockStore()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -721,7 +721,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 
 	rpr := &ReferencePageResolver{
 		store:           mockStore,
-		bundleStore:     mockBundleStore,
+		lsifStore:       mockBundleStore,
 		repositoryID:    100,
 		commit:          testCommit,
 		remoteDumpLimit: 2,
