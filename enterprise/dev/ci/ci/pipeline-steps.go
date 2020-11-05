@@ -23,7 +23,6 @@ var allDockerImages = []string{
 	"repo-updater",
 	"searcher",
 	"symbols",
-	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
 	"executor-queue",
 	"executor",
