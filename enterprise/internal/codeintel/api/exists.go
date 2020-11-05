@@ -36,13 +36,13 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 		// for the other condition. This should probably look like
 		// an additional parameter on the following exists query.
 		if exactPath {
-			exists, err := api.bundleManagerClient.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+			exists, err := api.bundleStore.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
 			if err != nil {
 				if err == bundles.ErrNotFound {
 					log15.Warn("Bundle does not exist")
 					return nil, nil
 				}
-				return nil, errors.Wrap(err, "bundleManagerClient.BundleClient")
+				return nil, errors.Wrap(err, "bundleStore.BundleClient")
 			}
 			if !exists {
 				continue

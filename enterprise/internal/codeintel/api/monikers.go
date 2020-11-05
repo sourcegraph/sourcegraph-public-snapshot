@@ -6,12 +6,13 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 func lookupMoniker(
 	store store.Store,
-	bundleManagerClient bundles.BundleManagerClient,
+	bundleStore database.Database,
 	dumpID int,
 	path string,
 	modelType string,
@@ -23,13 +24,13 @@ func lookupMoniker(
 		return nil, 0, nil
 	}
 
-	pid, err := bundleManagerClient.PackageInformation(context.Background(), dumpID, path, moniker.PackageInformationID)
+	pid, _, err := bundleStore.PackageInformation(context.Background(), dumpID, path, moniker.PackageInformationID)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}
-		return nil, 0, errors.Wrap(err, "bundleManagerClient.BundleClient")
+		return nil, 0, errors.Wrap(err, "bundleStore.BundleClient")
 	}
 
 	dump, exists, err := store.GetPackage(context.Background(), moniker.Scheme, pid.Name, pid.Version)
@@ -37,13 +38,13 @@ func lookupMoniker(
 		return nil, 0, errors.Wrap(err, "store.GetPackage")
 	}
 
-	locations, count, err := bundleManagerClient.MonikerResults(context.Background(), dump.ID, modelType, moniker.Scheme, moniker.Identifier, skip, take)
+	locations, count, err := bundleStore.MonikerResults(context.Background(), dump.ID, modelType, moniker.Scheme, moniker.Identifier, skip, take)
 	if err != nil {
 		if err == bundles.ErrNotFound {
 			log15.Warn("Bundle does not exist")
 			return nil, 0, nil
 		}
-		return nil, 0, errors.Wrap(err, "bundleManagerClient.BundleClient")
+		return nil, 0, errors.Wrap(err, "bundleStore.BundleClient")
 	}
 
 	return resolveLocationsWithDump(dump, locations), count, nil
