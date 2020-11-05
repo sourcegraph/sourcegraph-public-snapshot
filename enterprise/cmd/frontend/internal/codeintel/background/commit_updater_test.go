@@ -1,44 +1,48 @@
 package background
 
 import (
+	"context"
 	"testing"
-	"time"
 
-	commitsmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits/mocks"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestCommitUpdater(t *testing.T) {
-	store := storemocks.NewMockStore()
-	updater := commitsmocks.NewMockUpdater()
-	store.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{50: 3, 51: 2, 52: 6}, nil)
-
-	commitUpdater := NewCommitUpdater(store, updater, time.Second)
-	go func() { commitUpdater.Start() }()
-	commitUpdater.Stop()
-
-	if callCount := len(updater.TryUpdateFunc.History()); callCount < 3 {
-		t.Fatalf("unexpected update call count. want>=%d have=%d", 3, callCount)
+	graph := map[string][]string{
+		"a": nil,
+		"b": {"a"},
 	}
 
-	testCases := []struct {
-		repositoryID int
-		dirtyFlag    int
-	}{
-		{50, 3},
-		{51, 2},
-		{52, 6},
-	}
-	for _, testCase := range testCases {
-		found := false
-		for _, call := range updater.TryUpdateFunc.History() {
-			if call.Arg1 == testCase.repositoryID && call.Arg2 == testCase.dirtyFlag {
-				found = true
-			}
-		}
+	mockStore := storemocks.NewMockStore()
+	mockStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
+	mockStore.LockFunc.SetDefaultReturn(false, nil, nil)
 
-		if !found {
-			t.Errorf("unexpected call with args (%d, %d)", testCase.repositoryID, testCase.dirtyFlag)
+	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
+	mockGitserverClient.HeadFunc.SetDefaultReturn("b", nil)
+
+	updater := &CommitUpdater{
+		store:           mockStore,
+		gitserverClient: mockGitserverClient,
+	}
+
+	if err := updater.Handle(context.Background()); err != nil {
+		t.Fatalf("unexpected error updating commit graph: %s", err)
+	}
+
+	if len(mockStore.LockFunc.History()) != 1 {
+		t.Fatalf("unexpected lock call count. want=%d have=%d", 1, len(mockStore.LockFunc.History()))
+	} else {
+		call := mockStore.LockFunc.History()[0]
+		if call.Arg1 != 42 {
+			t.Errorf("unexpected repository id argument. want=%d have=%d", 42, call.Arg1)
 		}
+		if call.Arg2 {
+			t.Errorf("unexpected blocking argument. want=%v have=%v", false, call.Arg2)
+		}
+	}
+
+	if len(mockStore.CalculateVisibleUploadsFunc.History()) != 0 {
+		t.Fatalf("unexpected calculate visible uploads call count. want=%d have=%d", 0, len(mockStore.CalculateVisibleUploadsFunc.History()))
 	}
 }
