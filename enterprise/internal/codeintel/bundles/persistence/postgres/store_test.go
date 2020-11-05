@@ -16,187 +16,36 @@ func init() {
 	dbtesting.DBNameSuffix = "lsif-bundles"
 }
 
-func TestReadMeta(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	meta, err := testStore(t, 42, testFile).ReadMeta(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error reading meta: %s", err)
-	}
-	if meta.NumResultChunks != 4 {
-		t.Errorf("unexpected numResultChunks. want=%d have=%d", 4, meta.NumResultChunks)
-	}
-}
-
-func TestPathsWithPrefix(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	paths, err := testStore(t, 42, testFile).PathsWithPrefix(context.Background(), "internal/")
-	if err != nil {
-		t.Fatalf("unexpected error fetching paths with prefix: %s", err)
-	}
-
-	expectedPaths := []string{
-		"internal/gomod/module.go",
-		"internal/index/helper.go",
-		"internal/index/indexer.go",
-		"internal/index/types.go",
-	}
-	if diff := cmp.Diff(expectedPaths, paths); diff != "" {
-		t.Errorf("unexpected paths (-want +got):\n%s", diff)
-	}
-}
-
-func TestReadDocument(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	data, exists, err := testStore(t, 42, testFile).ReadDocument(context.Background(), "protocol/writer.go")
-	if err != nil {
-		t.Fatalf("unexpected error reading document: %s", err)
-	}
-	if !exists {
-		t.Errorf("expected document to exist")
-	}
-
-	expectedRange := types.RangeData{
-		StartLine:          140,
-		StartCharacter:     17,
-		EndLine:            140,
-		EndCharacter:       39,
-		DefinitionResultID: types.ID("3457"),
-		ReferenceResultID:  types.ID("15737"),
-		HoverResultID:      types.ID("3463"),
-		MonikerIDs:         []types.ID{types.ID("3460")},
-	}
-	if diff := cmp.Diff(expectedRange, data.Ranges[types.ID("3454")]); diff != "" {
-		t.Errorf("unexpected range data (-want +got):\n%s", diff)
-	}
-
-	expectedHoverData := "```go\nfunc (*Writer).EmitPackageInformation(packageName string, scheme string, version string) (string, error)\n```"
-	if diff := cmp.Diff(expectedHoverData, data.HoverResults[types.ID("3463")]); diff != "" {
-		t.Errorf("unexpected hover data (-want +got):\n%s", diff)
-	}
-
-	expectedMoniker := types.MonikerData{
-		Kind:                 "export",
-		Scheme:               "gomod",
-		Identifier:           "github.com/sourcegraph/lsif-go/protocol:Writer.EmitPackageInformation",
-		PackageInformationID: types.ID("37"),
-	}
-	if diff := cmp.Diff(expectedMoniker, data.Monikers[types.ID("3460")]); diff != "" {
-		t.Errorf("unexpected moniker data (-want +got):\n%s", diff)
-	}
-
-	expectedPackageInformation := types.PackageInformationData{
-		Name:    "github.com/sourcegraph/lsif-go",
-		Version: "v0.8.0",
-	}
-	if diff := cmp.Diff(expectedPackageInformation, data.PackageInformation[types.ID("37")]); diff != "" {
-		t.Errorf("unexpected package information data (-want +got):\n%s", diff)
-	}
-}
-
-func TestReadResultChunk(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	data, exists, err := testStore(t, 42, testFile).ReadResultChunk(context.Background(), 1)
-	if err != nil {
-		t.Fatalf("unexpected error reading result chunk: %s", err)
-	}
-	if !exists {
-		t.Errorf("expected result chunk to exist")
-	}
-
-	if path := data.DocumentPaths[types.ID("356")]; path != "protocol/writer.go" {
-		t.Errorf("unexpected document path. want=%s have=%s", "protocol/writer.go", path)
-	}
-
-	expectedDocumentRanges := []types.DocumentIDRangeID{
-		{DocumentID: "4032", RangeID: "5606"},
-		{DocumentID: "4032", RangeID: "11714"},
-		{DocumentID: "4032", RangeID: "11947"},
-	}
-
-	if diff := cmp.Diff(expectedDocumentRanges, data.DocumentIDRangeIDs[types.ID("16772")]); diff != "" {
-		t.Errorf("unexpected document ranges (-want +got):\n%s", diff)
-	}
-}
-
-func TestReadDefinitions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	definitions, totalCount, err := testStore(t, 42, testFile).ReadDefinitions(context.Background(), "gomod", "github.com/sourcegraph/lsif-go/protocol:Vertex", 0, 0)
-	if err != nil {
-		t.Fatalf("unexpected error getting definitions: %s", err)
-	}
-	if totalCount != 1 {
-		t.Errorf("unexpected total count. want=%d have=%d", 1, totalCount)
-	}
-
-	expectedDefinitions := []types.Location{
-		{URI: "protocol/protocol.go", StartLine: 34, StartCharacter: 5, EndLine: 34, EndCharacter: 11},
-	}
-	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
-		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
-	}
-}
-
-func TestReadReferences(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	references, totalCount, err := testStore(t, 42, testFile).ReadReferences(context.Background(), "gomod", "golang.org/x/tools/go/packages:Package", 3, 4)
-	if err != nil {
-		t.Fatalf("unexpected error getting references: %s", err)
-	}
-	if totalCount != 25 {
-		t.Errorf("unexpected total count. want=%d have=%d", 25, totalCount)
-	}
-
-	expectedReferences := []types.Location{
-		{URI: "internal/index/indexer.go", StartLine: 275, StartCharacter: 48, EndLine: 275, EndCharacter: 55},
-		{URI: "internal/index/indexer.go", StartLine: 486, StartCharacter: 66, EndLine: 486, EndCharacter: 73},
-		{URI: "internal/index/indexer.go", StartLine: 647, StartCharacter: 86, EndLine: 647, EndCharacter: 93},
-		{URI: "internal/index/indexer.go", StartLine: 131, StartCharacter: 41, EndLine: 131, EndCharacter: 48},
-	}
-	if diff := cmp.Diff(expectedReferences, references); diff != "" {
-		t.Errorf("unexpected references (-want +got):\n%s", diff)
-	}
-}
-
-func TestWrite(t *testing.T) {
+func TestReadWriteMeta(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore(t, 42, "")
-
-	if err := store.CreateTables(ctx); err != nil {
-		t.Fatalf("unexpected error while creating tables: %s", err)
-	}
+	store := testStore(t, 42)
 
 	if err := store.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
+
+	meta, err := store.ReadMeta(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error reading from database: %s", err)
+	}
+	if meta.NumResultChunks != 7 {
+		t.Errorf("unexpected num result chunks. want=%d have=%d", 7, meta.NumResultChunks)
+	}
+}
+
+func TestReadWriteDocument(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	store := testStore(t, 42)
 
 	expectedDocumentData := types.DocumentData{
 		Ranges: map[types.ID]types.RangeData{
@@ -227,6 +76,24 @@ func TestWrite(t *testing.T) {
 	if err := store.WriteDocuments(ctx, documentCh); err != nil {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
+
+	documentData, _, err := store.ReadDocument(ctx, "foo.go")
+	if err != nil {
+		t.Fatalf("unexpected error reading from database: %s", err)
+	}
+	if diff := cmp.Diff(expectedDocumentData, documentData); diff != "" {
+		t.Errorf("unexpected document data (-want +got):\n%s", diff)
+	}
+}
+
+func TestReadWriteResultChunk(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	store := testStore(t, 42)
 
 	expectedResultChunkData := types.ResultChunkData{
 		DocumentPaths: map[types.ID]string{
@@ -264,6 +131,24 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
+	resultChunkData, _, err := store.ReadResultChunk(ctx, 7)
+	if err != nil {
+		t.Fatalf("unexpected error reading from database: %s", err)
+	}
+	if diff := cmp.Diff(expectedResultChunkData, resultChunkData); diff != "" {
+		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
+	}
+}
+
+func TestReadWriteDefinitions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	store := testStore(t, 42)
+
 	expectedDefinitions := []types.Location{
 		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -281,6 +166,24 @@ func TestWrite(t *testing.T) {
 	if err := store.WriteDefinitions(ctx, definitionsCh); err != nil {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
+
+	definitions, _, err := store.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
+	if err != nil {
+		t.Fatalf("unexpected error reading from database: %s", err)
+	}
+	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
+		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
+	}
+}
+
+func TestReadWriteReferences(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	store := testStore(t, 42)
 
 	expectedReferences := []types.Location{
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -300,42 +203,6 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	if err := store.Done(nil); err != nil {
-		t.Fatalf("unexpected error closing transaction: %s", err)
-	}
-
-	meta, err := store.ReadMeta(ctx)
-	if err != nil {
-		t.Fatalf("unexpected error reading from database: %s", err)
-	}
-	if meta.NumResultChunks != 7 {
-		t.Errorf("unexpected num result chunks. want=%d have=%d", 7, meta.NumResultChunks)
-	}
-
-	documentData, _, err := store.ReadDocument(ctx, "foo.go")
-	if err != nil {
-		t.Fatalf("unexpected error reading from database: %s", err)
-	}
-	if diff := cmp.Diff(expectedDocumentData, documentData); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
-	}
-
-	resultChunkData, _, err := store.ReadResultChunk(ctx, 7)
-	if err != nil {
-		t.Fatalf("unexpected error reading from database: %s", err)
-	}
-	if diff := cmp.Diff(expectedResultChunkData, resultChunkData); diff != "" {
-		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
-	}
-
-	definitions, _, err := store.ReadDefinitions(ctx, "scheme A", "ident A", 0, 100)
-	if err != nil {
-		t.Fatalf("unexpected error reading from database: %s", err)
-	}
-	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
-		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
-	}
-
 	references, _, err := store.ReadReferences(ctx, "scheme C", "ident C", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
@@ -345,18 +212,43 @@ func TestWrite(t *testing.T) {
 	}
 }
 
-const testFile = "../sqlite/testdata/lsif-go@5bc35c78.lsif.db"
+func TestPathsWithPrefix(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
 
-func testStore(t *testing.T, id int, filename string) persistence.Store {
-	store := NewStore(dbconn.Global, id)
-	t.Cleanup(func() { _ = store.Close(nil) })
+	ctx := context.Background()
+	store := testStore(t, 42)
 
-	if filename != "" {
-		if err := MigrateBundleToPostgres(context.Background(), id, filename, dbconn.Global); err != nil {
-			t.Fatalf("unexpected error migrating test bundle: %s", err)
-		}
+	documentCh := make(chan persistence.KeyedDocumentData, 5)
+	documentCh <- persistence.KeyedDocumentData{Path: "foo"}        // exact
+	documentCh <- persistence.KeyedDocumentData{Path: "foo.go"}     // file prefix
+	documentCh <- persistence.KeyedDocumentData{Path: "foo/bar.go"} // directory prefix
+	documentCh <- persistence.KeyedDocumentData{Path: "bar/foo.go"} // contains, not prefixed
+	documentCh <- persistence.KeyedDocumentData{Path: "bar/baz.go"} // does not contain
+	close(documentCh)
+
+	if err := store.WriteDocuments(ctx, documentCh); err != nil {
+		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
+	paths, err := store.PathsWithPrefix(ctx, "foo")
+	if err != nil {
+		t.Fatalf("unexpected error reading from database: %s", err)
+	}
+
+	expectedPaths := []string{
+		"foo",
+		"foo.go",
+		"foo/bar.go",
+	}
+	if diff := cmp.Diff(expectedPaths, paths); diff != "" {
+		t.Errorf("unexpected paths (-want +got):\n%s", diff)
+	}
+}
+
+func testStore(t *testing.T, id int) persistence.Store {
 	// Wrap in observed, as that's how it's used in production
-	return persistence.NewObserved(store, &observation.TestContext)
+	return persistence.NewObserved(NewStore(dbconn.Global, id), &observation.TestContext)
 }
