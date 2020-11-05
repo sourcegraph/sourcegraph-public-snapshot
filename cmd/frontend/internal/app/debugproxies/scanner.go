@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -58,7 +57,7 @@ func StartClusterScanner(consumer ScanConsumer) error {
 	if err != nil {
 		return err
 	}
-	ns := Namespace()
+	ns := namespace()
 	// access to K8s clients
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -181,13 +180,11 @@ func (cs *clusterScanner) scanCluster() {
 	cs.consume(scanResults)
 }
 
-func Namespace() string {
-	// This check has to be done first for backwards compatibility with the way InClusterConfig was originally set up
-	if ns, ok := os.LookupEnv("POD_NAMESPACE"); ok {
-		return ns
-	}
+// namespace returns the namespace the pod is currently running in
+// this is done because the k8s client we previously used set the namespace
+// when the client was created, the official k8s client does not
+func namespace() string {
 
-	// Fall back to the namespace associated with the service account token, if available
 	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
 			return ns
