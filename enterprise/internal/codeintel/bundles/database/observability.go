@@ -12,7 +12,7 @@ import (
 // An ObservedDatabase wraps another Database with error logging, Prometheus metrics, and tracing.
 type ObservedDatabase struct {
 	database                    Database
-	filename                    string
+	bundleID                    int
 	existsOperation             *observation.Operation
 	rangesOperation             *observation.Operation
 	definitionsOperation        *observation.Operation
@@ -32,7 +32,7 @@ var _ Database = &ObservedDatabase{}
 var singletonMetrics = &metrics.SingletonOperationMetrics{}
 
 // NewObservedDatabase wraps the given Database with error logging, Prometheus metrics, and tracing.
-func NewObserved(database Database, filename string, observationContext *observation.Context) Database {
+func NewObserved(database Database, bundleID int, observationContext *observation.Context) Database {
 	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
 		return metrics.NewOperationMetrics(
 			observationContext.Registerer,
@@ -44,7 +44,7 @@ func NewObserved(database Database, filename string, observationContext *observa
 
 	return &ObservedDatabase{
 		database: database,
-		filename: filename,
+		bundleID: bundleID,
 		existsOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.Exists",
 			MetricLabels: []string{"exists"},
@@ -96,7 +96,7 @@ func NewObserved(database Database, filename string, observationContext *observa
 // Exists calls into the inner Database and registers the observed results.
 func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, err error) {
 	ctx, endObservation := db.existsOperation.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("filename", db.filename),
+		log.Int("bundleID", db.bundleID),
 		log.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -107,7 +107,7 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 func (db *ObservedDatabase) Ranges(ctx context.Context, path string, startLine, endLine int) (ranges []bundles.CodeIntelligenceRange, err error) {
 	ctx, endObservation := db.rangesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("path", path),
 			log.Int("startLine", startLine),
 			log.Int("endLine", endLine),
@@ -121,7 +121,7 @@ func (db *ObservedDatabase) Ranges(ctx context.Context, path string, startLine, 
 func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []bundles.Location, err error) {
 	ctx, endObservation := db.definitionsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("path", path),
 			log.Int("line", line),
 			log.Int("character", character),
@@ -135,7 +135,7 @@ func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, 
 func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []bundles.Location, err error) {
 	ctx, endObservation := db.referencesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("path", path),
 			log.Int("line", line),
 			log.Int("character", character),
@@ -149,7 +149,7 @@ func (db *ObservedDatabase) References(ctx context.Context, path string, line, c
 func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, character int) (_ string, _ bundles.Range, _ bool, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("path", path),
 			log.Int("line", line),
 			log.Int("character", character),
@@ -163,7 +163,7 @@ func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, charac
 func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string, skip, take int) (diagnostics []bundles.Diagnostic, _ int, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("prefix", prefix),
 		},
 	})
@@ -175,7 +175,7 @@ func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string, skip
 func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (monikers [][]bundles.MonikerData, err error) {
 	ctx, endObservation := db.monikersByPositionOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("path", path),
 			log.Int("line", line),
 			log.Int("character", character),
@@ -197,7 +197,7 @@ func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string,
 func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []bundles.Location, _ int, err error) {
 	ctx, endObservation := db.monikerResultsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("tableName", tableName),
 			log.String("scheme", scheme),
 			log.String("identifier", identifier),
@@ -211,7 +211,7 @@ func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, schem
 func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string, packageInformationID string) (_ bundles.PackageInformationData, _ bool, err error) {
 	ctx, endObservation := db.packageInformationOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
-			log.String("filename", db.filename),
+			log.Int("bundleID", db.bundleID),
 			log.String("path", path),
 			log.String("packageInformationId", string(packageInformationID)),
 		},

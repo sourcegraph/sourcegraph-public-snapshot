@@ -20,16 +20,14 @@ var ErrNoMetadata = errors.New("no rows in meta table")
 
 type store struct {
 	*basestore.Store
-	dumpID     int
 	serializer *serializer
 }
 
 var _ persistence.Store = &store{}
 
-func NewStore(db dbutil.DB, dumpID int) persistence.Store {
+func NewStore(db dbutil.DB) persistence.Store {
 	return &store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
-		dumpID:     dumpID,
 		serializer: newSerializer(),
 	}
 }
@@ -42,7 +40,6 @@ func (s *store) Transact(ctx context.Context) (persistence.Store, error) {
 
 	return &store{
 		Store:      tx,
-		dumpID:     s.dumpID,
 		serializer: s.serializer,
 	}, nil
 }
@@ -51,12 +48,12 @@ func (s *store) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *store) ReadMeta(ctx context.Context) (types.MetaData, error) {
+func (s *store) ReadMeta(ctx context.Context, bundleID int) (types.MetaData, error) {
 	numResultChunks, ok, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			`SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s`,
-			s.dumpID,
+			bundleID,
 		),
 	))
 	if err != nil {
@@ -69,12 +66,12 @@ func (s *store) ReadMeta(ctx context.Context) (types.MetaData, error) {
 	return types.MetaData{NumResultChunks: numResultChunks}, nil
 }
 
-func (s *store) PathsWithPrefix(ctx context.Context, prefix string) ([]string, error) {
+func (s *store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string) ([]string, error) {
 	paths, err := basestore.ScanStrings(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			`SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path LIKE %s ORDER BY path`,
-			s.dumpID,
+			bundleID,
 			prefix+"%",
 		),
 	))
@@ -85,12 +82,12 @@ func (s *store) PathsWithPrefix(ctx context.Context, prefix string) ([]string, e
 	return paths, nil
 }
 
-func (s *store) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {
+func (s *store) ReadDocument(ctx context.Context, bundleID int, path string) (types.DocumentData, bool, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			`SELECT data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1`,
-			s.dumpID,
+			bundleID,
 			path,
 		),
 	))
@@ -106,12 +103,12 @@ func (s *store) ReadDocument(ctx context.Context, path string) (types.DocumentDa
 	return documentData, true, nil
 }
 
-func (s *store) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
+func (s *store) ReadResultChunk(ctx context.Context, bundleID int, id int) (types.ResultChunkData, bool, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			`SELECT data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx = %s LIMIT 1`,
-			s.dumpID,
+			bundleID,
 			id,
 		),
 	))
@@ -127,20 +124,20 @@ func (s *store) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkD
 	return resultChunkData, true, nil
 }
 
-func (s *store) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	return s.readDefinitionReferences(ctx, "lsif_data_definitions", scheme, identifier, skip, take)
+func (s *store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
+	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_definitions", scheme, identifier, skip, take)
 }
 
-func (s *store) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	return s.readDefinitionReferences(ctx, "lsif_data_references", scheme, identifier, skip, take)
+func (s *store) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
+	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_references", scheme, identifier, skip, take)
 }
 
-func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
+func (s *store) readDefinitionReferences(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			`SELECT data FROM "`+tableName+`" WHERE dump_id = %s AND scheme = %s AND identifier = %s LIMIT 1`,
-			s.dumpID,
+			bundleID,
 			scheme,
 			identifier,
 		),
@@ -173,7 +170,7 @@ func (s *store) readDefinitionReferences(ctx context.Context, tableName, scheme,
 	return locations[lo:hi], len(locations), nil
 }
 
-func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) (err error) {
+func (s *store) WriteMeta(ctx context.Context, bundleID int, meta types.MetaData) (err error) {
 	inserter := batch.NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
 
 	defer func() {
@@ -182,10 +179,10 @@ func (s *store) WriteMeta(ctx context.Context, meta types.MetaData) (err error) 
 		}
 	}()
 
-	return inserter.Insert(ctx, s.dumpID, meta.NumResultChunks)
+	return inserter.Insert(ctx, bundleID, meta.NumResultChunks)
 }
 
-func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.KeyedDocumentData) error {
+func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan persistence.KeyedDocumentData) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
@@ -193,7 +190,7 @@ func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.K
 				return err
 			}
 
-			if err := inserter.Insert(ctx, s.dumpID, v.Path, data); err != nil {
+			if err := inserter.Insert(ctx, bundleID, v.Path, data); err != nil {
 				return err
 			}
 		}
@@ -204,7 +201,7 @@ func (s *store) WriteDocuments(ctx context.Context, documents chan persistence.K
 	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data"}, inserter)
 }
 
-func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persistence.IndexedResultChunkData) error {
+func (s *store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan persistence.IndexedResultChunkData) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
@@ -212,7 +209,7 @@ func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persist
 				return err
 			}
 
-			if err := inserter.Insert(ctx, s.dumpID, v.Index, data); err != nil {
+			if err := inserter.Insert(ctx, bundleID, v.Index, data); err != nil {
 				return err
 			}
 		}
@@ -223,15 +220,15 @@ func (s *store) WriteResultChunks(ctx context.Context, resultChunks chan persist
 	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter)
 }
 
-func (s *store) WriteDefinitions(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
-	return s.writeDefinitionReferences(ctx, "lsif_data_definitions", monikerLocations)
+func (s *store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan types.MonikerLocations) error {
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", monikerLocations)
 }
 
-func (s *store) WriteReferences(ctx context.Context, monikerLocations chan types.MonikerLocations) error {
-	return s.writeDefinitionReferences(ctx, "lsif_data_references", monikerLocations)
+func (s *store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan types.MonikerLocations) error {
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", monikerLocations)
 }
 
-func (s *store) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations chan types.MonikerLocations) error {
+func (s *store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, monikerLocations chan types.MonikerLocations) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
@@ -239,7 +236,7 @@ func (s *store) writeDefinitionReferences(ctx context.Context, tableName string,
 				return err
 			}
 
-			if err := inserter.Insert(ctx, s.dumpID, v.Scheme, v.Identifier, data); err != nil {
+			if err := inserter.Insert(ctx, bundleID, v.Scheme, v.Identifier, data); err != nil {
 				return err
 			}
 		}

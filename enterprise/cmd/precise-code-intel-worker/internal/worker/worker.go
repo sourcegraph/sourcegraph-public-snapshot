@@ -37,7 +37,7 @@ func NewWorker(
 		enableBudget:    budgetMax > 0,
 		budgetRemaining: budgetMax,
 		createStore: func(id int) persistence.Store {
-			return persistence.NewObserved(postgres.NewStore(codeIntelDB, id), observationContext)
+			return persistence.NewObserved(postgres.NewStore(codeIntelDB), observationContext)
 		},
 	}
 

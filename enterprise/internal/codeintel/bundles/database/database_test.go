@@ -363,6 +363,8 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
+const testBundleID = 447
+
 func openTestDatabase(t *testing.T) Database {
 	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
@@ -379,10 +381,10 @@ func openTestDatabase(t *testing.T) Database {
 		}
 	}
 
-	db, err := OpenDatabase(context.Background(), "", postgres.NewStore(dbconn.Global, 447))
+	db, err := OpenDatabase(context.Background(), testBundleID, postgres.NewStore(dbconn.Global))
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
 
-	return NewObserved(db, "", &observation.TestContext)
+	return NewObserved(db, testBundleID, &observation.TestContext)
 }
