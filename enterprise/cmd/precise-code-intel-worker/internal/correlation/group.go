@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 )
 
 // GroupedBundleData is a view of a correlation State that sorts data by it containing document
@@ -19,8 +19,8 @@ import (
 // persistent storage and what is read in the query path.
 type GroupedBundleData struct {
 	Meta              types.MetaData
-	Documents         chan persistence.KeyedDocumentData
-	ResultChunks      chan persistence.IndexedResultChunkData
+	Documents         chan lsifstore.KeyedDocumentData
+	ResultChunks      chan lsifstore.IndexedResultChunkData
 	Definitions       chan types.MonikerLocations
 	References        chan types.MonikerLocations
 	Packages          []types.Package
@@ -63,8 +63,8 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 	}, nil
 }
 
-func serializeBundleDocuments(ctx context.Context, state *State) chan persistence.KeyedDocumentData {
-	ch := make(chan persistence.KeyedDocumentData)
+func serializeBundleDocuments(ctx context.Context, state *State) chan lsifstore.KeyedDocumentData {
+	ch := make(chan lsifstore.KeyedDocumentData)
 
 	go func() {
 		defer close(ch)
@@ -74,7 +74,7 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan persistenc
 				continue
 			}
 
-			data := persistence.KeyedDocumentData{
+			data := lsifstore.KeyedDocumentData{
 				Path:     uri,
 				Document: serializeDocument(state, documentID),
 			}
@@ -158,7 +158,7 @@ func serializeDocument(state *State, documentID int) types.DocumentData {
 	return document
 }
 
-func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan persistence.IndexedResultChunkData {
+func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan lsifstore.IndexedResultChunkData {
 	chunkAssignments := make(map[int][]int, numResultChunks)
 	for id := range state.DefinitionData {
 		index := types.HashKey(toID(id), numResultChunks)
@@ -169,7 +169,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 
-	ch := make(chan persistence.IndexedResultChunkData)
+	ch := make(chan lsifstore.IndexedResultChunkData)
 
 	go func() {
 		defer close(ch)
@@ -206,7 +206,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				})
 			}
 
-			data := persistence.IndexedResultChunkData{
+			data := lsifstore.IndexedResultChunkData{
 				Index: index,
 				ResultChunk: types.ResultChunkData{
 					DocumentPaths:      documentPaths,

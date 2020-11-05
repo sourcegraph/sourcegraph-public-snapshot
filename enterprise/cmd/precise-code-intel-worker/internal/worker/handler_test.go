@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	persistencemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/mocks"
 	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store/mocks"
@@ -36,7 +36,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	mockStore := storemocks.NewMockStore()
-	mockPersistenceStore := persistencemocks.NewMockStore()
+	mockLSIFStore := lsifstoremocks.NewMockStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
@@ -45,7 +45,7 @@ func TestHandle(t *testing.T) {
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Set default transaction behavior
-	mockPersistenceStore.TransactFunc.SetDefaultReturn(mockPersistenceStore, nil)
+	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
@@ -60,7 +60,7 @@ func TestHandle(t *testing.T) {
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
 		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
-		createStore:     func(id int) persistence.Store { return mockPersistenceStore },
+		createStore:     func(id int) lsifstore.Store { return mockLSIFStore },
 	}
 
 	requeued, err := handler.handle(context.Background(), mockStore, upload)
@@ -138,7 +138,7 @@ func TestHandleError(t *testing.T) {
 	}
 
 	mockStore := storemocks.NewMockStore()
-	mockPersistenceStore := persistencemocks.NewMockStore()
+	mockLSIFStore := lsifstoremocks.NewMockStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
@@ -147,7 +147,7 @@ func TestHandleError(t *testing.T) {
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Set default transaction behavior
-	mockPersistenceStore.TransactFunc.SetDefaultReturn(mockPersistenceStore, nil)
+	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
@@ -160,7 +160,7 @@ func TestHandleError(t *testing.T) {
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
 		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
-		createStore:     func(id int) persistence.Store { return mockPersistenceStore },
+		createStore:     func(id int) lsifstore.Store { return mockLSIFStore },
 	}
 
 	requeued, err := handler.handle(context.Background(), mockStore, upload)

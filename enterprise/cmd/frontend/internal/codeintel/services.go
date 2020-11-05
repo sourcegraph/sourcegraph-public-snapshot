@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -59,10 +58,9 @@ func initServices(ctx context.Context) error {
 			log.Fatalf("failed to initialize upload store: %s", err)
 		}
 		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		innerStore := persistence.NewObserved(persistence.NewStore(codeIntelDB), observationContext)
-		bundleStore := database.NewObserved(database.OpenDatabase(innerStore), observationContext)
+		lsifStore := lsifstore.NewObserved(lsifstore.NewStore(codeIntelDB), observationContext)
+		bundleStore := database.NewObserved(database.OpenDatabase(lsifStore), observationContext)
 		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleStore, gitserver.DefaultClient), observationContext)
-		lsifStore := lsifstore.New(codeIntelDB)
 
 		services.store = store
 		services.uploadStore = uploadStore

@@ -10,8 +10,8 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -54,7 +54,7 @@ type Database interface {
 }
 
 type databaseImpl struct {
-	store persistence.Store
+	store lsifstore.Store
 }
 
 var _ Database = &databaseImpl{}
@@ -79,7 +79,7 @@ type DocumentPathRangeID struct {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(store persistence.Store) Database {
+func OpenDatabase(store lsifstore.Store) Database {
 	return &databaseImpl{store: store}
 }
 
