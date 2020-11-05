@@ -851,7 +851,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			campaign:        campaignID,
 			ownedByCampaign: campaignID,
 			reconcilerState: cmpgn.ReconcilerStateErrored,
-			numFailures:     reconcilerMaxNumRetries - 1,
+			numFailures:     ReconcilerMaxNumRetries - 1,
 		})
 
 		c3 := createChangeset(t, ctx, s, testChangesetOpts{
@@ -885,7 +885,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reconcilerState: cmpgn.ReconcilerStateErrored,
 			ownedByCampaign: campaignID,
 			failureMessage:  &canceledChangesetFailureMessage,
-			numFailures:     reconcilerMaxNumRetries,
+			numFailures:     ReconcilerMaxNumRetries,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c2, changesetAssertions{
@@ -893,7 +893,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reconcilerState: cmpgn.ReconcilerStateErrored,
 			ownedByCampaign: campaignID,
 			failureMessage:  &canceledChangesetFailureMessage,
-			numFailures:     reconcilerMaxNumRetries,
+			numFailures:     ReconcilerMaxNumRetries,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c3, changesetAssertions{
@@ -913,7 +913,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			reconcilerState: cmpgn.ReconcilerStateErrored,
 			failureMessage:  &canceledChangesetFailureMessage,
 			ownedByCampaign: campaignID,
-			numFailures:     reconcilerMaxNumRetries,
+			numFailures:     ReconcilerMaxNumRetries,
 		})
 	})
 
@@ -945,7 +945,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				have: testChangesetOpts{
 					reconcilerState: cmpgn.ReconcilerStateErrored,
 					failureMessage:  "failed",
-					numFailures:     reconcilerMaxNumRetries - 1,
+					numFailures:     ReconcilerMaxNumRetries - 1,
 				},
 				want: wantEnqueued,
 			},

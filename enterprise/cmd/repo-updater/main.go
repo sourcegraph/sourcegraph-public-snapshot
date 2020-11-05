@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -51,7 +52,7 @@ func enterpriseInit(
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	campaigns.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
+	campaignsBackground.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
