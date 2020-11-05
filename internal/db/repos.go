@@ -198,7 +198,12 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 		return 0, err
 	}
 
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE %s", sqlf.Join(conds, "AND"))
+	predQ := sqlf.Sprintf("TRUE")
+	if len(conds) > 0 {
+		predQ = sqlf.Sprintf("(%s)", sqlf.Join(conds, "AND"))
+	}
+
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND %s", predQ)
 	tr.LazyPrintf("SQL: %v", q.Query(sqlf.PostgresBindVar))
 
 	var count int
@@ -408,6 +413,9 @@ type ReposListOptions struct {
 	// and this may be replaced by the version context name.
 	Names []string
 
+	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
+	IDs []api.RepoID
+
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
@@ -459,6 +467,9 @@ type ReposListOptions struct {
 
 	// CursorDirection contains the comparison for cursor-based pagination, all possible values are: next, prev.
 	CursorDirection string
+
+	// UseOr decides between ANDing or ORing the predicates together.
+	UseOr bool
 
 	*LimitOffset
 }
@@ -521,7 +532,16 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	predQ := sqlf.Sprintf("TRUE")
+	if len(conds) > 0 {
+		if opt.UseOr {
+			predQ = sqlf.Join(conds, "\n OR ")
+		} else {
+			predQ = sqlf.Join(conds, "\n AND ")
+		}
+	}
+
+	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Sprintf("(%s)", predQ), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(fetchSQL))
 
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
@@ -851,10 +871,6 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 }
 
 func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
-	conds = []*sqlf.Query{
-		sqlf.Sprintf("deleted_at IS NULL"),
-	}
-
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
 	cursorConds, err := parseCursorConds(opt)
@@ -898,6 +914,16 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 			return nil, err
 		}
 		conds = append(conds, cond)
+	}
+
+	if len(opt.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opt.IDs))
+		for _, id := range opt.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	if len(opt.ServiceTypes) > 0 {

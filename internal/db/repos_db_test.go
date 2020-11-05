@@ -519,6 +519,44 @@ func TestRepos_List_cloned(t *testing.T) {
 	}
 }
 
+func TestRepos_List_ids(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	mine := types.Repos(mustCreate(ctx, t, MakeGithubRepo(), MakeGitlabRepo()))
+	yours := types.Repos(mustCreate(ctx, t, MakeGitoliteRepo()))
+	all := append(mine, yours...)
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Subset", ReposListOptions{IDs: mine.IDs()}, mine},
+		{"All", ReposListOptions{IDs: all.IDs()}, all},
+		{"Default", ReposListOptions{}, all},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := Repos.List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
 func TestRepos_List_serviceTypes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1010,6 +1048,51 @@ func TestRepos_createRepo(t *testing.T) {
 	}
 	if got, want := repo.Description, "test"; got != want {
 		t.Fatalf("got Description %q, want %q", got, want)
+	}
+}
+
+func TestRepos_List_useOr(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { MockAuthzFilter = nil }()
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	archived := types.Repos{MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
+	archived = types.Repos(mustCreate(ctx, t, archived...))
+	forks := types.Repos{MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
+	forks = types.Repos(mustCreate(ctx, t, forks...))
+	cloned := types.Repos{MakeGithubRepo()}.With(func(r *types.Repo) { r.Cloned = true })
+	cloned = types.Repos(mustCreate(ctx, t, cloned...))
+
+	archivedAndForks := append(archived, forks...)
+	sort.Sort(archivedAndForks)
+	all := append(archivedAndForks, cloned...)
+	sort.Sort(all)
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Archived or Forks", ReposListOptions{OnlyArchived: true, OnlyForks: true, UseOr: true}, archivedAndForks},
+		{"Archived or Forks Or Cloned", ReposListOptions{OnlyArchived: true, OnlyForks: true, OnlyCloned: true, UseOr: true}, all},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := Repos.List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
 	}
 }
 
