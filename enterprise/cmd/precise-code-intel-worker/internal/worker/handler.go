@@ -204,9 +204,6 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 		err = store.Done(err)
 	}()
 
-	if err := store.CreateTables(ctx); err != nil {
-		return errors.Wrap(err, "store.CreateTables")
-	}
 	if err := store.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
