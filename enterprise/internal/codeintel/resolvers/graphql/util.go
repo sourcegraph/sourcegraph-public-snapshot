@@ -3,7 +3,7 @@ package graphql
 import (
 	"github.com/sourcegraph/go-lsp"
 
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
 )
 
 // strPtr creates a pointer to the given value. If the value is an

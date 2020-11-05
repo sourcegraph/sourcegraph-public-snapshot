@@ -5,7 +5,7 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
@@ -25,19 +25,19 @@ type Resolver interface {
 }
 
 type resolver struct {
-	store               store.Store
-	bundleManagerClient bundles.BundleManagerClient
-	codeIntelAPI        codeintelapi.CodeIntelAPI
-	hunkCache           HunkCache
+	store        store.Store
+	bundleStore  database.Database
+	codeIntelAPI codeintelapi.CodeIntelAPI
+	hunkCache    HunkCache
 }
 
 // NewResolver creates a new resolver with the given services.
-func NewResolver(store store.Store, bundleManagerClient bundles.BundleManagerClient, codeIntelAPI codeintelapi.CodeIntelAPI, hunkCache HunkCache) Resolver {
+func NewResolver(store store.Store, bundleStore database.Database, codeIntelAPI codeintelapi.CodeIntelAPI, hunkCache HunkCache) Resolver {
 	return &resolver{
-		store:               store,
-		bundleManagerClient: bundleManagerClient,
-		codeIntelAPI:        codeIntelAPI,
-		hunkCache:           hunkCache,
+		store:        store,
+		bundleStore:  bundleStore,
+		codeIntelAPI: codeIntelAPI,
+		hunkCache:    hunkCache,
 	}
 }
 
@@ -85,7 +85,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 
 	return NewQueryResolver(
 		r.store,
-		r.bundleManagerClient,
+		r.bundleStore,
 		r.codeIntelAPI,
 		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
 		int(args.Repo.ID),

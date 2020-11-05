@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strings"
 
@@ -9,10 +10,13 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client_types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
+
+// ErrNotFound occurs when data does not exist for a requested bundle.
+var ErrNotFound = errors.New("data does not exist")
 
 // Database wraps access to a single processed bundle.
 type Database interface {
@@ -50,7 +54,7 @@ type Database interface {
 }
 
 type databaseImpl struct {
-	store persistence.Store
+	store lsifstore.Store
 }
 
 var _ Database = &databaseImpl{}
@@ -75,7 +79,7 @@ type DocumentPathRangeID struct {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(store persistence.Store) Database {
+func OpenDatabase(store lsifstore.Store) Database {
 	return &databaseImpl{store: store}
 }
 
@@ -252,6 +256,7 @@ func (db *databaseImpl) Diagnostics(ctx context.Context, bundleID int, prefix st
 			skip--
 			if skip < 0 && len(diagnostics) < take {
 				diagnostics = append(diagnostics, bundles.Diagnostic{
+					DumpID:         bundleID,
 					Path:           path,
 					Severity:       diagnostic.Severity,
 					Code:           diagnostic.Code,
@@ -338,8 +343,9 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, bundleID int, tableN
 	var locations []bundles.Location
 	for _, row := range rows {
 		locations = append(locations, bundles.Location{
-			Path:  row.URI,
-			Range: newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			DumpID: bundleID,
+			Path:   row.URI,
+			Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 		})
 	}
 
@@ -581,8 +587,9 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, bundleID i
 			}
 
 			locations = append(locations, bundles.Location{
-				Path:  path,
-				Range: newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+				DumpID: bundleID,
+				Path:   path,
+				Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			})
 		}
 

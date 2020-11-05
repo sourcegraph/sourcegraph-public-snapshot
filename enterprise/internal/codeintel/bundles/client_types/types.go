@@ -1,4 +1,4 @@
-package clientclient
+package clienttypes
 
 // Location is an LSP-like location scoped to a dump.
 type Location struct {

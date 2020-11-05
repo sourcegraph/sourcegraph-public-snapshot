@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -36,8 +35,8 @@ func NewWorker(
 		metrics:         metrics,
 		enableBudget:    budgetMax > 0,
 		budgetRemaining: budgetMax,
-		createStore: func(id int) persistence.Store {
-			return persistence.NewObserved(postgres.NewStore(codeIntelDB), observationContext)
+		createStore: func(id int) lsifstore.Store {
+			return lsifstore.NewObserved(lsifstore.NewStore(codeIntelDB), observationContext)
 		},
 	}
 

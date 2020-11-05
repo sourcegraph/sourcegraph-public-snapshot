@@ -1,5 +1,6 @@
+import pTimeout from 'p-timeout'
 import { Subject } from 'rxjs'
-import { isPromiseLike, isSubscribable, tryCatchPromise } from './util'
+import { isAsyncIterable, isPromiseLike, isSubscribable, observableFromAsyncIterable, tryCatchPromise } from './util'
 
 describe('tryCatchPromise', () => {
     test('returns a resolved promise with the synchronous result', async () =>
@@ -45,7 +46,7 @@ describe('isPromise', () => {
                 })
             )
         ).toBe(true))
-    test('returns true for non-promises', () => {
+    test('returns false for non-promises', () => {
         expect(isPromiseLike(1)).toBe(false)
         expect(isPromiseLike({ then: 1 })).toBe(false)
         expect(isPromiseLike(new Subject<any>())).toBe(false)
@@ -54,7 +55,7 @@ describe('isPromise', () => {
 
 describe('isSubscribable', () => {
     test('returns true for subscribables', () => expect(isSubscribable(new Subject<any>())).toBe(true))
-    test('returns true for non-subscribables', () => {
+    test('returns false for non-subscribables', () => {
         expect(isSubscribable(1)).toBe(false)
         expect(isSubscribable({ subscribe: 1 })).toBe(false)
         expect(
@@ -64,5 +65,132 @@ describe('isSubscribable', () => {
                 })
             )
         ).toBe(false)
+    })
+})
+
+describe('isAsyncIterable', () => {
+    test('returns true for AsyncIterables', () => {
+        async function* provideHover() {
+            yield 1
+            await Promise.resolve()
+            yield 2
+            return
+        }
+        const providerResult = provideHover()
+
+        expect(isAsyncIterable(providerResult)).toBe(true)
+    })
+
+    test('returns false for non-AsyncIterables', () => {
+        expect(isAsyncIterable(1)).toBe(false)
+        expect(
+            isAsyncIterable(
+                new Promise<any>(() => {
+                    /* noop */
+                })
+            )
+        ).toBe(false)
+        expect(
+            isAsyncIterable(
+                (function* () {
+                    yield 1
+                    yield 2
+                })()
+            )
+        ).toBe(false)
+    })
+})
+
+describe('observableFromAsyncIterable', () => {
+    test('result is a valid subscribable', () => {
+        expect(
+            isSubscribable(
+                observableFromAsyncIterable(
+                    (async function* () {
+                        yield 1
+                        await Promise.resolve()
+                        yield 2
+                        return 'return value'
+                    })()
+                )
+            )
+        ).toBe(true)
+    })
+
+    it('returned observable emits yielded values and return value', async () => {
+        const observable = observableFromAsyncIterable(
+            (async function* () {
+                await Promise.resolve()
+                yield 1
+                yield 2
+                yield 3
+                yield 4
+                yield 5
+            })()
+        )
+
+        const values: number[] = []
+        await new Promise(complete => observable.subscribe({ next: value => values.push(value), complete }))
+        expect(values).toStrictEqual([1, 2, 3, 4, 5])
+    })
+
+    it('stops emitting and throws AbortError on unsubscription', async () => {
+        let abortErrorThrown = false
+        async function* test() {
+            await Promise.resolve()
+            yield 1
+            yield 2
+            try {
+                yield 3
+            } catch {
+                abortErrorThrown = true
+            }
+            yield 4
+            yield 5
+        }
+
+        const observable = observableFromAsyncIterable(test())
+
+        const collectedValues: number[] = []
+        await new Promise(resolve => {
+            const subscription = observable.subscribe({
+                next: value => {
+                    collectedValues.push(value)
+                    if (value === 3) {
+                        unsubscribe()
+                    }
+                },
+                error: resolve,
+                complete: resolve,
+            })
+            function unsubscribe() {
+                subscription.unsubscribe()
+                resolve()
+            }
+        })
+
+        expect(collectedValues).toStrictEqual([1, 2, 3])
+        // Assert that not only has the observable stopped emitting, that an `AbortError` was thrown as well
+        expect(abortErrorThrown).toBe(true)
+    })
+
+    it('throws iterator error', async () => {
+        const observable = observableFromAsyncIterable(
+            (async function* () {
+                await Promise.resolve()
+                yield 1
+                yield 2
+                yield 3
+                throw new Error('oops')
+            })()
+        )
+
+        const error = await pTimeout(
+            new Promise(error => observable.subscribe({ error })),
+            1000,
+            'Expected observable to throw error'
+        )
+
+        expect(error).toStrictEqual(new Error('oops'))
     })
 })

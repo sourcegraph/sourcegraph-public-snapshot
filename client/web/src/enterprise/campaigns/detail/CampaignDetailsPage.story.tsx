@@ -33,26 +33,19 @@ const now = new Date()
 
 const campaignDefaults: CampaignFields = {
     __typename: 'Campaign',
-    changesets: {
-        stats: {
-            closed: 1,
-            deleted: 1,
-            draft: 1,
-            merged: 2,
-            open: 2,
-            total: 10,
-            unpublished: 4,
-        },
+    changesetsStats: {
+        closed: 1,
+        deleted: 1,
+        draft: 1,
+        merged: 2,
+        open: 2,
+        total: 10,
+        unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
     initialApplier: {
         url: '/users/alice',
         username: 'alice',
-    },
-    diffStat: {
-        added: 10,
-        changed: 8,
-        deleted: 10,
     },
     id: 'specid',
     url: '/users/alice/campaigns/awesome-campaign',
