@@ -15,5 +15,6 @@ RUN apk update && apk add --no-cache \
 
 USER sourcegraph
 EXPOSE 3187
+VOLUME ["/lsif-storage"]	
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-bundle-manager"]
 COPY precise-code-intel-bundle-manager /usr/local/bin/
