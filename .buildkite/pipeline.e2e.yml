@@ -16,7 +16,7 @@ steps:
       - cd /sourcegraph
       - ./test/e2e/test.sh
     plugins:
-      - ssh://git@github.com/sourcegraph/vagrant-buildkite-plugin.git#main:
+      - ssh://git@github.com/sourcegraph/vagrant-buildkite-plugin.git#fix/pwd:
           box: sourcegraph-e2e
           workdir: test
           plugins:
