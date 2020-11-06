@@ -62,6 +62,12 @@ export interface Filter {
     filterValue: Quoted | Literal | undefined
 }
 
+enum OperatorKind {
+    Or = 'or',
+    And = 'and',
+    Not = 'not',
+}
+
 /**
  * Represents an operator in a search query.
  *
@@ -69,8 +75,9 @@ export interface Filter {
  */
 export interface Operator {
     type: 'operator'
-    range: CharacterRange
     value: string
+    range: CharacterRange
+    kind: OperatorKind
 }
 
 /**
@@ -277,20 +284,35 @@ const scanToken = <T extends Term = Literal>(
     }
 }
 
-const whitespace = scanToken(
-    /\s+/,
-    (_input, range): Whitespace => ({
-        type: 'whitespace',
-        range,
-    })
-)
+const whitespace = scanToken(/\s+/, (_input, range) => ({
+    type: 'whitespace',
+    range,
+}))
 
 const literal = scanToken(/[^\s)]+/)
 
-const operator = scanToken(
-    /(and|AND|or|OR|not|NOT)/,
-    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end), range: { start, end } })
-)
+const operatorNot = scanToken(/(not|NOT)/, (input, { start, end }) => ({
+    type: 'operator',
+    value: input.slice(start, end),
+    range: { start, end },
+    kind: OperatorKind.Not,
+}))
+
+const operatorAnd = scanToken(/(and|AND)/, (input, { start, end }) => ({
+    type: 'operator',
+    value: input.slice(start, end),
+    range: { start, end },
+    kind: OperatorKind.And,
+}))
+
+const operatorOr = scanToken(/(or|OR)/, (input, { start, end }) => ({
+    type: 'operator',
+    value: input.slice(start, end),
+    range: { start, end },
+    kind: OperatorKind.Or,
+}))
+
+const operator = oneOf<Operator>(operatorAnd, operatorOr, operatorNot)
 
 const comment = scanToken(
     /\/\/.*/,
