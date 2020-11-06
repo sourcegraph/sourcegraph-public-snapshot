@@ -9,6 +9,8 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
 ## 3.20 -> 3.21
 
 Follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
