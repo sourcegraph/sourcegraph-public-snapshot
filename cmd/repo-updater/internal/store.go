@@ -751,6 +751,10 @@ WHERE
             AND r.deleted_at IS NULL)
 `
 
+// EnqueueSyncJobs adds all external services whose next_sync_at column is in the past to
+// the external_service_sync_jobs table.
+// If ignoreSiteAdmin is true, it will not select external services owned by the global admin user.
+// This option is set to true on Cloud.
 func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
