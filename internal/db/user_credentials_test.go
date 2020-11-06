@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"fmt"
 	"math/big"
 	"net/http"
 	"reflect"
@@ -22,6 +21,72 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
+
+func TestUserCredentials_Create(t *testing.T) {
+	ctx, user := setUpUserCredentialTest(t)
+
+	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
+	// fields, which causes problems when diffing the keys embedded in OAuth
+	// clients. We'll just define a little helper here to wrap cmp.Diff and get
+	// us over the hump.
+	diffAuthenticators := func(a, b auth.Authenticator) string {
+		return cmp.Diff(a, b, cmp.Comparer(func(a, b *big.Int) bool {
+			return a.Cmp(b) == 0
+		}))
+	}
+
+	// Instead of two of every animal, we want one of every authenticator. Same,
+	// same.
+	for name, auth := range createUserCredentialAuths(t) {
+		t.Run(name, func(t *testing.T) {
+			scope := UserCredentialScope{
+				Domain:              name,
+				UserID:              user.ID,
+				ExternalServiceType: "github",
+				ExternalServiceID:   "https://github.com",
+			}
+
+			cred, err := UserCredentials.Create(ctx, scope, auth)
+			if err != nil {
+				t.Errorf("unexpected non-nil error: %v", err)
+			} else if cred == nil {
+				t.Error("unexpected nil credential")
+			}
+
+			if cred.ID == 0 {
+				t.Error("unexpected zero ID")
+			}
+			if cred.Domain != scope.Domain {
+				t.Errorf("unexpected domain: have=%q want=%q", cred.Domain, scope.Domain)
+			}
+			if cred.UserID != scope.UserID {
+				t.Errorf("unexpected ID: have=%d want=%d", cred.UserID, scope.UserID)
+			}
+			if cred.ExternalServiceType != scope.ExternalServiceType {
+				t.Errorf("unexpected external service type: have=%q want=%q", cred.ExternalServiceType, scope.ExternalServiceType)
+			}
+			if cred.ExternalServiceID != scope.ExternalServiceID {
+				t.Errorf("unexpected external service id: have=%q want=%q", cred.ExternalServiceID, scope.ExternalServiceID)
+			}
+			if diff := diffAuthenticators(cred.Credential, auth); diff != "" {
+				t.Errorf("unexpected credential:\n%s", diff)
+			}
+			if cred.CreatedAt.IsZero() {
+				t.Errorf("unexpected zero creation time")
+			}
+			if cred.UpdatedAt.IsZero() {
+				t.Errorf("unexpected zero update time")
+			}
+
+			// Ensure that trying to insert again fails.
+			if cred, err := UserCredentials.Create(ctx, scope, auth); err == nil {
+				t.Error("unexpected nil error")
+			} else if cred != nil {
+				t.Errorf("unexpected non-nil credential: %v", cred)
+			}
+		})
+	}
+}
 
 func TestUserCredentials_Delete(t *testing.T) {
 	ctx, user := setUpUserCredentialTest(t)
@@ -50,7 +115,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		cred, err := UserCredentials.Upsert(ctx, scope, token)
+		cred, err := UserCredentials.Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +161,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		want, err := UserCredentials.Upsert(ctx, scope, token)
+		want, err := UserCredentials.Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -141,7 +206,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 	})
 
 	t.Run("extant", func(t *testing.T) {
-		want, err := UserCredentials.Upsert(ctx, scope, token)
+		want, err := UserCredentials.Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -175,12 +240,12 @@ func TestUserCredentials_List(t *testing.T) {
 
 	// Unlike the other tests in this file, we'll set up a couple of credentials
 	// right now, and then list from there.
-	github, err := UserCredentials.Upsert(ctx, githubScope, token)
+	github, err := UserCredentials.Create(ctx, githubScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gitlab, err := UserCredentials.Upsert(ctx, gitlabScope, token)
+	gitlab, err := UserCredentials.Create(ctx, gitlabScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,110 +372,11 @@ func TestUserCredentials_List(t *testing.T) {
 	}
 }
 
-func TestUserCredentials_Upsert(t *testing.T) {
-	ctx, user := setUpUserCredentialTest(t)
-
-	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
-	// fields, which causes problems when diffing the keys embedded in OAuth
-	// clients. We'll just define a little helper here to wrap cmp.Diff and get
-	// us over the hump.
-	diffAuthenticators := func(a, b auth.Authenticator) string {
-		return cmp.Diff(a, b, cmp.Comparer(func(a, b *big.Int) bool {
-			return a.Cmp(b) == 0
-		}))
-	}
-
-	// Instead of two of every animal, we want two of every authenticator. Same,
-	// same.
-	for nameFrom, from := range createUserCredentialAuths(t) {
-		for nameTo, to := range createUserCredentialAuths(t) {
-			t.Run(fmt.Sprintf("%s → %s", nameFrom, nameTo), func(t *testing.T) {
-				var cred *UserCredential
-				scope := UserCredentialScope{
-					Domain:              UserCredentialDomainCampaigns,
-					UserID:              user.ID,
-					ExternalServiceType: "github",
-					ExternalServiceID:   "https://github.com",
-				}
-
-				t.Run("insert", func(t *testing.T) {
-					var err error
-					if cred, err = UserCredentials.Upsert(ctx, scope, from); err != nil {
-						t.Errorf("unexpected non-nil error: %v", err)
-					} else if cred == nil {
-						t.Error("unexpected nil credential")
-					}
-
-					if cred.ID == 0 {
-						t.Error("unexpected zero ID")
-					}
-					if cred.Domain != scope.Domain {
-						t.Errorf("unexpected domain: have=%q want=%q", cred.Domain, scope.Domain)
-					}
-					if cred.UserID != scope.UserID {
-						t.Errorf("unexpected ID: have=%d want=%d", cred.UserID, scope.UserID)
-					}
-					if cred.ExternalServiceType != scope.ExternalServiceType {
-						t.Errorf("unexpected external service type: have=%q want=%q", cred.ExternalServiceType, scope.ExternalServiceType)
-					}
-					if cred.ExternalServiceID != scope.ExternalServiceID {
-						t.Errorf("unexpected external service id: have=%q want=%q", cred.ExternalServiceID, scope.ExternalServiceID)
-					}
-					if diff := diffAuthenticators(cred.Credential, from); diff != "" {
-						t.Errorf("unexpected credential:\n%s", diff)
-					}
-					if cred.CreatedAt.IsZero() {
-						t.Errorf("unexpected zero creation time")
-					}
-					if cred.UpdatedAt.IsZero() {
-						t.Errorf("unexpected zero update time")
-					}
-				})
-
-				t.Run("update", func(t *testing.T) {
-					var err error
-					var updated *UserCredential
-					if updated, err = UserCredentials.Upsert(ctx, scope, to); err != nil {
-						t.Errorf("unexpected non-nil error: %v", err)
-					} else if cred == nil {
-						t.Error("unexpected nil credential")
-					}
-
-					if cred.ID != updated.ID {
-						t.Errorf("unexpected ID change: old=%d new=%d", cred.ID, updated.ID)
-					}
-					if updated.Domain != scope.Domain {
-						t.Errorf("unexpected domain: have=%q want=%q", cred.Domain, scope.Domain)
-					}
-					if updated.UserID != scope.UserID {
-						t.Errorf("unexpected ID: have=%d want=%d", cred.UserID, scope.UserID)
-					}
-					if updated.ExternalServiceType != scope.ExternalServiceType {
-						t.Errorf("unexpected external service type: have=%q want=%q", cred.ExternalServiceType, scope.ExternalServiceType)
-					}
-					if updated.ExternalServiceID != scope.ExternalServiceID {
-						t.Errorf("unexpected external service id: have=%q want=%q", cred.ExternalServiceID, scope.ExternalServiceID)
-					}
-					if diff := diffAuthenticators(updated.Credential, to); diff != "" {
-						t.Errorf("unexpected credential:\n%s", diff)
-					}
-					if cred.CreatedAt != updated.CreatedAt {
-						t.Errorf("unexpected creation time change: old=%v new=%v", cred.CreatedAt, updated.CreatedAt)
-					}
-					if cred.UpdatedAt == updated.UpdatedAt {
-						t.Errorf("unexpected updated time non-change: old=%v new=%v", cred.UpdatedAt, updated.UpdatedAt)
-					}
-				})
-			})
-		}
-	}
-}
-
 func TestUserCredentials_Invalid(t *testing.T) {
 	ctx, user := setUpUserCredentialTest(t)
 
 	t.Run("marshal", func(t *testing.T) {
-		if _, err := UserCredentials.Upsert(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
+		if _, err := UserCredentials.Create(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -422,7 +388,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 
 		insertRawCredential := func(t *testing.T, domain string, raw string) int64 {
 			q := sqlf.Sprintf(
-				userCredentialsUpsertQueryFmtstr,
+				userCredentialsCreateQueryFmtstr,
 				domain,
 				user.ID,
 				"type",

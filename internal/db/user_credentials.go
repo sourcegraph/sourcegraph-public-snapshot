@@ -55,6 +55,35 @@ type UserCredentialScope struct {
 	ExternalServiceID   string
 }
 
+func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
+	if Mocks.UserCredentials.Create != nil {
+		return Mocks.UserCredentials.Create(ctx, scope, credential)
+	}
+
+	raw, err := marshalCredential(credential)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling credential")
+	}
+
+	q := sqlf.Sprintf(
+		userCredentialsCreateQueryFmtstr,
+		scope.Domain,
+		scope.UserID,
+		scope.ExternalServiceType,
+		scope.ExternalServiceID,
+		secret.StringValue{S: &raw},
+		sqlf.Join(userCredentialsColumns, ", "),
+	)
+
+	cred := UserCredential{}
+	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err := scanUserCredential(&cred, row); err != nil {
+		return nil, err
+	}
+
+	return &cred, nil
+}
+
 func (*userCredentials) Delete(ctx context.Context, id int64) error {
 	if Mocks.UserCredentials.Delete != nil {
 		return Mocks.UserCredentials.Delete(ctx, id)
@@ -191,35 +220,6 @@ func (*userCredentials) List(ctx context.Context, opts UserCredentialsListOpts) 
 	return creds, next, nil
 }
 
-func (*userCredentials) Upsert(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
-	if Mocks.UserCredentials.Upsert != nil {
-		return Mocks.UserCredentials.Upsert(ctx, scope, credential)
-	}
-
-	raw, err := marshalCredential(credential)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling credential")
-	}
-
-	q := sqlf.Sprintf(
-		userCredentialsUpsertQueryFmtstr,
-		scope.Domain,
-		scope.UserID,
-		scope.ExternalServiceType,
-		scope.ExternalServiceID,
-		secret.StringValue{S: &raw},
-		sqlf.Join(userCredentialsColumns, ", "),
-	)
-
-	cred := UserCredential{}
-	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err := scanUserCredential(&cred, row); err != nil {
-		return nil, err
-	}
-
-	return &cred, nil
-}
-
 // 🐉 This marks the end of the public API. Beyond here are dragons.
 
 // userCredentialsColumns are the columns that must be selected by
@@ -258,7 +258,7 @@ ORDER BY created_at ASC, domain ASC, user_id ASC, external_service_id ASC
 %s  -- LIMIT clause
 `
 
-const userCredentialsUpsertQueryFmtstr = `
+const userCredentialsCreateQueryFmtstr = `
 -- source: internal/db/user_credentials.go:Upsert
 INSERT INTO
 	user_credentials (
@@ -279,14 +279,6 @@ INSERT INTO
 		NOW(),
 		NOW()
 	)
-	ON CONFLICT (
-		domain,
-		user_id,
-		external_service_type,
-		external_service_id
-	) DO UPDATE SET
-		credential = excluded.credential,
-		updated_at = excluded.updated_at
 	RETURNING %s
 `
 
