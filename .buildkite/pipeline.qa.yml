@@ -10,6 +10,8 @@ steps:
     queue: 'baremetal'
 
 - label: ':docker::arrow_double_up:'
+  env:
+    VAGRANT_SERVICE_ACCOUNT: buildkite@sourcegraph-ci.iam.gserviceaccount.com
   command:
   - .buildkite/vagrant-run.sh sourcegraph-upgrade
   timeout_in_minutes: 20
