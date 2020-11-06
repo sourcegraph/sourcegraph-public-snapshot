@@ -198,9 +198,8 @@ func getRedirect(req *http.Request) (string, error) {
 	// we limit the redirect URL to only permit certain urls
 	if !canRedirect(returnTo) {
 		return "", fmt.Errorf("invalid URL in returnTo parameter: %s", returnTo)
-	} else {
-		return returnTo, nil
 	}
+	return returnTo, nil
 }
 
 // canRedirect is used to limit the set of URLs we will redirect to
