@@ -11,7 +11,8 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker Compose
 ```bash
 git clone https://github.com/sourcegraph/deploy-sourcegraph-docker
 cd deploy-sourcegraph-docker/docker-compose
-git checkout v3.21.2
+SOURCEGRAPH_VERSION="v3.21.2"
+git checkout $SOURCEGRAPH_VERSION
 docker-compose up -d
 ```
 
