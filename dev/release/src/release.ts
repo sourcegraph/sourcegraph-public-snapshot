@@ -410,19 +410,22 @@ ${issueCategories
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
             )
             const defaultPRMessage = `release: sourcegraph@${release.version}`
-            const prBody = (actionItems: string[]): string => {
-                const defaultText = `Follow the Sourcegraph ${release.version} release in the [release campaign](${campaignURL}).`
+            const prBodyAndDraftState = (actionItems: string[]): { draft: boolean; body: string } => {
+                const defaultBody = `Follow the Sourcegraph ${release.version} release in the [release campaign](${campaignURL}).`
                 if (!actionItems || actionItems.length === 0) {
-                    return defaultText
+                    return { draft: false, body: defaultBody }
                 }
-                return `${defaultText}
+                return {
+                    draft: true, // further actions required before merge
+                    body: `${defaultBody}
 
 ### :warning: Additional changes required
 
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
-`
+`,
+                }
             }
 
             // Render changes
@@ -438,24 +441,6 @@ cc @${config.captainGitHubUsername}
                             ? `draft sourcegraph@${release.version} release`
                             : defaultPRMessage,
                         title: defaultPRMessage,
-                        draft: true, // This PR requires further action
-                        body: prBody(
-                            ((): string[] => {
-                                const items: string[] = []
-                                if (isPatchRelease) {
-                                    items.push('Update the upgrade guides in `doc/admin/updates`')
-                                } else {
-                                    items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch',
-                                        'If any specific upgrade steps are required, update `doc/admin/updates`'
-                                    )
-                                }
-                                items.push(
-                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request'
-                                )
-                                return items
-                            })()
-                        ),
                         edits: [
                             // Update references to Sourcegraph versions in docs
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
@@ -475,6 +460,23 @@ cc @${config.captainGitHubUsername}
                                 ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\\n\\nTODO' doc/admin/updates/*.md`
                                 : 'echo "Skipping upgrade guide entries"',
                         ],
+                        ...prBodyAndDraftState(
+                            ((): string[] => {
+                                const items: string[] = []
+                                if (isPatchRelease) {
+                                    items.push('Update the upgrade guides in `doc/admin/updates`')
+                                } else {
+                                    items.push(
+                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch',
+                                        'If any specific upgrade steps are required, update `doc/admin/updates`'
+                                    )
+                                }
+                                items.push(
+                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request'
+                                )
+                                return items
+                            })()
+                        ),
                     },
                     {
                         owner: 'sourcegraph',
@@ -483,8 +485,8 @@ cc @${config.captainGitHubUsername}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: prBody([]),
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -493,11 +495,10 @@ cc @${config.captainGitHubUsername}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: prBody([
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
+                        ...prBodyAndDraftState([
                             'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR (`pure-docker` release is optional for patch releases)',
                         ]),
-                        draft: true, // This PR requires further action
-                        edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
                     {
                         owner: 'sourcegraph',
@@ -506,10 +507,10 @@ cc @${config.captainGitHubUsername}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: prBody([]),
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
                         ],
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -518,10 +519,10 @@ cc @${config.captainGitHubUsername}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: prBody([]),
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
                         ],
+                        ...prBodyAndDraftState([]),
                     },
                 ],
                 dryRun: dryRun.changesets,
