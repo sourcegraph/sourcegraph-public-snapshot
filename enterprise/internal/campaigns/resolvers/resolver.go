@@ -411,12 +411,7 @@ func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts
 		return err
 	}
 
-	return usagestats.LogEvent(ctx, usagestats.Event{
-		EventName: "CampaignSpecCreated",
-		UserID:    actor.UID,
-		Source:    "backend",
-		Argument:  json.RawMessage(jsonArg),
-	})
+	return usagestats.LogBackendEvent(actor.UID, "CampaignSpecCreated", json.RawMessage(jsonArg))
 }
 
 func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (graphqlbackend.ChangesetSpecResolver, error) {
