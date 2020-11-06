@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -236,7 +235,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 				t.Errorf("List:\n%s", diff)
 			}
 
-			deleted := want.Clone().With(db.Opt.RepoDeletedAt(now))
+			deleted := want.Clone().With(internaldb.Opt.RepoDeletedAt(now))
 			args := internaldb.ReposListOptions{}
 
 			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
@@ -248,7 +247,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 
 			// Insert previously soft-deleted repos. Ensure we get back the same ID.
-			if err = tx.UpsertRepos(ctx, want.Clone().With(db.Opt.RepoID(0))...); err != nil {
+			if err = tx.UpsertRepos(ctx, want.Clone().With(internaldb.Opt.RepoID(0))...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
@@ -306,7 +305,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 				t.Fatalf("List:\n%s", diff)
 			}
 
-			allDeleted := all.Clone().With(db.Opt.RepoDeletedAt(now))
+			allDeleted := all.Clone().With(internaldb.Opt.RepoDeletedAt(now))
 			args := internaldb.ReposListOptions{}
 
 			if err = tx.UpsertRepos(ctx, allDeleted...); err != nil {
@@ -319,7 +318,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 
 			// Insert one of the previously soft-deleted repos. Ensure ID on upserted repo is set and we get back the same ID.
 			want := types.Repos{all[0]}
-			upsert := want.Clone().With(db.Opt.RepoID(0))
+			upsert := want.Clone().With(internaldb.Opt.RepoID(0))
 			if err = tx.UpsertRepos(ctx, upsert...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
