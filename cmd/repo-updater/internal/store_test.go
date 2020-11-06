@@ -163,21 +163,21 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			extsvc.KindGitolite,
 		}
 
-		services := internaldb.MakeExternalServices()
+		services := types.MakeExternalServices()
 
 		if err := store.ExternalServiceStore().Upsert(ctx, services...); err != nil {
 			t.Fatalf("Upsert error: %v", err)
 		}
 
-		servicesPerKind := internaldb.ExternalServicesToMap(services)
+		servicesPerKind := types.ExternalServicesToMap(services)
 
 		repositories := types.Repos{
-			internaldb.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]),
-			internaldb.MakeGitlabRepo(servicesPerKind[extsvc.KindGitLab]),
-			internaldb.MakeBitbucketServerRepo(servicesPerKind[extsvc.KindBitbucketServer]),
-			internaldb.MakeAWSCodeCommitRepo(servicesPerKind[extsvc.KindAWSCodeCommit]),
-			internaldb.MakeOtherRepo(servicesPerKind[extsvc.KindOther]),
-			internaldb.MakeGitoliteRepo(servicesPerKind[extsvc.KindGitolite]),
+			types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]),
+			types.MakeGitlabRepo(servicesPerKind[extsvc.KindGitLab]),
+			types.MakeBitbucketServerRepo(servicesPerKind[extsvc.KindBitbucketServer]),
+			types.MakeAWSCodeCommitRepo(servicesPerKind[extsvc.KindAWSCodeCommit]),
+			types.MakeOtherRepo(servicesPerKind[extsvc.KindOther]),
+			types.MakeGitoliteRepo(servicesPerKind[extsvc.KindGitolite]),
 		}
 
 		t.Run("no repos", func(t *testing.T) {
@@ -187,7 +187,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 		})
 
 		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			want := internaldb.GenerateRepos(7, repositories...)
+			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -235,7 +235,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 				t.Errorf("List:\n%s", diff)
 			}
 
-			deleted := want.Clone().With(internaldb.Opt.RepoDeletedAt(now))
+			deleted := want.Clone().With(types.Opt.RepoDeletedAt(now))
 			args := internaldb.ReposListOptions{}
 
 			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
@@ -247,7 +247,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 
 			// Insert previously soft-deleted repos. Ensure we get back the same ID.
-			if err = tx.UpsertRepos(ctx, want.Clone().With(internaldb.Opt.RepoID(0))...); err != nil {
+			if err = tx.UpsertRepos(ctx, want.Clone().With(types.Opt.RepoID(0))...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
@@ -279,7 +279,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 		}))
 
 		t.Run("many repos soft-deleted and single repo reinserted", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			all := internaldb.GenerateRepos(7, repositories...)
+			all := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, all...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -305,7 +305,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 				t.Fatalf("List:\n%s", diff)
 			}
 
-			allDeleted := all.Clone().With(internaldb.Opt.RepoDeletedAt(now))
+			allDeleted := all.Clone().With(types.Opt.RepoDeletedAt(now))
 			args := internaldb.ReposListOptions{}
 
 			if err = tx.UpsertRepos(ctx, allDeleted...); err != nil {
@@ -318,7 +318,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 
 			// Insert one of the previously soft-deleted repos. Ensure ID on upserted repo is set and we get back the same ID.
 			want := types.Repos{all[0]}
-			upsert := want.Clone().With(internaldb.Opt.RepoID(0))
+			upsert := want.Clone().With(types.Opt.RepoID(0))
 			if err = tx.UpsertRepos(ctx, upsert...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
@@ -339,7 +339,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 
 		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			// UpsertRepos shouldn't set the cloned column to true
-			r := internaldb.GenerateRepos(1, repositories...)[0]
+			r := types.GenerateRepos(1, repositories...)[0]
 			r.Cloned = true
 			if err := tx.UpsertRepos(ctx, r); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -378,13 +378,13 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	services := internaldb.MakeExternalServices()
-	servicesPerKind := internaldb.ExternalServicesToMap(services)
+	services := types.MakeExternalServices()
+	servicesPerKind := types.ExternalServicesToMap(services)
 	mustCreateServices(t, store, services)
 
 	return func(t *testing.T) {
-		github := internaldb.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub])
-		gitlab := internaldb.MakeGitlabRepo(servicesPerKind[extsvc.KindGitLab])
+		github := types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub])
+		gitlab := types.MakeGitlabRepo(servicesPerKind[extsvc.KindGitLab])
 
 		repositories := types.Repos{
 			github,
@@ -400,7 +400,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 		})
 
 		t.Run("delete repo", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			want := internaldb.GenerateRepos(7, repositories...)
+			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -438,7 +438,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 		}))
 
 		t.Run("delete external service", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			origRepos := internaldb.GenerateRepos(7, repositories...)
+			origRepos := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, origRepos...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -487,7 +487,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 		}))
 
 		t.Run("inserts updates and deletes", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			want := internaldb.GenerateRepos(7, repositories...)
+			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -541,14 +541,14 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 }
 
 func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.T) {
-	services := internaldb.MakeExternalServices()
-	servicesPerKind := internaldb.ExternalServicesToMap(services)
+	services := types.MakeExternalServices()
+	servicesPerKind := types.ExternalServicesToMap(services)
 	mustCreateServices(t, store, services)
 
 	return func(t *testing.T) {
 		var repositories types.Repos
 		for i := 0; i < 3; i++ {
-			repositories = append(repositories, internaldb.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]))
+			repositories = append(repositories, types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]))
 		}
 
 		check := func(t testing.TB, ctx context.Context, tx *internal.Store, wantNames []string) {
@@ -576,7 +576,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 		})
 
 		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			stored := internaldb.GenerateRepos(9, repositories...)
+			stored := types.GenerateRepos(9, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("RepoStore.Create error: %s", err)
@@ -610,7 +610,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 		}))
 
 		t.Run("repo names in mixed case", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			stored := internaldb.GenerateRepos(9, repositories...)
+			stored := types.GenerateRepos(9, repositories...)
 			for i := range stored {
 				if i%2 == 0 {
 					stored[i].Name = api.RepoName(strings.ToUpper(string(stored[i].Name)))
@@ -642,14 +642,14 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 
 func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		services := internaldb.MakeExternalServices()
-		servicesPerKind := internaldb.ExternalServicesToMap(services)
+		services := types.MakeExternalServices()
+		servicesPerKind := types.ExternalServicesToMap(services)
 
 		mustCreateServices(t, store, services)
 
 		var repositories types.Repos
 		for i := 0; i < 3; i++ {
-			repositories = append(repositories, internaldb.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]))
+			repositories = append(repositories, types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]))
 		}
 
 		ctx := context.Background()
@@ -665,7 +665,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 		})
 
 		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			stored := internaldb.GenerateRepos(10, repositories...)
+			stored := types.GenerateRepos(10, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("RepoStore.Create error: %s", err)
@@ -690,7 +690,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 		}))
 
 		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			stored := internaldb.GenerateRepos(10, repositories...)
+			stored := types.GenerateRepos(10, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("RepoStore.Create error: %s", err)
@@ -725,17 +725,17 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	services := internaldb.MakeExternalServices()
-	servicesPerKind := internaldb.ExternalServicesToMap(services)
+	services := types.MakeExternalServices()
+	servicesPerKind := types.ExternalServicesToMap(services)
 	mustCreateServices(t, store, services)
 
-	unmanaged := internaldb.MakeRepo("unmanaged", "https://example.com/", "non_existent_kind")
-	github := internaldb.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub])
-	gitlab := internaldb.MakeGitlabRepo(servicesPerKind[extsvc.KindGitLab])
-	bitbucketServer := internaldb.MakeBitbucketServerRepo(servicesPerKind[extsvc.KindBitbucketServer])
-	awsCodeCommit := internaldb.MakeAWSCodeCommitRepo(servicesPerKind[extsvc.KindAWSCodeCommit])
-	otherRepo := internaldb.MakeOtherRepo(servicesPerKind[extsvc.KindOther])
-	gitoliteRepo := internaldb.MakeGitoliteRepo(servicesPerKind[extsvc.KindGitolite])
+	unmanaged := types.MakeRepo("unmanaged", "https://example.com/", "non_existent_kind")
+	github := types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub])
+	gitlab := types.MakeGitlabRepo(servicesPerKind[extsvc.KindGitLab])
+	bitbucketServer := types.MakeBitbucketServerRepo(servicesPerKind[extsvc.KindBitbucketServer])
+	awsCodeCommit := types.MakeAWSCodeCommitRepo(servicesPerKind[extsvc.KindAWSCodeCommit])
+	otherRepo := types.MakeOtherRepo(servicesPerKind[extsvc.KindOther])
+	gitoliteRepo := types.MakeGitoliteRepo(servicesPerKind[extsvc.KindGitolite])
 
 	repositories := types.Repos{
 		github,
@@ -759,7 +759,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 		name   string
 		args   func(stored types.Repos) internaldb.ReposListOptions
 		stored types.Repos
-		repos  internaldb.ReposAssertion
+		repos  types.ReposAssertion
 		err    error
 	}
 
@@ -779,7 +779,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				return args
 			},
 			stored: stored,
-			repos:  internaldb.Assert.ReposEqual(stored...),
+			repos:  types.Assert.ReposEqual(stored...),
 		})
 	}
 
@@ -789,22 +789,22 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 			return internaldb.ReposListOptions{ServiceTypes: kinds}
 		},
 		stored: types.Repos{github, gitlab, unmanaged}.Clone(),
-		repos:  internaldb.Assert.ReposEqual(github, gitlab),
+		repos:  types.Assert.ReposEqual(github, gitlab),
 	})
 
 	{
-		stored := repositories.With(internaldb.Opt.RepoDeletedAt(now))
+		stored := repositories.With(types.Opt.RepoDeletedAt(now))
 		testCases = append(testCases, testCase{
 			name:   "excludes soft deleted repos by default",
 			stored: stored,
-			repos:  internaldb.Assert.ReposEqual(),
+			repos:  types.Assert.ReposEqual(),
 		})
 	}
 
 	testCases = append(testCases, testCase{
 		name:   "returns repos in ascending order by id",
-		stored: internaldb.GenerateRepos(7, repositories...),
-		repos: internaldb.Assert.ReposOrderedBy(func(a, b *types.Repo) bool {
+		stored: types.GenerateRepos(7, repositories...),
+		repos: types.Assert.ReposOrderedBy(func(a, b *types.Repo) bool {
 			return a.ID < b.ID
 		}),
 	})
@@ -817,7 +817,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				Names: []string{string(github.Name), string(gitlab.Name)},
 			}
 		},
-		repos: internaldb.Assert.ReposEqual(github, gitlab),
+		repos: types.Assert.ReposEqual(github, gitlab),
 	})
 
 	testCases = append(testCases, testCase{
@@ -828,7 +828,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				IDs: []api.RepoID{stored[0].ID, stored[1].ID},
 			}
 		},
-		repos: internaldb.Assert.ReposEqual(repositories[:2].Clone()...),
+		repos: types.Assert.ReposEqual(repositories[:2].Clone()...),
 	})
 
 	testCases = append(testCases, testCase{
@@ -839,7 +839,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				ServiceTypes: []string{extsvc.KindGitHub, extsvc.KindGitLab},
 			}
 		},
-		repos: internaldb.Assert.ReposEqual(github, gitlab),
+		repos: types.Assert.ReposEqual(github, gitlab),
 	})
 
 	testCases = append(testCases, testCase{
@@ -850,7 +850,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 			}
 		},
 		stored: repositories,
-		repos:  internaldb.Assert.ReposEqual(gitlab),
+		repos:  types.Assert.ReposEqual(gitlab),
 	})
 
 	testCases = append(testCases, testCase{
@@ -863,7 +863,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				UseOr:        true,
 			}
 		},
-		repos: internaldb.Assert.ReposEqual(github, gitlab),
+		repos: types.Assert.ReposEqual(github, gitlab),
 	})
 
 	testCases = append(testCases, testCase{
@@ -876,7 +876,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				UseOr:        false,
 			}
 		},
-		repos: internaldb.Assert.ReposEqual(),
+		repos: types.Assert.ReposEqual(),
 	})
 
 	{
@@ -888,7 +888,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 					ExternalServiceID: servicesPerKind[extsvc.KindGitHub].ID,
 				}
 			},
-			repos: internaldb.Assert.ReposEqual(github),
+			repos: types.Assert.ReposEqual(github),
 		})
 	}
 
@@ -922,7 +922,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 		}
 
 		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			stored := internaldb.GenerateRepos(5, repositories...).Clone()
+			stored := types.GenerateRepos(5, repositories...).Clone()
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
 			}
@@ -947,22 +947,22 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 				r.Cloned = true
 			})
 
-			internaldb.Assert.ReposEqual(want...)(t, rs)
+			types.Assert.ReposEqual(want...)(t, rs)
 		}))
 	}
 }
 
 func testStoreListReposPagination(t *testing.T, store *internal.Store) func(*testing.T) {
-	services := internaldb.MakeExternalServices()
-	servicesPerKind := internaldb.ExternalServicesToMap(services)
+	services := types.MakeExternalServices()
+	servicesPerKind := types.ExternalServicesToMap(services)
 	mustCreateServices(t, store, services)
 
-	github := internaldb.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub])
+	github := types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub])
 
 	return func(t *testing.T) {
 		ctx := context.Background()
 		t.Run("", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
-			stored := internaldb.GenerateRepos(7, github)
+			stored := types.GenerateRepos(7, github)
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("RepoStore.Create error: %s", err)
 			}
@@ -1044,7 +1044,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *internal.Store) func(t *testing
 		clock := dbtesting.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
-		services := internaldb.GenerateExternalServices(10, internaldb.MakeExternalServices()...)
+		services := types.GenerateExternalServices(10, types.MakeExternalServices()...)
 
 		type testCase struct {
 			name            string
