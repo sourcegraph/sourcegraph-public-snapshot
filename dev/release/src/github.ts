@@ -252,13 +252,21 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
     // Generate changes
     const results: CreatedChangeset[] = []
     for (const change of options.changes) {
+        const repository = `${change.owner}/${change.repo}`
+        console.log(`Preparing change for ${repository} on '${change.base}' to '${change.head}'
+
+Title: ${change.title}
+Body: ${change.body || 'none'}
+Dryrun: ${options.dryRun || false}`)
         await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
         if (!options.dryRun) {
             pullRequest = await createPR(octokit, change)
         }
+
         results.push({
-            repository: `${change.owner}/${change.repo}`,
+            repository,
             branch: change.base,
             pullRequestURL: pullRequest.url,
             pullRequestNumber: pullRequest.number,

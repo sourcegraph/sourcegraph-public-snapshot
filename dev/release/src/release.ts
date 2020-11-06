@@ -411,7 +411,7 @@ ${issueCategories
             )
             const defaultPRMessage = `release: sourcegraph@${release.version}`
             const prBody = (actionItems: string[]): string => {
-                const defaultText = `Follow the ${release.version} Sourcegraph release in the [release campaign](${campaignURL}).`
+                const defaultText = `Follow the Sourcegraph ${release.version} release in the [release campaign](${campaignURL}).`
                 if (!actionItems || actionItems.length === 0) {
                     return defaultText
                 }
