@@ -184,12 +184,17 @@ func (cs *clusterScanner) scanCluster() {
 // this is done because the k8s client we previously used set the namespace
 // when the client was created, the official k8s client does not
 func namespace() string {
-
-	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
-		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
-			return ns
-		}
+	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log15.Warn("unable to read ", filename, " using \"default\" ns")
+		return "default"
 	}
 
-	return "default"
+	ns := strings.TrimSpace(string(data))
+	if len(ns) == 0 {
+		log15.Warn("file: ", filename, " empty using \"default\" ns")
+		return "default"
+	}
+	return ns
 }
