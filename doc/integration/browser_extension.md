@@ -98,7 +98,7 @@ To grant these permissions:
 
 By default, the browser extension communicates with [sourcegraph.com](https://sourcegraph.com), which has only public code.
 
-To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect it to the extension.
+To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect the extension to it.
 
 Follow these instructions:
 
