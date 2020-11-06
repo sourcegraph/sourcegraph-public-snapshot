@@ -15,7 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -95,9 +94,6 @@ func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	db := dbtest.NewDB(t, *dsn)
-
-	m := internal.NewStoreMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
 
 	store := internal.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
