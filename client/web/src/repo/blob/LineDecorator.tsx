@@ -21,7 +21,7 @@ export interface LineDecoratorProps extends ThemeProps {
 }
 
 /**
- *
+ * Component that decorates lines of code and appends line attachments set by extensions
  */
 export const LineDecorator = React.memo<LineDecoratorProps>(
     ({ getCodeElementFromLineNumber, line, decorations, codeViewReference, portalID, isLightTheme }) => {
