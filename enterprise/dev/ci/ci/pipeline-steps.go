@@ -260,11 +260,13 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VERSION"] = commonEnv["VERSION"]
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
-	// tag for 'us.gcr.io/sourcegraph-dev' images built from this commit
+	// Set variables that indicate the tag for 'us.gcr.io/sourcegraph-dev' images built
+	// from this CI run's commit, and credentials to access them.
 	env["CANDIDATE_VERSION"] = candidateImageTag(c)
+	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
-	// for sourcegraph-upgrade
-	env["TEST_UPGRADE_FROM_SOURCEGRAPH_VERSION"] = "3.20.0"
+	// Test upgrades from mininum upgradeable Sourcegraph version
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
 
 	return func(pipeline *bk.Pipeline) {
 		if !c.shouldRunE2EandQA() {
