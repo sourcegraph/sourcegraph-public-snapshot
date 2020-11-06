@@ -15,11 +15,15 @@
     width: 32rem;
     max-width: 100vw;
 
-    &--centered {
+    &--centered,
+    &--top-third {
         transform: translate(-50%, -50%);
         position: absolute;
         top: 50%;
         margin: 0;
         left: 50%;
+    }
+    &--top-third {
+        top: 33%;
     }
 }
