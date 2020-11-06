@@ -60,6 +60,7 @@ export interface Filter {
     range: CharacterRange
     filterType: Literal
     filterValue: Quoted | Literal | undefined
+    negated: boolean
 }
 
 enum OperatorKind {
@@ -383,6 +384,7 @@ const filter: Parser<Filter> = (input, start) => {
             range: { start, end: parsedValue ? parsedValue.token.range.end : parsedDelimiter.token.range.end },
             filterType: parsedKeyword.token,
             filterValue: parsedValue?.token,
+            negated: parsedKeyword.token.value.startsWith('-'),
         },
     }
 }
