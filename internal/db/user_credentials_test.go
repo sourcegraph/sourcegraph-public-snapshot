@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -457,7 +458,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 
 func TestUserCredentialNotFoundErr(t *testing.T) {
 	err := UserCredentialNotFoundErr{}
-	if have := err.NotFound(); !have {
+	if have := errcode.IsNotFound(err); !have {
 		t.Error("UserCredentialNotFoundErr does not say it represents a not found error")
 	}
 }
