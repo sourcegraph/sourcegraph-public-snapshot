@@ -42,13 +42,13 @@ FROM (
 	`
 
 	var (
-		totalOnboardingTourViews   int
-		viewedLangStep             int
-		viewedFilterRepoStep       int
-		viewedAddQueryTermStep     int
-		viewedSubmitSearchStep     int
-		viewedSearchReferenceStep  int
-		closeOnboardingTourClicked int
+		totalOnboardingTourViews   *int32
+		viewedLangStep             *int32
+		viewedFilterRepoStep       *int32
+		viewedAddQueryTermStep     *int32
+		viewedSubmitSearchStep     *int32
+		viewedSearchReferenceStep  *int32
+		closeOnboardingTourClicked *int32
 	)
 	if err := dbconn.Global.QueryRowContext(ctx, getSearchOnboardingQuery).Scan(
 		&totalOnboardingTourViews,
@@ -62,13 +62,13 @@ FROM (
 		return nil, err
 	}
 	s := &types.SearchOnboarding{
-		TotalOnboardingTourViews:   int32(totalOnboardingTourViews),
-		ViewedLangStep:             int32(viewedLangStep),
-		ViewedFilterRepoStep:       int32(viewedFilterRepoStep),
-		ViewedAddQueryTermStep:     int32(viewedAddQueryTermStep),
-		ViewedSubmitSearchStep:     int32(viewedSubmitSearchStep),
-		ViewedSearchReferenceStep:  int32(viewedSearchReferenceStep),
-		CloseOnboardingTourClicked: int32(closeOnboardingTourClicked),
+		TotalOnboardingTourViews:   totalOnboardingTourViews,
+		ViewedLangStep:             viewedLangStep,
+		ViewedFilterRepoStep:       viewedFilterRepoStep,
+		ViewedAddQueryTermStep:     viewedAddQueryTermStep,
+		ViewedSubmitSearchStep:     viewedSubmitSearchStep,
+		ViewedSearchReferenceStep:  viewedSearchReferenceStep,
+		CloseOnboardingTourClicked: closeOnboardingTourClicked,
 	}
 
 	return s, nil

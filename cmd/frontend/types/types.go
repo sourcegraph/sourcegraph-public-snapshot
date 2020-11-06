@@ -1258,13 +1258,13 @@ type HomepagePanels struct {
 }
 
 type SearchOnboarding struct {
-	TotalOnboardingTourViews   int32
-	ViewedLangStep             int32
-	ViewedFilterRepoStep       int32
-	ViewedAddQueryTermStep     int32
-	ViewedSubmitSearchStep     int32
-	ViewedSearchReferenceStep  int32
-	CloseOnboardingTourClicked int32
+	TotalOnboardingTourViews   *int32
+	ViewedLangStep             *int32
+	ViewedFilterRepoStep       *int32
+	ViewedAddQueryTermStep     *int32
+	ViewedSubmitSearchStep     *int32
+	ViewedSearchReferenceStep  *int32
+	CloseOnboardingTourClicked *int32
 }
 
 // Secret represents the secrets table
