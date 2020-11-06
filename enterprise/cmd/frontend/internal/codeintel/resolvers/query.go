@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
