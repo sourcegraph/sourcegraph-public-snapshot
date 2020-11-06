@@ -314,7 +314,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     selected.classList.remove('selected')
                 }
                 for (const { element } of codeCells) {
-                    // this.createLineDecorationAttachmentDOMNode(line, element)
                     // Highlight row
                     const row = element.parentElement as HTMLTableRowElement
                     row.classList.add('selected')
@@ -348,7 +347,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         const decorations = modelChanges.pipe(
             switchMap(model => {
                 const modelChanged = !isEqual(model, lastModel)
-                lastModel = model // record we can compute modelChanged
+                lastModel = model // record so we can compute modelChanged
                 // Only clear decorations if the model changed. If only the extensions changed,
                 // keep the old decorations until the new ones are available, to avoid UI jitter
                 return merge(

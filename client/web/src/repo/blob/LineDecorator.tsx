@@ -1,7 +1,6 @@
 import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
 import isAbsoluteUrl from 'is-absolute-url'
-import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
@@ -9,7 +8,7 @@ import {
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { property } from '../../../../shared/src/util/types'
+import { isDefined, property } from '../../../../shared/src/util/types'
 
 export interface LineDecoratorProps extends ThemeProps {
     /** 1-based line number */
@@ -26,6 +25,11 @@ export interface LineDecoratorProps extends ThemeProps {
 export const LineDecorator = React.memo<LineDecoratorProps>(
     ({ getCodeElementFromLineNumber, line, decorations, codeViewReference, portalID, isLightTheme }) => {
         const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
+
+        // `LineDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
+        // after mount/decoration updates, but before the browser has painted DOM updates.
+        // This prevents users from seeing inconsistent states where changes handled by React have been
+        // painted, but DOM manipulation handled by these effects are painted on the next tick.
 
         // Create portal node and attach to code cell
         useLayoutEffect(() => {
@@ -108,36 +112,34 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
 
         // Render decoration attachments into portal
         return ReactDOM.createPortal(
-            decorations
-                ?.filter(property('after', (after): after is DecorationAttachmentRenderOptions => !!after))
-                .map((decoration, index) => {
-                    const attachment = decoration.after
-                    const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+            decorations?.filter(property('after', isDefined)).map((decoration, index) => {
+                const attachment = decoration.after
+                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
-                    return (
-                        <LinkOrSpan
-                            // Key by content, use index to remove possibility of duplicate keys
-                            key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
-                            className="line-decoration-attachment"
-                            to={attachment.linkURL}
-                            data-tooltip={attachment.hoverMessage}
-                            // Use target to open external URLs
-                            target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                            rel="noreferrer noopener"
-                        >
-                            <span
-                                className="line-decoration-attachment__contents"
-                                // eslint-disable-next-line react/forbid-dom-props
-                                style={{
-                                    color: style.color,
-                                    backgroundColor: style.backgroundColor,
-                                }}
-                                data-contents={attachment.contentText || ''}
-                            />
-                        </LinkOrSpan>
-                    )
-                }),
+                return (
+                    <LinkOrSpan
+                        // Key by content, use index to remove possibility of duplicate keys
+                        key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
+                        className="line-decoration-attachment"
+                        to={attachment.linkURL}
+                        data-tooltip={attachment.hoverMessage}
+                        // Use target to open external URLs
+                        target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
+                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                        rel="noreferrer noopener"
+                    >
+                        <span
+                            className="line-decoration-attachment__contents"
+                            // eslint-disable-next-line react/forbid-dom-props
+                            style={{
+                                color: style.color,
+                                backgroundColor: style.backgroundColor,
+                            }}
+                            data-contents={attachment.contentText || ''}
+                        />
+                    </LinkOrSpan>
+                )
+            }),
             portalNode
         )
     }
