@@ -1,6 +1,6 @@
 import React from 'react'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
-import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
+import { LinkWithIconOnlyTooltip } from '../../components/LinkWithIconOnlyTooltip'
 
 export const CodeMonitoringNavItem: React.FunctionComponent = () => (
     <LinkWithIconOnlyTooltip
