@@ -21,6 +21,11 @@ export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
     endColumn: end + 1,
 })
 
+/**
+ * A label associated with a pattern token. We don't use SearchPatternType because
+ * that is used as a global quantifier for all patterns in a query. PatternKind
+ * allows to qualify multiple pattern tokens differently within a single query.
+ */
 export enum PatternKind {
     Literal = 1,
     Regexp,
