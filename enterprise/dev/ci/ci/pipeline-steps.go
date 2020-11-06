@@ -51,7 +51,7 @@ func addDocs(pipeline *bk.Pipeline) {
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark:", bk.Cmd("./dev/check/all.sh")) // TODO: Add header
+	pipeline.AddStep(":white_check_mark: Misc Linters", bk.Cmd("./dev/check/all.sh"))
 }
 
 // Adds the lint test step.
