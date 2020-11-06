@@ -9,6 +9,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import * as React from 'react'
+import classNames from 'classnames'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -50,6 +51,8 @@ interface SearchResultsInfoBarProps
     displayPerformanceWarning: boolean
 
     location: H.Location
+
+    className?: string
 }
 
 /**
@@ -83,7 +86,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     const excludeArchivedFilter = props.results.dynamicFilters.find(filter => filter.value === 'archived:yes')
     const excludedArchivedCount = excludeArchivedFilter?.count || 0
     return (
-        <div className="search-results-info-bar" data-testid="results-info-bar">
+        <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             {props.results.results.length === 0 && (
                 <small className="search-results-info-bar__row">
                     <div className="search-results-info-bar__row-left">
@@ -92,14 +95,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end" />
                 </small>
             )}
-            {!props.searchStreaming &&
-                (props.results.timedout.length > 0 ||
-                    props.results.cloning.length > 0 ||
-                    props.results.results.length > 0 ||
-                    props.results.missing.length > 0 ||
-                    excludedForksCount > 0 ||
-                    excludedArchivedCount > 0) && (
-                    <small className="search-results-info-bar__row">
+            {(props.results.timedout.length > 0 ||
+                props.results.cloning.length > 0 ||
+                props.results.results.length > 0 ||
+                props.results.missing.length > 0 ||
+                excludedForksCount > 0 ||
+                excludedArchivedCount > 0) && (
+                <small className="search-results-info-bar__row">
+                    {!props.searchStreaming && (
                         <div className="search-results-info-bar__row-left">
                             <div className="search-results-info-bar__notice test-search-results-stats">
                                 <span>
@@ -185,63 +188,62 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             )}
                             <QuotesInterpretedLiterallyNotice {...props} />
                         </div>
-                        <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
-                            <ActionsNavItems
-                                {...props}
-                                extraContext={{ searchQuery: props.query || null }}
-                                menu={ContributableMenu.SearchResultsToolbar}
-                                wrapInList={false}
-                                showLoadingSpinnerDuringExecution={true}
-                                actionItemClass="btn btn-link nav-link text-decoration-none"
-                            />
+                    )}
+                    <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
+                        <ActionsNavItems
+                            {...props}
+                            extraContext={{ searchQuery: props.query || null }}
+                            menu={ContributableMenu.SearchResultsToolbar}
+                            wrapInList={false}
+                            showLoadingSpinnerDuringExecution={true}
+                            actionItemClass="btn btn-link nav-link text-decoration-none"
+                        />
 
-                            {props.results.results.length > 0 && (
-                                <li className="nav-item">
-                                    <button
-                                        type="button"
-                                        onClick={props.onExpandAllResultsToggle}
-                                        className="btn btn-link nav-link text-decoration-none"
-                                        data-tooltip={`${
-                                            props.allExpanded ? 'Hide' : 'Show'
-                                        } more matches on all results`}
-                                    >
-                                        {props.allExpanded ? (
-                                            <>
-                                                <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ArrowExpandVerticalIcon className="icon-inline" /> Expand all
-                                            </>
-                                        )}
-                                    </button>
-                                </li>
-                            )}
+                        {props.results.results.length > 0 && (
+                            <li className="nav-item">
+                                <button
+                                    type="button"
+                                    onClick={props.onExpandAllResultsToggle}
+                                    className="btn btn-link nav-link text-decoration-none"
+                                    data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                >
+                                    {props.allExpanded ? (
+                                        <>
+                                            <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ArrowExpandVerticalIcon className="icon-inline" /> Expand all
+                                        </>
+                                    )}
+                                </button>
+                            </li>
+                        )}
 
-                            {props.showSavedQueryButton !== false && props.authenticatedUser && (
-                                <li className="nav-item">
-                                    <button
-                                        type="button"
-                                        onClick={props.onSaveQueryClick}
-                                        className="btn btn-link nav-link text-decoration-none"
-                                        disabled={props.didSave}
-                                    >
-                                        {props.didSave ? (
-                                            <>
-                                                <CheckIcon className="icon-inline" /> Query saved
-                                            </>
-                                        ) : (
-                                            <>
-                                                <DownloadIcon className="icon-inline test-save-search-link" /> Save this
-                                                search query
-                                            </>
-                                        )}
-                                    </button>
-                                </li>
-                            )}
-                        </ul>
-                    </small>
-                )}
+                        {props.showSavedQueryButton !== false && props.authenticatedUser && (
+                            <li className="nav-item">
+                                <button
+                                    type="button"
+                                    onClick={props.onSaveQueryClick}
+                                    className="btn btn-link nav-link text-decoration-none"
+                                    disabled={props.didSave}
+                                >
+                                    {props.didSave ? (
+                                        <>
+                                            <CheckIcon className="icon-inline" /> Query saved
+                                        </>
+                                    ) : (
+                                        <>
+                                            <DownloadIcon className="icon-inline test-save-search-link" /> Save this
+                                            search query
+                                        </>
+                                    )}
+                                </button>
+                            </li>
+                        )}
+                    </ul>
+                </small>
+            )}
             {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
         </div>
     )

@@ -326,11 +326,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         </div>
                     </div>
                 )}
-                <SearchResultTypeTabs
-                    {...this.props}
-                    query={this.props.navbarSearchQueryState.query}
-                    filtersInQuery={this.props.filtersInQuery}
-                />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}

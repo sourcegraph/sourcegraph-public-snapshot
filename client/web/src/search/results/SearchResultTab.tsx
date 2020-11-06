@@ -16,7 +16,7 @@ interface Props
         VersionContextProps {
     location: H.Location
     type: SearchType
-    query: string
+    query?: string
 }
 
 const typeToProse: Record<Exclude<SearchType, null>, string> = {
