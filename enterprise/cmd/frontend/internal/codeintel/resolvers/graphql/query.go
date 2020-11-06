@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
 // DefaultReferencesPageSize is the reference result page size when no limit is supplied.

@@ -10,7 +10,7 @@ import (
 
 // MockPositionAdjuster is a mock implementation of the PositionAdjuster
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockPositionAdjuster struct {
 	// AdjustPathFunc is an instance of a mock function object controlling

@@ -4,14 +4,14 @@ package mocks
 
 import (
 	"context"
+	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	resolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"sync"
 )
 
 // MockQueryResolver is a mock implementation of the QueryResolver interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockQueryResolver struct {
 	// DefinitionsFunc is an instance of a mock function object controlling

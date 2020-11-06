@@ -6,7 +6,7 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	apimocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api/mocks"
+	apimocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api/mocks"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
