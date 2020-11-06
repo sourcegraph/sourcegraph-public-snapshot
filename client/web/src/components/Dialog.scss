@@ -1,5 +1,14 @@
 @import '~@reach/dialog/styles.css';
 
+[data-reach-dialog-overlay] {
+    background-color: rgba($gray-04, 0.5);
+}
+.theme-dark {
+    [data-reach-dialog-overlay] {
+        background-color: rgba($gray-19, 0.5);
+    }
+}
+
 .modal-body {
     background-color: var(--color-bg-2);
     padding: 1rem;
