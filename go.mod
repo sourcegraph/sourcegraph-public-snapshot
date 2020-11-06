@@ -59,7 +59,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
-	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.2
@@ -71,7 +71,7 @@ require (
 	github.com/google/pprof v0.0.0-20200905233945-acf8798be1f7 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/google/zoekt v0.0.0-20200720095054-b48e35d16e83
-	github.com/googleapis/gnostic v0.4.1 // indirect
+	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.0
@@ -195,7 +195,7 @@ require (
 	golang.org/x/tools v0.0.0-20200915031644-64986481280e
 	google.golang.org/api v0.29.0
 	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/protobuf v1.24.0 // indirect
+	google.golang.org/genproto v0.0.0-20201019141844-1ed22bb0c154 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
@@ -209,6 +209,8 @@ require (
 )
 
 replace (
+	// k8s tests fail without this pinned https://github.com/kubernetes/test-infra/issues/16116#issuecomment-583251688
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.0
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66
