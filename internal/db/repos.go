@@ -543,7 +543,7 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 
 	fromClause := sqlf.Sprintf("repo")
 	if opt.ExternalServiceID != 0 {
-		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON repo.id = e.repo_id")
+		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id = %s)", opt.ExternalServiceID)
 	}
 
 	// fetch matching repos
@@ -990,10 +990,6 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 		if indexAll != *opt.Index {
 			conds = append(conds, sqlf.Sprintf("false"))
 		}
-	}
-
-	if opt.ExternalServiceID != 0 {
-		conds = append(conds, sqlf.Sprintf("e.external_service_id = %d", opt.ExternalServiceID))
 	}
 
 	return conds, nil
