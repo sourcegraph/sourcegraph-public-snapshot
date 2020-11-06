@@ -683,7 +683,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('error')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22&patternType=literal'
+                '/search?q=repo:%22auth0/go-jwt-middleware%24%22+error&patternType=literal'
             )
             await driver.page.waitForSelector('.test-search-result')
             await driver.page.waitForFunction(() => {
@@ -698,7 +698,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22&patternType=literal'
+                '/search?q=repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22+error&patternType=literal'
             )
             await driver.page.waitForSelector('.test-search-result')
             await driver.page.waitForFunction(() => {
@@ -715,7 +715,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('markdown')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22+lang:%22markdown%22&patternType=literal'
+                '/search?q=repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22+lang:%22markdown%22+error&patternType=literal'
             )
             await driver.page.waitForSelector('.test-search-result')
             await driver.page.waitForFunction(() => {
@@ -898,14 +898,14 @@ describe('Search regression test suite', () => {
             await driver.page.waitForSelector('.test-filter-input-radio-button-no')
             await driver.page.click('.test-filter-input-radio-button-no')
             await driver.page.click('.test-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:%22no%22&patternType=literal')
+            await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
             await driver.page.waitForSelector('.filter-input')
             await driver.page.click('.filter-input')
             await driver.page.waitForSelector('.test-filter-input-finite-form')
             await driver.page.waitForSelector('.test-filter-input-radio-button-only')
             await driver.page.click('.test-filter-input-radio-button-only')
             await driver.page.click('.test-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:%22only%22&patternType=literal')
+            await driver.assertWindowLocation('/search?q=fork:%22only%22+test&patternType=literal')
         })
     })
 })
