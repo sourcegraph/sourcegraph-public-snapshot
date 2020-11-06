@@ -13,6 +13,7 @@ var (
 	SavedSearches    = &savedSearches{}
 	Settings         = &settings{}
 	Users            = &users{}
+	UserCredentials  = &userCredentials{}
 	UserEmails       = &userEmails{}
 	EventLogs        = &eventLogs{}
 

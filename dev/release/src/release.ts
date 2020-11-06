@@ -405,6 +405,7 @@ ${issueCategories
 
             // default values
             const isPatchRelease = release.patch === 0
+            const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
             )
@@ -449,20 +450,29 @@ cc @${config.captainGitHubUsername}
                                         'If any specific upgrade steps are required, update `doc/admin/updates`'
                                     )
                                 }
+                                items.push(
+                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request'
+                                )
                                 return items
                             })()
                         ),
                         edits: [
-                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${release.version}/g' {} +`,
-                            `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${release.version}\`/g' doc/index.md`,
+                            // Update references to Sourcegraph versions in docs
+                            `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
+                            `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version}\`/g' doc/index.md`,
+                            `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/docker-compose/index.md`,
                             isPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version}"' doc/_resources/templates/document.html`,
+
+                            // Update references to Sourcegraph deployment versions
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+
                             // Add a stub to add upgrade guide entries
                             isPatchRelease
-                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\n\nTODO' doc/admin/updates/*.md`
+                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\\n\\nTODO' doc/admin/updates/*.md`
                                 : 'echo "Skipping upgrade guide entries"',
                         ],
                     },
@@ -498,7 +508,7 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         body: prBody([]),
                         edits: [
-                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
                         ],
                     },
                     {
@@ -510,7 +520,7 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         body: prBody([]),
                         edits: [
-                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
+                            `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
                         ],
                     },
                 ],

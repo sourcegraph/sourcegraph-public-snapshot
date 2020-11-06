@@ -1122,6 +1122,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_credentials"
+```
+        Column         |           Type           |                           Modifiers                           
+-----------------------+--------------------------+---------------------------------------------------------------
+ id                    | bigint                   | not null default nextval('user_credentials_id_seq'::regclass)
+ domain                | text                     | not null
+ user_id               | integer                  | not null
+ external_service_type | text                     | not null
+ external_service_id   | text                     | not null
+ credential            | text                     | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+Indexes:
+    "user_credentials_pkey" PRIMARY KEY, btree (id)
+    "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
+Foreign-key constraints:
+    "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.user_emails"
 ```
           Column           |           Type           |       Modifiers        
@@ -1250,6 +1270,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:
