@@ -1,4 +1,4 @@
-package store
+package dbstore
 
 import "github.com/pkg/errors"
 
