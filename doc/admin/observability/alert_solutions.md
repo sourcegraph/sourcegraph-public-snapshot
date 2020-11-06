@@ -4759,3 +4759,289 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
+## executor: executor_queue_size
+
+<p class="subtitle">code-intel: executor queue size</p>**Descriptions:**
+
+- _executor: 100+ executor queue size_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_executor_queue_size"
+]
+```
+
+<br />
+## executor: executor_queue_growth_rate
+
+<p class="subtitle">code-intel: executor queue growth rate every 5m</p>**Descriptions:**
+
+- _executor: 5+ executor queue growth rate every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_executor_queue_growth_rate"
+]
+```
+
+<br />
+## executor: executor_process_errors
+
+<p class="subtitle">code-intel: executor process errors every 5m</p>**Descriptions:**
+
+- _executor: 20+ executor process errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_executor_process_errors"
+]
+```
+
+<br />
+## executor: frontend_internal_api_error_responses
+
+<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>**Descriptions:**
+
+- _executor: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs executor-queue` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs executor-queue` for logs indicating request failures to `frontend` or `frontend-internal`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_frontend_internal_api_error_responses"
+]
+```
+
+<br />
+## executor: container_cpu_usage
+
+<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
+
+- _executor: 99%+ container cpu usage total (1m average) across all cores by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_container_cpu_usage"
+]
+```
+
+<br />
+## executor: container_memory_usage
+
+<p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
+
+- _executor: 99%+ container memory usage by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_container_memory_usage"
+]
+```
+
+<br />
+## executor: container_restarts
+
+<p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
+
+- _executor: 1+ container restarts every 5m by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p executor-queue`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_container_restarts"
+]
+```
+
+<br />
+## executor: fs_inodes_used
+
+<p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
+
+- _executor: 3e+06+ fs inodes in use by instance_
+
+**Possible solutions:**
+
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_fs_inodes_used"
+]
+```
+
+<br />
+## executor: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
+
+- _executor: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the executor-queue service.
+	- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+## executor: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
+
+- _executor: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the executor-queue service.
+	- **Docker Compose:** Consider increasing `memory:` of the executor-queue container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+## executor: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
+
+- _executor: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+## executor: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
+
+- _executor: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_provisioning_container_memory_usage_short_term"
+]
+```
+
+<br />
+## executor: go_goroutines
+
+<p class="subtitle">code-intel: maximum active goroutines</p>**Descriptions:**
+
+- _executor: 10000+ maximum active goroutines for 10m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_go_goroutines"
+]
+```
+
+<br />
+## executor: go_gc_duration_seconds
+
+<p class="subtitle">code-intel: maximum go garbage collection duration</p>**Descriptions:**
+
+- _executor: 2s+ maximum go garbage collection duration_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor_go_gc_duration_seconds"
+]
+```
+
+<br />
+## executor: pods_available_percentage
+
+<p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
+
+- _executor: less than 90% percentage pods available for 10m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_executor_pods_available_percentage"
+]
+```
+
+<br />
