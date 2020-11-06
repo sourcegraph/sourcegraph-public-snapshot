@@ -33,12 +33,16 @@ const (
 	UserCredentialDomainCampaigns = "campaigns"
 )
 
-// userCredentialNotFoundErr is returned when a credential cannot be found from
+// UserCredentialNotFoundErr is returned when a credential cannot be found from
 // its ID or scope.
-type userCredentialNotFoundErr struct{ args []interface{} }
+type UserCredentialNotFoundErr struct{ args []interface{} }
 
-func (err userCredentialNotFoundErr) Error() string {
+func (err UserCredentialNotFoundErr) Error() string {
 	return fmt.Sprintf("user credential not found: %v", err.args)
+}
+
+func (UserCredentialNotFoundErr) NotFound() bool {
+	return true
 }
 
 // userCredentials provides access to the `user_credentials` table.
@@ -65,7 +69,7 @@ func (*userCredentials) Delete(ctx context.Context, id int64) error {
 	if rows, err := res.RowsAffected(); err != nil {
 		return err
 	} else if rows == 0 {
-		return userCredentialNotFoundErr{args: []interface{}{id}}
+		return UserCredentialNotFoundErr{args: []interface{}{id}}
 	}
 
 	return nil
@@ -85,7 +89,7 @@ func (*userCredentials) GetByID(ctx context.Context, id int64) (*UserCredential,
 	cred := UserCredential{}
 	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
-		return nil, userCredentialNotFoundErr{args: []interface{}{id}}
+		return nil, UserCredentialNotFoundErr{args: []interface{}{id}}
 	} else if err != nil {
 		return nil, err
 	}
@@ -110,7 +114,7 @@ func (*userCredentials) GetByScope(ctx context.Context, scope UserCredentialScop
 	cred := UserCredential{}
 	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
-		return nil, userCredentialNotFoundErr{args: []interface{}{scope}}
+		return nil, UserCredentialNotFoundErr{args: []interface{}{scope}}
 	} else if err != nil {
 		return nil, err
 	}

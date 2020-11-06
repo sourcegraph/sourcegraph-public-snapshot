@@ -31,7 +31,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 			t.Error("unexpected nil error")
 		}
 
-		e, ok := err.(userCredentialNotFoundErr)
+		e, ok := err.(UserCredentialNotFoundErr)
 		if !ok {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
@@ -59,7 +59,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 		}
 
 		_, err = UserCredentials.GetByID(ctx, cred.ID)
-		if _, ok := err.(userCredentialNotFoundErr); !ok {
+		if _, ok := err.(UserCredentialNotFoundErr); !ok {
 			t.Errorf("unexpected error retrieving credential after deletion: %v", err)
 		}
 	})
@@ -77,7 +77,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 			t.Error("unexpected nil error")
 		}
 
-		e, ok := err.(userCredentialNotFoundErr)
+		e, ok := err.(UserCredentialNotFoundErr)
 		if !ok {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
@@ -130,7 +130,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 			t.Error("unexpected nil error")
 		}
 
-		e, ok := err.(userCredentialNotFoundErr)
+		e, ok := err.(UserCredentialNotFoundErr)
 		if !ok {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
@@ -447,12 +447,19 @@ func TestUserCredentials_Invalid(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				if _, err := UserCredentials.GetByID(ctx, id); err == nil {
 					t.Error("unexpected nil error")
-				} else if _, ok := err.(userCredentialNotFoundErr); ok {
+				} else if _, ok := err.(UserCredentialNotFoundErr); ok {
 					t.Error("unexpected not found error")
 				}
 			})
 		}
 	})
+}
+
+func TestUserCredentialNotFoundErr(t *testing.T) {
+	err := UserCredentialNotFoundErr{}
+	if have := err.NotFound(); !have {
+		t.Error("UserCredentialNotFoundErr does not say it represents a not found error")
+	}
 }
 
 func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
