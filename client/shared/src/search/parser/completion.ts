@@ -214,9 +214,9 @@ export async function getCompletionItems(
         throw new Error('getCompletionItems: no token at column')
     }
     const token = tokenAtColumn
-    // When the token at column is a literal or whitespace, show
-    // static filter type suggestions, followed by dynamic suggestions.
-    if (token.type === 'literal' || token.type === 'whitespace') {
+    // When the token at column is labeled as a pattern or whitespace, and none of filter,
+    // operator, nor quoted value, show static filter type suggestions, followed by dynamic suggestions.
+    if (token.type === 'pattern' || token.type === 'whitespace') {
         // Offer autocompletion of filter values
         const staticSuggestions = FILTER_TYPE_COMPLETIONS.map(
             (suggestion): Monaco.languages.CompletionItem => ({
@@ -230,7 +230,7 @@ export async function getCompletionItems(
         // This avoids blocking on dynamic suggestions to display
         // the suggestions widget.
         if (
-            token.type === 'literal' &&
+            token.type === 'pattern' &&
             staticSuggestions.some(({ label }) => label.startsWith(token.value.toLowerCase()))
         ) {
             return { suggestions: staticSuggestions }

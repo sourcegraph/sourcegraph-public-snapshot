@@ -1049,10 +1049,25 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		Sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
 		Store:             store,
 	}
-	haveErr := rec.process(ctx, store, otherChangeset)
-	if !errors.Is(haveErr, ErrPublishSameBranch) {
-		t.Fatalf("reconciler process failed with wrong error: %s", haveErr)
+
+	err := rec.process(ctx, store, otherChangeset)
+	if err != nil {
+		t.Fatalf("reconciler process failed: %s", err)
 	}
+
+	// We expect the changeset to be errored, but without any retries left, so
+	// we don't retry.
+	wantMsg := ErrPublishSameBranch{}.Error()
+	reloadAndAssertChangeset(t, ctx, store, otherChangeset, changesetAssertions{
+		repo:            otherChangeset.RepoID,
+		currentSpec:     otherChangesetSpec.ID,
+		ownedByCampaign: otherCampaign.ID,
+
+		failureMessage:   &wantMsg,
+		reconcilerState:  campaigns.ReconcilerStateErrored,
+		publicationState: campaigns.ChangesetPublicationStateUnpublished,
+		numFailures:      ReconcilerMaxNumRetries + 999,
+	})
 }
 
 func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState) *github.PullRequest {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
+	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 )
 
 // NewCodeIntelUploadHandler creates a new code intel LSIF upload HTTP handler. This is used

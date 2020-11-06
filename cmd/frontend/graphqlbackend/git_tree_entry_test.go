@@ -101,6 +101,11 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 			cloneURL:     "https://github.com/user/repo",
 			wantRepoName: api.RepoName("github.com/user/repo"),
 		},
+		{
+			name:         "relatively-pathed submodule",
+			cloneURL:     "../../a/b/c.git",
+			wantRepoName: api.RepoName("github.example.com/a/b/c"),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

@@ -625,7 +625,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 
-	svcs := MakeExternalServices()
+	svcs := types.MakeExternalServices()
 
 	t.Run("no external services", func(t *testing.T) {
 		if err := ExternalServices.Upsert(ctx); err != nil {
@@ -645,7 +645,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		want := GenerateExternalServices(7, svcs...)
+		want := types.GenerateExternalServices(7, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
