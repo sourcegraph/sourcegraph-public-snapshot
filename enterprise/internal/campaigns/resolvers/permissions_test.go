@@ -374,6 +374,13 @@ func TestPermissionLevels(t *testing.T) {
 
 		for _, m := range mutations {
 			t.Run(m.name, func(t *testing.T) {
+				// Specific mutations trigger a license check.
+				licensing.EnforceTiers = true
+				defer func() { licensing.EnforceTiers = false }()
+
+				licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
+				defer func() { licensing.MockCheckFeature = nil }()
+
 				tests := []struct {
 					name           string
 					currentUser    int32
@@ -403,15 +410,6 @@ func TestPermissionLevels(t *testing.T) {
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
-
-						// Specific mutations should trigger a license check.
-						if m.wantLicenseErr {
-							licensing.EnforceTiers = true
-							defer func() { licensing.EnforceTiers = false }()
-
-							licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
-							defer func() { licensing.MockCheckFeature = nil }()
-						}
 
 						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
 						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
@@ -650,7 +648,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -675,7 +673,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -702,7 +700,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
-		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -791,7 +788,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
-	changesetStats   apitest.ChangesetConnectionStats
+	changesetStats   apitest.ChangesetsStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -809,7 +806,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
 		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
@@ -830,11 +827,12 @@ const queryCampaignPermLevels = `
 query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
     ... on Campaign {
-      id
+	  id
+
+	  changesetsStats { unpublished, open, merged, closed, total }
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
-		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {

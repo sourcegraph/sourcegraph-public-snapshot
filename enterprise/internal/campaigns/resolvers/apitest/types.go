@@ -82,6 +82,7 @@ type Campaign struct {
 	UpdatedAt               string
 	ClosedAt                string
 	URL                     string
+	ChangesetsStats         ChangesetsStats
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
@@ -157,10 +158,9 @@ type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
 	PageInfo   PageInfo
-	Stats      ChangesetConnectionStats
 }
 
-type ChangesetConnectionStats struct {
+type ChangesetsStats struct {
 	Unpublished int
 	Draft       int
 	Open        int
