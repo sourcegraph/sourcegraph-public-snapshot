@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store/mocks"
+	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
