@@ -7,7 +7,7 @@ With string interpolation, you can insert these expressions directly into string
 fields.
 
 Context keys are like variables that you can use inside of these interpolated
-expressions. Context keys gives you access to values that are available to your
+expressions. Context keys give you access to values that are available to your
 extension dynamically, such as `resource` for the currently viewed resource, or
 `config` for the configuration settings.
 
@@ -16,7 +16,7 @@ extension dynamically, such as `resource` for the currently viewed resource, or
 
 Context key expressions can be interpolated inside of strings. In manifest
 fields that support interpolated expressions, you can interpolate an expression
-by surrounding it with`${` and `}` tags.
+by surrounding it with `${` and `}` tags.
 
 This syntax for interpolation is based on JavaScript's template interpolation
 syntax.
@@ -29,7 +29,8 @@ These fields in the manifest support context key expressions.
 
 ### In contributed actions
 
-String fields that accept interpolated expressions:
+String fields that accept interpolated expressions, in [contributed
+actions:](contributions.md#actions)
 
 - `title`
 - `category`
@@ -50,7 +51,8 @@ Fields that expect a context key expression:
 
 ### In menu contributions
 
-Fields that expect a context key expression:
+Fields that expect a context key expression, in [menu
+contributions](contributions.md#menus)
 
 - `when`: enables the menu contribution when this expression evaluates to true.
 
