@@ -3,7 +3,7 @@ package codeintel
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 

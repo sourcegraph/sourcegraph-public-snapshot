@@ -5,8 +5,8 @@ package mocks
 import (
 	"context"
 	api "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"sync"
 )
 
@@ -50,7 +50,7 @@ func NewMockCodeIntelAPI() *MockCodeIntelAPI {
 			},
 		},
 		FindClosestDumpsFunc: &CodeIntelAPIFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error) {
 				return nil, nil
 			},
 		},
@@ -341,15 +341,15 @@ func (c CodeIntelAPIDiagnosticsFuncCall) Results() []interface{} {
 // FindClosestDumps method of the parent MockCodeIntelAPI instance is
 // invoked.
 type CodeIntelAPIFindClosestDumpsFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string) ([]store.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string) ([]store.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error)
 	history     []CodeIntelAPIFindClosestDumpsFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumps delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeIntelAPI) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]store.Dump, error) {
+func (m *MockCodeIntelAPI) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]dbstore.Dump, error) {
 	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.FindClosestDumpsFunc.appendCall(CodeIntelAPIFindClosestDumpsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -358,7 +358,7 @@ func (m *MockCodeIntelAPI) FindClosestDumps(v0 context.Context, v1 int, v2 strin
 // SetDefaultHook sets function that is called when the FindClosestDumps
 // method of the parent MockCodeIntelAPI instance is invoked and the hook
 // queue is empty.
-func (f *CodeIntelAPIFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]store.Dump, error)) {
+func (f *CodeIntelAPIFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -366,7 +366,7 @@ func (f *CodeIntelAPIFindClosestDumpsFunc) SetDefaultHook(hook func(context.Cont
 // FindClosestDumps method of the parent MockCodeIntelAPI instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeIntelAPIFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]store.Dump, error)) {
+func (f *CodeIntelAPIFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -374,21 +374,21 @@ func (f *CodeIntelAPIFindClosestDumpsFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeIntelAPIFindClosestDumpsFunc) SetDefaultReturn(r0 []store.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
+func (f *CodeIntelAPIFindClosestDumpsFunc) SetDefaultReturn(r0 []dbstore.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeIntelAPIFindClosestDumpsFunc) PushReturn(r0 []store.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
+func (f *CodeIntelAPIFindClosestDumpsFunc) PushReturn(r0 []dbstore.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeIntelAPIFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
+func (f *CodeIntelAPIFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -441,7 +441,7 @@ type CodeIntelAPIFindClosestDumpsFuncCall struct {
 	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []store.Dump
+	Result0 []dbstore.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

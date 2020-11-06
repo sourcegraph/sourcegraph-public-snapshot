@@ -4,14 +4,14 @@ package mocks
 
 import (
 	"context"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"sync"
 )
 
 // MockReferencePager is a mock implementation of the ReferencePager
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore)
 // used for unit testing.
 type MockReferencePager struct {
 	// DoneFunc is an instance of a mock function object controlling the
@@ -42,7 +42,7 @@ func NewMockReferencePager() *MockReferencePager {
 // NewMockReferencePagerFrom creates a new mock of the MockReferencePager
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
-func NewMockReferencePagerFrom(i store.ReferencePager) *MockReferencePager {
+func NewMockReferencePagerFrom(i dbstore.ReferencePager) *MockReferencePager {
 	return &MockReferencePager{
 		DoneFunc: &ReferencePagerDoneFunc{
 			defaultHook: i.Done,

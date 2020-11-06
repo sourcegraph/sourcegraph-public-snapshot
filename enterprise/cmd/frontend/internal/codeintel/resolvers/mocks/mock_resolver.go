@@ -6,7 +6,7 @@ import (
 	"context"
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"sync"
 )
 
@@ -53,17 +53,17 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
-			defaultHook: func(context.Context, int) (store.Index, bool, error) {
-				return store.Index{}, false, nil
+			defaultHook: func(context.Context, int) (dbstore.Index, bool, error) {
+				return dbstore.Index{}, false, nil
 			},
 		},
 		GetUploadByIDFunc: &ResolverGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (store.Upload, bool, error) {
-				return store.Upload{}, false, nil
+			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+				return dbstore.Upload{}, false, nil
 			},
 		},
 		IndexConnectionResolverFunc: &ResolverIndexConnectionResolverFunc{
-			defaultHook: func(store.GetIndexesOptions) *resolvers.IndexesResolver {
+			defaultHook: func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver {
 				return nil
 			},
 		},
@@ -73,7 +73,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		UploadConnectionResolverFunc: &ResolverUploadConnectionResolverFunc{
-			defaultHook: func(store.GetUploadsOptions) *resolvers.UploadsResolver {
+			defaultHook: func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver {
 				return nil
 			},
 		},
@@ -323,15 +323,15 @@ func (c ResolverDeleteUploadByIDFuncCall) Results() []interface{} {
 // ResolverGetIndexByIDFunc describes the behavior when the GetIndexByID
 // method of the parent MockResolver instance is invoked.
 type ResolverGetIndexByIDFunc struct {
-	defaultHook func(context.Context, int) (store.Index, bool, error)
-	hooks       []func(context.Context, int) (store.Index, bool, error)
+	defaultHook func(context.Context, int) (dbstore.Index, bool, error)
+	hooks       []func(context.Context, int) (dbstore.Index, bool, error)
 	history     []ResolverGetIndexByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockResolver) GetIndexByID(v0 context.Context, v1 int) (store.Index, bool, error) {
+func (m *MockResolver) GetIndexByID(v0 context.Context, v1 int) (dbstore.Index, bool, error) {
 	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
 	m.GetIndexByIDFunc.appendCall(ResolverGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -340,7 +340,7 @@ func (m *MockResolver) GetIndexByID(v0 context.Context, v1 int) (store.Index, bo
 // SetDefaultHook sets function that is called when the GetIndexByID method
 // of the parent MockResolver instance is invoked and the hook queue is
 // empty.
-func (f *ResolverGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (store.Index, bool, error)) {
+func (f *ResolverGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.Index, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -348,7 +348,7 @@ func (f *ResolverGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int
 // GetIndexByID method of the parent MockResolver instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ResolverGetIndexByIDFunc) PushHook(hook func(context.Context, int) (store.Index, bool, error)) {
+func (f *ResolverGetIndexByIDFunc) PushHook(hook func(context.Context, int) (dbstore.Index, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -356,21 +356,21 @@ func (f *ResolverGetIndexByIDFunc) PushHook(hook func(context.Context, int) (sto
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ResolverGetIndexByIDFunc) SetDefaultReturn(r0 store.Index, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (store.Index, bool, error) {
+func (f *ResolverGetIndexByIDFunc) SetDefaultReturn(r0 dbstore.Index, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.Index, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ResolverGetIndexByIDFunc) PushReturn(r0 store.Index, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (store.Index, bool, error) {
+func (f *ResolverGetIndexByIDFunc) PushReturn(r0 dbstore.Index, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.Index, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ResolverGetIndexByIDFunc) nextHook() func(context.Context, int) (store.Index, bool, error) {
+func (f *ResolverGetIndexByIDFunc) nextHook() func(context.Context, int) (dbstore.Index, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -411,7 +411,7 @@ type ResolverGetIndexByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 store.Index
+	Result0 dbstore.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -435,15 +435,15 @@ func (c ResolverGetIndexByIDFuncCall) Results() []interface{} {
 // ResolverGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockResolver instance is invoked.
 type ResolverGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (store.Upload, bool, error)
-	hooks       []func(context.Context, int) (store.Upload, bool, error)
+	defaultHook func(context.Context, int) (dbstore.Upload, bool, error)
+	hooks       []func(context.Context, int) (dbstore.Upload, bool, error)
 	history     []ResolverGetUploadByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockResolver) GetUploadByID(v0 context.Context, v1 int) (store.Upload, bool, error) {
+func (m *MockResolver) GetUploadByID(v0 context.Context, v1 int) (dbstore.Upload, bool, error) {
 	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
 	m.GetUploadByIDFunc.appendCall(ResolverGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -452,7 +452,7 @@ func (m *MockResolver) GetUploadByID(v0 context.Context, v1 int) (store.Upload, 
 // SetDefaultHook sets function that is called when the GetUploadByID method
 // of the parent MockResolver instance is invoked and the hook queue is
 // empty.
-func (f *ResolverGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (store.Upload, bool, error)) {
+func (f *ResolverGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -460,7 +460,7 @@ func (f *ResolverGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, in
 // GetUploadByID method of the parent MockResolver instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ResolverGetUploadByIDFunc) PushHook(hook func(context.Context, int) (store.Upload, bool, error)) {
+func (f *ResolverGetUploadByIDFunc) PushHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -468,21 +468,21 @@ func (f *ResolverGetUploadByIDFunc) PushHook(hook func(context.Context, int) (st
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ResolverGetUploadByIDFunc) SetDefaultReturn(r0 store.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (store.Upload, bool, error) {
+func (f *ResolverGetUploadByIDFunc) SetDefaultReturn(r0 dbstore.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ResolverGetUploadByIDFunc) PushReturn(r0 store.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (store.Upload, bool, error) {
+func (f *ResolverGetUploadByIDFunc) PushReturn(r0 dbstore.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ResolverGetUploadByIDFunc) nextHook() func(context.Context, int) (store.Upload, bool, error) {
+func (f *ResolverGetUploadByIDFunc) nextHook() func(context.Context, int) (dbstore.Upload, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -523,7 +523,7 @@ type ResolverGetUploadByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 store.Upload
+	Result0 dbstore.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -548,15 +548,15 @@ func (c ResolverGetUploadByIDFuncCall) Results() []interface{} {
 // IndexConnectionResolver method of the parent MockResolver instance is
 // invoked.
 type ResolverIndexConnectionResolverFunc struct {
-	defaultHook func(store.GetIndexesOptions) *resolvers.IndexesResolver
-	hooks       []func(store.GetIndexesOptions) *resolvers.IndexesResolver
+	defaultHook func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver
+	hooks       []func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver
 	history     []ResolverIndexConnectionResolverFuncCall
 	mutex       sync.Mutex
 }
 
 // IndexConnectionResolver delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockResolver) IndexConnectionResolver(v0 store.GetIndexesOptions) *resolvers.IndexesResolver {
+func (m *MockResolver) IndexConnectionResolver(v0 dbstore.GetIndexesOptions) *resolvers.IndexesResolver {
 	r0 := m.IndexConnectionResolverFunc.nextHook()(v0)
 	m.IndexConnectionResolverFunc.appendCall(ResolverIndexConnectionResolverFuncCall{v0, r0})
 	return r0
@@ -565,7 +565,7 @@ func (m *MockResolver) IndexConnectionResolver(v0 store.GetIndexesOptions) *reso
 // SetDefaultHook sets function that is called when the
 // IndexConnectionResolver method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverIndexConnectionResolverFunc) SetDefaultHook(hook func(store.GetIndexesOptions) *resolvers.IndexesResolver) {
+func (f *ResolverIndexConnectionResolverFunc) SetDefaultHook(hook func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver) {
 	f.defaultHook = hook
 }
 
@@ -574,7 +574,7 @@ func (f *ResolverIndexConnectionResolverFunc) SetDefaultHook(hook func(store.Get
 // inovkes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ResolverIndexConnectionResolverFunc) PushHook(hook func(store.GetIndexesOptions) *resolvers.IndexesResolver) {
+func (f *ResolverIndexConnectionResolverFunc) PushHook(hook func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -583,7 +583,7 @@ func (f *ResolverIndexConnectionResolverFunc) PushHook(hook func(store.GetIndexe
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ResolverIndexConnectionResolverFunc) SetDefaultReturn(r0 *resolvers.IndexesResolver) {
-	f.SetDefaultHook(func(store.GetIndexesOptions) *resolvers.IndexesResolver {
+	f.SetDefaultHook(func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver {
 		return r0
 	})
 }
@@ -591,12 +591,12 @@ func (f *ResolverIndexConnectionResolverFunc) SetDefaultReturn(r0 *resolvers.Ind
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ResolverIndexConnectionResolverFunc) PushReturn(r0 *resolvers.IndexesResolver) {
-	f.PushHook(func(store.GetIndexesOptions) *resolvers.IndexesResolver {
+	f.PushHook(func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver {
 		return r0
 	})
 }
 
-func (f *ResolverIndexConnectionResolverFunc) nextHook() func(store.GetIndexesOptions) *resolvers.IndexesResolver {
+func (f *ResolverIndexConnectionResolverFunc) nextHook() func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -632,7 +632,7 @@ func (f *ResolverIndexConnectionResolverFunc) History() []ResolverIndexConnectio
 type ResolverIndexConnectionResolverFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 store.GetIndexesOptions
+	Arg0 dbstore.GetIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *resolvers.IndexesResolver
@@ -763,15 +763,15 @@ func (c ResolverQueryResolverFuncCall) Results() []interface{} {
 // UploadConnectionResolver method of the parent MockResolver instance is
 // invoked.
 type ResolverUploadConnectionResolverFunc struct {
-	defaultHook func(store.GetUploadsOptions) *resolvers.UploadsResolver
-	hooks       []func(store.GetUploadsOptions) *resolvers.UploadsResolver
+	defaultHook func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver
+	hooks       []func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver
 	history     []ResolverUploadConnectionResolverFuncCall
 	mutex       sync.Mutex
 }
 
 // UploadConnectionResolver delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockResolver) UploadConnectionResolver(v0 store.GetUploadsOptions) *resolvers.UploadsResolver {
+func (m *MockResolver) UploadConnectionResolver(v0 dbstore.GetUploadsOptions) *resolvers.UploadsResolver {
 	r0 := m.UploadConnectionResolverFunc.nextHook()(v0)
 	m.UploadConnectionResolverFunc.appendCall(ResolverUploadConnectionResolverFuncCall{v0, r0})
 	return r0
@@ -780,7 +780,7 @@ func (m *MockResolver) UploadConnectionResolver(v0 store.GetUploadsOptions) *res
 // SetDefaultHook sets function that is called when the
 // UploadConnectionResolver method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverUploadConnectionResolverFunc) SetDefaultHook(hook func(store.GetUploadsOptions) *resolvers.UploadsResolver) {
+func (f *ResolverUploadConnectionResolverFunc) SetDefaultHook(hook func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver) {
 	f.defaultHook = hook
 }
 
@@ -789,7 +789,7 @@ func (f *ResolverUploadConnectionResolverFunc) SetDefaultHook(hook func(store.Ge
 // inovkes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ResolverUploadConnectionResolverFunc) PushHook(hook func(store.GetUploadsOptions) *resolvers.UploadsResolver) {
+func (f *ResolverUploadConnectionResolverFunc) PushHook(hook func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -798,7 +798,7 @@ func (f *ResolverUploadConnectionResolverFunc) PushHook(hook func(store.GetUploa
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ResolverUploadConnectionResolverFunc) SetDefaultReturn(r0 *resolvers.UploadsResolver) {
-	f.SetDefaultHook(func(store.GetUploadsOptions) *resolvers.UploadsResolver {
+	f.SetDefaultHook(func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver {
 		return r0
 	})
 }
@@ -806,12 +806,12 @@ func (f *ResolverUploadConnectionResolverFunc) SetDefaultReturn(r0 *resolvers.Up
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ResolverUploadConnectionResolverFunc) PushReturn(r0 *resolvers.UploadsResolver) {
-	f.PushHook(func(store.GetUploadsOptions) *resolvers.UploadsResolver {
+	f.PushHook(func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver {
 		return r0
 	})
 }
 
-func (f *ResolverUploadConnectionResolverFunc) nextHook() func(store.GetUploadsOptions) *resolvers.UploadsResolver {
+func (f *ResolverUploadConnectionResolverFunc) nextHook() func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -847,7 +847,7 @@ func (f *ResolverUploadConnectionResolverFunc) History() []ResolverUploadConnect
 type ResolverUploadConnectionResolverFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 store.GetUploadsOptions
+	Arg0 dbstore.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *resolvers.UploadsResolver

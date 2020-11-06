@@ -5,7 +5,7 @@ package background
 import (
 	"context"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"regexp"
 	"sync"
 )
@@ -38,27 +38,27 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+			defaultHook: func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 				return nil, nil
 			},
 		},
 		FileExistsFunc: &GitserverClientFileExistsFunc{
-			defaultHook: func(context.Context, store.Store, int, string, string) (bool, error) {
+			defaultHook: func(context.Context, dbstore.Store, int, string, string) (bool, error) {
 				return false, nil
 			},
 		},
 		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: func(context.Context, store.Store, int) (string, error) {
+			defaultHook: func(context.Context, dbstore.Store, int) (string, error) {
 				return "", nil
 			},
 		},
 		ListFilesFunc: &GitserverClientListFilesFunc{
-			defaultHook: func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error) {
+			defaultHook: func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error) {
 				return nil, nil
 			},
 		},
 		RawContentsFunc: &GitserverClientRawContentsFunc{
-			defaultHook: func(context.Context, store.Store, int, string, string) ([]byte, error) {
+			defaultHook: func(context.Context, dbstore.Store, int, string, string) ([]byte, error) {
 				return nil, nil
 			},
 		},
@@ -70,11 +70,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockGitserverClient interface {
-	CommitGraph(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
-	FileExists(context.Context, store.Store, int, string, string) (bool, error)
-	Head(context.Context, store.Store, int) (string, error)
-	ListFiles(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error)
-	RawContents(context.Context, store.Store, int, string, string) ([]byte, error)
+	CommitGraph(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
+	FileExists(context.Context, dbstore.Store, int, string, string) (bool, error)
+	Head(context.Context, dbstore.Store, int) (string, error)
+	ListFiles(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error)
+	RawContents(context.Context, dbstore.Store, int, string, string) ([]byte, error)
 }
 
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
@@ -103,15 +103,15 @@ func NewMockGitserverClientFrom(i surrogateMockGitserverClient) *MockGitserverCl
 // GitserverClientCommitGraphFunc describes the behavior when the
 // CommitGraph method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitGraphFunc struct {
-	defaultHook func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
-	hooks       []func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
+	defaultHook func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
+	hooks       []func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)
 	history     []GitserverClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 store.Store, v2 int, v3 gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 dbstore.Store, v2 int, v3 gitserver.CommitGraphOptions) (map[string][]string, error) {
 	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2, v3)
 	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -120,7 +120,7 @@ func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 store.Store, v2
 // SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -128,7 +128,7 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Contex
 // CommitGraph method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -137,7 +137,7 @@ func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, sto
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 		return r0, r1
 	})
 }
@@ -145,12 +145,12 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientCommitGraphFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+	f.PushHook(func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, store.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, dbstore.Store, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -188,7 +188,7 @@ type GitserverClientCommitGraphFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.Store
+	Arg1 dbstore.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
@@ -218,15 +218,15 @@ func (c GitserverClientCommitGraphFuncCall) Results() []interface{} {
 // GitserverClientFileExistsFunc describes the behavior when the FileExists
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientFileExistsFunc struct {
-	defaultHook func(context.Context, store.Store, int, string, string) (bool, error)
-	hooks       []func(context.Context, store.Store, int, string, string) (bool, error)
+	defaultHook func(context.Context, dbstore.Store, int, string, string) (bool, error)
+	hooks       []func(context.Context, dbstore.Store, int, string, string) (bool, error)
 	history     []GitserverClientFileExistsFuncCall
 	mutex       sync.Mutex
 }
 
 // FileExists delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) FileExists(v0 context.Context, v1 store.Store, v2 int, v3 string, v4 string) (bool, error) {
+func (m *MockGitserverClient) FileExists(v0 context.Context, v1 dbstore.Store, v2 int, v3 string, v4 string) (bool, error) {
 	r0, r1 := m.FileExistsFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.FileExistsFunc.appendCall(GitserverClientFileExistsFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -235,7 +235,7 @@ func (m *MockGitserverClient) FileExists(v0 context.Context, v1 store.Store, v2 
 // SetDefaultHook sets function that is called when the FileExists method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientFileExistsFunc) SetDefaultHook(hook func(context.Context, store.Store, int, string, string) (bool, error)) {
+func (f *GitserverClientFileExistsFunc) SetDefaultHook(hook func(context.Context, dbstore.Store, int, string, string) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -243,7 +243,7 @@ func (f *GitserverClientFileExistsFunc) SetDefaultHook(hook func(context.Context
 // FileExists method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientFileExistsFunc) PushHook(hook func(context.Context, store.Store, int, string, string) (bool, error)) {
+func (f *GitserverClientFileExistsFunc) PushHook(hook func(context.Context, dbstore.Store, int, string, string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -252,7 +252,7 @@ func (f *GitserverClientFileExistsFunc) PushHook(hook func(context.Context, stor
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientFileExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int, string, string) (bool, error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Store, int, string, string) (bool, error) {
 		return r0, r1
 	})
 }
@@ -260,12 +260,12 @@ func (f *GitserverClientFileExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientFileExistsFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int, string, string) (bool, error) {
+	f.PushHook(func(context.Context, dbstore.Store, int, string, string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientFileExistsFunc) nextHook() func(context.Context, store.Store, int, string, string) (bool, error) {
+func (f *GitserverClientFileExistsFunc) nextHook() func(context.Context, dbstore.Store, int, string, string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -303,7 +303,7 @@ type GitserverClientFileExistsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.Store
+	Arg1 dbstore.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
@@ -336,15 +336,15 @@ func (c GitserverClientFileExistsFuncCall) Results() []interface{} {
 // GitserverClientHeadFunc describes the behavior when the Head method of
 // the parent MockGitserverClient instance is invoked.
 type GitserverClientHeadFunc struct {
-	defaultHook func(context.Context, store.Store, int) (string, error)
-	hooks       []func(context.Context, store.Store, int) (string, error)
+	defaultHook func(context.Context, dbstore.Store, int) (string, error)
+	hooks       []func(context.Context, dbstore.Store, int) (string, error)
 	history     []GitserverClientHeadFuncCall
 	mutex       sync.Mutex
 }
 
 // Head delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Head(v0 context.Context, v1 store.Store, v2 int) (string, error) {
+func (m *MockGitserverClient) Head(v0 context.Context, v1 dbstore.Store, v2 int) (string, error) {
 	r0, r1 := m.HeadFunc.nextHook()(v0, v1, v2)
 	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -353,7 +353,7 @@ func (m *MockGitserverClient) Head(v0 context.Context, v1 store.Store, v2 int) (
 // SetDefaultHook sets function that is called when the Head method of the
 // parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, store.Store, int) (string, error)) {
+func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, dbstore.Store, int) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -361,7 +361,7 @@ func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, stor
 // Head method of the parent MockGitserverClient instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, store.Store, int) (string, error)) {
+func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, dbstore.Store, int) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -370,7 +370,7 @@ func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, store.Stor
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int) (string, error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Store, int) (string, error) {
 		return r0, r1
 	})
 }
@@ -378,12 +378,12 @@ func (f *GitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientHeadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int) (string, error) {
+	f.PushHook(func(context.Context, dbstore.Store, int) (string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientHeadFunc) nextHook() func(context.Context, store.Store, int) (string, error) {
+func (f *GitserverClientHeadFunc) nextHook() func(context.Context, dbstore.Store, int) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -421,7 +421,7 @@ type GitserverClientHeadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.Store
+	Arg1 dbstore.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
@@ -448,15 +448,15 @@ func (c GitserverClientHeadFuncCall) Results() []interface{} {
 // GitserverClientListFilesFunc describes the behavior when the ListFiles
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientListFilesFunc struct {
-	defaultHook func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error)
-	hooks       []func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error)
+	defaultHook func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error)
+	hooks       []func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error)
 	history     []GitserverClientListFilesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListFiles delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) ListFiles(v0 context.Context, v1 store.Store, v2 int, v3 string, v4 *regexp.Regexp) ([]string, error) {
+func (m *MockGitserverClient) ListFiles(v0 context.Context, v1 dbstore.Store, v2 int, v3 string, v4 *regexp.Regexp) ([]string, error) {
 	r0, r1 := m.ListFilesFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.ListFilesFunc.appendCall(GitserverClientListFilesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -465,7 +465,7 @@ func (m *MockGitserverClient) ListFiles(v0 context.Context, v1 store.Store, v2 i
 // SetDefaultHook sets function that is called when the ListFiles method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientListFilesFunc) SetDefaultHook(hook func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error)) {
+func (f *GitserverClientListFilesFunc) SetDefaultHook(hook func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -473,7 +473,7 @@ func (f *GitserverClientListFilesFunc) SetDefaultHook(hook func(context.Context,
 // ListFiles method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientListFilesFunc) PushHook(hook func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error)) {
+func (f *GitserverClientListFilesFunc) PushHook(hook func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -482,7 +482,7 @@ func (f *GitserverClientListFilesFunc) PushHook(hook func(context.Context, store
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientListFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error) {
 		return r0, r1
 	})
 }
@@ -490,12 +490,12 @@ func (f *GitserverClientListFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientListFilesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error) {
+	f.PushHook(func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientListFilesFunc) nextHook() func(context.Context, store.Store, int, string, *regexp.Regexp) ([]string, error) {
+func (f *GitserverClientListFilesFunc) nextHook() func(context.Context, dbstore.Store, int, string, *regexp.Regexp) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -533,7 +533,7 @@ type GitserverClientListFilesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.Store
+	Arg1 dbstore.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
@@ -566,15 +566,15 @@ func (c GitserverClientListFilesFuncCall) Results() []interface{} {
 // GitserverClientRawContentsFunc describes the behavior when the
 // RawContents method of the parent MockGitserverClient instance is invoked.
 type GitserverClientRawContentsFunc struct {
-	defaultHook func(context.Context, store.Store, int, string, string) ([]byte, error)
-	hooks       []func(context.Context, store.Store, int, string, string) ([]byte, error)
+	defaultHook func(context.Context, dbstore.Store, int, string, string) ([]byte, error)
+	hooks       []func(context.Context, dbstore.Store, int, string, string) ([]byte, error)
 	history     []GitserverClientRawContentsFuncCall
 	mutex       sync.Mutex
 }
 
 // RawContents delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) RawContents(v0 context.Context, v1 store.Store, v2 int, v3 string, v4 string) ([]byte, error) {
+func (m *MockGitserverClient) RawContents(v0 context.Context, v1 dbstore.Store, v2 int, v3 string, v4 string) ([]byte, error) {
 	r0, r1 := m.RawContentsFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.RawContentsFunc.appendCall(GitserverClientRawContentsFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -583,7 +583,7 @@ func (m *MockGitserverClient) RawContents(v0 context.Context, v1 store.Store, v2
 // SetDefaultHook sets function that is called when the RawContents method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientRawContentsFunc) SetDefaultHook(hook func(context.Context, store.Store, int, string, string) ([]byte, error)) {
+func (f *GitserverClientRawContentsFunc) SetDefaultHook(hook func(context.Context, dbstore.Store, int, string, string) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
@@ -591,7 +591,7 @@ func (f *GitserverClientRawContentsFunc) SetDefaultHook(hook func(context.Contex
 // RawContents method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientRawContentsFunc) PushHook(hook func(context.Context, store.Store, int, string, string) ([]byte, error)) {
+func (f *GitserverClientRawContentsFunc) PushHook(hook func(context.Context, dbstore.Store, int, string, string) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -600,7 +600,7 @@ func (f *GitserverClientRawContentsFunc) PushHook(hook func(context.Context, sto
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientRawContentsFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int, string, string) ([]byte, error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Store, int, string, string) ([]byte, error) {
 		return r0, r1
 	})
 }
@@ -608,12 +608,12 @@ func (f *GitserverClientRawContentsFunc) SetDefaultReturn(r0 []byte, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientRawContentsFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int, string, string) ([]byte, error) {
+	f.PushHook(func(context.Context, dbstore.Store, int, string, string) ([]byte, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientRawContentsFunc) nextHook() func(context.Context, store.Store, int, string, string) ([]byte, error) {
+func (f *GitserverClientRawContentsFunc) nextHook() func(context.Context, dbstore.Store, int, string, string) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -651,7 +651,7 @@ type GitserverClientRawContentsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.Store
+	Arg1 dbstore.Store
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int

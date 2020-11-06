@@ -11,7 +11,7 @@ import (
 
 // MockS3API is a mock implementation of the s3API interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore)
 // used for unit testing.
 type MockS3API struct {
 	// AbortMultipartUploadFunc is an instance of a mock function object
@@ -97,7 +97,7 @@ func NewMockS3API() *MockS3API {
 }
 
 // surrogateMockS3API is a copy of the s3API interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore).
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockS3API interface {
 	AbortMultipartUpload(context.Context, *s3.AbortMultipartUploadInput) (*s3.AbortMultipartUploadOutput, error)
@@ -1129,7 +1129,7 @@ func (c S3APIUploadPartCopyFuncCall) Results() []interface{} {
 
 // MockS3Uploader is a mock implementation of the s3Uploader interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore)
 // used for unit testing.
 type MockS3Uploader struct {
 	// UploadFunc is an instance of a mock function object controlling the
@@ -1151,7 +1151,7 @@ func NewMockS3Uploader() *MockS3Uploader {
 
 // surrogateMockS3Uploader is a copy of the s3Uploader interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore).
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockS3Uploader interface {
 	Upload(context.Context, *s3manager.UploadInput) error
