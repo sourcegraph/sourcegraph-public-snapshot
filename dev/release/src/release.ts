@@ -238,7 +238,7 @@ const steps: Step[] = [
                     releaseDate
                 )}>`
                 await postMessage(
-                    `*${majorMinor} Release*
+                    `:mega: *${majorMinor} Release*
 
 :captain: Release captain: @${captainSlackUsername}
 :pencil: Tracking issue: ${url}
@@ -254,7 +254,7 @@ const steps: Step[] = [
     {
         id: 'tracking:patch-issue',
         run: async config => {
-            const { captainGitHubUsername, slackAnnounceChannel, dryRun } = config
+            const { captainGitHubUsername, captainSlackUsername, slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
 
             // Create issue
@@ -270,7 +270,12 @@ const steps: Step[] = [
             // Announce issue if issue does not already exist
             if (created) {
                 await postMessage(
-                    `:captain: Patch release ${release.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
+                    `:mega: *${release.version} Patch Release*
+
+:captain: Release captain: @${captainSlackUsername}
+:pencil: Tracking issue: ${url}
+
+If you have changes that should go into this patch release, *please add the relevant commits to the checklist in the tracking issue, or it will not be included*.`,
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
@@ -350,13 +355,13 @@ const steps: Step[] = [
                 { name: 'open', issues: openIssues, issuesURL: openIssuesURL },
             ]
 
-            const message = `:captain: ${release.version} release status update:
+            const message = `:mega: *${release.version} Release Status Update*
 
-- Tracking issue: ${trackingIssueURL}
+* Tracking issue: ${trackingIssueURL}
 ${issueCategories
     .map(
         category =>
-            '- ' +
+            '* ' +
             (category.issues.length === 1
                 ? `There is 1 ${category.name} issue: ${category.issuesURL}`
                 : `There are ${category.issues.length} ${category.name} issues: ${category.issuesURL}`)
@@ -398,12 +403,26 @@ ${issueCategories
             await commandExists('src')
             const sourcegraphAuth = await campaigns.sourcegraphAuth()
 
-            // default texts
+            // default values
             const isPatchRelease = release.patch === 0
+            const campaignURL = campaigns.campaignURL(
+                campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
+            )
             const defaultPRMessage = `release: sourcegraph@${release.version}`
-            const defaultPRBody =
-                'Follow this Sourcegraph release in the [release campaign](https://k8s.sgdev.org/organizations/sourcegraph/campaigns).'
-            const additionalChangesHeader = '### :warning: Additional changes required'
+            const prBody = (actionItems: string[]): string => {
+                const defaultText = `Follow the ${release.version} Sourcegraph release in the [release campaign](${campaignURL}).`
+                if (!actionItems || actionItems.length === 0) {
+                    return defaultText
+                }
+                return `${defaultText}
+
+### :warning: Additional changes required
+
+${actionItems.map(item => `- [ ] ${item}`).join('\n')}
+
+cc @${config.captainGitHubUsername}
+`
+            }
 
             // Render changes
             const createdChanges = await createChangesets({
@@ -418,14 +437,21 @@ ${issueCategories
                             ? `draft sourcegraph@${release.version} release`
                             : defaultPRMessage,
                         title: defaultPRMessage,
-                        body: isPatchRelease
-                            ? defaultPRBody
-                            : `${defaultPRBody}
-
-${additionalChangesHeader}
-
-* [ ] Update the upgrade guides in \`doc/admin/updates\`: cc @${config.captainGitHubUsername}`,
                         draft: true, // This PR requires further action
+                        body: prBody(
+                            ((): string[] => {
+                                const items: string[] = []
+                                if (isPatchRelease) {
+                                    items.push('Update the upgrade guides in `doc/admin/updates`')
+                                } else {
+                                    items.push(
+                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch',
+                                        'If any specific upgrade steps are required, update `doc/admin/updates`'
+                                    )
+                                }
+                                return items
+                            })()
+                        ),
                         edits: [
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${release.version}/g' {} +`,
                             `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${release.version}\`/g' doc/index.md`,
@@ -447,7 +473,7 @@ ${additionalChangesHeader}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: defaultPRBody,
+                        body: prBody([]),
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
                     {
@@ -457,11 +483,9 @@ ${additionalChangesHeader}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: `${defaultPRMessage}
-
-${additionalChangesHeader}
-
-* [ ] Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR: cc @${config.captainGitHubUsername} (pure-docker release is optional for patch releases)`,
+                        body: prBody([
+                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR (`pure-docker` release is optional for patch releases)',
+                        ]),
                         draft: true, // This PR requires further action
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
@@ -472,7 +496,7 @@ ${additionalChangesHeader}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: defaultPRBody,
+                        body: prBody([]),
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
                         ],
@@ -484,7 +508,7 @@ ${additionalChangesHeader}
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        body: defaultPRBody,
+                        body: prBody([]),
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
                         ],
@@ -496,24 +520,22 @@ ${additionalChangesHeader}
             // if changesets were actually published, set up a campaign and post in Slack
             if (!dryRun.changesets) {
                 // Create campaign to track changes
-                let publishCampaign = ''
                 try {
                     console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
-                    publishCampaign = await campaigns.createCampaign(
+                    await campaigns.createCampaign(
                         createdChanges,
                         campaigns.releaseTrackingCampaign(release.version, sourcegraphAuth)
                     )
-                    console.log(`Created ${publishCampaign}`)
                 } catch (error) {
                     console.error(error)
-                    console.error('Failed to create campaign for this release, omitting')
+                    console.error('Failed to create campaign for this release, continuing with announcement')
                 }
 
                 // Announce release update in Slack
                 await postMessage(
                     `:captain: *Sourcegraph ${release.version} release has been staged*
 
-Campaign: ${publishCampaign}`,
+Campaign: ${campaignURL}`,
                     slackAnnounceChannel
                 )
             }
