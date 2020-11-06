@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -26,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -102,18 +100,12 @@ func TestIntegration(t *testing.T) {
 	m := internal.NewStoreMetrics()
 	m.MustRegister(prometheus.DefaultRegisterer)
 
+	store := internal.NewStore(db, sql.TxOptions{
+		Isolation: sql.LevelReadCommitted,
+	})
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
-
-	store := internal.NewStore(
-		db,
-		sql.TxOptions{
-			Isolation: sql.LevelReadCommitted,
-		},
-		lg,
-		m,
-		trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	)
+	store.Log = lg
 
 	for _, tc := range []struct {
 		name string

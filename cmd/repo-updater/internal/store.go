@@ -6,13 +6,16 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -24,28 +27,28 @@ import (
 type Store struct {
 	*basestore.Store
 
-	log     logging.ErrorLogger
-	metrics StoreMetrics
-	tracer  trace.Tracer
+	// Logger used by the store. Defaults to log15.Root().
+	Log logging.ErrorLogger
+	// Metrics are sent to Prometheus by default.
+	Metrics StoreMetrics
+	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
+	Tracer trace.Tracer
+
 	txtrace *trace.Trace
 	txctx   context.Context
 }
 
 // NewStore instantiates and returns a new Store with prepared statements.
-// Store wraps a basestore with error logging,
-// Prometheus metrics and tracing.
-func NewStore(
-	db dbutil.DB,
-	txOpts sql.TxOptions,
-	l logging.ErrorLogger,
-	m StoreMetrics,
-	t trace.Tracer,
-) *Store {
+// Store wraps a basestore with error logging, Prometheus metrics and tracing.
+func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
+	m := NewStoreMetrics()
+	m.MustRegister(prometheus.DefaultRegisterer)
+
 	return &Store{
 		Store:   basestore.NewWithDB(db, txOpts),
-		log:     l,
-		metrics: m,
-		tracer:  t,
+		Log:     log15.Root(),
+		Metrics: m,
+		Tracer:  trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
 
@@ -54,7 +57,7 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, txctx := s.tracer.New(txctx, family, "")
+	tr, txctx := s.Tracer.New(txctx, family, "")
 	ctx = trace.CopyContext(ctx, txctx)
 	return tr, ctx
 }
@@ -64,8 +67,8 @@ func (s *Store) Transact(ctx context.Context) (tx *Store, err error) {
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		s.metrics.Transact.Observe(secs, 1, &err)
-		logging.Log(s.log, "store.transact", &err)
+		s.Metrics.Transact.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.transact", &err)
 		if err != nil {
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
@@ -80,9 +83,9 @@ func (s *Store) Transact(ctx context.Context) (tx *Store, err error) {
 
 	return &Store{
 		Store:   txBase,
-		log:     s.log,
-		metrics: s.metrics,
-		tracer:  s.tracer,
+		Log:     s.Log,
+		Metrics: s.Metrics,
+		Tracer:  s.Tracer,
 		txtrace: tr,
 		txctx:   ctx,
 	}, nil
@@ -100,12 +103,12 @@ func (s *Store) Done(err error) error {
 		if err != nil {
 			done = true
 			tr.SetError(err)
-			s.metrics.Done.Observe(secs, 1, &err)
-			logging.Log(s.log, "store.done", &err)
+			s.Metrics.Done.Observe(secs, 1, &err)
+			logging.Log(s.Log, "store.done", &err)
 		}
 
 		if !done {
-			s.metrics.Done.Observe(secs, 1, nil)
+			s.Metrics.Done.Observe(secs, 1, nil)
 		}
 
 		tr.Finish()
@@ -119,13 +122,13 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 }
 
 // RepoStore returns a db.ReposStore using the same database handle.
-func (s *Store) RepoStore() *db.RepoStore {
-	return db.Repos.With(s.Store)
+func (s *Store) RepoStore() *internaldb.RepoStore {
+	return internaldb.Repos.With(s.Store)
 }
 
 // ExternalServiceStore returns a db.ExternalServiceStore using the same database handle.
-func (s *Store) ExternalServiceStore() *db.ExternalServiceStore {
-	return db.ExternalServices.With(s.Store)
+func (s *Store) ExternalServiceStore() *internaldb.ExternalServiceStore {
+	return internaldb.ExternalServices.With(s.Store)
 }
 
 // a paginatedQuery returns a query with the given pagination
@@ -181,8 +184,8 @@ func (s *Store) ListExternalRepoSpecs(ctx context.Context) (ids map[api.External
 		secs := time.Since(began).Seconds()
 		count := float64(len(ids))
 
-		s.metrics.ListExternalRepoSpecs.Observe(secs, count, &err)
-		logging.Log(s.log, "store.list-external-repo-specs", &err,
+		s.Metrics.ListExternalRepoSpecs.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.list-external-repo-specs", &err,
 			"count", len(ids),
 		)
 
@@ -302,8 +305,8 @@ func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err erro
 		secs := time.Since(began).Seconds()
 		count := float64(len(repos))
 
-		s.metrics.UpsertRepos.Observe(secs, count, &err)
-		logging.Log(s.log, "store.upsert-repos", &err, "count", len(repos))
+		s.Metrics.UpsertRepos.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.upsert-repos", &err, "count", len(repos))
 
 		tr.SetError(err)
 		tr.Finish()
@@ -528,8 +531,8 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 		secs := time.Since(began).Seconds()
 		count := float64(len(inserts) + len(updates) + len(deletes))
 
-		s.metrics.UpsertSources.Observe(secs, count, &err)
-		logging.Log(s.log, "store.upsert-sources", &err, "count", count)
+		s.Metrics.UpsertSources.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.upsert-sources", &err, "count", count)
 
 		tr.SetError(err)
 		tr.Finish()
@@ -650,8 +653,8 @@ func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err er
 		secs := time.Since(began).Seconds()
 		count := float64(len(repoNames))
 
-		s.metrics.SetClonedRepos.Observe(secs, count, &err)
-		logging.Log(s.log, "store.set-cloned-repos", &err, "count", len(repoNames))
+		s.Metrics.SetClonedRepos.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.set-cloned-repos", &err, "count", len(repoNames))
 
 		tr.SetError(err)
 		tr.Finish()
@@ -689,8 +692,8 @@ func (s *Store) CountNotClonedRepos(ctx context.Context) (count uint64, err erro
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
-		s.metrics.CountNotClonedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.log, "store.count-not-cloned-repos", &err, "count", count)
+		s.Metrics.CountNotClonedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-not-cloned-repos", &err, "count", count)
 
 		tr.SetError(err)
 		tr.Finish()
@@ -715,8 +718,8 @@ func (s *Store) CountUserAddedRepos(ctx context.Context) (count uint64, err erro
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
-		s.metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.log, "store.count-user-added-repos", &err, "count", count)
+		s.Metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count)
 
 		tr.SetError(err)
 		tr.Finish()
@@ -753,7 +756,7 @@ func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err 
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		s.metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
+		s.Metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
