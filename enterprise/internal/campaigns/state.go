@@ -424,7 +424,7 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		if m.IsDraft {
+		if m.IsDraft && m.State == string(campaigns.ChangesetExternalStateOpen) {
 			s = campaigns.ChangesetExternalStateDraft
 		} else {
 			s = campaigns.ChangesetExternalState(m.State)

@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/postgres"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,7 +18,7 @@ import (
 func NewWorker(
 	s store.Store,
 	codeIntelDB *sql.DB,
-	bundleManagerClient bundles.BundleManagerClient,
+	uploadStore uploadstore.Store,
 	gitserverClient gitserverClient,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
@@ -30,14 +29,14 @@ func NewWorker(
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	handler := &handler{
-		store:               s,
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics,
-		enableBudget:        budgetMax > 0,
-		budgetRemaining:     budgetMax,
-		createStore: func(id int) persistence.Store {
-			return persistence.NewObserved(postgres.NewStore(codeIntelDB, id), observationContext)
+		store:           s,
+		uploadStore:     uploadStore,
+		gitserverClient: gitserverClient,
+		metrics:         metrics,
+		enableBudget:    budgetMax > 0,
+		budgetRemaining: budgetMax,
+		createStore: func(id int) lsifstore.Store {
+			return lsifstore.NewObserved(lsifstore.NewStore(codeIntelDB), observationContext)
 		},
 	}
 

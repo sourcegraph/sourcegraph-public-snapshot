@@ -392,11 +392,18 @@ ${issueCategories
         id: 'release:stage',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
-            const { upcoming: release } = await releaseVersions(config)
+            const { upcoming: release, previous } = await releaseVersions(config)
 
             // set up src-cli
             await commandExists('src')
             const sourcegraphAuth = await campaigns.sourcegraphAuth()
+
+            // default texts
+            const isPatchRelease = release.patch === 0
+            const defaultPRMessage = `release: sourcegraph@${release.version}`
+            const defaultPRBody =
+                'Follow this Sourcegraph release in the [release campaign](https://k8s.sgdev.org/organizations/sourcegraph/campaigns).'
+            const additionalChangesHeader = '### :warning: Additional changes required'
 
             // Render changes
             const createdChanges = await createChangesets({
@@ -407,16 +414,30 @@ ${issueCategories
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${release.version}`,
-                        commitMessage: `release: sourcegraph@${release.version}`,
-                        title: `release: sourcegraph@${release.version}`,
+                        commitMessage: isPatchRelease
+                            ? `draft sourcegraph@${release.version} release`
+                            : defaultPRMessage,
+                        title: defaultPRMessage,
+                        body: isPatchRelease
+                            ? defaultPRBody
+                            : `${defaultPRBody}
+
+${additionalChangesHeader}
+
+* [ ] Update the upgrade guides in \`doc/admin/updates\`: cc @${config.captainGitHubUsername}`,
+                        draft: true, // This PR requires further action
                         edits: [
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${release.version}/g' {} +`,
                             `${sed} -i -E 's/version \`[0-9]+\\.[0-9]+\\.[0-9]+\`/version \`${release.version}\`/g' doc/index.md`,
-                            release.patch === 0
+                            isPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version}"' doc/_resources/templates/document.html`,
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            // Add a stub to add upgrade guide entries
+                            isPatchRelease
+                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\n\nTODO' doc/admin/updates/*.md`
+                                : 'echo "Skipping upgrade guide entries"',
                         ],
                     },
                     {
@@ -424,21 +445,34 @@ ${issueCategories
                         repo: 'deploy-sourcegraph',
                         base: `${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
-                        commitMessage: `release: sourcegraph@${release.version}`,
-                        title: `release: sourcegraph@${release.version}`,
-                        edits: [
-                            // installs version pinned by deploy-sourcegraph
-                            'go install github.com/slimsag/update-docker-tags',
-                            `.github/workflows/scripts/update-docker-tags.sh ${release.version}`,
-                        ],
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        body: defaultPRBody,
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-docker',
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        body: `${defaultPRMessage}
+
+${additionalChangesHeader}
+
+* [ ] Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR: cc @${config.captainGitHubUsername} (pure-docker release is optional for patch releases)`,
+                        draft: true, // This PR requires further action
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
                     },
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
                         head: `publish-${release.version}`,
-                        commitMessage: `release: sourcegraph@${release.version}`,
-                        title: `release: sourcegraph@${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        body: defaultPRBody,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/amazon-linux2.sh`,
                         ],
@@ -448,8 +482,9 @@ ${issueCategories
                         repo: 'deploy-sourcegraph-digitalocean',
                         base: 'master',
                         head: `publish-${release.version}`,
-                        commitMessage: `release: sourcegraph@${release.version}`,
-                        title: `release: sourcegraph@${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        body: defaultPRBody,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
                         ],
@@ -458,6 +493,7 @@ ${issueCategories
                 dryRun: dryRun.changesets,
             })
 
+            // if changesets were actually published, set up a campaign and post in Slack
             if (!dryRun.changesets) {
                 // Create campaign to track changes
                 let publishCampaign = ''
@@ -477,8 +513,7 @@ ${issueCategories
                 await postMessage(
                     `:captain: *Sourcegraph ${release.version} release has been staged*
 
-* Campaign: ${publishCampaign}
-* @stephen: update <https://github.com/sourcegraph/deploy-sourcegraph-docker|deploy-sourcegraph-docker> as needed`,
+Campaign: ${publishCampaign}`,
                     slackAnnounceChannel
                 )
             }

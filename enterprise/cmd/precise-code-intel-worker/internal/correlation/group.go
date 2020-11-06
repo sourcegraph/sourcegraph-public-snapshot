@@ -10,21 +10,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 // GroupedBundleData is a view of a correlation State that sorts data by it containing document
 // and shared data into shareded result chunks. The fields of this type are what is written to
 // persistent storage and what is read in the query path.
 type GroupedBundleData struct {
-	Meta              types.MetaData
-	Documents         chan persistence.KeyedDocumentData
-	ResultChunks      chan persistence.IndexedResultChunkData
-	Definitions       chan types.MonikerLocations
-	References        chan types.MonikerLocations
-	Packages          []types.Package
-	PackageReferences []types.PackageReference
+	Meta              lsifstore.MetaData
+	Documents         chan lsifstore.KeyedDocumentData
+	ResultChunks      chan lsifstore.IndexedResultChunkData
+	Definitions       chan lsifstore.MonikerLocations
+	References        chan lsifstore.MonikerLocations
+	Packages          []lsifstore.Package
+	PackageReferences []lsifstore.PackageReference
 }
 
 const MaxNumResultChunks = 1000
@@ -41,7 +40,7 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 		),
 	))
 
-	meta := types.MetaData{NumResultChunks: numResultChunks}
+	meta := lsifstore.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
@@ -63,8 +62,8 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 	}, nil
 }
 
-func serializeBundleDocuments(ctx context.Context, state *State) chan persistence.KeyedDocumentData {
-	ch := make(chan persistence.KeyedDocumentData)
+func serializeBundleDocuments(ctx context.Context, state *State) chan lsifstore.KeyedDocumentData {
+	ch := make(chan lsifstore.KeyedDocumentData)
 
 	go func() {
 		defer close(ch)
@@ -74,7 +73,7 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan persistenc
 				continue
 			}
 
-			data := persistence.KeyedDocumentData{
+			data := lsifstore.KeyedDocumentData{
 				Path:     uri,
 				Document: serializeDocument(state, documentID),
 			}
@@ -90,24 +89,24 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan persistenc
 	return ch
 }
 
-func serializeDocument(state *State, documentID int) types.DocumentData {
-	document := types.DocumentData{
-		Ranges:             make(map[types.ID]types.RangeData, state.Contains.SetLen(documentID)),
-		HoverResults:       map[types.ID]string{},
-		Monikers:           map[types.ID]types.MonikerData{},
-		PackageInformation: map[types.ID]types.PackageInformationData{},
-		Diagnostics:        make([]types.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
+func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
+	document := lsifstore.DocumentData{
+		Ranges:             make(map[lsifstore.ID]lsifstore.RangeData, state.Contains.SetLen(documentID)),
+		HoverResults:       map[lsifstore.ID]string{},
+		Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
+		PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
+		Diagnostics:        make([]lsifstore.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
 	}
 
 	state.Contains.SetEach(documentID, func(rangeID int) {
 		rangeData := state.RangeData[rangeID]
 
-		monikerIDs := make([]types.ID, 0, state.Monikers.SetLen(rangeID))
+		monikerIDs := make([]lsifstore.ID, 0, state.Monikers.SetLen(rangeID))
 		state.Monikers.SetEach(rangeID, func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
 			monikerIDs = append(monikerIDs, toID(monikerID))
 
-			document.Monikers[toID(monikerID)] = types.MonikerData{
+			document.Monikers[toID(monikerID)] = lsifstore.MonikerData{
 				Kind:                 moniker.Kind,
 				Scheme:               moniker.Scheme,
 				Identifier:           moniker.Identifier,
@@ -116,14 +115,14 @@ func serializeDocument(state *State, documentID int) types.DocumentData {
 
 			if moniker.PackageInformationID != 0 {
 				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
-				document.PackageInformation[toID(moniker.PackageInformationID)] = types.PackageInformationData{
+				document.PackageInformation[toID(moniker.PackageInformationID)] = lsifstore.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
 				}
 			}
 		})
 
-		document.Ranges[toID(rangeID)] = types.RangeData{
+		document.Ranges[toID(rangeID)] = lsifstore.RangeData{
 			StartLine:          rangeData.StartLine,
 			StartCharacter:     rangeData.StartCharacter,
 			EndLine:            rangeData.EndLine,
@@ -142,7 +141,7 @@ func serializeDocument(state *State, documentID int) types.DocumentData {
 
 	state.Diagnostics.SetEach(documentID, func(diagnosticID int) {
 		for _, diagnostic := range state.DiagnosticResults[diagnosticID] {
-			document.Diagnostics = append(document.Diagnostics, types.DiagnosticData{
+			document.Diagnostics = append(document.Diagnostics, lsifstore.DiagnosticData{
 				Severity:       diagnostic.Severity,
 				Code:           diagnostic.Code,
 				Message:        diagnostic.Message,
@@ -158,18 +157,18 @@ func serializeDocument(state *State, documentID int) types.DocumentData {
 	return document
 }
 
-func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan persistence.IndexedResultChunkData {
+func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan lsifstore.IndexedResultChunkData {
 	chunkAssignments := make(map[int][]int, numResultChunks)
 	for id := range state.DefinitionData {
-		index := types.HashKey(toID(id), numResultChunks)
+		index := lsifstore.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 	for id := range state.ReferenceData {
-		index := types.HashKey(toID(id), numResultChunks)
+		index := lsifstore.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 
-	ch := make(chan persistence.IndexedResultChunkData)
+	ch := make(chan lsifstore.IndexedResultChunkData)
 
 	go func() {
 		defer close(ch)
@@ -179,8 +178,8 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				continue
 			}
 
-			documentPaths := map[types.ID]string{}
-			documentIDRangeIDs := map[types.ID][]types.DocumentIDRangeID{}
+			documentPaths := map[lsifstore.ID]string{}
+			documentIDRangeIDs := map[lsifstore.ID][]lsifstore.DocumentIDRangeID{}
 
 			for _, resultID := range resultIDs {
 				documentRanges, ok := state.DefinitionData[resultID]
@@ -198,7 +197,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					documentPaths[toID(documentID)] = state.DocumentData[documentID]
 
 					rangeIDs.Each(func(rangeID int) {
-						documentIDRangeIDs[toID(resultID)] = append(documentIDRangeIDs[toID(resultID)], types.DocumentIDRangeID{
+						documentIDRangeIDs[toID(resultID)] = append(documentIDRangeIDs[toID(resultID)], lsifstore.DocumentIDRangeID{
 							DocumentID: toID(documentID),
 							RangeID:    toID(rangeID),
 						})
@@ -206,9 +205,9 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				})
 			}
 
-			data := persistence.IndexedResultChunkData{
+			data := lsifstore.IndexedResultChunkData{
 				Index: index,
-				ResultChunk: types.ResultChunkData{
+				ResultChunk: lsifstore.ResultChunkData{
 					DocumentPaths:      documentPaths,
 					DocumentIDRangeIDs: documentIDRangeIDs,
 				},
@@ -230,7 +229,7 @@ var (
 	getReferenceResultID  = func(r lsif.Range) int { return r.ReferenceResultID }
 )
 
-func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan types.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan lsifstore.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
@@ -256,14 +255,14 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 		})
 	}
 
-	ch := make(chan types.MonikerLocations)
+	ch := make(chan lsifstore.MonikerLocations)
 
 	go func() {
 		defer close(ch)
 
 		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
 			for identifier, ids := range idsByIdentifier {
-				var locations []types.Location
+				var locations []lsifstore.LocationData
 				for _, id := range ids {
 					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 						uri := state.DocumentData[documentID]
@@ -274,7 +273,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 						rangeIDs.Each(func(id int) {
 							r := state.RangeData[id]
 
-							locations = append(locations, types.Location{
+							locations = append(locations, lsifstore.LocationData{
 								URI:            uri,
 								StartLine:      r.StartLine,
 								StartCharacter: r.StartCharacter,
@@ -289,7 +288,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 					continue
 				}
 
-				data := types.MonikerLocations{
+				data := lsifstore.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: identifier,
 					Locations:  locations,
@@ -307,13 +306,13 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 	return ch
 }
 
-func gatherPackages(state *State, dumpID int) []types.Package {
-	uniques := make(map[string]types.Package, state.ExportedMonikers.Len())
+func gatherPackages(state *State, dumpID int) []lsifstore.Package {
+	uniques := make(map[string]lsifstore.Package, state.ExportedMonikers.Len())
 	state.ExportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
-		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = types.Package{
+		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = lsifstore.Package{
 			DumpID:  dumpID,
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
@@ -321,7 +320,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 		}
 	})
 
-	packages := make([]types.Package, 0, len(uniques))
+	packages := make([]lsifstore.Package, 0, len(uniques))
 	for _, v := range uniques {
 		packages = append(packages, v)
 	}
@@ -329,7 +328,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference, error) {
+func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -351,14 +350,14 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 		}
 	})
 
-	packageReferences := make([]types.PackageReference, 0, len(uniques))
+	packageReferences := make([]lsifstore.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
 		filter, err := bloomfilter.CreateFilter(v.Identifiers)
 		if err != nil {
 			return nil, errors.Wrap(err, "bloomfilter.CreateFilter")
 		}
 
-		packageReferences = append(packageReferences, types.PackageReference{
+		packageReferences = append(packageReferences, lsifstore.PackageReference{
 			DumpID:  dumpID,
 			Scheme:  v.Scheme,
 			Name:    v.Name,
@@ -374,10 +373,10 @@ func makeKey(parts ...string) string {
 	return strings.Join(parts, ":")
 }
 
-func toID(id int) types.ID {
+func toID(id int) lsifstore.ID {
 	if id == 0 {
-		return types.ID("")
+		return lsifstore.ID("")
 	}
 
-	return types.ID(strconv.FormatInt(int64(id), 10))
+	return lsifstore.ID(strconv.FormatInt(int64(id), 10))
 }
