@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
-import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
@@ -203,24 +203,14 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
         ...childBreadcrumbSetters,
     }
 
-    const routeMatch = userAreaRoutes.find(({ path, exact }) =>
-        matchPath(props.location.pathname, { path: url + path, exact })
-    )?.path
-
-    // Hide header and use full-width container for campaigns pages.
-    const isCampaigns = routeMatch === '/campaigns'
-    const hideHeader = isCampaigns
-
     return (
         <div className="user-area w-100">
-            {!hideHeader && (
-                <UserAreaHeader
-                    {...props}
-                    {...context}
-                    navItems={props.userAreaHeaderNavItems}
-                    className="border-bottom mt-4"
-                />
-            )}
+            <UserAreaHeader
+                {...props}
+                {...context}
+                navItems={props.userAreaHeaderNavItems}
+                className="border-bottom mt-4"
+            />
             <div className="container mt-3">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

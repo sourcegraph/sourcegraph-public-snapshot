@@ -27,6 +27,12 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         condition: () => authExp,
     },
     {
+        path: '/campaigns',
+        exact: true,
+        render: lazyComponent(() => import('../../campaigns/settings/CampaignsSettingsArea'), 'CampaignsSettingsArea'),
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.campaignsEnabled,
+    },
+    {
         path: '/subscriptions/new',
         exact: true,
         render: lazyComponent(

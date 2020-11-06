@@ -18,6 +18,12 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             exact: true,
             condition: () => authExp,
         },
+        {
+            to: '/campaigns',
+            label: 'Campaigns',
+            condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
+                viewerCanAdminister && !isSourcegraphDotCom && window.context.campaignsEnabled,
+        },
         ...userSettingsSideBarItems.account.slice(2),
         {
             label: 'Permissions',
