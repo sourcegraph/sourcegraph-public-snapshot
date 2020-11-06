@@ -3,7 +3,7 @@ import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
 
-const { add } = storiesOf('web/code-monitoring/CodeMonitoringPage', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
 
 add('Example', () => <WebStory>{props => <CodeMonitoringPage {...props} />}</WebStory>, {
     design: {
