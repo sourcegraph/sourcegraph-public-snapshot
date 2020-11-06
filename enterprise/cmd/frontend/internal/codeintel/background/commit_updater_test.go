@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 )
 
 func TestCommitUpdater(t *testing.T) {

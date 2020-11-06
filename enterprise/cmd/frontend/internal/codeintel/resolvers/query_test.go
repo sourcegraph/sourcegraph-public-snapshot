@@ -7,10 +7,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	apimocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api/mocks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore/mocks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 )
 
 func TestRanges(t *testing.T) {

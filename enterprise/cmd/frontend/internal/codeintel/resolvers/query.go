@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 // AdjustedLocation is similar to a codeintelapi.ResolvedLocation, but with fields denoting
