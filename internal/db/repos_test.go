@@ -315,15 +315,15 @@ func TestRepos_Create(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	svcs := MakeExternalServices()
+	svcs := types.MakeExternalServices()
 	if err := ExternalServices.Upsert(ctx, svcs...); err != nil {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
-	msvcs := ExternalServicesToMap(svcs)
+	msvcs := types.ExternalServicesToMap(svcs)
 
-	repo1 := MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
-	repo2 := MakeGitlabRepo(msvcs[extsvc.KindGitLab])
+	repo1 := types.MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
+	repo2 := types.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
 		if err := Repos.Create(ctx); err != nil {
@@ -332,7 +332,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 
 	t.Run("many repos", func(t *testing.T) {
-		want := GenerateRepos(7, repo1, repo2)
+		want := types.GenerateRepos(7, repo1, repo2)
 
 		if err := Repos.Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)

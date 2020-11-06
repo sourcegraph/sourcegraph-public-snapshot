@@ -532,8 +532,8 @@ func TestRepos_List_ids(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	mine := types.Repos(mustCreate(ctx, t, MakeGithubRepo(), MakeGitlabRepo()))
-	yours := types.Repos(mustCreate(ctx, t, MakeGitoliteRepo()))
+	mine := types.Repos(mustCreate(ctx, t, types.MakeGithubRepo(), types.MakeGitlabRepo()))
+	yours := types.Repos(mustCreate(ctx, t, types.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -570,9 +570,9 @@ func TestRepos_List_serviceTypes(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	mine := mustCreate(ctx, t, MakeGithubRepo())
-	yours := mustCreate(ctx, t, MakeGitlabRepo())
-	others := mustCreate(ctx, t, MakeGitoliteRepo())
+	mine := mustCreate(ctx, t, types.MakeGithubRepo())
+	yours := mustCreate(ctx, t, types.MakeGitlabRepo())
+	others := mustCreate(ctx, t, types.MakeGitoliteRepo())
 	both := append(mine, yours...)
 	all := append(both, others...)
 
@@ -1064,11 +1064,11 @@ func TestRepos_List_useOr(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	archived := types.Repos{MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
+	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
 	archived = types.Repos(mustCreate(ctx, t, archived...))
-	forks := types.Repos{MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
+	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
 	forks = types.Repos(mustCreate(ctx, t, forks...))
-	cloned := types.Repos{MakeGithubRepo()}.With(func(r *types.Repo) { r.Cloned = true })
+	cloned := types.Repos{types.MakeGithubRepo()}.With(func(r *types.Repo) { r.Cloned = true })
 	cloned = types.Repos(mustCreate(ctx, t, cloned...))
 
 	archivedAndForks := append(archived, forks...)
@@ -1113,7 +1113,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := MakeExternalServices()
+	services := types.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
 	if err := ExternalServices.Create(ctx, confGet, service1); err != nil {
@@ -1123,12 +1123,12 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mine := types.Repos{MakeGithubRepo(service1)}
+	mine := types.Repos{types.MakeGithubRepo(service1)}
 	if err := Repos.Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
-	yours := types.Repos{MakeGitlabRepo(service2)}
+	yours := types.Repos{types.MakeGitlabRepo(service2)}
 	if err := Repos.Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
