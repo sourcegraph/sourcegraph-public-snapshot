@@ -6,13 +6,19 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { CampaignsCodeHostFields } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
+import { Subject } from 'rxjs'
 
 export interface CodeHostConnectionNodeProps {
     node: CampaignsCodeHostFields
     history: H.History
+    updateList: Subject<void>
 }
 
-export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({ node, history }) => {
+export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
+    node,
+    history,
+    updateList,
+}) => {
     const Icon = defaultExternalServices[node.externalServiceKind].icon
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
 
@@ -25,7 +31,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterCreate = useCallback(() => {
         setShowAddModal(false)
-    }, [])
+        updateList.next()
+    }, [updateList])
 
     const onRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -36,7 +43,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterDelete = useCallback(() => {
         setShowDeleteModal(false)
-    }, [])
+        updateList.next()
+    }, [updateList])
     return (
         <>
             <li className="list-group-item p-3">

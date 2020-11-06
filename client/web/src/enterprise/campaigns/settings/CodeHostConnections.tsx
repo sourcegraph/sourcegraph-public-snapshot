@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Subject } from 'rxjs'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsCodeHostFields } from '../../../graphql-operations'
@@ -11,7 +12,9 @@ export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'his
     // Nothing for now.
 }
 
-export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = props => (
+export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = props => {
+    const updateList = useMemo(() => new Subject<void>(),[])
+    return (
     <>
         <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" className="justify-content-end" />
         <h2>Code host connections</h2>
@@ -19,16 +22,18 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
         <FilteredConnection<CampaignsCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
             {...props}
             nodeComponent={CodeHostConnectionNode}
-            nodeComponentProps={{ history: props.history }}
+            nodeComponentProps={{ history: props.history, updateList, }}
             queryConnection={queryUserCampaignsCodeHosts}
             hideSearch={true}
             defaultFirst={15}
             noun="code host"
             pluralNoun="code hosts"
             listClassName="list-group"
+            updates={updateList}
             className="mb-3"
             cursorPaging={true}
             noSummaryIfAllNodesVisible={true}
         />
     </>
 )
+    }
