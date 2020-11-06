@@ -15,7 +15,10 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -26,7 +29,7 @@ import (
 type Syncer struct {
 	Sourcer Sourcer
 	Worker  *workerutil.Worker
-	Store   Store
+	Store   *internal.Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
@@ -68,7 +71,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOptions) error {
+func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *internal.Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -119,22 +122,17 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 type syncHandler struct {
 	db              *sql.DB
 	syncer          *Syncer
-	store           Store
+	store           *internal.Store
 	minSyncInterval func() time.Duration
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
-	sj, ok := record.(*SyncJob)
+	sj, ok := record.(*internal.SyncJob)
 	if !ok {
-		return fmt.Errorf("expected repos.SyncJob, got %T", record)
+		return fmt.Errorf("expected internal.SyncJob, got %T", record)
 	}
 
-	store := s.store
-	if ws, ok := s.store.(WithStore); ok {
-		store = ws.With(tx.Handle().DB())
-	}
-
-	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
+	return s.syncer.SyncExternalService(ctx, s.store.With(tx), sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if
@@ -167,7 +165,7 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 }
 
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, tx *internal.Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	if s.Logger != nil {
@@ -178,19 +176,14 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
-	ids := []int64{externalServiceID}
-	svcs, err := tx.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	svc, err := tx.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
-		return errors.Wrap(err, "fetching external services")
+		return errors.Wrap(err, "fetching external service")
 	}
 
-	if len(svcs) != 1 {
-		return errors.Errorf("want 1 external service but got %d", len(svcs))
-	}
-	svc := svcs[0]
 	isUserOwned := svc.NamespaceUserID > 0
 
-	onSourced := func(*Repo) error { return nil } //noop
+	onSourced := func(*types.Repo) error { return nil } //noop
 
 	if isUserOwned {
 		// If we are over our limit for user added repos we abort the sync
@@ -213,7 +206,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		if maxAllowed == 0 {
 			maxAllowed = ConfUserReposMaxPerUser()
 		}
-		onSourced = func(r *Repo) error {
+		onSourced = func(r *types.Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
 			if newCount >= int64(maxAllowed) {
 				return fmt.Errorf("per user repo count has exceeded allowed limit: %d", maxAllowed)
@@ -231,29 +224,29 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	}
 
 	// Fetch repos from the source
-	var sourced Repos
-	if sourced, err = s.sourced(ctx, svcs, onSourced); err != nil {
+	var sourced types.Repos
+	if sourced, err = s.sourced(ctx, types.ExternalServices{svc}, onSourced); err != nil {
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
 	// User added external services should only sync public code
 	if isUserOwned {
-		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		sourced = sourced.Filter(func(r *types.Repo) bool { return !r.Private })
 	}
 
-	var storedServiceRepos Repos
+	var storedServiceRepos types.Repos
 	// Fetch repos from our DB related to externalServiceID
-	if storedServiceRepos, err = tx.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
+	if storedServiceRepos, err = tx.RepoStore().List(ctx, db.ReposListOptions{ExternalServiceID: externalServiceID}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
 	// Now fetch any possible name conflicts.
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
-	var conflicting Repos
-	if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
+	var conflicting types.Repos
+	if conflicting, err = tx.RepoStore().List(ctx, db.ReposListOptions{Names: sourced.Names()}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
-	conflicting = conflicting.Filter(func(r *Repo) bool {
+	conflicting = conflicting.Filter(func(r *types.Repo) bool {
 		for _, id := range r.ExternalServiceIDs() {
 			if id == externalServiceID {
 				return false
@@ -270,11 +263,11 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Our stored repo could have multiple sources in its Sources map. Our sourced repo will only every have
 	// one repo in its Sources map. In order for our diff code to operate we should add the other sources to
 	// the sourced repo.
-	storedByURI := make(map[string]*Repo, len(storedServiceRepos))
+	storedByURI := make(map[string]*types.Repo, len(storedServiceRepos))
 	for _, r := range storedServiceRepos {
 		storedByURI[r.URI] = r
 	}
-	sourcedByURI := make(map[string]*Repo, len(sourced))
+	sourcedByURI := make(map[string]*types.Repo, len(sourced))
 	for _, r := range sourced {
 		sourcedByURI[r.URI] = r
 	}
@@ -329,7 +322,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = tx.UpsertExternalServices(ctx, svc)
+	err = tx.ExternalServiceStore().Upsert(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "upserting external service")
 	}
@@ -349,9 +342,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 // If the new repo wins, then the old repo is added to the diff.Deleted slice.
 // If the old repo wins, then the new repo is no longer inserted and is filtered out from
 // the diff.Added slice.
-func resolveNameConflicts(diff *Diff, conflicting Repos) {
-	var toDelete Repos
-	diff.Added = diff.Added.Filter(func(r *Repo) bool {
+func resolveNameConflicts(diff *Diff, conflicting types.Repos) {
+	var toDelete types.Repos
+	diff.Added = diff.Added.Filter(func(r *types.Repo) bool {
 		for _, cr := range conflicting {
 			if cr.Name == r.Name {
 				// The repos are conflicting, we deterministically choose the one
@@ -363,7 +356,7 @@ func resolveNameConflicts(diff *Diff, conflicting Repos) {
 					return false
 				case 1:
 					// the new repo wins so the old repo is deleted along with all of its relationships.
-					toDelete = append(toDelete, cr.With(func(r *Repo) { r.Sources = nil }))
+					toDelete = append(toDelete, cr.With(func(r *types.Repo) { r.Sources = nil }))
 				}
 
 				return true
@@ -372,7 +365,7 @@ func resolveNameConflicts(diff *Diff, conflicting Repos) {
 
 		return true
 	})
-	diff.Modified = diff.Modified.Filter(func(r *Repo) bool {
+	diff.Modified = diff.Modified.Filter(func(r *types.Repo) bool {
 		for _, cr := range conflicting {
 			if cr.Name == r.Name {
 				// The repos are conflicting, we deterministically choose the one
@@ -381,11 +374,11 @@ func resolveNameConflicts(diff *Diff, conflicting Repos) {
 				case -1:
 					// the repo that is currently existing in the database wins
 					// causing the new one to be filtered out
-					toDelete = append(toDelete, r.With(func(r *Repo) { r.Sources = nil }))
+					toDelete = append(toDelete, r.With(func(r *types.Repo) { r.Sources = nil }))
 					return false
 				case 1:
 					// the new repo wins so the old repo is deleted along with all of its relationships.
-					toDelete = append(toDelete, cr.With(func(r *Repo) { r.Sources = nil }))
+					toDelete = append(toDelete, cr.With(func(r *types.Repo) { r.Sources = nil }))
 				}
 
 				return true
@@ -422,10 +415,10 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 }
 
 // SyncRepo runs the syncer on a single repository.
-func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (err error) {
+func (s *Syncer) SyncRepo(ctx context.Context, store *internal.Store, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, "Syncer.SyncRepo", sourcedRepo.Name)
+	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
 	defer save(&diff, &err)
 
 	if tr, ok := store.(Transactor); ok {
@@ -443,7 +436,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *Repo) (
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, sourcedRepo *Repo) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store *internal.Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", sourcedRepo.Name)
@@ -453,12 +446,12 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, 
 	return err
 }
 
-func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, publicOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
+func (s *Syncer) syncRepo(ctx context.Context, store *internal.Store, insertOnly bool, publicOnly bool, sourcedRepo *types.Repo) (diff Diff, err error) {
 	if publicOnly && sourcedRepo.Private {
 		return Diff{}, nil
 	}
 
-	var storedSubset Repos
+	var storedSubset types.Repos
 	args := StoreListReposArgs{
 		Names:         []string{sourcedRepo.Name},
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
@@ -475,7 +468,7 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 	// NewDiff modifies the stored slice so we clone it before passing it
 	storedCopy := storedSubset.Clone()
 
-	diff = NewDiff([]*Repo{sourcedRepo}, storedSubset)
+	diff = NewDiff([]*types.Repo{sourcedRepo}, storedSubset)
 
 	// We trust that if we determine that a repo needs to be deleted it should be deleted
 	// from all external services. By setting sources to nil this is forced when we call
@@ -519,9 +512,9 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 	return diff, nil
 }
 
-func (s *Syncer) upserts(diff Diff) []*Repo {
+func (s *Syncer) upserts(diff Diff) []*types.Repo {
 	now := s.Now()
-	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Modified))
+	upserts := make([]*types.Repo, 0, len(diff.Added)+len(diff.Modified))
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
@@ -537,15 +530,15 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 }
 
 type sourceDiff struct {
-	Added, Modified, Deleted map[api.RepoID][]SourceInfo
+	Added, Modified, Deleted map[api.RepoID][]types.SourceInfo
 }
 
 // sourcesUpserts creates a diff for sources based on the repositoried diff.
-func (s *Syncer) sourcesUpserts(diff *Diff, stored []*Repo) *sourceDiff {
+func (s *Syncer) sourcesUpserts(diff *Diff, stored []*types.Repo) *sourceDiff {
 	sdiff := sourceDiff{
-		Added:    make(map[api.RepoID][]SourceInfo),
-		Modified: make(map[api.RepoID][]SourceInfo),
-		Deleted:  make(map[api.RepoID][]SourceInfo),
+		Added:    make(map[api.RepoID][]types.SourceInfo),
+		Modified: make(map[api.RepoID][]types.SourceInfo),
+		Deleted:  make(map[api.RepoID][]types.SourceInfo),
 	}
 
 	// When a repository is added, add its sources map to the list
@@ -587,7 +580,7 @@ func (s *Syncer) sourcesUpserts(diff *Diff, stored []*Repo) *sourceDiff {
 
 // sourceDiff computes the diff between the oldSources and the newSources,
 // and updates the Added, Modified and Deleted in place of `diff`.
-func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, newSources map[string]*SourceInfo) {
+func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, newSources map[string]*types.SourceInfo) {
 	for k, oldSrc := range oldSources {
 		if newSrc, ok := newSources[k]; ok {
 			if oldSrc.CloneURL != newSrc.CloneURL {
@@ -615,7 +608,7 @@ func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, new
 // of s.Synced will receive a list of repos. In particular this is so that the
 // git update scheduler can start working straight away on existing
 // repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store) {
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *internal.Store) {
 	if s.Synced == nil {
 		return
 	}
@@ -623,7 +616,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
 	if err != nil {
 		if s.Logger != nil {
-			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+			s.Logger.Warn("initialUnmodifiedDiffFromstore *internal.Store.ListRepos", "error", err)
 		}
 		return
 	}
@@ -640,15 +633,15 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 // Diff is the difference found by a sync between what is in the store and
 // what is returned from sources.
 type Diff struct {
-	Added      Repos
-	Deleted    Repos
-	Modified   Repos
-	Unmodified Repos
+	Added      types.Repos
+	Deleted    types.Repos
+	Modified   types.Repos
+	Unmodified types.Repos
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
 func (d *Diff) Sort() {
-	for _, ds := range []Repos{
+	for _, ds := range []types.Repos{
 		d.Added,
 		d.Deleted,
 		d.Modified,
@@ -659,13 +652,13 @@ func (d *Diff) Sort() {
 }
 
 // Repos returns all repos in the Diff.
-func (d Diff) Repos() Repos {
-	all := make(Repos, 0, len(d.Added)+
+func (d Diff) Repos() types.Repos {
+	all := make(types.Repos, 0, len(d.Added)+
 		len(d.Deleted)+
 		len(d.Modified)+
 		len(d.Unmodified))
 
-	for _, rs := range []Repos{
+	for _, rs := range []types.Repos{
 		d.Added,
 		d.Deleted,
 		d.Modified,
@@ -678,15 +671,15 @@ func (d Diff) Repos() Repos {
 }
 
 // NewDiff returns a diff from the given sourced and stored repos.
-func NewDiff(sourced, stored []*Repo) (diff Diff) {
+func NewDiff(sourced, stored []*types.Repo) (diff Diff) {
 	return newDiff(nil, sourced, stored)
 }
 
-func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
+func newDiff(svc *types.ExternalService, sourced, stored []*types.Repo) (diff Diff) {
 	// Sort sourced so we merge deterministically
-	sort.Sort(Repos(sourced))
+	sort.Sort(types.Repos(sourced))
 
-	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
+	byID := make(map[api.ExternalRepoSpec]*types.Repo, len(sourced))
 	for _, r := range sourced {
 		if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
@@ -699,7 +692,7 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 	// a conflict on name, we deterministically pick which sourced repo to
 	// keep. Can't merge since they represent different repositories
 	// (different external ID).
-	byName := make(map[string]*Repo, len(byID))
+	byName := make(map[string]*types.Repo, len(byID))
 	for _, r := range byID {
 		k := strings.ToLower(r.Name)
 		if old := byName[k]; old == nil {
@@ -746,14 +739,14 @@ func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
 	return diff
 }
 
-func merge(o, n *Repo) {
+func merge(o, n *types.Repo) {
 	for id, src := range o.Sources {
 		n.Sources[id] = src
 	}
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context, svcs []*types.ExternalService, onSourced ...func(*types.Repo) error) ([]*types.Repo, error) {
 	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err
@@ -764,7 +757,7 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*Repo) error, error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *internal.Store, publicOnly bool) (func(*types.Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
@@ -775,7 +768,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnl
 		return nil, err
 	}
 
-	return func(r *Repo) error {
+	return func(r *types.Repo) error {
 		// We know this won't be an insert.
 		if _, ok := ids[r.ExternalRepo]; ok {
 			return nil

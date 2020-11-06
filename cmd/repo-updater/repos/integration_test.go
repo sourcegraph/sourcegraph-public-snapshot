@@ -6,11 +6,9 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -29,40 +27,21 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	dbstore := repos.NewDBStore(db, sql.TxOptions{
+	store := internal.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 	})
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
-
-	store := repos.NewObservedStore(
-		dbstore,
-		lg,
-		repos.NewStoreMetrics(),
-		trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	)
+	store.Log = lg
 
 	userID := insertTestUser(t, db)
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, repos.Store) func(*testing.T)
+		test func(*testing.T, *internal.Store) func(*testing.T)
 	}{
-		{"DBStore/ListExternalServices", testStoreListExternalServices(userID)},
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
-		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos},
-		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices},
-		{"DBStore/InsertRepos", testStoreInsertRepos},
-		{"DBStore/DeleteRepos", testStoreDeleteRepos},
-		{"DBStore/UpsertRepos", testStoreUpsertRepos},
-		{"DBStore/UpsertSources", testStoreUpsertSources},
-		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, dbstore)},
-		{"DBStore/ListRepos", testStoreListRepos},
-		{"DBStore/ListRepos/Pagination", testStoreListReposPagination},
-		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
-		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
-		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},
 		{"DBStore/Syncer/Sync", testSyncerSync},
 		{"DBStore/Syncer/SyncWithErrors", testSyncerSyncWithErrors},
 		{"DBStore/Syncer/SyncRepo", testSyncRepo},

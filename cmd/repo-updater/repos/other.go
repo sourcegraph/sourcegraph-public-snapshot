@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -20,13 +21,13 @@ import (
 // A OtherSource yields repositories from a single Other connection configured
 // in Sourcegraph via the external services configuration.
 type OtherSource struct {
-	svc    *ExternalService
+	svc    *types.ExternalService
 	conn   *schema.OtherExternalServiceConnection
 	client httpcli.Doer
 }
 
 // NewOtherSource returns a new OtherSource from the given external service.
-func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
+func NewOtherSource(svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
 	var c schema.OtherExternalServiceConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -76,8 +77,8 @@ func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s OtherSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s OtherSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {
@@ -112,7 +113,7 @@ func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
 	return base.Parse(repo)
 }
 
-func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error) {
+func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo, error) {
 	repoURL := u.String()
 	repoSource := reposource.Other{OtherExternalServiceConnection: s.conn}
 	repoName, err := repoSource.CloneURLToRepoName(u.String())
@@ -126,24 +127,26 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 	u.Path, u.RawQuery = "", ""
 	serviceID := u.String()
 
-	return &Repo{
-		Name: string(repoName),
-		URI:  repoURI,
+	return &types.Repo{
+		Name: repoName,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   serviceID,
 		},
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: repoURL,
+		RepoFields: &types.RepoFields{
+			URI: repoURI,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: repoURL,
+				},
 			},
 		},
 	}, nil
 }
 
-func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
+func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	req, err := http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
 	if err != nil {
 		return nil, err
@@ -160,7 +163,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 	}
 
 	var data struct {
-		Items []*Repo
+		Items []*types.Repo
 	}
 	err = json.Unmarshal(b, &data)
 	if err != nil {
@@ -185,7 +188,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
-		r.Sources = map[string]*SourceInfo{
+		r.Sources = map[string]*types.SourceInfo{
 			urn: {
 				ID: urn,
 				// TODO we should allow this to be set
@@ -195,7 +198,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 
 		// The only required field left is Name
 		if r.Name == "" {
-			r.Name = r.URI
+			r.Name = api.RepoName(r.URI)
 		}
 	}
 

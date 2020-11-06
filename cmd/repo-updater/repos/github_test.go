@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -36,10 +37,12 @@ func TestExampleRepositoryQuerySplit(t *testing.T) {
 }
 
 func TestGithubSource_CreateChangeset(t *testing.T) {
-	repo := &Repo{
-		Metadata: &github.Repository{
-			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-			NameWithOwner: "sourcegraph/automation-testing",
+	repo := &types.Repo{
+		RepoFields: &types.RepoFields{
+			Metadata: &github.Repository{
+				ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				NameWithOwner: "sourcegraph/automation-testing",
+			},
 		},
 	}
 
@@ -93,7 +96,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -168,7 +171,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -236,7 +239,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -306,7 +309,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -348,14 +351,14 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 		{
 			name: "found",
 			cs: &Changeset{
-				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Repo:      &types.Repo{RepoFields: &types.RepoFields{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}}},
 				Changeset: &campaigns.Changeset{ExternalID: "5550"},
 			},
 		},
 		{
 			name: "not-found",
 			cs: &Changeset{
-				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Repo:      &types.Repo{RepoFields: &types.RepoFields{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}}},
 				Changeset: &campaigns.Changeset{ExternalID: "100000"},
 			},
 			err: "Changeset with external ID 100000 not found",
@@ -378,7 +381,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -415,7 +418,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	testCases := []struct {
 		name          string
 		nameWithOwner string
-		assert        func(*testing.T, *Repo)
+		assert        func(*testing.T, *types.Repo)
 		err           string
 	}{
 		{
@@ -431,30 +434,32 @@ func TestGithubSource_GetRepo(t *testing.T) {
 		{
 			name:          "found",
 			nameWithOwner: "sourcegraph/sourcegraph",
-			assert: func(t *testing.T, have *Repo) {
+			assert: func(t *testing.T, have *types.Repo) {
 				t.Helper()
 
-				want := &Repo{
-					Name:        "github.com/sourcegraph/sourcegraph",
-					Description: "Code search and navigation tool (self-hosted)",
-					URI:         "github.com/sourcegraph/sourcegraph",
+				want := &types.Repo{
+					Name: "github.com/sourcegraph/sourcegraph",
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 					},
-					Sources: map[string]*SourceInfo{
-						"extsvc:github:0": {
-							ID:       "extsvc:github:0",
-							CloneURL: "https://github.com/sourcegraph/sourcegraph",
+					RepoFields: &types.RepoFields{
+						Description: "Code search and navigation tool (self-hosted)",
+						URI:         "github.com/sourcegraph/sourcegraph",
+						Sources: map[string]*types.SourceInfo{
+							"extsvc:github:0": {
+								ID:       "extsvc:github:0",
+								CloneURL: "https://github.com/sourcegraph/sourcegraph",
+							},
 						},
-					},
-					Metadata: &github.Repository{
-						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:    41288708,
-						NameWithOwner: "sourcegraph/sourcegraph",
-						Description:   "Code search and navigation tool (self-hosted)",
-						URL:           "https://github.com/sourcegraph/sourcegraph",
+						Metadata: &github.Repository{
+							ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+							DatabaseID:    41288708,
+							NameWithOwner: "sourcegraph/sourcegraph",
+							Description:   "Code search and navigation tool (self-hosted)",
+							URL:           "https://github.com/sourcegraph/sourcegraph",
+						},
 					},
 				}
 
@@ -482,7 +487,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
@@ -516,7 +521,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
 
 	tests := []struct {
 		name   string
@@ -552,7 +557,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}
@@ -590,7 +595,7 @@ func TestMatchOrg(t *testing.T) {
 
 func TestGithubSource_ListRepos(t *testing.T) {
 	assertAllReposListed := func(want []string) ReposAssertion {
-		return func(t testing.TB, rs Repos) {
+		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
 			have := rs.Names()
@@ -742,7 +747,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
 				Config: marshalJSON(t, tc.conf),
 			}

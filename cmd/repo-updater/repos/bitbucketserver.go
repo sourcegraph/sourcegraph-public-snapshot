@@ -10,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,7 +24,7 @@ import (
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc     *ExternalService
+	svc     *types.ExternalService
 	config  *schema.BitbucketServerConnection
 	exclude excludeFunc
 	client  *bitbucketserver.Client
@@ -31,7 +32,7 @@ type BitbucketServerSource struct {
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
-func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -39,7 +40,7 @@ func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbu
 	return newBitbucketServerSource(svc, &c, cf)
 }
 
-func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
 	}
@@ -230,11 +231,11 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s BitbucketServerSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
-func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *Repo {
+func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *types.Repo {
 	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
@@ -270,35 +271,37 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 
 	urn := s.svc.URN()
 
-	return &Repo{
-		Name: string(reposource.BitbucketServerRepoName(
+	return &types.Repo{
+		Name: reposource.BitbucketServerRepoName(
 			s.config.RepositoryPathPattern,
 			host.Hostname(),
 			project,
 			repo.Slug,
-		)),
-		URI: string(reposource.BitbucketServerRepoName(
-			"",
-			host.Hostname(),
-			project,
-			repo.Slug,
-		)),
+		),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          strconv.Itoa(repo.ID),
 			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
-		Description: repo.Name,
-		Fork:        repo.Origin != nil,
-		Archived:    isArchived,
-		Private:     !repo.Public,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: cloneURL,
+		Private: !repo.Public,
+		RepoFields: &types.RepoFields{
+			URI: string(reposource.BitbucketServerRepoName(
+				"",
+				host.Hostname(),
+				project,
+				repo.Slug,
+			)),
+			Description: repo.Name,
+			Fork:        repo.Origin != nil,
+			Archived:    isArchived,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: cloneURL,
+				},
 			},
+			Metadata: repo,
 		},
-		Metadata: repo,
 	}
 }
 

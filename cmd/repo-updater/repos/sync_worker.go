@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -159,35 +160,16 @@ func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 		return nil, false, err
 	}
 
-	jobs, err := scanJobs(rows)
+	jobs, err := internal.ScanJobs(rows)
 	if err != nil {
 		return nil, false, err
 	}
 
-	var job SyncJob
+	var job internal.SyncJob
 
 	if len(jobs) > 0 {
 		job = jobs[0]
 	}
 
 	return &job, true, nil
-}
-
-// SyncJob represents an external service that needs to be synced
-type SyncJob struct {
-	ID                int
-	State             string
-	FailureMessage    sql.NullString
-	StartedAt         sql.NullTime
-	FinishedAt        sql.NullTime
-	ProcessAfter      sql.NullTime
-	NumResets         int
-	NumFailures       int
-	ExternalServiceID int64
-	NextSyncAt        sql.NullTime
-}
-
-// RecordID implements workerutil.Record and indicates the queued item id
-func (s *SyncJob) RecordID() int {
-	return s.ID
 }

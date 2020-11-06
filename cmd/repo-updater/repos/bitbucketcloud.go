@@ -8,6 +8,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -20,14 +21,14 @@ import (
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketCloudSource struct {
-	svc     *ExternalService
+	svc     *types.ExternalService
 	config  *schema.BitbucketCloudConnection
 	exclude excludeFunc
 	client  *bitbucketcloud.Client
 }
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
-func NewBitbucketCloudSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	var c schema.BitbucketCloudConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -35,7 +36,7 @@ func NewBitbucketCloudSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbuc
 	return newBitbucketCloudSource(svc, &c, cf)
 }
 
-func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	if c.ApiURL == "" {
 		c.ApiURL = "https://api.bitbucket.org"
 	}
@@ -84,11 +85,11 @@ func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan Source
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s BitbucketCloudSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s BitbucketCloudSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
-func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
+func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *types.Repo {
 	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
@@ -97,32 +98,34 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 	host = extsvc.NormalizeBaseURL(host)
 
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.BitbucketCloudRepoName(
+	return &types.Repo{
+		Name: reposource.BitbucketCloudRepoName(
 			s.config.RepositoryPathPattern,
 			host.Hostname(),
 			r.FullName,
-		)),
-		URI: string(reposource.BitbucketCloudRepoName(
-			"",
-			host.Hostname(),
-			r.FullName,
-		)),
+		),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          r.UUID,
 			ServiceType: extsvc.TypeBitbucketCloud,
 			ServiceID:   host.String(),
 		},
-		Description: r.Description,
-		Fork:        r.Parent != nil,
-		Private:     r.IsPrivate,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(r),
+		Private: r.IsPrivate,
+		RepoFields: &types.RepoFields{
+			URI: string(reposource.BitbucketCloudRepoName(
+				"",
+				host.Hostname(),
+				r.FullName,
+			)),
+			Description: r.Description,
+			Fork:        r.Parent != nil,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: s.authenticatedRemoteURL(r),
+				},
 			},
+			Metadata: r,
 		},
-		Metadata: r,
 	}
 }
 

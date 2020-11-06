@@ -254,10 +254,10 @@ func (s *Store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanJobs(rows)
+	return ScanJobs(rows)
 }
 
-func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
+func ScanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
@@ -292,7 +292,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 }
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
-// The ID field is used to distinguish between Repos that need to be updated and Repos
+// The ID field is used to distinguish between Repos that need to be updated and types.Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
 // The cloned column is not updated by this function.
 // This method does NOT update sources in the external_services_repo table.

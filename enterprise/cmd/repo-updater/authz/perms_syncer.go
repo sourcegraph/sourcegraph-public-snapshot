@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -202,7 +203,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	if len(repoSpecs) > 0 {
 		// Get corresponding internal database IDs
 		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{

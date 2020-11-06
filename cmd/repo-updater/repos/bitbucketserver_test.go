@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -52,7 +53,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -61,7 +62,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r, false))
 			}
@@ -125,7 +126,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -165,10 +166,12 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	repo := &Repo{
-		Metadata: &bitbucketserver.Repo{
-			Slug:    "vegeta",
-			Project: &bitbucketserver.Project{Key: "SOUR"},
+	repo := &types.Repo{
+		RepoFields: &types.RepoFields{
+			Metadata: &bitbucketserver.Repo{
+				Slug:    "vegeta",
+				Project: &bitbucketserver.Project{Key: "SOUR"},
+			},
 		},
 	}
 
@@ -204,7 +207,7 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -251,10 +254,12 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	repo := &Repo{
-		Metadata: &bitbucketserver.Repo{
-			Slug:    "automation-testing",
-			Project: &bitbucketserver.Project{Key: "SOUR"},
+	repo := &types.Repo{
+		RepoFields: &types.RepoFields{
+			Metadata: &bitbucketserver.Repo{
+				Slug:    "automation-testing",
+				Project: &bitbucketserver.Project{Key: "SOUR"},
+			},
 		},
 	}
 
@@ -314,7 +319,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -387,7 +392,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -456,7 +461,7 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -530,7 +535,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,

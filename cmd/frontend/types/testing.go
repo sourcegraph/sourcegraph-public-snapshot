@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -64,6 +65,13 @@ func MakeGitlabRepo(services ...*ExternalService) *Repo {
 func MakeBitbucketServerRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("bitbucketserver.mycorp.com/foo/bar", "http://bitbucketserver.mycorp.com", extsvc.TypeBitbucketServer, services...)
 	repo.RepoFields.Metadata = new(bitbucketserver.Repo)
+	return repo
+}
+
+// MakeBitbucketCloudRepo returns a configured Bitbucket Cloud repository.
+func MakeBitbucketCloudRepo(services ...*ExternalService) *Repo {
+	repo := MakeRepo("bitbucket.org/team/foo", "https://bitbucket.org/", extsvc.TypeBitbucketCloud, services...)
+	repo.RepoFields.Metadata = new(bitbucketcloud.Repo)
 	return repo
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -23,7 +24,7 @@ import (
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc                 *ExternalService
+	svc                 *types.ExternalService
 	config              *schema.GitLabConnection
 	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
@@ -32,7 +33,7 @@ type GitLabSource struct {
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -40,7 +41,7 @@ func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, 
 	return newGitLabSource(svc, &c, cf)
 }
 
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -94,7 +95,7 @@ func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // GetRepo returns the GitLab repository with the given pathWithNamespace.
-func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*Repo, error) {
+func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*types.Repo, error) {
 	proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
@@ -108,37 +109,39 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*R
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitLabSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GitLabSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
-func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
+func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.GitLabRepoName(
+	return &types.Repo{
+		Name: reposource.GitLabRepoName(
 			s.config.RepositoryPathPattern,
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
 			s.nameTransformations,
-		)),
-		URI: string(reposource.GitLabRepoName(
-			"",
-			s.baseURL.Hostname(),
-			proj.PathWithNamespace,
-			s.nameTransformations,
-		)),
+		),
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
-		Description:  proj.Description,
-		Fork:         proj.ForkedFromProject != nil,
-		Archived:     proj.Archived,
 		Private:      proj.Visibility == "private",
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(proj),
+		RepoFields: &types.RepoFields{
+			URI: string(reposource.GitLabRepoName(
+				"",
+				s.baseURL.Hostname(),
+				proj.PathWithNamespace,
+				s.nameTransformations,
+			)),
+			Description: proj.Description,
+			Fork:        proj.ForkedFromProject != nil,
+			Archived:    proj.Archived,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: s.authenticatedRemoteURL(proj),
+				},
 			},
+			Metadata: proj,
 		},
-		Metadata: proj,
 	}
 }
 

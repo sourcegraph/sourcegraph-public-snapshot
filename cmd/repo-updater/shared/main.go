@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
@@ -44,7 +45,7 @@ const port = "3182"
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db *sql.DB, store *internal.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
 	ctx := context.Background()
@@ -91,18 +92,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db)
 
-	var store repos.Store
-	{
-		m := repos.NewStoreMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
-
-		store = repos.NewObservedStore(
-			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault}),
-			log15.Root(),
-			m,
-			trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		)
-	}
+	store := internal.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 
 	cf := httpcli.NewExternalHTTPClientFactory()
 
@@ -139,7 +129,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
-		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		es, err := store.ExternalServiceStore().List(ctx, repos.db.ExternalServicesListOptions{
 			// On Cloud we want to fetch our admin owned external service only here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
@@ -374,7 +364,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
-func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
+func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *internal.Store) {
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {

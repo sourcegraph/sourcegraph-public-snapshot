@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/inconshreveable/log15"
@@ -22,7 +25,7 @@ import (
 // A GitoliteSource yields repositories from a single Gitolite connection configured
 // in Sourcegraph via the external services configuration.
 type GitoliteSource struct {
-	svc  *ExternalService
+	svc  *types.ExternalService
 	conn *schema.GitoliteConnection
 	// We ask gitserver to talk to gitolite because it holds the ssh keys
 	// required for authentication.
@@ -31,7 +34,7 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
 	var c schema.GitoliteConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -83,29 +86,31 @@ func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResul
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitoliteSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GitoliteSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
-func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
+func (s GitoliteSource) excludes(gr *gitolite.Repo, r *types.Repo) bool {
 	return s.exclude(gr.Name) ||
-		strings.ContainsAny(r.Name, "\\^$|()[]*?{},")
+		strings.ContainsAny(string(r.Name), "\\^$|()[]*?{},")
 }
 
-func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *Repo {
+func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *types.Repo {
 	urn := s.svc.URN()
 	name := string(reposource.GitoliteRepoName(s.conn.Prefix, repo.Name))
-	return &Repo{
-		Name:         name,
-		URI:          name,
+	return &types.Repo{
+		Name:         api.RepoName(name),
 		ExternalRepo: gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(s.conn.Host)),
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: repo.URL,
+		RepoFields: &types.RepoFields{
+			URI: name,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: repo.URL,
+				},
 			},
+			Metadata: repo,
 		},
-		Metadata: repo,
 	}
 }
 
@@ -123,12 +128,12 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *Repo {
 type GitolitePhabricatorMetadataSyncer struct {
 	sem     *semaphore.Weighted // Only one sync at a time, like it was done before.
 	counter int64               // Only sync every 10th time, like it was done before.
-	store   Store               // Use to load the external services that yielded a given repo.
+	store   *internal.Store     // Use to load the external services that yielded a given repo.
 }
 
 // NewGitolitePhabricatorMetadataSyncer returns a GitolitePhabricatorMetadataSyncer with
 // the given parameters.
-func NewGitolitePhabricatorMetadataSyncer(s Store) *GitolitePhabricatorMetadataSyncer {
+func NewGitolitePhabricatorMetadataSyncer(s *internal.Store) *GitolitePhabricatorMetadataSyncer {
 	return &GitolitePhabricatorMetadataSyncer{
 		sem:     semaphore.NewWeighted(1),
 		counter: -1,
@@ -139,7 +144,7 @@ func NewGitolitePhabricatorMetadataSyncer(s Store) *GitolitePhabricatorMetadataS
 // Sync creates Phabricator repos for each of the given Gitolite repos.
 // If this is confusing to you, that's because it is. Read the comment on
 // the GitolitePhabricatorMetadataSyncer type.
-func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*Repo) error {
+func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*types.Repo) error {
 	if !s.sem.TryAcquire(1) {
 		log15.Info("existing gitolite/phabricator repo task still running, skipping")
 		return nil
@@ -154,7 +159,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 	// Group repos by external service so that we look-up external services from the DB
 	// only once.
 	var ids []int64
-	grouped := make(map[int64]Repos)
+	grouped := make(map[int64]types.Repos)
 	for _, r := range repos {
 		if r.ExternalRepo.ServiceType != extsvc.TypeGitolite || r.IsDeleted() {
 			continue
@@ -171,7 +176,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 		return nil
 	}
 
-	es, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	es, err := s.store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
 	}

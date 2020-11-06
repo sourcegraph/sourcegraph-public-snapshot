@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,31 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-// This error is passed to txstore.Done in order to always
-// roll-back the transaction a test case executes in.
-// This is meant to ensure each test case has a clean slate.
-var errRollback = errors.New("tx: rollback")
-
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
-
-func transact(ctx context.Context, s *internal.Store, test func(testing.TB, *internal.Store)) func(*testing.T) {
-	return func(t *testing.T) {
-		t.Helper()
-
-		var err error
-		txStore := s
-
-		if !s.InTransaction() {
-			txStore, err = s.Transact(ctx)
-			if err != nil {
-				t.Fatalf("failed to start transaction: %v", err)
-			}
-			defer txStore.Done(errRollback)
-		}
-
-		test(t, txStore)
-	}
-}
 
 func hasNoID(r *types.Repo) bool {
 	return r.ID == 0
@@ -182,7 +157,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 		})
 
-		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("many repos", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
@@ -274,7 +249,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 		}))
 
-		t.Run("many repos soft-deleted and single repo reinserted", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("many repos soft-deleted and single repo reinserted", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			all := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, all...); err != nil {
@@ -333,7 +308,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 		}))
 
-		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("it shouldn't modify the cloned column", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			// UpsertRepos shouldn't set the cloned column to true
 			r := types.GenerateRepos(1, repositories...)[0]
 			r.Cloned = true
@@ -395,7 +370,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			}
 		})
 
-		t.Run("delete repo", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("delete repo", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
@@ -433,7 +408,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			}
 		}))
 
-		t.Run("delete external service", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("delete external service", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			origRepos := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, origRepos...); err != nil {
@@ -482,7 +457,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			}
 		}))
 
-		t.Run("inserts updates and deletes", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("inserts updates and deletes", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
@@ -571,7 +546,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 			}
 		})
 
-		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("many repo names", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			stored := types.GenerateRepos(9, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -605,7 +580,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 			check(t, ctx, tx, names)
 		}))
 
-		t.Run("repo names in mixed case", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("repo names in mixed case", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			stored := types.GenerateRepos(9, repositories...)
 			for i := range stored {
 				if i%2 == 0 {
@@ -660,7 +635,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 			}
 		})
 
-		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("multiple cloned repos", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			stored := types.GenerateRepos(10, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -685,7 +660,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 			}
 		}))
 
-		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("deleted non cloned repos", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			stored := types.GenerateRepos(10, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -894,7 +869,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 
-			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+			t.Run(tc.name, internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 				stored := tc.stored.Clone()
 
 				if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -917,7 +892,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 			}))
 		}
 
-		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("only include cloned", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			stored := types.GenerateRepos(5, repositories...).Clone()
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
@@ -957,7 +932,7 @@ func testStoreListReposPagination(t *testing.T, store *internal.Store) func(*tes
 
 	return func(t *testing.T) {
 		ctx := context.Background()
-		t.Run("", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("", internal.Transact(ctx, store, func(t testing.TB, tx *internal.Store) {
 			stored := types.GenerateRepos(7, github)
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("RepoStore.Create error: %s", err)

@@ -27,14 +27,14 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	repos.Store
+	*internal.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	GithubDotComSource    interface {
-		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
+		GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error)
 	}
 	GitLabDotComSource interface {
-		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
+		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
 	}
 	Scheduler interface {
 		UpdateOnce(id api.RepoID, name api.RepoName, url string)
@@ -89,7 +89,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+	rs, err := s.Store.ListRepos(r.Context(), *internal.StoreListReposArgs{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -110,11 +110,11 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
+	args := repos.db.ExternalServicesListOptions{
 		IDs: svcIDs,
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -132,7 +132,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+	rs, err := s.Store.ListRepos(r.Context(), *internal.StoreListReposArgs{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -147,11 +147,11 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		Kinds: repos.Repos(rs).Kinds(),
+	args := repos.db.ExternalServicesListOptions{
+		Kinds: types.Repos(rs).Kinds(),
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -164,7 +164,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	err = s.Store.ExternalServiceStore().Upsert(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -200,7 +200,7 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
-func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func newExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	svcs := make([]api.ExternalService, 0, len(es))
 
 	for _, e := range es {
@@ -291,7 +291,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.ListRepos(ctx, *internal.StoreListReposArgs{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -370,7 +370,7 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	src, err := repos.NewSource(&repos.ExternalService{
+	src, err := repos.NewSource(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,
@@ -429,13 +429,13 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+	list, err := s.Store.ListRepos(ctx, *internal.StoreListReposArgs{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {
 		return nil, err
 	}
-	var repo *repos.Repo
+	var repo *types.Repo
 	if len(list) > 0 {
 		repo = list[0]
 	}
@@ -463,7 +463,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				// we can safely assume that when a repository stored in the database is not accessible anymore,
 				// no other external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
+					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
 						r.DeletedAt = s.Now()
 					}))
 					if err != nil {
@@ -497,7 +497,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 // remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
 // for remoteName on codehost.
 func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
-	var repo *repos.Repo
+	var repo *types.Repo
 	var err error
 	switch codehost {
 	case extsvc.GitHubDotCom:
@@ -668,7 +668,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	respond(w, http.StatusOK, nil)
 }
 
-func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
+func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)

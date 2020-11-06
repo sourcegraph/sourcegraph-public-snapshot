@@ -77,18 +77,18 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 }
 
 type mockReposStore struct {
-	listRepos func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+	listRepos func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error)
 }
 
-func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
 	return nil, nil
 }
 
-func (s *mockReposStore) UpsertExternalServices(context.Context, ...*repos.ExternalService) error {
+func (s *mockReposStore) UpsertExternalServices(context.Context, ...*types.ExternalService) error {
 	return nil
 }
 
-func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
 	return s.listRepos(ctx, args)
 }
 
@@ -96,7 +96,7 @@ func (s *mockReposStore) ListExternalRepoSpecs(ctx context.Context) (map[api.Ext
 	return nil, nil
 }
 
-func (s *mockReposStore) InsertRepos(context.Context, ...*repos.Repo) error {
+func (s *mockReposStore) InsertRepos(context.Context, ...*types.Repo) error {
 	return nil
 }
 
@@ -104,11 +104,11 @@ func (s *mockReposStore) DeleteRepos(context.Context, ...api.RepoID) error {
 	return nil
 }
 
-func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
+func (s *mockReposStore) UpsertRepos(context.Context, ...*types.Repo) error {
 	return nil
 }
 
-func (s *mockReposStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]repos.SourceInfo) error {
+func (s *mockReposStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]types.SourceInfo) error {
 	return nil
 }
 
@@ -162,11 +162,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}()
 
 	reposStore := &mockReposStore{
-		listRepos: func(_ context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+		listRepos: func(_ context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
 			if !args.PrivateOnly {
 				return nil, errors.New("PrivateOnly want true but got false")
 			}
-			return []*repos.Repo{{ID: 1}}, nil
+			return []*types.Repo{{ID: 1}}, nil
 		},
 	}
 	clock := func() time.Time {
@@ -223,15 +223,15 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		}()
 
 		reposStore := &mockReposStore{
-			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
-				return []*repos.Repo{
+			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error) {
+				return []*types.Repo{
 					{
 						ID:      1,
 						Private: true,
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: "https://gitlab.com/",
 						},
-						Sources: map[string]*repos.SourceInfo{
+						Sources: map[string]*types.SourceInfo{
 							extsvc.URN(extsvc.TypeGitLab, 0): {},
 						},
 					},
@@ -298,15 +298,15 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		}()
 
 		reposStore := &mockReposStore{
-			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
-				return []*repos.Repo{
+			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error) {
+				return []*types.Repo{
 					{
 						ID:      1,
 						Private: true,
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: p1.ServiceID(),
 						},
-						Sources: map[string]*repos.SourceInfo{
+						Sources: map[string]*types.SourceInfo{
 							p1.URN(): {},
 						},
 					},
@@ -361,15 +361,15 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}()
 
 	reposStore := &mockReposStore{
-		listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
-			return []*repos.Repo{
+		listRepos: func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error) {
+			return []*types.Repo{
 				{
 					ID:      1,
 					Private: true,
 					ExternalRepo: api.ExternalRepoSpec{
 						ServiceID: p.ServiceID(),
 					},
-					Sources: map[string]*repos.SourceInfo{
+					Sources: map[string]*types.SourceInfo{
 						p.URN(): {},
 					},
 				},

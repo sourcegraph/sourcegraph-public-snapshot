@@ -12,6 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -26,7 +27,7 @@ import (
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc             *ExternalService
+	svc             *types.ExternalService
 	config          *schema.GitHubConnection
 	exclude         excludeFunc
 	excludeArchived bool
@@ -45,7 +46,7 @@ type GithubSource struct {
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -53,7 +54,7 @@ func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, 
 	return newGithubSource(svc, &c, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -152,8 +153,8 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GithubSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GithubSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 // Type guards.
@@ -305,7 +306,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 
 // GetRepo returns the Github repository with the given name and owner
 // ("org/repo-name")
-func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
+func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
 	r, err := s.getRepository(ctx, nameWithOwner)
 	if err != nil {
 		return nil, err
@@ -313,31 +314,33 @@ func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo,
 	return s.makeRepo(r), nil
 }
 
-func (s GithubSource) makeRepo(r *github.Repository) *Repo {
+func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.GitHubRepoName(
+	return &types.Repo{
+		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
 			s.originalHostname,
 			r.NameWithOwner,
-		)),
-		URI: string(reposource.GitHubRepoName(
-			"",
-			s.originalHostname,
-			r.NameWithOwner,
-		)),
+		),
 		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
-		Description:  r.Description,
-		Fork:         r.IsFork,
-		Archived:     r.IsArchived,
 		Private:      r.IsPrivate,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(r),
+		RepoFields: &types.RepoFields{
+			URI: string(reposource.GitHubRepoName(
+				"",
+				s.originalHostname,
+				r.NameWithOwner,
+			)),
+			Description: r.Description,
+			Fork:        r.IsFork,
+			Archived:    r.IsArchived,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: s.authenticatedRemoteURL(r),
+				},
 			},
+			Metadata: r,
 		},
-		Metadata: r,
 	}
 }
 

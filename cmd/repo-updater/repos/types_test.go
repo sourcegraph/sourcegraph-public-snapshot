@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -25,12 +27,12 @@ func TestExternalService_Exclude(t *testing.T) {
 
 	type testCase struct {
 		name   string
-		svcs   ExternalServices
-		repos  Repos
+		svcs   types.ExternalServices
+		repos  types.Repos
 		assert ExternalServicesAssertion
 	}
 
-	githubService := ExternalService{
+	githubService := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github",
 		Config: `{
@@ -43,7 +45,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitlabService := ExternalService{
+	gitlabService := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: `{
@@ -56,7 +58,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	bitbucketServerService := ExternalService{
+	bitbucketServerService := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: `{
@@ -70,7 +72,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	awsCodeCommitService := ExternalService{
+	awsCodeCommitService := types.ExternalService{
 		ID:          9,
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS CodeCommit",
@@ -84,7 +86,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitoliteService := ExternalService{
+	gitoliteService := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite",
 		Config: `{
@@ -96,7 +98,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	otherService := ExternalService{
+	otherService := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other code hosts",
 		Config: formatJSON(t, `{
@@ -107,62 +109,53 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	repos := Repos{
-		{
-			Metadata: &github.Repository{
-				ID:            "foo",
-				NameWithOwner: "org/foo",
+	newRepo := func(metadata interface{}) *types.Repo {
+		return &types.Repo{
+			RepoFields: &types.RepoFields{
+				Metadata: metadata,
 			},
-		},
-		{
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "org/foo",
-				},
+		}
+	}
+	repos := types.Repos{
+		newRepo(&github.Repository{
+			ID:            "foo",
+			NameWithOwner: "org/foo",
+		}),
+		newRepo(&gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				ID:                1,
+				PathWithNamespace: "org/foo",
 			},
-		},
-		{
-			Metadata: &github.Repository{
-				NameWithOwner: "org/baz",
+		}),
+		newRepo(&github.Repository{
+			NameWithOwner: "org/baz",
+		}),
+		newRepo(&gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				PathWithNamespace: "org/baz",
 			},
-		},
-		{
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					PathWithNamespace: "org/baz",
-				},
+		}),
+		newRepo(&bitbucketserver.Repo{
+			ID:   1,
+			Slug: "foo",
+			Project: &bitbucketserver.Project{
+				Key: "org",
 			},
-		},
-		{
-			Metadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "foo",
-				Project: &bitbucketserver.Project{
-					Key: "org",
-				},
+		}),
+		newRepo(&bitbucketserver.Repo{
+			Slug: "baz",
+			Project: &bitbucketserver.Project{
+				Key: "org",
 			},
-		},
-		{
-			Metadata: &bitbucketserver.Repo{
-				Slug: "baz",
-				Project: &bitbucketserver.Project{
-					Key: "org",
-				},
-			},
-		},
-		{
-			Metadata: &awscodecommit.Repository{
-				ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-				Name: "foo",
-			},
-		},
-		{
-			Metadata: &awscodecommit.Repository{
-				ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
-				Name: "baz",
-			},
-		},
+		}),
+		newRepo(&awscodecommit.Repository{
+			ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			Name: "foo",
+		}),
+		newRepo(&awscodecommit.Repository{
+			ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
+			Name: "baz",
+		}),
 		{
 			Name: "git-host.mycorp.com/org/foo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -178,15 +171,13 @@ func TestExternalService_Exclude(t *testing.T) {
 				ServiceID:   "https://git-host.mycorp.com/",
 			},
 		},
-		{
-			Metadata: &gitolite.Repo{Name: "foo"},
-		},
+		newRepo(&gitolite.Repo{Name: "foo"}),
 	}
 
 	var testCases []testCase
 	{
-		svcs := ExternalServices{
-			githubService.With(func(e *ExternalService) {
+		svcs := types.ExternalServices{
+			githubService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -199,7 +190,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlabService.With(func(e *ExternalService) {
+			gitlabService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -212,7 +203,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServerService.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -226,7 +217,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommitService.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -240,7 +231,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitoliteService.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -262,8 +253,8 @@ func TestExternalService_Exclude(t *testing.T) {
 		})
 	}
 	{
-		svcs := ExternalServices{
-			githubService.With(func(e *ExternalService) {
+		svcs := types.ExternalServices{
+			githubService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -275,7 +266,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlabService.With(func(e *ExternalService) {
+			gitlabService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -287,7 +278,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServerService.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -300,7 +291,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommitService.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -313,7 +304,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitoliteService.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -324,7 +315,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			otherService.With(func(e *ExternalService) {
+			otherService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					"url": "https://git-host.mycorp.com",
@@ -342,7 +333,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			svcs:  svcs,
 			repos: repos,
 			assert: Assert.ExternalServicesEqual(
-				githubService.With(func(e *ExternalService) {
+				githubService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -356,7 +347,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitlabService.With(func(e *ExternalService) {
+				gitlabService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -370,7 +361,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				bitbucketServerService.With(func(e *ExternalService) {
+				bitbucketServerService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -385,7 +376,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				awsCodeCommitService.With(func(e *ExternalService) {
+				awsCodeCommitService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -400,7 +391,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitoliteService.With(func(e *ExternalService) {
+				gitoliteService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -412,7 +403,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				otherService.With(func(e *ExternalService) {
+				otherService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						"url": "https://git-host.mycorp.com",
@@ -445,7 +436,7 @@ func TestExternalService_Exclude(t *testing.T) {
 }
 
 func TestReposNamesSummary(t *testing.T) {
-	var rps Repos
+	var rps types.Repos
 
 	eid := func(id int) api.ExternalRepoSpec {
 		return api.ExternalRepoSpec{
@@ -456,7 +447,7 @@ func TestReposNamesSummary(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		rps = append(rps, &Repo{Name: "bar", ExternalRepo: eid(i)})
+		rps = append(rps, &types.Repo{Name: "bar", ExternalRepo: eid(i)})
 	}
 
 	expected := "bar bar bar bar bar"
@@ -468,7 +459,7 @@ func TestReposNamesSummary(t *testing.T) {
 	rps = nil
 
 	for i := 0; i < 22; i++ {
-		rps = append(rps, &Repo{Name: "b", ExternalRepo: eid(i)})
+		rps = append(rps, &types.Repo{Name: "b", ExternalRepo: eid(i)})
 	}
 
 	expected = "b b b b b b b b b b b b b b b b b b b b..."
@@ -489,10 +480,10 @@ func TestPick(t *testing.T) {
 			ServiceID:   "https://fake.com",
 		}
 	}
-	a := &Repo{Name: "bar", ExternalRepo: eid("1")}
-	b := &Repo{Name: "bar", ExternalRepo: eid("2")}
+	a := &types.Repo{Name: "bar", ExternalRepo: eid("1")}
+	b := &types.Repo{Name: "bar", ExternalRepo: eid("2")}
 
-	for _, args := range [][2]*Repo{{a, b}, {b, a}} {
+	for _, args := range [][2]*types.Repo{{a, b}, {b, a}} {
 		keep, discard := pick(args[0], args[1])
 		if keep != a || discard != b {
 			t.Errorf("unexpected pick(%v, %v)", args[0], args[1])
@@ -522,9 +513,9 @@ func TestSyncRateLimiters(t *testing.T) {
 	}
 
 	makeLister := func(options ...limitOptions) *MockExternalServicesLister {
-		services := make([]*ExternalService, 0, len(options))
+		services := make([]*types.ExternalService, 0, len(options))
 		for i, o := range options {
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				ID:          int64(i) + 1,
 				Kind:        "GitLab",
 				DisplayName: "GitLab",
@@ -549,7 +540,7 @@ func TestSyncRateLimiters(t *testing.T) {
 			services = append(services, svc)
 		}
 		return &MockExternalServicesLister{
-			listExternalServices: func(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+			listExternalServices: func(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return services, nil
 			},
 		}
@@ -693,9 +684,9 @@ func TestSyncRateLimiters(t *testing.T) {
 }
 
 type MockExternalServicesLister struct {
-	listExternalServices func(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
+	listExternalServices func(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-func (m MockExternalServicesLister) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
-	return m.listExternalServices(ctx, args)
+func (m MockExternalServicesLister) List(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	return m.List(ctx, opt)
 }

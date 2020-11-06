@@ -12,7 +12,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -73,9 +74,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
+	reposStore := internal.NewStore(testDB, sql.TxOptions{})
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
 		CreatedAt: clock(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,
@@ -90,7 +91,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)
 
-	repo := repos.Repo{
+	repo := types.Repo{
 		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
 		Private: true,
 		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
@@ -98,7 +99,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
 				ID: svc.URN(),
 			},

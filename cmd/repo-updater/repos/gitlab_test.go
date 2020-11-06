@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -71,7 +72,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		projectWithNamespace string
-		assert               func(*testing.T, *Repo)
+		assert               func(*testing.T, *types.Repo)
 		err                  string
 	}{
 		{
@@ -82,35 +83,37 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 		{
 			name:                 "found",
 			projectWithNamespace: "gitlab-org/gitaly",
-			assert: func(t *testing.T, have *Repo) {
+			assert: func(t *testing.T, have *types.Repo) {
 				t.Helper()
 
-				want := &Repo{
-					Name:        "gitlab.com/gitlab-org/gitaly",
-					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-					URI:         "gitlab.com/gitlab-org/gitaly",
+				want := &types.Repo{
+					Name: "gitlab.com/gitlab-org/gitaly",
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "2009901",
 						ServiceType: "gitlab",
 						ServiceID:   "https://gitlab.com/",
 					},
-					Sources: map[string]*SourceInfo{
-						"extsvc:gitlab:0": {
-							ID:       "extsvc:gitlab:0",
-							CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+					RepoFields: &types.RepoFields{
+						Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+						URI:         "gitlab.com/gitlab-org/gitaly",
+						Sources: map[string]*types.SourceInfo{
+							"extsvc:gitlab:0": {
+								ID:       "extsvc:gitlab:0",
+								CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+							},
 						},
-					},
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
-							ID:                2009901,
-							PathWithNamespace: "gitlab-org/gitaly",
-							Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-							WebURL:            "https://gitlab.com/gitlab-org/gitaly",
-							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
-							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+						Metadata: &gitlab.Project{
+							ProjectCommon: gitlab.ProjectCommon{
+								ID:                2009901,
+								PathWithNamespace: "gitlab-org/gitaly",
+								Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+								WebURL:            "https://gitlab.com/gitlab-org/gitaly",
+								HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
+								SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+							},
+							Visibility: "",
+							Archived:   false,
 						},
-						Visibility: "",
-						Archived:   false,
 					},
 				}
 
@@ -138,7 +141,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
@@ -172,7 +175,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
 
 	tests := []struct {
 		name   string
@@ -208,7 +211,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}
@@ -227,8 +230,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_, _ = p.source.CreateChangeset(p.ctx, &Changeset{
-				Repo: &Repo{
-					Metadata: struct{}{},
+				Repo: &types.Repo{
+					RepoFields: &types.RepoFields{
+						Metadata: struct{}{},
+					},
 				},
 			})
 			t.Error("invalid metadata did not panic")
@@ -319,8 +324,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.CloseChangeset(p.ctx, &Changeset{
-				Repo: &Repo{
-					Metadata: struct{}{},
+				Repo: &types.Repo{
+					RepoFields: &types.RepoFields{
+						Metadata: struct{}{},
+					},
 				},
 			})
 			t.Error("invalid metadata did not panic")
@@ -360,8 +367,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
-				Repo: &Repo{
-					Metadata: struct{}{},
+				Repo: &types.Repo{
+					RepoFields: &types.RepoFields{
+						Metadata: struct{}{},
+					},
 				},
 			})
 			t.Error("invalid metadata did not panic")
@@ -402,7 +411,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
 
 			_ = p.source.LoadChangeset(p.ctx, &Changeset{
-				Repo: &Repo{Metadata: struct{}{}},
+				Repo: &types.Repo{RepoFields: &types.RepoFields{Metadata: struct{}{}}},
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -414,7 +423,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
-				Repo: &Repo{Metadata: &gitlab.Project{}},
+				Repo: &types.Repo{RepoFields: &types.RepoFields{Metadata: &gitlab.Project{}}},
 			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
@@ -752,7 +761,7 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
 			Changeset: &campaigns.Changeset{},
-			Repo:      &Repo{Metadata: &gitlab.Project{}},
+			Repo:      &types.Repo{RepoFields: &types.RepoFields{Metadata: &gitlab.Project{}}},
 			HeadRef:   "refs/heads/head",
 			BaseRef:   "refs/heads/base",
 			Title:     "title",

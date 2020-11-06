@@ -8,7 +8,10 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,7 +22,7 @@ import (
 // A PhabricatorSource yields repositories from a single Phabricator connection configured
 // in Sourcegraph via the external services configuration.
 type PhabricatorSource struct {
-	svc  *ExternalService
+	svc  *types.ExternalService
 	conn *schema.PhabricatorConnection
 	cf   *httpcli.Factory
 
@@ -28,7 +31,7 @@ type PhabricatorSource struct {
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
 	var c schema.PhabricatorConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -74,11 +77,11 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceRe
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *PhabricatorSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s *PhabricatorSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
-func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
+func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error) {
 	var external []*phabricator.URI
 	builtin := make(map[string]*phabricator.URI)
 
@@ -136,26 +139,28 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 	}
 
 	urn := s.svc.URN()
-	return &Repo{
-		Name: name,
-		URI:  name,
+	return &types.Repo{
+		Name: api.RepoName(name),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repo.PHID,
 			ServiceType: extsvc.TypePhabricator,
 			ServiceID:   serviceID,
 		},
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: cloneURL,
-				// TODO(tsenart): We need a way for admins to specify which URI to
-				// use as a CloneURL. Do they want to use https + shortname, git + callsign
-				// an external URI that's mirrored or observed, etc.
-				// This must be figured out when starting to integrate the new Syncer with this
-				// source.
+		RepoFields: &types.RepoFields{
+			URI: name,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: cloneURL,
+					// TODO(tsenart): We need a way for admins to specify which URI to
+					// use as a CloneURL. Do they want to use https + shortname, git + callsign
+					// an external URI that's mirrored or observed, etc.
+					// This must be figured out when starting to integrate the new Syncer with this
+					// source.
+				},
 			},
+			Metadata: repo,
 		},
-		Metadata: repo,
 	}, nil
 }
 
@@ -180,11 +185,11 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 }
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, s *internal.Store) {
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	for {
-		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		phabs, err := s.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindPhabricator},
 		})
 		if err != nil {
@@ -226,7 +231,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, repos []*Repo) error {
+func updatePhabRepos(ctx context.Context, repos []*types.Repo) error {
 	for _, r := range repos {
 		repo := r.Metadata.(*phabricator.Repo)
 		err := api.InternalClient.PhabricatorRepoCreate(
