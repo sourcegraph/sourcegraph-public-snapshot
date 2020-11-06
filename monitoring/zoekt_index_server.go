@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 func ZoektIndexServer() *Container {
 	return &Container{
 		Name:        "zoekt-indexserver",
@@ -38,18 +36,7 @@ func ZoektIndexServer() *Container {
 						sharedContainerRestarts("zoekt-indexserver", ObservableOwnerSearch),
 						sharedContainerFsInodes("zoekt-indexserver", ObservableOwnerSearch),
 					},
-					{
-						{
-							Name:              "fs_io_operations",
-							Description:       "filesystem reads and writes rate by instance over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("zoekt-indexserver")),
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(5000),
-							PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
-							Owner:             ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
-					},
+					sharedFsIO("zoekt-indexserver", ObservableOwnerSearch),
 				},
 			},
 			{

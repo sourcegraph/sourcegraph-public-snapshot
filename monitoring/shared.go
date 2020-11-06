@@ -131,6 +131,41 @@ var sharedContainerFsInodes sharedObservable = func(containerName string, owner 
 	}
 }
 
+func sharedFsIO(containerName string, owner ObservableOwner) []Observable {
+	return []Observable{
+		{
+			Name:              "fs_io_operations",
+			Description:       "filesystem reads and writes rate by instance over 5m",
+			Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[5m]) + rate(container_fs_writes_total{%[1]s}[5m]))`, promCadvisorContainerMatchers(containerName)),
+			DataMayNotExist:   true,
+			Warning:           Alert().GreaterOrEqual(5000),
+			PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
+			Owner:             owner,
+			PossibleSolutions: "none",
+		},
+		{
+			Name:              "fs_io_reads",
+			Description:       "filesystem reads rate by instance over 5m",
+			Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%s}[1h]))`, promCadvisorContainerMatchers(containerName)),
+			DataMayNotExist:   true,
+			Warning:           Alert().GreaterOrEqual(5000),
+			PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
+			Owner:             owner,
+			PossibleSolutions: "none",
+		},
+		{
+			Name:              "fs_io_writes",
+			Description:       "filesystem writes rate by instance over 5m",
+			Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_writes_total{%s}[1h]))`, promCadvisorContainerMatchers(containerName)),
+			DataMayNotExist:   true,
+			Warning:           Alert().GreaterOrEqual(5000),
+			PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
+			Owner:             owner,
+			PossibleSolutions: "none",
+		},
+	}
+}
+
 // Warn that instances might need more resources if short-term usage is high.
 
 var sharedProvisioningCPUUsageShortTerm sharedObservable = func(containerName string, owner ObservableOwner) Observable {
