@@ -64,3 +64,7 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Homepage panel engagement
   - Percentage of panel clicks (out of total views)
   - Total count of unique users engaging with the panels
+- Search onboarding engagement
+  - Total number of views of the onboarding tour
+  - Total number of views of each step in the onboarding tour
+  - Total number of tours closed

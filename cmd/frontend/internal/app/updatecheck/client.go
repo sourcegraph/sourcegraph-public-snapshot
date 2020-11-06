@@ -167,6 +167,17 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
+func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
+
+	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(searchOnboarding)
+}
+
 func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
 
@@ -267,6 +278,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
+		SearchOnboarding:    []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -328,6 +340,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalHomepagePanelsJSON failed", "error", err)
 		}
 
+		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalSearchOnboardingJSON failed", "error", err)
+		}
+
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
@@ -376,7 +393,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = db.EventLogs.Insert(ctx, &db.Event{
 		UserID:          0,
 		Name:            "ping",
