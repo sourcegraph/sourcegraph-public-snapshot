@@ -128,12 +128,50 @@ func (s *Store) ExternalServiceStore() *db.ExternalServiceStore {
 	return db.ExternalServices.With(s.Store)
 }
 
-func (s *Store) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, count int64, err error) {
+// a paginatedQuery returns a query with the given pagination
+// parameters
+type paginatedQuery func(cursor, limit int64) *sqlf.Query
+
+func (s *Store) paginate(ctx context.Context, limit, perPage int64, cursor int64, q paginatedQuery, scan dbutil.ScanFunc) (err error) {
+	const defaultPerPageLimit = 10000
+
+	if perPage <= 0 {
+		perPage = defaultPerPageLimit
+	}
+
+	if limit > 0 && perPage > limit {
+		perPage = limit
+	}
+
+	var (
+		remaining   = limit
+		next, count int64
+	)
+
+	// We need this so that we enter the loop below for the first iteration
+	// since cursor will be < next
+	next = cursor
+	cursor--
+
+	for cursor < next && err == nil && (limit <= 0 || remaining > 0) {
+		cursor = next
+		next, count, err = s.list(ctx, q(cursor, perPage), scan)
+		if limit > 0 {
+			if remaining -= count; perPage > remaining {
+				perPage = remaining
+			}
+		}
+	}
+
+	return err
+}
+
+func (s *Store) list(ctx context.Context, q *sqlf.Query, scan dbutil.ScanFunc) (last, count int64, err error) {
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return 0, 0, err
 	}
-	return scanAll(rows, scan)
+	return dbutil.ScanAll(rows, scan)
 }
 
 func (s *Store) ListExternalRepoSpecs(ctx context.Context) (ids map[api.ExternalRepoSpec]struct{}, err error) {
@@ -178,7 +216,7 @@ ORDER BY id ASC LIMIT %s
 	}
 	ids = make(map[api.ExternalRepoSpec]struct{})
 	return ids, s.paginate(ctx, 0, 0, 0, paginatedQuery,
-		func(sc scanner) (last, count int64, err error) {
+		func(sc dbutil.Scanner) (last, count int64, err error) {
 			var id int64
 			var spec api.ExternalRepoSpec
 			if err := sc.Scan(&id, &spec.ID, &spec.ServiceType, &spec.ServiceID); err != nil {
@@ -322,7 +360,7 @@ func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err erro
 			continue
 		}
 
-		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+		_, _, err = dbutil.ScanAll(rows, func(sc dbutil.Scanner) (last, count int64, err error) {
 			var (
 				i  int
 				id api.RepoID
@@ -782,14 +820,14 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 	return &repoRecord{
 		ID:                  r.ID,
 		Name:                r.Name,
-		URI:                 nullStringColumn(r.URI),
+		URI:                 dbutil.NullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
-		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
-		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		UpdatedAt:           dbutil.NullTimeColumn(r.UpdatedAt.UTC()),
+		DeletedAt:           dbutil.NullTimeColumn(r.DeletedAt.UTC()),
+		ExternalServiceType: dbutil.NullStringColumn(r.ExternalRepo.ServiceType),
+		ExternalServiceID:   dbutil.NullStringColumn(r.ExternalRepo.ServiceID),
+		ExternalID:          dbutil.NullStringColumn(r.ExternalRepo.ID),
 		Archived:            r.Archived,
 		Fork:                r.Fork,
 		Private:             r.Private,
