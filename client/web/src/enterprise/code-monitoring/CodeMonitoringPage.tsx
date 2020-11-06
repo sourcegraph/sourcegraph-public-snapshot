@@ -1,9 +1,9 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
-import { Breadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
-import { PageHeader } from '../components/PageHeader'
-import { PageTitle } from '../components/PageTitle'
+import { Breadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
+import { PageHeader } from '../../components/PageHeader'
+import { PageTitle } from '../../components/PageTitle'
 
 interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location

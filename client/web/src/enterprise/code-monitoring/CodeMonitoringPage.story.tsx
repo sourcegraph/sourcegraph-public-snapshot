@@ -1,7 +1,7 @@
 import React from 'react'
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { storiesOf } from '@storybook/react'
-import { WebStory } from '../components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 const { add } = storiesOf('web/code-monitoring/CodeMonitoringPage', module)
 
