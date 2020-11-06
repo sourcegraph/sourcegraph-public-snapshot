@@ -4,7 +4,7 @@ package mocks
 
 import (
 	"context"
-	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploadstore"
 	"io"
 	"sync"
 )
