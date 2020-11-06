@@ -18,6 +18,8 @@ var (
 )
 
 func main() {
+	log.Println("Running initializer")
+
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
@@ -58,14 +60,14 @@ func main() {
 	}
 
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
-
 	file, err := os.OpenFile("/root/.profile", os.O_APPEND|os.O_WRONLY, 0755)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 	if _, err := file.WriteString(envvar); err != nil {
-		log.Print(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
+
+	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in /root/.profile")
 }
