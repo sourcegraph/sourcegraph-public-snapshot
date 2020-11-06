@@ -26,7 +26,7 @@ docker_logs() {
   cp "$LOGFILE" $CONTAINER.log
   chmod 744 $CONTAINER.log
 }
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
