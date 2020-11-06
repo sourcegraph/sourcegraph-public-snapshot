@@ -163,7 +163,7 @@ describe('Core functionality regression test suite', () => {
             newText: aviURL,
             enterTextMethod: 'paste',
         })
-        await driver.findElementWithText('Update profile', { action: 'click' })
+        await driver.findElementWithText('Save', { action: 'click' })
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
