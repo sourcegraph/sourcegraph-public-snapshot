@@ -78,6 +78,30 @@ func TestUserCredentials_Create(t *testing.T) {
 				t.Errorf("unexpected zero update time")
 			}
 
+			// Ensure that the credential we put into the database was really
+			// encrypted when running the tests with encryption enabled.
+			if secret.ConfiguredToEncrypt() {
+				t.Run("encryption", func(t *testing.T) {
+					clear, err := marshalCredential(auth)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var cipher string
+					q := sqlf.Sprintf(
+						`SELECT credential FROM user_credentials WHERE id = %s`,
+						cred.ID,
+					)
+					row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+					if err := row.Scan(&cipher); err != nil {
+						t.Fatal(err)
+					}
+					if cipher == clear {
+						t.Errorf("ciphertext matches cleartext: clear=%q cipher=%q", clear, cipher)
+					}
+				})
+			}
+
 			// Ensure that trying to insert again fails.
 			if cred, err := UserCredentials.Create(ctx, scope, auth); err == nil {
 				t.Error("unexpected nil error")
