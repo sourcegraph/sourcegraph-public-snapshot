@@ -15,7 +15,7 @@ type RepoUsageStatistics struct {
 	PreciseCount int
 }
 
-// scanRepoUsageStatisticsSlice scans a slice of repo usage statistics from the return value of `*store.query`.
+// scanRepoUsageStatisticsSlice scans a slice of repo usage statistics from the return value of `*Store.query`.
 func scanRepoUsageStatisticsSlice(rows *sql.Rows, queryErr error) (_ []RepoUsageStatistics, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -42,7 +42,7 @@ func scanRepoUsageStatisticsSlice(rows *sql.Rows, queryErr error) (_ []RepoUsage
 // RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 // code intelligence activity within the last week grouped by repository. The resulting slice is ordered
 // by search then precise event counts.
-func (s *store) RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistics, error) {
+func (s *Store) RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistics, error) {
 	return scanRepoUsageStatisticsSlice(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			r.id,

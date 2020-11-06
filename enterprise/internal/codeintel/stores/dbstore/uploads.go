@@ -40,7 +40,7 @@ func (u Upload) RecordID() int {
 	return u.ID
 }
 
-// scanUploads scans a slice of uploads from the return value of `*store.query`.
+// scanUploads scans a slice of uploads from the return value of `*Store.query`.
 func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -87,7 +87,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 	return uploads, nil
 }
 
-// scanFirstUpload scans a slice of uploads from the return value of `*store.query` and returns the first.
+// scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
 	uploads, err := scanUploads(rows, err)
 	if err != nil || len(uploads) == 0 {
@@ -96,17 +96,17 @@ func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
 	return uploads[0], true, nil
 }
 
-// scanFirstUploadInterface scans a slice of uploads from the return value of `*store.query` and returns the first.
+// scanFirstUploadInterface scans a slice of uploads from the return value of `*Store.query` and returns the first.
 func scanFirstUploadInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
 	return scanFirstUpload(rows, err)
 }
 
-// scanFirstUploadRecord scans a slice of uploads from the return value of `*store.query` and returns the first.
+// scanFirstUploadRecord scans a slice of uploads from the return value of `*Store.query` and returns the first.
 func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstUpload(rows, err)
 }
 
-// scanCounts scans pairs of id/counts from the return value of `*store.query`.
+// scanCounts scans pairs of id/counts from the return value of `*Store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -128,7 +128,7 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 }
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
-func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error) {
+func (s *Store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error) {
 	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			u.id,
@@ -172,7 +172,7 @@ type GetUploadsOptions struct {
 }
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
-func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error) {
+func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
@@ -190,7 +190,7 @@ func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
-func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
+func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -284,13 +284,13 @@ func makeSearchCondition(term string) *sqlf.Query {
 }
 
 // QueueSize returns the number of uploads in the queued state.
-func (s *store) QueueSize(ctx context.Context) (int, error) {
+func (s *Store) QueueSize(ctx context.Context) (int, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name WHERE state = 'queued'`)))
 	return count, err
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
+func (s *Store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 	if upload.UploadedParts == nil {
 		upload.UploadedParts = []int{}
 	}
@@ -326,7 +326,7 @@ func (s *store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 
 // AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 // (the resulting array is deduplicated on update).
-func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
+func (s *Store) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s)))
@@ -335,12 +335,12 @@ func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) erro
 }
 
 // MarkQueued updates the state of the upload to queued and updates the upload size.
-func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) error {
+func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 
 // MarkComplete updates the state of the upload to complete.
-func (s *store) MarkComplete(ctx context.Context, id int) (err error) {
+func (s *Store) MarkComplete(ctx context.Context, id int) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'completed', finished_at = clock_timestamp()
@@ -349,7 +349,7 @@ func (s *store) MarkComplete(ctx context.Context, id int) (err error) {
 }
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
-func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (err error) {
+func (s *Store) MarkErrored(ctx context.Context, id int, failureMessage string) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
@@ -383,7 +383,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
 // This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
 // be returned along with a false valued flag. This method must not be called from within a transaction.
-func (s *store) Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error) {
+func (s *Store) Dequeue(ctx context.Context, maxSize int64) (Upload, *Store, bool, error) {
 	conditions := []*sqlf.Query{}
 	if maxSize != 0 {
 		conditions = append(conditions, sqlf.Sprintf("upload_size IS NULL OR upload_size <= %s", maxSize))
@@ -398,14 +398,14 @@ func (s *store) Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool
 }
 
 // Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
-func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
+func (s *Store) Requeue(ctx context.Context, id int, after time.Time) error {
 	return s.makeUploadWorkQueueStore().Requeue(ctx, id, after)
 }
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
 // was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
 // the background.
-func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
+func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
@@ -442,7 +442,7 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 // that were removed for that repository.
-func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
+func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are  completed or visible at tip.
 
@@ -464,7 +464,7 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 }
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
-func (s *store) HardDeleteUploadByID(ctx context.Context, ids ...int) error {
+func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -492,15 +492,15 @@ const UploadMaxNumResets = 3
 // In order to prevent input that continually crashes worker instances, uploads that have been reset more than
 // UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
 // identifiers.
-func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error) {
+func (s *Store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error) {
 	return s.makeUploadWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeUploadWorkQueueStore() dbworkerstore.Store {
+func (s *Store) makeUploadWorkQueueStore() dbworkerstore.Store {
 	return WorkerutilUploadStore(s)
 }
 
-func WorkerutilUploadStore(s Store) dbworkerstore.Store {
+func WorkerutilUploadStore(s basestore.ShareableStore) dbworkerstore.Store {
 	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:         "lsif_uploads",
 		ViewName:          "lsif_uploads_with_repository_name u",

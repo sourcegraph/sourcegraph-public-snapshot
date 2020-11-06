@@ -14,7 +14,7 @@ var tableNames = []string{
 	"lsif_data_references",
 }
 
-func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
+func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	if len(bundleIDs) == 0 {
 		return nil
 	}

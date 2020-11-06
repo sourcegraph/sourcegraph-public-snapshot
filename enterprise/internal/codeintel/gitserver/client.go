@@ -10,19 +10,25 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type Client struct{}
+type Client struct {
+	operations *operations
+}
 
-var DefaultClient = &Client{}
+func New(observationContext *observation.Context) *Client {
+	return &Client{
+		operations: makeOperations(observationContext),
+	}
+}
 
 // Head determines the tip commit of the default branch for the given repository.
-func (c *Client) Head(ctx context.Context, store store.Store, repositoryID int) (string, error) {
-	return execGitCommand(ctx, store, repositoryID, "rev-parse", "HEAD")
+func (c *Client) Head(ctx context.Context, dbStore DBStore, repositoryID int) (string, error) {
+	return execGitCommand(ctx, dbStore, repositoryID, "rev-parse", "HEAD")
 }
 
 type CommitGraphOptions struct {
@@ -33,7 +39,7 @@ type CommitGraphOptions struct {
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
-func (c *Client) CommitGraph(ctx context.Context, store store.Store, repositoryID int, options CommitGraphOptions) (map[string][]string, error) {
+func (c *Client) CommitGraph(ctx context.Context, dbStore DBStore, repositoryID int, options CommitGraphOptions) (map[string][]string, error) {
 	commands := []string{"log", "--all", "--pretty=%H %P"}
 	if options.Commit != "" {
 		commands = append(commands, options.Commit)
@@ -42,7 +48,7 @@ func (c *Client) CommitGraph(ctx context.Context, store store.Store, repositoryI
 		commands = append(commands, fmt.Sprintf("-%d", options.Limit))
 	}
 
-	out, err := execGitCommand(ctx, store, repositoryID, commands...)
+	out, err := execGitCommand(ctx, dbStore, repositoryID, commands...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +82,8 @@ func parseParents(pair []string) map[string][]string {
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.
-func (c *Client) RawContents(ctx context.Context, store store.Store, repositoryID int, commit, file string) ([]byte, error) {
-	out, err := execGitCommand(ctx, store, repositoryID, "show", fmt.Sprintf("%s:%s", commit, file))
+func (c *Client) RawContents(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) ([]byte, error) {
+	out, err := execGitCommand(ctx, dbStore, repositoryID, "show", fmt.Sprintf("%s:%s", commit, file))
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +94,8 @@ func (c *Client) RawContents(ctx context.Context, store store.Store, repositoryI
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
 // of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 // that key are the files nested under that directory.
-func (c *Client) DirectoryChildren(ctx context.Context, store store.Store, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
-	out, err := execGitCommand(ctx, store, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
+func (c *Client) DirectoryChildren(ctx context.Context, dbStore DBStore, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
+	out, err := execGitCommand(ctx, dbStore, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +165,8 @@ func parseDirectoryChildren(dirnames []string, paths []string) map[string][]stri
 }
 
 // FileExists determines whether a file exists in a particular commit of a repository.
-func (c *Client) FileExists(ctx context.Context, store store.Store, repositoryID int, commit, file string) (bool, error) {
-	repo, err := repositoryIDToRepo(ctx, store, repositoryID)
+func (c *Client) FileExists(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) (bool, error) {
+	repo, err := repositoryIDToRepo(ctx, dbStore, repositoryID)
 	if err != nil {
 		return false, err
 	}
@@ -182,8 +188,8 @@ func (c *Client) FileExists(ctx context.Context, store store.Store, repositoryID
 
 // ListFiles returns a list of root-relative file paths matching the given pattern in a particular
 // commit of a repository.
-func (c *Client) ListFiles(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
-	out, err := execGitCommand(ctx, store, repositoryID, "ls-tree", "--name-only", "-r", commit, "--")
+func (c *Client) ListFiles(ctx context.Context, dbStore DBStore, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	out, err := execGitCommand(ctx, dbStore, repositoryID, "ls-tree", "--name-only", "-r", commit, "--")
 	if err != nil {
 		return nil, err
 	}
@@ -199,8 +205,8 @@ func (c *Client) ListFiles(ctx context.Context, store store.Store, repositoryID 
 }
 
 // execGitCommand executes a git command for the given repository by identifier.
-func execGitCommand(ctx context.Context, store store.Store, repositoryID int, args ...string) (string, error) {
-	repo, err := repositoryIDToRepo(ctx, store, repositoryID)
+func execGitCommand(ctx context.Context, dbStore DBStore, repositoryID int, args ...string) (string, error) {
+	repo, err := repositoryIDToRepo(ctx, dbStore, repositoryID)
 	if err != nil {
 		return "", err
 	}
@@ -212,8 +218,8 @@ func execGitCommand(ctx context.Context, store store.Store, repositoryID int, ar
 }
 
 // repositoryIDToRepo creates a gitserver.Repo from a repository identifier.
-func repositoryIDToRepo(ctx context.Context, store store.Store, repositoryID int) (gitserver.Repo, error) {
-	repoName, err := store.RepoName(ctx, repositoryID)
+func repositoryIDToRepo(ctx context.Context, dbStore DBStore, repositoryID int) (gitserver.Repo, error) {
+	repoName, err := dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
 		return gitserver.Repo{}, errors.Wrap(err, "store.RepoName")
 	}

@@ -10,7 +10,7 @@ import (
 
 var ErrNoMetadata = errors.New("no rows in meta table")
 
-func (s *store) ReadMeta(ctx context.Context, bundleID int) (MetaData, error) {
+func (s *Store) ReadMeta(ctx context.Context, bundleID int) (MetaData, error) {
 	numResultChunks, ok, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
@@ -28,7 +28,7 @@ func (s *store) ReadMeta(ctx context.Context, bundleID int) (MetaData, error) {
 	return MetaData{NumResultChunks: numResultChunks}, nil
 }
 
-func (s *store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string) ([]string, error) {
+func (s *Store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string) ([]string, error) {
 	paths, err := basestore.ScanStrings(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
@@ -44,7 +44,7 @@ func (s *store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string
 	return paths, nil
 }
 
-func (s *store) ReadDocument(ctx context.Context, bundleID int, path string) (DocumentData, bool, error) {
+func (s *Store) ReadDocument(ctx context.Context, bundleID int, path string) (DocumentData, bool, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
@@ -65,7 +65,7 @@ func (s *store) ReadDocument(ctx context.Context, bundleID int, path string) (Do
 	return documentData, true, nil
 }
 
-func (s *store) ReadResultChunk(ctx context.Context, bundleID int, id int) (ResultChunkData, bool, error) {
+func (s *Store) ReadResultChunk(ctx context.Context, bundleID int, id int) (ResultChunkData, bool, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
@@ -86,15 +86,15 @@ func (s *store) ReadResultChunk(ctx context.Context, bundleID int, id int) (Resu
 	return resultChunkData, true, nil
 }
 
-func (s *store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
+func (s *Store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
 	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_definitions", scheme, identifier, skip, take)
 }
 
-func (s *store) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
+func (s *Store) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
 	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_references", scheme, identifier, skip, take)
 }
 
-func (s *store) readDefinitionReferences(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
+func (s *Store) readDefinitionReferences(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]LocationData, int, error) {
 	data, ok, err := basestore.ScanFirstString(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(

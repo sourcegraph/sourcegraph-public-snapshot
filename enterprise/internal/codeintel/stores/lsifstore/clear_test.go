@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestClear(t *testing.T) {
@@ -16,7 +17,7 @@ func TestClear(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	for i := 0; i < 5; i++ {
 		query := sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, 0)", i+1)

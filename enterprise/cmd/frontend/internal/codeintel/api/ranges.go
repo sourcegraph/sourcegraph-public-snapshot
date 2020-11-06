@@ -17,8 +17,8 @@ type ResolvedCodeIntelligenceRange struct {
 }
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
-func (api *codeIntelAPI) Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) ([]ResolvedCodeIntelligenceRange, error) {
-	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
+func (api *CodeIntelAPI) Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) ([]ResolvedCodeIntelligenceRange, error) {
+	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.GetDumpByID")
 	}

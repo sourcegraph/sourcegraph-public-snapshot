@@ -39,7 +39,7 @@ func (i Index) RecordID() int {
 	return i.ID
 }
 
-// scanIndexes scans a slice of indexes from the return value of `*store.query`.
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
 func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -78,7 +78,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 	return indexes, nil
 }
 
-// scanFirstIndex scans a slice of indexes from the return value of `*store.query` and returns the first.
+// scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
 	indexes, err := scanIndexes(rows, err)
 	if err != nil || len(indexes) == 0 {
@@ -87,12 +87,12 @@ func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
 	return indexes[0], true, nil
 }
 
-// scanFirstIndexInterface scans a slice of indexes from the return value of `*store.query` and returns the first.
+// scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
 func scanFirstIndexInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
 	return scanFirstIndex(rows, err)
 }
 
-// scanFirstIndexInterface scans a slice of indexes from the return value of `*store.query` and returns the first.
+// scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
 func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstIndex(rows, err)
 }
@@ -100,7 +100,7 @@ func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, e
 var ScanFirstIndexRecord = scanFirstIndexRecord
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
+func (s *Store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			u.id,
@@ -141,7 +141,7 @@ type GetIndexesOptions struct {
 }
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
+func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -229,7 +229,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 }
 
 // IndexQueueSize returns the number of indexes in the queued state.
-func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
+func (s *Store) IndexQueueSize(ctx context.Context) (int, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name WHERE state = 'queued'`),
@@ -239,7 +239,7 @@ func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
 }
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.
-func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) WHERE EXISTS (
 			SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
@@ -252,7 +252,7 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 }
 
 // InsertIndex inserts a new index and returns its identifier.
-func (s *store) InsertIndex(ctx context.Context, index Index) (int, error) {
+func (s *Store) InsertIndex(ctx context.Context, index Index) (int, error) {
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
@@ -283,7 +283,7 @@ func (s *store) InsertIndex(ctx context.Context, index Index) (int, error) {
 }
 
 // MarkIndexComplete updates the state of the index to complete.
-func (s *store) MarkIndexComplete(ctx context.Context, id int) (err error) {
+func (s *Store) MarkIndexComplete(ctx context.Context, id int) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'completed', finished_at = clock_timestamp()
@@ -292,7 +292,7 @@ func (s *store) MarkIndexComplete(ctx context.Context, id int) (err error) {
 }
 
 // MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
-func (s *store) MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error) {
+func (s *Store) MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
@@ -324,7 +324,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 var IndexColumnsWithNullRank = indexColumnsWithNullRank
 
 // SetIndexLogContents updates the log contents fo the index.
-func (s *store) SetIndexLogContents(ctx context.Context, indexID int, contents string) error {
+func (s *Store) SetIndexLogContents(ctx context.Context, indexID int, contents string) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET log_contents = %s
@@ -336,7 +336,7 @@ func (s *store) SetIndexLogContents(ctx context.Context, indexID int, contents s
 // the index is returned along with a store instance which wraps the transaction. This transaction must be
 // closed. If there is no such unlocked index, a zero-value index and nil store will be returned along with
 // a false valued flag. This method must not be called from within a transaction.
-func (s *store) DequeueIndex(ctx context.Context) (Index, Store, bool, error) {
+func (s *Store) DequeueIndex(ctx context.Context) (Index, *Store, bool, error) {
 	index, tx, ok, err := s.makeIndexWorkQueueStore().Dequeue(ctx, nil)
 	if err != nil || !ok {
 		return Index{}, nil, false, err
@@ -346,12 +346,12 @@ func (s *store) DequeueIndex(ctx context.Context) (Index, Store, bool, error) {
 }
 
 // RequeueIndex updates the state of the index to queued and adds a processing delay before the next dequeue attempt.
-func (s *store) RequeueIndex(ctx context.Context, id int, after time.Time) error {
+func (s *Store) RequeueIndex(ctx context.Context, id int, after time.Time) error {
 	return s.makeIndexWorkQueueStore().Requeue(ctx, id, after)
 }
 
 // DeleteIndexByID deletes an index by its identifier.
-func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
+func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
@@ -372,7 +372,7 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 // DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
-func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
+func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
@@ -406,15 +406,15 @@ const IndexMaxNumResets = 3
 // queued state. In order to prevent input that continually crashes indexer instances, indexes that have
 // been reset more than IndexMaxNumResets times will be marked as errored. This method returns a list of
 // updated and errored index identifiers.
-func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, []int, error) {
+func (s *Store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, []int, error) {
 	return s.makeIndexWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeIndexWorkQueueStore() dbworkerstore.Store {
+func (s *Store) makeIndexWorkQueueStore() dbworkerstore.Store {
 	return WorkerutilIndexStore(s)
 }
 
-func WorkerutilIndexStore(s Store) dbworkerstore.Store {
+func WorkerutilIndexStore(s basestore.ShareableStore) dbworkerstore.Store {
 	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",

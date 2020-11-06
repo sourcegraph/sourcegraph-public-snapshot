@@ -25,14 +25,14 @@ import (
 )
 
 type UploadHandler struct {
-	store       store.Store
+	dbStore     DBStore
 	uploadStore uploadstore.Store
 	internal    bool
 }
 
-func NewUploadHandler(store store.Store, uploadStore uploadstore.Store, internal bool) http.Handler {
+func NewUploadHandler(dbStore DBStore, uploadStore uploadstore.Store, internal bool) http.Handler {
 	handler := &UploadHandler{
-		store:       store,
+		dbStore:     dbStore,
 		uploadStore: uploadStore,
 		internal:    internal,
 	}
@@ -153,7 +153,7 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 		return nil, clientError("no uploadId supplied")
 	}
 
-	upload, exists, err := h.store.GetUploadByID(ctx, getQueryInt(r, "uploadId"))
+	upload, exists, err := h.dbStore.GetUploadByID(ctx, getQueryInt(r, "uploadId"))
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 	}
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.dbStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
 	ctx := r.Context()
 
-	id, err := h.store.InsertUpload(ctx, store.Upload{
+	id, err := h.dbStore.InsertUpload(ctx, store.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
@@ -285,7 +285,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (_ interface{}, err error) {
 	ctx := r.Context()
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.dbStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 		return nil, clientError("upload is missing %d parts", upload.NumParts-len(upload.UploadedParts))
 	}
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.dbStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}

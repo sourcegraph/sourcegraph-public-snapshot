@@ -10,8 +10,8 @@ import (
 )
 
 // Hover returns the hover text and range for the symbol at the given position.
-func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error) {
-	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
+func (api *CodeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error) {
+	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return "", lsifstore.Range{}, false, errors.Wrap(err, "store.GetDumpByID")
 	}

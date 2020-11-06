@@ -18,8 +18,8 @@ const DefintionMonikersLimit = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 // This may include remote definitions if the remote repository is also indexed.
-func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
-	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
+func (api *CodeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
+	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.GetDumpByID")
 	}
@@ -31,7 +31,7 @@ func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, cha
 	return api.definitionsRaw(ctx, dump, pathInBundle, line, character)
 }
 
-func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
+func (api *CodeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
 	locations, err := api.lsifStore.Definitions(ctx, dump.ID, pathInBundle, line, character)
 	if err != nil {
 		if err == lsifstore.ErrNotFound {
@@ -56,7 +56,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
 			if moniker.Kind == "import" {
-				locations, _, err := lookupMoniker(api.store, api.lsifStore, dump.ID, pathInBundle, "definitions", moniker, 0, DefintionMonikersLimit)
+				locations, _, err := lookupMoniker(api.dbStore, api.lsifStore, dump.ID, pathInBundle, "definitions", moniker, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, err
 				}
@@ -86,7 +86,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 	return nil, nil
 }
 
-func (api *codeIntelAPI) definitionRaw(ctx context.Context, dump store.Dump, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
+func (api *CodeIntelAPI) definitionRaw(ctx context.Context, dump store.Dump, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
 	resolved, err := api.definitionsRaw(ctx, dump, pathInBundle, line, character)
 	if err != nil || len(resolved) == 0 {
 		return ResolvedLocation{}, false, errors.Wrap(err, "api.definitionsRaw")
