@@ -200,7 +200,7 @@ func (*userCredentials) List(ctx context.Context, opts UserCredentialsListOpts) 
 	}
 	defer rows.Close()
 
-	creds := []*UserCredential{}
+	var creds []*UserCredential
 	for rows.Next() {
 		cred := UserCredential{}
 		if err := scanUserCredential(&cred, rows); err != nil {
