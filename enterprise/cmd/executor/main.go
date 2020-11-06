@@ -65,7 +65,7 @@ func makeWorkerMetrics() workerutil.WorkerMetrics {
 
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"index_queue_processor",
+		"executor_queue_processor",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of records processed"),
 	)
