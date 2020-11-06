@@ -30,5 +30,7 @@ pushd client/web || exit
 yarn run test:regression:core
 yarn run test:regression:integrations
 popd || exit
-PID=$(pgrep ffmpeg)
-kill "$PID"
+
+# ==========================
+
+test/cleanup-display.sh

@@ -5,8 +5,7 @@ set -x
 
 # shellcheck disable=SC1091
 source /root/.profile
-bash test/setup-deps.sh
-bash test/setup-display.sh
+test/setup-deps.sh
 
 # ==========================
 
@@ -18,9 +17,6 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-asdf install
-yarn
-yarn generate
 pushd enterprise || exit
 ./cmd/server/pre-build.sh
 ./cmd/server/build.sh
@@ -45,3 +41,5 @@ go build
 sleep 10
 ./precise-code-intel-tester query
 popd || exit
+
+# ==========================

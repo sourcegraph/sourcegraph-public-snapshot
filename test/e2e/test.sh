@@ -5,8 +5,8 @@ set -x
 
 # shellcheck disable=SC1091
 source /root/.profile
-bash test/setup-deps.sh
-bash test/setup-display.sh
+test/setup-deps.sh
+test/setup-display.sh
 
 # ==========================
 
@@ -19,3 +19,7 @@ pushd enterprise || exit
 popd || exit
 ./dev/ci/e2e.sh
 docker image rm -f "${IMAGE}"
+
+# ==========================
+
+test/cleanup-display.sh

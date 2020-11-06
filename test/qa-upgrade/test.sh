@@ -5,8 +5,8 @@ set -x
 
 # shellcheck disable=SC1091
 source /root/.profile
-bash test/setup-deps.sh
-bash test/setup-display.sh
+test/setup-deps.sh
+test/setup-display.sh
 
 # ==========================
 
@@ -33,8 +33,12 @@ sleep 15
 # Run tests
 echo "TEST: Running regression tests"
 pushd client/web || exit
-SOURCEGRAPH_BASE_URL=http://localhost:7080 yarn run test:regression:core
+yarn run test:regression:core
 popd || exit
 echo "TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:3370
 curl -f http://localhost:3370/healthz
+
+# ==========================
+
+test/cleanup-display.sh
