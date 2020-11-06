@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"regexp"
 	"sort"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -168,68 +170,25 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
-	appendCommonQueryArgs := func(args *[]string) {
-		if opt.Query.Pattern != "" {
-			var queryArg string
-			if opt.MatchChangedOccurrenceCount {
-				queryArg = "-S"
-			} else {
-				queryArg = "-G"
-			}
-			*args = append(*args, queryArg+opt.Query.Pattern)
-			if !opt.Query.IsCaseSensitive {
-				*args = append(*args, "--regexp-ignore-case")
-			}
-			if opt.Query.IsRegExp {
-				*args = append(*args, "--pickaxe-regex")
-			}
-		}
-		if opt.Paths.IsRegExp {
-			*args = append(*args, "--extended-regexp")
-		}
+	// We do a search with git log returning just the commits (and source sha).
+	onelineCommits, complete, err := rawLogSearch(ctx, repo, opt)
+	if err != nil {
+		return nil, complete, err
 	}
 
+	// We then search each commit to further filter the results.
+	results, showComplete, err := rawShowSearch(ctx, repo, opt, onelineCommits)
+	complete = complete && showComplete
+	return results, complete, err
+}
+
+// rawLogSearch runs git log to find matching commits. complete is true if we
+// parsed all the output from git without encountering a timeout.
+func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (_ []*onelineCommit, complete bool, _ error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
 		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", args)
-	}
-
-	appendCommonDashDashArgs := func(args *[]string) {
-		// If we have exclude paths, we need to effectively unset the --max-count because we can't
-		// filter out changes that match the exclude path (because there's no way to use full
-		// regexps in git pathspecs).
-		//
-		// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where this is
-		// necessary; see https://git-scm.com/docs/gitglossary.html#def_pathspec.
-		var addMaxCount500 bool
-		if opt.Paths.ExcludePattern != "" {
-			addMaxCount500 = true
-		}
-
-		// Args we append after this don't need to be checked for allowlisting because "--"
-		// precedes them.
-		var pathspecs []string
-		for _, p := range opt.Paths.IncludePatterns {
-			// Roughly try to convert IncludePatterns (regexps) to git pathspecs (globs).
-			glob, equiv := regexpToGlobBestEffort(p)
-			if !opt.Paths.IsCaseSensitive && glob != "" {
-				// This relies on regexpToGlobBestEffort not returning `:`-prefixed globs.
-				glob = ":(icase)" + glob
-			}
-			if !equiv {
-				addMaxCount500 = true
-			}
-			if glob != "" {
-				pathspecs = append(pathspecs, glob)
-			}
-		}
-
-		if addMaxCount500 {
-			*args = append(*args, "--max-count=500") // TODO(sqs): 500 is arbitrary high number
-		}
-		*args = append(*args, "--")
-		*args = append(*args, pathspecs...)
 	}
 
 	// We need to get `git log --source` (the ref by which we reached each commit), but
@@ -247,44 +206,57 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		"--no-patch",
 		"--no-merges",
 	)
-	appendCommonQueryArgs(&onelineArgs)
-	appendCommonDashDashArgs(&onelineArgs)
+	onelineArgs = append(onelineArgs, logDiffCommonArgs(opt)...)
 
 	// Time out the first `git log` operation prior to the parent context timeout, so we still have time to `git
 	// show` the results it returns. These proportions are untuned guesses.
 	//
 	// TODO(sqs): this can be made much more efficient in many ways
-	withTimeout := func(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-		if deadline.IsZero() {
-			return ctx, func() {}
-		}
-		return context.WithTimeout(ctx, timeout)
-	}
+
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
 	onelineCmd.Repo = repo
-	logTimeout := time.Until(deadline) / 2
-	tr.LazyPrintf("git log %v with timeout %s", onelineCmd.Args, logTimeout)
-	ctxLog, cancel := withTimeout(ctx, logTimeout)
-	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
-	tr.LazyPrintf("git log done: data %d bytes, complete=%v, err=%v", len(data), complete, err)
-	cancel()
+	ctxLog, cancel := withDeadlinePercentage(ctx, 0.5)
+	defer cancel()
+	onelineReader, err := gitserver.StdoutReader(ctxLog, onelineCmd)
 	if err != nil {
-		// Don't fail if the repository is empty.
-		if strings.Contains(err.Error(), "does not have any commits yet") {
-			return nil, true, nil
+		if errors.Is(err, context.DeadlineExceeded) {
+			// the gitserver call exceeded our deadline before the command
+			// produced any output.
+			return nil, false, nil
 		}
+		return nil, false, err
+	}
 
-		return nil, complete, err
-	}
-	onelineCommits, err := parseCommitsFromOnelineLog(data)
-	if err != nil {
-		if !complete {
-			// Tolerate parse errors when we received incomplete data.
-		} else {
-			return nil, complete, err
+	scan := logOnelineScanner(onelineReader)
+	var onelineCommits []*onelineCommit
+	for {
+		var commit *onelineCommit
+		commit, err = scan()
+		if err != nil {
+			break
 		}
+		onelineCommits = append(onelineCommits, commit)
 	}
+
+	if err == io.EOF {
+		return onelineCommits, true, nil
+	} else if errors.Is(err, context.DeadlineExceeded) {
+		return onelineCommits, false, nil
+	} else if strings.Contains(err.Error(), "does not have any commits yet") {
+		// Don't fail if the repository is empty.
+		return nil, true, nil
+	}
+	return nil, false, err
+}
+
+// rawShowSearch runs git show on each commit in onelineCommits. We need to do
+// this to further filter hunks.
+func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
+	if len(onelineCommits) == 0 {
+		return nil, true, nil
+	}
+
 	// Build a map of commit -> source ref.
 	commitSourceRefs := make(map[string]string, len(onelineCommits))
 	for _, c := range onelineCommits {
@@ -331,24 +303,18 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	if hasPathFilters {
 		showArgs = append(showArgs, "--patch")
 	}
-	appendCommonQueryArgs(&showArgs)
-	appendCommonDashDashArgs(&showArgs)
+	showArgs = append(showArgs, logDiffCommonArgs(opt)...)
 	if !isAllowedGitCmd(showArgs) {
 		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", showArgs)
 	}
 	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
 	showCmd.Repo = repo
-	var complete2 bool
-	showTimeout := time.Duration(float64(time.Until(deadline)) * 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
-	tr.LazyPrintf("git show %v with timeout %s", showCmd.Args, showTimeout)
-	ctxShow, cancel := withTimeout(ctx, showTimeout)
-	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
-	tr.LazyPrintf("git show done: data %d bytes, complete=%v, err=%v", len(data), complete2, err)
+	ctxShow, cancel := withDeadlinePercentage(ctx, 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
+	data, complete, err := readUntilTimeout(ctxShow, showCmd)
 	cancel()
 	if err != nil {
 		return nil, complete, err
 	}
-	complete = complete && complete2
 	var cache refResolveCache
 	for len(data) > 0 {
 		var commit *Commit
@@ -435,6 +401,65 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	return results, complete, nil
 }
 
+func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
+	var args []string
+	if opt.Query.Pattern != "" {
+		var queryArg string
+		if opt.MatchChangedOccurrenceCount {
+			queryArg = "-S"
+		} else {
+			queryArg = "-G"
+		}
+		args = append(args, queryArg+opt.Query.Pattern)
+		if !opt.Query.IsCaseSensitive {
+			args = append(args, "--regexp-ignore-case")
+		}
+		if opt.Query.IsRegExp {
+			args = append(args, "--pickaxe-regex")
+		}
+	}
+	if opt.Paths.IsRegExp {
+		args = append(args, "--extended-regexp")
+	}
+
+	// If we have exclude paths, we need to effectively unset the --max-count because we can't
+	// filter out changes that match the exclude path (because there's no way to use full
+	// regexps in git pathspecs).
+	//
+	// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where this is
+	// necessary; see https://git-scm.com/docs/gitglossary.html#def_pathspec.
+	var addMaxCount500 bool
+	if opt.Paths.ExcludePattern != "" {
+		addMaxCount500 = true
+	}
+
+	// Args we append after this don't need to be checked for allowlisting because "--"
+	// precedes them.
+	var pathspecs []string
+	for _, p := range opt.Paths.IncludePatterns {
+		// Roughly try to convert IncludePatterns (regexps) to git pathspecs (globs).
+		glob, equiv := regexpToGlobBestEffort(p)
+		if !opt.Paths.IsCaseSensitive && glob != "" {
+			// This relies on regexpToGlobBestEffort not returning `:`-prefixed globs.
+			glob = ":(icase)" + glob
+		}
+		if !equiv {
+			addMaxCount500 = true
+		}
+		if glob != "" {
+			pathspecs = append(pathspecs, glob)
+		}
+	}
+
+	if addMaxCount500 {
+		args = append(args, "--max-count=500") // TODO(sqs): 500 is arbitrary high number
+	}
+	args = append(args, "--")
+	args = append(args, pathspecs...)
+
+	return args
+}
+
 // cachedRefResolver is a short-lived cache for ref resolutions. Only use it for the lifetime of a
 // single request and for a single repo.
 type refResolveCache struct {
@@ -491,4 +516,17 @@ func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []strin
 		filtered = append(filtered, ref)
 	}
 	return filtered, nil
+}
+
+// withDeadlinePercentage returns a context which expires once p of the
+// remaining time has passed. p decimal fraction in [0,1]. For example to
+// expire in half the remaining time set p to 0.5. To expire in 80% of the
+// remaining time, set p to 0.8.
+func withDeadlinePercentage(ctx context.Context, p float64) (context.Context, context.CancelFunc) {
+	if deadline, ok := ctx.Deadline(); ok {
+		now := time.Now()
+		d := time.Duration(float64(deadline.Sub(now)) * p)
+		return context.WithDeadline(ctx, now.Add(d))
+	}
+	return context.WithCancel(ctx)
 }

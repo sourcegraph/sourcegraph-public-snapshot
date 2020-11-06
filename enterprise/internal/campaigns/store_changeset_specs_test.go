@@ -13,9 +13,8 @@ import (
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
-	repo, _ := testRepo(t, rs, extsvc.KindGitHub)
-	dr, _ := testRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := dr.With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(t, rs, extsvc.KindGitHub)
+	deletedRepo := testRepo(t, rs, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
 	if err := rs.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)

@@ -171,15 +171,6 @@ func TestChangesetConnectionResolver(t *testing.T) {
 			}
 
 			wantChangesets := apitest.ChangesetConnection{
-				Stats: apitest.ChangesetConnectionStats{
-					Unpublished: 1,
-					Draft:       0,
-					Open:        tc.wantOpen,
-					Merged:      1,
-					Closed:      0,
-					Deleted:     0,
-					Total:       tc.wantTotalCount,
-				},
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					EndCursor:   wantEndCursor,
@@ -231,7 +222,6 @@ query($campaign: ID!, $first: Int, $after: String, $reviewState: ChangesetReview
     ... on Campaign {
       changesets(first: $first, after: $after, reviewState: $reviewState) {
         totalCount
-        stats { unpublished, draft, open, merged, closed, deleted, total }
         nodes {
           __typename
 

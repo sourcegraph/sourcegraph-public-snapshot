@@ -701,6 +701,33 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
+    Create a new credential for the requesting user for the given code host.
+    If another token for that code host already exists, an error with the error code
+    ErrDuplicateToken is returned.
+    """
+    createCampaignsCredential(
+        """
+        The kind of external service being configured.
+        """
+        externalServiceKind: ExternalServiceKind!
+
+        """
+        The URL of the external service being configured.
+        """
+        externalServiceURL: String!
+
+        """
+        The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
+        """
+        credential: String!
+    ): CampaignsCredential!
+
+    """
+    Hard-deletes a given campaigns credential.
+    """
+    deleteCampaignsCredential(campaignsCredential: ID!): EmptyResponse!
+
+    """
     OBSERVABILITY
 
     Set the status of a test alert of the specified parameters - useful for validating
@@ -712,6 +739,72 @@ type Mutation {
         """
         level: String!
     ): EmptyResponse!
+}
+
+"""
+A connection of all code hosts usable with campaigns and accessible by the user
+this is requested on.
+"""
+type CampaignsCodeHostConnection {
+    """
+    A list of code hosts.
+    """
+    nodes: [CampaignsCodeHost!]!
+
+    """
+    The total number of configured external services in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code host usable with campaigns. This service is accessible by the user it belongs to.
+"""
+type CampaignsCodeHost {
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The configured credential, if any.
+    """
+    credential: CampaignsCredential
+}
+
+"""
+A user token configured for campaigns use on the specified code host.
+"""
+type CampaignsCredential implements Node {
+    """
+    A globally unique identifier.
+    """
+    id: ID!
+
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The date and time this token has been created at.
+    """
+    createdAt: DateTime!
 }
 
 """
@@ -1154,6 +1247,11 @@ type Campaign implements Node {
     The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
     """
     closedAt: DateTime
+
+    """
+    Stats on all the changesets that are tracked in this campaign.
+    """
+    changesetsStats: ChangesetsStats!
 
     """
     The changesets in this campaign that already exist on the code host.
@@ -1631,7 +1729,7 @@ type ExternalChangeset implements Node & Changeset {
 """
 Used in the campaign page for the overview component.
 """
-type ChangesetConnectionStats {
+type ChangesetsStats {
     """
     The count of unpublished changesets.
     """
@@ -1657,7 +1755,7 @@ type ChangesetConnectionStats {
     """
     deleted: Int!
     """
-    The count of all changesets. Equal to totalCount of the connection.
+    The count of all changesets.
     """
     total: Int!
 }
@@ -1680,11 +1778,6 @@ type ChangesetConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-
-    """
-    Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
-    """
-    stats: ChangesetConnectionStats!
 }
 
 """
@@ -5843,6 +5936,22 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    Returns a connection of configured external services accessible by this user, for usage with campaigns.
+    These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
+    connected to CampaignCredential resources, if one has been created for the code host connection before.
+    """
+    campaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): CampaignsCodeHostConnection!
 
     """
     A list of monitors owned by the user or her organization.

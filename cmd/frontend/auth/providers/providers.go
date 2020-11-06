@@ -75,9 +75,6 @@ type Info struct {
 	DisplayName string
 
 	// AuthenticationURL is the URL to visit in order to initiate authenticating via this provider.
-	//
-	// TODO(sqs): Support "return-to" post-authentication-redirect destinations so newly authed
-	// users aren't dumped back onto the homepage.
 	AuthenticationURL string
 }
 

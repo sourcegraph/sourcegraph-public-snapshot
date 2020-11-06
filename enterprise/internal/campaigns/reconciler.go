@@ -27,13 +27,21 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-// reconciler processes changesets and reconciles their current state — in
+// ReconcilerMaxNumRetries is the maximum number of attempts the reconciler
+// makes to process a changeset when it fails.
+const ReconcilerMaxNumRetries = 60
+
+// ReconcilerMaxNumResets is the maximum number of attempts the reconciler
+// makes to process a changeset when it stalls (process crashes, etc.).
+const ReconcilerMaxNumResets = 60
+
+// Reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
-type reconciler struct {
-	gitserverClient GitserverClient
-	sourcer         repos.Sourcer
-	store           *Store
+type Reconciler struct {
+	GitserverClient GitserverClient
+	Sourcer         repos.Sourcer
+	Store           *Store
 
 	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
@@ -42,9 +50,9 @@ type reconciler struct {
 
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
-func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
+func (r *Reconciler) HandlerFunc() dbworker.HandlerFunc {
 	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
-		return r.process(ctx, r.store.With(tx), record.(*campaigns.Changeset))
+		return r.process(ctx, r.Store.With(tx), record.(*campaigns.Changeset))
 	}
 }
 
@@ -62,7 +70,7 @@ func (r *reconciler) HandlerFunc() dbworker.HandlerFunc {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
+func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
 	// Reset the error message.
 	ch.FailureMessage = nil
 
@@ -79,8 +87,8 @@ func (r *reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.ops)
 
 	e := &executor{
-		sourcer:           r.sourcer,
-		gitserverClient:   r.gitserverClient,
+		sourcer:           r.Sourcer,
+		gitserverClient:   r.GitserverClient,
 		noSleepBeforeSync: r.noSleepBeforeSync,
 
 		tx: tx,
@@ -318,7 +326,7 @@ func (e *executor) importChangeset(ctx context.Context) (bool, error) {
 		msg := err.Error()
 		e.ch.FailureMessage = &msg
 		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
-		e.ch.NumFailures = reconcilerMaxNumRetries + 999
+		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
 		return true, nil
 	}
 
@@ -699,7 +707,7 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
 
-func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, error) {
+func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {
 	rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{id}})
 	if err != nil {
 		return nil, err
@@ -710,39 +718,37 @@ func loadRepo(ctx context.Context, tx repos.Store, id api.RepoID) (*repos.Repo, 
 	return rs[0], nil
 }
 
-func loadExternalService(ctx context.Context, reposStore repos.Store, repo *repos.Repo) (*repos.ExternalService, error) {
+func loadExternalService(ctx context.Context, reposStore RepoStore, repo *repos.Repo) (*repos.ExternalService, error) {
 	var externalService *repos.ExternalService
-	{
-		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
+	args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
 
-		es, err := reposStore.ListExternalServices(ctx, args)
+	es, err := reposStore.ListExternalServices(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range es {
+		cfg, err := e.Configuration()
 		if err != nil {
 			return nil, err
 		}
 
-		for _, e := range es {
-			cfg, err := e.Configuration()
-			if err != nil {
-				return nil, err
+		switch cfg := cfg.(type) {
+		case *schema.GitHubConnection:
+			if cfg.Token != "" {
+				externalService = e
 			}
-
-			switch cfg := cfg.(type) {
-			case *schema.GitHubConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
-			case *schema.BitbucketServerConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
-			case *schema.GitLabConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
+		case *schema.BitbucketServerConnection:
+			if cfg.Token != "" {
+				externalService = e
 			}
-			if externalService != nil {
-				break
+		case *schema.GitLabConnection:
+			if cfg.Token != "" {
+				externalService = e
 			}
+		}
+		if externalService != nil {
+			break
 		}
 	}
 
