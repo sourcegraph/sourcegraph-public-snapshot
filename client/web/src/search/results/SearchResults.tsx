@@ -11,6 +11,7 @@ import {
     CaseSensitivityProps,
     parseSearchURL,
     resolveVersionContext,
+    SearchStreamingProps,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
@@ -49,7 +50,8 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        VersionContextProps {
+        VersionContextProps,
+        SearchStreamingProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
