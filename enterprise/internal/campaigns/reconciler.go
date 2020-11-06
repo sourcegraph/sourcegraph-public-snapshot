@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -98,12 +99,33 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		delta: plan.delta,
 	}
 
-	return e.ExecutePlan(ctx, plan)
+	err = e.ExecutePlan(ctx, plan)
+	if errcode.IsTerminal(err) {
+		// We don't want to retry on terminal error so we don't return an error
+		// from this function and set the NumFailures so high that the changeset is
+		// not dequeued up again.
+		msg := err.Error()
+		e.ch.FailureMessage = &msg
+		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
+		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
+		return tx.UpdateChangeset(ctx, ch)
+	}
+
+	return err
 }
 
-// ErrPublishSameBranch is returned by publish changeset if a changeset with the same external branch
-// already exists in the database and is owned by another campaign.
-var ErrPublishSameBranch = errors.New("cannot create changeset on the same branch in multiple campaigns")
+// ErrPublishSameBranch is returned by publish changeset if a changeset with
+// the same external branch already exists in the database and is owned by
+// another campaign.
+// It is a terminal error that won't be fixed by retrying to publish the
+// changeset with the same spec.
+type ErrPublishSameBranch struct{}
+
+func (e ErrPublishSameBranch) Error() string {
+	return "cannot create changeset on the same branch in multiple campaigns"
+}
+
+func (e ErrPublishSameBranch) Terminal() bool { return true }
 
 type executor struct {
 	gitserverClient   GitserverClient
@@ -151,11 +173,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 			err = e.syncChangeset(ctx)
 
 		case operationImport:
-			var notFound bool
-			notFound, err = e.importChangeset(ctx)
-			if notFound {
-				upsertChangesetEvents = false
-			}
+			err = e.importChangeset(ctx)
 
 		case operationPush:
 			err = e.pushChangesetPatch(ctx)
@@ -232,7 +250,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	}
 
 	if existingSameBranch != nil && existingSameBranch.ID != e.ch.ID {
-		return ErrPublishSameBranch
+		return ErrPublishSameBranch{}
 	}
 
 	// Create a commit and push it
@@ -313,26 +331,14 @@ func (e *executor) syncChangeset(ctx context.Context) error {
 	return nil
 }
 
-func (e *executor) importChangeset(ctx context.Context) (bool, error) {
+func (e *executor) importChangeset(ctx context.Context) error {
 	if err := e.loadChangeset(ctx); err != nil {
-		_, ok := err.(repos.ChangesetNotFoundError)
-		if !ok {
-			return false, err
-		}
-
-		// If we're importing and it can't be found, we want to mark the
-		// changeset as "dead" and never retry:
-
-		msg := err.Error()
-		e.ch.FailureMessage = &msg
-		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
-		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
-		return true, nil
+		return err
 	}
 
 	e.ch.Unsynced = false
 
-	return false, nil
+	return nil
 }
 
 func (e *executor) loadChangeset(ctx context.Context) error {
