@@ -34,11 +34,6 @@ var once sync.Once
 
 func initServices(ctx context.Context) error {
 	once.Do(func() {
-		if config.BundleManagerURL == "" {
-			services.err = fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
-			return
-		}
-
 		if err := config.UploadStoreConfig.Validate(); err != nil {
 			services.err = fmt.Errorf("failed to load config: %s", err)
 			return
