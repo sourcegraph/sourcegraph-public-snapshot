@@ -3,10 +3,13 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // IndexableRepository marks a repository for eligibility to be indexed automatically.
@@ -65,7 +68,16 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 }
 
 // IndexableRepositories returns the metadata of all indexable repositories.
-func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error) {
+func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) (_ []IndexableRepository, err error) {
+	ctx, endObservation := s.operations.indexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("opts.Limit", opts.Limit),
+		log.Int("opts.MinimumSearchCount", opts.MinimumSearchCount),
+		log.Float64("opts.MinimumSearchRatio", opts.MinimumSearchRatio),
+		log.Int("opts.MinimumPreciseCount", opts.MinimumPreciseCount),
+		log.String("opts.MinimumTimeSinceLastEnqueue", fmt.Sprintf("%s", opts.MinimumTimeSinceLastEnqueue)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if opts.now.IsZero() {
 		opts.now = time.Now()
 	}
@@ -119,9 +131,14 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 
 // UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 // already marked as indexable, a new record will be created.
-func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error {
+func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) (err error) {
+	ctx, endObservation := s.operations.updateIndexableRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("indexableRepository.RepositoryID", indexableRepository.RepositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	// Ensure that record exists before we attempt to update it
-	err := s.Store.Exec(ctx, sqlf.Sprintf(`
+	err = s.Store.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
 		VALUES (%s)
 		ON CONFLICT DO NOTHING
@@ -158,7 +175,11 @@ func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 
 // ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
 // since lastUpdatedBefore.
-func (s *Store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error {
+func (s *Store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) (err error) {
+	// TODO - should be a duration ago instead
+	ctx, endObservation := s.operations.resetIndexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(
 		`
 		UPDATE lsif_indexable_repositories

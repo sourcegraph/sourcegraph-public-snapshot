@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type ResolvedCodeIntelligenceRange struct {
@@ -17,7 +19,15 @@ type ResolvedCodeIntelligenceRange struct {
 }
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
-func (api *CodeIntelAPI) Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) ([]ResolvedCodeIntelligenceRange, error) {
+func (api *CodeIntelAPI) Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) (_ []ResolvedCodeIntelligenceRange, err error) {
+	ctx, endObservation := api.operations.ranges.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("file", file),
+		log.Int("startLine", startLine),
+		log.Int("endLine", endLine),
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.GetDumpByID")

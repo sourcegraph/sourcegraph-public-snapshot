@@ -6,10 +6,12 @@ import (
 	"fmt"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // RemoteDumpLimit is the limit for fetching batches of remote dumps.
@@ -20,7 +22,14 @@ var ErrIllegalLimit = errors.New("limit must be positive")
 
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories.
-func (api *CodeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+func (api *CodeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) (_ []ResolvedLocation, _ Cursor, _ bool, err error) {
+	ctx, endObservation := api.operations.references.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if limit <= 0 {
 		return nil, Cursor{}, false, ErrIllegalLimit
 	}

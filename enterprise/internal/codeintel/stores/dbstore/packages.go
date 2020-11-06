@@ -4,12 +4,21 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // GetPackage returns the dump that provides the package with the given scheme, name, and version and a flag indicating its existence.
-func (s *Store) GetPackage(ctx context.Context, scheme, name, version string) (Dump, bool, error) {
+func (s *Store) GetPackage(ctx context.Context, scheme, name, version string) (_ Dump, _ bool, err error) {
+	ctx, endObservation := s.operations.getPackage.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("scheme", scheme),
+		log.String("name", name),
+		log.String("version", version),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			d.id,
@@ -37,6 +46,9 @@ func (s *Store) GetPackage(ctx context.Context, scheme, name, version string) (D
 
 // UpdatePackages upserts package data tied to the given upload.
 func (s *Store) UpdatePackages(ctx context.Context, packages []lsifstore.Package) (err error) {
+	ctx, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	if len(packages) == 0 {
 		return nil
 	}

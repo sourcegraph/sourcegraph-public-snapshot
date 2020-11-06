@@ -5,9 +5,11 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // DefintionMonikersLimit is the maximum number of definition moniker results we'll ask
@@ -18,7 +20,15 @@ const DefintionMonikersLimit = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 // This may include remote definitions if the remote repository is also indexed.
-func (api *CodeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
+func (api *CodeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) (_ []ResolvedLocation, err error) {
+	ctx, endObservation := api.operations.definitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("file", file),
+		log.Int("line", line),
+		log.Int("character", character),
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.GetDumpByID")

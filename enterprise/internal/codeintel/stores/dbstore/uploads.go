@@ -7,7 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -128,7 +130,12 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 }
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
-func (s *Store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error) {
+func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
+	ctx, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			u.id,
@@ -172,7 +179,12 @@ type GetUploadsOptions struct {
 }
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
-func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error) {
+func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+	ctx, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		// TODO(efritz) - uploadedBefore should be a duration
+	}})
+	defer endObservation(1, observation.Args{})
+
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
@@ -191,6 +203,17 @@ func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
+	ctx, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("opts.RepositoryID", opts.RepositoryID),
+		log.String("opts.State", opts.State),
+		log.String("opts.Term", opts.Term),
+		log.Bool("opts.VisibleAtTip", opts.VisibleAtTip),
+		// TODO(efritz) - opts.UploadedBefore should be a duration
+		log.Int("opts.Limit", opts.Limit),
+		log.Int("opts.Offset", opts.Offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -284,13 +307,21 @@ func makeSearchCondition(term string) *sqlf.Query {
 }
 
 // QueueSize returns the number of uploads in the queued state.
-func (s *Store) QueueSize(ctx context.Context) (int, error) {
+func (s *Store) QueueSize(ctx context.Context) (_ int, err error) {
+	ctx, endObservation := s.operations.queueSize.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name WHERE state = 'queued'`)))
 	return count, err
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *Store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
+func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err error) {
+	ctx, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("upload.ID", upload.ID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if upload.UploadedParts == nil {
 		upload.UploadedParts = []int{}
 	}
@@ -326,7 +357,13 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 
 // AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 // (the resulting array is deduplicated on update).
-func (s *Store) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
+func (s *Store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err error) {
+	ctx, endObservation := s.operations.addUploadPart.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+		log.Int("partIndex", partIndex),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s)))
@@ -335,12 +372,22 @@ func (s *Store) AddUploadPart(ctx context.Context, uploadID, partIndex int) erro
 }
 
 // MarkQueued updates the state of the upload to queued and updates the upload size.
-func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) error {
+func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err error) {
+	ctx, endObservation := s.operations.markQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 
 // MarkComplete updates the state of the upload to complete.
 func (s *Store) MarkComplete(ctx context.Context, id int) (err error) {
+	ctx, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'completed', finished_at = clock_timestamp()
@@ -350,6 +397,11 @@ func (s *Store) MarkComplete(ctx context.Context, id int) (err error) {
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
 func (s *Store) MarkErrored(ctx context.Context, id int, failureMessage string) (err error) {
+	ctx, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
@@ -383,7 +435,12 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
 // This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
 // be returned along with a false valued flag. This method must not be called from within a transaction.
-func (s *Store) Dequeue(ctx context.Context, maxSize int64) (Upload, *Store, bool, error) {
+func (s *Store) Dequeue(ctx context.Context, maxSize int64) (_ Upload, _ *Store, _ bool, err error) {
+	ctx, endObservation := s.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int64("maxSize", maxSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	conditions := []*sqlf.Query{}
 	if maxSize != 0 {
 		conditions = append(conditions, sqlf.Sprintf("upload_size IS NULL OR upload_size <= %s", maxSize))
@@ -398,7 +455,13 @@ func (s *Store) Dequeue(ctx context.Context, maxSize int64) (Upload, *Store, boo
 }
 
 // Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
-func (s *Store) Requeue(ctx context.Context, id int, after time.Time) error {
+func (s *Store) Requeue(ctx context.Context, id int, after time.Time) (err error) {
+	ctx, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+		// TODO(efritz) - after should be a duration
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.makeUploadWorkQueueStore().Requeue(ctx, id, after)
 }
 
@@ -406,6 +469,11 @@ func (s *Store) Requeue(ctx context.Context, id int, after time.Time) error {
 // was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
 // the background.
 func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
@@ -442,7 +510,10 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 // that were removed for that repository.
-func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
+func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are  completed or visible at tip.
 
@@ -464,7 +535,10 @@ func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 }
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
-func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) error {
+func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
+	ctx, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	if len(ids) == 0 {
 		return nil
 	}

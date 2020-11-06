@@ -5,8 +5,10 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // appLockKey is the namespace in which all advisory locks are taken.
@@ -19,6 +21,12 @@ type UnlockFunc func(err error) error
 // Lock attempts to take an advisory lock on the given key. If successful, this method will
 // return a true-valued flag along with a function that must be called to release the lock.
 func (s *Store) Lock(ctx context.Context, key int, blocking bool) (locked bool, _ UnlockFunc, err error) {
+	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("key", key),
+		log.Bool("blocking", blocking),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if blocking {
 		locked, err = s.lock(ctx, key)
 	} else {

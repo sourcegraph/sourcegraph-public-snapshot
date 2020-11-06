@@ -7,7 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -100,7 +102,12 @@ func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, e
 var ScanFirstIndexRecord = scanFirstIndexRecord
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *Store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
+func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err error) {
+	ctx, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			u.id,
@@ -142,6 +149,15 @@ type GetIndexesOptions struct {
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
+	ctx, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("opts.RepositoryID", opts.RepositoryID),
+		log.String("opts.State", opts.State),
+		log.String("opts.Term", opts.Term),
+		log.Int("opts.Limit", opts.Limit),
+		log.Int("opts.Offset", opts.Offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -229,7 +245,10 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 }
 
 // IndexQueueSize returns the number of indexes in the queued state.
-func (s *Store) IndexQueueSize(ctx context.Context) (int, error) {
+func (s *Store) IndexQueueSize(ctx context.Context) (_ int, err error) {
+	ctx, endObservation := s.operations.indexQueueSize.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name WHERE state = 'queued'`),
@@ -239,7 +258,13 @@ func (s *Store) IndexQueueSize(ctx context.Context) (int, error) {
 }
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.
-func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) WHERE EXISTS (
 			SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
@@ -252,7 +277,12 @@ func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 }
 
 // InsertIndex inserts a new index and returns its identifier.
-func (s *Store) InsertIndex(ctx context.Context, index Index) (int, error) {
+func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
+	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("index.ID", index.ID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
@@ -284,6 +314,11 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (int, error) {
 
 // MarkIndexComplete updates the state of the index to complete.
 func (s *Store) MarkIndexComplete(ctx context.Context, id int) (err error) {
+	ctx, endObservation := s.operations.markIndexComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'completed', finished_at = clock_timestamp()
@@ -293,6 +328,11 @@ func (s *Store) MarkIndexComplete(ctx context.Context, id int) (err error) {
 
 // MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
 func (s *Store) MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error) {
+	ctx, endObservation := s.operations.markIndexErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
@@ -324,7 +364,12 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 var IndexColumnsWithNullRank = indexColumnsWithNullRank
 
 // SetIndexLogContents updates the log contents fo the index.
-func (s *Store) SetIndexLogContents(ctx context.Context, indexID int, contents string) error {
+func (s *Store) SetIndexLogContents(ctx context.Context, indexID int, contents string) (err error) {
+	ctx, endObservation := s.operations.setIndexLogContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("indexID", indexID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET log_contents = %s
@@ -336,7 +381,10 @@ func (s *Store) SetIndexLogContents(ctx context.Context, indexID int, contents s
 // the index is returned along with a store instance which wraps the transaction. This transaction must be
 // closed. If there is no such unlocked index, a zero-value index and nil store will be returned along with
 // a false valued flag. This method must not be called from within a transaction.
-func (s *Store) DequeueIndex(ctx context.Context) (Index, *Store, bool, error) {
+func (s *Store) DequeueIndex(ctx context.Context) (_ Index, _ *Store, _ bool, err error) {
+	ctx, endObservation := s.operations.dequeueIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	index, tx, ok, err := s.makeIndexWorkQueueStore().Dequeue(ctx, nil)
 	if err != nil || !ok {
 		return Index{}, nil, false, err
@@ -346,12 +394,24 @@ func (s *Store) DequeueIndex(ctx context.Context) (Index, *Store, bool, error) {
 }
 
 // RequeueIndex updates the state of the index to queued and adds a processing delay before the next dequeue attempt.
-func (s *Store) RequeueIndex(ctx context.Context, id int, after time.Time) error {
+func (s *Store) RequeueIndex(ctx context.Context, id int, after time.Time) (err error) {
+
+	ctx, endObservation := s.operations.requeueIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+		// TODO(efritz) - after should be a duration
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.makeIndexWorkQueueStore().Requeue(ctx, id, after)
 }
 
 // DeleteIndexByID deletes an index by its identifier.
 func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
@@ -372,7 +432,10 @@ func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 // DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
-func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
+func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
 

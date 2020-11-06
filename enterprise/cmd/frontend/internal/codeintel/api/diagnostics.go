@@ -5,9 +5,11 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type ResolvedDiagnostic struct {
@@ -16,7 +18,15 @@ type ResolvedDiagnostic struct {
 }
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
-func (api *CodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error) {
+func (api *CodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) (_ []ResolvedDiagnostic, _ int, err error) {
+	ctx, endObservation := api.operations.diagnostics.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.Int("uploadID", uploadID),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "store.GetDumpByID")
