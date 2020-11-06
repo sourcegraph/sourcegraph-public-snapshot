@@ -5,18 +5,10 @@ set -x
 
 # shellcheck disable=SC1091
 source /root/.profile
-Xvfb "$DISPLAY" -screen 0 1280x1024x24 &
-x11vnc -display "$DISPLAY" -forever -rfbport 5900 >/x11vnc.log 2>&1 &
+bash test/setup-deps.sh
+bash test/setup-display.sh
 
-curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-chmod +x /usr/local/bin/src
-
-asdf install
-yarn
-yarn generate
-yes | gcloud auth configure-docker
-
-ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
+# ==========================
 
 CONTAINER=sourcegraph-server
 
@@ -31,9 +23,7 @@ trap docker_logs exit
 
 sleep 15
 
-pushd test/qa || exit
-go run main.go
-popd || exit
+go run test/init-server.go
 
 source /root/.profile
 pushd client/web || exit

@@ -3,8 +3,12 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
-curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-chmod +x /usr/local/bin/src
+# shellcheck disable=SC1091
+source /root/.profile
+bash test/setup-deps.sh
+bash test/setup-display.sh
+
+# ==========================
 
 CONTAINER=sourcegraph-server
 
@@ -26,8 +30,8 @@ trap docker_logs exit
 
 sleep 15
 
-pushd test/code-intel || exit
-go run main.go
+pushd 'test' || exit
+go run init-server.go
 popd || exit
 
 # shellcheck disable=SC1091

@@ -41,6 +41,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create token: ", err)
 	}
+	if token == "" {
+		log.Fatal("Failed to create token")
+	}
 
 	siteConfig, err := client.SiteConfiguration()
 	if err != nil {
@@ -62,7 +65,7 @@ func main() {
 	}
 	defer file.Close()
 	if _, err := file.WriteString(envvar); err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		os.Exit(1)
 	}
-
 }

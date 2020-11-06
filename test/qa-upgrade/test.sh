@@ -3,17 +3,17 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
-asdf install
-yarn install
-yarn generate
-yes | gcloud auth configure-docker
+# shellcheck disable=SC1091
+source /root/.profile
+bash test/setup-deps.sh
+bash test/setup-display.sh
+
+# ==========================
 
 # Run, initialize, and stop an old Sourcegraph release
 IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
-pushd test/qa || exit
-go run main.go
-popd || exit
+go run test/init-server.go
 # shellcheck disable=SC1091
 source /root/.profile
 docker container stop sourcegraph-old
