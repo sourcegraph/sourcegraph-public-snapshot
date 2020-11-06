@@ -11,9 +11,21 @@ import (
 func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
 	stats := types.CampaignsUsageStatistics{}
 
+	const campaignsCountsQuery = `
+SELECT
+    COUNT(*)                                      AS campaigns_count,
+    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS campaigns_closed_count
+FROM campaigns;
+`
+	if err := dbconn.Global.QueryRowContext(ctx, campaignsCountsQuery).Scan(
+		&stats.CampaignsCount,
+		&stats.CampaignsClosedCount,
+	); err != nil {
+		return nil, err
+	}
+
 	const changesetCountsQuery = `
 SELECT
-    (SELECT COUNT(*) FROM campaigns) AS campaigns_count,
     COUNT(*)                        FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
     COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_added_sum,
     COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_changed_sum,
@@ -27,7 +39,6 @@ SELECT
 FROM changesets;
 `
 	if err := dbconn.Global.QueryRowContext(ctx, changesetCountsQuery).Scan(
-		&stats.CampaignsCount,
 		&stats.ActionChangesetsCount,
 		&stats.ActionChangesetsDiffStatAddedSum,
 		&stats.ActionChangesetsDiffStatChangedSum,

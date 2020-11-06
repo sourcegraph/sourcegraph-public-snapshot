@@ -86,10 +86,10 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	// Create campaigns 1, 2.
 	_, err = dbconn.Global.Exec(`
 		INSERT INTO campaigns
-			(id, name, campaign_spec_id, last_applied_at, namespace_user_id)
+			(id, name, campaign_spec_id, last_applied_at, namespace_user_id, closed_at)
 		VALUES
-			(1, 'test', 1, NOW(), $1),
-			(2, 'test-2', 2, NOW(), $1)
+			(1, 'test', 1, NOW(), $1, NULL),
+			(2, 'test-2', 2, NOW(), $1, NOW())
 	`, user.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -121,6 +121,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	}
 	want := &types.CampaignsUsageStatistics{
 		CampaignsCount:                           2,
+		CampaignsClosedCount:                     1,
 		ActionChangesetsCount:                    4,
 		ActionChangesetsDiffStatAddedSum:         14,
 		ActionChangesetsDiffStatChangedSum:       14,

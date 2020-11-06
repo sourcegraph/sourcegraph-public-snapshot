@@ -140,6 +140,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of created changeset specs</li>
                         <li>Total count of created campaign specs</li>
                         <li>Total count of created campaigns</li>
+                        <li>Total count of closed campaigns</li>
                         <li>Total count of changesets created by campaigns</li>
                         <li>Aggregate counts of lines changed, added, deleted in changeset</li>
                         <li>Total count of changesets created by campaigns that have been merged</li>

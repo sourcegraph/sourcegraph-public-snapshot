@@ -49,6 +49,7 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total count of created changeset specs
   - Total count of created campaign specs
   - Total count of created campaigns
+  - Total count of closed campaigns
   - Total count of changesets created by campaigns
   - Aggregate counts of lines changed, added, deleted in changeset
   - Total count of changesets created by campaigns that have been merged
