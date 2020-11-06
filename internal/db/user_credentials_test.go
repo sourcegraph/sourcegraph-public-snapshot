@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"math/big"
 	"net/http"
 	"reflect"
 	"testing"
@@ -308,6 +309,16 @@ func TestUserCredentials_List(t *testing.T) {
 func TestUserCredentials_Upsert(t *testing.T) {
 	ctx, user := setUpUserCredentialTest(t)
 
+	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
+	// fields, which causes problems when diffing the keys embedded in OAuth
+	// clients. We'll just define a little helper here to wrap cmp.Diff and get
+	// us over the hump.
+	diffAuthenticators := func(a, b auth.Authenticator) string {
+		return cmp.Diff(a, b, cmp.Comparer(func(a, b *big.Int) bool {
+			return a.Cmp(b) == 0
+		}))
+	}
+
 	// Instead of two of every animal, we want two of every authenticator. Same,
 	// same.
 	for nameFrom, from := range createUserCredentialAuths(t) {
@@ -344,7 +355,7 @@ func TestUserCredentials_Upsert(t *testing.T) {
 					if cred.ExternalServiceID != scope.ExternalServiceID {
 						t.Errorf("unexpected external service id: have=%q want=%q", cred.ExternalServiceID, scope.ExternalServiceID)
 					}
-					if diff := cmp.Diff(cred.Credential, from); diff != "" {
+					if diff := diffAuthenticators(cred.Credential, from); diff != "" {
 						t.Errorf("unexpected credential:\n%s", diff)
 					}
 					if cred.CreatedAt.IsZero() {
@@ -379,7 +390,7 @@ func TestUserCredentials_Upsert(t *testing.T) {
 					if updated.ExternalServiceID != scope.ExternalServiceID {
 						t.Errorf("unexpected external service id: have=%q want=%q", cred.ExternalServiceID, scope.ExternalServiceID)
 					}
-					if diff := cmp.Diff(updated.Credential, to); diff != "" {
+					if diff := diffAuthenticators(updated.Credential, to); diff != "" {
 						t.Errorf("unexpected credential:\n%s", diff)
 					}
 					if cred.CreatedAt != updated.CreatedAt {
