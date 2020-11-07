@@ -17,7 +17,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 > Are users/customers actively asking us for these changes and cannot wait until the next full release?
 
-**ANSWER THIS, include links to customer issue tracker**
+<!-- ANSWER THIS, include links to customer issue tracker -->
 
 > Are the changes extremely minimal, well-tested, and low risk such that not testing as we do in a full release is OK?
 
