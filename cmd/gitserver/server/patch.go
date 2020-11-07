@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -66,6 +67,38 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
+	// Patch in the new token if needed.
+	if req.Push != nil && req.Push.Token != "" {
+		u, err := url.Parse(remoteURL)
+		if err != nil {
+			log15.Error("Failed to parse remote URL", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "parsing remote URL"))
+			return http.StatusInternalServerError, resp
+		}
+
+		switch req.Push.Type {
+		case "github":
+			// GitHub wants the user to be the token.
+			u.User = url.UserPassword(req.Push.Token, "")
+
+		case "gitlab":
+			// GitLab wants the user to be "git", and the password to be the
+			// user token.
+			if u.User == nil {
+				u.User = url.UserPassword("git", req.Push.Token)
+			} else {
+				u.User = url.UserPassword(u.User.Username(), req.Push.Token)
+			}
+
+		default:
+			log15.Error("Cannot apply a token to a code host of", "type", req.Push.Type)
+			resp.SetError(repo, "", "", errors.Errorf("cannot apply token to code host of type %s", req.Push.Type))
+			return http.StatusInternalServerError, resp
+		}
+
+		remoteURL = u.String()
+	}
+
 	redactor := newURLRedactor(remoteURL)
 	defer func() {
 		if resp.Error != nil {
@@ -123,7 +156,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		ref = tmp
 	}
 
-	if req.Push {
+	if req.Push != nil {
 		ref = ensureRefPrefix(ref)
 	}
 
@@ -241,7 +274,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
-	if req.Push {
+	if req.Push != nil {
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
