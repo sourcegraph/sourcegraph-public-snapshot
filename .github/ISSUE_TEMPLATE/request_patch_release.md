@@ -9,6 +9,8 @@ assignees: ''
 
 @sourcegraph/distribution I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
+The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
+
 - **LINK TO EXACT MERGED COMMITS HERE**
 
 I have read [when and why we perform patch releases](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) and answer the questions as follows:
@@ -29,4 +31,8 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 >
 > Do you believe the changes are important enough to warrant this?
 
-**ANSER THIS, yes/no**
+**ANSWER THIS, yes/no**
+
+> Patch releases are a signal we can do something better to improve the quality of Sourcegraph. Have you already scheduled a call (or created a google doc) to perform a [retrospective](https://about.sourcegraph.com/retrospectives) and identify ways we can improve?
+
+**ANSWER THIS**
