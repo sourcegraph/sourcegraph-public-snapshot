@@ -301,11 +301,10 @@ func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string
 		switch push.Type {
 		case "github":
 			// GitHub wants the user to be the token.
-			u.User = url.UserPassword(push.Token, "")
+			u.User = url.User(push.Token)
 
 		case "gitlab":
-			// GitLab wants the user to be "git", and the password to be the
-			// user token.
+			// GitLab wants the password to be the user token.
 			if u.User == nil {
 				u.User = url.UserPassword("git", push.Token)
 			} else {
