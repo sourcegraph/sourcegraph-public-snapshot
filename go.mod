@@ -175,7 +175,6 @@ require (
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	github.com/ugorji/go v1.1.8 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
-	github.com/xanzy/go-gitlab v0.28.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
