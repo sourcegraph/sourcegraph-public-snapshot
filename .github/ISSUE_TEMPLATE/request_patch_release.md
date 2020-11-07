@@ -25,7 +25,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 > Is there some functionality completely broken that warrants redacting the prior release of Sourcegraph and advising users wait for the patch release?
 
-**ANSWER THIS, explain if needed**
+<!-- **ANSWER THIS, explain if needed** -->
 
 > This will interrupt our regular planned work and release cycle, taking 3-6 hours of our time, and will take up all of our site admin's valuable time by asking them to upgrade or producing noise for them if they don't need to upgrade.
 >
