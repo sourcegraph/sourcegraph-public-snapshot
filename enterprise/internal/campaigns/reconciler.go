@@ -168,9 +168,6 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return err
 	}
 
-	// TODO: remove before review
-	log15.Info("executing with authenticator", "auth", fmt.Sprintf("%+v", a), "changeset ID", e.ch.ID)
-
 	// Set up a source with which we can modify the changeset.
 	e.ccs, err = e.buildChangesetSource(e.repo, extSvc, a)
 	if err != nil {
