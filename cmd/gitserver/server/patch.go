@@ -68,35 +68,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	// Patch in the new token if needed.
-	if req.Push != nil && req.Push.Token != "" {
-		u, err := url.Parse(remoteURL)
-		if err != nil {
-			log15.Error("Failed to parse remote URL", "ref", ref, "err", err)
-			resp.SetError(repo, "", "", errors.Wrap(err, "parsing remote URL"))
-			return http.StatusInternalServerError, resp
-		}
-
-		switch req.Push.Type {
-		case "github":
-			// GitHub wants the user to be the token.
-			u.User = url.UserPassword(req.Push.Token, "")
-
-		case "gitlab":
-			// GitLab wants the user to be "git", and the password to be the
-			// user token.
-			if u.User == nil {
-				u.User = url.UserPassword("git", req.Push.Token)
-			} else {
-				u.User = url.UserPassword(u.User.Username(), req.Push.Token)
-			}
-
-		default:
-			log15.Error("Cannot apply a token to a code host of", "type", req.Push.Type)
-			resp.SetError(repo, "", "", errors.Errorf("cannot apply token to code host of type %s", req.Push.Type))
-			return http.StatusInternalServerError, resp
-		}
-
-		remoteURL = u.String()
+	remoteURL, err = updateRemoteURLForPush(req.Push, remoteURL)
+	if err != nil {
+		log15.Error("Failed to apply push options to the remote URL", "push", req.Push, "remoteURL", remoteURL, "err", err)
+		resp.SetError(repo, "", "", errors.Wrap(err, "applying push options"))
+		return http.StatusInternalServerError, resp
 	}
 
 	redactor := newURLRedactor(remoteURL)
@@ -311,4 +287,37 @@ func cleanUpTmpRepo(path string) {
 // Copied from git package to avoid cycle import when testing git package.
 func ensureRefPrefix(ref string) string {
 	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// updateRemoteURLForPush applies the given PushConfig to the remote URL,
+// returning the new remote URL.
+func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string, error) {
+	if push != nil && push.Token != "" {
+		u, err := url.Parse(remoteURL)
+		if err != nil {
+			return "", errors.Wrap(err, "parsing remote URL")
+		}
+
+		switch push.Type {
+		case "github":
+			// GitHub wants the user to be the token.
+			u.User = url.UserPassword(push.Token, "")
+
+		case "gitlab":
+			// GitLab wants the user to be "git", and the password to be the
+			// user token.
+			if u.User == nil {
+				u.User = url.UserPassword("git", push.Token)
+			} else {
+				u.User = url.UserPassword(u.User.Username(), push.Token)
+			}
+
+		default:
+			return "", errors.Errorf("cannot apply token to code host of type %s", push.Type)
+		}
+
+		return u.String(), nil
+	}
+
+	return remoteURL, nil
 }
