@@ -12,7 +12,7 @@ interface Props
         VersionContextProps {
     location: H.Location
     history: H.History
-    query?: string
+    query: string
     className?: string
 }
 
