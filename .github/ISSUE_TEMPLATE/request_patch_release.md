@@ -35,4 +35,13 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 > Patch releases are a signal we can do something better to improve the quality of Sourcegraph. Have you already scheduled a call (or created a google doc) to perform a [retrospective](https://about.sourcegraph.com/retrospectives) and identify ways we can improve?
 
-**ANSWER THIS**
+<!-- **ANSWER THIS** -->
+
+---
+
+_For the release captain_: after reviewing and approving this request:
+* If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracker+), add the listed commits alongside a link in this issue
+* If there is no upcoming patch release, create a new one:
+	* Update `dev/release/config.json` with the patch release in `upcomingRelease`
+	* `cd dev/release && yarn run release tracking:patch-issue`
+	* Add the listed commits alongside a link in this issue
