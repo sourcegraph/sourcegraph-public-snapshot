@@ -1,11 +1,11 @@
 import { getMonacoTokens } from './tokens'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, Sequence } from './scanner'
 
 describe('getMonacoTokens()', () => {
     test('returns the tokens for a parsed search query', () => {
         expect(
             getMonacoTokens(
-                (parseSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews') as ParseSuccess<Sequence>)
+                (scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews') as ScanSuccess<Sequence>)
                     .token
             )
         ).toStrictEqual([
@@ -41,7 +41,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('search query containing parenthesized parameters', () => {
-        expect(getMonacoTokens((parseSearchQuery('r:a (f:b and c)') as ParseSuccess<Sequence>).token)).toStrictEqual([
+        expect(getMonacoTokens((scanSearchQuery('r:a (f:b and c)') as ScanSuccess<Sequence>).token)).toStrictEqual([
             {
                 scopes: 'keyword',
                 startIndex: 0,

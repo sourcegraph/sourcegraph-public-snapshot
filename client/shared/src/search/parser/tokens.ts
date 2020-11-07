@@ -1,12 +1,12 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence } from './parser'
+import { Sequence } from './scanner'
 
 /**
- * Returns the tokens in a parsed search query displayed in the Monaco query input.
+ * Returns the tokens in a scanned search query displayed in the Monaco query input.
  */
-export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.languages.IToken[] {
+export function getMonacoTokens(scannedQuery: Pick<Sequence, 'members'>): Monaco.languages.IToken[] {
     const tokens: Monaco.languages.IToken[] = []
-    for (const token of parsedQuery.members) {
+    for (const token of scannedQuery.members) {
         switch (token.type) {
             case 'filter':
                 {

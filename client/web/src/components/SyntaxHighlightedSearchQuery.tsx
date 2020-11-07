@@ -1,10 +1,10 @@
 import React, { Fragment, useMemo } from 'react'
-import { parseSearchQuery } from '../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../shared/src/search/parser/scanner'
 
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: string }> = ({ query }) => {
     const tokens = useMemo(() => {
-        const parsedQuery = parseSearchQuery(query)
+        const parsedQuery = scanSearchQuery(query)
         return parsedQuery.type === 'success'
             ? parsedQuery.token.members.map(token => {
                   if (token.type === 'filter') {
