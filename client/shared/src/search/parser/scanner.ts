@@ -132,14 +132,14 @@ export type Token = Whitespace | OpeningParen | ClosingParen | Operator | Commen
 export type Term = Token | Sequence
 
 /**
- * Represents the failed result of running a {@link Parser} on a search query.
+ * Represents the failed result of running a {@link Scanner} on a search query.
  */
-interface ParseError {
+interface ScanError {
     type: 'error'
 
     /**
      * A string representing the token that would have been expected
-     * for successful parsing at {@link ParseError#at}.
+     * for successful scanning at {@link ScannerError#at}.
      */
     expected: string
 
@@ -150,9 +150,9 @@ interface ParseError {
 }
 
 /**
- * Represents the successful result of running a {@link Parser} on a search query.
+ * Represents the successful result of running a {@link Scannerer} on a search query.
  */
-export interface ParseSuccess<T = Term> {
+export interface ScanSuccess<T = Term> {
     type: 'success'
 
     /**
@@ -162,22 +162,22 @@ export interface ParseSuccess<T = Term> {
 }
 
 /**
- * Represents the result of running a {@link Parser} on a search query.
+ * Represents the result of running a {@link Scanner} on a search query.
  */
-export type ParserResult<T = Term> = ParseError | ParseSuccess<T>
+export type ScanResult<T = Term> = ScanError | ScanSuccess<T>
 
-type Parser<T = Term> = (input: string, start: number) => ParserResult<T>
+type Scanner<T = Term> = (input: string, start: number) => ScanResult<T>
 
 /**
- * Returns a {@link Parser} that succeeds if zero or more tokens parsed
- * by the given `parseToken` parsers are found in a search query.
+ * Returns a {@link Scanner} that succeeds if zero or more tokens are scanned
+ * by the given `scanToken` scanners.
  */
-const zeroOrMore = (parseToken: Parser<Term>): Parser<Sequence> => (input, start) => {
+const zeroOrMore = (scanToken: Scanner<Term>): Scanner<Sequence> => (input, start) => {
     const members: Token[] = []
     let adjustedStart = start
     let end = start + 1
     while (input[adjustedStart] !== undefined) {
-        const result = parseToken(input, adjustedStart)
+        const result = scanToken(input, adjustedStart)
         if (result.type === 'error') {
             return result
         }
@@ -198,12 +198,12 @@ const zeroOrMore = (parseToken: Parser<Term>): Parser<Sequence> => (input, start
 }
 
 /**
- * Returns a {@link Parser} that succeeds if any of the given parsers succeeds.
+ * Returns a {@link Scanner} that succeeds if any of the given scanner succeeds.
  */
-const oneOf = <T>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
+const oneOf = <T>(...scanners: Scanner<T>[]): Scanner<T> => (input, start) => {
     const expected: string[] = []
-    for (const parser of parsers) {
-        const result = parser(input, start)
+    for (const scanner of scanners) {
+        const result = scanner(input, start)
         if (result.type === 'success') {
             return result
         }
@@ -217,10 +217,10 @@ const oneOf = <T>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
 }
 
 /**
- * A {@link Parser} that will attempt to parse delimited strings for an arbitrary
+ * A {@link Scanner} that will attempt to scan delimited strings for an arbitrary
  * delimiter. `\` is treated as an escape character for the delimited string.
  */
-const quoted = (delimiter: string): Parser<Quoted> => (input, start) => {
+const quoted = (delimiter: string): Scanner<Quoted> => (input, start) => {
     if (input[start] !== delimiter) {
         return { type: 'error', expected: delimiter, at: start }
     }
@@ -239,10 +239,10 @@ const quoted = (delimiter: string): Parser<Quoted> => (input, start) => {
 }
 
 /**
- * Returns a {@link Parser} that will attempt to parse tokens matching
+ * Returns a {@link Scanner} that will attempt to scan tokens matching
  * the given character in a search query.
  */
-const character = (character: string): Parser<Literal> => (input, start) => {
+const character = (character: string): Scanner<Literal> => (input, start) => {
     if (input[start] !== character) {
         return { type: 'error', expected: character, at: start }
     }
@@ -253,14 +253,14 @@ const character = (character: string): Parser<Literal> => (input, start) => {
 }
 
 /**
- * Returns a {@link Parser} that will attempt to parse
+ * Returns a {@link Scanner} that will attempt to scan
  * tokens matching the given RegExp pattern in a search query.
  */
 const scanToken = <T extends Term = Literal>(
     regexp: RegExp,
     output?: T | ((input: string, range: CharacterRange) => T),
     expected?: string
-): Parser<T> => {
+): Scanner<T> => {
     if (!regexp.source.startsWith('^')) {
         regexp = new RegExp(`^${regexp.source}`, regexp.flags)
     }
@@ -331,19 +331,19 @@ const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: '
 const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
 /**
- * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
+ * Returns a {@link Scanner} that succeeds if a token scanned by `scanToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
-const followedBy = (parseToken: Parser<Token>, parseNext: Parser<Token>): Parser<Sequence> => (input, start) => {
+const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanner<Sequence> => (input, start) => {
     const members: Token[] = []
-    const tokenResult = parseToken(input, start)
+    const tokenResult = scanToken(input, start)
     if (tokenResult.type === 'error') {
         return tokenResult
     }
     members.push(tokenResult.token)
     let { end } = tokenResult.token.range
     if (input[end] !== undefined) {
-        const separatorResult = parseNext(input, end)
+        const separatorResult = scanNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
@@ -357,39 +357,39 @@ const followedBy = (parseToken: Parser<Token>, parseNext: Parser<Token>): Parser
 }
 
 /**
- * A {@link Parser} that will attempt to parse {@link Filter} tokens
+ * A {@link Scanner} that will attempt to scan {@link Filter} tokens
  * (consisting a of a filter type and a filter value, separated by a colon)
  * in a search query.
  */
-const filter: Parser<Filter> = (input, start) => {
-    const parsedKeyword = filterKeyword(input, start)
-    if (parsedKeyword.type === 'error') {
-        return parsedKeyword
+const filter: Scanner<Filter> = (input, start) => {
+    const scannedKeyword = filterKeyword(input, start)
+    if (scannedKeyword.type === 'error') {
+        return scannedKeyword
     }
-    const parsedDelimiter = filterDelimiter(input, parsedKeyword.token.range.end)
-    if (parsedDelimiter.type === 'error') {
-        return parsedDelimiter
+    const scannedDelimiter = filterDelimiter(input, scannedKeyword.token.range.end)
+    if (scannedDelimiter.type === 'error') {
+        return scannedDelimiter
     }
-    const parsedValue =
-        input[parsedDelimiter.token.range.end] === undefined
+    const scannedValue =
+        input[scannedDelimiter.token.range.end] === undefined
             ? undefined
-            : filterValue(input, parsedDelimiter.token.range.end)
-    if (parsedValue && parsedValue.type === 'error') {
-        return parsedValue
+            : filterValue(input, scannedDelimiter.token.range.end)
+    if (scannedValue && scannedValue.type === 'error') {
+        return scannedValue
     }
     return {
         type: 'success',
         token: {
             type: 'filter',
-            range: { start, end: parsedValue ? parsedValue.token.range.end : parsedDelimiter.token.range.end },
-            filterType: parsedKeyword.token,
-            filterValue: parsedValue?.token,
-            negated: parsedKeyword.token.value.startsWith('-'),
+            range: { start, end: scannedValue ? scannedValue.token.range.end : scannedDelimiter.token.range.end },
+            filterType: scannedKeyword.token,
+            filterValue: scannedValue?.token,
+            negated: scannedKeyword.token.value.startsWith('-'),
         },
     }
 }
 
-const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ParseSuccess<Pattern> => ({
+const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
     type: 'success',
     token: {
         type: 'pattern',
@@ -423,7 +423,7 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrOper
  * (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
  * (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
  */
-export const scanBalancedPattern = (kind = PatternKind.Literal): Parser<Pattern> => (input, start) => {
+export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern> => (input, start) => {
     let adjustedStart = start
     let balanced = 0
     let current = ''
@@ -502,7 +502,7 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Parser<Pattern>
     return createPattern(result.join(''), { start, end: adjustedStart }, kind)
 }
 
-const scanPattern = (kind: PatternKind): Parser<Pattern> => (input, start) => {
+const scanPattern = (kind: PatternKind): Scanner<Pattern> => (input, start) => {
     const balancedPattern = scanBalancedPattern(kind)(input, start)
     if (balancedPattern.type === 'success') {
         return createPattern(balancedPattern.token.value, balancedPattern.token.range, kind)
@@ -519,16 +519,16 @@ const scanPattern = (kind: PatternKind): Parser<Pattern> => (input, start) => {
 const whitespaceOrClosingParen = oneOf<Whitespace | ClosingParen>(whitespace, closingParen)
 
 /**
- * A {@link Parser} for a Sourcegraph search query, interpreting patterns for {@link PatternKind}.
+ * A {@link Scanner} for a Sourcegraph search query, interpreting patterns for {@link PatternKind}.
  *
  * @param interpretComments Interpets C-style line comments for multiline queries.
  */
-const createParser = (kind: PatternKind, interpretComments?: boolean): Parser<Sequence> => {
+const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<Sequence> => {
     const baseQuotedScanner = [quoted('"'), quoted("'")]
     const quotedScanner = kind === PatternKind.Regexp ? [quoted('/'), ...baseQuotedScanner] : baseQuotedScanner
 
     const baseScanner = [operator, filter, ...quotedScanner, scanPattern(kind)]
-    const tokenScanner: Parser<Token>[] = interpretComments ? [comment, ...baseScanner] : baseScanner
+    const tokenScanner: Scanner<Token>[] = interpretComments ? [comment, ...baseScanner] : baseScanner
 
     const baseEarlyPatternScanner = [...quotedScanner, scanBalancedPattern(kind)]
     const earlyPatternScanner = interpretComments ? [comment, ...baseEarlyPatternScanner] : baseEarlyPatternScanner
@@ -545,13 +545,13 @@ const createParser = (kind: PatternKind, interpretComments?: boolean): Parser<Se
 }
 
 /**
- * Parses a search query string.
+ * Scans a search query string.
  */
-export const parseSearchQuery = (
+export const scanSearchQuery = (
     query: string,
     interpretComments?: boolean,
     kind = PatternKind.Literal
-): ParserResult<Sequence> => {
-    const scanner = createParser(kind, interpretComments)
+): ScanResult<Sequence> => {
+    const scanner = createScanner(kind, interpretComments)
     return scanner(query, 0)
 }

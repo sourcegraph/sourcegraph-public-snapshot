@@ -1,12 +1,12 @@
 import { getDiagnostics } from './diagnostics'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, Sequence } from './scanner'
 import { SearchPatternType } from '../../graphql-operations'
 
 describe('getDiagnostics()', () => {
     test('do not raise invalid filter type', () => {
         expect(
             getDiagnostics(
-                (parseSearchQuery('repos:^github.com/sourcegraph') as ParseSuccess<Sequence>).token,
+                (scanSearchQuery('repos:^github.com/sourcegraph') as ScanSuccess<Sequence>).token,
                 SearchPatternType.literal
             )
         ).toStrictEqual([])
@@ -14,7 +14,7 @@ describe('getDiagnostics()', () => {
 
     test('invalid filter value', () => {
         expect(
-            getDiagnostics((parseSearchQuery('case:maybe') as ParseSuccess<Sequence>).token, SearchPatternType.literal)
+            getDiagnostics((scanSearchQuery('case:maybe') as ScanSuccess<Sequence>).token, SearchPatternType.literal)
         ).toStrictEqual([
             {
                 endColumn: 5,
@@ -30,7 +30,7 @@ describe('getDiagnostics()', () => {
     test('search query containing colon, literal pattern type, do not raise error', () => {
         expect(
             getDiagnostics(
-                (parseSearchQuery('Configuration::doStuff(...)') as ParseSuccess<Sequence>).token,
+                (scanSearchQuery('Configuration::doStuff(...)') as ScanSuccess<Sequence>).token,
                 SearchPatternType.literal
             )
         ).toStrictEqual([])
@@ -39,7 +39,7 @@ describe('getDiagnostics()', () => {
     test('search query containing quoted token, regexp pattern type', () => {
         expect(
             getDiagnostics(
-                (parseSearchQuery('"Configuration::doStuff(...)"') as ParseSuccess<Sequence>).token,
+                (scanSearchQuery('"Configuration::doStuff(...)"') as ScanSuccess<Sequence>).token,
                 SearchPatternType.regexp
             )
         ).toStrictEqual([])
@@ -48,7 +48,7 @@ describe('getDiagnostics()', () => {
     test('search query containing parenthesized parameterss', () => {
         expect(
             getDiagnostics(
-                (parseSearchQuery('repo:a (file:b and c)') as ParseSuccess<Sequence>).token,
+                (scanSearchQuery('repo:a (file:b and c)') as ScanSuccess<Sequence>).token,
                 SearchPatternType.regexp
             )
         ).toStrictEqual([])
@@ -57,7 +57,7 @@ describe('getDiagnostics()', () => {
     test('search query containing quoted token, literal pattern type', () => {
         expect(
             getDiagnostics(
-                (parseSearchQuery('"Configuration::doStuff(...)"') as ParseSuccess<Sequence>).token,
+                (scanSearchQuery('"Configuration::doStuff(...)"') as ScanSuccess<Sequence>).token,
                 SearchPatternType.literal
             )
         ).toStrictEqual([
