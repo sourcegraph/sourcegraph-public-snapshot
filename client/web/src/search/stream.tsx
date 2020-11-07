@@ -371,7 +371,7 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
 )
 
 const observeMessages = <T extends SearchEvent>(
-    type: SearchEvent['type'],
+    type: T['type'],
     eventSource: EventSource,
     observer: Subscriber<SearchEvent>
 ): Subscription =>
@@ -392,10 +392,13 @@ const observeMessages = <T extends SearchEvent>(
         )
         .subscribe(observer)
 
-const messageHandlers: Record<
-    SearchEvent['type'],
-    (type: SearchEvent['type'], eventSource: EventSource, observer: Subscriber<SearchEvent>) => Subscription
-> = {
+const messageHandlers: {
+    [EventType in SearchEvent['type']]: (
+        type: EventType,
+        eventSource: EventSource,
+        observer: Subscriber<SearchEvent>
+    ) => Subscription
+} = {
     done: (type, eventSource, observer) =>
         fromEvent(eventSource, type).subscribe(() => {
             observer.complete()
