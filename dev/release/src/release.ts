@@ -269,13 +269,14 @@ const steps: Step[] = [
 
             // Announce issue if issue does not already exist
             if (created) {
+                const patchRequestTemplate = `https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=${release.version}%3A+`
                 await postMessage(
                     `:mega: *${release.version} Patch Release*
 
 :captain: Release captain: @${captainSlackUsername}
 :pencil: Tracking issue: ${url}
 
-If you have changes that should go into this patch release, *please add the relevant commits to the checklist in the tracking issue, or it will not be included*.`,
+If you have changes that should go into this patch release, <${patchRequestTemplate}|please *file a patch request issue*>, or it will not be included.`,
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
