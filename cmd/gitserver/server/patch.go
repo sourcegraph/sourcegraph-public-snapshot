@@ -304,7 +304,8 @@ func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string
 			u.User = url.User(push.Token)
 
 		case "gitlab":
-			// GitLab wants the password to be the user token.
+			// GitLab wants the password to be the user token. It also appears
+			// to want "git" as the username if none is provided.
 			if u.User == nil {
 				u.User = url.UserPassword("git", push.Token)
 			} else {
