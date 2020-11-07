@@ -11,7 +11,7 @@ assignees: ''
 
 The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
 
-- **LINK TO EXACT MERGED COMMITS HERE**
+- <!-- LINK TO EXACT MERGED COMMITS HERE -->
 
 I have read [when and why we perform patch releases](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) and answer the questions as follows:
 
