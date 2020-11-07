@@ -31,7 +31,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 >
 > Do you believe the changes are important enough to warrant this?
 
-**ANSWER THIS, yes/no**
+<!-- **ANSWER THIS, yes/no** -->
 
 > Patch releases are a signal we can do something better to improve the quality of Sourcegraph. Have you already scheduled a call (or created a google doc) to perform a [retrospective](https://about.sourcegraph.com/retrospectives) and identify ways we can improve?
 
