@@ -21,7 +21,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 > Are the changes extremely minimal, well-tested, and low risk such that not testing as we do in a full release is OK?
 
-**ANSWER THIS, explain in detail**
+<!-- **ANSWER THIS, explain in detail** -->
 
 > Is there some functionality completely broken that warrants redacting the prior release of Sourcegraph and advising users wait for the patch release?
 
