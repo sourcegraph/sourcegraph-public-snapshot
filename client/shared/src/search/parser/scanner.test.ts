@@ -25,33 +25,33 @@ describe('scanBalancedPattern()', () => {
         )
     })
 
-    test('not recognized, contains not operator', () => {
+    test('not recognized, contains not keyword', () => {
         expect(scanLiteralBalancedPattern('(foo not bar)', 0)).toMatchInlineSnapshot(
-            '{"type":"error","expected":"no recognized filter or operator","at":5}'
+            '{"type":"error","expected":"no recognized filter or keyword","at":5}'
         )
     })
 
-    test('not recognized, starts with a not operator', () => {
+    test('not recognized, starts with a not keyword', () => {
         expect(scanLiteralBalancedPattern('(not chocolate)', 0)).toMatchInlineSnapshot(
-            '{"type":"error","expected":"no recognized filter or operator","at":1}'
+            '{"type":"error","expected":"no recognized filter or keyword","at":1}'
         )
     })
 
-    test('not recognized, contains an or operator', () => {
+    test('not recognized, contains an or keyword', () => {
         expect(scanLiteralBalancedPattern('(foo OR bar)', 0)).toMatchInlineSnapshot(
-            '{"type":"error","expected":"no recognized filter or operator","at":5}'
+            '{"type":"error","expected":"no recognized filter or keyword","at":5}'
         )
     })
 
-    test('not recognized, contains an and operator', () => {
+    test('not recognized, contains an and keyword', () => {
         expect(scanLiteralBalancedPattern('repo:foo AND bar', 0)).toMatchInlineSnapshot(
-            '{"type":"error","expected":"no recognized filter or operator","at":0}'
+            '{"type":"error","expected":"no recognized filter or keyword","at":0}'
         )
     })
 
     test('not recognized, contains a recognized repo field', () => {
         expect(scanLiteralBalancedPattern('repo:foo bar', 0)).toMatchInlineSnapshot(
-            '{"type":"error","expected":"no recognized filter or operator","at":0}'
+            '{"type":"error","expected":"no recognized filter or keyword","at":0}'
         )
     })
 
@@ -140,13 +140,13 @@ describe('scanSearchQuery() for literal search', () => {
 
     test('parenthesized parameters', () => {
         expect(scanSearchQuery('repo:a (file:b and c)')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":6},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"a","range":{"start":5,"end":6}},"negated":false},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"filter","range":{"start":8,"end":14},"filterType":{"type":"literal","value":"file","range":{"start":8,"end":12}},"filterValue":{"type":"literal","value":"b","range":{"start":13,"end":14}},"negated":false},{"type":"whitespace","range":{"start":14,"end":15}},{"type":"operator","value":"and","range":{"start":15,"end":18},"kind":"and"},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"pattern","range":{"start":19,"end":20},"kind":1,"value":"c"},{"type":"closingParen","range":{"start":20,"end":21}}],"range":{"start":0,"end":21}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":6},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"a","range":{"start":5,"end":6}},"negated":false},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"filter","range":{"start":8,"end":14},"filterType":{"type":"literal","value":"file","range":{"start":8,"end":12}},"filterValue":{"type":"literal","value":"b","range":{"start":13,"end":14}},"negated":false},{"type":"whitespace","range":{"start":14,"end":15}},{"type":"keyword","value":"and","range":{"start":15,"end":18},"kind":"and"},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"pattern","range":{"start":19,"end":20},"kind":1,"value":"c"},{"type":"closingParen","range":{"start":20,"end":21}}],"range":{"start":0,"end":21}}}'
         )
     })
 
     test('nested parenthesized parameters', () => {
         expect(scanSearchQuery('(a and (b or c) and d)')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"pattern","range":{"start":1,"end":2},"kind":1,"value":"a"},{"type":"whitespace","range":{"start":2,"end":3}},{"type":"operator","value":"and","range":{"start":3,"end":6},"kind":"and"},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"pattern","range":{"start":8,"end":9},"kind":1,"value":"b"},{"type":"whitespace","range":{"start":9,"end":10}},{"type":"operator","value":"or","range":{"start":10,"end":12},"kind":"or"},{"type":"whitespace","range":{"start":12,"end":13}},{"type":"pattern","range":{"start":13,"end":14},"kind":1,"value":"c"},{"type":"closingParen","range":{"start":14,"end":15}},{"type":"whitespace","range":{"start":15,"end":16}},{"type":"operator","value":"and","range":{"start":16,"end":19},"kind":"and"},{"type":"whitespace","range":{"start":19,"end":20}},{"type":"pattern","range":{"start":20,"end":21},"kind":1,"value":"d"},{"type":"closingParen","range":{"start":21,"end":22}}],"range":{"start":0,"end":22}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"pattern","range":{"start":1,"end":2},"kind":1,"value":"a"},{"type":"whitespace","range":{"start":2,"end":3}},{"type":"keyword","value":"and","range":{"start":3,"end":6},"kind":"and"},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"pattern","range":{"start":8,"end":9},"kind":1,"value":"b"},{"type":"whitespace","range":{"start":9,"end":10}},{"type":"keyword","value":"or","range":{"start":10,"end":12},"kind":"or"},{"type":"whitespace","range":{"start":12,"end":13}},{"type":"pattern","range":{"start":13,"end":14},"kind":1,"value":"c"},{"type":"closingParen","range":{"start":14,"end":15}},{"type":"whitespace","range":{"start":15,"end":16}},{"type":"keyword","value":"and","range":{"start":16,"end":19},"kind":"and"},{"type":"whitespace","range":{"start":19,"end":20}},{"type":"pattern","range":{"start":20,"end":21},"kind":1,"value":"d"},{"type":"closingParen","range":{"start":21,"end":22}}],"range":{"start":0,"end":22}}}'
         )
     })
 
@@ -166,11 +166,11 @@ describe('scanSearchQuery() for regexp', () => {
         )
     })
 
-    test('interpret regexp pattern with match groups between operators', () => {
+    test('interpret regexp pattern with match groups between keywords', () => {
         expect(
             scanSearchQuery('(((sauce|graph)\\s?) or (best)) and (gr|aph)', false, PatternKind.Regexp)
         ).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"pattern","range":{"start":1,"end":19},"kind":2,"value":"((sauce|graph)\\\\s?)"},{"type":"whitespace","range":{"start":19,"end":20}},{"type":"operator","value":"or","range":{"start":20,"end":22},"kind":"or"},{"type":"whitespace","range":{"start":22,"end":23}},{"type":"pattern","range":{"start":23,"end":29},"kind":2,"value":"(best)"},{"type":"closingParen","range":{"start":29,"end":30}},{"type":"whitespace","range":{"start":30,"end":31}},{"type":"operator","value":"and","range":{"start":31,"end":34},"kind":"and"},{"type":"whitespace","range":{"start":34,"end":35}},{"type":"pattern","range":{"start":35,"end":43},"kind":2,"value":"(gr|aph)"}],"range":{"start":0,"end":43}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"pattern","range":{"start":1,"end":19},"kind":2,"value":"((sauce|graph)\\\\s?)"},{"type":"whitespace","range":{"start":19,"end":20}},{"type":"keyword","value":"or","range":{"start":20,"end":22},"kind":"or"},{"type":"whitespace","range":{"start":22,"end":23}},{"type":"pattern","range":{"start":23,"end":29},"kind":2,"value":"(best)"},{"type":"closingParen","range":{"start":29,"end":30}},{"type":"whitespace","range":{"start":30,"end":31}},{"type":"keyword","value":"and","range":{"start":31,"end":34},"kind":"and"},{"type":"whitespace","range":{"start":34,"end":35}},{"type":"pattern","range":{"start":35,"end":43},"kind":2,"value":"(gr|aph)"}],"range":{"start":0,"end":43}}}'
         )
     })
 
