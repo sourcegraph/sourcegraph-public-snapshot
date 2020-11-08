@@ -1,10 +1,11 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
+import { queryUserCampaignsCodeHosts } from './backend'
 import { CodeHostConnections } from './CodeHostConnections'
 
 export interface CampaignsSettingsAreaProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    // Nothing for now.
+    queryUserCampaignsCodeHosts?: typeof queryUserCampaignsCodeHosts
 }
 
 export const CampaignsSettingsArea: React.FunctionComponent<CampaignsSettingsAreaProps> = props => (

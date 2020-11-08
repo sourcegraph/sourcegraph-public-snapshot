@@ -84,7 +84,11 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                         >
                             Cancel
                         </button>
-                        <button type="submit" disabled={isLoading === true} className="btn btn-primary">
+                        <button
+                            type="submit"
+                            disabled={isLoading === true || credential.length === 0}
+                            className="btn btn-primary"
+                        >
                             {isLoading === true && <LoadingSpinner className="icon-inline" />}
                             Add token
                         </button>

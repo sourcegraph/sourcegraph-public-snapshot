@@ -5,24 +5,30 @@ import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsCodeHostFields } from '../../../graphql-operations'
 import { CampaignsIconFlushLeft } from '../icons'
-import { queryUserCampaignsCodeHosts } from './backend'
+import { queryUserCampaignsCodeHosts as _queryUserCampaignsCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    // Nothing for now.
+    queryUserCampaignsCodeHosts?: typeof _queryUserCampaignsCodeHosts
 }
 
-export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = props => {
+export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
+    history,
+    location,
+    queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
+}) => {
     const updateList = useMemo(() => new Subject<void>(), [])
     return (
         <>
             <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" className="justify-content-end" />
-            <h2>Code host connections</h2>
-            <p>Configure access to code hosts connected to this Sourcegraph instance, so you can publish changesets.</p>
+            <h2>Code host tokens</h2>
+            <p>Add authentication tokens to enable campaigns changeset creation on your code hosts.</p>
             <FilteredConnection<CampaignsCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
-                {...props}
+                history={history}
+                location={location}
+                useURLQuery={false}
                 nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ history: props.history, updateList }}
+                nodeComponentProps={{ history, updateList }}
                 queryConnection={queryUserCampaignsCodeHosts}
                 hideSearch={true}
                 defaultFirst={15}

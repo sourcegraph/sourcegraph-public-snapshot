@@ -48,7 +48,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     return (
         <>
             <li className="list-group-item p-3">
-                <div className="d-flex justify-content-between align-content-center mb-0">
+                <div className="d-flex justify-content-between align-items-center mb-0">
                     <h3 className="mb-0">
                         <CodeHostConnectionState enabled={node.credential !== null} />
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}

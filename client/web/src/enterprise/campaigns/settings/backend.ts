@@ -16,8 +16,6 @@ import {
 export const campaignsCredentialFieldsFragment = gql`
     fragment CampaignsCredentialFields on CampaignsCredential {
         id
-        externalServiceURL
-        externalServiceKind
         createdAt
     }
 `

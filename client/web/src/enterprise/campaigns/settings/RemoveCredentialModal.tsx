@@ -8,17 +8,19 @@ import { deleteCampaignsCredential } from './backend'
 import { Scalars } from '../../../graphql-operations'
 
 export interface RemoveCredentialModalProps {
+    credentialID: Scalars['ID']
+
     onCancel: () => void
     afterDelete: () => void
+
     history: H.History
-    credentialID: Scalars['ID']
 }
 
 export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModalProps> = ({
+    credentialID,
     onCancel,
     afterDelete,
     history,
-    credentialID,
 }) => {
     const labelId = 'removeCredential'
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
@@ -41,6 +43,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                 <h3 className="text-danger" id={labelId}>
                     Remove campaigns token?
                 </h3>
+
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
 
                 <p>You will not be able to create changesets on this code host if this token is removed.</p>
