@@ -14,87 +14,85 @@ export interface CodeHostConnectionNodeProps {
     updateList: Subject<void>
 }
 
+type OpenModal = 'add' | 'delete'
+
 export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
     node,
     history,
     updateList,
 }) => {
     const Icon = defaultExternalServices[node.externalServiceKind].icon
-    const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
 
-    const [showAddModal, setShowAddModal] = useState<boolean>(false)
+    const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
-        setShowAddModal(true)
+        setOpenModal('add')
     }, [])
-    const onCancelAdd = useCallback(() => {
-        setShowAddModal(false)
+    const onClickRemove = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setOpenModal('delete')
     }, [])
-    const afterCreate = useCallback(() => {
-        setShowAddModal(false)
+    const onCancel = useCallback(() => {
+        setOpenModal(undefined)
+    }, [])
+    const afterAction = useCallback(() => {
+        setOpenModal(undefined)
         updateList.next()
     }, [updateList])
 
-    const onRemove = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setShowDeleteModal(true)
-    }, [])
-    const onCancelDelete = useCallback(() => {
-        setShowDeleteModal(false)
-    }, [])
-    const afterDelete = useCallback(() => {
-        setShowDeleteModal(false)
-        updateList.next()
-    }, [updateList])
+    const isEnabled = node.credential !== null
+
     return (
         <>
-            <li className="list-group-item p-3">
+            <li className="list-group-item p-3 test-code-host-connection-node">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                     <h3 className="mb-0">
-                        <CodeHostConnectionState enabled={node.credential !== null} />
+                        {isEnabled && (
+                            <CheckCircleOutlineIcon className="text-success icon-inline test-code-host-connection-node-enabled" />
+                        )}
+                        {!isEnabled && (
+                            <CheckboxBlankCircleOutlineIcon className="text-danger icon-inline test-code-host-connection-node-disabled" />
+                        )}
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}
                     </h3>
                     <div className="mb-0">
-                        {node.credential !== null && (
-                            <a href="" className="btn btn-link text-danger" onClick={onRemove}>
+                        {isEnabled && (
+                            <a
+                                href=""
+                                className="btn btn-link text-danger test-code-host-connection-node-btn-remove"
+                                onClick={onClickRemove}
+                            >
                                 Remove
                             </a>
                         )}
-                        {node.credential === null && (
-                            <button type="button" className="btn btn-success" onClick={onClickAdd}>
+                        {!isEnabled && (
+                            <button
+                                type="button"
+                                className="btn btn-success test-code-host-connection-node-btn-add"
+                                onClick={onClickAdd}
+                            >
                                 Add token
                             </button>
                         )}
                     </div>
                 </div>
             </li>
-            {showDeleteModal && (
+            {openModal === 'delete' && (
                 <RemoveCredentialModal
-                    afterDelete={afterDelete}
-                    credentialID={node.credential!.id}
+                    onCancel={onCancel}
+                    afterDelete={afterAction}
                     history={history}
-                    onCancel={onCancelDelete}
+                    credentialID={node.credential!.id}
                 />
             )}
-            {showAddModal && (
+            {openModal === 'add' && (
                 <AddCredentialModal
-                    onCancel={onCancelAdd}
-                    afterCreate={afterCreate}
+                    onCancel={onCancel}
+                    afterCreate={afterAction}
+                    history={history}
                     externalServiceKind={node.externalServiceKind}
                     externalServiceURL={node.externalServiceURL}
-                    history={history}
                 />
             )}
         </>
     )
 }
-
-interface CodeHostConnectionStateProps {
-    enabled: boolean
-}
-
-const CodeHostConnectionState: React.FunctionComponent<CodeHostConnectionStateProps> = ({ enabled }) => (
-    <>
-        {enabled && <CheckCircleOutlineIcon className="text-success icon-inline" />}
-        {!enabled && <CheckboxBlankCircleOutlineIcon className="text-danger icon-inline" />}
-    </>
-)

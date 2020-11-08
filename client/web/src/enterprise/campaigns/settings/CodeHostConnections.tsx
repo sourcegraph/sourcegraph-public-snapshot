@@ -17,6 +17,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     location,
     queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
 }) => {
+    // Subject to fire a reload of the list.
     const updateList = useMemo(() => new Subject<void>(), [])
     return (
         <>

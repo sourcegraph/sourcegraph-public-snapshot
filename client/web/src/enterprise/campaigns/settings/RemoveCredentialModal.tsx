@@ -39,7 +39,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
             onDismiss={onCancel}
             aria-labelledby={labelId}
         >
-            <div className="web-content">
+            <div className="web-content test-remove-credential-modal">
                 <h3 className="text-danger" id={labelId}>
                     Remove campaigns token?
                 </h3>
@@ -57,7 +57,12 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                     >
                         Cancel
                     </button>
-                    <button type="button" disabled={isLoading === true} className="btn btn-danger" onClick={onDelete}>
+                    <button
+                        type="button"
+                        disabled={isLoading === true}
+                        className="btn btn-danger test-remove-credential-modal-submit"
+                        onClick={onDelete}
+                    >
                         {isLoading === true && <LoadingSpinner className="icon-inline" />}
                         Yes, remove connection
                     </button>

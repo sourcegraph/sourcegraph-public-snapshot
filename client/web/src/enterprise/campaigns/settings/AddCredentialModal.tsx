@@ -27,9 +27,11 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     const labelId = 'addCredential'
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [credential, setCredential] = useState<string>('')
+
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
     }, [])
+
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
@@ -43,13 +45,14 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
         },
         [afterCreate, credential, externalServiceKind, externalServiceURL]
     )
+
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
             onDismiss={onCancel}
             aria-labelledby={labelId}
         >
-            <div className="web-content">
+            <div className="web-content test-add-credential-modal">
                 <h3 id={labelId}>GitHub campaigns token</h3>
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
                 <Form onSubmit={onSubmit}>
@@ -59,23 +62,25 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             id="token"
                             name="token"
                             type="text"
-                            className="form-control"
+                            className="form-control test-add-credential-modal-input"
                             required={true}
                             minLength={1}
                             value={credential}
                             onChange={onChangeCredential}
                         />
-                        <p className="form-text text-muted">
+                        <p className="form-text">
                             <a href="asdasdas" rel="noreferrer noopener" target="_blank">
                                 Create a new access token
                             </a>{' '}
                             with repo or public_repo scope.
                         </p>
                         <p className="form-text">
-                            <LockIcon className="icon-inline" /> Access tokens are encrypted before storing.
+                            <i>
+                                <LockIcon className="icon-inline" /> Access tokens are encrypted before storing.
+                            </i>
                         </p>
                     </div>
-                    <div className="d-flex justify-content-end pt-5">
+                    <div className="d-flex justify-content-end">
                         <button
                             type="button"
                             disabled={isLoading === true}
@@ -87,7 +92,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                         <button
                             type="submit"
                             disabled={isLoading === true || credential.length === 0}
-                            className="btn btn-primary"
+                            className="btn btn-primary test-add-credential-modal-submit"
                         >
                             {isLoading === true && <LoadingSpinner className="icon-inline" />}
                             Add token
