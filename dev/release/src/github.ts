@@ -13,6 +13,24 @@ function dateMarkdown(date: Date, name: string): string {
     return `[${formatDate(date)}](${timezoneLink(date, name)})`
 }
 
+// Ensure these templates are up to date with the state of the tooling and release processes.
+const templates = {
+    releaseIssue: {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/release_issue_template.md',
+    },
+    patchReleaseIssue: {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/patch_release_issue_template.md',
+    },
+}
+
+/**
+ * Ensures a release ($MAJOR.$MINOR) tracking issue has been created with the given
+ * parameters using `templates.releaseIssue`.
+ */
 export async function ensureTrackingIssue({
     version,
     assignees,
@@ -31,11 +49,8 @@ export async function ensureTrackingIssue({
     dryRun: boolean
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const releaseIssueTemplate = await getContent(octokit, {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/release_issue_template.md',
-    })
+    console.log(`Preparing issue from ${JSON.stringify(templates.releaseIssue)}`)
+    const releaseIssueTemplate = await getContent(octokit, templates.releaseIssue)
     const majorMinor = `${version.major}.${version.minor}`
     const releaseIssueBody = releaseIssueTemplate
         .replace(/\$MAJOR/g, version.major.toString())
@@ -86,6 +101,10 @@ export async function ensureTrackingIssue({
     )
 }
 
+/**
+ * Ensures a patch release ($MAJOR.$MINOR.PATCH) tracking issue has been created with the
+ * given parameters using `templates.releaseIssue`.
+ */
 export async function ensurePatchReleaseIssue({
     version,
     assignees,
@@ -96,11 +115,8 @@ export async function ensurePatchReleaseIssue({
     dryRun: boolean
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const issueTemplate = await getContent(octokit, {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/patch_release_issue_template.md',
-    })
+    console.log(`Preparing issue from ${JSON.stringify(templates.patchReleaseIssue)}`)
+    const issueTemplate = await getContent(octokit, templates.patchReleaseIssue)
     const issueBody = issueTemplate
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
