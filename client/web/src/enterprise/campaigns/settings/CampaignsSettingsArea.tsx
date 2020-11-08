@@ -8,6 +8,7 @@ export interface CampaignsSettingsAreaProps extends Pick<RouteComponentProps, 'h
     queryUserCampaignsCodeHosts?: typeof queryUserCampaignsCodeHosts
 }
 
+/** The page area for all campaigns settings. It's shown in the user settings sidebar. */
 export const CampaignsSettingsArea: React.FunctionComponent<CampaignsSettingsAreaProps> = props => (
     <>
         <PageTitle title="Campaigns settings" />
