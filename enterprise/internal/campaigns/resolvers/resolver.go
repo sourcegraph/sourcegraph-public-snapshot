@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -686,6 +688,48 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlbackend.CreateCampaignsCredentialArgs) (_ graphqlbackend.CampaignsCredentialResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignsCredential", fmt.Sprintf("%q (%q)", args.ExternalServiceKind, args.ExternalServiceURL))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	// Check user is authenticated.
+	actor := actor.FromContext(ctx)
+	if actor == nil {
+		return nil, errors.New("not authenticated")
+	}
+	if actor.UID == 0 {
+		return nil, errors.New("no user in context")
+	}
+
+	// Need to validate externalServiceKind, otherwise this'll panic.
+	kind, valid := extsvc.ParseServiceKind(args.ExternalServiceKind)
+	if !valid {
+		return nil, errors.New("invalid external service kind")
+	}
+
+	// TODO: Do we want to validate the URL, or even if such an external service exists? Or better, would the DB have a constraint?
+
+	// For now, we only support OAuth bearer tokens.
+	a := &auth.OAuthBearerToken{Token: args.Credential}
+	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+		Domain:              db.UserCredentialDomainCampaigns,
+		ExternalServiceID:   args.ExternalServiceURL,
+		ExternalServiceType: extsvc.KindToType(kind),
+		UserID:              actor.UID,
+	}, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignsCredentialResolver{credential: cred}, nil
 }
 
 func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlbackend.DeleteCampaignsCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {

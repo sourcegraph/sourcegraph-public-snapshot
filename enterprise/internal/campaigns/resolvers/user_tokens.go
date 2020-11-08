@@ -2,20 +2,15 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 const campaignsCredentialIDKind = "CampaignsCredential"
@@ -27,47 +22,6 @@ func marshalCampaignsCredentialID(id int64) graphql.ID {
 func unmarshalCampaignsCredentialID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
 	return
-}
-
-func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlbackend.CreateCampaignsCredentialArgs) (graphqlbackend.CampaignsCredentialResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignsCredential", fmt.Sprintf("ExternalServiceKind %s", args.ExternalServiceKind))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// Validate that the instance's licensing tier supports campaigns.
-	if err := checkLicense(); err != nil {
-		return nil, err
-	}
-
-	if err := campaignsEnabled(); err != nil {
-		return nil, err
-	}
-
-	actor := actor.FromContext(ctx)
-	if actor == nil {
-		return nil, errors.New("not authenticated")
-	}
-	if actor.UID == 0 {
-		return nil, errors.New("no user in context")
-	}
-
-	// TODO: Need to validate ExternalServiceKind, otherwise this'll panic.
-
-	a := &auth.OAuthBearerToken{Token: args.Credential}
-	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
-		Domain:              db.UserCredentialDomainCampaigns,
-		ExternalServiceID:   args.ExternalServiceURL,
-		ExternalServiceType: extsvc.KindToType(args.ExternalServiceKind),
-		UserID:              actor.UID,
-	}, a)
-	if err != nil {
-		return nil, err
-	}
-
-	return &campaignsCredentialResolver{credential: cred}, nil
 }
 
 func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
