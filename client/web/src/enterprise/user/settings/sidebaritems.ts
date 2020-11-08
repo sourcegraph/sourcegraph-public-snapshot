@@ -22,7 +22,7 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/campaigns',
             label: 'Campaigns',
             condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
-                viewerCanAdminister && !isSourcegraphDotCom && window.context.campaignsEnabled,
+                !isSourcegraphDotCom && window.context.campaignsEnabled && viewerCanAdminister,
         },
         ...userSettingsSideBarItems.account.slice(2),
         {
