@@ -24,10 +24,6 @@ func unmarshalCampaignsCredentialID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
-func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
-	return &campaignsCodeHostConnectionResolver{args: args, store: r.store}, nil
-}
-
 type campaignsCredentialResolver struct {
 	credential *db.UserCredential
 }

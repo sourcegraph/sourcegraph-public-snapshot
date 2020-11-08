@@ -549,6 +549,25 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}, nil
 }
 
+func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only viewable for self or by site admins.
+	ownerOrAdmin, err := checkSiteAdminOrSameUser(ctx, args.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if !ownerOrAdmin {
+		return nil, errors.New("non site admin cannot retrieve code host config for other users")
+	}
+
+	// TODO: Apply things like validateFirstParamDefaults and parse `after`.
+
+	return &campaignsCodeHostConnectionResolver{args: args, store: r.store}, nil
+}
+
 // listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into
 // ListChangesetsOpts.
 // If the args do not include a filter that would reveal sensitive information
