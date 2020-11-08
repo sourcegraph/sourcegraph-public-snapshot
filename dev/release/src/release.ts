@@ -479,7 +479,7 @@ cc @${config.captainGitHubUsername}
                                 } else {
                                     items.push(
                                         'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch',
-                                        'If any specific upgrade steps are required, update `doc/admin/updates`'
+                                        'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
                                     )
                                 }
                                 items.push(
@@ -508,7 +508,9 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
-                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR (`pure-docker` release is optional for patch releases)',
+                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${
+                                isPatchRelease ? '(note: `pure-docker` release is optional for patch releases)' : ''
+                            }`,
                         ]),
                     },
                     {
