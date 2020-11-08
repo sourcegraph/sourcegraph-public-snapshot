@@ -89,7 +89,7 @@ export async function ensureTrackingIssue({
     return ensureIssue(
         octokit,
         {
-            title: trackingIssueTitle(version.major, version.minor),
+            title: trackingIssueTitle(version),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -124,7 +124,7 @@ export async function ensurePatchReleaseIssue({
     return ensureIssue(
         octokit,
         {
-            title: `${version.version} patch release`,
+            title: trackingIssueTitle(version),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -199,8 +199,11 @@ export async function listIssues(
     return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
 }
 
-export function trackingIssueTitle(major: number, minor: number): string {
-    return `${major}.${minor} release tracking issue`
+export function trackingIssueTitle(version: semver.SemVer): string {
+    if (!version.patch) {
+        return `${version.major}.${version.minor} release tracking issue`
+    }
+    return `${version.version} patch release tracking issue`
 }
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {

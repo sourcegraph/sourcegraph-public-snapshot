@@ -332,10 +332,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
             const githubClient = await getAuthenticatedGitHubClient()
             const { upcoming: release } = await releaseVersions(config)
 
-            const trackingIssueURL = await getIssueByTitle(
-                githubClient,
-                trackingIssueTitle(release.major, release.minor)
-            )
+            const trackingIssueURL = await getIssueByTitle(githubClient, trackingIssueTitle(release))
             if (!trackingIssueURL) {
                 throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
@@ -410,9 +407,22 @@ ${issueCategories
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
             )
+            const trackingIssueURL = await getIssueByTitle(
+                await getAuthenticatedGitHubClient(),
+                trackingIssueTitle(release)
+            )
+            if (!trackingIssueURL) {
+                // Do not block release staging on lack of tracking issue
+                console.error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
+            }
+
+            // default PR content
             const defaultPRMessage = `release: sourcegraph@${release.version}`
             const prBodyAndDraftState = (actionItems: string[]): { draft: boolean; body: string } => {
-                const defaultBody = `Follow the Sourcegraph ${release.version} release in the [release campaign](${campaignURL}).`
+                const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
+
+* [Release campaign](${campaignURL})
+* ${trackingIssueURL ? `[Tracking issue](${trackingIssueURL}` : 'No tracking issue exists for this release'}`
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
                 }
