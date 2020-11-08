@@ -217,6 +217,35 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	}, nil
 }
 
+func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalCampaignsCredentialID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	cred, err := db.UserCredentials.GetByID(ctx, dbID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	ownerOrAdmin, err := checkSiteAdminOrSameUser(ctx, cred.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if !ownerOrAdmin {
+		return nil, errors.New("resource doesn't belong to requesting user and is not site admin")
+	}
+
+	return &campaignsCredentialResolver{credential: cred}, nil
+}
+
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
 	tr, _ := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))

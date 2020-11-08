@@ -84,21 +84,6 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
-	dbID, err := unmarshalCampaignsCredentialID(id)
-	if err != nil {
-		return nil, err
-	}
-	cred, err := db.UserCredentials.GetByID(ctx, dbID)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &campaignsCredentialResolver{credential: cred}, nil
-}
-
 func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
 	return &campaignsCodeHostConnectionResolver{args: args, store: r.store}, nil
 }
