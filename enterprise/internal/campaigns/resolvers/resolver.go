@@ -688,6 +688,48 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlbackend.DeleteCampaignsCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaignsCredential", fmt.Sprintf("Credential: %q", args.CampaignsCredential))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalCampaignsCredentialID(args.CampaignsCredential)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	// Get existing credential.
+	cred, err := db.UserCredentials.GetByID(ctx, dbID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user may delete the credential.
+	ownerOrAdmin, err := checkSiteAdminOrSameUser(ctx, cred.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if !ownerOrAdmin {
+		return nil, errors.New("resource doesn't belong to requesting user and is not site admin")
+	}
+
+	// This also fails if the credential was not found.
+	if err := db.UserCredentials.Delete(ctx, dbID); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	if s == nil {
 		return campaigns.CampaignStateAny, nil
