@@ -57,7 +57,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 	// TODO: Need to validate ExternalServiceKind, otherwise this'll panic.
 
 	a := &auth.OAuthBearerToken{Token: args.Credential}
-	cred, err := db.UserCredentials.Upsert(ctx, db.UserCredentialScope{
+	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(args.ExternalServiceKind),
