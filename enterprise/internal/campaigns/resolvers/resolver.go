@@ -563,9 +563,19 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 		return nil, errors.New("non site admin cannot retrieve code host config for other users")
 	}
 
+	limitOffset := db.LimitOffset{
+		Limit: int(args.First),
+	}
+	if args.After != nil {
+		var err error
+		limitOffset.Offset, err = strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// TODO: Apply things like validateFirstParamDefaults and parse `after`.
 
-	return &campaignsCodeHostConnectionResolver{args: args, store: r.store}, nil
+	return &campaignsCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store}, nil
 }
 
 // listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into

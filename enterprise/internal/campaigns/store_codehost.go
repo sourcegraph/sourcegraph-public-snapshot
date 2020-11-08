@@ -38,6 +38,7 @@ SELECT
 FROM repo
 WHERE %s
 GROUP BY external_service_type, external_service_id
+ORDER BY external_service_type ASC, external_service_id ASC
 %s
 `
 
