@@ -92,29 +92,29 @@ describe('parseSearchQuery() for literal search', () => {
 
     test('filter', () =>
         expect(parseSearchQuery('f:b')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":3},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"b","range":{"start":2,"end":3}}}],"range":{"start":0,"end":3}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":3},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"b","range":{"start":2,"end":3}},"negated":false}],"range":{"start":0,"end":3}}}'
         ))
 
     test('negated filter', () =>
         expect(parseSearchQuery('-f:b')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"-f","range":{"start":0,"end":2}},"filterValue":{"type":"literal","value":"b","range":{"start":3,"end":4}}}],"range":{"start":0,"end":4}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"-f","range":{"start":0,"end":2}},"filterValue":{"type":"literal","value":"b","range":{"start":3,"end":4}},"negated":true}],"range":{"start":0,"end":4}}}'
         ))
 
     test('filter with quoted value', () => {
         expect(parseSearchQuery('f:"b"')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":5},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"quoted","quotedValue":"b","range":{"start":2,"end":5}}}],"range":{"start":0,"end":5}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":5},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"quoted","quotedValue":"b","range":{"start":2,"end":5}},"negated":false}],"range":{"start":0,"end":5}}}'
         )
     })
 
     test('filter with a value ending with a colon', () => {
         expect(parseSearchQuery('f:a:')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a:","range":{"start":2,"end":4}}}],"range":{"start":0,"end":4}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a:","range":{"start":2,"end":4}},"negated":false}],"range":{"start":0,"end":4}}}'
         )
     })
 
     test('filter where the value is a colon', () => {
         expect(parseSearchQuery('f:a:')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a:","range":{"start":2,"end":4}}}],"range":{"start":0,"end":4}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":4},"filterType":{"type":"literal","value":"f","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a:","range":{"start":2,"end":4}},"negated":false}],"range":{"start":0,"end":4}}}'
         )
     })
 
@@ -135,12 +135,12 @@ describe('parseSearchQuery() for literal search', () => {
 
     test('complex query', () =>
         expect(parseSearchQuery('repo:^github\\.com/gorilla/mux$ lang:go -file:mux.go Router')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":30},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"^github\\\\.com/gorilla/mux$","range":{"start":5,"end":30}}},{"type":"whitespace","range":{"start":30,"end":31}},{"type":"filter","range":{"start":31,"end":38},"filterType":{"type":"literal","value":"lang","range":{"start":31,"end":35}},"filterValue":{"type":"literal","value":"go","range":{"start":36,"end":38}}},{"type":"whitespace","range":{"start":38,"end":39}},{"type":"filter","range":{"start":39,"end":51},"filterType":{"type":"literal","value":"-file","range":{"start":39,"end":44}},"filterValue":{"type":"literal","value":"mux.go","range":{"start":45,"end":51}}},{"type":"whitespace","range":{"start":51,"end":52}},{"type":"pattern","range":{"start":52,"end":58},"kind":1,"value":"Router"}],"range":{"start":0,"end":58}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":30},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"^github\\\\.com/gorilla/mux$","range":{"start":5,"end":30}},"negated":false},{"type":"whitespace","range":{"start":30,"end":31}},{"type":"filter","range":{"start":31,"end":38},"filterType":{"type":"literal","value":"lang","range":{"start":31,"end":35}},"filterValue":{"type":"literal","value":"go","range":{"start":36,"end":38}},"negated":false},{"type":"whitespace","range":{"start":38,"end":39}},{"type":"filter","range":{"start":39,"end":51},"filterType":{"type":"literal","value":"-file","range":{"start":39,"end":44}},"filterValue":{"type":"literal","value":"mux.go","range":{"start":45,"end":51}},"negated":true},{"type":"whitespace","range":{"start":51,"end":52}},{"type":"pattern","range":{"start":52,"end":58},"kind":1,"value":"Router"}],"range":{"start":0,"end":58}}}'
         ))
 
     test('parenthesized parameters', () => {
         expect(parseSearchQuery('repo:a (file:b and c)')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":6},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"a","range":{"start":5,"end":6}}},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"filter","range":{"start":8,"end":14},"filterType":{"type":"literal","value":"file","range":{"start":8,"end":12}},"filterValue":{"type":"literal","value":"b","range":{"start":13,"end":14}}},{"type":"whitespace","range":{"start":14,"end":15}},{"type":"operator","value":"and","range":{"start":15,"end":18},"kind":"and"},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"pattern","range":{"start":19,"end":20},"kind":1,"value":"c"},{"type":"closingParen","range":{"start":20,"end":21}}],"range":{"start":0,"end":21}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":6},"filterType":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"filterValue":{"type":"literal","value":"a","range":{"start":5,"end":6}},"negated":false},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"openingParen","range":{"start":7,"end":8}},{"type":"filter","range":{"start":8,"end":14},"filterType":{"type":"literal","value":"file","range":{"start":8,"end":12}},"filterValue":{"type":"literal","value":"b","range":{"start":13,"end":14}},"negated":false},{"type":"whitespace","range":{"start":14,"end":15}},{"type":"operator","value":"and","range":{"start":15,"end":18},"kind":"and"},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"pattern","range":{"start":19,"end":20},"kind":1,"value":"c"},{"type":"closingParen","range":{"start":20,"end":21}}],"range":{"start":0,"end":21}}}'
         )
     })
 
@@ -152,7 +152,7 @@ describe('parseSearchQuery() for literal search', () => {
 
     test('do not treat links as filters', () => {
         expect(parseSearchQuery('http://example.com repo:a')).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"pattern","range":{"start":0,"end":18},"kind":1,"value":"http://example.com"},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"filter","range":{"start":19,"end":25},"filterType":{"type":"literal","value":"repo","range":{"start":19,"end":23}},"filterValue":{"type":"literal","value":"a","range":{"start":24,"end":25}}}],"range":{"start":0,"end":25}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"pattern","range":{"start":0,"end":18},"kind":1,"value":"http://example.com"},{"type":"whitespace","range":{"start":18,"end":19}},{"type":"filter","range":{"start":19,"end":25},"filterType":{"type":"literal","value":"repo","range":{"start":19,"end":23}},"filterValue":{"type":"literal","value":"a","range":{"start":24,"end":25}},"negated":false}],"range":{"start":0,"end":25}}}'
         )
     })
 })
@@ -176,7 +176,7 @@ describe('parseSearchQuery() for regexp', () => {
 
     test('interpret regexp slash quotes', () => {
         expect(parseSearchQuery('r:a /a regexp \\ pattern/', false, PatternKind.Regexp)).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":3},"filterType":{"type":"literal","value":"r","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a","range":{"start":2,"end":3}}},{"type":"whitespace","range":{"start":3,"end":4}},{"type":"quoted","quotedValue":"a regexp \\\\ pattern","range":{"start":4,"end":24}}],"range":{"start":0,"end":24}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"filter","range":{"start":0,"end":3},"filterType":{"type":"literal","value":"r","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a","range":{"start":2,"end":3}},"negated":false},{"type":"whitespace","range":{"start":3,"end":4}},{"type":"quoted","quotedValue":"a regexp \\\\ pattern","range":{"start":4,"end":24}}],"range":{"start":0,"end":24}}}'
         )
     })
 })
@@ -188,7 +188,7 @@ repo:sourcegraph
 // search for thing
 thing`
         expect(parseSearchQuery(query, true)).toMatchInlineSnapshot(
-            '{"type":"success","token":{"type":"sequence","members":[{"type":"comment","value":"// saucegraph is best graph","range":{"start":0,"end":27}},{"type":"whitespace","range":{"start":27,"end":28}},{"type":"filter","range":{"start":28,"end":44},"filterType":{"type":"literal","value":"repo","range":{"start":28,"end":32}},"filterValue":{"type":"literal","value":"sourcegraph","range":{"start":33,"end":44}}},{"type":"whitespace","range":{"start":44,"end":45}},{"type":"comment","value":"// search for thing","range":{"start":45,"end":64}},{"type":"whitespace","range":{"start":64,"end":65}},{"type":"pattern","range":{"start":65,"end":70},"kind":1,"value":"thing"}],"range":{"start":0,"end":70}}}'
+            '{"type":"success","token":{"type":"sequence","members":[{"type":"comment","value":"// saucegraph is best graph","range":{"start":0,"end":27}},{"type":"whitespace","range":{"start":27,"end":28}},{"type":"filter","range":{"start":28,"end":44},"filterType":{"type":"literal","value":"repo","range":{"start":28,"end":32}},"filterValue":{"type":"literal","value":"sourcegraph","range":{"start":33,"end":44}},"negated":false},{"type":"whitespace","range":{"start":44,"end":45}},{"type":"comment","value":"// search for thing","range":{"start":45,"end":64}},{"type":"whitespace","range":{"start":64,"end":65}},{"type":"pattern","range":{"start":65,"end":70},"kind":1,"value":"thing"}],"range":{"start":0,"end":70}}}'
         )
     })
 
