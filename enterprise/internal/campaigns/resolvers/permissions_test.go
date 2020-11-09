@@ -36,7 +36,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -322,7 +322,7 @@ func TestPermissionLevels(t *testing.T) {
 		})
 	})
 
-	t.Run("mutations", func(t *testing.T) {
+	t.Run("campaign mutations", func(t *testing.T) {
 		mutations := []struct {
 			name           string
 			mutationFunc   func(campaignID, changesetID, campaignSpecID string) string
@@ -465,9 +465,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 	})
 
-	t.Run("admin-only create mutations", func(t *testing.T) {
-		// These can be removed once we enable creation of
-		// changesetSpecs/campaignSpecs/applyCampaign for non-site-admin users.
+	t.Run("spec mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
 			mutationFunc func(userID string) string
@@ -498,23 +496,23 @@ func TestPermissionLevels(t *testing.T) {
 					currentUser int32
 					wantAuthErr bool
 				}{
-					{
-						name:        "authorized user",
-						currentUser: userID,
-						wantAuthErr: true,
-					},
-					{
-						name:        "authorized site-admin",
-						currentUser: adminID,
-						wantAuthErr: false,
-					},
+					{name: "no user", currentUser: 0, wantAuthErr: true},
+					{name: "user", currentUser: userID, wantAuthErr: false},
+					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						mutation := m.mutationFunc(string(graphqlbackend.MarshalUserID(tc.currentUser)))
+						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
+						if tc.currentUser == 0 {
+							// If we don't have a currentUser we try to create
+							// a campaign in another namespace, solely for the
+							// purposes of this test.
+							namespaceID = string(graphqlbackend.MarshalUserID(userID))
+						}
+						mutation := m.mutationFunc(namespaceID)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 
@@ -525,7 +523,7 @@ func TestPermissionLevels(t *testing.T) {
 							if len(errs) != 1 {
 								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 							}
-							if !strings.Contains(errs[0].Error(), "must be site admin") {
+							if !strings.Contains(errs[0].Error(), "not authenticated") {
 								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 							}
 						} else {
@@ -553,7 +551,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -648,7 +646,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -673,7 +671,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -700,7 +698,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
-		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -789,7 +786,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
-	changesetStats   apitest.ChangesetConnectionStats
+	changesetStats   apitest.ChangesetsStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -807,7 +804,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
 		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
@@ -828,11 +825,12 @@ const queryCampaignPermLevels = `
 query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
     ... on Campaign {
-      id
+	  id
+
+	  changesetsStats { unpublished, open, merged, closed, total }
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
-		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {

@@ -213,7 +213,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return err
 	}
 
-	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver)
+	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver)
 	if err != nil {
 		return err
 	}

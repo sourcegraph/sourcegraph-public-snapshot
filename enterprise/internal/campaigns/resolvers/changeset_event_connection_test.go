@@ -89,7 +89,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 
 	addChangeset(t, ctx, store, campaign, changeset.ID)
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

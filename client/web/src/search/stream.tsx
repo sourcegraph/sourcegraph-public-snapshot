@@ -65,15 +65,20 @@ interface CommitMatch {
 
 type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
 
-// Aggregate type. Replace when new ones come in.
+/**
+ * An aggregate type representing a progress update.
+ * Should be replaced when a new ones come in.
+ */
 interface Progress {
     /**
      * True if this is the final progress update for this stream
      */
     done: boolean
 
-    // The number of repositories matching the repo: filter. Is set once they
-    // are resolved.
+    /**
+     * The number of repositories matching the repo: filter. Is set once they
+     * are resolved.
+     */
     repositoriesCount?: number
 
     // The number of non-overlapping matches. If skipped is non-empty, then
@@ -81,10 +86,15 @@ interface Progress {
     matchCount: number
 
     // Wall clock time in milliseconds for this search.
-    durationMS: number
+    durationMs: number
 
-    // A description of shards or documents that were skipped. This has a
-    // deterministic ordering.
+    /**
+     * A description of shards or documents that were skipped. This has a
+     * deterministic ordering. More important reasons will be listed first. If
+     * a search is repeated, the final skipped list will be the same.
+     * However, within a search stream when a new skipped reason is found, it
+     * may appear anywhere in the list.
+     */
     skipped: Skipped[]
 }
 
@@ -94,28 +104,35 @@ interface Skipped {
      *
      * - document-match-limit :: we found too many matches in a document, so we stopped searching it.
      * - shard-match-limit :: we found too many matches in a shard/repository, so we stopped searching it.
+     * - repository-limit :: we did not search a repository because the set of repositories to search was too large.
      * - shard-timeout :: we ran out of time before searching a shard/repository.
      * - repository-cloning :: we could not search a repository because it is not cloned.
      * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
      * - excluded-fork :: we did not search a repository because it is a fork.
      * - excluded-archive :: we did not search a repository because it is archived.
-     * - repository-limit :: we did not search a repository because the set of repositories to search was too large.
      */
     reason:
         | 'document-match-limit'
         | 'shard-match-limit'
+        | 'repository-limit'
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
         | 'excluded-fork'
         | 'excluded-archive'
-        | 'repository-limit'
-    // A short message. eg 1,200 timedout.
+    /**
+     * A short message. eg 1,200 timed out.
+     */
     title: string
-    // A message to show the user. Usually includes information explaining the reason, count as well as a sample of the missing items.
+    /**
+     * A message to show the user. Usually includes information explaining the reason,
+     * count as well as a sample of the missing items.
+     */
     message: string
     severity: 'info' | 'warn'
-    // a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
+    /**
+     * a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
+     */
     suggested?: {
         title: string
         queryExpression: string
@@ -269,7 +286,7 @@ function setProgress(results: GQL.ISearchResults, progress: Progress): GQL.ISear
         approximateResultCount: `${progress.matchCount}${exact ? '' : '+'}`,
         limitHit: hasSkippedLimitReason,
         repositoriesCount: progress.repositoriesCount || 0,
-        elapsedMilliseconds: progress.durationMS,
+        elapsedMilliseconds: progress.durationMs,
     }
 }
 
