@@ -2,80 +2,254 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
-type Resolver struct {
+// NewResolver returns a new Resolver who uses the given db
+func NewResolver(db *sql.DB) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{db: db, clock: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }}
 }
 
-func (*Resolver) Monitors(ctx context.Context, userID graphql.ID, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
-	return &monitorConnection{userID: userID}, nil
+type Resolver struct {
+	db    *sql.DB
+	clock func() time.Time
+}
+
+func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
+	q, err := monitorsQuery(userID, args)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.Query(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ms, err := scanMonitors(rows)
+	if err != nil {
+		return nil, err
+	}
+	return &monitorConnection{r, ms}, nil
+}
+
+func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	q, err := r.createCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return r.runQuery(ctx, q)
+}
+
+func (r *Resolver) runQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
+	rows, err := r.db.Query(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ms, err := scanMonitors(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(ms) == 0 {
+		return nil, fmt.Errorf("operation failed. Query should have returned 1 row")
+	}
+	return ms[0], nil
+}
+
+func scanMonitors(rows *sql.Rows) ([]graphqlbackend.MonitorResolver, error) {
+	var ms []graphqlbackend.MonitorResolver
+	for rows.Next() {
+		m := &monitor{}
+		if err := rows.Scan(
+			&m.id,
+			&m.createdBy,
+			&m.createdAt,
+			&m.changedBy,
+			&m.changedAt,
+			&m.description,
+			&m.enabled,
+			&m.namespaceUserID,
+			&m.namespaceOrgID,
+		); err != nil {
+			return nil, err
+		}
+		ms = append(ms, m)
+	}
+	err := rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ms, nil
+}
+
+func nilOrInt32(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
+}
+
+var monitorColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_monitors.id"),
+	sqlf.Sprintf("cm_monitors.created_by"),
+	sqlf.Sprintf("cm_monitors.created_at"),
+	sqlf.Sprintf("cm_monitors.changed_by"),
+	sqlf.Sprintf("cm_monitors.changed_at"),
+	sqlf.Sprintf("cm_monitors.description"),
+	sqlf.Sprintf("cm_monitors.enabled"),
+	sqlf.Sprintf("cm_monitors.namespace_user_id"),
+	sqlf.Sprintf("cm_monitors.namespace_org_id"),
+}
+
+func monitorsQuery(userID int32, args *graphqlbackend.ListMonitorsArgs) (*sqlf.Query, error) {
+	const SelectMonitorsByOwner = `
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id 
+FROM cm_monitors
+WHERE namespace_user_id = %s
+AND id > %s
+ORDER BY id ASC
+LIMIT %S
+`
+	var after int64
+	if args.After == nil {
+		after = 0
+	} else {
+		err := relay.UnmarshalSpec(graphql.ID(*args.After), &after)
+		if err != nil {
+			return nil, err
+		}
+	}
+	query := sqlf.Sprintf(
+		SelectMonitorsByOwner,
+		userID,
+		after,
+		args.First,
+	)
+	return query, nil
+}
+
+func (r *Resolver) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (*sqlf.Query, error) {
+	const InsertCodeMonitorQuery = `
+INSERT INTO cm_monitors 
+(created_at, created_by, changed_at, changed_by, description, namespace_user_id, namespace_org_id) 
+VALUES (%s,%s,%s,%s,%s,%s,%s)
+RETURNING %s;
+`
+	var userID int32
+	var orgID int32
+	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
+	if err != nil {
+		return nil, err
+	}
+	now := r.clock()
+	a := actor.FromContext(ctx)
+	return sqlf.Sprintf(
+		InsertCodeMonitorQuery,
+		now,
+		a.UID,
+		now,
+		a.UID,
+		args.Description,
+		nilOrInt32(userID),
+		nilOrInt32(orgID),
+		sqlf.Join(monitorColumns, ", "),
+	), nil
 }
 
 //
 // MonitorConnection
 //
 type monitorConnection struct {
-	userID graphql.ID
+	*Resolver
+	monitors []graphqlbackend.MonitorResolver
 }
 
 func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorResolver, error) {
-	return []graphqlbackend.MonitorResolver{&monitor{userID: m.userID}}, nil
+	return m.monitors, nil
 }
 
 func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
-	return 1, nil
+	return int32(len(m.monitors)), nil
 }
 
 func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	if len(m.monitors) == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID())), nil
 }
 
 //
 // Monitor
 //
 type monitor struct {
-	userID graphql.ID
+	id              int64
+	createdBy       int32
+	createdAt       time.Time
+	changedBy       int32
+	changedAt       time.Time
+	description     string
+	enabled         bool
+	namespaceUserID *int32
+	namespaceOrgID  *int32
 }
 
+const (
+	monitorKind = "codemonitor"
+)
+
 func (m *monitor) ID() graphql.ID {
-	return "ID not implemented"
+	return relay.MarshalID(monitorKind, m.id)
 }
 
 func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByID(ctx, m.userID)
+	return graphqlbackend.UserByIDInt32(ctx, m.createdBy)
 }
 
 func (m *monitor) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: time.Now()}
+	return graphqlbackend.DateTime{Time: m.createdAt}
 }
 
 func (m *monitor) Description() string {
-	return "description not implemented"
+	return m.description
 }
 
-func (*monitor) Enabled() bool {
-	return true
+func (m *monitor) Enabled() bool {
+	return m.enabled
+}
+
+func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
+	if m.namespaceOrgID == nil {
+		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, *m.namespaceUserID)
+	} else {
+		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, *m.namespaceOrgID)
+	}
+	return n, err
 }
 
 func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, error) {
-	return &monitorTrigger{&monitorQuery{monitorID: m.ID(), userID: m.userID}}, nil
+	return &monitorTrigger{&monitorQuery{monitorID: m.ID(), userID: m.ID()}}, nil
 }
 
 func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
 	return &monitorActionConnection{
 			monitorID: m.ID(),
-			userID:    m.userID},
+			userID:    m.ID()},
 		nil
-}
-
-func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	n.Namespace, err = graphqlbackend.UserByID(ctx, m.userID)
-	return n, err
 }
 
 //
