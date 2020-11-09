@@ -732,6 +732,20 @@ type Mutation {
         """
         level: String!
     ): EmptyResponse!
+    """
+    Create a code monitor.
+    """
+    createCodeMonitor(
+        """
+        The namepsace represents the owener of the code monitor.
+        Owners can either be users or organziations.
+        """
+        namespace: ID!
+        """
+        A meaningful description of the code monitor.
+        """
+        description: String!
+    ): Monitor!
 }
 
 """
