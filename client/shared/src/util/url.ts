@@ -652,9 +652,9 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
 }
 
 export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const parsedQuery = scanSearchQuery(query)
-    if (parsedQuery.type === 'success') {
-        for (const token of parsedQuery.token.members) {
+    const scannedQuery = scanSearchQuery(query)
+    if (scannedQuery.type === 'success') {
+        for (const token of scannedQuery.term) {
             if (
                 token.type === 'filter' &&
                 token.filterType.value.toLowerCase() === 'patterntype' &&
@@ -672,9 +672,9 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
 }
 
 export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const parsedQuery = scanSearchQuery(query)
-    if (parsedQuery.type === 'success') {
-        for (const token of parsedQuery.token.members) {
+    const scannedQuery = scanSearchQuery(query)
+    if (scannedQuery.type === 'success') {
+        for (const token of scannedQuery.term) {
             if (token.type === 'filter' && token.filterType.value.toLowerCase() === 'case' && token.filterValue) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },

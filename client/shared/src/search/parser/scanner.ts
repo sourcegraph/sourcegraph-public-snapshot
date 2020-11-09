@@ -82,15 +82,6 @@ export interface Keyword {
 }
 
 /**
- * Represents a sequence of tokens in a search query.
- */
-export interface Sequence {
-    type: 'sequence'
-    range: CharacterRange
-    members: Token[]
-}
-
-/**
  * Represents a quoted string in a search query.
  *
  * Example: "Conn".
