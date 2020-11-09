@@ -70,7 +70,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Patch in the new token if needed.
 	remoteURL, err = updateRemoteURLForPush(req.Push, remoteURL)
 	if err != nil {
-		log15.Error("Failed to apply push options to the remote URL", "push", req.Push, "remoteURL", remoteURL, "err", err)
+		log15.Error("Failed to apply push options to the remote URL", "err", err)
 		resp.SetError(repo, "", "", errors.Wrap(err, "applying push options"))
 		return http.StatusInternalServerError, resp
 	}
