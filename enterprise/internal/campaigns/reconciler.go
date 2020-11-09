@@ -267,43 +267,55 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 // doesn't have a credential configured for the code host, or the changeset
 // isn't owned by a campaign).
 func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
-	if e.ch.OwnedByCampaignID != 0 {
-		// If the changeset is owned by a campaign, we want to reconcile using
-		// the user's credentials, which means we need to know which user last
-		// applied the owning campaign. Let's go find out.
-		campaign, err := loadCampaign(ctx, e.tx, e.ch.OwnedByCampaignID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load owning campaign")
-		}
-
-		cred, err := loadUserCredential(ctx, campaign.LastApplierID, e.repo)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				// We need to check if the user is an admin: if they are, then
-				// we can use the nil return from loadUserCredential() to fall
-				// back to the global credentials used for the code host. If
-				// not, then we need to error out.
-				user, err := loadUser(ctx, campaign.LastApplierID)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to load user applying the campaign")
-				}
-
-				if user.SiteAdmin {
-					return nil, nil
-				} else {
-					return nil, errors.Errorf("user does not have a valid credential for repo %q", e.repo.Name)
-				}
-			}
-			return nil, errors.Wrap(err, "failed to load user credential")
-		}
-
-		return cred.Credential, nil
+	if e.ch.OwnedByCampaignID == 0 {
+		// Unowned changesets are imported, and therefore don't need to use a user
+		// credential, since reconciliation isn't a mutating process.
+		return nil, nil
 	}
 
-	// Unowned changesets are imported, and therefore don't need to use a user
-	// credential, since reconciliation isn't a mutating process.
-	return nil, nil
+	// If the changeset is owned by a campaign, we want to reconcile using
+	// the user's credentials, which means we need to know which user last
+	// applied the owning campaign. Let's go find out.
+	campaign, err := loadCampaign(ctx, e.tx, e.ch.OwnedByCampaignID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load owning campaign")
+	}
+
+	cred, err := loadUserCredential(ctx, campaign.LastApplierID, e.repo)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			// We need to check if the user is an admin: if they are, then
+			// we can use the nil return from loadUserCredential() to fall
+			// back to the global credentials used for the code host. If
+			// not, then we need to error out.
+			user, err := loadUser(ctx, campaign.LastApplierID)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load user applying the campaign")
+			}
+
+			if user.SiteAdmin {
+				return nil, nil
+			}
+
+			return nil, ErrMissingCredentials{repo: e.repo.Name}
+		}
+		return nil, errors.Wrap(err, "failed to load user credential")
+	}
+
+	return cred.Credential, nil
 }
+
+// ErrMissingCredentials is returned by loadAuthenticator if the user that
+// applied the last campaign/changeset spec doesn't have UserCredentials for
+// the given repository and is not a site-admin (so no fallback to the global
+// credentials is possible).
+type ErrMissingCredentials struct{ repo string }
+
+func (e ErrMissingCredentials) Error() string {
+	return fmt.Sprintf("user does not have a valid credential for repository %q", e.repo)
+}
+
+func (e ErrMissingCredentials) Terminal() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
