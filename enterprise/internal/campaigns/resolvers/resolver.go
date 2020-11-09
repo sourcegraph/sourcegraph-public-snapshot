@@ -746,14 +746,25 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 
 	// TODO: Do we want to validate the URL, or even if such an external service exists? Or better, would the DB have a constraint?
 
-	// For now, we only support OAuth bearer tokens.
-	a := &auth.OAuthBearerToken{Token: args.Credential}
-	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+	scope := db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
 		UserID:              actor.UID,
-	}, a)
+	}
+
+	// Throw error documented in schema.graphql.
+	_, err = db.UserCredentials.GetByScope(ctx, scope)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	if !errcode.IsNotFound(err) {
+		return nil, ErrDuplicateToken{}
+	}
+
+	// For now, we only support OAuth bearer tokens.
+	a := &auth.OAuthBearerToken{Token: args.Credential}
+	cred, err := db.UserCredentials.Create(ctx, scope, a)
 	if err != nil {
 		return nil, err
 	}

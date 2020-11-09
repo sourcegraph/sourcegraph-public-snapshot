@@ -262,3 +262,14 @@ type Person struct {
 	Email string
 	User  *User
 }
+
+type CampaignsCredential struct {
+	ID                  string
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	CreatedAt           string
+}
+
+type EmptyResponse struct {
+	AlwaysNil string
+}
