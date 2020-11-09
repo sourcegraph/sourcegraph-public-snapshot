@@ -84,7 +84,7 @@ interface Progress {
     matchCount: number
 
     // Wall clock time in milliseconds for this search.
-    durationMS: number
+    durationMs: number
 
     // A description of shards or documents that were skipped. This has a
     // deterministic ordering.
@@ -279,7 +279,7 @@ function setProgress(results: GQL.ISearchResults, progress: Progress): GQL.ISear
         approximateResultCount: `${progress.matchCount}${exact ? '' : '+'}`,
         limitHit: hasSkippedLimitReason,
         repositoriesCount: progress.repositoriesCount || 0,
-        elapsedMilliseconds: progress.durationMS,
+        elapsedMilliseconds: progress.durationMs,
     }
 }
 
