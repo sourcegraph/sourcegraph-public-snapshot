@@ -89,6 +89,10 @@ func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) erro
 
 // NewPreSetUserIsSiteAdmin returns a PreSetUserIsSiteAdmin closure.
 func NewPreSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
+	if !licensing.EnforceTiers {
+		return nil
+	}
+
 	return func(isSiteAdmin bool) error {
 		if isSiteAdmin {
 			return nil

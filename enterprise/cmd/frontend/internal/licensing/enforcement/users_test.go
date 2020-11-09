@@ -192,3 +192,46 @@ func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...interfa
 func (db *fakeDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	panic("implement me")
 }
+
+func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
+	if !licensing.EnforceTiers {
+		licensing.EnforceTiers = true
+		defer func() { licensing.EnforceTiers = false }()
+	}
+
+	tests := []struct {
+		name        string
+		license     *license.Info
+		isSiteAdmin bool
+		wantErr     bool
+	}{
+		{
+			name:        "prompt to site admin is OK",
+			isSiteAdmin: true,
+			wantErr:     false,
+		},
+		{
+			name:        "revoke site admin with a valid license is OK",
+			license:     &license.Info{UserCount: 10},
+			isSiteAdmin: false,
+			wantErr:     false,
+		},
+		{
+			name:        "revoke site admin without a license is not OK",
+			isSiteAdmin: false,
+			wantErr:     true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+				return test.license, "test-signature", nil
+			}
+			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+			err := NewPreSetUserIsSiteAdmin()(test.isSiteAdmin)
+			if gotErr := err != nil; gotErr != test.wantErr {
+				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
+			}
+		})
+	}
+}
