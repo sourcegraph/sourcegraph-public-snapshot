@@ -117,6 +117,11 @@ type Server struct {
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
 
+	Store interface {
+		// TODO document and use enum for state
+		SetState(context.Context, api.RepoName, string) error
+	}
+
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
 
@@ -820,6 +825,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		defer cancel1()
 		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
+
+		defer s.withStoreCloning(ctx, repo)()
 
 		dstPath := string(dir)
 		overwrite := opts != nil && opts.Overwrite

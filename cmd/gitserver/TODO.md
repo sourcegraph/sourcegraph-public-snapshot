@@ -11,3 +11,22 @@
     
 7. Separate idea to document and explore:
     - Instead of having fork and archived columns in repo, generalize this to something like a repo_tags table that can index other "tags" such as GitHub repo topics.
+
+## Design
+
+### Startup
+
+On startup we need to handle rows which are marked as cloning but didn't get unmarked due to unclean shutdown.
+
+``` sql
+update gitserver_repos set state = 'not_cloned' where shard_id = 'gitserver-1' and state = cloning;
+```
+
+### Janitor
+
+ensures that what is on disk matches what is in gitserver_repo.
+
+one complication: if gitserver_repo.state == cloning and on disk state is not_cloned, then do not update state.
+diff // select id from gitserver_repos where state = 'cloned';
+update gitserver_repos set state = 'not_cloned' where shard_id = %s and state != 'cloning' and id = %s;
+
