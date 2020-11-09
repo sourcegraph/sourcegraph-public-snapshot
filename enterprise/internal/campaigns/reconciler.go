@@ -240,6 +240,9 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 	src := sources[0]
 
 	if auth != nil {
+		// If auth == nil that means the user that applied that last
+		// campaign/changeset spec is a site-admin and we can fall back to the
+		// global credentials stored in extSvc.
 		ucs, ok := src.(repos.UserSource)
 		if !ok {
 			return nil, errors.Errorf("using user credentials on code host of repo %q is not implemented", repo.Name)
