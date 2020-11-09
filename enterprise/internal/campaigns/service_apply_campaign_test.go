@@ -38,7 +38,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	repos, _ := createTestRepos(t, ctx, dbconn.Global, 4)
+	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time {

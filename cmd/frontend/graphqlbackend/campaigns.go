@@ -87,7 +87,7 @@ type DeleteCampaignsCredentialArgs struct {
 type ListCampaignsCodeHostsArgs struct {
 	First  int32
 	After  *string
-	UserID int64
+	UserID int32
 }
 
 type CampaignsResolver interface {
