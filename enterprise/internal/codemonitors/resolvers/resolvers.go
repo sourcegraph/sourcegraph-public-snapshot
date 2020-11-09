@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -48,6 +49,123 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 	return r.runQuery(ctx, q)
+}
+
+func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*graphqlbackend.EmptyResponse, error) {
+	err := r.isAllowedToEdit(ctx, args.Id)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteCodeMonitor: %w", err)
+	}
+	q, err := deleteCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	res, err := r.db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if affected == 0 {
+		return nil, fmt.Errorf("0 rows affected")
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, args.Id)
+	if err != nil {
+		return nil, fmt.Errorf("ToggleCodeMonitor: %w", err)
+	}
+	q, err := r.toggleCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return r.runQuery(ctx, q)
+}
+
+func (r *Resolver) EditCodeMonitor(ctx context.Context, args *graphqlbackend.EditCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, args.Id)
+	if err != nil {
+		return nil, fmt.Errorf("EditCodeMonitor: %w", err)
+	}
+	q, err := r.editCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return r.runQuery(ctx, q)
+}
+
+func (r *Resolver) monitorForID(ctx context.Context, id graphql.ID) (graphqlbackend.MonitorResolver, error) {
+	monitorForIdQuery := `
+select * from cm_monitors
+where id = %s
+`
+	var monitorId int64
+	err := relay.UnmarshalSpec(id, &monitorId)
+	if err != nil {
+		return nil, err
+	}
+	q := sqlf.Sprintf(
+		monitorForIdQuery,
+		monitorId,
+	)
+	return r.runQuery(ctx, q)
+}
+
+// isAllowedToEdit compares the owner of a monitor to the actor of the request.
+// For now, only users can be owners, later we want to allow organizations to be
+// owners too.
+func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
+	var monitorId int32
+	err := relay.UnmarshalSpec(id, &monitorId)
+	if err != nil {
+		return err
+	}
+	userId, _, err := r.ownerForId32(ctx, monitorId)
+	if err != nil {
+		return err
+	}
+	if userId == nil {
+		return fmt.Errorf("monitor does not exist")
+	}
+	if err := backend.CheckSiteAdminOrSameUser(ctx, *userId); err != nil {
+		return fmt.Errorf("user not allowed to edit")
+	}
+	return nil
+}
+
+func (r *Resolver) ownerForId32(ctx context.Context, monitorId int32) (userId *int32, orgId *int32, err error) {
+	q, err := ownerForId32Query(ctx, monitorId)
+	if err != nil {
+		return nil, nil, err
+	}
+	rows, err := r.db.Query(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err = rows.Scan(
+			&userId,
+			&orgId,
+		); err != nil {
+			return nil, nil, err
+		}
+	}
+	rerr := rows.Close()
+	if rerr != nil {
+		return nil, nil, rerr
+	}
+
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return userId, orgId, nil
 }
 
 func (r *Resolver) runQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
@@ -168,6 +286,94 @@ RETURNING %s;
 		nilOrInt32(orgID),
 		sqlf.Join(monitorColumns, ", "),
 	), nil
+}
+
+func ownerForId32Query(ctx context.Context, monitorId int32) (*sqlf.Query, error) {
+	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors where id = %s`
+	return sqlf.Sprintf(
+		ownerForId32Query,
+		monitorId,
+	), nil
+}
+
+func deleteCodeMonitorQuery(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*sqlf.Query, error) {
+	const deleteCodeMonitorQuery = `DELETE FROM cm_monitors WHERE id = %s`
+	var id int64
+	err := relay.UnmarshalSpec(args.Id, &id)
+	if err != nil {
+		return nil, err
+	}
+	return sqlf.Sprintf(
+		deleteCodeMonitorQuery,
+		id,
+	), nil
+}
+
+func (r *Resolver) toggleCodeMonitorQuery(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*sqlf.Query, error) {
+	toggleCodeMonitorQuery := `
+UPDATE cm_monitors
+set enabled = %s,
+	changed_by = %s,
+	changed_at = %s
+where id = %s
+returning %s 
+`
+	var monitorID int64
+	err := relay.UnmarshalSpec(args.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+	actorUID := actor.FromContext(ctx).UID
+	query := sqlf.Sprintf(
+		toggleCodeMonitorQuery,
+		args.Enabled,
+		actorUID,
+		r.clock(),
+		monitorID,
+		sqlf.Join(monitorColumns, ", "),
+	)
+	return query, nil
+}
+
+func (r *Resolver) editCodeMonitorQuery(ctx context.Context, args *graphqlbackend.EditCodeMonitorArgs) (*sqlf.Query, error) {
+	editCodeMonitorQuery := `
+UPDATE cm_monitors
+set description = %s,
+	enabled = %s,
+	namespace_user_id = %s,
+	namespace_org_id = %s,
+	changed_by = %s,
+	changed_at = %s
+where id = %s
+returning %s 
+`
+	var userID int32
+	var orgID int32
+	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	actorUID := actor.FromContext(ctx).UID
+
+	query := sqlf.Sprintf(
+		editCodeMonitorQuery,
+		args.Description,
+		args.Enabled,
+		nilOrInt32(userID),
+		nilOrInt32(orgID),
+		actorUID,
+		r.clock(),
+		monitorID,
+		sqlf.Join(monitorColumns, ", "),
+	)
+	return query, nil
 }
 
 //

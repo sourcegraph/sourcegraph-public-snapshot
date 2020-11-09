@@ -753,6 +753,28 @@ type Mutation {
         """
         description: String!
     ): Monitor!
+    """
+    Delete a code monitor.
+    """
+    deleteCodeMonitor(
+        """
+        The ID of the code monitor.
+        """
+        id: ID!
+    ): EmptyResponse!
+    """
+    Toggle the state of a code monitor between enabled/disabled.
+    """
+    toggleCodeMonitor(
+        """
+        The ID of the code monitor.
+        """
+        id: ID!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+    ): Monitor!
 }
 
 """

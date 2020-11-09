@@ -746,6 +746,50 @@ type Mutation {
         """
         description: String!
     ): Monitor!
+    """
+    Delete a code monitor.
+    """
+    deleteCodeMonitor(
+        """
+        The ID of the code monitor.
+        """
+        id: ID!
+    ): EmptyResponse!
+    """
+    Toggle the state of a code monitor between enabled/disabled.
+    """
+    toggleCodeMonitor(
+        """
+        The ID of the code monitor.
+        """
+        id: ID!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+    ): Monitor!
+    """
+    Edit a code monitor.
+    """
+    editCodeMonitor(
+        """
+        The ID of the code monitor.
+        """
+        id: ID!
+        """
+        A meaningful description of the code monitor.
+        """
+        description: String!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+        """
+        The namepsace represents the owener of the code monitor.
+        Owners can either be users or organziations.
+        """
+        namespace: ID!
+    ): Monitor!
 }
 
 """
