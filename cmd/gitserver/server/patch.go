@@ -16,6 +16,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -299,11 +300,11 @@ func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string
 		}
 
 		switch push.Type {
-		case "github":
+		case extsvc.TypeGitHub:
 			// GitHub wants the user to be the token.
 			u.User = url.User(push.Token)
 
-		case "gitlab":
+		case extsvc.TypeGitLab:
 			// GitLab wants the password to be the user token. It also appears
 			// to want "git" as the username if none is provided.
 			if u.User == nil {

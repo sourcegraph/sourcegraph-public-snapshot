@@ -201,7 +201,9 @@ type PushConfig struct {
 	// push the target ref to the code host. If unset, the default code host
 	// configuration should be used.
 	Token string
+
 	// Type specifies the type of code host being pushed to.
+	// It's one of the extsvc.Type* constants.
 	Type string
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -29,27 +30,27 @@ func TestUpdateRemoteURLForPush(t *testing.T) {
 			wantErr:   true,
 		},
 		"github without user/pass": {
-			push:      &protocol.PushConfig{Token: "foo", Type: "github"},
+			push:      &protocol.PushConfig{Token: "foo", Type: extsvc.TypeGitHub},
 			remoteURL: "http://example.com",
 			want:      "http://foo@example.com",
 		},
 		"gitlab without user/pass": {
-			push:      &protocol.PushConfig{Token: "foo", Type: "gitlab"},
+			push:      &protocol.PushConfig{Token: "foo", Type: extsvc.TypeGitLab},
 			remoteURL: "http://example.com",
 			want:      "http://git:foo@example.com",
 		},
 		"github with user/pass": {
-			push:      &protocol.PushConfig{Token: "foo", Type: "github"},
+			push:      &protocol.PushConfig{Token: "foo", Type: extsvc.TypeGitHub},
 			remoteURL: "http://user:pass@example.com",
 			want:      "http://foo@example.com",
 		},
 		"gitlab with user/pass": {
-			push:      &protocol.PushConfig{Token: "foo", Type: "gitlab"},
+			push:      &protocol.PushConfig{Token: "foo", Type: extsvc.TypeGitLab},
 			remoteURL: "http://user:pass@example.com",
 			want:      "http://user:foo@example.com",
 		},
 		"invalid URL": {
-			push:      &protocol.PushConfig{Token: "foo", Type: "github"},
+			push:      &protocol.PushConfig{Token: "foo", Type: extsvc.TypeGitHub},
 			remoteURL: "http://a b.com/",
 			wantErr:   true,
 		},
