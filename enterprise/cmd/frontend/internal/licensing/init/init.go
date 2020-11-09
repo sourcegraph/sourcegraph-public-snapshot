@@ -26,6 +26,10 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// reached.
 	db.Users.PreCreateUser = enforcement.NewPreCreateUserHook(&usersStore{})
 
+	// Enforce non-site admin roles in Free tier.
+	db.Users.AfterCreateUser = enforcement.NewAfterCreateUserHook()
+	db.Users.PreSetUserIsSiteAdmin = enforcement.NewPreSetUserIsSiteAdmin()
+
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
 	db.ExternalServices.PreCreateExternalService = enforcement.NewPreCreateExternalServiceHook(&externalServicesStore{})

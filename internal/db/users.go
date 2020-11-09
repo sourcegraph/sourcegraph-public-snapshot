@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 	"unicode/utf8"
@@ -12,6 +11,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,6 +30,12 @@ type users struct {
 	// PreCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	PreCreateUser func(context.Context) error
+	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
+	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
+	AfterCreateUser func(ctx context.Context, tx dbutil.DB, user *types.User) error
+	// PreSetUserIsSiteAdmin (if set) is a hook called before (un)prompting a user to be a site admin.
+	PreSetUserIsSiteAdmin func(isSiteAdmin bool) error
 }
 
 // userNotFoundErr is the error that is returned when a user is not found.
@@ -221,7 +228,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	// Run PreCreateUser hook.
 	if u.PreCreateUser != nil {
 		if err := u.PreCreateUser(ctx); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
 
@@ -269,6 +276,17 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		}
 	}
 
+	user := &types.User{
+		ID:                    id,
+		Username:              info.Username,
+		DisplayName:           info.DisplayName,
+		AvatarURL:             info.AvatarURL,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+		SiteAdmin:             siteAdmin,
+		BuiltinAuth:           info.Password != "",
+		InvalidatedSessionsAt: invalidatedSessionsAt,
+	}
 	{
 		// Run hooks.
 		//
@@ -283,19 +301,16 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, orgs); err != nil {
 			return nil, err
 		}
+
+		// Run AfterCreateUser hook
+		if u.AfterCreateUser != nil {
+			if err := u.AfterCreateUser(ctx, tx, user); err != nil {
+				return nil, errors.Wrap(err, "after create user hook")
+			}
+		}
 	}
 
-	return &types.User{
-		ID:                    id,
-		Username:              info.Username,
-		DisplayName:           info.DisplayName,
-		AvatarURL:             info.AvatarURL,
-		CreatedAt:             createdAt,
-		UpdatedAt:             updatedAt,
-		SiteAdmin:             siteAdmin,
-		BuiltinAuth:           info.Password != "",
-		InvalidatedSessionsAt: invalidatedSessionsAt,
-	}, nil
+	return user, nil
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -519,10 +534,18 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	return nil
 }
 
+// SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
 func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if Mocks.Users.SetIsSiteAdmin != nil {
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
 	}
+
+	if u.PreSetUserIsSiteAdmin != nil {
+		if err := u.PreSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+			return err
+		}
+	}
+
 	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
 	return err
 }
