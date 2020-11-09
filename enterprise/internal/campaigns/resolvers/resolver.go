@@ -753,7 +753,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		return nil, err
 	}
 	if !errcode.IsNotFound(err) {
-		return nil, ErrDuplicateToken{}
+		return nil, ErrDuplicateCredential{}
 	}
 
 	// For now, we only support OAuth bearer tokens.

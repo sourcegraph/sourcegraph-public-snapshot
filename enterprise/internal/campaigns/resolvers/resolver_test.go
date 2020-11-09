@@ -788,7 +788,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Extensions["code"], "ErrDuplicateToken"; have != want {
+	if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 		t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 	}
 }

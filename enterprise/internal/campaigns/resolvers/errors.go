@@ -60,12 +60,12 @@ func (e ErrMatchingCampaignExists) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrMatchingCampaignExists"}
 }
 
-type ErrDuplicateToken struct{}
+type ErrDuplicateCredential struct{}
 
-func (e ErrDuplicateToken) Error() string {
+func (e ErrDuplicateCredential) Error() string {
 	return "a credential for this code host already exists"
 }
 
-func (e ErrDuplicateToken) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrDuplicateToken"}
+func (e ErrDuplicateCredential) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrDuplicateCredential"}
 }
