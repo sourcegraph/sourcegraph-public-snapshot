@@ -9,6 +9,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsListEmptyItem } from './CampaignsListEmptyItem'
 
 export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
@@ -58,6 +59,9 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                     </Link>
                 }
             />
+            <p className="text-muted">
+                Run custom code over hundreds of repositories and manage the resulting changesets
+            </p>
             <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
                 location={location}
@@ -74,6 +78,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                 className="mb-3"
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
+                emptyElement={<CampaignsListEmptyItem />}
             />
         </>
     )
