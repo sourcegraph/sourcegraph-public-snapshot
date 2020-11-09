@@ -21,7 +21,7 @@ func init() {
 	dbtesting.DBNameSuffix = "codemonitorsdb"
 }
 
-func TestCreateCodeMonitor(t *testing.T) {
+func TestCodeMonitorResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -69,6 +69,64 @@ func TestCreateCodeMonitor(t *testing.T) {
 	}
 	if !reflect.DeepEqual(want, got.(*monitor)) {
 		t.Fatalf("\ngot %+v,\nwant %+v", got, want)
+	}
+
+	// Toggle the monitor to enabled=false
+	got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
+		Id:      got.ID(),
+		Enabled: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Enabled() != false {
+		t.Fatalf("got %t, want %t", got.Enabled(), false)
+	}
+
+	want = &monitor{
+		id:              1,
+		createdBy:       userID,
+		createdAt:       clock(),
+		changedBy:       userID,
+		changedAt:       clock(),
+		description:     "apple",
+		enabled:         true,
+		namespaceUserID: &userID,
+		namespaceOrgID:  nil,
+	}
+
+	// Edit the description of code monitor
+	got, err = r.EditCodeMonitor(ctx, &graphqlbackend.EditCodeMonitorArgs{
+		Id:          got.ID(),
+		Enabled:     true,
+		Description: "apple",
+		Namespace:   ns,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(want, got.(*monitor)) {
+		t.Fatalf("\ngot %+v,\nwant %+v", got, want)
+	}
+
+	// Delete the monitor
+	_, err = r.DeleteCodeMonitor(ctx, &graphqlbackend.DeleteCodeMonitorArgs{
+		Id: got.ID(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = r.monitorForID(ctx, got.ID())
+	if err == nil {
+		t.Fatalf("monitor should have been deleted")
+	}
+
+	// Delete the same monitor again
+	_, err = r.DeleteCodeMonitor(ctx, &graphqlbackend.DeleteCodeMonitorArgs{
+		Id: got.ID(),
+	})
+	if err == nil {
+		t.Fatalf("DeleteCodeMonitor should have returned an error")
 	}
 }
 
