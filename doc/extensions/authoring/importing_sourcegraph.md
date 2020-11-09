@@ -22,7 +22,7 @@ or bundled with your project, the `sourcegraph` module is actually injected
 dynamically when your extension is loaded within a Sourcegraph instance.
 
 The `sourcegraph` module that you install as a `package.json` dependency is
-actually a set of Typescript type definitions that allow you to use the
+actually a set of TypeScript type definitions that allow you to use the
 Sourcegraph API's interfaces. The module doesn't contain the implementations of
 these interfaces.
 
