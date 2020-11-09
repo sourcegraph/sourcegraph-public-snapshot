@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -17,24 +16,24 @@ import (
 // for the same repository and should not repeat the work since the last calculation performed
 // will always be the one we want.
 type CommitUpdater struct {
-	store           store.Store
-	gitserverClient gitserverClient
+	dbStore         DBStore
+	gitserverClient GitserverClient
 }
 
 var _ goroutine.Handler = &CommitUpdater{}
 
 // NewCommitUpdater returns a background routine that periodically updates the commit graph
 // and visible uploads for each repository marked as dirty.
-func NewCommitUpdater(store store.Store, gitserverClient gitserverClient, interval time.Duration) goroutine.BackgroundRoutine {
+func NewCommitUpdater(dbStore DBStore, gitserverClient GitserverClient, interval time.Duration) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &CommitUpdater{
-		store:           store,
+		dbStore:         dbStore,
 		gitserverClient: gitserverClient,
 	})
 }
 
 // Handle checks for dirty repositories and invokes the underlying updater on each one.
 func (u *CommitUpdater) Handle(ctx context.Context) error {
-	repositoryIDs, err := u.store.DirtyRepositories(ctx)
+	repositoryIDs, err := u.dbStore.DirtyRepositories(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.DirtyRepositories")
 	}
@@ -63,7 +62,7 @@ func (u *CommitUpdater) HandleError(err error) {
 // that the repository can be unmarked as long as the repository is not marked as dirty again
 // before the update completes.
 func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) error {
-	ok, unlock, err := u.store.Lock(ctx, repositoryID, false)
+	ok, unlock, err := u.dbStore.Lock(ctx, repositoryID, false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "store.Lock")
 	}
@@ -71,17 +70,17 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		err = unlock(err)
 	}()
 
-	graph, err := u.gitserverClient.CommitGraph(ctx, u.store, repositoryID, gitserver.CommitGraphOptions{})
+	graph, err := u.gitserverClient.CommitGraph(ctx, u.dbStore, repositoryID, gitserver.CommitGraphOptions{})
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitGraph")
 	}
 
-	tipCommit, err := u.gitserverClient.Head(ctx, u.store, repositoryID)
+	tipCommit, err := u.gitserverClient.Head(ctx, u.dbStore, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	if err := u.store.CalculateVisibleUploads(ctx, repositoryID, graph, tipCommit, dirtyToken); err != nil {
+	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, graph, tipCommit, dirtyToken); err != nil {
 		return errors.Wrap(err, "store.CalculateVisibleUploads")
 	}
 

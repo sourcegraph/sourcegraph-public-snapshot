@@ -38,7 +38,7 @@ type IndexableRepositoryQueryOptions struct {
 	now                         time.Time
 }
 
-// scanIndexableRepositories scans a slice of indexable repositories from the return value of `*store.query`.
+// scanIndexableRepositories scans a slice of indexable repositories from the return value of `*Store.query`.
 func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRepository, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -65,7 +65,7 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 }
 
 // IndexableRepositories returns the metadata of all indexable repositories.
-func (s *store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error) {
+func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error) {
 	if opts.now.IsZero() {
 		opts.now = time.Now()
 	}
@@ -119,7 +119,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 
 // UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 // already marked as indexable, a new record will be created.
-func (s *store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error {
+func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error {
 	// Ensure that record exists before we attempt to update it
 	err := s.Store.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
@@ -158,7 +158,7 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 
 // ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
 // since lastUpdatedBefore.
-func (s *store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error {
+func (s *Store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(
 		`
 		UPDATE lsif_indexable_repositories

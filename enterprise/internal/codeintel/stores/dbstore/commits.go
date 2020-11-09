@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-// scanUploadMeta scans upload metadata grouped by commit from the return value of `*store.query`.
+// scanUploadMeta scans upload metadata grouped by commit from the return value of `*Store.query`.
 func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -32,7 +32,7 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 }
 
 // HasRepository determines if there is LSIF data for the given repository.
-func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, error) {
+func (s *Store) HasRepository(ctx context.Context, repositoryID int) (bool, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_uploads
@@ -44,7 +44,7 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (bool, erro
 }
 
 // HasCommit determines if the given commit is known for the given repository.
-func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func (s *Store) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
@@ -56,7 +56,7 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 }
 
 // MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
-func (s *store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error {
+func (s *Store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error {
 	return s.Store.Exec(
 		ctx,
 		sqlf.Sprintf(`
@@ -89,7 +89,7 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 
 // DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
-func (s *store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
+func (s *Store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
 	return scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(`SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token`)))
 }
 
@@ -100,7 +100,7 @@ func (s *store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
-func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
+func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return err

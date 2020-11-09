@@ -24,6 +24,7 @@ type s3Store struct {
 	manageBucket bool
 	client       s3API
 	uploader     s3Uploader
+	operations   *operations
 }
 
 var _ Store = &s3Store{}
@@ -45,7 +46,7 @@ func (c *S3Config) load(parent *env.BaseConfig) {
 }
 
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
-func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
+func newS3FromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
 	sess, err := session.NewSessionWithOptions(s3SessionOptions(config.Backend, config.S3))
 	if err != nil {
 		return nil, err
@@ -54,16 +55,17 @@ func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
 	s3Client := s3.New(sess)
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{s3manager.NewUploaderWithClient(s3Client)}
-	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket), nil
+	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket, operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, ttl time.Duration, manageBucket bool) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, ttl time.Duration, manageBucket bool, operations *operations) *s3Store {
 	return &s3Store{
 		bucket:       bucket,
 		ttl:          ttl,
 		manageBucket: manageBucket,
 		client:       client,
 		uploader:     uploader,
+		operations:   operations,
 	}
 }
 
@@ -146,7 +148,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		if err == nil {
 			// Delete sources on success
 			if err := s.deleteSources(ctx, *multipartUpload.Bucket, sources); err != nil {
-				log15.Error("failed to delete source objects", "error", err)
+				log15.Error("Failed to delete source objects", "error", err)
 			}
 		} else {
 			// On failure, try to clean up copied then orphaned parts
@@ -155,7 +157,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 				Key:      multipartUpload.Key,
 				UploadId: multipartUpload.UploadId,
 			}); err != nil {
-				log15.Error("failed to abort multipart upload", "error", err)
+				log15.Error("Failed to abort multipart upload", "error", err)
 			}
 		}
 	}()

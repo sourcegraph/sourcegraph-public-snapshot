@@ -15,7 +15,7 @@ type IndexConfiguration struct {
 	Data         []byte `json:"data"`
 }
 
-// scanIndexConfigurations scans a slice of index configurations from the return value of `*store.query`.
+// scanIndexConfigurations scans a slice of index configurations from the return value of `*Store.query`.
 func scanIndexConfigurations(rows *sql.Rows, queryErr error) (_ []IndexConfiguration, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -39,7 +39,7 @@ func scanIndexConfigurations(rows *sql.Rows, queryErr error) (_ []IndexConfigura
 	return indexConfigurations, nil
 }
 
-// scanFirstIndexConfiguration scans a slice of index configurations from the return value of `*store.query`
+// scanFirstIndexConfiguration scans a slice of index configurations from the return value of `*Store.query`
 // and returns the first.
 func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration, bool, error) {
 	indexConfigurations, err := scanIndexConfigurations(rows, err)
@@ -50,12 +50,12 @@ func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration,
 }
 
 // GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
-func (s *store) GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error) {
+func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error) {
 	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(`SELECT c.repository_id FROM lsif_index_configuration c`)))
 }
 
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
-func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error) {
+func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error) {
 	return scanFirstIndexConfiguration(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			c.id,

@@ -19,6 +19,7 @@ type gcsStore struct {
 	manageBucket bool
 	config       GCSConfig
 	client       gcsAPI
+	operations   *operations
 }
 
 var _ Store = &gcsStore{}
@@ -36,22 +37,23 @@ func (c *GCSConfig) load(parent *env.BaseConfig) {
 }
 
 // newGCSFromConfig creates a new store backed by GCP storage.
-func newGCSFromConfig(ctx context.Context, config *Config) (Store, error) {
+func newGCSFromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
 	client, err := storage.NewClient(ctx, gcsClientOptions(config.GCS)...)
 	if err != nil {
 		return nil, err
 	}
 
-	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS), nil
+	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS, operations), nil
 }
 
-func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig) *gcsStore {
+func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig, operations *operations) *gcsStore {
 	return &gcsStore{
 		bucket:       bucket,
 		ttl:          ttl,
 		config:       config,
 		manageBucket: manageBucket,
 		client:       client,
+		operations:   operations,
 	}
 }
 
@@ -118,7 +120,7 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 		if err == nil {
 			// Delete sources on success
 			if err := s.deleteSources(ctx, bucket, sources); err != nil {
-				log15.Error("failed to delete source objects", "error", err)
+				log15.Error("Failed to delete source objects", "error", err)
 			}
 		}
 	}()

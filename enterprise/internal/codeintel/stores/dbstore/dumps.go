@@ -30,7 +30,7 @@ type Dump struct {
 	Indexer        string     `json:"indexer"`
 }
 
-// scanDumps scans a slice of dumps from the return value of `*store.query`.
+// scanDumps scans a slice of dumps from the return value of `*Store.query`.
 func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -66,7 +66,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 	return dumps, nil
 }
 
-// scanFirstDump scans a slice of dumps from the return value of `*store.query` and returns the first.
+// scanFirstDump scans a slice of dumps from the return value of `*Store.query` and returns the first.
 func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 	dumps, err := scanDumps(rows, err)
 	if err != nil || len(dumps) == 0 {
@@ -76,7 +76,7 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 }
 
 // GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
-func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
+func (s *Store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			d.id,
@@ -115,7 +115,7 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 // of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
 // by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
 // we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
-func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
+func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
 
 	return scanDumps(s.Store.Query(
@@ -145,7 +145,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
-func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error) {
+func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]Dump, error) {
 	if len(graph) == 0 {
 		return nil, nil
 	}
@@ -248,7 +248,7 @@ func scanFirstIntPair(rows *sql.Rows, queryErr error) (_ int, _ int, _ bool, err
 // SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
 // background.
-func (s *store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+func (s *Store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return 0, err
@@ -284,7 +284,7 @@ func (s *store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, no
 // DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
-func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
+func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'deleted'

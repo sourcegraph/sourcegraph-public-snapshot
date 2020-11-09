@@ -9,7 +9,7 @@ import (
 )
 
 // GetPackage returns the dump that provides the package with the given scheme, name, and version and a flag indicating its existence.
-func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (Dump, bool, error) {
+func (s *Store) GetPackage(ctx context.Context, scheme, name, version string) (Dump, bool, error) {
 	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			d.id,
@@ -36,7 +36,7 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 }
 
 // UpdatePackages upserts package data tied to the given upload.
-func (s *store) UpdatePackages(ctx context.Context, packages []lsifstore.Package) (err error) {
+func (s *Store) UpdatePackages(ctx context.Context, packages []lsifstore.Package) (err error) {
 	if len(packages) == 0 {
 		return nil
 	}

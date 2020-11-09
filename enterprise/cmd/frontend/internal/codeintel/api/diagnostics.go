@@ -16,8 +16,8 @@ type ResolvedDiagnostic struct {
 }
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
-func (api *codeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error) {
-	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
+func (api *CodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error) {
+	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "store.GetDumpByID")
 	}
