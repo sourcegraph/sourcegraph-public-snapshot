@@ -63,22 +63,22 @@ export interface Filter {
     negated: boolean
 }
 
-enum OperatorKind {
+export enum KeywordKind {
     Or = 'or',
     And = 'and',
     Not = 'not',
 }
 
 /**
- * Represents an operator in a search query.
+ * Represents a keyword in a search query.
  *
- * Example: AND, OR, NOT.
+ * Current keywords are: AND, and, OR, or, NOT, not.
  */
-export interface Operator {
-    type: 'operator'
+export interface Keyword {
+    type: 'keyword'
     value: string
     range: CharacterRange
-    kind: OperatorKind
+    kind: KeywordKind
 }
 
 /**
@@ -127,7 +127,7 @@ export interface ClosingParen {
     range: CharacterRange
 }
 
-export type Token = Whitespace | OpeningParen | ClosingParen | Operator | Comment | Literal | Pattern | Filter | Quoted
+export type Token = Whitespace | OpeningParen | ClosingParen | Keyword | Comment | Literal | Pattern | Filter | Quoted
 
 export type Term = Token | Sequence
 
@@ -292,28 +292,28 @@ const whitespace = scanToken(/\s+/, (_input, range) => ({
 
 const literal = scanToken(/[^\s)]+/)
 
-const operatorNot = scanToken(/(not|NOT)/, (input, { start, end }) => ({
-    type: 'operator',
+const keywordNot = scanToken(/(not|NOT)/, (input, { start, end }) => ({
+    type: 'keyword',
     value: input.slice(start, end),
     range: { start, end },
-    kind: OperatorKind.Not,
+    kind: KeywordKind.Not,
 }))
 
-const operatorAnd = scanToken(/(and|AND)/, (input, { start, end }) => ({
-    type: 'operator',
+const keywordAnd = scanToken(/(and|AND)/, (input, { start, end }) => ({
+    type: 'keyword',
     value: input.slice(start, end),
     range: { start, end },
-    kind: OperatorKind.And,
+    kind: KeywordKind.And,
 }))
 
-const operatorOr = scanToken(/(or|OR)/, (input, { start, end }) => ({
-    type: 'operator',
+const keywordOr = scanToken(/(or|OR)/, (input, { start, end }) => ({
+    type: 'keyword',
     value: input.slice(start, end),
     range: { start, end },
-    kind: OperatorKind.Or,
+    kind: KeywordKind.Or,
 }))
 
-const operator = oneOf<Operator>(operatorAnd, operatorOr, operatorNot)
+const keyword = oneOf<Keyword>(keywordAnd, keywordOr, keywordNot)
 
 const comment = scanToken(
     /\/\/.*/,
@@ -399,8 +399,8 @@ const createPattern = (value: string, range: CharacterRange, kind: PatternKind):
     },
 })
 
-const scanFilterOrOperator = oneOf<Literal | Sequence>(filterKeyword, followedBy(operator, whitespace))
-const keepScanning = (input: string, start: number): boolean => scanFilterOrOperator(input, start).type !== 'success'
+const scanFilterOrKeyword = oneOf<Literal | Sequence>(filterKeyword, followedBy(keyword, whitespace))
+const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyword(input, start).type !== 'success'
 
 /**
  * ScanBalancedPattern attempts to scan balanced parentheses as literal patterns. This
@@ -437,7 +437,7 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern
     if (!keepScanning(input, start)) {
         return {
             type: 'error',
-            expected: 'no recognized filter or operator',
+            expected: 'no recognized filter or keyword',
             at: start,
         }
     }
@@ -452,7 +452,7 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern
             if (!keepScanning(input, adjustedStart)) {
                 return {
                     type: 'error',
-                    expected: 'no recognized filter or operator',
+                    expected: 'no recognized filter or keyword',
                     at: adjustedStart,
                 }
             }
@@ -472,7 +472,7 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern
             if (!keepScanning(input, adjustedStart)) {
                 return {
                     type: 'error',
-                    expected: 'no recognized filter or operator',
+                    expected: 'no recognized filter or keyword',
                     at: adjustedStart,
                 }
             }
@@ -527,7 +527,7 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     const baseQuotedScanner = [quoted('"'), quoted("'")]
     const quotedScanner = kind === PatternKind.Regexp ? [quoted('/'), ...baseQuotedScanner] : baseQuotedScanner
 
-    const baseScanner = [operator, filter, ...quotedScanner, scanPattern(kind)]
+    const baseScanner = [keyword, filter, ...quotedScanner, scanPattern(kind)]
     const tokenScanner: Scanner<Token>[] = interpretComments ? [comment, ...baseScanner] : baseScanner
 
     const baseEarlyPatternScanner = [...quotedScanner, scanBalancedPattern(kind)]
