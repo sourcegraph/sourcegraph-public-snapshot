@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -426,4 +428,42 @@ func checkRepoSupported(repo *types.Repo) error {
 		repo.ExternalRepo.ServiceType,
 		repo.Name,
 	)
+}
+
+// FetchUsernameForBitbucketServerToken fetches the username associated with a Bitbucket server token, which we need to authenticate for git pushes.
+// To make this process as streamlined as possible for users, we only ask for a credential and resolve the username using the API.
+// Since Bitbucket sends the username as a header in REST responses, we can take it from there and complete the credential.
+func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
+	extSvcID, err := s.store.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
+		ExternalServiceID:   externalServiceID,
+		ExternalServiceType: externalServiceType,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	rstore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	es, err := rstore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{IDs: []int64{extSvcID}})
+	if err != nil {
+		return "", err
+	}
+	if len(es) == 0 {
+		return "", errors.New("no external service found for repo")
+	}
+	externalService := es[0]
+
+	sources, err := s.sourcer(externalService)
+	if err != nil {
+		return "", err
+	}
+	bbsSource, ok := sources[0].(repos.BitbucketServerSource)
+	if !ok {
+		return "", errors.New("external service source doesn't implement BitbucketServerSource")
+	}
+	source, err := bbsSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+	if err != nil {
+		return "", err
+	}
+
+	return source.(*repos.BitbucketServerSource).AuthenticatedUsername(ctx)
 }

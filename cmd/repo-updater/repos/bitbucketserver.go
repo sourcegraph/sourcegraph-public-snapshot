@@ -459,3 +459,7 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	}
 	return ids, nil
 }
+
+func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	return s.client.AuthenticatedUsername(ctx)
+}

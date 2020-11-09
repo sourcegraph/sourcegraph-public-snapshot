@@ -91,6 +91,7 @@ func getExternalServiceIDQuery(opts GetExternalServiceIDOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.external_service_type = %s", opts.ExternalServiceType),
 		sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID),
+		sqlf.Sprintf("external_services.deleted_at IS NULL"),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	return sqlf.Sprintf(getExternalServiceIDQueryFmtstr, sqlf.Join(preds, "AND"))

@@ -12,21 +12,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
@@ -763,47 +759,11 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 
 	var a auth.Authenticator
 	if kind == extsvc.KindBitbucketServer {
-		// For Bitbucket server, we need username, password combinations for authenticating git pushes.
-		// To make this process as streamlined as possible for users, we only ask for a credential here as well.
-		// Since Bitbucket sends the username as a header in REST responses, we can take it from there and complete the credential.
-		extSvcID, err := r.store.GetExternalServiceID(ctx, ee.GetExternalServiceIDOpts{
-			ExternalServiceID:   args.ExternalServiceURL,
-			ExternalServiceType: extsvc.KindToType(kind),
-		})
+		svc := ee.NewService(r.store, r.httpFactory)
+		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
 		if err != nil {
 			return nil, err
 		}
-
-		rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-		es, err := rstore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{IDs: []int64{extSvcID}})
-		if err != nil {
-			return nil, err
-		}
-		if len(es) == 0 {
-			return nil, errors.New("no external service found for repo")
-		}
-		externalService := es[0]
-		cf := r.httpFactory
-		if cf == nil {
-			cf = httpcli.NewExternalHTTPClientFactory()
-		}
-		cli, err := cf.Doer()
-		if err != nil {
-			return nil, err
-		}
-		cfg, err := externalService.Configuration()
-		if err != nil {
-			return nil, err
-		}
-		client, err := bitbucketserver.NewClientWithAuthenticator(cfg.(*schema.BitbucketServerConnection), cli, &auth.OAuthBearerToken{Token: args.Credential})
-		if err != nil {
-			return nil, err
-		}
-		username, err := client.AuthenticatedUsername(ctx)
-		if err != nil {
-			return nil, err
-		}
-
 		a = &auth.BasicAuth{Username: username, Password: args.Credential}
 	} else {
 		a = &auth.OAuthBearerToken{Token: args.Credential}
