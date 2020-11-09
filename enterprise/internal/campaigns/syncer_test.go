@@ -215,7 +215,7 @@ func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
 			var wg sync.WaitGroup
 
 			syncer := &ChangesetSyncer{
-				SyncStore:      MockSyncStore{listChangesets: tc.listChangesets},
+				syncStore:      MockSyncStore{listChangesets: tc.listChangesets},
 				priorityNotify: make(chan []int64),
 			}
 
@@ -278,7 +278,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -313,7 +313,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -337,7 +337,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
@@ -383,7 +383,7 @@ func TestSyncRegistry(t *testing.T) {
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
-					RepoExternalServiceID: extSvc.ID,
+					RepoExternalServiceID: "https://example.com/",
 				},
 			}, nil
 		},
@@ -426,10 +426,9 @@ func TestSyncRegistry(t *testing.T) {
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
 	syncer := &ChangesetSyncer{
-		SyncStore:   syncStore,
-		ReposStore:  repoStore,
+		syncStore:   syncStore,
+		reposStore:  repoStore,
 		codeHostURL: "https://example.com/",
-		extSvcID:    extSvc.ID,
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
 			return nil
@@ -440,7 +439,7 @@ func TestSyncRegistry(t *testing.T) {
 
 	// Set the syncer
 	r.mu.Lock()
-	r.syncers[extSvc.ID] = syncer
+	r.syncers["https://example.com/"] = syncer
 	r.mu.Unlock()
 
 	// Send priority items

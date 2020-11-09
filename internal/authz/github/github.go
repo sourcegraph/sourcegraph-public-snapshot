@@ -23,16 +23,16 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 }
 
-func NewProvider(urn string, githubURL *url.URL, baseToken string, client *github.Client) *Provider {
+func NewProvider(urn string, githubURL *url.URL, baseToken string, client *github.V3Client) *Provider {
 	if client == nil {
 		apiURL, _ := github.APIRoot(githubURL)
-		client = github.NewClient(apiURL, &auth.OAuthBearerToken{Token: baseToken}, nil)
+		client = github.NewV3Client(apiURL, &auth.OAuthBearerToken{Token: baseToken}, nil)
 	}
 
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub),
-		client:   &ClientAdapter{Client: client},
+		client:   &ClientAdapter{V3Client: client},
 	}
 }
 

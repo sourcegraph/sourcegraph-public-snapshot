@@ -134,7 +134,6 @@ export async function createExtensionHostClientConnection(
     subscription.add(clientCodeEditor)
 
     const clientLanguageFeatures = new ClientLanguageFeatures(
-        services.textDocumentDefinition,
         services.textDocumentReferences,
         services.textDocumentLocations,
         services.completionItems

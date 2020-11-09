@@ -142,6 +142,31 @@ func KindToType(kind string) string {
 	}
 }
 
+// TypeToKind returns a Kind constants given a Type
+// It will panic when given an unknown type.
+func TypeToKind(t string) string {
+	switch t {
+	case TypeAWSCodeCommit:
+		return KindAWSCodeCommit
+	case TypeBitbucketServer:
+		return KindBitbucketServer
+	case TypeBitbucketCloud:
+		return KindBitbucketCloud
+	case TypeGitHub:
+		return KindGitHub
+	case TypeGitLab:
+		return KindGitLab
+	case TypeGitolite:
+		return KindGitolite
+	case TypePhabricator:
+		return KindPhabricator
+	case TypeOther:
+		return KindOther
+	default:
+		panic(fmt.Sprintf("unknown type: %q", t))
+	}
+}
+
 var (
 	// Precompute these for use in ParseServiceType below since the constants are mixed case
 	bbsLower = strings.ToLower(TypeBitbucketServer)

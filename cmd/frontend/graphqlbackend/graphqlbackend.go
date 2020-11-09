@@ -325,7 +325,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
@@ -343,7 +343,10 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 	}
-
+	if codeMonitors != nil {
+		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
+		resolver.CodeMonitorsResolver = codeMonitors
+	}
 	return graphql.ParseSchema(
 		Schema,
 		resolver,
@@ -447,6 +450,11 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 	return n.ToVisibleChangesetSpec()
 }
 
+func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
+	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.Node.(ProductLicense)
 	return n, ok
@@ -531,18 +539,21 @@ type schemaResolver struct {
 	CampaignsResolver
 	AuthzResolver
 	CodeIntelResolver
+	CodeMonitorsResolver
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver CodeIntelResolver
-	authzResolver     AuthzResolver
-	campaignsResolver CampaignsResolver
+	codeIntelResolver    CodeIntelResolver
+	authzResolver        AuthzResolver
+	campaignsResolver    CampaignsResolver
+	codeMonitorsResolver CodeMonitorsResolver
 }{
-	codeIntelResolver: defaultCodeIntelResolver{},
-	authzResolver:     defaultAuthzResolver{},
-	campaignsResolver: defaultCampaignsResolver{},
+	codeIntelResolver:    defaultCodeIntelResolver{},
+	authzResolver:        defaultAuthzResolver{},
+	campaignsResolver:    defaultCampaignsResolver{},
+	codeMonitorsResolver: defaultCodeMonitorsResolver{},
 }
 
 // DEPRECATED
@@ -573,6 +584,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":
 		return r.ChangesetByID(ctx, id)
+	case "CampaignsCredential":
+		return r.CampaignsCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

@@ -13,10 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -32,7 +31,7 @@ type handler struct {
 	metrics         metrics.WorkerMetrics
 	enableBudget    bool
 	budgetRemaining int64
-	createStore     func(id int) persistence.Store
+	createStore     func(id int) lsifstore.Store
 }
 
 type gitserverClient interface {
@@ -224,7 +223,7 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 }
 
 // TODO(efritz) - refactor/simplify this after last change
-func (h *handler) updateXrepoData(ctx context.Context, store store.Store, upload store.Upload, packages []types.Package, packageReferences []types.PackageReference) (err error) {
+func (h *handler) updateXrepoData(ctx context.Context, store store.Store, upload store.Upload, packages []lsifstore.Package, packageReferences []lsifstore.PackageReference) (err error) {
 	ctx, endOperation := h.metrics.UpdateXrepoDatabaseOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 

@@ -1,16 +1,20 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { from, Subject, Subscription } from 'rxjs'
+import { from, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
-import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
+import * as clientType from '@sourcegraph/extension-api-types'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
     ProvidePanelViewSignature,
     PanelViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/panelViews'
-import { ContributableViewContainer, TextDocumentPositionParameters } from '../../../../../shared/src/api/protocol'
+import {
+    ContributableViewContainer,
+    ReferenceParameters,
+    TextDocumentPositionParameters,
+} from '../../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -21,6 +25,8 @@ import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -90,7 +96,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             id: string,
             title: string,
             priority: number,
-            registry: TextDocumentLocationProviderRegistry<P>,
+            provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
@@ -105,56 +111,45 @@ export class BlobPanel extends React.PureComponent<Props> {
                           }
                         : undefined
                 ),
-                switchMap(activeEditor =>
-                    registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
-                        map(hasProviders => {
-                            if (!hasProviders) {
-                                return null
-                            }
-                            const parameters: TextDocumentPositionParameters | null = getActiveCodeEditorPosition(
-                                activeEditor
-                            )
-                            if (!parameters) {
-                                return null
-                            }
-                            return {
-                                title,
-                                content: '',
-                                priority,
+                map(activeEditor => {
+                    const parameters: TextDocumentPositionParameters | null = getActiveCodeEditorPosition(activeEditor)
+                    if (!parameters) {
+                        return null
+                    }
+                    return {
+                        title,
+                        content: '',
+                        priority,
 
-                                // This disable directive is necessary because TypeScript is not yet smart
-                                // enough to know that (typeof params & typeof extraParams) is P.
-                                //
-                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                                locationProvider: registry
-                                    .getLocations({ ...parameters, ...extraParameters } as P)
-                                    .pipe(
-                                        tap(({ result: locations }) => {
-                                            if (this.props.activation && id === 'references' && locations.length > 0) {
-                                                this.props.activation.update({ FoundReferences: true })
-                                            }
-                                        })
-                                    ),
-                            }
-                        })
-                    )
-                )
+                        // This disable directive is necessary because TypeScript is not yet smart
+                        // enough to know that (typeof params & typeof extraParams) is P.
+                        //
+                        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                        locationProvider: provideLocations({ ...parameters, ...extraParameters } as P).pipe(
+                            tap(({ result: locations }) => {
+                                if (this.props.activation && id === 'references' && locations.length > 0) {
+                                    this.props.activation.update({ FoundReferences: true })
+                                }
+                            })
+                        ),
+                    }
+                })
             ),
         })
 
         this.subscriptions.add(
             this.props.extensionsController.services.panelViews.registerProviders([
-                entryForViewProviderRegistration(
-                    'def',
-                    'Definition',
-                    190,
-                    this.props.extensionsController.services.textDocumentDefinition
+                entryForViewProviderRegistration('def', 'Definition', 190, parameters =>
+                    from(this.props.extensionsController.extHostAPI).pipe(
+                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinition(parameters)))
+                    )
                 ),
-                entryForViewProviderRegistration(
+                entryForViewProviderRegistration<ReferenceParameters>(
                     'references',
                     'References',
                     180,
-                    this.props.extensionsController.services.textDocumentReferences,
+                    parameters =>
+                        this.props.extensionsController.services.textDocumentReferences.getLocations(parameters),
                     {
                         context: { includeDeclaration: false },
                     }

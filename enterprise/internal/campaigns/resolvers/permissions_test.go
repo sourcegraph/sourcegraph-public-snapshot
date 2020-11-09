@@ -37,7 +37,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,7 +554,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -650,7 +650,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -676,7 +676,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -703,7 +703,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
-		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -793,7 +792,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
-	changesetStats   apitest.ChangesetConnectionStats
+	changesetStats   apitest.ChangesetsStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -811,7 +810,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
 		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
@@ -832,11 +831,12 @@ const queryCampaignPermLevels = `
 query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
     ... on Campaign {
-      id
+	  id
+
+	  changesetsStats { unpublished, open, merged, closed, total }
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
-		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {

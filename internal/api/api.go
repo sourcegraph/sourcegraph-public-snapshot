@@ -126,6 +126,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	Unrestricted    bool
 }
 
 func cmp(a, b string) int {

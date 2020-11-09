@@ -330,6 +330,11 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
+	args.UserID = int64(r.user.ID)
+	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false
@@ -345,5 +350,5 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
 	}
-	return monitors(ctx, r.ID(), args)
+	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.ID(), args)
 }

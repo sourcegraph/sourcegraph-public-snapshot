@@ -148,7 +148,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
-	if s.config.Token == "" || !proj.RequiresAuthentication() {
+	if s.config.Token == "" {
 		return proj.HTTPURLToRepo
 	}
 	u, err := url.Parse(proj.HTTPURLToRepo)
@@ -199,7 +199,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
 
-				time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+				time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -252,7 +252,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				url = *nextPageURL
 
 				// 0-duration sleep unless nearing rate limit exhaustion
-				time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+				time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}

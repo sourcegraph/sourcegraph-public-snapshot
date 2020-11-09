@@ -8,12 +8,6 @@ export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.
     const tokens: Monaco.languages.IToken[] = []
     for (const token of parsedQuery.members) {
         switch (token.type) {
-            case 'whitespace':
-                tokens.push({
-                    startIndex: token.range.start,
-                    scopes: 'whitespace',
-                })
-                break
             case 'filter':
                 {
                     tokens.push({
@@ -28,16 +22,12 @@ export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.
                     }
                 }
                 break
+            case 'whitespace':
             case 'operator':
-                tokens.push({
-                    startIndex: token.range.start,
-                    scopes: 'operator',
-                })
-                break
             case 'comment':
                 tokens.push({
                     startIndex: token.range.start,
-                    scopes: 'comment',
+                    scopes: token.type,
                 })
                 break
             default:
