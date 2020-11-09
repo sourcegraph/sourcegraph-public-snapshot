@@ -38,7 +38,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	repos, _ := createTestRepos(t, ctx, dbconn.Global, 4)
+	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time {
@@ -967,12 +967,7 @@ type testSpecOpts struct {
 
 var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
 
-func createChangesetSpec(
-	t *testing.T,
-	ctx context.Context,
-	store *Store,
-	opts testSpecOpts,
-) *campaigns.ChangesetSpec {
+func buildChangesetSpec(t *testing.T, opts testSpecOpts) *campaigns.ChangesetSpec {
 	t.Helper()
 
 	published := campaigns.PublishedValue{Val: opts.published}
@@ -1011,6 +1006,19 @@ func createChangesetSpec(
 		DiffStatChanged: testChangsetSpecDiffStat.Changed,
 		DiffStatDeleted: testChangsetSpecDiffStat.Deleted,
 	}
+
+	return spec
+}
+
+func createChangesetSpec(
+	t *testing.T,
+	ctx context.Context,
+	store *Store,
+	opts testSpecOpts,
+) *campaigns.ChangesetSpec {
+	t.Helper()
+
+	spec := buildChangesetSpec(t, opts)
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
 		t.Fatal(err)

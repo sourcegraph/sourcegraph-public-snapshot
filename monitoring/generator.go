@@ -944,7 +944,6 @@ func main() {
 		Frontend(),
 		GitServer(),
 		GitHubProxy(),
-		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
 		QueryRunner(),
 		RepoUpdater(),

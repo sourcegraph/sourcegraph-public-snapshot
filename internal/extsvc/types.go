@@ -198,6 +198,31 @@ func ParseServiceType(s string) (string, bool) {
 	}
 }
 
+// ParseServiceKind will return a ServiceKind constant after doing a case insensitive match on s.
+// It returns ("", false) if no match was found.
+func ParseServiceKind(s string) (string, bool) {
+	switch strings.ToUpper(s) {
+	case KindAWSCodeCommit:
+		return KindAWSCodeCommit, true
+	case KindBitbucketServer:
+		return KindBitbucketServer, true
+	case KindBitbucketCloud:
+		return KindBitbucketCloud, true
+	case KindGitHub:
+		return KindGitHub, true
+	case KindGitLab:
+		return KindGitLab, true
+	case KindGitolite:
+		return KindGitolite, true
+	case KindPhabricator:
+		return KindPhabricator, true
+	case KindOther:
+		return KindOther, true
+	default:
+		return "", false
+	}
+}
+
 // AccountID is a descriptive type for the external identifier of an external account on the
 // code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL ID
 // (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.
