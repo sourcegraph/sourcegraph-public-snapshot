@@ -98,7 +98,7 @@ Here is an example `package.json` that defines a toggle button:
 }
 ```
 
-The specially crafted `commandArguments` make the action update the `myext.enabled` settings property to the opposite of its current value. To achieve this, it uses template interpolation (with `${...}`) and a special 4th argument of `"json"` that causes the argument to be parsed as JSON instead of treated as a string. (This is important, because we want the `myext.enabled` setting to have a boolean value: `{"myext.enabled": true}`, not `{"myext.enabled": "true"}`.
+The specially crafted `commandArguments` make the action update the `myext.enabled` settings property to the opposite of its current value. To achieve this, it uses a [context key expression](context_key_expressions.md) (interpolated with `${...}`) and a special 4th argument of `"json"` that causes the argument to be parsed as JSON instead of treated as a string. (This is important, because we want the `myext.enabled` setting to have a boolean value: `{"myext.enabled": true}`, not `{"myext.enabled": "true"}`.
 
 ## queryGraphQL
 

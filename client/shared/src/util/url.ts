@@ -2,7 +2,7 @@ import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
-import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
+import { scanSearchQuery, CharacterRange } from '../search/parser/scanner'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
@@ -652,7 +652,7 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
 }
 
 export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const parsedQuery = parseSearchQuery(query)
+    const parsedQuery = scanSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const token of parsedQuery.token.members) {
             if (
@@ -672,7 +672,7 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
 }
 
 export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const parsedQuery = parseSearchQuery(query)
+    const parsedQuery = scanSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const token of parsedQuery.token.members) {
             if (token.type === 'filter' && token.filterType.value.toLowerCase() === 'case' && token.filterValue) {

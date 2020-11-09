@@ -4,7 +4,7 @@ import {
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { uniqueId } from 'lodash'
 import { validateFilter, isSingularFilter } from '../../../../shared/src/search/parser/filters'
 
@@ -19,7 +19,7 @@ import { validateFilter, isSingularFilter } from '../../../../shared/src/search/
 export function convertPlainTextToInteractiveQuery(
     query: string
 ): { filtersInQuery: FiltersToTypeAndValue; navbarQuery: string } {
-    const parsedQuery = parseSearchQuery(query)
+    const parsedQuery = scanSearchQuery(query)
 
     const newFiltersInQuery: FiltersToTypeAndValue = {}
     let newNavbarQuery = ''

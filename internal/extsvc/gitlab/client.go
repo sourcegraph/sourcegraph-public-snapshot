@@ -95,6 +95,12 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	}
 }
 
+// GetAuthenticatorClient returns a client authenticated by the given
+// authenticator.
+func (p *ClientProvider) GetAuthenticatorClient(a auth.Authenticator) *Client {
+	return p.getClient(a)
+}
+
 // GetPATClient returns a client authenticated by the personal access token.
 func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client {
 	if personalAccessToken == "" {
@@ -243,6 +249,17 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 // RateLimitMonitor exposes the rate limit monitor.
 func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
+}
+
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	tokenHash := a.Hash()
+
+	cc := *c
+	cc.rateLimiter = ratelimit.DefaultRegistry.Get(cc.baseURL.String())
+	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, &ratelimit.Monitor{})
+	cc.Auth = a
+
+	return &cc
 }
 
 type HTTPError int

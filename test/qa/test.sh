@@ -29,6 +29,7 @@ source /root/.profile
 pushd client/web || exit
 yarn run test:regression:core
 yarn run test:regression:integrations
+yarn run test:regression:search
 popd || exit
 
 # ==========================

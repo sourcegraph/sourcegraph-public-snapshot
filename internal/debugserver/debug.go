@@ -111,7 +111,6 @@ func NewServerRoutine(extra ...Endpoint) (goroutine.BackgroundRoutine, error) {
 		router.Handle("/gc", http.HandlerFunc(gcHandler))
 		router.Handle("/freeosmemory", http.HandlerFunc(freeOSMemoryHandler))
 		router.Handle("/debug/fgprof", fgprof.Handler())
-		router.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
 		router.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
 		router.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		router.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
@@ -119,6 +118,9 @@ func NewServerRoutine(extra ...Endpoint) (goroutine.BackgroundRoutine, error) {
 		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
 		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
 		router.Handle("/metrics", promhttp.Handler())
+
+		// This path acts as a wildcard and should appear after more specific entries.
+		router.PathPrefix("/debug/pprof").HandlerFunc(pprof.Index)
 
 		for _, e := range extra {
 			router.Handle(e.Path, e.Handler)

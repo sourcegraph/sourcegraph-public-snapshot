@@ -180,6 +180,10 @@ export interface HomePanelsProps {
     now?: () => Date
 }
 
+export interface SearchStreamingProps {
+    searchStreaming: boolean
+}
+
 /**
  * Verifies whether a version context exists on an instance.
  *

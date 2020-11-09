@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 const testBundleID = 447
@@ -19,7 +20,7 @@ func TestDatabaseExists(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	testCases := []struct {
 		path     string
@@ -45,7 +46,7 @@ func TestDatabaseRanges(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	//   20: // NewWriter creates a new Writer.
 	//   21: func NewWriter(w io.Writer, addContents bool) *Writer {
@@ -160,7 +161,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
@@ -184,7 +185,7 @@ func TestDatabaseReferences(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
 	//                   ^^^^^^^^^
@@ -216,7 +217,7 @@ func TestDatabaseHover(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	// `\tcontents, err := findContents(pkgs, p, f, obj)`
 	//                     ^^^^^^^^^^^^
@@ -247,7 +248,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
@@ -278,7 +279,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	edgeDefinitionLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
@@ -336,7 +337,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "60"); err != nil {
 		t.Fatalf("unexpected error %s", err)
@@ -354,7 +355,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
-func populateTestStore(t *testing.T) Store {
+func populateTestStore(t *testing.T) *Store {
 	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
@@ -380,5 +381,5 @@ func populateTestStore(t *testing.T) Store {
 		}
 	}
 
-	return testStore()
+	return NewStore(dbconn.Global, &observation.TestContext)
 }

@@ -5,13 +5,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 func lookupMoniker(
-	store store.Store,
-	lsifStore lsifstore.Store,
+	dbStore DBStore,
+	lsifStore LSIFStore,
 	dumpID int,
 	path string,
 	modelType string,
@@ -32,7 +31,7 @@ func lookupMoniker(
 		return nil, 0, errors.Wrap(err, "lsifStore.BundleClient")
 	}
 
-	dump, exists, err := store.GetPackage(context.Background(), moniker.Scheme, pid.Name, pid.Version)
+	dump, exists, err := dbStore.GetPackage(context.Background(), moniker.Scheme, pid.Name, pid.Version)
 	if err != nil || !exists {
 		return nil, 0, errors.Wrap(err, "store.GetPackage")
 	}
