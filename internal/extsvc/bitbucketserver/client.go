@@ -1356,3 +1356,51 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 
 	return nil, errors.New("existing PR not found")
 }
+
+func (c *Client) AuthenticatedUsername(ctx context.Context) (username string, err error) {
+	u := url.URL{Path: "rest/api/1.0/users", RawQuery: "limit=1"}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	req.URL = c.URL.ResolveReference(req.URL)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
+		req.WithContext(ctx),
+		nethttp.OperationName("Bitbucket Server"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+
+	if err := c.Auth.Authenticate(req); err != nil {
+		return "", err
+	}
+
+	startWait := time.Now()
+	if err := c.RateLimit.Wait(ctx); err != nil {
+		return "", err
+	}
+
+	if d := time.Since(startWait); d > 200*time.Millisecond {
+		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return "", errors.WithStack(&httpError{
+			URL:        req.URL,
+			StatusCode: resp.StatusCode,
+		})
+	}
+
+	username = resp.Header.Get("X-Ausername")
+	if username == "" {
+		return "", errors.New("no username in X-Ausername header")
+	}
+
+	return username, nil
+}
