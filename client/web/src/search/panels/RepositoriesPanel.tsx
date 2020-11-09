@@ -8,7 +8,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { parseSearchURLQuery } from '..'
 import { ShowMoreButton } from './ShowMoreButton'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -127,7 +127,7 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     for (const node of eventLogResult.nodes) {
         const url = new URL(node.url)
         const queryFromURL = parseSearchURLQuery(url.search)
-        const parsedQuery = parseSearchQuery(queryFromURL || '')
+        const parsedQuery = scanSearchQuery(queryFromURL || '')
         if (parsedQuery.type === 'success') {
             for (const token of parsedQuery.token.members) {
                 if (

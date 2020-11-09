@@ -28,6 +28,5 @@ executor-queue: executor-queue
 codeintel-executor: EXECUTOR_QUEUE_NAME=codeintel TMPDIR=~/.sourcegraph/indexer-temp executor
 
 # Enterprise code intelligence services
-precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
 precise-code-intel-worker: precise-code-intel-worker
 minio: ./dev/minio.sh

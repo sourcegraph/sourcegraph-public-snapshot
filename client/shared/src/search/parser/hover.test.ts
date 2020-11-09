@@ -1,10 +1,9 @@
 import { getHoverResult } from './hover'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, Sequence } from './scanner'
 
 describe('getHoverResult()', () => {
     test('returns hover contents for filters', () => {
-        const parsedQuery = (parseSearchQuery('repo:sourcegraph file:code_intelligence') as ParseSuccess<Sequence>)
-            .token
+        const parsedQuery = (scanSearchQuery('repo:sourcegraph file:code_intelligence') as ScanSuccess<Sequence>).token
         expect(getHoverResult(parsedQuery, { column: 4 })).toStrictEqual({
             contents: [
                 {

@@ -6,7 +6,7 @@ import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
@@ -41,7 +41,7 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
     const currentQuery = parseSearchURLQuery(location.search) || ''
-    const parsedQuery = parseSearchQuery(currentQuery)
+    const parsedQuery = scanSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 
     if (parsedQuery.type === 'success') {

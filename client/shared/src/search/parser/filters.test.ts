@@ -1,5 +1,5 @@
 import { validateFilter } from './filters'
-import { Literal, Quoted } from './parser'
+import { Literal, Quoted } from './scanner'
 
 describe('validateFilter()', () => {
     interface TestCase {
