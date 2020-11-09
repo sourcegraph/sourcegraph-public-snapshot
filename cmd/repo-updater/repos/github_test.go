@@ -775,17 +775,6 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 }
 
 func TestGithubSource_WithAuthenticator(t *testing.T) {
-	// The GithubSource uses the github.Client under the hood, which
-	// uses rcache, a caching layer that uses Redis.
-	// We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
-
-	cf, save := newClientFactory(t, "WithAuthenticator")
-	defer save(t)
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
-
 	svc := &ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: marshalJSON(t, &schema.GitHubConnection{
@@ -794,7 +783,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 		}),
 	}
 
-	githubSrc, err := NewGithubSource(svc, cf)
+	githubSrc, err := NewGithubSource(svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
