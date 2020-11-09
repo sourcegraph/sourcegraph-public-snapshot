@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { escapeRegExp, startCase } from 'lodash'
 import { FILTERS, resolveFilter } from './filters'
-import { Sequence, toMonacoRange } from './parser'
+import { Sequence, toMonacoRange } from './scanner'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
 import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
