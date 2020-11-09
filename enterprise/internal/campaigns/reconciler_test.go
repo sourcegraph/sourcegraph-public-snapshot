@@ -7,6 +7,7 @@ import (
 
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -1287,6 +1289,137 @@ func TestNamespaceURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestExecutor_LoadAuthenticator(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user cannot be a site admin")
+	}
+
+	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	repo := rs[0]
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+
+	t.Run("imported changeset uses global token", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 0,
+			},
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by missing campaign", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 1234,
+			},
+			tx: store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user without credential", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by normal user without credential", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              admin.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+
+	t.Run("owned by normal user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              user.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
 }
 
 type mockInternalClient struct {

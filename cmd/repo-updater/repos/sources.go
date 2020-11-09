@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -84,6 +85,16 @@ type Source interface {
 	ExternalServices() ExternalServices
 }
 
+// A UserSource is a source that can use a custom authenticator (such as one
+// contained in a user credential) to interact with the code host, rather than
+// global credentials.
+type UserSource interface {
+	// WithAuthenticator returns a copy of the original Source configured to use
+	// the given authenticator, provided that authenticator type is supported by
+	// the code host.
+	WithAuthenticator(auth.Authenticator) (Source, error)
+}
+
 // A DraftChangesetSource can create draft changesets and undraft them.
 type DraftChangesetSource interface {
 	// CreateDraftChangeset will create the Changeset on the source. If it already
@@ -112,6 +123,24 @@ type ChangesetSource interface {
 	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
 	// If not, it's a noop.
 	ReopenChangeset(context.Context, *Changeset) error
+}
+
+// UnsupportedAuthenticatorError is returned by WithAuthenticator if the
+// authenticator isn't supported on that code host.
+type UnsupportedAuthenticatorError struct {
+	have   string
+	source string
+}
+
+func (e UnsupportedAuthenticatorError) Error() string {
+	return fmt.Sprintf("authenticator type unsupported for %s sources: %s", e.source, e.have)
+}
+
+func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) UnsupportedAuthenticatorError {
+	return UnsupportedAuthenticatorError{
+		have:   fmt.Sprintf("%T", a),
+		source: source,
+	}
 }
 
 // ChangesetNotFoundError is returned by LoadChangeset if the changeset

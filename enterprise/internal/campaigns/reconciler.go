@@ -11,11 +11,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -160,8 +162,14 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return errors.Wrap(err, "failed to load external service")
 	}
 
+	// Figure out which authenticator we should use to modify the changeset.
+	a, err := e.loadAuthenticator(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(e.repo, extSvc)
+	e.ccs, err = e.buildChangesetSource(e.repo, extSvc, a)
 	if err != nil {
 		return err
 	}
@@ -221,7 +229,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService, auth auth.Authenticator) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -230,6 +238,21 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 		return nil, errors.New("invalid number of sources for external service")
 	}
 	src := sources[0]
+
+	if auth != nil {
+		// If auth == nil that means the user that applied that last
+		// campaign/changeset spec is a site-admin and we can fall back to the
+		// global credentials stored in extSvc.
+		ucs, ok := src.(repos.UserSource)
+		if !ok {
+			return nil, errors.Errorf("using user credentials on code host of repo %q is not implemented", repo.Name)
+		}
+
+		if src, err = ucs.WithAuthenticator(auth); err != nil {
+			return nil, errors.Wrapf(err, "unable to use this specific user credential on code host of repo %q", repo.Name)
+		}
+	}
+
 	ccs, ok := src.(repos.ChangesetSource)
 	if !ok {
 		return nil, errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
@@ -237,6 +260,62 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 
 	return ccs, nil
 }
+
+// loadAuthenticator determines the correct Authenticator to use when
+// reconciling the current changeset. It will return nil, nil if the code host's
+// global configuration should be used (ie the applying user is an admin and
+// doesn't have a credential configured for the code host, or the changeset
+// isn't owned by a campaign).
+func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
+	if e.ch.OwnedByCampaignID == 0 {
+		// Unowned changesets are imported, and therefore don't need to use a user
+		// credential, since reconciliation isn't a mutating process.
+		return nil, nil
+	}
+
+	// If the changeset is owned by a campaign, we want to reconcile using
+	// the user's credentials, which means we need to know which user last
+	// applied the owning campaign. Let's go find out.
+	campaign, err := loadCampaign(ctx, e.tx, e.ch.OwnedByCampaignID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load owning campaign")
+	}
+
+	cred, err := loadUserCredential(ctx, campaign.LastApplierID, e.repo)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			// We need to check if the user is an admin: if they are, then
+			// we can use the nil return from loadUserCredential() to fall
+			// back to the global credentials used for the code host. If
+			// not, then we need to error out.
+			user, err := loadUser(ctx, campaign.LastApplierID)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load user applying the campaign")
+			}
+
+			if user.SiteAdmin {
+				return nil, nil
+			}
+
+			return nil, ErrMissingCredentials{repo: e.repo.Name}
+		}
+		return nil, errors.Wrap(err, "failed to load user credential")
+	}
+
+	return cred.Credential, nil
+}
+
+// ErrMissingCredentials is returned by loadAuthenticator if the user that
+// applied the last campaign/changeset spec doesn't have UserCredentials for
+// the given repository and is not a site-admin (so no fallback to the global
+// credentials is possible).
+type ErrMissingCredentials struct{ repo string }
+
+func (e ErrMissingCredentials) Error() string {
+	return fmt.Sprintf("user does not have a valid credential for repository %q", e.repo)
+}
+
+func (e ErrMissingCredentials) Terminal() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
@@ -794,6 +873,19 @@ func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset)
 		}
 	}
 	return
+}
+
+func loadUser(ctx context.Context, id int32) (*types.User, error) {
+	return db.Users.GetByID(ctx, id)
+}
+
+func loadUserCredential(ctx context.Context, userID int32, repo *repos.Repo) (*db.UserCredential, error) {
+	return db.UserCredentials.GetByScope(ctx, db.UserCredentialScope{
+		Domain:              db.UserCredentialDomainCampaigns,
+		UserID:              userID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	})
 }
 
 func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
