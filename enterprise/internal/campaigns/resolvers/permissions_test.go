@@ -322,7 +322,7 @@ func TestPermissionLevels(t *testing.T) {
 		})
 	})
 
-	t.Run("mutations", func(t *testing.T) {
+	t.Run("campaign mutations", func(t *testing.T) {
 		mutations := []struct {
 			name           string
 			mutationFunc   func(campaignID, changesetID, campaignSpecID string) string
@@ -465,9 +465,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 	})
 
-	t.Run("admin-only create mutations", func(t *testing.T) {
-		// These can be removed once we enable creation of
-		// changesetSpecs/campaignSpecs/applyCampaign for non-site-admin users.
+	t.Run("spec mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
 			mutationFunc func(userID string) string
@@ -498,23 +496,23 @@ func TestPermissionLevels(t *testing.T) {
 					currentUser int32
 					wantAuthErr bool
 				}{
-					{
-						name:        "authorized user",
-						currentUser: userID,
-						wantAuthErr: true,
-					},
-					{
-						name:        "authorized site-admin",
-						currentUser: adminID,
-						wantAuthErr: false,
-					},
+					{name: "no user", currentUser: 0, wantAuthErr: true},
+					{name: "user", currentUser: userID, wantAuthErr: false},
+					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						mutation := m.mutationFunc(string(graphqlbackend.MarshalUserID(tc.currentUser)))
+						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
+						if tc.currentUser == 0 {
+							// If we don't have a currentUser we try to create
+							// a campaign in another namespace, solely for the
+							// purposes of this test.
+							namespaceID = string(graphqlbackend.MarshalUserID(userID))
+						}
+						mutation := m.mutationFunc(namespaceID)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 
@@ -525,7 +523,7 @@ func TestPermissionLevels(t *testing.T) {
 							if len(errs) != 1 {
 								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 							}
-							if !strings.Contains(errs[0].Error(), "must be site admin") {
+							if !strings.Contains(errs[0].Error(), "not authenticated") {
 								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 							}
 						} else {
