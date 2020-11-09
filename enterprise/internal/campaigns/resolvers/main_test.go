@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -97,17 +96,6 @@ var testDiffGraphQL = apitest.FileDiffs{
 			Stat: apitest.DiffStat{Changed: 1},
 		},
 	},
-}
-
-func marshalJSON(t testing.TB, v interface{}) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(bs)
 }
 
 func marshalDateTime(t testing.TB, ts time.Time) string {

@@ -6,16 +6,17 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
-	repo := testRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
-	bitbucketRepo := testRepo(t, reposStore, extsvc.KindBitbucketServer)
-	awsRepo := testRepo(t, reposStore, extsvc.KindAWSCodeCommit)
+	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	bitbucketRepo := ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
+	awsRepo := ct.TestRepo(t, reposStore, extsvc.KindAWSCodeCommit)
 
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)

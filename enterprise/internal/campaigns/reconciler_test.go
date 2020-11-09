@@ -41,7 +41,7 @@ func TestReconcilerProcess(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -822,10 +822,10 @@ func TestDeterminePlan(t *testing.T) {
 
 	store := NewStore(dbconn.Global)
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	githubRepo := rs[0]
 
-	rs, _ = createBbsTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ = ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := rs[0]
 
 	admin := createTestUser(ctx, t)
@@ -1000,7 +1000,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -1201,7 +1201,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),

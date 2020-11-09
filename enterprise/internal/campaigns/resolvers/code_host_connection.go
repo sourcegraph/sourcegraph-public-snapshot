@@ -88,15 +88,23 @@ func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all,
 
 		afterIdx := c.limitOffset.Offset
 
+		// Out of bound means page slice is empty.
+		if afterIdx >= len(c.chs) {
+			return
+		}
+
 		// Prepare page slice based on pagination params.
 		limit := c.limitOffset.Limit
+		// No limit set: page slice is all from `afterIdx` on.
 		if limit <= 0 {
-			limit = len(c.chs)
+			c.chsPage = c.chs[afterIdx:]
+			return
 		}
-		if limit > len(c.chs)-afterIdx {
+		// If limit + afterIdx exceed slice bounds, cap to limit.
+		if limit+afterIdx >= len(c.chs) {
 			limit = len(c.chs) - afterIdx
 		}
-		c.chsPage = c.chs[afterIdx:limit]
+		c.chsPage = c.chs[afterIdx : limit+afterIdx]
 	})
 	return c.chs, c.chsPage, c.chsErr
 }

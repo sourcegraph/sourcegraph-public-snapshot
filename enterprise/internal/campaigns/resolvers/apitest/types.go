@@ -283,6 +283,6 @@ type CampaignsCodeHostsConnection struct {
 
 type CampaignsCodeHost struct {
 	ExternalServiceKind string
-	ExernalServiceURL   string
+	ExternalServiceURL  string
 	Credential          CampaignsCredential
 }
