@@ -178,10 +178,6 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-// Type guards.
-var _ ChangesetSource = GithubSource{}
-var _ DraftChangesetSource = GithubSource{}
-
 // CreateChangeset creates the given changeset on the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	input := buildCreatePullRequestInput(c)
