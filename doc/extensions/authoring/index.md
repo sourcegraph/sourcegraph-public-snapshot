@@ -20,6 +20,7 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 - [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
 - [Cookbook (sample code)](cookbook.md)
 - [UX style guide](ux_style_guide.md)
+- [Context key expressions](context_key_expressions.md)
 - [Testing extensions](testing_extensions.md)
 
 ## Tutorials
