@@ -8,11 +8,11 @@ import { Breadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from '../../componen
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 
-interface Props extends BreadcrumbsProps, BreadcrumbSetters {
+export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
 }
-export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
+export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = props => {
     props.useBreadcrumb(
         useMemo(
             () => ({
