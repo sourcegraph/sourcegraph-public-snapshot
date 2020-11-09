@@ -192,6 +192,10 @@ func (r *Repo) Clone() *Repo {
 		return nil
 	}
 	clone := *r
+	if r.RepoFields != nil {
+		repoFields := *r.RepoFields
+		clone.RepoFields = &repoFields
+	}
 	if r.Sources != nil {
 		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
 		for k, v := range r.Sources {
@@ -397,6 +401,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -1255,6 +1260,16 @@ type HomepagePanels struct {
 	UsersSavedSearchesClickedPercentage    *float64
 	UsersNewSavedSearchesClickedPercentage *float64
 	PercentUsersShown                      *float64
+}
+
+type SearchOnboarding struct {
+	TotalOnboardingTourViews   *int32
+	ViewedLangStep             *int32
+	ViewedFilterRepoStep       *int32
+	ViewedAddQueryTermStep     *int32
+	ViewedSubmitSearchStep     *int32
+	ViewedSearchReferenceStep  *int32
+	CloseOnboardingTourClicked *int32
 }
 
 // Secret represents the secrets table

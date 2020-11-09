@@ -895,7 +895,8 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
 		Config: marshalJSON(t, &schema.GitLabConnection{
-			Url: "https://gitlab.com/",
+			Url:   "https://gitlab.com/",
+			Token: "secret-gitlab-token",
 			Webhooks: []*schema.GitLabWebhook{
 				{Secret: "super"},
 				{Secret: "secret"},
