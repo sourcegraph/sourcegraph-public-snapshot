@@ -327,9 +327,6 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	return u.String(), nil
 }
 
-var _ ChangesetSource = &GitLabSource{}
-var _ DraftChangesetSource = &GitLabSource{}
-
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
