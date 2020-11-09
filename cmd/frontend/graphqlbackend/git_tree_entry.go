@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	neturl "net/url"
 	"os"
 	"path"
@@ -262,7 +263,15 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			// In that case, we default to stripping any relative prefix and crafting
 			// a new URL based on the reposource's host, if available.
 			if strings.HasPrefix(cloneURL, "../") && host != "" {
-				cloneURL = host + "/" + strings.ReplaceAll(cloneURL, "../", "")
+				u, err := url.Parse(cloneURL)
+				if err != nil {
+					return "", err
+				}
+				base, err := url.Parse(host)
+				if err != nil {
+					return "", err
+				}
+				cloneURL = base.ResolveReference(u).String()
 			}
 
 			repoName, err := rs.CloneURLToRepoName(cloneURL)
