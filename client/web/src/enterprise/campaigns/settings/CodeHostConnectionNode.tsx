@@ -47,10 +47,16 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                 <div className="d-flex justify-content-between align-items-center mb-0">
                     <h3 className="mb-0">
                         {isEnabled && (
-                            <CheckCircleOutlineIcon className="text-success icon-inline test-code-host-connection-node-enabled" />
+                            <CheckCircleOutlineIcon
+                                className="text-success icon-inline test-code-host-connection-node-enabled"
+                                data-tooltip="Connected"
+                            />
                         )}
                         {!isEnabled && (
-                            <CheckboxBlankCircleOutlineIcon className="text-danger icon-inline test-code-host-connection-node-disabled" />
+                            <CheckboxBlankCircleOutlineIcon
+                                className="text-danger icon-inline test-code-host-connection-node-disabled"
+                                data-tooltip="No token set"
+                            />
                         )}
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}
                     </h3>
