@@ -4,10 +4,8 @@ import { Observable } from 'rxjs'
 import {
     CampaignsVariables,
     CampaignsResult,
-    CampaignsByUserResult,
-    CampaignsByUserVariables,
-    CampaignsByOrgResult,
-    CampaignsByOrgVariables,
+    CampaignsByNamespaceResult,
+    CampaignsByNamespaceVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -65,23 +63,23 @@ export const queryCampaigns = ({
         map(data => data.campaigns)
     )
 
-export const queryCampaignsByUser = ({
-    userID,
+export const queryCampaignsByNamespace = ({
+    namespaceID,
     first,
     after,
     state,
     viewerCanAdminister,
-}: CampaignsByUserVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>(
+}: CampaignsByNamespaceVariables): Observable<CampaignsResult['campaigns']> =>
+    requestGraphQL<CampaignsByNamespaceResult, CampaignsByNamespaceVariables>(
         gql`
-            query CampaignsByUser(
-                $userID: ID!
+            query CampaignsByNamespace(
+                $namespaceID: ID!
                 $first: Int
                 $after: String
                 $state: CampaignState
                 $viewerCanAdminister: Boolean
             ) {
-                node(id: $userID) {
+                node(id: $namespaceID) {
                     __typename
                     ... on User {
                         campaigns(
@@ -90,53 +88,9 @@ export const queryCampaignsByUser = ({
                             state: $state
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
-                            nodes {
-                                ...ListCampaign
-                            }
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            totalCount
+                            ...CampaignsFields
                         }
                     }
-                }
-            }
-
-            ${ListCampaignFragment}
-        `,
-        { first, after, state, viewerCanAdminister, userID }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('User not found')
-            }
-            if (data.node.__typename !== 'User') {
-                throw new Error(`Requested node is a ${data.node.__typename}, not a User`)
-            }
-            return data.node.campaigns
-        })
-    )
-
-export const queryCampaignsByOrg = ({
-    orgID,
-    first,
-    after,
-    state,
-    viewerCanAdminister,
-}: CampaignsByOrgVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>(
-        gql`
-            query CampaignsByOrg(
-                $orgID: ID!
-                $first: Int
-                $after: String
-                $state: CampaignState
-                $viewerCanAdminister: Boolean
-            ) {
-                node(id: $orgID) {
-                    __typename
                     ... on Org {
                         campaigns(
                             first: $first
@@ -144,30 +98,35 @@ export const queryCampaignsByOrg = ({
                             state: $state
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
-                            nodes {
-                                ...ListCampaign
-                            }
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            totalCount
+                            ...CampaignsFields
                         }
                     }
                 }
             }
 
+            fragment CampaignsFields on CampaignConnection {
+                nodes {
+                    ...ListCampaign
+                }
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                totalCount
+            }
+
             ${ListCampaignFragment}
         `,
-        { first, after, state, viewerCanAdminister, orgID }
+        { first, after, state, viewerCanAdminister, namespaceID }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.node) {
-                throw new Error('Org not found')
+                throw new Error('Namespace not found')
             }
-            if (data.node.__typename !== 'Org') {
-                throw new Error(`Requested node is a ${data.node.__typename}, not an Org`)
+
+            if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
+                throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
             return data.node.campaigns
         })
