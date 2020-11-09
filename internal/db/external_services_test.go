@@ -165,11 +165,18 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
 		},
 		{
-			name:         "prevent disallowed fields",
+			name:         "prevent disallowed repositoryPathPattern field",
 			kind:         extsvc.KindGitHub,
 			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}" // comments}`,
 			hasNamespace: true,
 			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
+		},
+		{
+			name:         "prevent disallowed nameTransformations field",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}] // comments}`,
+			hasNamespace: true,
+			wantErr:      `field "nameTransformations" is not allowed in a user-added external service`,
 		},
 	}
 	for _, test := range tests {
