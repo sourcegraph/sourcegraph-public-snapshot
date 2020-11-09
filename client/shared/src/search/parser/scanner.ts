@@ -158,7 +158,7 @@ export interface ScanSuccess<T = Term> {
     /**
      * The resulting term.
      */
-    token: T
+    term: T
 }
 
 /**
@@ -181,18 +181,18 @@ const zeroOrMore = (scanToken: Scanner<Term>): Scanner<Token[]> => (input, start
         if (result.type === 'error') {
             return result
         }
-        if (Array.isArray(result.token)) {
-            for (const token of result.token) {
+        if (Array.isArray(result.term)) {
+            for (const token of result.term) {
                 tokens.push(token)
                 end = token.range.end
             }
         } else {
-            tokens.push(result.token)
-            end = result.token.range.end
+            tokens.push(result.term)
+            end = result.term.range.end
         }
         adjustedStart = end
     }
-    return { type: 'success', token: tokens }
+    return { type: 'success', term: tokens }
 }
 
 /**
@@ -232,7 +232,7 @@ const quoted = (delimiter: string): Scanner<Quoted> => (input, start) => {
     return {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
-        token: { type: 'quoted', quotedValue: input.slice(start + 1, end), range: { start, end: end + 1 } },
+        term: { type: 'quoted', quotedValue: input.slice(start + 1, end), range: { start, end: end + 1 } },
     }
 }
 
@@ -246,7 +246,7 @@ const character = (character: string): Scanner<Literal> => (input, start) => {
     }
     return {
         type: 'success',
-        token: { type: 'literal', value: character, range: { start, end: start + 1 } },
+        term: { type: 'literal', value: character, range: { start, end: start + 1 } },
     }
 }
 
@@ -274,7 +274,7 @@ const scanToken = <T extends Term = Literal>(
         const range = { start, end: start + match[0].length }
         return {
             type: 'success',
-            token: output
+            term: output
                 ? typeof output === 'function'
                     ? output(input, range)
                     : output
@@ -338,19 +338,19 @@ const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanne
     if (tokenResult.type === 'error') {
         return tokenResult
     }
-    tokens.push(tokenResult.token)
-    let { end } = tokenResult.token.range
+    tokens.push(tokenResult.term)
+    let { end } = tokenResult.term.range
     if (input[end] !== undefined) {
         const separatorResult = scanNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
-        tokens.push(separatorResult.token)
-        end = separatorResult.token.range.end
+        tokens.push(separatorResult.term)
+        end = separatorResult.term.range.end
     }
     return {
         type: 'success',
-        token: tokens,
+        term: tokens,
     }
 }
 
@@ -364,32 +364,32 @@ const filter: Scanner<Filter> = (input, start) => {
     if (scannedKeyword.type === 'error') {
         return scannedKeyword
     }
-    const scannedDelimiter = filterDelimiter(input, scannedKeyword.token.range.end)
+    const scannedDelimiter = filterDelimiter(input, scannedKeyword.term.range.end)
     if (scannedDelimiter.type === 'error') {
         return scannedDelimiter
     }
     const scannedValue =
-        input[scannedDelimiter.token.range.end] === undefined
+        input[scannedDelimiter.term.range.end] === undefined
             ? undefined
-            : filterValue(input, scannedDelimiter.token.range.end)
+            : filterValue(input, scannedDelimiter.term.range.end)
     if (scannedValue && scannedValue.type === 'error') {
         return scannedValue
     }
     return {
         type: 'success',
-        token: {
+        term: {
             type: 'filter',
-            range: { start, end: scannedValue ? scannedValue.token.range.end : scannedDelimiter.token.range.end },
-            filterType: scannedKeyword.token,
-            filterValue: scannedValue?.token,
-            negated: scannedKeyword.token.value.startsWith('-'),
+            range: { start, end: scannedValue ? scannedValue.term.range.end : scannedDelimiter.term.range.end },
+            filterType: scannedKeyword.term,
+            filterValue: scannedValue?.term,
+            negated: scannedKeyword.term.value.startsWith('-'),
         },
     }
 }
 
 const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
     type: 'success',
-    token: {
+    term: {
         type: 'pattern',
         range,
         kind,
@@ -503,12 +503,12 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern
 const scanPattern = (kind: PatternKind): Scanner<Pattern> => (input, start) => {
     const balancedPattern = scanBalancedPattern(kind)(input, start)
     if (balancedPattern.type === 'success') {
-        return createPattern(balancedPattern.token.value, balancedPattern.token.range, kind)
+        return createPattern(balancedPattern.term.value, balancedPattern.term.range, kind)
     }
 
     const anyPattern = literal(input, start)
     if (anyPattern.type === 'success') {
-        return createPattern(anyPattern.token.value, anyPattern.token.range, kind)
+        return createPattern(anyPattern.term.value, anyPattern.term.range, kind)
     }
 
     return anyPattern
