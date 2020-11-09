@@ -4,23 +4,16 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-type CodeHost struct {
-	ExternalServiceType string
-	ExternalServiceID   string
-}
+func (s *Store) GetCodeHosts(ctx context.Context) ([]*campaigns.CodeHost, error) {
+	q := getCodeHostsQuery()
 
-type GetCodeHostsOpts struct {
-	Limit int64
-}
-
-func (s *Store) GetCodeHosts(ctx context.Context, opts GetCodeHostsOpts) ([]*CodeHost, error) {
-	q := getCodeHostsQuery(opts)
-
-	cs := make([]*CodeHost, 0)
+	cs := make([]*campaigns.CodeHost, 0)
 	err := s.query(ctx, q, func(sc scanner) error {
-		var c CodeHost
+		var c campaigns.CodeHost
 		if err := scanCodeHost(&c, sc); err != nil {
 			return err
 		}
@@ -39,23 +32,19 @@ FROM repo
 WHERE %s
 GROUP BY external_service_type, external_service_id
 ORDER BY external_service_type ASC, external_service_id ASC
-%s
 `
 
-func getCodeHostsQuery(opts GetCodeHostsOpts) *sqlf.Query {
+func getCodeHostsQuery() *sqlf.Query {
 	preds := []*sqlf.Query{
 		// Only show supported hosts.
-		sqlf.Sprintf("external_service_type IN ('github','gitlab','bitbucketServer')"),
+		sqlf.Sprintf("external_service_type IN (%s, %s, %s)", extsvc.TypeGitHub, extsvc.TypeGitLab, extsvc.TypeBitbucketServer),
+		// And only for those which have any enabled repositories.
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-	limitQuery := sqlf.Sprintf("")
-	if opts.Limit > 0 {
-		limitQuery = sqlf.Sprintf("LIMIT %s", opts.Limit)
-	}
-	return sqlf.Sprintf(getCodeHostsQueryFmtstr, sqlf.Join(preds, "AND"), limitQuery)
+	return sqlf.Sprintf(getCodeHostsQueryFmtstr, sqlf.Join(preds, "AND"))
 }
 
-func scanCodeHost(c *CodeHost, sc scanner) error {
+func scanCodeHost(c *campaigns.CodeHost, sc scanner) error {
 	return sc.Scan(
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,

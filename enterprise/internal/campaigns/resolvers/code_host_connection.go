@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -18,8 +19,8 @@ type campaignsCodeHostConnectionResolver struct {
 	store       *ee.Store
 
 	once    sync.Once
-	chs     []*ee.CodeHost
-	chsPage []*ee.CodeHost
+	chs     []*campaigns.CodeHost
+	chsPage []*campaigns.CodeHost
 	chsErr  error
 }
 
@@ -80,10 +81,10 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 	return nodes, nil
 }
 
-func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*ee.CodeHost, err error) {
+func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
-		c.chs, c.chsErr = c.store.GetCodeHosts(ctx, ee.GetCodeHostsOpts{})
+		c.chs, c.chsErr = c.store.GetCodeHosts(ctx)
 
 		afterIdx := c.limitOffset.Offset
 
