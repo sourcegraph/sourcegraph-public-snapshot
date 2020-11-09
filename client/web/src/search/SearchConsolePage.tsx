@@ -141,7 +141,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
                         <button className="btn btn-lg btn-primary" type="button" onClick={triggerSearch}>
-                            Search
+                            Search &nbsp; {window.navigator.platform.includes('Mac') ? <kbd>⌘</kbd> : <kbd>Ctrl</kbd>}+
+                            <kbd>⏎</kbd>
                         </button>
                     </div>
                     <MonacoEditor
