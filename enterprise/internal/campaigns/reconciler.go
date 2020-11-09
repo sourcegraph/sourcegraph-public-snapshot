@@ -559,7 +559,8 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		token = av.Token
 
 	case nil:
-		// This is OK: we'll just send an empty token and all will be well.
+		// This is OK: we'll just send an empty token and gitserver will use
+		// the credential stored in the clone URL of the repository.
 
 	default:
 		return opts, errors.Errorf("cannot use credentials of type %T to push commits", a)
