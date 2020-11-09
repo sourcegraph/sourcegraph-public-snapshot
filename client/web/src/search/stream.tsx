@@ -65,7 +65,10 @@ interface CommitMatch {
 
 type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
 
-// Aggregate type. Replace when new ones come in.
+/**
+ * An aggregate type representing a progress update.
+ * Should be replaced when a new ones come in.
+ */
 interface Progress {
     /**
      * True if this is the final progress update for this stream
