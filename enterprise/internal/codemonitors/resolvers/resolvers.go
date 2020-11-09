@@ -100,8 +100,8 @@ func (r *Resolver) EditCodeMonitor(ctx context.Context, args *graphqlbackend.Edi
 
 func (r *Resolver) monitorForID(ctx context.Context, id graphql.ID) (graphqlbackend.MonitorResolver, error) {
 	monitorForIdQuery := `
-select * from cm_monitors
-where id = %s
+SELECT * FROM cm_monitors
+WHERE id = %s
 `
 	var monitorId int64
 	err := relay.UnmarshalSpec(id, &monitorId)
