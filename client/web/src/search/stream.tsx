@@ -110,12 +110,19 @@ interface Skipped {
         | 'repository-missing'
         | 'excluded-fork'
         | 'excluded-archive'
-    // A short message. eg 1,200 timedout.
+    /**
+     * A short message. eg 1,200 timed out.
+     */
     title: string
-    // A message to show the user. Usually includes information explaining the reason, count as well as a sample of the missing items.
+    /**
+     * A message to show the user. Usually includes information explaining the reason,
+     * count as well as a sample of the missing items.
+     */
     message: string
     severity: 'info' | 'warn'
-    // a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
+    /**
+     * a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
+     */
     suggested?: {
         title: string
         queryExpression: string
