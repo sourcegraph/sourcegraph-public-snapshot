@@ -56,6 +56,7 @@ export interface InitResult {
         typeof sourcegraph['languages'],
         'registerHoverProvider' | 'registerDocumentHighlightProvider' | 'registerDefinitionProvider'
     >
+    graphQL: typeof sourcegraph['graphQL']
 }
 
 /**
@@ -226,6 +227,12 @@ export const initNewExtensionAPI = (
         provider: sourcegraph.DefinitionProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider })
 
+    // GraphQL
+    const graphQL: typeof sourcegraph['graphQL'] = {
+        // `graphQL.queryGraphQL` is simply a discoverable wrapper over the `queryGraphQL` command.
+        queryGraphQL: (query, variables) => commands.executeCommand('queryGraphQL', query, variables),
+    }
+
     return {
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
@@ -240,6 +247,7 @@ export const initNewExtensionAPI = (
             registerDocumentHighlightProvider,
             registerDefinitionProvider,
         },
+        graphQL,
     }
 }
 

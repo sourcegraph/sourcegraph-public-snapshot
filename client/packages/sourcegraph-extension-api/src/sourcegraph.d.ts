@@ -1609,6 +1609,17 @@ declare module 'sourcegraph' {
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
     }
 
+    export namespace graphQL {
+        /**
+         * Executes a Sourcegraph GraphQL API query or mutation on the associated Sourcegraph instance and returns a promise for the result.
+         *
+         * @param query The GraphQL query
+         * @param variables A key/value object with variable values
+         * @returns Promise for the result of the GraphQL query
+         */
+        export function queryGraphQL<T = any>(query: string, variables: { [key: string]: any }): Promise<T>
+    }
+
     /**
      * A description of the information available at a URL.
      */
