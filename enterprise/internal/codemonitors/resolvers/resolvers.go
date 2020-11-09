@@ -289,7 +289,7 @@ RETURNING %s;
 }
 
 func ownerForId32Query(ctx context.Context, monitorId int32) (*sqlf.Query, error) {
-	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors where id = %s`
+	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s`
 	return sqlf.Sprintf(
 		ownerForId32Query,
 		monitorId,
@@ -312,11 +312,11 @@ func deleteCodeMonitorQuery(ctx context.Context, args *graphqlbackend.DeleteCode
 func (r *Resolver) toggleCodeMonitorQuery(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*sqlf.Query, error) {
 	toggleCodeMonitorQuery := `
 UPDATE cm_monitors
-set enabled = %s,
+SET enabled = %s,
 	changed_by = %s,
 	changed_at = %s
-where id = %s
-returning %s 
+WHERE id = %s
+RETURNING %s 
 `
 	var monitorID int64
 	err := relay.UnmarshalSpec(args.Id, &monitorID)
@@ -338,14 +338,14 @@ returning %s
 func (r *Resolver) editCodeMonitorQuery(ctx context.Context, args *graphqlbackend.EditCodeMonitorArgs) (*sqlf.Query, error) {
 	editCodeMonitorQuery := `
 UPDATE cm_monitors
-set description = %s,
+SET description = %s,
 	enabled = %s,
 	namespace_user_id = %s,
 	namespace_org_id = %s,
 	changed_by = %s,
 	changed_at = %s
-where id = %s
-returning %s 
+WHERE id = %s
+RETURNING %s 
 `
 	var userID int32
 	var orgID int32
