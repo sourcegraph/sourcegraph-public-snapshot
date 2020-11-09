@@ -10,7 +10,7 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
                   if (token.type === 'filter') {
                       return (
                           <Fragment key={token.range.start}>
-                              <span className="search-keyword">
+                              <span className="search-filter-keyword">
                                   {query.slice(token.filterType.range.start, token.filterType.range.end)}:
                               </span>
                               {token.filterValue ? (
@@ -19,9 +19,9 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
                           </Fragment>
                       )
                   }
-                  if (token.type === 'operator') {
+                  if (token.type === 'keyword') {
                       return (
-                          <span className="search-operator" key={token.range.start}>
+                          <span className="search-keyword" key={token.range.start}>
                               {query.slice(token.range.start, token.range.end)}
                           </span>
                       )

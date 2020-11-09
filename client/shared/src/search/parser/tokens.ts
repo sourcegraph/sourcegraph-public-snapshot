@@ -12,7 +12,7 @@ export function getMonacoTokens(scannedQuery: Pick<Sequence, 'members'>): Monaco
                 {
                     tokens.push({
                         startIndex: token.filterType.range.start,
-                        scopes: 'keyword',
+                        scopes: 'filterKeyword',
                     })
                     if (token.filterValue) {
                         tokens.push({
@@ -23,7 +23,7 @@ export function getMonacoTokens(scannedQuery: Pick<Sequence, 'members'>): Monaco
                 }
                 break
             case 'whitespace':
-            case 'operator':
+            case 'keyword':
             case 'comment':
                 tokens.push({
                     startIndex: token.range.start,

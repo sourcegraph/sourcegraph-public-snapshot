@@ -10,7 +10,7 @@ describe('getMonacoTokens()', () => {
             )
         ).toStrictEqual([
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 0,
             },
             {
@@ -22,7 +22,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 25,
             },
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 26,
             },
             {
@@ -43,7 +43,7 @@ describe('getMonacoTokens()', () => {
     test('search query containing parenthesized parameters', () => {
         expect(getMonacoTokens((scanSearchQuery('r:a (f:b and c)') as ScanSuccess<Sequence>).token)).toStrictEqual([
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 0,
             },
             {
@@ -59,7 +59,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 4,
             },
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 5,
             },
             {
@@ -71,7 +71,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 8,
             },
             {
-                scopes: 'operator',
+                scopes: 'keyword',
                 startIndex: 9,
             },
             {
