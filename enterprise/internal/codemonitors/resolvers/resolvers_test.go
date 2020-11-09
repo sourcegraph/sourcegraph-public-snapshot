@@ -17,10 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "codemonitorsdb"
+}
+
 func TestCreateCodeMonitor(t *testing.T) {
-	t.Skip()
-	//if testing.Short() {
-	//}
+	if testing.Short() {
+		t.Skip()
+	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
