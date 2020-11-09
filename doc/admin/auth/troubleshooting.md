@@ -4,11 +4,11 @@
 
 As of 3.20, Sourcegraph supports 6 authentication methods as listed in our [User authentication (SSO)](https://docs.sourcegraph.com/admin/auth) page, details about how to configure those methods should refer to the relevant document pages.
 
-Among these authentication methods, there are 4 of them that require Sourcegraph to send requests to the authentication provider, including GitHub OAuth, GitLab OAuth, OpenID Connect and SAML.
+Among these authentication methods, there are 4 that require Sourcegraph to send requests to the authentication provider, including GitHub OAuth, GitLab OAuth, OpenID Connect and SAML.
 
-If a GitHub OAuth is configured in Sourcegraph, users should be redirected to the GitHub instance (GitHub.com, GitHub Enterprise, etc.) for authorizing the Sourcegraph OAuth application upon sign in. Once the user is authenticated on the GitHub instance, then authorized the application, the GitHub instance should redirect the user straight back to the Sourcegraph instance but not anywhere else. 
+If a GitHub OAuth method is configured in Sourcegraph, users should be redirected to the GitHub instance (GitHub.com, GitHub Enterprise, etc.) to authorize the Sourcegraph OAuth application upon sign in. Once the user is authenticated on the GitHub instance and has authorized the application, the GitHub instance should redirect the user directly back to the Sourcegraph instance. 
 
-The reason is that such redirection contains critical and confidential information that Sourcegraph consumes (as an OAuth consumer), and information may be stripped or expired if there is a third-party getting in the way.
+This redirection contains critical and confidential information that Sourcegraph consumes (as an OAuth consumer), and information may be stripped or expired if there is a third-party in the way.
 
 Therefore, the **Callback URL/Single Sign On URL** is very important to get right on the authentication provider side. Here is an example of callback URL in a GitHub OAuth application settings:
 
@@ -24,23 +24,23 @@ For an OAuth application against GitHub.com (GitHub OAuth), the authentication f
 
 ### The authentication provider always redirects back to its direct consumer
 
-All GitHub OAuth, GitLab OAuth, OpenID Connect and SAML require the admin to configure a **Callback URL/Single Sign On URL** on the authentication provider side, which means the redirection back to the Sourcegraph (the consumer) is critical to make the user authentication work (as explained in the last section).
+GitHub OAuth, GitLab OAuth, OpenID Connect and SAML all require the admin to configure a **Callback URL/Single Sign On URL** on the authentication provider side, which means the redirection back to the Sourcegraph (the consumer) is critical to make the user authentication work (as explained in the last section).
 
-In a complex authentication set up, there is a chain of authentication. For example, Sourcegraph syncs users from the GitHub instance via GitHub OAuth, and the GitHub instance is in turn syncing users from a company central SSO, say, Okta, via SAML.
+In a complex authentication set up, there is a chain of authentication. For example, Sourcegraph syncs users from the GitHub instance via GitHub OAuth, and the GitHub instance in turn syncs users from a company central SSO (such as Okta) via SAML.
 
-In such a setup, the Sourcegraph instance only talks to the GitHub instance, and is not aware of the existence of the Okta. The same is true that Okta does not know that the Sourcegraph is in fact syncing users from it (through GitHub).
+In such a setup, the Sourcegraph instance only talks to the GitHub instance, and is not aware of the existence of the central SSO. The central SSO, in turn, does not know that the Sourcegraph is syncing users from the central SSO (through GitHub).
 
-Therefore, it makes no sense to have Okta redirect users directly back to Sourcegraph which effectively bypasses the GitHub instance. In a correct set up, the authentication provider should always redirect the user to its direct consumer. Thus, *Okta should only redirect users back to the GitHub instance, and the GitHub instance in turn redirects the user back to Sourcegraph with any information needed for the consumer.*
+Therefore, it makes no sense to have the central SSO redirect users directly back to Sourcegraph, which effectively bypasses the GitHub instance. The authentication provider should always redirect the user to its direct consumer. Thus, *the central SSO should only redirect users back to the GitHub instance, and the GitHub instance should redirect the user back to Sourcegraph with any information needed for the consumer.*
 
 ## Debugging playbook
 
 ### Make sure the client ID and client secret are actually correct
 
-Invalid pair of client ID and client secret does not prevent the user from completing the OAuth flow until a confusing error, which gives the user a wrong intuitive that they’re correct.
+Invalid client ID and client secret pair does not prevent the user from completing the OAuth flow until a confusing error, which may mislead the user into thinking the client ID and client secret pair are correct.
 
 ### Test in incognito mode
 
-It is possible that a browser extension that the user uses modifies/strips a HTTP header or cookie for the authentication. Ask the user to perform the test in incognito mode without any browser extension is preferred. The incognito mode also helps to ensure that the user logs out from all involved parties.
+It is possible that a user's browser extension modifies or strips a HTTP header or cookie needed for the authentication. Ask the user to perform the test in incognito mode without any browser extensions. The incognito mode also helps ensure that the user is logged out from all involved parties.
 
 ### Preserve log in DevTools
 
@@ -48,7 +48,7 @@ To keep a record of redirection in a user's browser is very helpful to audit the
 
 ![Preserve log in Chrome](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_preserve_log_in_chrome.png)
 
-It would be easier to eyeball logs if the user does a “clear” before any tests:
+It's easier to spot problems if the user “clears logs” before running tests:
 
 ![Clear log in Chrome](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_clear_log_in_chromejpg)
 
@@ -56,11 +56,11 @@ It would be easier to eyeball logs if the user does a “clear” before any tes
 
 Things to note:
 
-1. Okta has a weird UX that many options (e.g. SAML templates) are not available in the so-called **Developer Console** UI, make sure first changin to the **Classic UI** on the top-left.
+1. Okta has a weird UX that many options (e.g. SAML templates) are not available in the so-called **Developer Console** UI. Make sure to first change to the **Classic UI** on the top left.
 
     ![Okta classic UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_okta_classic_ui.png)
 
-2. The Okta docs must be opened directly from the application settings because it contains a special URL parameter “baseAdminUrl” for displaying confidential information in the docs:
+2. The Okta docs must be opened directly from the application settings because of a special URL parameter `baseAdminUrl` used to display confidential information in the docs:
 
     ![Okta view instruction](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_okta_view_instruction.png)
     ![Okta view instruction 2](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_okta_view_instruction_2.png)
@@ -71,13 +71,13 @@ Things to note:
 
 ### Sourcegraph specific cookies
 
-For GitHub OAuth, Sourcegraph uses a special cookie called `github-state-cookie`, which should be sent by browser automatically upon the user is being redirected back to Sourcegraph (the callback URL):
+For GitHub OAuth, Sourcegraph uses a special cookie called `github-state-cookie`, which should be sent by browser automatically when the user redirected back to Sourcegraph (the callback URL):
 
 ![Sourcegraph state cookie](https://storage.googleapis.com/sourcegraph-assets/docs/images/auth/troubleshooting_sourcegraph_state_cookie.png)
 
-If the cookie is not found in the **Request Headers**, then there is a problem. Maybe due to proxy server stripping out any unrecognized cookies (so the browser won’t be able to get it back from the Sourcegraph instance in the first place).
+If the cookie is not found in the **Request Headers**, then there is a problem. It may be due to proxy server stripping out any unrecognized cookies (so the browser won’t be able to receive the cookie back from the Sourcegraph instance in the first place).
 
-### Things to collect for async analyzes
+### Things to collect for async analysis
 
 - `"auth.providers"` portion of the Sourcegraph site configuration. Example:
 
