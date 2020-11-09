@@ -953,6 +953,7 @@ func main() {
 		ZoektIndexServer(),
 		ZoektWebServer(),
 		Prometheus(),
+		ExecutorAndExecutorQueue(),
 	}
 	var filelist []string
 	for _, container := range containers {
