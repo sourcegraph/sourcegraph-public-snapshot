@@ -488,6 +488,7 @@ Foreign-key constraints:
  last_sync_at      | timestamp with time zone | 
  next_sync_at      | timestamp with time zone | 
  namespace_user_id | integer                  | 
+ unrestricted      | boolean                  | not null default false
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_namespace_user_id_idx" btree (namespace_user_id)

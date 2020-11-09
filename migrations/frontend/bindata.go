@@ -114,6 +114,8 @@
 // 1528395739_user_credentials.up.sql (854B)
 // 1528395740_add_table_cm_monitors.down.sql (445B)
 // 1528395740_add_table_cm_monitors.up.sql (1.421kB)
+// 1528395741_create_external_service_unrestricted_column.down.sql (83B)
+// 1528395741_create_external_service_unrestricted_column.up.sql (117B)
 
 package migrations
 
@@ -2462,6 +2464,46 @@ func _1528395740_add_table_cm_monitorsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395741_create_external_service_unrestricted_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\xcd\x0a\xc2\x21\x0c\x00\xf0\xfb\x9e\x62\xef\xe1\xe9\xaf\xad\x18\xf8\x11\xba\xa0\x5b\x84\xed\x20\x84\x87\x69\xd1\xe3\xf7\xf3\x74\xe1\xec\x00\x8e\x28\x54\x51\x0e\x1f\x09\xf5\xb7\xd5\xe6\xf3\xfd\x58\x6a\xdf\xd1\x75\xe1\xa9\x96\x2b\x86\x12\x6f\x29\x23\x9f\x91\xee\xdc\xa4\xe1\x67\x9a\xae\x6d\xa3\x6f\x7d\x39\x80\x50\x52\x62\x71\xf0\x0f\x00\x00\xff\xff\xd4\x5f\xb5\x26\x53\x00\x00\x00")
+
+func _1528395741_create_external_service_unrestricted_columnDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395741_create_external_service_unrestricted_columnDownSql,
+		"1528395741_create_external_service_unrestricted_column.down.sql",
+	)
+}
+
+func _1528395741_create_external_service_unrestricted_columnDownSql() (*asset, error) {
+	bytes, err := _1528395741_create_external_service_unrestricted_columnDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395741_create_external_service_unrestricted_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x89, 0x6, 0x7, 0xcb, 0xc9, 0x9b, 0x82, 0x8d, 0x74, 0x97, 0x2b, 0x70, 0xa8, 0xa4, 0xbc, 0xa0, 0x8d, 0x1c, 0x7, 0x49, 0xc6, 0x61, 0xdd, 0xbf, 0x6b, 0xa0, 0x36, 0xa2, 0x8f, 0xa, 0xb6}}
+	return a, nil
+}
+
+var __1528395741_create_external_service_unrestricted_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc9\xc1\x0a\x02\x21\x10\x06\xe0\xbb\x4f\xf1\xbf\xc7\x9e\x66\xd7\x31\x84\x51\x21\x47\xe8\x16\xb1\xcd\x61\x21\xf6\xa0\x16\x3d\x7e\xd0\xf9\x5b\xf9\x12\xf3\xe2\x1c\x89\xf2\x15\x4a\xab\x30\xec\x3b\xad\x9f\x8f\xd7\x7d\x58\xff\x1c\xbb\x0d\x90\xf7\xd8\x8a\xb4\x94\x11\x03\x72\x51\xf0\x2d\x56\xad\x78\x9f\xdd\xc6\xec\xc7\x3e\xed\x89\xb5\x14\x61\xca\x7f\xcf\x4d\x04\x9e\x03\x35\x51\x04\x92\xca\x8b\x73\x5b\x49\x29\xea\xe2\x7e\x01\x00\x00\xff\xff\x66\x51\x8b\x91\x75\x00\x00\x00")
+
+func _1528395741_create_external_service_unrestricted_columnUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395741_create_external_service_unrestricted_columnUpSql,
+		"1528395741_create_external_service_unrestricted_column.up.sql",
+	)
+}
+
+func _1528395741_create_external_service_unrestricted_columnUpSql() (*asset, error) {
+	bytes, err := _1528395741_create_external_service_unrestricted_columnUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395741_create_external_service_unrestricted_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdc, 0x95, 0xa5, 0x27, 0xf8, 0x90, 0x23, 0x3, 0x8a, 0x30, 0xf9, 0xc7, 0xba, 0xd2, 0x3, 0xe9, 0xe1, 0xd1, 0xb5, 0xd7, 0xc7, 0xd2, 0xf8, 0x1e, 0x6d, 0xb6, 0xb7, 0x96, 0xe0, 0x27, 0x65, 0x9f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2667,6 +2709,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395739_user_credentials.up.sql":                                           _1528395739_user_credentialsUpSql,
 	"1528395740_add_table_cm_monitors.down.sql":                                    _1528395740_add_table_cm_monitorsDownSql,
 	"1528395740_add_table_cm_monitors.up.sql":                                      _1528395740_add_table_cm_monitorsUpSql,
+	"1528395741_create_external_service_unrestricted_column.down.sql":              _1528395741_create_external_service_unrestricted_columnDownSql,
+	"1528395741_create_external_service_unrestricted_column.up.sql":                _1528395741_create_external_service_unrestricted_columnUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2827,6 +2871,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395739_user_credentials.up.sql":                                           {_1528395739_user_credentialsUpSql, map[string]*bintree{}},
 	"1528395740_add_table_cm_monitors.down.sql":                                    {_1528395740_add_table_cm_monitorsDownSql, map[string]*bintree{}},
 	"1528395740_add_table_cm_monitors.up.sql":                                      {_1528395740_add_table_cm_monitorsUpSql, map[string]*bintree{}},
+	"1528395741_create_external_service_unrestricted_column.down.sql":              {_1528395741_create_external_service_unrestricted_columnDownSql, map[string]*bintree{}},
+	"1528395741_create_external_service_unrestricted_column.up.sql":                {_1528395741_create_external_service_unrestricted_columnUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
