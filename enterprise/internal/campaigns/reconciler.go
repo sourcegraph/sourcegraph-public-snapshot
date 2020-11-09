@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -553,10 +554,31 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		return opts, err
 	}
 
-	token := ""
+	pushOpts := &protocol.PushConfig{}
+
 	switch av := a.(type) {
 	case *auth.OAuthBearerToken:
-		token = av.Token
+		switch repo.ExternalRepo.ServiceType {
+		case extsvc.TypeGitHub:
+			pushOpts.Token = av.Token
+
+		case extsvc.TypeGitLab:
+			pushOpts.Username = "git"
+			pushOpts.Password = av.Token
+
+		case extsvc.TypeBitbucketServer:
+			return opts, errors.New("need username/password to push commits to bitbucket server")
+		}
+
+	case *auth.BasicAuth:
+		switch repo.ExternalRepo.ServiceType {
+		case extsvc.TypeGitHub, extsvc.TypeGitLab:
+			return opts, errors.New("need token to push commits to " + repo.ExternalRepo.ServiceType)
+
+		case extsvc.TypeBitbucketServer:
+			pushOpts.Username = av.Username
+			pushOpts.Password = av.Password
+		}
 
 	case nil:
 		// This is OK: we'll just send an empty token and gitserver will use
@@ -590,10 +612,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
 		GitApplyArgs: []string{"-p0"},
-		Push: &protocol.PushConfig{
-			Token: token,
-			Type:  repo.ExternalRepo.ServiceType,
-		},
+		Push:         pushOpts,
 	}
 
 	return opts, nil

@@ -202,9 +202,9 @@ type PushConfig struct {
 	// configuration should be used.
 	Token string
 
-	// Type specifies the type of code host being pushed to.
-	// It's one of the extsvc.Type* constants.
-	Type string
+	// Username, Password, if set, provides the basic auth credentials to push
+	// the target ref to the code host.
+	Username, Password string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

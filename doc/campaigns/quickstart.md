@@ -29,8 +29,8 @@ Campaigns need write permissions for the repositories in which you want to make 
 
 Configure your code host connections to have the right permissions for campaigns:
 
-- repo, read:org, and read:discussion (see [GitHub api token and access](../../admin/external_service/github.md#github-api-token-and-access) )
-- api, read_repository, write_repository (see [GitLab access token scopes](../../admin/external_service/gitlab.md#access-token-scopes))
+- `repo`, `read:org`, and `read:discussion` (see [GitHub api token and access](../../admin/external_service/github.md#github-api-token-and-access) )
+- `api`, `read_repository`, `write_repository` (see [GitLab access token scopes](../../admin/external_service/gitlab.md#access-token-scopes))
 - **write** permissions on the project and repository level (see [Bitbucket Server access token permissions](../../admin/external_service/bitbucket_server.md#access-token-permissions))
 
 See ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.

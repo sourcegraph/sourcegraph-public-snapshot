@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -85,6 +86,24 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 }
 
 var _ ChangesetSource = BitbucketServerSource{}
+
+func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken, *auth.BasicAuth, *bitbucketserver.SudoableOAuthClient:
+		// Excellent.
+	default:
+		return nil, errors.Errorf("unknown Authenticator type: %T", a)
+	}
+
+	sc := s
+
+	c := *s.client
+	c.Auth = a
+
+	sc.client = &c
+
+	return &sc, nil
+}
 
 // CreateChangeset creates the given *Changeset in the code host.
 func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
