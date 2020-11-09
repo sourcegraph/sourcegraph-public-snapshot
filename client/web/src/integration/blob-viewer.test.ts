@@ -224,8 +224,14 @@ describe('Blob viewer', () => {
             id: string
             extensionID: string
             extensionManifest: ExtensionManifest
+            /** The URL of the JavaScript bundle */
             url: string
             viewerCanAdminister: boolean
+            /**
+             * A function whose body is a Sourcegraph extension.
+             *
+             * Bundle must import 'sourcegraph' (e.g. `const sourcegraph = require('sourcegraph')`)
+             * */
             bundle: () => void
         }
 
@@ -324,8 +330,9 @@ describe('Blob viewer', () => {
                                 sourcegraph.app.activeWindowChanges.subscribe(activeWindow => {
                                     const viewerSubscription = activeWindow?.activeViewComponentChanges.subscribe(
                                         viewer => {
+                                            let selectionsSubscription: sourcegraph.Unsubscribable | undefined
                                             if (viewer?.type === 'CodeEditor') {
-                                                const selectionsSubscription = viewer.selectionsChanges.subscribe(
+                                                selectionsSubscription = viewer.selectionsChanges.subscribe(
                                                     selections => {
                                                         viewer.setDecorations(
                                                             selectedLineDecorationType,
@@ -342,12 +349,12 @@ describe('Blob viewer', () => {
                                                         )
                                                     }
                                                 )
-
-                                                if (previousSelectionsSubscription) {
-                                                    previousSelectionsSubscription.unsubscribe()
-                                                }
-                                                previousSelectionsSubscription = selectionsSubscription
                                             }
+
+                                            if (previousSelectionsSubscription) {
+                                                previousSelectionsSubscription.unsubscribe()
+                                            }
+                                            previousSelectionsSubscription = selectionsSubscription
                                         }
                                     )
 
@@ -517,10 +524,10 @@ describe('Blob viewer', () => {
         })
 
         it('sends the latest document to extensions', async () => {
+            // This test is meant to prevent regression of
+            // "extensions receive wrong text documents": https://github.com/sourcegraph/sourcegraph/issues/14965
+
             /**
-             * This test is meant to prevent regression of
-             * "extensions receive wrong text documents": https://github.com/sourcegraph/sourcegraph/issues/14965
-             *
              * How can we verify that extensions receive the latest document?
              * The test extension has to cause some change detectable to the web application, and
              * this change must be dependent on the text document. This extension should be simple to
@@ -554,9 +561,11 @@ describe('Blob viewer', () => {
 
                         const wordPattern = /word/g
                         const matchIndices: number[] = []
-                        let match: RegExpExecArray | null
-                        while ((match = wordPattern.exec(text))) {
-                            matchIndices.push(match.index)
+
+                        for (const match of text.matchAll(wordPattern)) {
+                            if (match.index) {
+                                matchIndices.push(match.index)
+                            }
                         }
 
                         editor.setDecorations(

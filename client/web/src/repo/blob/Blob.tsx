@@ -3,8 +3,8 @@ import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import * as React from 'react'
-import { combineLatest, fromEvent, merge, Observable, ReplaySubject, Subject, Subscription } from 'rxjs'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { combineLatest, fromEvent, merge, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { groupDecorationsByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -109,53 +109,67 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     // Element reference subjects passed to `hoverifier`. They must be `ReplaySubjects` because
     // the ref callback is called before hoverifier is created in `useEffect`
-    const [blobElements, nextBlobElement] = useSubject<HTMLElement | null>(replaySubjectFactory)
-    const [hoverOverlayElements, nextOverlayElement] = useSubject<HTMLElement | null>(replaySubjectFactory)
+    const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    const nextBlobElement = useCallback((blobElement: HTMLElement | null) => blobElements.next(blobElement), [
+        blobElements,
+    ])
 
-    const [codeViewElements, nextCodeViewElement] = useSubject<HTMLElement | null>(replaySubjectFactory)
-    const codeViewReference = React.useRef<HTMLElement | null>()
-    const updateCodeView = React.useCallback(
+    const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    const nextOverlayElement = useCallback(
+        (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
+        [hoverOverlayElements]
+    )
+
+    const codeViewElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    const codeViewReference = useRef<HTMLElement | null>()
+    const nextCodeViewElement = useCallback(
         (codeView: HTMLElement | null) => {
             codeViewReference.current = codeView
-            nextCodeViewElement(codeView)
+            codeViewElements.next(codeView)
         },
-        [nextCodeViewElement]
+        [codeViewElements]
     )
 
     // Emits on position changes from URL hash
-    const [locationPositions, nextLocationPosition] = useSubject<LineOrPositionOrRange>(replaySubjectFactory)
-    const parsedHash = React.useMemo(() => parseHash(location.hash), [location.hash])
+    const locationPositions = useMemo(() => new ReplaySubject<LineOrPositionOrRange>(1), [])
+    const nextLocationPosition = useCallback(
+        (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
+        [locationPositions]
+    )
+    const parsedHash = useMemo(() => parseHash(location.hash), [location.hash])
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
 
     // Subject that emits on every render. Source for `hoverOverlayRerenders`
-    const [rerenders, nextRerender] = useSubject<void>(replaySubjectFactory)
-    React.useEffect(() => {
-        nextRerender()
+    const rerenders = useMemo(() => new ReplaySubject(1), [])
+    useEffect(() => {
+        rerenders.next()
     })
 
     // Emits on model
-    const [modelChanges, nextModelChange] = useSubject<ModelProps>(replaySubjectFactory)
-    React.useEffect(() => {
+    const modelChanges = useMemo(() => new ReplaySubject<ModelProps>(1), [])
+    const nextModelChange = useCallback((modelProps: ModelProps) => modelChanges.next(modelProps), [modelChanges])
+    useEffect(() => {
         nextModelChange(model)
     }, [model, nextModelChange])
 
-    const [closeButtonClicks, nextCloseButtonClick] = useSubject<MouseEvent>()
+    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
+    const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
 
     /** Create hoverifier */
     // We don't want to recreate hoverifier on each render, so props can't be a dependency
     // in useEffect, but hoverifier needs a way to access the latest props.
-    const propsReference = React.useRef<BlobProps>(props)
+    const propsReference = useRef<BlobProps>(props)
     propsReference.current = props
 
-    const [hoverState, setHoverState] = React.useState<HoverState<HoverContext, HoverMerged, ActionItemAction>>({})
+    const [hoverState, setHoverState] = useState<HoverState<HoverContext, HoverMerged, ActionItemAction>>({})
 
-    const [decorationsOrError, setDecorationsOrError] = React.useState<TextDocumentDecoration[] | Error | null>()
+    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | null>()
 
     // This effect is meant to run only after first render, cleanup on unmount.
     // TODO: Create a hoverifier React hook
-    React.useEffect(() => {
+    useEffect(() => {
         const subscriptions = new Subscription()
 
         const singleClickGoToDefinition = Boolean(
@@ -381,7 +395,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
     // decorations haven't changed.
-    const groupedDecorations = React.useMemo(
+    const groupedDecorations = useMemo(
         () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
         [decorationsOrError]
     )
@@ -390,7 +404,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         <div className={`blob ${props.className}`} ref={nextBlobElement}>
             <code
                 className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
-                ref={updateCodeView}
+                ref={nextCodeViewElement}
                 dangerouslySetInnerHTML={{ __html: props.model.html }}
             />
             {hoverState.hoverOverlayProps && (
@@ -421,31 +435,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     .toArray()}
         </div>
     )
-}
-
-/**
- * Creates a ReplaySubject with a buffer size of 1
- */
-function replaySubjectFactory<T>(): ReplaySubject<T> {
-    return new ReplaySubject<T>(1)
-}
-
-/**
- * Unlike `useObservable` or `useEventObservable`, `useSubject` doesn't return the latest value
- * emitted by the Subscribable. Rather, it returns the subject instantiated by the factory
- * as an observable, and a stable `next` function.
- *
- * @param subjectFactory A function that returns a Subject. This must be wrapped in useCallback if it defined inside
- * your component
- */
-function useSubject<T>(subjectFactory?: () => Subject<T>): [Observable<T>, (nextValue: T) => void] {
-    const subject = React.useMemo(() => (typeof subjectFactory === 'function' ? subjectFactory() : new Subject<T>()), [
-        subjectFactory,
-    ])
-    const observable = React.useMemo(() => subject.asObservable(), [subject])
-    const next = React.useCallback((element: T): void => subject.next(element), [subject])
-
-    return [observable, next]
 }
 
 function getLSPTextDocumentPositionParameters(
