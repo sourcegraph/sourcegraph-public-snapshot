@@ -1,4 +1,4 @@
-# Adding support for a language
+# How to add support for a language
 
 The following guides detail the steps necessary to add or upgrade support for a particular programming language.
 
