@@ -745,11 +745,11 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// Throw error documented in schema.graphql.
-	_, err = db.UserCredentials.GetByScope(ctx, scope)
+	existing, err := db.UserCredentials.GetByScope(ctx, scope)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
-	if !errcode.IsNotFound(err) {
+	if existing != nil {
 		return nil, ErrDuplicateCredential{}
 	}
 
