@@ -1295,11 +1295,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
-	store := NewStoreWithClock(dbconn.Global, clock)
+	store := NewStore(dbconn.Global)
 
 	admin := createTestUser(ctx, t)
 	if !admin.SiteAdmin {
@@ -1318,7 +1314,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
 	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
-	t.Run("imported changeset", func(t *testing.T) {
+	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: 0,
