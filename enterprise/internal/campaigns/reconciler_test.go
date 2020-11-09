@@ -1309,7 +1309,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 		t.Fatal("user cannot be a site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	repo := rs[0]
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
@@ -1435,7 +1435,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
-	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	gitHubRepo := rs[0]
 
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
