@@ -563,7 +563,7 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		// the credential stored in the clone URL of the repository.
 
 	default:
-		return opts, errors.Errorf("cannot use credentials of type %T to push commits", a)
+		return opts, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
 	}
 
 	opts = protocol.CreateCommitFromPatchRequest{
@@ -598,6 +598,16 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 
 	return opts, nil
 }
+
+// ErrNoPushCredentials is returned by buildCommitOpts if the credentials
+// cannot be used by git to authenticate a `git push`.
+type ErrNoPushCredentials struct{ credentialsType string }
+
+func (e ErrNoPushCredentials) Error() string {
+	return fmt.Sprintf("cannot use credentials of type %T to push commits", e.credentialsType)
+}
+
+func (e ErrNoPushCredentials) Terminal() bool { return true }
 
 // operation is an enum to distinguish between different reconciler operations.
 type operation string
