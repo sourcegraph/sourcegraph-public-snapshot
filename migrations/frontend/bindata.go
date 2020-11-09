@@ -110,8 +110,10 @@
 // 1528395737_compressed_commits.up.sql (339B)
 // 1528395738_nullable_commit.down.sql (255B)
 // 1528395738_nullable_commit.up.sql (259B)
-// 1528395739_create_external_service_unrestricted_column.down.sql (83B)
-// 1528395739_create_external_service_unrestricted_column.up.sql (117B)
+// 1528395739_user_credentials.down.sql (56B)
+// 1528395739_user_credentials.up.sql (854B)
+// 1528395740_create_external_service_unrestricted_column.down.sql (83B)
+// 1528395740_create_external_service_unrestricted_column.up.sql (117B)
 
 package migrations
 
@@ -2380,42 +2382,82 @@ func _1528395738_nullable_commitUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395739_create_external_service_unrestricted_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\xcd\x0a\xc2\x21\x0c\x00\xf0\xfb\x9e\x62\xef\xe1\xe9\xaf\xad\x18\xf8\x11\xba\xa0\x5b\x84\xed\x20\x84\x87\x69\xd1\xe3\xf7\xf3\x74\xe1\xec\x00\x8e\x28\x54\x51\x0e\x1f\x09\xf5\xb7\xd5\xe6\xf3\xfd\x58\x6a\xdf\xd1\x75\xe1\xa9\x96\x2b\x86\x12\x6f\x29\x23\x9f\x91\xee\xdc\xa4\xe1\x67\x9a\xae\x6d\xa3\x6f\x7d\x39\x80\x50\x52\x62\x71\xf0\x0f\x00\x00\xff\xff\xd4\x5f\xb5\x26\x53\x00\x00\x00")
+var __1528395739_user_credentialsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x4f\x2e\x4a\x4d\x49\xcd\x2b\xc9\x4c\xcc\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x77\x25\x18\x56\x38\x00\x00\x00")
 
-func _1528395739_create_external_service_unrestricted_columnDownSqlBytes() ([]byte, error) {
+func _1528395739_user_credentialsDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395739_create_external_service_unrestricted_columnDownSql,
-		"1528395739_create_external_service_unrestricted_column.down.sql",
+		__1528395739_user_credentialsDownSql,
+		"1528395739_user_credentials.down.sql",
 	)
 }
 
-func _1528395739_create_external_service_unrestricted_columnDownSql() (*asset, error) {
-	bytes, err := _1528395739_create_external_service_unrestricted_columnDownSqlBytes()
+func _1528395739_user_credentialsDownSql() (*asset, error) {
+	bytes, err := _1528395739_user_credentialsDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395739_create_external_service_unrestricted_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395739_user_credentials.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xec, 0xee, 0xa4, 0x33, 0x3c, 0x8e, 0xa3, 0xc7, 0xc6, 0x31, 0x9e, 0x9e, 0x58, 0x8e, 0xf0, 0xe1, 0x4d, 0x68, 0x22, 0x24, 0x1e, 0x18, 0xe0, 0xdf, 0x7f, 0xfa, 0x60, 0x8, 0x8a, 0xca, 0xd4, 0x2}}
+	return a, nil
+}
+
+var __1528395739_user_credentialsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x93\xc1\x72\xda\x3c\x14\x85\xf7\x3c\xc5\x59\xc2\x8c\x93\x07\xf8\xb3\x72\xe0\xc2\xaf\xa9\x31\xa9\x2d\x26\x49\x37\x8c\x6a\x5f\x82\x06\x45\xa6\xf2\x35\x94\xb7\xef\xc8\x98\x74\x26\xa5\x9b\x2e\xad\xa3\x73\xf4\x5d\xf9\xe8\x91\x16\x2a\x7f\x18\x8d\xa6\x05\xa5\x9a\xa0\xd3\xc7\x8c\xa0\xe6\xc8\x57\x1a\xf4\xa2\x4a\x5d\xa2\x6b\x39\x6c\xaa\xc0\x35\x7b\xb1\xc6\xb5\x18\x8f\x00\xc0\xd6\x78\x54\x8b\x92\x0a\x95\x66\x78\x2a\xd4\x32\x2d\x5e\xf1\x85\x5e\x93\x5e\xad\x9b\x77\x63\x3d\x34\xbd\xe8\x3e\x2b\x5f\x67\xd9\x45\xe9\xe3\x6c\x0d\x95\x6b\x5a\x50\xf1\x49\xe5\x9f\xc2\xc1\x1b\xb7\x69\x39\x1c\x6d\xc5\x1b\x39\x1f\xf8\x56\xcc\x1f\x1b\x6d\x7d\x6b\xdb\x6f\xee\xbf\xa8\x46\xb8\xde\x18\x81\x56\x4b\x2a\x75\xba\x7c\xc2\xb3\xd2\xff\xf7\x9f\xf8\xb6\xca\xe9\xc3\x81\x19\xcd\xd3\x75\x16\x23\x9e\xc7\x93\x61\x96\x43\xfd\xcf\xfe\x3e\xe0\xee\x0e\x35\x3b\x1e\x32\x6c\x0b\xeb\x25\xe2\x36\xde\x38\x77\x86\xe3\xad\xa0\xe9\xe4\x3f\xbc\xd9\x23\x7b\xc8\x8e\xd1\x72\x15\x58\xe0\x8d\x74\x81\xd1\x6c\x21\xcd\x9e\x7d\x9b\x5c\xf3\xe2\xfd\xb6\x38\x59\xe7\xe0\xec\x9e\xdd\x19\x27\xe3\x05\xd2\xe0\x3b\xa3\xe2\x20\xf1\xbf\xc8\xce\xc8\x60\x84\x09\x7c\x85\xc0\x69\xc7\xfe\x1a\x14\xf8\xbd\x39\x72\x9d\x80\xe3\xd1\x27\x2b\x3b\xb0\xaf\xc2\xf9\x10\xf1\x60\x3d\x0e\xce\x54\x7c\xff\x31\x48\xc9\x82\xee\xd0\x33\x6e\x9b\xc0\xf6\xcd\x63\xcf\xe7\xfb\x5e\x9e\xaf\x0a\x52\x8b\x3c\xf6\x03\xe3\xa1\x01\x13\x14\x34\xa7\x82\xf2\x29\x95\x03\xf5\x38\xae\xae\x72\xcc\x28\x23\x4d\x98\xa6\xe5\x34\x9d\x51\xbc\x39\x2a\x8a\x58\xcd\xe4\xf3\x69\x06\x9d\xb7\x3f\x3a\x46\xd5\xf8\x56\x82\xb1\x5e\x60\xaa\xd0\xb4\xed\x05\xc4\xb2\xab\xdb\xcb\xb8\x26\x70\x12\xb1\xb7\xa6\x92\x64\xb0\x5d\xe8\xd6\xb9\xfa\xba\x26\x8c\x2f\xa5\x4d\xae\x15\x4d\x6e\xb7\xf1\xc6\xb2\xad\x27\xa3\x49\x7c\x45\xab\xe5\x52\xe9\x87\xd1\xaf\x00\x00\x00\xff\xff\x05\x84\xdf\xdc\x56\x03\x00\x00")
+
+func _1528395739_user_credentialsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395739_user_credentialsUpSql,
+		"1528395739_user_credentials.up.sql",
+	)
+}
+
+func _1528395739_user_credentialsUpSql() (*asset, error) {
+	bytes, err := _1528395739_user_credentialsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395739_user_credentials.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1c, 0x39, 0xaa, 0x83, 0x5c, 0x45, 0x7b, 0xa7, 0x2d, 0xc8, 0xb9, 0x5f, 0x8d, 0x0, 0x2c, 0x3a, 0x37, 0x56, 0x4c, 0x5a, 0x9e, 0x10, 0x4, 0xd6, 0x93, 0x63, 0xa5, 0x62, 0x6d, 0x76, 0x9f, 0xd5}}
+	return a, nil
+}
+
+var __1528395740_create_external_service_unrestricted_columnDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\xcd\x0a\xc2\x21\x0c\x00\xf0\xfb\x9e\x62\xef\xe1\xe9\xaf\xad\x18\xf8\x11\xba\xa0\x5b\x84\xed\x20\x84\x87\x69\xd1\xe3\xf7\xf3\x74\xe1\xec\x00\x8e\x28\x54\x51\x0e\x1f\x09\xf5\xb7\xd5\xe6\xf3\xfd\x58\x6a\xdf\xd1\x75\xe1\xa9\x96\x2b\x86\x12\x6f\x29\x23\x9f\x91\xee\xdc\xa4\xe1\x67\x9a\xae\x6d\xa3\x6f\x7d\x39\x80\x50\x52\x62\x71\xf0\x0f\x00\x00\xff\xff\xd4\x5f\xb5\x26\x53\x00\x00\x00")
+
+func _1528395740_create_external_service_unrestricted_columnDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395740_create_external_service_unrestricted_columnDownSql,
+		"1528395740_create_external_service_unrestricted_column.down.sql",
+	)
+}
+
+func _1528395740_create_external_service_unrestricted_columnDownSql() (*asset, error) {
+	bytes, err := _1528395740_create_external_service_unrestricted_columnDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395740_create_external_service_unrestricted_column.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x89, 0x6, 0x7, 0xcb, 0xc9, 0x9b, 0x82, 0x8d, 0x74, 0x97, 0x2b, 0x70, 0xa8, 0xa4, 0xbc, 0xa0, 0x8d, 0x1c, 0x7, 0x49, 0xc6, 0x61, 0xdd, 0xbf, 0x6b, 0xa0, 0x36, 0xa2, 0x8f, 0xa, 0xb6}}
 	return a, nil
 }
 
-var __1528395739_create_external_service_unrestricted_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc9\xc1\x0a\x02\x21\x10\x06\xe0\xbb\x4f\xf1\xbf\xc7\x9e\x66\xd7\x31\x84\x51\x21\x47\xe8\x16\xb1\xcd\x61\x21\xf6\xa0\x16\x3d\x7e\xd0\xf9\x5b\xf9\x12\xf3\xe2\x1c\x89\xf2\x15\x4a\xab\x30\xec\x3b\xad\x9f\x8f\xd7\x7d\x58\xff\x1c\xbb\x0d\x90\xf7\xd8\x8a\xb4\x94\x11\x03\x72\x51\xf0\x2d\x56\xad\x78\x9f\xdd\xc6\xec\xc7\x3e\xed\x89\xb5\x14\x61\xca\x7f\xcf\x4d\x04\x9e\x03\x35\x51\x04\x92\xca\x8b\x73\x5b\x49\x29\xea\xe2\x7e\x01\x00\x00\xff\xff\x66\x51\x8b\x91\x75\x00\x00\x00")
+var __1528395740_create_external_service_unrestricted_columnUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc9\xc1\x0a\x02\x21\x10\x06\xe0\xbb\x4f\xf1\xbf\xc7\x9e\x66\xd7\x31\x84\x51\x21\x47\xe8\x16\xb1\xcd\x61\x21\xf6\xa0\x16\x3d\x7e\xd0\xf9\x5b\xf9\x12\xf3\xe2\x1c\x89\xf2\x15\x4a\xab\x30\xec\x3b\xad\x9f\x8f\xd7\x7d\x58\xff\x1c\xbb\x0d\x90\xf7\xd8\x8a\xb4\x94\x11\x03\x72\x51\xf0\x2d\x56\xad\x78\x9f\xdd\xc6\xec\xc7\x3e\xed\x89\xb5\x14\x61\xca\x7f\xcf\x4d\x04\x9e\x03\x35\x51\x04\x92\xca\x8b\x73\x5b\x49\x29\xea\xe2\x7e\x01\x00\x00\xff\xff\x66\x51\x8b\x91\x75\x00\x00\x00")
 
-func _1528395739_create_external_service_unrestricted_columnUpSqlBytes() ([]byte, error) {
+func _1528395740_create_external_service_unrestricted_columnUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395739_create_external_service_unrestricted_columnUpSql,
-		"1528395739_create_external_service_unrestricted_column.up.sql",
+		__1528395740_create_external_service_unrestricted_columnUpSql,
+		"1528395740_create_external_service_unrestricted_column.up.sql",
 	)
 }
 
-func _1528395739_create_external_service_unrestricted_columnUpSql() (*asset, error) {
-	bytes, err := _1528395739_create_external_service_unrestricted_columnUpSqlBytes()
+func _1528395740_create_external_service_unrestricted_columnUpSql() (*asset, error) {
+	bytes, err := _1528395740_create_external_service_unrestricted_columnUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395739_create_external_service_unrestricted_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395740_create_external_service_unrestricted_column.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdc, 0x95, 0xa5, 0x27, 0xf8, 0x90, 0x23, 0x3, 0x8a, 0x30, 0xf9, 0xc7, 0xba, 0xd2, 0x3, 0xe9, 0xe1, 0xd1, 0xb5, 0xd7, 0xc7, 0xd2, 0xf8, 0x1e, 0x6d, 0xb6, 0xb7, 0x96, 0xe0, 0x27, 0x65, 0x9f}}
 	return a, nil
 }
@@ -2621,8 +2663,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395737_compressed_commits.up.sql":                                         _1528395737_compressed_commitsUpSql,
 	"1528395738_nullable_commit.down.sql":                                          _1528395738_nullable_commitDownSql,
 	"1528395738_nullable_commit.up.sql":                                            _1528395738_nullable_commitUpSql,
-	"1528395739_create_external_service_unrestricted_column.down.sql":              _1528395739_create_external_service_unrestricted_columnDownSql,
-	"1528395739_create_external_service_unrestricted_column.up.sql":                _1528395739_create_external_service_unrestricted_columnUpSql,
+	"1528395739_user_credentials.down.sql":                                         _1528395739_user_credentialsDownSql,
+	"1528395739_user_credentials.up.sql":                                           _1528395739_user_credentialsUpSql,
+	"1528395740_create_external_service_unrestricted_column.down.sql":              _1528395740_create_external_service_unrestricted_columnDownSql,
+	"1528395740_create_external_service_unrestricted_column.up.sql":                _1528395740_create_external_service_unrestricted_columnUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2779,8 +2823,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395737_compressed_commits.up.sql":                                         {_1528395737_compressed_commitsUpSql, map[string]*bintree{}},
 	"1528395738_nullable_commit.down.sql":                                          {_1528395738_nullable_commitDownSql, map[string]*bintree{}},
 	"1528395738_nullable_commit.up.sql":                                            {_1528395738_nullable_commitUpSql, map[string]*bintree{}},
-	"1528395739_create_external_service_unrestricted_column.down.sql":              {_1528395739_create_external_service_unrestricted_columnDownSql, map[string]*bintree{}},
-	"1528395739_create_external_service_unrestricted_column.up.sql":                {_1528395739_create_external_service_unrestricted_columnUpSql, map[string]*bintree{}},
+	"1528395739_user_credentials.down.sql":                                         {_1528395739_user_credentialsDownSql, map[string]*bintree{}},
+	"1528395739_user_credentials.up.sql":                                           {_1528395739_user_credentialsUpSql, map[string]*bintree{}},
+	"1528395740_create_external_service_unrestricted_column.down.sql":              {_1528395740_create_external_service_unrestricted_columnDownSql, map[string]*bintree{}},
+	"1528395740_create_external_service_unrestricted_column.up.sql":                {_1528395740_create_external_service_unrestricted_columnUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

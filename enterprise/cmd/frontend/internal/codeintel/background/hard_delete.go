@@ -7,8 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
