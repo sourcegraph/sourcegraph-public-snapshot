@@ -52,7 +52,6 @@ export class Services {
     )
     public readonly extensions: IExtensionsService
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
-    public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()

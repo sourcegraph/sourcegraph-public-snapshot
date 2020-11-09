@@ -19,12 +19,10 @@ export const nodes: Record<string, ListCampaign> = {
 This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
         createdAt: subDays(now, 5).toISOString(),
         closedAt: null,
-        changesets: {
-            stats: {
-                open: 10,
-                closed: 0,
-                merged: 5,
-            },
+        changesetsStats: {
+            open: 10,
+            closed: 0,
+            merged: 5,
         },
         namespace: {
             namespaceName: 'alice',
@@ -38,12 +36,10 @@ This is my thorough explanation. And it can also get very long, in that case the
         description: null,
         createdAt: subDays(now, 5).toISOString(),
         closedAt: null,
-        changesets: {
-            stats: {
-                open: 10,
-                closed: 0,
-                merged: 5,
-            },
+        changesetsStats: {
+            open: 10,
+            closed: 0,
+            merged: 5,
         },
         namespace: {
             namespaceName: 'alice',
@@ -59,12 +55,10 @@ This is my thorough explanation. And it can also get very long, in that case the
         This is my thorough explanation.`,
         createdAt: subDays(now, 5).toISOString(),
         closedAt: subDays(now, 3).toISOString(),
-        changesets: {
-            stats: {
-                open: 0,
-                closed: 10,
-                merged: 5,
-            },
+        changesetsStats: {
+            open: 0,
+            closed: 10,
+            merged: 5,
         },
         namespace: {
             namespaceName: 'alice',

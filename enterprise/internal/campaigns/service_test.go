@@ -839,7 +839,7 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r, _ := testRepo(t, rstore, extsvc.KindGitHub)
+		r := testRepo(t, rstore, extsvc.KindGitHub)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
@@ -872,7 +872,7 @@ func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 
 	var rs []*repos.Repo
 	for i := 0; i < count; i++ {
-		r, _ := testRepo(t, rstore, extsvc.KindBitbucketServer)
+		r := testRepo(t, rstore, extsvc.KindBitbucketServer)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)

@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 func TestGroupBundleData(t *testing.T) {
@@ -241,14 +241,14 @@ func TestGroupBundleData(t *testing.T) {
 		t.Fatalf("unexpected error converting correlation state to types: %s", err)
 	}
 
-	expectedMetaData := types.MetaData{
+	expectedMetaData := lsifstore.MetaData{
 		NumResultChunks: 1,
 	}
 	if diff := cmp.Diff(expectedMetaData, actualBundleData.Meta); diff != "" {
 		t.Errorf("unexpected meta data (-want +got):\n%s", diff)
 	}
 
-	expectedPackages := []types.Package{
+	expectedPackages := []lsifstore.Package{
 		{DumpID: 42, Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
 	}
 	if diff := cmp.Diff(expectedPackages, actualBundleData.Packages); diff != "" {
@@ -259,14 +259,14 @@ func TestGroupBundleData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating bloom filter: %s", err)
 	}
-	expectedPackageReferences := []types.PackageReference{
+	expectedPackageReferences := []lsifstore.PackageReference{
 		{DumpID: 42, Scheme: "scheme A", Name: "pkg A", Version: "0.1.0", Filter: expectedFilter},
 	}
 	if diff := cmp.Diff(expectedPackageReferences, actualBundleData.PackageReferences); diff != "" {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
 	}
 
-	documents := map[string]types.DocumentData{}
+	documents := map[string]lsifstore.DocumentData{}
 	for v := range actualBundleData.Documents {
 		documents[v.Path] = v.Document
 	}
@@ -278,9 +278,9 @@ func TestGroupBundleData(t *testing.T) {
 		}
 	}
 
-	expectedDocumentData := map[string]types.DocumentData{
+	expectedDocumentData := map[string]lsifstore.DocumentData{
 		"foo.go": {
-			Ranges: map[types.ID]types.RangeData{
+			Ranges: map[lsifstore.ID]lsifstore.RangeData{
 				"2001": {
 					StartLine:          1,
 					StartCharacter:     2,
@@ -289,7 +289,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3001",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{"4001", "4002"},
+					MonikerIDs:         []lsifstore.ID{"4001", "4002"},
 				},
 				"2002": {
 					StartLine:          2,
@@ -299,7 +299,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "3006",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{"4003", "4004"},
+					MonikerIDs:         []lsifstore.ID{"4003", "4004"},
 				},
 				"2003": {
 					StartLine:          3,
@@ -309,11 +309,11 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3002",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 			},
-			HoverResults: map[types.ID]string{},
-			Monikers: map[types.ID]types.MonikerData{
+			HoverResults: map[lsifstore.ID]string{},
+			Monikers: map[lsifstore.ID]lsifstore.MonikerData{
 				"4001": {
 					Kind:                 "import",
 					Scheme:               "scheme A",
@@ -339,7 +339,7 @@ func TestGroupBundleData(t *testing.T) {
 					PackageInformationID: "",
 				},
 			},
-			PackageInformation: map[types.ID]types.PackageInformationData{
+			PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{
 				"5001": {
 					Name:    "pkg A",
 					Version: "0.1.0",
@@ -349,7 +349,7 @@ func TestGroupBundleData(t *testing.T) {
 					Version: "1.2.3",
 				},
 			},
-			Diagnostics: []types.DiagnosticData{
+			Diagnostics: []lsifstore.DiagnosticData{
 				{
 					Severity:       1,
 					Code:           "1234",
@@ -373,7 +373,7 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		"bar.go": {
-			Ranges: map[types.ID]types.RangeData{
+			Ranges: map[lsifstore.ID]lsifstore.RangeData{
 				"2004": {
 					StartLine:          4,
 					StartCharacter:     5,
@@ -382,7 +382,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "3007",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 				"2005": {
 					StartLine:          5,
@@ -392,7 +392,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3003",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 				"2006": {
 					StartLine:          6,
@@ -402,13 +402,13 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3008",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 			},
-			HoverResults:       map[types.ID]string{"3008": "foo"},
-			Monikers:           map[types.ID]types.MonikerData{},
-			PackageInformation: map[types.ID]types.PackageInformationData{},
-			Diagnostics: []types.DiagnosticData{
+			HoverResults:       map[lsifstore.ID]string{"3008": "foo"},
+			Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
+			PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
+			Diagnostics: []lsifstore.DiagnosticData{
 				{
 					Severity:       3,
 					Code:           "3234",
@@ -432,7 +432,7 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		"baz.go": {
-			Ranges: map[types.ID]types.RangeData{
+			Ranges: map[lsifstore.ID]lsifstore.RangeData{
 				"2007": {
 					StartLine:          7,
 					StartCharacter:     8,
@@ -441,7 +441,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3004",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 				"2008": {
 					StartLine:          8,
@@ -451,7 +451,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3009",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 				"2009": {
 					StartLine:          9,
@@ -461,20 +461,20 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3005",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []types.ID{},
+					MonikerIDs:         []lsifstore.ID{},
 				},
 			},
-			HoverResults:       map[types.ID]string{"3009": "bar"},
-			Monikers:           map[types.ID]types.MonikerData{},
-			PackageInformation: map[types.ID]types.PackageInformationData{},
-			Diagnostics:        []types.DiagnosticData{},
+			HoverResults:       map[lsifstore.ID]string{"3009": "bar"},
+			Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
+			PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
+			Diagnostics:        []lsifstore.DiagnosticData{},
 		},
 	}
 	if diff := cmp.Diff(expectedDocumentData, documents, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 
-	resultChunkData := map[int]types.ResultChunkData{}
+	resultChunkData := map[int]lsifstore.ResultChunkData{}
 	for v := range actualBundleData.ResultChunks {
 		resultChunkData[v.Index] = v.ResultChunk
 	}
@@ -484,14 +484,14 @@ func TestGroupBundleData(t *testing.T) {
 		}
 	}
 
-	expectedResultChunkData := map[int]types.ResultChunkData{
+	expectedResultChunkData := map[int]lsifstore.ResultChunkData{
 		0: {
-			DocumentPaths: map[types.ID]string{
+			DocumentPaths: map[lsifstore.ID]string{
 				"1001": "foo.go",
 				"1002": "bar.go",
 				"1003": "baz.go",
 			},
-			DocumentIDRangeIDs: map[types.ID][]types.DocumentIDRangeID{
+			DocumentIDRangeIDs: map[lsifstore.ID][]lsifstore.DocumentIDRangeID{
 				"3001": {
 					{DocumentID: "1001", RangeID: "2003"},
 					{DocumentID: "1002", RangeID: "2004"},
@@ -534,17 +534,17 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 
-	var definitions []types.MonikerLocations
+	var definitions []lsifstore.MonikerLocations
 	for v := range actualBundleData.Definitions {
 		definitions = append(definitions, v)
 	}
 	sortMonikerLocations(definitions)
 
-	expectedDefinitions := []types.MonikerLocations{
+	expectedDefinitions := []lsifstore.MonikerLocations{
 		{
 			Scheme:     "scheme A",
 			Identifier: "ident A",
-			Locations: []types.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -553,7 +553,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme B",
 			Identifier: "ident B",
-			Locations: []types.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -564,17 +564,17 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 
-	var references []types.MonikerLocations
+	var references []lsifstore.MonikerLocations
 	for v := range actualBundleData.References {
 		references = append(references, v)
 	}
 	sortMonikerLocations(references)
 
-	expectedReferences := []types.MonikerLocations{
+	expectedReferences := []lsifstore.MonikerLocations{
 		{
 			Scheme:     "scheme C",
 			Identifier: "ident C",
-			Locations: []types.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -583,7 +583,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme D",
 			Identifier: "ident D",
-			Locations: []types.Location{
+			Locations: []lsifstore.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -598,19 +598,19 @@ func TestGroupBundleData(t *testing.T) {
 //
 //
 
-func sortMonikerIDs(s []types.ID) {
+func sortMonikerIDs(s []lsifstore.ID) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(string(s[i]), string(s[j])) < 0
 	})
 }
 
-func sortDiagnostics(s []types.DiagnosticData) {
+func sortDiagnostics(s []lsifstore.DiagnosticData) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(s[i].Message, s[j].Message) < 0
 	})
 }
 
-func sortDocumentIDRangeIDs(s []types.DocumentIDRangeID) {
+func sortDocumentIDRangeIDs(s []lsifstore.DocumentIDRangeID) {
 	sort.Slice(s, func(i, j int) bool {
 		if cmp := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); cmp != 0 {
 			return cmp < 0
@@ -620,7 +620,7 @@ func sortDocumentIDRangeIDs(s []types.DocumentIDRangeID) {
 	})
 }
 
-func sortMonikerLocations(monikerLocations []types.MonikerLocations) {
+func sortMonikerLocations(monikerLocations []lsifstore.MonikerLocations) {
 	sort.Slice(monikerLocations, func(i, j int) bool {
 		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
 			return cmp < 0
@@ -635,7 +635,7 @@ func sortMonikerLocations(monikerLocations []types.MonikerLocations) {
 	}
 }
 
-func sortLocations(locations []types.Location) {
+func sortLocations(locations []lsifstore.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
 		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
 			return cmp < 0
