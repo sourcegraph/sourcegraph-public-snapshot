@@ -34,7 +34,8 @@ type users struct {
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, tx dbutil.DB, user *types.User) error
-	// PreSetUserIsSiteAdmin (if set) is a hook called before (un)prompting a user to be a site admin.
+	// PreSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
+	// site admin.
 	PreSetUserIsSiteAdmin func(isSiteAdmin bool) error
 }
 

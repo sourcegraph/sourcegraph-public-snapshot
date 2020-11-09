@@ -206,7 +206,7 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name:        "prompt to site admin is OK",
+			name:        "promote to site admin is OK",
 			isSiteAdmin: true,
 			wantErr:     false,
 		},

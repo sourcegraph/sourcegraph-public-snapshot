@@ -23,8 +23,8 @@ func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 		var licensedUserCount int32
 		if info != nil {
 			// We prevent creating new users when the license is expired because we do not want
-			// all new users to be prompted as site admins automatically until the customer decides
-			// to downgrade to Free tier.
+			// all new users to be promoted as site admins automatically until the customer
+			// decides to downgrade to Free tier.
 			if licensing.EnforceTiers && info.IsExpired() {
 				return errcode.NewPresentationError("Unable to create user account: Sourcegraph license expired! No new users can be created. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.")
 			}
@@ -61,7 +61,7 @@ func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 
 // NewAfterCreateUserHook returns a AfterCreateUserHook closure.
 func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) error {
-	// 🚨 SECURITY: To be extra safe that we never prompt any new user to be site admin on Sourcegraph Cloud.
+	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
 	if !licensing.EnforceTiers || envvar.SourcegraphDotComMode() {
 		return nil
 	}
