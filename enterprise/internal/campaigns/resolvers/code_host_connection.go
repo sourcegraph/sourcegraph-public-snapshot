@@ -84,7 +84,7 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
-		c.chs, c.chsErr = c.store.GetCodeHosts(ctx)
+		c.chs, c.chsErr = c.store.ListCodeHosts(ctx)
 
 		afterIdx := c.limitOffset.Offset
 
