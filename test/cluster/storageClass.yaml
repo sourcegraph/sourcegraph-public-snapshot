@@ -1,0 +1,13 @@
+# base/sourcegraph.StorageClass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+    name: sourcegraph
+    labels:
+        deploy: sourcegraph
+provisioner: kubernetes.io/gce-pd
+parameters:
+    type: pd-ssd # This configures SSDs (recommended).
+    fsType: ext4
+volumeBindingMode: Immediate
+reclaimPolicy: Delete

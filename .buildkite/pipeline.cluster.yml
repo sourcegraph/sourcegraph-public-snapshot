@@ -1,0 +1,6 @@
+steps:
+  - label: ":k8s:"
+    commands:
+      - test/cluster/cluster-test.sh
+    concurrency: 1
+    concurrency_group: "cluster-test"
