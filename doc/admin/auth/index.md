@@ -8,6 +8,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [OpenID Connect](#openid-connect) (including [Google accounts on Google Workspace](#google-workspace-google-accounts))
 - [SAML](saml/index.md)
 - [HTTP authentication proxies](#http-authentication-proxies)
+- [Troubleshooting](troubleshooting.md)
 
 The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 

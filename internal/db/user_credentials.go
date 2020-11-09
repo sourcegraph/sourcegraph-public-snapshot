@@ -187,6 +187,10 @@ func (*userCredentials) List(ctx context.Context, opts UserCredentialsListOpts) 
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
 	}
 
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
 	q := sqlf.Sprintf(
 		userCredentialsListQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
