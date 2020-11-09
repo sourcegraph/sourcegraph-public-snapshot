@@ -397,16 +397,13 @@ ${issueCategories
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release, previous } = await releaseVersions(config)
 
-            // set up src-cli
-            await commandExists('src')
-            const sourcegraphAuth = await campaigns.sourcegraphAuth()
+            // set up campaign config
+            const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
 
             // default values
             const isPatchRelease = release.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
-            const campaignURL = campaigns.campaignURL(
-                campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
-            )
+            const campaignURL = campaigns.campaignURL(campaign)
             const trackingIssueURL = await getIssueByTitle(
                 await getAuthenticatedGitHubClient(),
                 trackingIssueTitle(release)
@@ -545,11 +542,8 @@ cc @${config.captainGitHubUsername}
             if (!dryRun.changesets) {
                 // Create campaign to track changes
                 try {
-                    console.log(`Creating campaign in ${sourcegraphAuth.SRC_ENDPOINT}`)
-                    await campaigns.createCampaign(
-                        createdChanges,
-                        campaigns.releaseTrackingCampaign(release.version, sourcegraphAuth)
-                    )
+                    console.log(`Creating campaign in ${campaign.cliConfig.SRC_ENDPOINT}`)
+                    await campaigns.createCampaign(createdChanges, campaign)
                 } catch (error) {
                     console.error(error)
                     console.error('Failed to create campaign for this release, continuing with announcement')
@@ -575,20 +569,17 @@ Campaign: ${campaignURL}`,
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
 
-            // set up src-cli
-            await commandExists('src')
-            const sourcegraphAuth = await campaigns.sourcegraphAuth()
-
-            const campaignURL = await campaigns.addToCampaign(
+            const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
+            await campaigns.addToCampaign(
                 [
                     {
                         repository: changeRepo,
                         pullRequestNumber: parseInt(changeID, 10),
                     },
                 ],
-                campaigns.releaseTrackingCampaign(release.version, sourcegraphAuth)
+                campaign
             )
-            console.log(`Added ${changeRepo}#${changeID} to campaign ${campaignURL}`)
+            console.log(`Added ${changeRepo}#${changeID} to campaign ${campaigns.campaignURL(campaign)}`)
         },
     },
     {
@@ -599,7 +590,7 @@ Campaign: ${campaignURL}`,
 
             const versionAnchor = release.version.replace('.', '-')
             const campaignURL = campaigns.campaignURL(
-                campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphAuth())
+                campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
             await postMessage(
                 `:captain: *${release.version} has been published*
@@ -643,15 +634,15 @@ Campaign: ${campaignURL}`,
 
             // set up src-cli
             await commandExists('src')
-            const sourcegraphAuth = await campaigns.sourcegraphAuth()
-
-            const campaignURL = await campaigns.createCampaign(campaignConfig.changes, {
+            const campaign = {
                 name: campaignConfig.name,
                 description: campaignConfig.description,
                 namespace: 'sourcegraph',
-                auth: sourcegraphAuth,
-            })
-            console.log(`Created campaign ${campaignURL}`)
+                cliConfig: await campaigns.sourcegraphCLIConfig(),
+            }
+
+            await campaigns.createCampaign(campaignConfig.changes, campaign)
+            console.log(`Created campaign ${campaigns.campaignURL(campaign)}`)
         },
     },
 ]
