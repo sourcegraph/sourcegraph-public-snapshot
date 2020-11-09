@@ -5,7 +5,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func (s *Store) ListCodeHosts(ctx context.Context) ([]*campaigns.CodeHost, error) {
@@ -36,11 +35,17 @@ ORDER BY external_service_type ASC, external_service_id ASC
 
 func listCodeHostsQuery() *sqlf.Query {
 	preds := []*sqlf.Query{
-		// Only show supported hosts.
-		sqlf.Sprintf("external_service_type IN (%s, %s, %s)", extsvc.TypeGitHub, extsvc.TypeGitLab, extsvc.TypeBitbucketServer),
-		// And only for those which have any enabled repositories.
+		// Only for those which have any enabled repositories.
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
+
+	// Only show supported hosts.
+	supportedTypes := []*sqlf.Query{}
+	for extSvcType := range campaigns.SupportedExternalServices {
+		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
+	}
+	preds = append(preds, sqlf.Sprintf("external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
+
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(preds, "AND"))
 }
 
