@@ -2,8 +2,8 @@ package main
 
 func ExecutorAndExecutorQueue() *Container {
 	return &Container{
-		Name:        "executor",
-		Title:       "Executor And Executor Queue",
+		Name:        "executor-queue",
+		Title:       "Executor Queue",
 		Description: "Coordinates the and executes jobs from the executor work queue.",
 		Groups: []Group{
 			{

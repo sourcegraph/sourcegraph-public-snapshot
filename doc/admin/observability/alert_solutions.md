@@ -4759,11 +4759,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
-## executor: executor_queue_size
+## executor-queue: executor_queue_size
 
 <p class="subtitle">code-intel: executor queue size</p>**Descriptions:**
 
-- _executor: 100+ executor queue size_
+- _executor-queue: 100+ executor queue size_
 
 **Possible solutions:**
 
@@ -4771,16 +4771,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_executor_queue_size"
+  "warning_executor-queue_executor_queue_size"
 ]
 ```
 
 <br />
-## executor: executor_queue_growth_rate
+## executor-queue: executor_queue_growth_rate
 
 <p class="subtitle">code-intel: executor queue growth rate every 5m</p>**Descriptions:**
 
-- _executor: 5+ executor queue growth rate every 5m_
+- _executor-queue: 5+ executor queue growth rate every 5m_
 
 **Possible solutions:**
 
@@ -4788,16 +4788,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_executor_queue_growth_rate"
+  "warning_executor-queue_executor_queue_growth_rate"
 ]
 ```
 
 <br />
-## executor: executor_process_errors
+## executor-queue: executor_process_errors
 
 <p class="subtitle">code-intel: executor process errors every 5m</p>**Descriptions:**
 
-- _executor: 20+ executor process errors every 5m_
+- _executor-queue: 20+ executor process errors every 5m_
 
 **Possible solutions:**
 
@@ -4805,16 +4805,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_executor_process_errors"
+  "warning_executor-queue_executor_process_errors"
 ]
 ```
 
 <br />
-## executor: frontend_internal_api_error_responses
+## executor-queue: frontend_internal_api_error_responses
 
 <p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>**Descriptions:**
 
-- _executor: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
+- _executor-queue: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
 
 **Possible solutions:**
 
@@ -4829,16 +4829,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_frontend_internal_api_error_responses"
+  "warning_executor-queue_frontend_internal_api_error_responses"
 ]
 ```
 
 <br />
-## executor: container_cpu_usage
+## executor-queue: container_cpu_usage
 
 <p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
 
-- _executor: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _executor-queue: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -4848,16 +4848,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_container_cpu_usage"
+  "warning_executor-queue_container_cpu_usage"
 ]
 ```
 
 <br />
-## executor: container_memory_usage
+## executor-queue: container_memory_usage
 
 <p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
 
-- _executor: 99%+ container memory usage by instance_
+- _executor-queue: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -4867,16 +4867,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_container_memory_usage"
+  "warning_executor-queue_container_memory_usage"
 ]
 ```
 
 <br />
-## executor: container_restarts
+## executor-queue: container_restarts
 
 <p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
 
-- _executor: 1+ container restarts every 5m by instance_
+- _executor-queue: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -4890,16 +4890,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_container_restarts"
+  "warning_executor-queue_container_restarts"
 ]
 ```
 
 <br />
-## executor: fs_inodes_used
+## executor-queue: fs_inodes_used
 
 <p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
 
-- _executor: 3e+06+ fs inodes in use by instance_
+- _executor-queue: 3e+06+ fs inodes in use by instance_
 
 **Possible solutions:**
 
@@ -4909,16 +4909,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_fs_inodes_used"
+  "warning_executor-queue_fs_inodes_used"
 ]
 ```
 
 <br />
-## executor: provisioning_container_cpu_usage_long_term
+## executor-queue: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _executor: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _executor-queue: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4930,16 +4930,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_provisioning_container_cpu_usage_long_term"
+  "warning_executor-queue_provisioning_container_cpu_usage_long_term"
 ]
 ```
 
 <br />
-## executor: provisioning_container_memory_usage_long_term
+## executor-queue: provisioning_container_memory_usage_long_term
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _executor: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _executor-queue: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4951,16 +4951,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_provisioning_container_memory_usage_long_term"
+  "warning_executor-queue_provisioning_container_memory_usage_long_term"
 ]
 ```
 
 <br />
-## executor: provisioning_container_cpu_usage_short_term
+## executor-queue: provisioning_container_cpu_usage_short_term
 
 <p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
 
-- _executor: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+- _executor-queue: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
 **Possible solutions:**
 
@@ -4970,16 +4970,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_provisioning_container_cpu_usage_short_term"
+  "warning_executor-queue_provisioning_container_cpu_usage_short_term"
 ]
 ```
 
 <br />
-## executor: provisioning_container_memory_usage_short_term
+## executor-queue: provisioning_container_memory_usage_short_term
 
 <p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
 
-- _executor: 90%+ container memory usage (5m maximum) by instance_
+- _executor-queue: 90%+ container memory usage (5m maximum) by instance_
 
 **Possible solutions:**
 
@@ -4989,16 +4989,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_provisioning_container_memory_usage_short_term"
+  "warning_executor-queue_provisioning_container_memory_usage_short_term"
 ]
 ```
 
 <br />
-## executor: go_goroutines
+## executor-queue: go_goroutines
 
 <p class="subtitle">code-intel: maximum active goroutines</p>**Descriptions:**
 
-- _executor: 10000+ maximum active goroutines for 10m0s_
+- _executor-queue: 10000+ maximum active goroutines for 10m0s_
 
 **Possible solutions:**
 
@@ -5006,16 +5006,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_go_goroutines"
+  "warning_executor-queue_go_goroutines"
 ]
 ```
 
 <br />
-## executor: go_gc_duration_seconds
+## executor-queue: go_gc_duration_seconds
 
 <p class="subtitle">code-intel: maximum go garbage collection duration</p>**Descriptions:**
 
-- _executor: 2s+ maximum go garbage collection duration_
+- _executor-queue: 2s+ maximum go garbage collection duration_
 
 **Possible solutions:**
 
@@ -5023,16 +5023,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor_go_gc_duration_seconds"
+  "warning_executor-queue_go_gc_duration_seconds"
 ]
 ```
 
 <br />
-## executor: pods_available_percentage
+## executor-queue: pods_available_percentage
 
 <p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
 
-- _executor: less than 90% percentage pods available for 10m0s_
+- _executor-queue: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 
@@ -5040,7 +5040,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "critical_executor_pods_available_percentage"
+  "critical_executor-queue_pods_available_percentage"
 ]
 ```
 
