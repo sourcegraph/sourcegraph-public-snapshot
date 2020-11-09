@@ -5,12 +5,22 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Hover returns the hover text and range for the symbol at the given position.
-func (api *CodeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error) {
+func (api *CodeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (_ string, _ lsifstore.Range, _ bool, err error) {
+	ctx, endObservation := api.operations.hover.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("file", file),
+		log.Int("line", line),
+		log.Int("character", character),
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return "", lsifstore.Range{}, false, errors.Wrap(err, "store.GetDumpByID")

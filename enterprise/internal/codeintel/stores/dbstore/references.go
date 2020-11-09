@@ -5,10 +5,12 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // scanPackageReferences scans a slice of package references from the return value of `*Store.query`.
@@ -40,6 +42,16 @@ func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []lsifstore.Packag
 // SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 // given scheme, name, and version.
 func (s *Store) SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (_ int, _ ReferencePager, err error) {
+	ctx, endObservation := s.operations.sameRepoPager.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.String("scheme", scheme),
+		log.String("name", name),
+		log.String("version", version),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return 0, nil, err
@@ -82,6 +94,15 @@ func (s *Store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 // and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 // default branch.
 func (s *Store) PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (_ int, _ ReferencePager, err error) {
+	ctx, endObservation := s.operations.packageReferencePager.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("scheme", scheme),
+		log.String("name", name),
+		log.String("version", version),
+		log.Int("repositoryID", repositoryID),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return 0, nil, err
@@ -120,6 +141,9 @@ func (s *Store) PackageReferencePager(ctx context.Context, scheme, name, version
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *Store) UpdatePackageReferences(ctx context.Context, references []lsifstore.PackageReference) (err error) {
+	ctx, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	if len(references) == 0 {
 		return nil
 	}

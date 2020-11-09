@@ -5,7 +5,9 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // RepoUsageStatistics pairs a repository identifier with a count of code intelligence events.
@@ -42,7 +44,10 @@ func scanRepoUsageStatisticsSlice(rows *sql.Rows, queryErr error) (_ []RepoUsage
 // RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 // code intelligence activity within the last week grouped by repository. The resulting slice is ordered
 // by search then precise event counts.
-func (s *Store) RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistics, error) {
+func (s *Store) RepoUsageStatistics(ctx context.Context) (_ []RepoUsageStatistics, err error) {
+	ctx, endObservation := s.operations.repoUsageStatistics.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	return scanRepoUsageStatisticsSlice(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			r.id,

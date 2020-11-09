@@ -5,7 +5,9 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // IndexConfiguration stores the index configuration for a repository.
@@ -50,12 +52,20 @@ func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration,
 }
 
 // GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
-func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error) {
+func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []int, err error) {
+	ctx, endObservation := s.operations.getRepositoriesWithIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(`SELECT c.repository_id FROM lsif_index_configuration c`)))
 }
 
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
-func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (IndexConfiguration, bool, error) {
+func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ IndexConfiguration, _ bool, err error) {
+	ctx, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return scanFirstIndexConfiguration(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			c.id,

@@ -314,45 +314,19 @@ func Frontend() *Container {
 				Rows: []Row{
 					{
 						{
-							Name:        "99th_percentile_precise_code_intel_api_duration",
-							Description: "99th percentile successful precise code intel api query duration over 5m",
-							// TODO(efritz) - ensure these exclude error durations
-							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_api_duration_seconds_bucket[5m])))`,
-							DataMayNotExist: true,
-
+							Name:              "codeintel_api_99th_percentile_duration",
+							Description:       "99th percentile successful api operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_api_duration_seconds_bucket{job="frontend"}[5m])))`,
+							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("api operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:            "precise_code_intel_api_errors",
-							Description:     "precise code intel api errors every 5m",
-							Query:           `sum(increase(src_code_intel_api_errors_total[5m])) / sum(increase(src_code_intel_api_total[5m])) * 100`,
-							DataMayNotExist: true,
-
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							PanelOptions:      PanelOptions().LegendFormat("api operations").Unit(Percentage),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-					{
-						{
-							Name:        "code_intel_frontend_db_store_99th_percentile_duration",
-							Description: "99th percentile successful frontend database query duration over 5m",
-							// TODO(efritz) - exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_frontend_db_store_duration_seconds_bucket{job="frontend"}[5m])))`,
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "code_intel_frontend_db_store_errors",
-							Description:       "frontend database errors every 5m",
-							Query:             `increase(src_code_intel_frontend_db_store_errors_total{job="frontend"}[5m])`,
+							Name:              "codeintel_api_errors",
+							Description:       "api errors every 5m",
+							Query:             `increase(src_codeintel_api_errors_total{job="frontend"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -362,10 +336,9 @@ func Frontend() *Container {
 					},
 					{
 						{
-							Name:        "code_intel_codeintel_db_store_99th_percentile_duration",
-							Description: "99th percentile successful codeintel database query duration over 5m",
-							// TODO(efritz) - exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_codeintel_db_store_duration_seconds_bucket{job="frontend"}[5m])))`,
+							Name:              "codeintel_dbstore_99th_percentile_duration",
+							Description:       "99th percentile successful dbstore operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job="frontend"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
@@ -373,9 +346,9 @@ func Frontend() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "code_intel_codeintel_db_store_errors",
-							Description:       "codeintel database every 5m",
-							Query:             `increase(src_code_intel_codeintel_db_store_errors_total{job="frontend"}[5m])`,
+							Name:              "codeintel_dbstore_errors",
+							Description:       "dbstore errors every 5m",
+							Query:             `increase(src_codeintel_dbstore_errors_total{job="frontend"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -385,10 +358,9 @@ func Frontend() *Container {
 					},
 					{
 						{
-							Name:        "code_intel_bundle_store_99th_percentile_duration",
-							Description: "99th percentile successful bundle database store operation duration over 5m",
-							// TODO(efritz) - exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_bundle_store_duration_seconds_bucket{job="frontend"}[5m])))`,
+							Name:              "codeintel_lsifstore_99th_percentile_duration",
+							Description:       "99th percentile successful lsifstore operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job="frontend"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
@@ -396,9 +368,53 @@ func Frontend() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "code_intel_bundle_store_errors",
-							Description:       "bundle store errors every 5m",
-							Query:             `increase(src_code_intel_bundle_store_errors_total{job="frontend"}[5m])`,
+							Name:              "codeintel_lsifstore_errors",
+							Description:       "lsifstore errors every 5m",
+							Query:             `increase(src_codeintel_lsifstore_errors_total{job="frontend"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "codeintel_uploadstore_99th_percentile_duration",
+							Description:       "99th percentile successful uploadstore operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job="frontend"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_uploadstore_errors",
+							Description:       "uploadstore errors every 5m",
+							Query:             `increase(src_codeintel_uploadstore_errors_total{job="frontend"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "codeintel_gitserver_99th_percentile_duration",
+							Description:       "99th percentile successful gitserver operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job="frontend"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_gitserver_errors",
+							Description:       "gitserver errors every 5m",
+							Query:             `increase(src_codeintel_gitserver_errors_total{job="frontend"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),

@@ -5,9 +5,11 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // scanUploadMeta scans upload metadata grouped by commit from the return value of `*Store.query`.
@@ -32,7 +34,12 @@ func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, 
 }
 
 // HasRepository determines if there is LSIF data for the given repository.
-func (s *Store) HasRepository(ctx context.Context, repositoryID int) (bool, error) {
+func (s *Store) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
+	ctx, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_uploads
@@ -44,7 +51,13 @@ func (s *Store) HasRepository(ctx context.Context, repositoryID int) (bool, erro
 }
 
 // HasCommit determines if the given commit is known for the given repository.
-func (s *Store) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func (s *Store) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*)
 		FROM lsif_nearest_uploads
@@ -56,7 +69,12 @@ func (s *Store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 }
 
 // MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
-func (s *Store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error {
+func (s *Store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
+	ctx, endObservation := s.operations.markRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(
 		ctx,
 		sqlf.Sprintf(`
@@ -89,7 +107,10 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 
 // DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
-func (s *Store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
+func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, endObservation := s.operations.dirtyRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
 	return scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(`SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token`)))
 }
 
@@ -101,6 +122,14 @@ func (s *Store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
 func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
+	ctx, endObservation := s.operations.calculateVisibleUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.Int("numKeys", len(graph)),
+		log.String("tipCommit", tipCommit),
+		log.Int("dirtyToken", dirtyToken),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
