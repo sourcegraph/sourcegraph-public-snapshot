@@ -332,8 +332,14 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return ErrPublishSameBranch{}
 	}
 
+	// Figure out which authenticator we should use to push the commits.
+	a, err := e.loadAuthenticator(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Create a commit and push it
-	opts, err := buildCommitOpts(e.repo, e.spec)
+	opts, err := buildCommitOpts(e.repo, e.spec, a)
 	if err != nil {
 		return err
 	}
@@ -522,7 +528,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -545,6 +551,19 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 	commitAuthorEmail, err := desc.AuthorEmail()
 	if err != nil {
 		return opts, err
+	}
+
+	token := ""
+	switch av := a.(type) {
+	case *auth.OAuthBearerToken:
+		token = av.Token
+
+	case nil:
+		// This is OK: we'll just send an empty token and gitserver will use
+		// the credential stored in the clone URL of the repository.
+
+	default:
+		return opts, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
 	}
 
 	opts = protocol.CreateCommitFromPatchRequest{
@@ -571,11 +590,24 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.
 		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
 		GitApplyArgs: []string{"-p0"},
-		Push:         true,
+		Push: &protocol.PushConfig{
+			Token: token,
+			Type:  repo.ExternalRepo.ServiceType,
+		},
 	}
 
 	return opts, nil
 }
+
+// ErrNoPushCredentials is returned by buildCommitOpts if the credentials
+// cannot be used by git to authenticate a `git push`.
+type ErrNoPushCredentials struct{ credentialsType string }
+
+func (e ErrNoPushCredentials) Error() string {
+	return fmt.Sprintf("cannot use credentials of type %T to push commits", e.credentialsType)
+}
+
+func (e ErrNoPushCredentials) Terminal() bool { return true }
 
 // operation is an enum to distinguish between different reconciler operations.
 type operation string

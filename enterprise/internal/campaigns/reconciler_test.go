@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -1420,6 +1422,100 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
+}
+
+func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	gitHubRepo := rs[0]
+
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	gitLabExtSvc := createGitLabExternalService(t, ctx, rstore)
+	gitLabRepo := createGitLabRepo(t, ctx, rstore, gitLabExtSvc)
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+
+	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+	plan := &plan{}
+	plan.AddOp(operationPush)
+
+	tests := []struct {
+		name           string
+		repo           *repos.Repo
+		credentials    auth.Authenticator
+		wantPushConfig *gitprotocol.PushConfig
+	}{
+		{
+			name:        "github OAuthBearerToken",
+			repo:        gitHubRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				Token: "my-secret-github-token",
+				Type:  extsvc.TypeGitHub,
+			},
+		},
+		{
+			name:        "gitlab OAuthBearerToken",
+			repo:        gitLabRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				Token: "my-secret-gitlab-token",
+				Type:  extsvc.TypeGitLab,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.credentials != nil {
+				if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+					Domain:              db.UserCredentialDomainCampaigns,
+					UserID:              admin.ID,
+					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
+					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
+				}, tt.credentials); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			ex := &executor{
+				ch: &campaigns.Changeset{
+					OwnedByCampaignID: campaign.ID,
+					RepoID:            tt.repo.ID,
+				},
+				spec: buildChangesetSpec(t, testSpecOpts{
+					headRef:    "my-branch",
+					published:  true,
+					commitDiff: "testdiff",
+				}),
+				sourcer:         sourcer,
+				gitserverClient: gitClient,
+				tx:              store,
+			}
+
+			err := ex.ExecutePlan(context.Background(), plan)
+			if err != nil {
+				t.Fatalf("executing plan failed: %s", err)
+			}
+
+			if diff := cmp.Diff(tt.wantPushConfig, gitClient.CreateCommitFromPatchReq.Push); diff != "" {
+				t.Errorf("unexpected push options:\n%s", diff)
+			}
+		})
+	}
 }
 
 type mockInternalClient struct {
