@@ -775,6 +775,28 @@ type Mutation {
         """
         enabled: Boolean!
     ): Monitor!
+    """
+    Edit a code monitor.
+    """
+    editCodeMonitor(
+        """
+        The ID of the code monitor.
+        """
+        id: ID!
+        """
+        A meaningful description of the code monitor.
+        """
+        description: String!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+        """
+        The namepsace represents the owener of the code monitor.
+        Owners can either be users or organziations.
+        """
+        namespace: ID!
+    ): Monitor!
 }
 
 """
