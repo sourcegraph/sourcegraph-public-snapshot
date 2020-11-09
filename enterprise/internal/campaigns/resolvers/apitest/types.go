@@ -51,7 +51,8 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns CampaignConnection
+	Campaigns          CampaignConnection
+	CampaignsCodeHosts CampaignsCodeHostsConnection
 }
 
 type Org struct {
@@ -272,4 +273,16 @@ type CampaignsCredential struct {
 
 type EmptyResponse struct {
 	AlwaysNil string
+}
+
+type CampaignsCodeHostsConnection struct {
+	PageInfo   PageInfo
+	Nodes      []CampaignsCodeHost
+	TotalCount int
+}
+
+type CampaignsCodeHost struct {
+	ExternalServiceKind string
+	ExernalServiceURL   string
+	Credential          CampaignsCredential
 }

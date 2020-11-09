@@ -237,12 +237,8 @@ func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
-	ownerOrAdmin, err := checkSiteAdminOrSameUser(ctx, cred.UserID)
-	if err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, cred.UserID); err != nil {
 		return nil, err
-	}
-	if !ownerOrAdmin {
-		return nil, errors.New("resource doesn't belong to requesting user and is not site admin")
 	}
 
 	return &campaignsCredentialResolver{credential: cred}, nil
@@ -555,12 +551,8 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 	}
 
 	// 🚨 SECURITY: Only viewable for self or by site admins.
-	ownerOrAdmin, err := checkSiteAdminOrSameUser(ctx, args.UserID)
-	if err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, args.UserID); err != nil {
 		return nil, err
-	}
-	if !ownerOrAdmin {
-		return nil, errors.New("non site admin cannot retrieve code host config for other users")
 	}
 
 	limitOffset := db.LimitOffset{
@@ -798,12 +790,8 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	ownerOrAdmin, err := checkSiteAdminOrSameUser(ctx, cred.UserID)
-	if err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, cred.UserID); err != nil {
 		return nil, err
-	}
-	if !ownerOrAdmin {
-		return nil, errors.New("resource doesn't belong to requesting user and is not site admin")
 	}
 
 	// This also fails if the credential was not found.

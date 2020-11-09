@@ -754,7 +754,9 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-credential", true)
+	pruneUserCredentials(t)
+
+	userID := insertTestUser(t, dbconn.Global, "create-credential", false)
 
 	store := ee.NewStore(dbconn.Global)
 
@@ -804,6 +806,8 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
+
+	pruneUserCredentials(t)
 
 	userID := insertTestUser(t, dbconn.Global, "delete-credential", true)
 
