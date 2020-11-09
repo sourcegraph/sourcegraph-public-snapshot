@@ -101,11 +101,11 @@ Returns the object converted to a JSON string using `JSON.stringify`.
 
 ## Limitations
 
-The expression syntax is simple and isn't intended to be a full expression
-language, so there are some limitations
+The expression syntax is simple and isn't intended to be a full programming
+language, so there are some limitations.
 
 - **Lack of operator precedence.** Because of the simplicity of the parser,
-  operator do not have any precedence and are simply evaluated left-to-right.
+  operators do not have any precedence and are simply evaluated left-to-right.
   Use parentheses to specify precedence.
 - **Lack of a ternary operator.** Instead of a ternary operator, you can use
   combinations of `&&` and `||` operators to achieve a similar result.
