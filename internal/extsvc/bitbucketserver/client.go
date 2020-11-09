@@ -340,7 +340,7 @@ func (c *Client) UserPermissions(ctx context.Context, username string) (perms []
 	}
 
 	var ps []permission
-	err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
+	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
 		Values []permission `json:"values"`
 	}{
 		Values: ps,
@@ -368,12 +368,14 @@ func (c *Client) CreateUser(ctx context.Context, u *User) error {
 		"addToDefaultGroup": {"true"},
 	}
 
-	return c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, nil)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, nil)
+	return err
 }
 
 // LoadUser loads the given User returning an error in case of failure.
 func (c *Client) LoadUser(ctx context.Context, u *User) error {
-	return c.send(ctx, "GET", "rest/api/1.0/users/"+u.Slug, nil, nil, u)
+	_, err := c.send(ctx, "GET", "rest/api/1.0/users/"+u.Slug, nil, nil, u)
+	return err
 }
 
 // LoadGroup loads the given Group returning an error in case of failure.
@@ -383,7 +385,7 @@ func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 		Values []*Group `json:"values"`
 	}
 
-	err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
+	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
 	if err != nil {
 		return err
 	}
@@ -400,7 +402,8 @@ func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 // CreateGroup creates the given Group returning an error in case of failure.
 func (c *Client) CreateGroup(ctx context.Context, g *Group) error {
 	qry := url.Values{"name": {g.Name}}
-	return c.send(ctx, "POST", "rest/api/1.0/admin/groups", qry, g, g)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/groups", qry, g, g)
+	return err
 }
 
 // CreateGroupMembership creates the given Group's membership returning an error in case of failure.
@@ -410,7 +413,8 @@ func (c *Client) CreateGroupMembership(ctx context.Context, g *Group) error {
 		Users []string `json:"users"`
 	}
 	m := &membership{Group: g.Name, Users: g.Users}
-	return c.send(ctx, "POST", "rest/api/1.0/admin/groups/add-users", nil, m, nil)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/groups/add-users", nil, m, nil)
+	return err
 }
 
 // CreateUserRepoPermission creates the given permission returning an error in case of failure.
@@ -442,27 +446,31 @@ func (c *Client) createPermission(ctx context.Context, path, name string, p Perm
 		"name":       {name},
 		"permission": {string(p)},
 	}
-	return c.send(ctx, "PUT", path, qry, nil, nil)
+	_, err := c.send(ctx, "PUT", path, qry, nil, nil)
+	return err
 }
 
 // CreateRepo creates the given Repo returning an error in case of failure.
 func (c *Client) CreateRepo(ctx context.Context, r *Repo) error {
 	path := "rest/api/1.0/projects/" + r.Project.Key + "/repos"
-	return c.send(ctx, "POST", path, nil, r, &struct {
+	_, err := c.send(ctx, "POST", path, nil, r, &struct {
 		Values []*Repo `json:"values"`
 	}{
 		Values: []*Repo{r},
 	})
+	return err
 }
 
 // LoadProject loads the given Project returning an error in case of failure.
 func (c *Client) LoadProject(ctx context.Context, p *Project) error {
-	return c.send(ctx, "GET", "rest/api/1.0/projects/"+p.Key, nil, nil, p)
+	_, err := c.send(ctx, "GET", "rest/api/1.0/projects/"+p.Key, nil, nil, p)
+	return err
 }
 
 // CreateProject creates the given Project returning an error in case of failure.
 func (c *Client) CreateProject(ctx context.Context, p *Project) error {
-	return c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
+	return err
 }
 
 // LoadPullRequest loads the given PullRequest returning an error in case of failure.
@@ -480,7 +488,8 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
-	return c.send(ctx, "GET", path, nil, nil, pr)
+	_, err := c.send(ctx, "GET", path, nil, nil, pr)
+	return err
 }
 
 type UpdatePullRequestInput struct {
@@ -501,7 +510,8 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	)
 
 	pr := &PullRequest{}
-	return pr, c.send(ctx, "PUT", path, nil, in, pr)
+	_, err := c.send(ctx, "PUT", path, nil, in, pr)
+	return pr, err
 }
 
 // ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request
@@ -567,7 +577,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	err := c.send(ctx, "POST", path, nil, payload, pr)
+	_, err := c.send(ctx, "POST", path, nil, payload, pr)
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractDuplicatePullRequest(err)
@@ -602,7 +612,8 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	return c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
 }
 
 // ReopenPullRequest reopens a previously declined & closed PullRequest,
@@ -625,7 +636,8 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	return c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
 }
 
 // LoadPullRequestActivities loads the given PullRequest's timeline of activities,
@@ -734,7 +746,7 @@ func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, 
 		return nil, err
 	}
 	var resp Repo
-	err = c.do(ctx, req, &resp)
+	_, err = c.do(ctx, req, &resp)
 	return &resp, err
 }
 
@@ -769,7 +781,7 @@ func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, erro
 		return nil, err
 	}
 	var resp []byte
-	err = c.do(ctx, req, &resp)
+	_, err = c.do(ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -803,7 +815,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	}
 
 	var next PageToken
-	err = c.do(ctx, req, &struct {
+	_, err = c.do(ctx, req, &struct {
 		*PageToken
 		Values interface{} `json:"values"`
 	}{
@@ -818,7 +830,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) error {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -827,20 +839,20 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	if payload != nil {
 		body = new(bytes.Buffer)
 		if err := json.NewEncoder(body).Encode(payload); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	u := url.URL{Path: path, RawQuery: qry.Encode()}
 	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -853,12 +865,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer ht.Finish()
 
 	if err := c.Auth.Authenticate(req); err != nil {
-		return err
+		return nil, err
 	}
 
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	if d := time.Since(startWait); d > 200*time.Millisecond {
@@ -867,18 +879,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return errors.WithStack(&httpError{
+		return nil, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
@@ -889,10 +901,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		return json.Unmarshal(bs, result)
+		return resp, json.Unmarshal(bs, result)
 	}
 
-	return nil
+	return resp, nil
 }
 
 func parseQueryStrings(qs ...string) (url.Values, error) {
@@ -1358,43 +1370,9 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 }
 
 func (c *Client) AuthenticatedUsername(ctx context.Context) (username string, err error) {
-	u := url.URL{Path: "rest/api/1.0/users", RawQuery: "limit=1"}
-	req, err := http.NewRequest("GET", u.String(), nil)
+	resp, err := c.send(ctx, "GET", "rest/api/1.0/users", url.Values{"limit": []string{"1"}}, nil, nil)
 	if err != nil {
 		return "", err
-	}
-	req.URL = c.URL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
-		req.WithContext(ctx),
-		nethttp.OperationName("Bitbucket Server"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	if err := c.Auth.Authenticate(req); err != nil {
-		return "", err
-	}
-
-	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
-		return "", err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return "", errors.WithStack(&httpError{
-			URL:        req.URL,
-			StatusCode: resp.StatusCode,
-		})
 	}
 
 	username = resp.Header.Get("X-Ausername")
