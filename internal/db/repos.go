@@ -220,9 +220,9 @@ SELECT %s
 FROM %%s
 WHERE
 	deleted_at IS NULL
-AND	%%s	-- Populates "queryConds"
-AND	%%s	-- Populates "authzConds"
-%%s		-- Populates "querySuffix"
+AND %%s -- Populates "queryConds"
+AND %%s -- Populates "authzConds"
+%%s     -- Populates "querySuffix"
 `
 
 const getSourcesByRepoQueryStr = `
