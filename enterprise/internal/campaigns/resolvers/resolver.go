@@ -555,17 +555,19 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
 	limitOffset := db.LimitOffset{
 		Limit: int(args.First),
 	}
 	if args.After != nil {
-		var err error
-		limitOffset.Offset, err = strconv.Atoi(*args.After)
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
+		limitOffset.Offset = int(cursor)
 	}
-	// TODO: Apply things like validateFirstParamDefaults and parse `after`.
 
 	return &campaignsCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store}, nil
 }
