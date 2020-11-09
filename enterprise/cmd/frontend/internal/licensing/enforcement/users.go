@@ -59,7 +59,7 @@ func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 	}
 }
 
-// NewAfterCreateUserHook returns a AfterCreateUserHook closure with the given UsersStore.
+// NewAfterCreateUserHook returns a AfterCreateUserHook closure.
 func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) error {
 	// 🚨 SECURITY: To be extra safe that we never prompt any new user to be site admin on Sourcegraph Cloud.
 	if !licensing.EnforceTiers || envvar.SourcegraphDotComMode() {
@@ -87,7 +87,7 @@ func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) erro
 	}
 }
 
-// NewPreCreateUserHook returns a PreCreateUserHook closure with the given UsersStore.
+// NewPreSetUserIsSiteAdmin returns a PreSetUserIsSiteAdmin closure.
 func NewPreSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
 	return func(isSiteAdmin bool) error {
 		if isSiteAdmin {
