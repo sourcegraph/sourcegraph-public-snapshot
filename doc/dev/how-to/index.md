@@ -5,6 +5,10 @@
 - [How to debug live code](debug_live_code.md)
 - [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
 
+## New features
+
+- [How to add support for a language](add_support_for_a_language.md)
+
 ## [Troubleshooting](troubleshooting_local_development.md)
 
 - [Problems with node_modules or Javascript packages](troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
