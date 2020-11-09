@@ -1,7 +1,5 @@
 package main
 
-import "time"
-
 func PreciseCodeIntelWorker() *Container {
 	return &Container{
 		Name:        "precise-code-intel-worker",
@@ -9,7 +7,7 @@ func PreciseCodeIntelWorker() *Container {
 		Description: "Handles conversion of uploaded precise code intelligence bundles.",
 		Groups: []Group{
 			{
-				Title: "General",
+				Title: "Upload processor",
 				Rows: []Row{
 					{
 						{
@@ -34,9 +32,8 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:        "upload_process_errors",
-							Description: "upload process errors every 5m",
-							// TODO(efritz) - ensure these differentiate malformed dumps and system errors
+							Name:              "upload_process_errors",
+							Description:       "upload process errors every 5m",
 							Query:             `sum(increase(src_upload_queue_processor_errors_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
@@ -48,14 +45,13 @@ func PreciseCodeIntelWorker() *Container {
 				},
 			},
 			{
-				Title: "Database",
+				Title: "Stores",
 				Rows: []Row{
 					{
 						{
-							Name:        "code_intel_frontend_db_store_99th_percentile_duration",
-							Description: "99th percentile successful frontend database query duration over 5m",
-							// TODO(efritz) - exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_frontend_db_store_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
+							Name:              "codeintel_dbstore_99th_percentile_duration",
+							Description:       "99th percentile successful dbstore operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
@@ -63,9 +59,9 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "code_intel_frontend_db_store_errors",
-							Description:       "frontend database errors every 5m",
-							Query:             `increase(src_code_intel_frontend_db_store_errors_total{job="precise-code-intel-worker"}[5m])`,
+							Name:              "codeintel_dbstore_errors",
+							Description:       "dbstore errors every 5m",
+							Query:             `increase(src_codeintel_dbstore_errors_total{job="precise-code-intel-worker"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -75,10 +71,9 @@ func PreciseCodeIntelWorker() *Container {
 					},
 					{
 						{
-							Name:        "code_intel_codeintel_db_store_99th_percentile_duration",
-							Description: "99th percentile successful codeintel database query duration over 5m",
-							// TODO(efritz) - exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_codeintel_db_store_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
+							Name:              "codeintel_lsifstore_99th_percentile_duration",
+							Description:       "99th percentile successful lsifstore operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
@@ -86,9 +81,9 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "code_intel_codeintel_db_store_errors",
-							Description:       "codeintel database errors every 5m",
-							Query:             `increase(src_code_intel_codeintel_db_store_errors_total{job="precise-code-intel-worker"}[5m])`,
+							Name:              "codeintel_lsifstore_errors",
+							Description:       "lsifstore errors every 5m",
+							Query:             `increase(src_codeintel_lsifstore_errors_total{job="precise-code-intel-worker"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -96,40 +91,46 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 					},
-				},
-			},
-			{
-				Title:  "Upload resetter - re-queues uploads that did not complete processing",
-				Hidden: true,
-				Rows: []Row{
 					{
 						{
-							Name:              "processing_uploads_reset",
-							Description:       "uploads reset to queued state every 5m",
-							Query:             `sum(increase(src_upload_queue_resets_total[5m]))`,
+							Name:              "codeintel_uploadstore_99th_percentile_duration",
+							Description:       "99th percentile successful uploadstore operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "processing_uploads_reset_failures",
-							Description:       "uploads errored after repeated resets every 5m",
-							Query:             `sum(increase(src_upload_queue_max_resets_total[5m]))`,
+							Name:              "codeintel_uploadstore_errors",
+							Description:       "uploadstore errors every 5m",
+							Query:             `increase(src_codeintel_uploadstore_errors_total{job="precise-code-intel-worker"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "codeintel_gitserver_99th_percentile_duration",
+							Description:       "99th percentile successful gitserver operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "upload_resetter_errors",
-							Description:       "upload resetter errors every 5m",
-							Query:             `sum(increase(src_upload_queue_reset_errors_total[5m]))`,
+							Name:              "codeintel_gitserver_errors",
+							Description:       "gitserver errors every 5m",
+							Query:             `increase(src_codeintel_gitserver_errors_total{job="precise-code-intel-worker"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -140,51 +141,6 @@ func PreciseCodeIntelWorker() *Container {
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{
-					{
-						{
-							Name:              "99th_percentile_bundle_manager_transfer_duration",
-							Description:       "99th percentile successful bundle manager data transfer duration over 5m",
-							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="precise-code-intel-worker",category="transfer"}[5m])))`,
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(300),
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "bundle_manager_error_responses",
-							Description:       "bundle manager error responses every 5m",
-							Query:             `sum by (category)(increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m]))`,
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(5),
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-					{
-						{
-							Name:              "99th_percentile_gitserver_duration",
-							Description:       "99th percentile successful gitserver query duration over 5m",
-							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:            "gitserver_error_responses",
-							Description:     "gitserver error responses every 5m",
-							Query:           `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker"}[5m])) * 100`,
-							DataMayNotExist: true,
-
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
-							Owner:             ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
 					{
 						sharedFrontendInternalAPIErrorResponses("precise-code-intel-worker", ObservableOwnerCodeIntel),
 					},

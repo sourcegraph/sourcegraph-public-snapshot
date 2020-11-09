@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence, toMonacoRange } from './parser'
+import { Sequence, toMonacoRange } from './scanner'
 import { resolveFilter } from './filters'
 
 /**

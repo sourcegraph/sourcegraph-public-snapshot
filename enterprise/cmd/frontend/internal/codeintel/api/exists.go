@@ -5,10 +5,12 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // NumAncestors is the number of ancestors to query from gitserver when trying to find the closest
@@ -24,7 +26,16 @@ const NumAncestors = 100
 // exact document path are returned. Otherwise, dumps containing any document for which the given
 // path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
-func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error) {
+func (api *CodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []store.Dump, err error) {
+	ctx, endObservation := api.operations.findClosestDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.String("path", path),
+		log.Bool("exactPath", exactPath),
+		log.String("indexer", indexer),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	candidates, err := api.inferClosestUploads(ctx, repositoryID, commit, path, exactPath, indexer)
 	if err != nil {
 		return nil, err
@@ -68,8 +79,8 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 // this commit will.
 //
 // TODO(efritz) - show an indication in the GraphQL response and the UI that this repo is refreshing.
-func (api *codeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error) {
-	commitExists, err := api.store.HasCommit(ctx, repositoryID, commit)
+func (api *CodeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error) {
+	commitExists, err := api.dbStore.HasCommit(ctx, repositoryID, commit)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.HasCommit")
 	}
@@ -78,7 +89,7 @@ func (api *codeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID i
 		// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
 		// to intersect the target directory. If we're looking for dumps that can answer queries for
 		// a single file, then we need a dump with a root that properly encloses that file.
-		dumps, err := api.store.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
+		dumps, err := api.dbStore.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
 		if err != nil {
 			return nil, errors.Wrap(err, "store.FindClosestDumps")
 		}
@@ -86,7 +97,7 @@ func (api *codeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID i
 		return dumps, nil
 	}
 
-	repositoryExists, err := api.store.HasRepository(ctx, repositoryID)
+	repositoryExists, err := api.dbStore.HasRepository(ctx, repositoryID)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.HasRepository")
 	}
@@ -95,7 +106,7 @@ func (api *codeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID i
 		return nil, nil
 	}
 
-	graph, err := api.gitserverClient.CommitGraph(ctx, api.store, repositoryID, gitserver.CommitGraphOptions{
+	graph, err := api.gitserverClient.CommitGraph(ctx, api.dbStore, repositoryID, gitserver.CommitGraphOptions{
 		Commit: commit,
 		Limit:  NumAncestors,
 	})
@@ -103,12 +114,12 @@ func (api *codeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID i
 		return nil, err
 	}
 
-	dumps, err := api.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, exactPath, indexer, graph)
+	dumps, err := api.dbStore.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, exactPath, indexer, graph)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := api.store.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+	if err := api.dbStore.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
 		return nil, errors.Wrap(err, "store.MarkRepositoryAsDirty")
 	}
 

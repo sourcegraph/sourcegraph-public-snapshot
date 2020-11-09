@@ -176,8 +176,9 @@ type CreateCommitFromPatchRequest struct {
 	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
-	// Push specifies whether the target ref will be pushed to the code host
-	Push bool
+	// Push specifies whether the target ref will be pushed to the code host: if
+	// nil, no push will be attempted, if non-nil, a push will be attempted.
+	Push *PushConfig
 	// GitApplyArgs are the arguments that will be passed to `git apply` along
 	// with `--cached`.
 	GitApplyArgs []string
@@ -191,6 +192,19 @@ type PatchCommitInfo struct {
 	CommitterName  string
 	CommitterEmail string
 	Date           time.Time
+}
+
+// PushConfig provides the configuration required to push one or more commits to
+// a code host.
+type PushConfig struct {
+	// Token, if set, provides the OAuth bearer token that should be used to
+	// push the target ref to the code host. If unset, the default code host
+	// configuration should be used.
+	Token string
+
+	// Type specifies the type of code host being pushed to.
+	// It's one of the extsvc.Type* constants.
+	Type string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

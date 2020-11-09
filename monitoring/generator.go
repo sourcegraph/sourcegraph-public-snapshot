@@ -944,7 +944,6 @@ func main() {
 		Frontend(),
 		GitServer(),
 		GitHubProxy(),
-		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
 		QueryRunner(),
 		RepoUpdater(),
@@ -954,6 +953,7 @@ func main() {
 		ZoektIndexServer(),
 		ZoektWebServer(),
 		Prometheus(),
+		ExecutorAndExecutorQueue(),
 	}
 	var filelist []string
 	for _, container := range containers {

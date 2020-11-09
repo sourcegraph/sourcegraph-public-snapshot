@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -96,17 +96,6 @@ var testDiffGraphQL = apitest.FileDiffs{
 			Stat: apitest.DiffStat{Changed: 1},
 		},
 	},
-}
-
-func marshalJSON(t testing.TB, v interface{}) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(bs)
 }
 
 func marshalDateTime(t testing.TB, ts time.Time) string {
@@ -408,4 +397,17 @@ func createChangesetSpec(
 	}
 
 	return spec
+}
+
+func pruneUserCredentials(t *testing.T) {
+	t.Helper()
+	creds, _, err := db.UserCredentials.List(context.Background(), db.UserCredentialsListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range creds {
+		if err := db.UserCredentials.Delete(context.Background(), c.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 }

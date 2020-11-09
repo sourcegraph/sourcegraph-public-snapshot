@@ -66,6 +66,13 @@ func NewPermsSyncer(
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
 func (s *PermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
+	if len(userIDs) == 0 {
+		return
+	} else if s.isDisabled() {
+		log15.Warn("PermsSyncer.ScheduleUsers.disabled", "userIDs", userIDs)
+		return
+	}
+
 	users := make([]scheduledUser, len(userIDs))
 	for i := range userIDs {
 		users[i] = scheduledUser{
@@ -104,6 +111,13 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
 func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+	if len(repoIDs) == 0 {
+		return
+	} else if s.isDisabled() {
+		log15.Warn("PermsSyncer.ScheduleRepos.disabled", "repoIDs", repoIDs)
+		return
+	}
+
 	repos := make([]scheduledRepo, len(repoIDs))
 	for i := range repoIDs {
 		repos[i] = scheduledRepo{
@@ -605,6 +619,17 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	return schedule, nil
 }
 
+// isDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+// 	- Permissions user mapping is enabled
+// 	- No authz provider is configured
+//	- Not purchased with the current license
+func (s *PermsSyncer) isDisabled() bool {
+	return globals.PermissionsUserMapping().Enabled ||
+		len(s.providersByServiceID()) == 0 ||
+		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil)
+}
+
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	log15.Debug("PermsSyncer.runSchedule.started")
 	defer log15.Info("PermsSyncer.runSchedule.stopped")
@@ -619,13 +644,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		// Skip if:
-		// 	- Permissions user mapping is enabled
-		// 	- No authz provider is configured
-		//	- This is not purchased with the current license
-		if globals.PermissionsUserMapping().Enabled ||
-			len(s.providersByServiceID()) == 0 ||
-			(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) {
+		if s.isDisabled() {
 			continue
 		}
 

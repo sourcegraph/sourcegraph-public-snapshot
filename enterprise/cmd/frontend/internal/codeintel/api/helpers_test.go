@@ -11,9 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
 )
 
 var (
@@ -54,15 +52,15 @@ func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
 }
 
-func setMockStoreGetDumpByID(t *testing.T, mockStore *storemocks.MockStore, dumps map[int]store.Dump) {
-	mockStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) {
+func setMockDBStoreGetDumpByID(t *testing.T, mockDBStore *MockDBStore, dumps map[int]store.Dump) {
+	mockDBStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) {
 		dump, ok := dumps[id]
 		return dump, ok, nil
 	})
 }
 
-func setMockStoreGetPackage(t *testing.T, mockStore *storemocks.MockStore, expectedScheme, expectedName, expectedVersion string, dump store.Dump, exists bool) {
-	mockStore.GetPackageFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string) (store.Dump, bool, error) {
+func setMockDBStoreGetPackage(t *testing.T, mockDBStore *MockDBStore, expectedScheme, expectedName, expectedVersion string, dump store.Dump, exists bool) {
+	mockDBStore.GetPackageFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string) (store.Dump, bool, error) {
 		if scheme != expectedScheme {
 			t.Errorf("unexpected scheme for GetPackage. want=%s have=%s", expectedScheme, scheme)
 		}
@@ -76,8 +74,8 @@ func setMockStoreGetPackage(t *testing.T, mockStore *storemocks.MockStore, expec
 	})
 }
 
-func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, dumps []store.Dump) {
-	mockStore.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string) ([]store.Dump, error) {
+func setMockDBStoreFindClosestDumps(t *testing.T, mockDBStore *MockDBStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, dumps []store.Dump) {
+	mockDBStore.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string) ([]store.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -97,8 +95,8 @@ func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore,
 	})
 }
 
-func setMockStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, expectedGraph map[string][]string, dumps []store.Dump) {
-	mockStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]store.Dump, error) {
+func setMockDBStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockDBStore *MockDBStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, expectedGraph map[string][]string, dumps []store.Dump) {
+	mockDBStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]store.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -121,8 +119,8 @@ func setMockStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockStore *stor
 	})
 }
 
-func setMockStoreSameRepoPager(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager store.ReferencePager) {
-	mockStore.SameRepoPagerFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, store.ReferencePager, error) {
+func setMockDBStoreSameRepoPager(t *testing.T, mockDBStore *MockDBStore, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager ReferencePager) {
+	mockDBStore.SameRepoPagerFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, ReferencePager, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for SameRepoPager. want=%v have=%v", expectedRepositoryID, repositoryID)
 		}
@@ -145,8 +143,8 @@ func setMockStoreSameRepoPager(t *testing.T, mockStore *storemocks.MockStore, ex
 	})
 }
 
-func setMockStorePackageReferencePager(t *testing.T, mockStore *storemocks.MockStore, expectedScheme, expectedName, expectedVersion string, expectedRepositoryID, expectedLimit int, totalCount int, pager store.ReferencePager) {
-	mockStore.PackageReferencePagerFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, store.ReferencePager, error) {
+func setMockDBStorePackageReferencePager(t *testing.T, mockDBStore *MockDBStore, expectedScheme, expectedName, expectedVersion string, expectedRepositoryID, expectedLimit int, totalCount int, pager ReferencePager) {
+	mockDBStore.PackageReferencePagerFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error) {
 		if scheme != expectedScheme {
 			t.Errorf("unexpected scheme for PackageReferencePager. want=%s have=%s", expectedScheme, scheme)
 		}
@@ -166,8 +164,8 @@ func setMockStorePackageReferencePager(t *testing.T, mockStore *storemocks.MockS
 	})
 }
 
-func setMockStoreHasRepository(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, exists bool) {
-	mockStore.HasRepositoryFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (bool, error) {
+func setMockDBStoreHasRepository(t *testing.T, mockDBStore *MockDBStore, expectedRepositoryID int, exists bool) {
+	mockDBStore.HasRepositoryFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (bool, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for HasRepository. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -175,8 +173,8 @@ func setMockStoreHasRepository(t *testing.T, mockStore *storemocks.MockStore, ex
 	})
 }
 
-func setMockStoreHasCommit(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit string, exists bool) {
-	mockStore.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func setMockDBStoreHasCommit(t *testing.T, mockDBStore *MockDBStore, expectedRepositoryID int, expectedCommit string, exists bool) {
+	mockDBStore.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for HasCommit. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -187,7 +185,7 @@ func setMockStoreHasCommit(t *testing.T, mockStore *storemocks.MockStore, expect
 	})
 }
 
-func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *storemocks.MockReferencePager, expectedOffset int, references []lsifstore.PackageReference) {
+func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *MockReferencePager, expectedOffset int, references []lsifstore.PackageReference) {
 	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)
@@ -196,8 +194,8 @@ func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *store
 	})
 }
 
-func setMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, exists bool) {
-	mockBundleStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
+func setmockLSIFStoreExists(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath string, exists bool) {
+	mockLSIFStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Exists. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -214,8 +212,8 @@ type existsSpec struct {
 	exists bool
 }
 
-func setMultiMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.MockStore, specs ...existsSpec) {
-	mockBundleStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
+func setMultimockLSIFStoreExists(t *testing.T, mockLSIFStore *MockLSIFStore, specs ...existsSpec) {
+	mockLSIFStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string) (bool, error) {
 		for _, spec := range specs {
 			if dumpID == spec.dumpID && path == spec.path {
 				return spec.exists, nil
@@ -227,8 +225,8 @@ func setMultiMockBundleStoreExists(t *testing.T, mockBundleStore *bundlemocks.Mo
 	})
 }
 
-func setMockBundleStoreRanges(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedStartLine, expectedEndLine int, ranges []lsifstore.CodeIntelligenceRange) {
-	mockBundleStore.RangesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error) {
+func setmockLSIFStoreRanges(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath string, expectedStartLine, expectedEndLine int, ranges []lsifstore.CodeIntelligenceRange) {
+	mockLSIFStore.RangesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Ranges. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -245,8 +243,8 @@ func setMockBundleStoreRanges(t *testing.T, mockBundleStore *bundlemocks.MockSto
 	})
 }
 
-func setMockBundleStoreDefinitions(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []lsifstore.Location) {
-	mockBundleStore.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]lsifstore.Location, error) {
+func setmockLSIFStoreDefinitions(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []lsifstore.Location) {
+	mockLSIFStore.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]lsifstore.Location, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Definitions. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -263,8 +261,8 @@ func setMockBundleStoreDefinitions(t *testing.T, mockBundleStore *bundlemocks.Mo
 	})
 }
 
-func setMockBundleStoreReferences(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []lsifstore.Location) {
-	mockBundleStore.ReferencesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]lsifstore.Location, error) {
+func setmockLSIFStoreReferences(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, locations []lsifstore.Location) {
+	mockLSIFStore.ReferencesFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([]lsifstore.Location, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for References. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -281,8 +279,8 @@ func setMockBundleStoreReferences(t *testing.T, mockBundleStore *bundlemocks.Moc
 	})
 }
 
-func setMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, text string, r lsifstore.Range, exists bool) {
-	mockBundleStore.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, lsifstore.Range, bool, error) {
+func setmockLSIFStoreHover(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, text string, r lsifstore.Range, exists bool) {
+	mockLSIFStore.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, lsifstore.Range, bool, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Hover. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -309,8 +307,8 @@ type hoverSpec struct {
 	exists    bool
 }
 
-func setMultiMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.MockStore, specs ...hoverSpec) {
-	mockBundleStore.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, lsifstore.Range, bool, error) {
+func setMultimockLSIFStoreHover(t *testing.T, mockLSIFStore *MockLSIFStore, specs ...hoverSpec) {
+	mockLSIFStore.HoverFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) (string, lsifstore.Range, bool, error) {
 		for _, spec := range specs {
 			if dumpID == spec.dumpID && path == spec.path && line == spec.line && character == spec.character {
 				return spec.text, spec.r, spec.exists, nil
@@ -322,8 +320,8 @@ func setMultiMockBundleStoreHover(t *testing.T, mockBundleStore *bundlemocks.Moc
 	})
 }
 
-func setMockBundleStoreDiagnostics(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []lsifstore.Diagnostic, totalCount int) {
-	mockBundleStore.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, prefix string, skip, take int) ([]lsifstore.Diagnostic, int, error) {
+func setmockLSIFStoreDiagnostics(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []lsifstore.Diagnostic, totalCount int) {
+	mockLSIFStore.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, prefix string, skip, take int) ([]lsifstore.Diagnostic, int, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Diagnostics. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -340,8 +338,8 @@ func setMockBundleStoreDiagnostics(t *testing.T, mockBundleStore *bundlemocks.Mo
 	})
 }
 
-func setMockBundleStoreMonikersByPosition(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, monikers [][]lsifstore.MonikerData) {
-	mockBundleStore.MonikersByPositionFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([][]lsifstore.MonikerData, error) {
+func setmockLSIFStoreMonikersByPosition(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath string, expectedLine, expectedCharacter int, monikers [][]lsifstore.MonikerData) {
+	mockLSIFStore.MonikersByPositionFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path string, line, character int) ([][]lsifstore.MonikerData, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for MonikersByPosition. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -359,8 +357,8 @@ func setMockBundleStoreMonikersByPosition(t *testing.T, mockBundleStore *bundlem
 	})
 }
 
-func setMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []lsifstore.Location, totalCount int) {
-	mockBundleStore.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]lsifstore.Location, int, error) {
+func setmockLSIFStoreMonikerResults(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []lsifstore.Location, totalCount int) {
+	mockLSIFStore.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]lsifstore.Location, int, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for MonikerResults. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -394,8 +392,8 @@ type monikerResultsSpec struct {
 	totalCount int
 }
 
-func setMultiMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundlemocks.MockStore, specs ...monikerResultsSpec) {
-	mockBundleStore.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]lsifstore.Location, int, error) {
+func setMultimockLSIFStoreMonikerResults(t *testing.T, mockLSIFStore *MockLSIFStore, specs ...monikerResultsSpec) {
+	mockLSIFStore.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, modelType, scheme, identifier string, skip, take int) ([]lsifstore.Location, int, error) {
 		for _, spec := range specs {
 			if dumpID == spec.dumpID && modelType == spec.modelType && scheme == spec.scheme && identifier == spec.identifier && skip == spec.skip && take == spec.take {
 				return spec.locations, spec.totalCount, nil
@@ -407,8 +405,8 @@ func setMultiMockBundleStoreMonikerResults(t *testing.T, mockBundleStore *bundle
 	})
 }
 
-func setMockBundleStorePackageInformation(t *testing.T, mockBundleStore *bundlemocks.MockStore, expectedDumpID int, expectedPath, expectedPackageInformationID string, packageInformation lsifstore.PackageInformationData) {
-	mockBundleStore.PackageInformationFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path, packageInformationID string) (lsifstore.PackageInformationData, bool, error) {
+func setmockLSIFStorePackageInformation(t *testing.T, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPath, expectedPackageInformationID string, packageInformation lsifstore.PackageInformationData) {
+	mockLSIFStore.PackageInformationFunc.SetDefaultHook(func(ctx context.Context, dumpID int, path, packageInformationID string) (lsifstore.PackageInformationData, bool, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for PackageInformation. want=%d have=%d", expectedDumpID, dumpID)
 		}
@@ -437,7 +435,7 @@ func readTestFilter(t *testing.T, dirname, filename string) []byte {
 }
 
 func setMockGitserverCommitGraph(t *testing.T, mockGitserverClient *MockGitserverClient, expectedRepositoryID int, graph map[string][]string) {
-	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, s store.Store, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
+	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, s DBStore, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository identifier for CommitGraph. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}

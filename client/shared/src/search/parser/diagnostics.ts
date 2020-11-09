@@ -1,10 +1,10 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence, toMonacoRange } from './parser'
+import { Sequence, toMonacoRange } from './scanner'
 import { validateFilter } from './filters'
 import { SearchPatternType } from '../../graphql-operations'
 
 /**
- * Returns the diagnostics for a parsed search query to be displayed in the Monaco query input.
+ * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.
  */
 export function getDiagnostics(
     { members }: Pick<Sequence, 'members'>,

@@ -178,6 +178,14 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of unique users engaging with the panels</li>
                     </ul>
                 </li>
+                <li>
+                    Search onboarding engagement
+                    <ul>
+                        <li>Total number of views of the onboarding tour</li>
+                        <li>Total number of views of each step in the onboarding tour</li>
+                        <li>Total number of tours closed</li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>

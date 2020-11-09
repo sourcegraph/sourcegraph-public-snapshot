@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, Sequence } from './scanner'
 import { NEVER, of } from 'rxjs'
 import { SearchSuggestion } from '../../graphql/schema'
 
@@ -9,7 +9,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('re') as ScanSuccess<Sequence>).token,
                     { column: 3 },
                     of([
                         {
@@ -71,7 +71,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('reposi') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('reposi') as ScanSuccess<Sequence>).token,
                     { column: 7 },
                     of([
                         {
@@ -135,7 +135,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('') as ScanSuccess<Sequence>).token,
                     { column: 1 },
                     NEVER,
                     false
@@ -180,7 +180,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('a ') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('a ') as ScanSuccess<Sequence>).token,
                     { column: 3 },
                     of([
                         {
@@ -231,7 +231,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('rE') as ScanSuccess<Sequence>).token,
                     { column: 3 },
                     of([]),
                     false
@@ -276,7 +276,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('case:y') as ScanSuccess<Sequence>).token,
                     { column: 7 },
                     NEVER,
                     false
@@ -289,7 +289,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('lang:') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('lang:') as ScanSuccess<Sequence>).token,
                     {
                         column: 6,
                     },
@@ -327,7 +327,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('file:c') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('file:c') as ScanSuccess<Sequence>).token,
                     { column: 7 },
                     of([
                         {
@@ -349,7 +349,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('jsonrpc') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('jsonrpc') as ScanSuccess<Sequence>).token,
                     { column: 8 },
                     of([
                         {
@@ -380,7 +380,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('f:^jsonrpc') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('f:^jsonrpc') as ScanSuccess<Sequence>).token,
                     { column: 11 },
                     of([
                         {
@@ -402,7 +402,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('main.go') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('main.go') as ScanSuccess<Sequence>).token,
                     { column: 7 },
                     of([
                         {
@@ -426,7 +426,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('f:') as ParseSuccess<Sequence>).token,
+                    (scanSearchQuery('f:') as ScanSuccess<Sequence>).token,
                     { column: 2 },
                     of([
                         {

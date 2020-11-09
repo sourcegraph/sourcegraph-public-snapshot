@@ -5,18 +5,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
 )
 
 func TestLookupMoniker(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 
-	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "sub2/main.go", "1234", testPackageInformation)
-	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "definitions", "gomod", "pad", 10, 5, []lsifstore.Location{
+	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "sub2/main.go", "1234", testPackageInformation)
+	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", testDump2, true)
+	setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "definitions", "gomod", "pad", 10, 5, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -24,7 +22,7 @@ func TestLookupMoniker(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange5},
 	}, 15)
 
-	locations, totalCount, err := lookupMoniker(mockStore, mockBundleStore, 42, "sub2/main.go", "definitions", testMoniker2, 10, 5)
+	locations, totalCount, err := lookupMoniker(mockDBStore, mockLSIFStore, 42, "sub2/main.go", "definitions", testMoniker2, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
@@ -45,10 +43,10 @@ func TestLookupMoniker(t *testing.T) {
 }
 
 func TestLookupMonikerNoPackageInformationID(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 
-	_, totalCount, err := lookupMoniker(mockStore, mockBundleStore, 42, "sub/main.go", "definitions", testMoniker3, 10, 5)
+	_, totalCount, err := lookupMoniker(mockDBStore, mockLSIFStore, 42, "sub/main.go", "definitions", testMoniker3, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
@@ -58,13 +56,13 @@ func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 }
 
 func TestLookupMonikerNoPackage(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 
-	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
-	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
+	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "main.go", "1234", testPackageInformation)
+	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
 
-	_, totalCount, err := lookupMoniker(mockStore, mockBundleStore, 42, "main.go", "definitions", testMoniker1, 10, 5)
+	_, totalCount, err := lookupMoniker(mockDBStore, mockLSIFStore, 42, "main.go", "definitions", testMoniker1, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}

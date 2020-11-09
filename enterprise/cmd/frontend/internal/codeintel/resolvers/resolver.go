@@ -4,9 +4,7 @@ import (
 	"context"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -25,16 +23,16 @@ type Resolver interface {
 }
 
 type resolver struct {
-	store        store.Store
-	lsifStore    lsifstore.Store
-	codeIntelAPI codeintelapi.CodeIntelAPI
+	dbStore      DBStore
+	lsifStore    LSIFStore
+	codeIntelAPI CodeIntelAPI
 	hunkCache    HunkCache
 }
 
 // NewResolver creates a new resolver with the given services.
-func NewResolver(store store.Store, lsifStore lsifstore.Store, codeIntelAPI codeintelapi.CodeIntelAPI, hunkCache HunkCache) Resolver {
+func NewResolver(dbStore DBStore, lsifStore LSIFStore, codeIntelAPI CodeIntelAPI, hunkCache HunkCache) Resolver {
 	return &resolver{
-		store:        store,
+		dbStore:      dbStore,
 		lsifStore:    lsifStore,
 		codeIntelAPI: codeIntelAPI,
 		hunkCache:    hunkCache,
@@ -42,28 +40,28 @@ func NewResolver(store store.Store, lsifStore lsifstore.Store, codeIntelAPI code
 }
 
 func (r *resolver) GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error) {
-	return r.store.GetUploadByID(ctx, id)
+	return r.dbStore.GetUploadByID(ctx, id)
 }
 
 func (r *resolver) GetIndexByID(ctx context.Context, id int) (store.Index, bool, error) {
-	return r.store.GetIndexByID(ctx, id)
+	return r.dbStore.GetIndexByID(ctx, id)
 }
 
 func (r *resolver) UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver {
-	return NewUploadsResolver(r.store, opts)
+	return NewUploadsResolver(r.dbStore, opts)
 }
 
 func (r *resolver) IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver {
-	return NewIndexesResolver(r.store, opts)
+	return NewIndexesResolver(r.dbStore, opts)
 }
 
 func (r *resolver) DeleteUploadByID(ctx context.Context, uploadID int) error {
-	_, err := r.store.DeleteUploadByID(ctx, uploadID)
+	_, err := r.dbStore.DeleteUploadByID(ctx, uploadID)
 	return err
 }
 
 func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
-	_, err := r.store.DeleteIndexByID(ctx, id)
+	_, err := r.dbStore.DeleteIndexByID(ctx, id)
 	return err
 }
 
@@ -84,7 +82,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	}
 
 	return NewQueryResolver(
-		r.store,
+		r.dbStore,
 		r.lsifStore,
 		r.codeIntelAPI,
 		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
