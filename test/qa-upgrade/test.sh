@@ -4,18 +4,22 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
 # shellcheck disable=SC1091
-source /root/.profile
+set +x && source /root/.profile && set -x
+
 test/setup-deps.sh
 test/setup-display.sh
 
 # ==========================
 
-# Run, initialize, and stop an old Sourcegraph release
+# Run and initialize an old Sourcegraph release
 IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
 go run test/init-server.go
+
 # shellcheck disable=SC1091
-source /root/.profile
+set +x && source /root/.profile && set -x
+
+# Stop old Sourcegraph release
 docker container stop sourcegraph-old
 sleep 5
 

@@ -4,7 +4,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
 # shellcheck disable=SC1091
-source /root/.profile
+set +x && source /root/.profile && set -x
+
 bash test/setup-deps.sh
 bash test/setup-display.sh
 
@@ -25,7 +26,9 @@ sleep 15
 
 go run test/init-server.go
 
-source /root/.profile
+# shellcheck disable=SC1091
+set +x && source /root/.profile && set -x
+
 pushd client/web || exit
 yarn run test:regression:core
 yarn run test:regression:integrations

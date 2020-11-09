@@ -4,7 +4,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 set -x
 
 # shellcheck disable=SC1091
-source /root/.profile
+set +x && source /root/.profile && set -x
+
 test/setup-deps.sh
 test/setup-display.sh
 
