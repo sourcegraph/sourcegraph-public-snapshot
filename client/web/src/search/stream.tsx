@@ -104,12 +104,12 @@ interface Skipped {
     reason:
         | 'document-match-limit'
         | 'shard-match-limit'
+        | 'repository-limit'
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
         | 'excluded-fork'
         | 'excluded-archive'
-        | 'repository-limit'
     // A short message. eg 1,200 timedout.
     title: string
     // A message to show the user. Usually includes information explaining the reason, count as well as a sample of the missing items.
