@@ -163,25 +163,13 @@ describe('Core functionality regression test suite', () => {
             newText: aviURL,
             enterTextMethod: 'paste',
         })
-        await driver.findElementWithText('Save', { action: 'click' })
-        await driver.page.reload()
-        await driver.page.waitForFunction(
-            displayName => {
-                const element = document.querySelector('.test-user-area-header__display-name')
-                return element?.textContent && element.textContent.trim() === displayName
-            },
-            undefined,
-            displayName
-        )
-
-        await screenshots.verifySelector(
-            'navbar-toggle-is-bart-simpson.png',
-            'Navbar toggle avatar is Bart Simpson',
-            '.test-user-nav-item-toggle'
+        await driver.page.click('#test-EditUserProfileForm__save')
+        await driver.findElementWithText(
+            'Error: unable to change username because auth.enableUsernameChanges is false in site configuration'
         )
     })
 
-    test('2.2.3. User emails page', async () => {
+    test('2.2.3 User emails page', async () => {
         const testEmail = 'sg-test-account@protonmail.com'
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
         await driver.replaceText({ selector: '.test-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
