@@ -377,10 +377,14 @@ func logOnelineScanner(r io.Reader) func() (*onelineCommit, error) {
 	scanner.Split(scanNull)
 	return func() (*onelineCommit, error) {
 		if !scanner.Scan() {
-			if err := scanner.Err(); err != nil {
-				return nil, err
+			err := scanner.Err()
+			if err == nil {
+				return nil, io.EOF
+			} else if strings.Contains(err.Error(), "does not have any commits yet") {
+				// Treat empty repositories as having no commits without failing
+				return nil, io.EOF
 			}
-			return nil, io.EOF
+			return nil, err
 		}
 
 		e := scanner.Bytes()

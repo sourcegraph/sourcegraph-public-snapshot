@@ -134,6 +134,15 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return Mocks.RawLogDiffSearch(opt)
 	}
 
+	defer func() {
+		// We do best-effort in case of timeout. So we clear out the error and
+		// indicate the results are incomplete.
+		if err != nil && errors.Is(err, context.DeadlineExceeded) {
+			complete = false
+			err = nil
+		}
+	}()
+
 	deadline, ok := ctx.Deadline()
 	var timeoutLabel string
 	if ok {
@@ -174,33 +183,31 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	defer cancel()
 
 	// We do a search with git log returning just the commits (and source sha).
-	commitsChan := make(chan []*onelineCommit)
-	logErrChan := make(chan error)
-	go func() {
-		err := rawLogSearch(ctx, repo, opt, commitsChan)
-		close(commitsChan)
-		logErrChan <- err
-	}()
-	defer func() {
-		// ensure we drain and report errors from log
-		cancel()
-		for range commitsChan {
-		}
+	onelineCmd, err := rawLogSearchCmd(ctx, repo, opt)
+	if err != nil {
+		return nil, false, err
+	}
+	onelineReader, err := gitserver.StdoutReader(ctx, onelineCmd)
+	if err != nil {
+		return nil, false, err
+	}
+	defer onelineReader.Close()
+	nextCommit := logOnelineScanner(onelineReader)
 
-		if logErr := <-logErrChan; logErr != nil {
-			if errors.Is(logErr, context.DeadlineExceeded) {
-				complete = false
-			} else {
-				err = logErr
-			}
-		}
-	}()
+	// TODO implement batching
 
 	// We then search each commit in batches to further filter the results.
 	complete = true
-	for commits := range commitsChan {
+	for {
+		commit, err := nextCommit()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return results, complete, err
+		}
+
 		// TODO we want to share cache between calls to rawShowSearch
-		results2, complete2, err := rawShowSearch(ctx, repo, opt, commits)
+		results2, complete2, err := rawShowSearch(ctx, repo, opt, []*onelineCommit{commit})
 		results = append(results, results2...)
 		complete = complete && complete2
 
@@ -212,12 +219,11 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	return results, complete, nil
 }
 
-// rawLogSearch runs git log to find matching commits.
-func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, commitsChan chan<- []*onelineCommit) error {
+func rawLogSearchCmd(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (*gitserver.Cmd, error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
-		return fmt.Errorf("command failed: %q is not a allowed git command", args)
+		return nil, fmt.Errorf("command failed: %q is not a allowed git command", args)
 	}
 
 	// We need to get `git log --source` (the ref by which we reached each commit), but
@@ -237,63 +243,9 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 	)
 	onelineArgs = append(onelineArgs, logDiffCommonArgs(opt)...)
 
-	// Time out the first `git log` operation prior to the parent context timeout, so we still have time to `git
-	// show` the results it returns. These proportions are untuned guesses.
-	//
-	// TODO(sqs): this can be made much more efficient in many ways
-
-	// Run `git log` oneline command and read list of matching commits.
-	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
-	onelineCmd.Repo = repo
-	onelineReader, err := gitserver.StdoutReader(ctx, onelineCmd)
-	if err != nil {
-		return err
-	}
-	defer onelineReader.Close()
-
-	// To avoid doing thousands of channel sends for each commit, we buffer up
-	// results before sending them down. We send once our buffer has 500
-	// commits or it has been 50ms.
-	bufCap := 500
-	debounce := 50 * time.Millisecond
-
-	nextDeadline := time.Now().Add(debounce)
-	var buf []*onelineCommit
-
-	scan := logOnelineScanner(onelineReader)
-	for {
-		var commit *onelineCommit
-		commit, err = scan()
-		if err != nil {
-			if err == io.EOF {
-				err = nil
-			}
-			break
-		}
-		buf = append(buf, commit)
-
-		// Note: we have the possibility of waiting on scan even after our
-		// nextDeadline has been hit. We accept this tradeoff for
-		// implementation simplicity by avoiding extra synchronization.
-		if len(buf) >= bufCap || time.Now().After(nextDeadline) {
-			commitsChan <- buf
-			buf = nil
-			nextDeadline = time.Now().Add(debounce)
-		}
-	}
-
-	// Flush buf
-	if len(buf) > 0 {
-		commitsChan <- buf
-		buf = nil
-	}
-
-	// Don't fail if the repository is empty.
-	if err != nil && strings.Contains(err.Error(), "does not have any commits yet") {
-		err = nil
-	}
-
-	return err
+	cmd := gitserver.DefaultClient.Command("git", onelineArgs...)
+	cmd.Repo = repo
+	return cmd, nil
 }
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
