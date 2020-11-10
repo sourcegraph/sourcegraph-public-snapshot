@@ -73,7 +73,7 @@ To install this search engine shortcut manually, and for more information, see "
   <p>Grant permissions</p>
 </video>
 
-- [github.com](https://github.com/) - no action required.
+- [GitHub.com](https://github.com/) - no action required.
 - GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
 
 To grant these permissions:
