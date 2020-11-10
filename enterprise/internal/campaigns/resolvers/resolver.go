@@ -738,7 +738,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 	// TODO: Do we want to validate the URL, or even if such an external service exists? Or better, would the DB have a constraint?
 
 	if args.Credential == "" {
-		return nil, errors.New("empty credential now allowed")
+		return nil, errors.New("empty credential not allowed")
 	}
 
 	scope := db.UserCredentialScope{
