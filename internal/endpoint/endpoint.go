@@ -284,12 +284,12 @@ func namespace() string {
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log15.Warn("unable to read ", filename, " using \"default\" ns")
+		log15.Warn("endpoint: falling back to kubernetes default namespace", "error", filename+" is empty")
 		return "default"
 	}
 
 	ns := strings.TrimSpace(string(data))
-	if len(ns) == 0 {
+	if ns == "" {
 		log15.Warn("file: ", filename, " empty using \"default\" ns")
 		return "default"
 	}

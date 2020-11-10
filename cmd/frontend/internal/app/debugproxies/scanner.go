@@ -187,7 +187,7 @@ func namespace() string {
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log15.Warn("endpoint: falling back to kubernetes default namespace", "filename", filename, "error", err)
+		log15.Warn("scanner: falling back to kubernetes default namespace", "filename", filename, "error", err)
 		return "default"
 	}
 
