@@ -203,6 +203,7 @@ Check constraints:
     "changesets_external_id_check" CHECK (external_id <> ''::text)
     "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+    "external_branch_ref_prefix" CHECK (external_branch ~~ 'refs/heads/%'::text)
 Foreign-key constraints:
     "changesets_changeset_spec_id_fkey" FOREIGN KEY (current_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
     "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL DEFERRABLE
