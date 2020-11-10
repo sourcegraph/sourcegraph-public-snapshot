@@ -5,7 +5,7 @@ import { WebStory } from '../../components/WebStory'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
 
-add('Example', () => <WebStory>{props => <CodeMonitoringPage {...props} />}</WebStory>, {
+add('Example', () => <WebStory>{props => <CreateCodeMonitoriPage {...props} />}</WebStory>, {
     design: {
         type: 'figma',
         url:
