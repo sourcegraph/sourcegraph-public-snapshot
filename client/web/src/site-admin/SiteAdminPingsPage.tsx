@@ -142,11 +142,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of changesets created by campaigns that have been merged</li>
                         <li>Total count of changesets manually added to a campaign</li>
                         <li>Total count of changesets manually added to a campaign that have been merged</li>
-                        <li>Page view event when a user previews a campaign spec</li>
-                        <li>
-                            Page view event when a user creates/updates a campaign by applying a campaign spec through
-                            the UI
-                        </li>
                     </ul>
                 </li>
                 <li>
