@@ -336,6 +336,18 @@ type onelineCommit struct {
 	sourceRef string // `git log --source` source ref
 }
 
+// logOnelineBatchScanner wraps logOnelineScanner to batch up reads.
+func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize int, debounce time.Duration) func() ([]*onelineCommit, error) {
+	// TODO stub impl, do batching
+	return func() ([]*onelineCommit, error) {
+		commit, err := scan()
+		if err != nil {
+			return nil, err
+		}
+		return []*onelineCommit{commit}, nil
+	}
+}
+
 // logOnelineScanner parses the commits from the reader of:
 //
 //   git log --oneline -z --source --no-patch

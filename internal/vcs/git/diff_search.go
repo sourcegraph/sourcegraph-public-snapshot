@@ -192,14 +192,19 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, false, err
 	}
 	defer onelineReader.Close()
-	nextCommit := logOnelineScanner(onelineReader)
 
-	// TODO implement batching
+	// We batch up the commits from onelineReader to amortize the cost of
+	// running rawShowSearch
+	const (
+		maxBatchSize = 100
+		debounce     = 10 * time.Millisecond
+	)
+	nextCommits := logOnelineBatchScanner(logOnelineScanner(onelineReader), maxBatchSize, debounce)
 
 	// We then search each commit in batches to further filter the results.
 	complete = true
 	for {
-		commit, err := nextCommit()
+		commits, err := nextCommits()
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -207,7 +212,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		}
 
 		// TODO we want to share cache between calls to rawShowSearch
-		results2, complete2, err := rawShowSearch(ctx, repo, opt, []*onelineCommit{commit})
+		results2, complete2, err := rawShowSearch(ctx, repo, opt, commits)
 		results = append(results, results2...)
 		complete = complete && complete2
 
