@@ -30,6 +30,10 @@ type BitbucketServerSource struct {
 	client  *bitbucketserver.Client
 }
 
+var _ Source = &BitbucketServerSource{}
+var _ UserSource = &BitbucketServerSource{}
+var _ ChangesetSource = &BitbucketServerSource{}
+
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
 func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
@@ -85,22 +89,17 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 	s.listAllRepos(ctx, results)
 }
 
-var _ ChangesetSource = BitbucketServerSource{}
-
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken, *auth.BasicAuth, *bitbucketserver.SudoableOAuthClient:
-		// Excellent.
+		break
+
 	default:
-		return nil, errors.Errorf("unknown Authenticator type: %T", a)
+		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
 	}
 
 	sc := s
-
-	c := *s.client
-	c.Auth = a
-
-	sc.client = &c
+	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
 }

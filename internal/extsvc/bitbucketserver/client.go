@@ -112,27 +112,6 @@ func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 	return client, nil
 }
 
-// NewClientWithAuthenticator returns an authenticated Bitbucket Server API
-// client with the provided configuration, but using the given Authenticator and
-// ignoring any authentication related fields in the configuration. If a nil
-// httpClient is provided, http.DefaultClient will be used.
-func NewClientWithAuthenticator(config *schema.BitbucketServerConnection, httpClient httpcli.Doer, a auth.Authenticator) (*Client, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken, *auth.BasicAuth, *SudoableOAuthClient:
-		// Excellent.
-	default:
-		return nil, errors.Errorf("unknown Authenticator type: %T", a)
-	}
-
-	client, err := newClient(config, httpClient)
-	if err != nil {
-		return nil, err
-	}
-
-	client.Auth = a
-	return client, nil
-}
-
 func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
@@ -155,6 +134,18 @@ func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer
 		URL:        u,
 		RateLimit:  l,
 	}, nil
+}
+
+// WithAuthenticator returns a new Client that uses the same configuration,
+// HTTPClient, and RateLimiter as the current Client, except authenticated user
+// with the given authenticator instance.
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		RateLimit:  c.RateLimit,
+		Auth:       a,
+	}
 }
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
