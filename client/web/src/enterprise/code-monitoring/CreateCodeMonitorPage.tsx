@@ -1,4 +1,5 @@
 import * as H from 'history'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Form } from '../../../../branded/src/components/Form'
@@ -51,7 +52,12 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
             <div className="container mt-3 web-content">
                 <PageTitle title="Create new code monitor" />
                 <PageHeader title="Create new code monitor" icon={VideoInputAntennaIcon} />
-                Code monitors watch your code for specific triggers and run actions in response. Learn more.
+                Code monitors watch your code for specific triggers and run actions in response.{' '}
+                <a href="" target="_blank" rel="noopener">
+                    {/* TODO: populate link */}
+                    Learn more
+                </a>
+                .
                 <Form className="my-4">
                     <div className="flex mb-4">
                         Name
@@ -60,8 +66,9 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                         </div>
                         <small className="text-muted">
                             Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
-                            Do not include{' '}
+                            Do not include:{' '}
                             <a href="" target="_blank" rel="noopener">
+                                {/* TODO: populate link */}
                                 confidential information
                             </a>
                             .
@@ -96,11 +103,13 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                                             rel="noopener noreferrer"
                                             className="create-monitor-page__query-input-preview-link"
                                         >
-                                            Preview results
+                                            {/* TODO: populate link */}
+                                            Preview results <OpenInNewIcon />
                                         </a>
                                     </div>
                                     <small className="text-muted mb-4">
-                                        Code monitors only support type:diff and type:commit search queries.
+                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
+                                        <code className="bg-code">type:commit</code> search queries.
                                     </small>
                                     <div>
                                         <button type="button" className="btn btn-outline-secondary mr-1">
@@ -116,8 +125,9 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                         {!showQueryForm && (
                             <small className="text-muted">
                                 {' '}
-                                What other events would you like to monitor?{' '}
+                                What other events would you like to monitor? {/* TODO: populate link */}
                                 <a href="" target="_blank" rel="noopener">
+                                    {/* TODO: populate link */}
                                     Share feedback.
                                 </a>
                             </small>
@@ -131,10 +141,6 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                             <a href="" onClick={toggleEmailNotificationForm} className="font-weight-bold">
                                 Send email notifications
                             </a>
-                            <span className="text-muted">
-                                Deliver email notifications to specified recipients. Can customize delivery schedule and
-                                priority.
-                            </span>
                             {showEmailNotificationForm && (
                                 <>
                                     <div className="mt-4">
@@ -148,14 +154,6 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                                         <small className="text-muted">
                                             Code monitors are currently limited to sending emails to your primary email
                                             address.
-                                        </small>
-                                    </div>
-                                    <div className="mt-4">
-                                        Approved header
-                                        <input type="text" className="form-control my-2" />
-                                        <small className="text-muted">
-                                            Use the approved header to automatically approve the message in a read-only
-                                            or moderated mailing list.
                                         </small>
                                     </div>
                                     <div className="flex my-4">
@@ -179,17 +177,24 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                             )}
                         </div>
                         <small className="text-muted">
-                            What other actions would you like to do?{' '}
+                            What other actions would you like to do?
                             <a href="" target="_blank" rel="noopener">
+                                {/* TODO: populate link */}
                                 Share feedback.
                             </a>
                         </small>
                     </div>
-                    <div className="flex my-4">
-                        <Toggle title="Active" value={active} onToggle={toggleActive} className="mr-2" /> Active
+                    <div className="d-flex my-4">
+                        <div>
+                            <Toggle title="Active" value={active} onToggle={toggleActive} className="mr-2" />{' '}
+                        </div>
+                        <div className="flex-column">
+                            <div>Active</div>
+                            <div className="text-muted">We will watch for the trigger and run actions in response</div>
+                        </div>
                     </div>
                     <div className="flex my-4">
-                        <button type="button" className="btn btn-primary">
+                        <button type="button" className="btn btn-primary mr-2">
                             Create code monitor
                         </button>
                         <button type="button" className="btn btn-outline-secondary">
