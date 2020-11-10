@@ -179,7 +179,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<Props> = props => {
                             )}
                         </div>
                         <small className="text-muted">
-                            What other events would you like to monitor?{' '}
+                            What other actions would you like to do?{' '}
                             <a href="" target="_blank" rel="noopener">
                                 Share feedback.
                             </a>
