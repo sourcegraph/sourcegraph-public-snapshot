@@ -554,38 +554,9 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		return opts, err
 	}
 
-	pushOpts := &protocol.PushConfig{}
-
-	switch av := a.(type) {
-	case *auth.OAuthBearerToken:
-		switch repo.ExternalRepo.ServiceType {
-		case extsvc.TypeGitHub:
-			pushOpts.Token = av.Token
-
-		case extsvc.TypeGitLab:
-			pushOpts.Username = "git"
-			pushOpts.Password = av.Token
-
-		case extsvc.TypeBitbucketServer:
-			return opts, errors.New("need username/password to push commits to bitbucket server")
-		}
-
-	case *auth.BasicAuth:
-		switch repo.ExternalRepo.ServiceType {
-		case extsvc.TypeGitHub, extsvc.TypeGitLab:
-			return opts, errors.New("need token to push commits to " + repo.ExternalRepo.ServiceType)
-
-		case extsvc.TypeBitbucketServer:
-			pushOpts.Username = av.Username
-			pushOpts.Password = av.Password
-		}
-
-	case nil:
-		// This is OK: we'll just send an empty token and gitserver will use
-		// the credential stored in the clone URL of the repository.
-
-	default:
-		return opts, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
+	pushConf, err := buildPushConfig(repo.ExternalRepo.ServiceType, a)
+	if err != nil {
+		return opts, err
 	}
 
 	opts = protocol.CreateCommitFromPatchRequest{
@@ -612,10 +583,48 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
 		GitApplyArgs: []string{"-p0"},
-		Push:         pushOpts,
+		Push:         pushConf,
 	}
 
 	return opts, nil
+}
+
+func buildPushConfig(extSvcType string, a auth.Authenticator) (*protocol.PushConfig, error) {
+	pc := &protocol.PushConfig{}
+
+	switch av := a.(type) {
+	case *auth.OAuthBearerToken:
+		switch extSvcType {
+		case extsvc.TypeGitHub:
+			pc.Username = av.Token
+
+		case extsvc.TypeGitLab:
+			pc.Username = "git"
+			pc.Password = av.Token
+
+		case extsvc.TypeBitbucketServer:
+			return nil, errors.New("require username/token to push commits to BitbucketServer")
+		}
+
+	case *auth.BasicAuth:
+		switch extSvcType {
+		case extsvc.TypeGitHub, extsvc.TypeGitLab:
+			return nil, errors.New("need token to push commits to " + extSvcType)
+
+		case extsvc.TypeBitbucketServer:
+			pc.Username = av.Username
+			pc.Password = av.Password
+		}
+
+	case nil:
+		// This is OK: we'll just send an empty token and gitserver will use
+		// the credential stored in the clone URL of the repository.
+
+	default:
+		return nil, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
+	}
+
+	return pc, nil
 }
 
 // ErrNoPushCredentials is returned by buildCommitOpts if the credentials

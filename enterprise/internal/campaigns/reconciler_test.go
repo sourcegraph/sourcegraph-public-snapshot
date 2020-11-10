@@ -1464,7 +1464,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				Token: "my-secret-github-token",
+				Username: "my-secret-github-token",
 			},
 		},
 		{
@@ -1479,10 +1479,10 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "bitbucketServer BasicAuth",
 			repo:        bbsRepo,
-			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "mysecrettoken"},
+			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				Username: "fredwoard johnssen",
-				Password: "mysecrettoken",
+				Password: "my-secret-bbs-token",
 			},
 		},
 	}

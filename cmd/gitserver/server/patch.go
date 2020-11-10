@@ -302,8 +302,8 @@ func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string
 		return "", errors.Wrap(err, "parsing remote URL")
 	}
 
-	if push.Token != "" {
-		u.User = url.User(push.Token)
+	if push.Username != "" && push.Password == "" {
+		u.User = url.User(push.Username)
 	} else if push.Username != "" && push.Password != "" {
 		u.User = url.UserPassword(push.Username, push.Password)
 	}
