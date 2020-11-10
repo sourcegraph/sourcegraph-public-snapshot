@@ -1,5 +1,5 @@
 import React from 'react'
-import { CodeMonitoringPage } from './CodeMonitoringPage'
+import { CreateCodeMonitoriPage } from './CreateCodeMonitoriPage'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
 
