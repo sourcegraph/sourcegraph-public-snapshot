@@ -277,41 +277,43 @@ function mockCommonGraphQLResponses(
                 ...campaignOverrides,
             },
         }),
-        CampaignsByUser: () => ({
-            node: {
-                __typename: 'User',
-                campaigns: {
-                    nodes: [campaignListNode],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                    totalCount: 1,
-                },
-            },
-        }),
-        CampaignsByOrg: () => ({
-            node: {
-                __typename: 'Org',
-                campaigns: {
-                    nodes: [
-                        {
-                            ...campaignListNode,
-                            url: '/organizations/test-org/campaigns/test-campaign',
-                            namespace: {
-                                namespaceName: 'test-org',
-                                url: '/organizations/test-org',
-                            },
-                        },
-                    ],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                    totalCount: 1,
-                },
-            },
-        }),
+        CampaignsByNamespace: () =>
+            entityType === 'user'
+                ? {
+                      node: {
+                          __typename: 'User',
+                          campaigns: {
+                              nodes: [campaignListNode],
+                              pageInfo: {
+                                  endCursor: null,
+                                  hasNextPage: false,
+                              },
+                              totalCount: 1,
+                          },
+                      },
+                  }
+                : {
+                      node: {
+                          __typename: 'Org',
+                          campaigns: {
+                              nodes: [
+                                  {
+                                      ...campaignListNode,
+                                      url: '/organizations/test-org/campaigns/test-campaign',
+                                      namespace: {
+                                          namespaceName: 'test-org',
+                                          url: '/organizations/test-org',
+                                      },
+                                  },
+                              ],
+                              pageInfo: {
+                                  endCursor: null,
+                                  hasNextPage: false,
+                              },
+                              totalCount: 1,
+                          },
+                      },
+                  },
     }
 }
 
