@@ -2240,7 +2240,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Make sure there are external services added with valid tokens
+- An alert here indicates that no code host connections have synced in at least 9h0m0s. This indicates that there could be a configuration issue
+with your code hosts connections or networking issues affecting communication with your code hosts.
+- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
+- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
+- Check the repo-updater logs for errors about syncing.
+- Confirm that outbound network connections are allowed where repo-updater is deployed.
+- Check back in an hour to see if the issue has resolved itself.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
