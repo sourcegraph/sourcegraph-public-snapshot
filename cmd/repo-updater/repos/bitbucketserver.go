@@ -33,6 +33,7 @@ type BitbucketServerSource struct {
 var _ Source = &BitbucketServerSource{}
 var _ UserSource = &BitbucketServerSource{}
 var _ ChangesetSource = &BitbucketServerSource{}
+var _ UsernameSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional

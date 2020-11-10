@@ -83,7 +83,7 @@ FROM external_services
 JOIN external_service_repos esr ON esr.external_service_id = external_services.id
 JOIN repo ON esr.repo_id = repo.id
 WHERE %s
-ORDER BY external_service.id ASC
+ORDER BY external_services.id ASC
 LIMIT 1
 `
 

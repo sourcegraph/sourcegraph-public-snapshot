@@ -430,9 +430,18 @@ func checkRepoSupported(repo *types.Repo) error {
 	)
 }
 
-// FetchUsernameForBitbucketServerToken fetches the username associated with a Bitbucket server token, which we need to authenticate for git pushes.
-// To make this process as streamlined as possible for users, we only ask for a credential and resolve the username using the API.
-// Since Bitbucket sends the username as a header in REST responses, we can take it from there and complete the credential.
+// FetchUsernameForBitbucketServerToken fetches the username associated with a
+// Bitbucket server token.
+//
+// We need the username in order to use the token as the password in a HTTP
+// BasicAuth username/password pair used by gitserver to push commits.
+//
+// In order to not require from users to type in their BitbucketServer username
+// we only ask for a token and then use that token to talk to the
+// BitbucketServer API and get their username.
+//
+// Since Bitbucket sends the username as a header in REST responses, we can
+// take it from there and complete the UserCredential.
 func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
 	extSvcID, err := s.store.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
 		ExternalServiceID:   externalServiceID,
@@ -456,14 +465,21 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	if err != nil {
 		return "", err
 	}
-	bbsSource, ok := sources[0].(repos.BitbucketServerSource)
+
+	userSource, ok := sources[0].(repos.UserSource)
 	if !ok {
-		return "", errors.New("external service source doesn't implement BitbucketServerSource")
+		return "", errors.New("external service source cannot use other authenticator")
 	}
-	source, err := bbsSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+
+	source, err := userSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	if err != nil {
 		return "", err
 	}
 
-	return source.(*repos.BitbucketServerSource).AuthenticatedUsername(ctx)
+	usernameSource, ok := source.(repos.UsernameSource)
+	if !ok {
+		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
+	}
+
+	return usernameSource.AuthenticatedUsername(ctx)
 }
