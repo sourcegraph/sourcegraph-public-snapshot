@@ -103,7 +103,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				unsynced:         false,
 				title:            githubPR.Title,
@@ -145,7 +145,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -177,7 +177,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -203,7 +203,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
@@ -214,7 +214,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
@@ -241,7 +241,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 				// Previous update failed:
@@ -254,7 +254,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -282,7 +282,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -297,7 +297,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -319,7 +319,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 
@@ -335,7 +335,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 				// failureMessage should be nil
@@ -361,7 +361,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -376,7 +376,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -394,7 +394,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 			sourcerMetadata: githubPR,
@@ -402,7 +402,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 		},
@@ -417,7 +417,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				closing:          true,
 				ownedByCampaign:  campaign.ID,
@@ -432,7 +432,7 @@ func TestReconcilerProcess(t *testing.T) {
 				closing:          false,
 
 				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateClosed,
 
 				title:    closedGitHubPR.Title,
@@ -453,7 +453,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				closing:          true,
 				ownedByCampaign:  campaign.ID,
@@ -470,7 +470,7 @@ func TestReconcilerProcess(t *testing.T) {
 				closing:          false,
 
 				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateClosed,
 			},
 		},
@@ -492,7 +492,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				ownedByCampaign:  campaign.ID,
 				closing:          false,
@@ -506,7 +506,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -536,7 +536,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				ownedByCampaign:  campaign.ID,
 				closing:          false,
@@ -556,7 +556,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -586,7 +586,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     draftGithubPR.ID,
-				externalBranch: draftGithubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateDraft,
 
 				title:    draftGithubPR.Title,
@@ -618,7 +618,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     draftGithubPR.ID,
-				externalBranch: draftGithubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateDraft,
 
 				title:    draftGithubPR.Title,
@@ -648,7 +648,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(githubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -1025,7 +1025,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		campaign:         campaign.ID,
 		ownedByCampaign:  campaign.ID,
 		currentSpec:      changesetSpec.ID,
-		externalBranch:   git.AbbreviateRef(commonHeadRef),
+		externalBranch:   git.EnsureRefPrefix(commonHeadRef),
 		externalID:       "123",
 	})
 

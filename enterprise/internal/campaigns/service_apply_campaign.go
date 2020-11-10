@@ -440,7 +440,7 @@ func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
 
 		k := repoHeadRef{repo: c.RepoID}
 		if c.ExternalBranch != "" {
-			k.headRef = git.EnsureRefPrefix(c.ExternalBranch)
+			k.headRef = c.ExternalBranch
 			r.changesetsByRepoHeadRef[k] = c
 			continue
 		}

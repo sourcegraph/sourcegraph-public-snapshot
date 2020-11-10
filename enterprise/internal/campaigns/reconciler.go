@@ -322,7 +322,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
-		ExternalBranch:      git.AbbreviateRef(e.spec.Spec.HeadRef),
+		ExternalBranch:      e.spec.Spec.HeadRef,
 	})
 	if err != nil && err != ErrNoResults {
 		return err

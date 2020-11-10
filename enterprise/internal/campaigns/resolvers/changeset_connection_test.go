@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestChangesetConnectionResolver(t *testing.T) {
@@ -73,7 +74,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		repo:                repo.ID,
 		externalServiceType: "github",
 		externalID:          "12345",
-		externalBranch:      "open-pr",
+		externalBranch:      git.EnsureRefPrefix("open-pr"),
 		externalState:       campaigns.ChangesetExternalStateOpen,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
 		externalReviewState: campaigns.ChangesetReviewStatePending,
@@ -85,7 +86,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		repo:                repo.ID,
 		externalServiceType: "github",
 		externalID:          "56789",
-		externalBranch:      "merged-pr",
+		externalBranch:      git.EnsureRefPrefix("merged-pr"),
 		externalState:       campaigns.ChangesetExternalStateMerged,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
 		externalReviewState: campaigns.ChangesetReviewStatePending,
@@ -96,7 +97,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		repo:                inaccessibleRepo.ID,
 		externalServiceType: "github",
 		externalID:          "987651",
-		externalBranch:      "open-hidden-pr",
+		externalBranch:      git.EnsureRefPrefix("open-hidden-pr"),
 		externalState:       campaigns.ChangesetExternalStateOpen,
 		publicationState:    campaigns.ChangesetPublicationStatePublished,
 		externalReviewState: campaigns.ChangesetReviewStatePending,

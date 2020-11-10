@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -80,7 +81,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      fmt.Sprintf("campaigns/test/%d", i),
+				ExternalBranch:      git.EnsureRefPrefix(fmt.Sprintf("campaigns/test/%d", i)),
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
@@ -603,7 +604,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			CampaignIDs:         []int64{1},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
 			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "campaigns/test",
+			ExternalBranch:      git.EnsureRefPrefix("campaigns/test"),
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       "",
 			ExternalReviewState: "",
@@ -1172,7 +1173,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			CampaignIDs:         []int64{int64(i) + 1},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
 			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "campaigns/test",
+			ExternalBranch:      git.EnsureRefPrefix("campaigns/test"),
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       cmpgn.ChangesetExternalStateOpen,
 			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
