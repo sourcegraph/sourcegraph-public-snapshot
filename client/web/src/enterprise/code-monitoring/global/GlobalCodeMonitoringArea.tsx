@@ -71,7 +71,6 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                         exact={true}
                     />
                 </Switch>
-                {/* eslint-enable react/jsx-no-bind */}
             </div>
         </div>
     )
