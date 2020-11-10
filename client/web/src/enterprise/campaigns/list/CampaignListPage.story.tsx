@@ -15,11 +15,37 @@ const { add } = storiesOf('web/campaigns/CampaignListPage', module)
 
 const queryCampaigns = () =>
     of({
+        campaigns: {
+            totalCount: Object.values(nodes).length,
+            nodes: Object.values(nodes),
+            pageInfo: { endCursor: null, hasNextPage: false },
+        },
         totalCount: Object.values(nodes).length,
-        nodes: Object.values(nodes),
-        pageInfo: { endCursor: null, hasNextPage: false },
     })
 
 add('List of campaigns', () => (
     <EnterpriseWebStory>{props => <CampaignListPage {...props} queryCampaigns={queryCampaigns} />}</EnterpriseWebStory>
+))
+
+add('No campaigns', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignListPage
+                {...props}
+                queryCampaigns={() =>
+                    of({
+                        campaigns: {
+                            totalCount: 0,
+                            nodes: [],
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
+                        },
+                        totalCount: 0,
+                    })
+                }
+            />
+        )}
+    </EnterpriseWebStory>
 ))
