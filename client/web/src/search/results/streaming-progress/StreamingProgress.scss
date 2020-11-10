@@ -9,6 +9,7 @@
 
 .streaming-progress {
     box-sizing: border-box;
+    color: var(--link-color);
 
     &--in-progress {
         background-color: var(--color-bg-2);

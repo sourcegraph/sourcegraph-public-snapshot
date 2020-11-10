@@ -9,7 +9,7 @@ interface Props {
 }
 
 const defaultProgress: Progress = {
-    done: false,
+    done: true,
     durationMs: 0,
     matchCount: 0,
     skipped: [],
