@@ -13,15 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // NewResolver returns a new Resolver that uses the given db
-func NewResolver(db *sql.DB) graphqlbackend.CodeMonitorsResolver {
+func NewResolver(db dbutil.DB) graphqlbackend.CodeMonitorsResolver {
 	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }}
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
-func newResolverWithClock(db *sql.DB, clock func() time.Time) graphqlbackend.CodeMonitorsResolver {
+func newResolverWithClock(db dbutil.DB, clock func() time.Time) graphqlbackend.CodeMonitorsResolver {
 	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
 }
 
