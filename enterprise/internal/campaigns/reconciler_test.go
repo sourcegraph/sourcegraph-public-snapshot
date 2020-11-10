@@ -1497,7 +1497,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 					RepoID:            tt.repo.ID,
 				},
 				spec: buildChangesetSpec(t, testSpecOpts{
-					headRef:    "my-branch",
+					headRef:    "refs/heads/my-branch",
 					published:  true,
 					commitDiff: "testdiff",
 				}),

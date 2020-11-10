@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -352,7 +351,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		HeadRef:   e.spec.Spec.HeadRef,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
@@ -438,7 +437,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		HeadRef:   e.spec.Spec.HeadRef,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
@@ -492,7 +491,7 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		HeadRef:   e.spec.Spec.HeadRef,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
