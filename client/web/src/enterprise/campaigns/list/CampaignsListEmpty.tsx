@@ -19,12 +19,12 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                                     href="https://docs.sourcegraph.com/campaigns/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
-                                    Finding and replacing exclusionary terms
+                                    Finding and replacing code and text
                                 </a>
                             </h4>
                             <p className="text-muted mb-0">
-                                A Sourcegraph query plus a simple sed command creates changesets required to manage a
-                                large scale refactoring.
+                                A Sourcegraph query plus a simple <code>sed</code> command creates changesets required to manage a
+                                large scale change.
                             </p>
                         </div>
                     </div>
@@ -44,7 +44,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                                 </a>
                             </h4>
                             <p className="text-muted mb-0">
-                                Using comby language aware search to refactor Go statements to a semantically
+                                Using <a href="https://comby.dev/" rel="noopener">Comby's</a> language-aware structural search to refactor Go statements to a semantically
                                 equivalent, but clearer execution.
                             </p>
                         </div>
@@ -62,7 +62,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                 <p>
                     <strong>Quickstart</strong>
                 </p>
-                <p>Create your first Sourcegraph campaign in 10 minutes or less by altering a readme.</p>
+                <p>Create your first Sourcegraph campaign in 10 minutes or less.</p>
                 <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
                     Campaigns quickstart
                 </a>
@@ -73,7 +73,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                 </p>
                 <p>Learn how campaigns enables large-scale code changes across many repositories and code hosts.</p>
                 <a href="https://docs.sourcegraph.com/campaigns/explanations/introduction_to_campaigns" rel="noopener">
-                    Campaigns introduction
+                    Introduction to campaigns
                 </a>
             </div>
             <div className="col-12 col-md-4 mb-3">
@@ -81,14 +81,14 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                     <strong>Documentation</strong>
                 </p>
                 <p>
-                    Learn about the campaign spec{' '}
+                    Take a look at the{' '}
                     <a
                         href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference"
                         rel="noopener"
                     >
-                        YAML reference
+                       campaign spec YAML reference
                     </a>
-                    , it's powerful{' '}
+                    , learn about its powerful{' '}
                     <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
                         templating language
                     </a>
@@ -109,7 +109,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
         </div>
         <h2>Campaigns demo</h2>
         <p className="text-muted">
-            This demo highlights the ease of refactoring code and managing changesets across many repositories and
+            This demo shows how to refactor code and manage changesets across many repositories and
             multiple code hosts.
         </p>
         <div className="text-center">
