@@ -7,7 +7,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -60,8 +62,12 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPasswor
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
 	}
+
+	resetLinkExpiryDuration := conf.AuthPasswordResetLinkExpiry()
+
 	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
-	r := dbconn.Global.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
+	r := dbconn.Global.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '"+strconv.Itoa(resetLinkExpiryDuration)+" seconds' > now()", id, resetCode)
+
 	var ct int
 	if err := r.Scan(&ct); err != nil {
 		return false, err
