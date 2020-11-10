@@ -64,7 +64,8 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	defer func() { err = tx.db.Done(err) }()
 
 	// create code monitor
-	q, err := tx.createCodeMonitorQuery(ctx, args)
+	var q *sqlf.Query
+	q, err = tx.createCodeMonitorQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +87,12 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	// create actions
 	for i, action := range args.Actions {
 		if action.Email != nil {
-			q, err := tx.createActionEmailQuery(ctx, m.(*monitor).id, action.Email)
+			q, err = tx.createActionEmailQuery(ctx, m.(*monitor).id, action.Email)
 			if err != nil {
 				return nil, err
 			}
-			e, err := tx.runEmailQuery(ctx, q)
+			var e graphqlbackend.MonitorEmailResolver
+			e, err = tx.runEmailQuery(ctx, q)
 			if err != nil {
 				return nil, err
 			}
