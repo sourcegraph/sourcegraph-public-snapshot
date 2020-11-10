@@ -122,6 +122,8 @@
 // 1528395743_add_table_cm_emails.up.sql (1.396kB)
 // 1528395744_add_table_cm_recipients.down.sql (447B)
 // 1528395744_add_table_cm_recipients.up.sql (1.014kB)
+// 1528395745_ref_prefix_external_branch.down.sql (565B)
+// 1528395745_ref_prefix_external_branch.up.sql (620B)
 
 package migrations
 
@@ -2630,6 +2632,46 @@ func _1528395744_add_table_cm_recipientsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395745_ref_prefix_external_branchDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8f\xd1\x4a\xc3\x30\x14\x86\xef\xfb\x14\xc7\x0b\x39\x1d\x54\xf6\x00\xa5\x83\xe9\x82\x06\xd3\x4c\xba\x0c\x2f\x43\x5a\xcf\x2c\x22\x99\xf4\xe4\x42\x10\xdf\x5d\xe2\xb6\xa2\x6d\x55\xf0\x2e\x9c\xff\x0b\xff\xff\x5d\x8a\x6b\xa9\xf3\x24\xd9\xde\xad\x96\x46\x40\xd3\x3a\xff\x48\x4c\x81\x61\x23\x0c\xd0\x6b\xa0\xce\xbb\x67\x5b\x77\xce\x37\x2d\x14\xa0\x4c\x25\xcb\x74\x70\xcf\x00\x3b\xda\xf1\xbc\x25\xf7\xc0\x73\x9c\xc1\xfd\x8d\xa8\xc4\xe8\xb7\xdc\x80\x5e\x1b\xd0\x5b\xa5\x26\x1a\x2d\xbf\x50\x73\xa8\x8d\x2f\x28\xe0\x89\xf7\xbe\xb6\x4c\x21\x8d\x87\x0c\xf0\x2d\x16\x54\xb4\x7b\xc7\x0c\xc2\xde\x7e\xe6\xe9\x61\x51\x24\x2e\x16\x0b\x3c\x12\x38\x9c\x34\x3b\x8d\x1a\x82\x5f\x57\xc1\x52\xaf\xc6\xc0\x59\x01\x88\xd3\x91\x92\xb7\xe2\x5b\xd1\x39\xe6\xff\x12\xab\x1d\xd3\xef\x62\x47\xe2\x6f\xb1\x13\xf8\xa3\x58\x0f\x8c\xc5\xfa\x68\x52\x2c\xb9\x5a\x97\xa5\x34\x79\xf2\x11\x00\x00\xff\xff\x13\x58\x4b\xe9\x35\x02\x00\x00")
+
+func _1528395745_ref_prefix_external_branchDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395745_ref_prefix_external_branchDownSql,
+		"1528395745_ref_prefix_external_branch.down.sql",
+	)
+}
+
+func _1528395745_ref_prefix_external_branchDownSql() (*asset, error) {
+	bytes, err := _1528395745_ref_prefix_external_branchDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395745_ref_prefix_external_branch.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xea, 0x24, 0xe6, 0x8d, 0x84, 0xf2, 0x8e, 0x4c, 0xec, 0x6, 0x77, 0x1, 0x10, 0x16, 0x64, 0xbc, 0xb7, 0x3f, 0xe, 0xfd, 0x30, 0x3f, 0x55, 0x61, 0x58, 0x55, 0x75, 0x16, 0x78, 0xfc, 0xce, 0x3d}}
+	return a, nil
+}
+
+var __1528395745_ref_prefix_external_branchUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x91\xd1\x4a\xc3\x30\x14\x86\xef\xfb\x14\xc7\x0b\x39\x2d\x54\xf6\x00\xa3\x83\xda\x05\x2d\x76\xa9\x6c\x19\x5e\x86\xb4\x9e\x59\x44\x32\xe9\xc9\x85\x20\xbe\xbb\x44\xb7\x21\x4b\x7a\xe1\xee\x42\xbe\xff\x0f\xff\x47\x6e\xc5\x5d\x2d\xe7\x49\xb2\x7d\x5c\x96\x4a\x40\x3f\x18\xfb\x42\x4c\x8e\x61\x23\x14\xd0\x87\xa3\xd1\x9a\x37\xdd\x8d\xc6\xf6\x03\x14\x50\xb5\xb2\x2a\x55\x8a\x23\xed\x78\x36\x90\x79\xe6\x19\xe6\xe7\xb9\x0c\x9e\xee\xc5\x5a\x04\xf5\x7a\x03\xb2\x55\x20\xb7\x4d\x03\xa5\x5c\x06\xdc\xc3\xa6\x7e\x10\xf0\xf7\xf9\x6b\x8c\xcc\xd3\xfc\x4e\xfd\xef\x46\x7f\x82\x02\x5e\x79\x6f\x3b\xcd\xe4\x52\x7f\x91\x03\x7e\xfa\xfa\x9a\x76\x5f\x98\x83\xdb\xeb\x1f\x9e\xc6\xe7\xfb\xc6\xcd\x62\x81\x87\x06\x66\xd9\xd1\xe0\x9c\x04\x0a\x41\xe0\xaa\x00\xc4\x38\x9a\xd4\xbb\xc4\xae\x33\x4c\xff\xb3\x3b\x34\x22\x76\x47\x32\x69\x77\x0a\x84\x76\x27\x34\xfd\x79\x55\xbb\x5a\xd5\x6a\x9e\x7c\x07\x00\x00\xff\xff\x86\x65\x25\x4d\x6c\x02\x00\x00")
+
+func _1528395745_ref_prefix_external_branchUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395745_ref_prefix_external_branchUpSql,
+		"1528395745_ref_prefix_external_branch.up.sql",
+	)
+}
+
+func _1528395745_ref_prefix_external_branchUpSql() (*asset, error) {
+	bytes, err := _1528395745_ref_prefix_external_branchUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395745_ref_prefix_external_branch.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbf, 0xc3, 0x2d, 0x25, 0xbc, 0xa3, 0xc, 0xf4, 0xa4, 0x1f, 0x3, 0xcf, 0x6, 0x25, 0x95, 0x66, 0xfa, 0x76, 0x4, 0xd9, 0xbd, 0x66, 0x19, 0x32, 0xa2, 0x50, 0x37, 0x8d, 0x74, 0x3b, 0xa9, 0x5e}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2843,6 +2885,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395743_add_table_cm_emails.up.sql":                                        _1528395743_add_table_cm_emailsUpSql,
 	"1528395744_add_table_cm_recipients.down.sql":                                  _1528395744_add_table_cm_recipientsDownSql,
 	"1528395744_add_table_cm_recipients.up.sql":                                    _1528395744_add_table_cm_recipientsUpSql,
+	"1528395745_ref_prefix_external_branch.down.sql":                               _1528395745_ref_prefix_external_branchDownSql,
+	"1528395745_ref_prefix_external_branch.up.sql":                                 _1528395745_ref_prefix_external_branchUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3011,6 +3055,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395743_add_table_cm_emails.up.sql":                                        {_1528395743_add_table_cm_emailsUpSql, map[string]*bintree{}},
 	"1528395744_add_table_cm_recipients.down.sql":                                  {_1528395744_add_table_cm_recipientsDownSql, map[string]*bintree{}},
 	"1528395744_add_table_cm_recipients.up.sql":                                    {_1528395744_add_table_cm_recipientsUpSql, map[string]*bintree{}},
+	"1528395745_ref_prefix_external_branch.down.sql":                               {_1528395745_ref_prefix_external_branchDownSql, map[string]*bintree{}},
+	"1528395745_ref_prefix_external_branch.up.sql":                                 {_1528395745_ref_prefix_external_branchUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
