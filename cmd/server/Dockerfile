@@ -39,7 +39,7 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:b55ad2b@sha256:3e34d4996f046df081f5f9b726d992c73724ab1611ea55b104a937304faefdbe
+COPY --from=sourcegraph/syntect_server:1c72add@sha256:17851d7da26f86e9f21725ac461b3ce6066bdb95731da09bed07045c03661fe9
 
 # install postgres 11
 # hadolint ignore=DL3022,DL3003,DL3018,DL3019,SC2035
