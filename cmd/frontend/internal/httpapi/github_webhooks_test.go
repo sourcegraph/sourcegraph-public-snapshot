@@ -52,14 +52,16 @@ func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 }
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
-	h := GithubWebhook{}
-	var called int
+	var (
+		h      = GithubWebhook{}
+		called = make(chan struct{}, 2)
+	)
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
-		called++
+		called <- struct{}{}
 		return nil
 	}, "test-event-1")
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
-		called++
+		called <- struct{}{}
 		return nil
 	}, "test-event-1")
 
@@ -67,20 +69,22 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
-	if called != 2 {
+	if len(called) != 2 {
 		t.Errorf("Expected called to be 2, got %v", called)
 	}
 }
 
 func TestGithubWebhookDispatchError(t *testing.T) {
-	h := GithubWebhook{}
-	var called int
+	var (
+		h      = GithubWebhook{}
+		called = make(chan struct{}, 2)
+	)
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
-		called++
+		called <- struct{}{}
 		return fmt.Errorf("oh no")
 	}, "test-event-1")
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
-		called++
+		called <- struct{}{}
 		return nil
 	}, "test-event-1")
 
@@ -88,7 +92,7 @@ func TestGithubWebhookDispatchError(t *testing.T) {
 	if have, want := h.Dispatch(ctx, "test-event-1", nil, nil), "oh no"; errString(have) != want {
 		t.Errorf("Expected %q, got %q", want, have)
 	}
-	if called != 2 {
+	if len(called) != 2 {
 		t.Errorf("Expected called to be 2, got %v", called)
 	}
 }
