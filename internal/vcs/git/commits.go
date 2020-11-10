@@ -338,13 +338,46 @@ type onelineCommit struct {
 
 // logOnelineBatchScanner wraps logOnelineScanner to batch up reads.
 func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize int, debounce time.Duration) func() ([]*onelineCommit, error) {
-	// TODO stub impl, do batching
+	var finalErr error
 	return func() ([]*onelineCommit, error) {
-		commit, err := scan()
-		if err != nil {
-			return nil, err
+		// The previous call may have had an error but also had commits to
+		// return. In that case we didn't return the error, so need to return
+		// it now.
+		if finalErr != nil {
+			return nil, finalErr
 		}
-		return []*onelineCommit{commit}, nil
+
+		// Stop scanning if we haven't found maxBatchSize by deadline. Note:
+		// scan may block long past deadline. We accept this tradeoff for
+		// simplicity in our implementation.
+		deadline := time.Now().Add(debounce)
+
+		// Add to commits until we hit maxBatchSize or we are passed
+		// deadline. If we encounter an error set finalErr
+		var commits []*onelineCommit
+		for {
+			commit, err := scan()
+			if err != nil {
+				finalErr = err
+				break
+			}
+			commits = append(commits, commit)
+			if len(commits) >= maxBatchSize || time.Now().After(deadline) {
+				break
+			}
+		}
+
+		if len(commits) > 0 {
+			// Note: finalErr can be non-nil here. The next call to this
+			// function will return finalErr.
+			return commits, nil
+		}
+
+		if finalErr == nil {
+			panic("finalErr should be set if commits is empty")
+		}
+
+		return nil, finalErr
 	}
 }
 
