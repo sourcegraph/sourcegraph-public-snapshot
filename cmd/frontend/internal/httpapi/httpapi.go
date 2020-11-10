@@ -1,9 +1,7 @@
 package httpapi
 
 import (
-	"context"
 	"database/sql"
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"log"
@@ -55,16 +53,9 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	// TEMPORARY DELETE THIS
 	gh := GithubWebhook{
 		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 	}
-
-	gh.Register("public", func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
-		log15.Error(fmt.Sprintf("GOT EVENT %v %T", svc.ID, payload), "service", svc)
-		return nil
-	})
-	// *******************
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(gh))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.TraceRoute(gitlabWebhook))
