@@ -58,7 +58,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 		gh := GithubWebhook{
 			Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 		}
-		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(gh))
+		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
 	} else {
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	}

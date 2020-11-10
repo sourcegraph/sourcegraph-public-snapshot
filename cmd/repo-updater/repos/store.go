@@ -229,6 +229,7 @@ SELECT
   unrestricted
 FROM external_services
 WHERE id = %s
+AND deleted_at IS NULL
 `
 
 // ListExternalServices lists all stored external services matching the given args.

@@ -17,6 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
+// permissible based on the event type(s) the handler was registered against. If you register a handler
+// for many event types, you should do a type switch within your handler
+type WebhookHandler func(ctx context.Context, extSvc *repos.ExternalService, event interface{}) error
+
+// GithubWebhook is responsible for handling incoming http requests for github webhooks
+// and routing to any registered WebhookHandlers, events are routed by their event type,
+// passed in the X-Github-Event header
 type GithubWebhook struct {
 	Repos repos.Store
 
@@ -24,7 +32,7 @@ type GithubWebhook struct {
 	handlers map[string][]WebhookHandler
 }
 
-func (h GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
@@ -45,7 +53,7 @@ func (h GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e, err := gh.ParseWebHook(gh.WebHookType(r), body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
-		http.Error(w, err.Error(), 400)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -53,7 +61,7 @@ func (h GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = h.Dispatch(r.Context(), eventType, extSvc, e)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 }
@@ -88,8 +96,6 @@ func (h *GithubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
 	}
 }
 
-type WebhookHandler func(ctx context.Context, extSvc *repos.ExternalService, event interface{}) error
-
 func (h *GithubWebhook) getExternalService(r *http.Request, body []byte) (*repos.ExternalService, error) {
 	var (
 		sig   = r.Header.Get("X-Hub-Signature")
@@ -120,6 +126,9 @@ func (h *GithubWebhook) getExternalService(r *http.Request, body []byte) (*repos
 		return nil, fmt.Errorf("invalid configuration, recieved github webhook for non-github external service: %v", externalServiceID)
 	}
 
+	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
+	// If there are no secrets or no secret managed to authenticate the request,
+	// we return an error to the client.
 	for _, hook := range gc.Webhooks {
 		if hook.Secret == "" {
 			continue
@@ -138,10 +147,9 @@ func (h *GithubWebhook) getExternalService(r *http.Request, body []byte) (*repos
 // TODO: delete this once old style webhooks are deprecated
 func (h *GithubWebhook) findAndValidateExternalService(ctx context.Context, sig string, body []byte) (*repos.ExternalService, error) {
 	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
-	// in GitHub external services config. Since n is usually small here,
-	// it's ok for this to be have linear complexity.
+	// in GitHub external services config.
 	// If there are no secrets or no secret managed to authenticate the request,
-	// we return a 401 to the client.
+	// we return an error to the client.
 	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindGitHub}}
 	es, err := h.Repos.ListExternalServices(ctx, args)
 	if err != nil {
