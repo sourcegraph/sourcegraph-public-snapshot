@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestChangesetResolver(t *testing.T) {
@@ -95,7 +94,7 @@ func TestChangesetResolver(t *testing.T) {
 		repo:                repo.ID,
 		externalServiceType: "github",
 		externalID:          "12345",
-		externalBranch:      git.EnsureRefPrefix("open-pr"),
+		externalBranch:      "open-pr",
 		externalState:       campaigns.ChangesetExternalStateOpen,
 		externalCheckState:  campaigns.ChangesetCheckStatePending,
 		externalReviewState: campaigns.ChangesetReviewStateChangesRequested,
