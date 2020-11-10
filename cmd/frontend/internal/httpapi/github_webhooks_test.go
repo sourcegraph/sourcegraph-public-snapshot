@@ -13,27 +13,25 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	gh "github.com/google/go-github/v28/github"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
-func TestDispatchSuccess(t *testing.T) {
+func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h := GithubWebhook{}
 	var called bool
-	h.Register("test-event-1", func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
 		called = true
 		return nil
-	})
+	}, "test-event-1")
 
 	ctx := context.Background()
 	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
@@ -44,7 +42,7 @@ func TestDispatchSuccess(t *testing.T) {
 	}
 }
 
-func TestDispatchNoHandler(t *testing.T) {
+func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 	h := GithubWebhook{}
 	ctx := context.Background()
 	// no op
@@ -53,17 +51,17 @@ func TestDispatchNoHandler(t *testing.T) {
 	}
 }
 
-func TestDispatchSuccessMultiple(t *testing.T) {
+func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	h := GithubWebhook{}
 	var called int
-	h.Register("test-event-1", func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
 		called++
 		return nil
-	})
-	h.Register("test-event-1", func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	}, "test-event-1")
+	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
 		called++
 		return nil
-	})
+	}, "test-event-1")
 
 	ctx := context.Background()
 	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
@@ -74,24 +72,24 @@ func TestDispatchSuccessMultiple(t *testing.T) {
 	}
 }
 
-func TestDispatchError(t *testing.T) {
+func TestGithubWebhookDispatchError(t *testing.T) {
 	h := GithubWebhook{}
 	var called int
-	h.Register("test-event-1", func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
 		called++
-		return fmt.Errorf("oh dear")
-	})
-	h.Register("test-event-1", func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+		return fmt.Errorf("oh no")
+	}, "test-event-1")
+	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
 		called++
 		return nil
-	})
+	}, "test-event-1")
 
 	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", nil, nil); errString(err) != "oh dear" {
-		t.Errorf("Expected 'oh no', got %s", err)
+	if have, want := h.Dispatch(ctx, "test-event-1", nil, nil), "oh no"; errString(have) != want {
+		t.Errorf("Expected %q, got %q", want, have)
 	}
-	if called != 1 {
-		t.Errorf("Expected called to be 1, got %v", called)
+	if called != 2 {
+		t.Errorf("Expected called to be 2, got %v", called)
 	}
 }
 
@@ -102,14 +100,13 @@ func errString(err error) string {
 	return err.Error()
 }
 
-func TestExternalServices(t *testing.T) {
+func TestGithubWebhookExternalServices(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	t.Parallel()
 
-	dbtesting.SetupGlobalTestDB(t)
 	db := dbtest.NewDB(t, *dsn)
 
 	ctx := context.Background()
@@ -137,7 +134,7 @@ func TestExternalServices(t *testing.T) {
 	}
 
 	var called bool
-	hook.Register("public", func(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+	hook.Register(func(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
 		evt, ok := payload.(*gh.PublicEvent)
 		if !ok {
 			t.Errorf("Expected *gh.PublicEvent event, got %T", payload)
@@ -147,47 +144,36 @@ func TestExternalServices(t *testing.T) {
 		}
 		called = true
 		return nil
-	})
+	}, "public")
 
-	u := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/")
-
-	req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("X-Github-Event", "public")
-	req.Header.Set("X-Hub-Signature", sign(t, eventPayload, []byte(secret)))
-
-	rec := httptest.NewRecorder()
-	hook.ServeHTTP(rec, req)
-	resp := rec.Result()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Non 200 code: %v", resp.StatusCode)
+	urls := []string{
+		// current webhook URLs, uses fast path for finding external service
+		extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/"),
+		// old webhook URLs, finds external service by searching all configured external services
+		"https://example.com/.api/github-webhook",
 	}
 
-	if !called {
-		t.Fatalf("Expected called to be true, got false (webhook handler was not called)")
-	}
-}
+	for _, u := range urls {
+		called = false
 
-func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
-	t.Helper()
+		req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("X-Github-Event", "public")
+		req.Header.Set("X-Hub-Signature", sign(t, eventPayload, []byte(secret)))
 
-	err := db.QueryRow("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id").Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
+		rec := httptest.NewRecorder()
+		hook.ServeHTTP(rec, req)
+		resp := rec.Result()
 
-	return userID
-}
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("Non 200 code: %v", resp.StatusCode)
+		}
 
-func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
-	t.Helper()
-
-	_, err := db.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
-	if err != nil {
-		t.Fatal(err)
+		if !called {
+			t.Fatalf("Expected called to be true, got false (webhook handler was not called)")
+		}
 	}
 }
 
