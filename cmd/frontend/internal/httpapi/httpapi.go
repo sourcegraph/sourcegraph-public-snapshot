@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -53,11 +54,14 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	gh := GithubWebhook{
-		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+	if os.Getenv("USE_NEW_WEBHOOKS") != "" {
+		gh := GithubWebhook{
+			Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+		}
+		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(gh))
+	} else {
+		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	}
-
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(gh))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.TraceRoute(gitlabWebhook))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
 	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(false)))
