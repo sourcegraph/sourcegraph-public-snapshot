@@ -46,6 +46,9 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
 <!-- depends-on-source: ~/internal/usagestats/campaigns.go -->
 - Campaign usage data
+  - Page view events when:
+    - user previews a campaign spec
+    - user creates/updates a campaign through the web interface
   - Total count of created campaigns
   - Total count of changesets created by campaigns
   - Total count of changesets created by campaigns that have been merged
