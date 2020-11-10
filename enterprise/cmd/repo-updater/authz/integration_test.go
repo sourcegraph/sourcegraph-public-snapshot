@@ -74,14 +74,14 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	reposStore := internal.NewStore(testDB, sql.TxOptions{})
+	store := internal.NewStore(testDB, sql.TxOptions{})
 
 	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
 		CreatedAt: clock(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,
 	}
-	err = reposStore.UpsertExternalServices(ctx, &svc)
+	err = store.ExternalServiceStore().Upsert(ctx, &svc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,18 +94,20 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	repo := types.Repo{
 		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
 		Private: true,
-		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+		RepoFields: &types.RepoFields{
+			URI: "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID: svc.URN(),
+				},
+			},
+		},
 		ExternalRepo: api.ExternalRepoSpec{
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
-			svc.URN(): {
-				ID: svc.URN(),
-			},
-		},
 	}
-	err = reposStore.InsertRepos(ctx, &repo)
+	err = store.RepoStore().Create(ctx, &repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +129,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	permsStore := edb.NewPermsStore(testDB, clock)
-	syncer := NewPermsSyncer(reposStore, permsStore, clock, nil)
+	syncer := NewPermsSyncer(nil, permsStore, clock, nil)
+	syncer.repoLister = store.RepoStore()
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)
 	if err != nil {

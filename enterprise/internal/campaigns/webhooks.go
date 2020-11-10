@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,9 +14,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -25,9 +25,9 @@ import (
 )
 
 type Webhook struct {
-	Store *Store
-	Repos repos.Store
-	Now   func() time.Time
+	Store                *Store
+	ExternalServiceStore *db.ExternalServiceStore
+	Now                  func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
@@ -44,9 +44,9 @@ func (h Webhook) getRepoForPR(
 	tx *Store,
 	pr PR,
 	externalServiceID string,
-) (*repos.Repo, error) {
-	reposTx := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	rs, err := reposTx.ListRepos(ctx, repos.StoreListReposArgs{
+) (*types.Repo, error) {
+	reposTx := db.NewRepoStoreWithDB(tx.DB())
+	rs, err := reposTx.List(ctx, db.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
@@ -66,7 +66,7 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
+func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 	c, err := extSvc.Configuration()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to get external service config")
@@ -194,8 +194,8 @@ type BitbucketServerWebhook struct {
 	configCache map[int64]*schema.BitbucketServerConnection
 }
 
-func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *Store, services *db.ExternalServiceStore, now func() time.Time) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, services, now, extsvc.TypeGitHub}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -234,7 +234,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -245,8 +245,8 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 	// it's ok for this to be have linear complexity.
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return a 401 to the client.
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindGitHub}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	args := db.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}}
+	es, err := h.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
@@ -264,7 +264,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 		}
 	}
 
-	var extSvc *repos.ExternalService
+	var extSvc *types.ExternalService
 	for _, e := range es {
 		if externalServiceID != 0 && e.ID != externalServiceID {
 			continue
@@ -815,9 +815,9 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *Store, esStore *db.ExternalServiceStore, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, repos, now, extsvc.TypeBitbucketServer},
+		Webhook:     &Webhook{store, esStore, now, extsvc.TypeBitbucketServer},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
@@ -855,7 +855,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -873,16 +873,16 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		}
 	}
 
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindBitbucketServer}}
+	args := db.ExternalServicesListOptions{Kinds: []string{extsvc.KindBitbucketServer}}
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	es, err := h.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	var extSvc *repos.ExternalService
+	var extSvc *types.ExternalService
 	for _, e := range es {
 		if externalServiceID != 0 && e.ID != externalServiceID {
 			continue

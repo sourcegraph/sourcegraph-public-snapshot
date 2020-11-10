@@ -9,13 +9,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ dbutil.DB, clock clock) {
 	campaigns := make([]*cmpgn.Campaign, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
@@ -510,7 +510,7 @@ func TestUserDeleteCascades(t *testing.T) {
 	orgID := insertTestOrg(t, db)
 	userID := insertTestUser(t, db)
 
-	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
+	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, db dbutil.DB, clock clock) {
 		// Set up two campaigns and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).

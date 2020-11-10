@@ -2,18 +2,18 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -38,13 +38,14 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	reposStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
-	repos := make([]*repos.Repo, 0, 3)
+	repos := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
-		if err := reposStore.InsertRepos(ctx, r); err != nil {
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
+		if err := reposStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 		repos = append(repos, r)

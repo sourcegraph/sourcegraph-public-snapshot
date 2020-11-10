@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -111,7 +112,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		GitserverClient: gitserver.DefaultClient,
 	}
 
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store)
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore())
 	server.RateLimitSyncer = rateLimitSyncer
 	// Attempt to perform an initial sync with all external services
 	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
@@ -129,7 +130,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
-		es, err := store.ExternalServiceStore().List(ctx, repos.db.ExternalServicesListOptions{
+		es, err := store.ExternalServiceStore().List(ctx, internaldb.ExternalServicesListOptions{
 			// On Cloud we want to fetch our admin owned external service only here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},

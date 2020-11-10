@@ -21,20 +21,18 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
@@ -48,19 +46,13 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	dbstore := repos.NewDBStore(db, sql.TxOptions{
+	store := internal.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
-
-	store := repos.NewObservedStore(
-		dbstore,
-		lg,
-		repos.NewStoreMetrics(),
-		trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	)
+	store.Log = lg
 
 	for _, tc := range []struct {
 		name string
@@ -199,19 +191,7 @@ func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testi
 		}`),
 		}
 
-		githubRepo := (&types.Repo{
-			Name: "github.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "bar",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "http://github.com",
-			},
-			Sources: map[string]*types.SourceInfo{},
-			Metadata: &github.Repository{
-				ID:            "bar",
-				NameWithOwner: "foo/bar",
-			},
-		}).With(repos.Opt.RepoSources(githubService.URN()))
+		githubRepo := types.MakeGithubRepo(githubService)
 
 		gitlabService := &types.ExternalService{
 			ID:          1,
@@ -226,21 +206,7 @@ func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testi
 		}`),
 		}
 
-		gitlabRepo := (&types.Repo{
-			Name: "gitlab.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1",
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "http://gitlab.com",
-			},
-			Sources: map[string]*types.SourceInfo{},
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "foo/bar",
-				},
-			},
-		}).With(repos.Opt.RepoSources(gitlabService.URN()))
+		gitlabRepo := types.MakeGitlabRepo(gitlabService)
 
 		bitbucketServerService := &types.ExternalService{
 			ID:          1,
@@ -256,22 +222,7 @@ func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testi
 		}`),
 		}
 
-		bitbucketServerRepo := (&types.Repo{
-			Name: "bitbucketserver.mycorp.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1",
-				ServiceType: "bitbucketServer",
-				ServiceID:   "http://bitbucketserver.mycorp.com",
-			},
-			Sources: map[string]*types.SourceInfo{},
-			Metadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "bar",
-				Project: &bitbucketserver.Project{
-					Key: "foo",
-				},
-			},
-		}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
+		bitbucketServerRepo := types.MakeBitbucketServerRepo(bitbucketServerService)
 
 		type testCase struct {
 			name  string
@@ -327,7 +278,7 @@ func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testi
 				}
 
 				storedRepos := tc.repos.Clone()
-				err = store.InsertRepos(ctx, storedRepos...)
+				err = store.RepoStore().Create(ctx, storedRepos...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
@@ -368,7 +319,7 @@ func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testi
 					ids = append(ids, s.ID)
 				}
 
-				svcs, err := store.ExternalServiceStore().List(ctx, ExternalServicesListOptions{
+				svcs, err := store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
 					IDs: ids,
 				})
 				if err != nil {
@@ -400,21 +351,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 			t.Fatal(err)
 		}
 
-		repo := types.Repo{
-			Name: "github.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "bar",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "http://github.com",
-			},
-			Metadata: new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				svc.URN(): {
-					ID:       svc.URN(),
-					CloneURL: "https://secret-token@github.com/foo/bar",
-				},
-			},
-		}
+		repo := types.MakeGithubRepo(&svc)
 
 		repoWithMissingCloneURL := types.Repo{
 			Name: "github.com/foo/baz",
@@ -423,24 +360,26 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			Metadata: new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				svc.URN(): {
-					ID: svc.URN(),
+			RepoFields: &types.RepoFields{
+				Metadata: new(github.Repository),
+				Sources: map[string]*types.SourceInfo{
+					svc.URN(): {
+						ID: svc.URN(),
+					},
 				},
 			},
 		}
 
-		if err := store.InsertRepos(ctx, &repo, &repoWithMissingCloneURL); err != nil {
+		if err := store.RepoStore().Create(ctx, repo, &repoWithMissingCloneURL); err != nil {
 			t.Fatal(err)
 		}
 
 		type testCase struct {
-			name  string
-			store *internal.Store
-			repo  gitserver.Repo
-			res   *protocol.RepoUpdateResponse
-			err   string
+			name       string
+			repoLister repos.RepoLister
+			repo       gitserver.Repo
+			res        *protocol.RepoUpdateResponse
+			err        string
 		}
 
 		var testCases []testCase
@@ -449,29 +388,29 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 				err := errors.New("boom")
 				return testCase{
 					name: "returns an error on store failure",
-					store: &storeWithErrors{
-						Store:        store,
+					repoLister: &repoListerWithErrors{
+						RepoStore:    store.RepoStore(),
 						ListReposErr: err,
 					},
 					err: `store.list-repos: boom`,
 				}
 			}(),
 			testCase{
-				name:  "missing repo",
-				store: store, // empty store
-				repo:  gitserver.Repo{Name: "foo"},
-				err:   `repo "foo" not found in store`,
+				name:       "missing repo",
+				repoLister: store.RepoStore(), // empty store
+				repo:       gitserver.Repo{Name: "foo"},
+				err:        `repo "foo" not found in store`,
 			},
 			func() testCase {
 				repo := repoWithMissingCloneURL.Clone()
 
 				return testCase{
-					name:  "missing clone URL",
-					store: store,
-					repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+					name:       "missing clone URL",
+					repoLister: store.RepoStore(),
+					repo:       gitserver.Repo{Name: api.RepoName(repo.Name)},
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
-						Name: repo.Name,
+						Name: string(repo.Name),
 					},
 				}
 			}(),
@@ -479,12 +418,12 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 				repo := repo.Clone()
 				cloneURL := "https://user:password@github.com/foo/bar"
 				return testCase{
-					name:  "given clone URL is preferred",
-					store: store,
-					repo:  gitserver.Repo{Name: api.RepoName(repo.Name), URL: cloneURL},
+					name:       "given clone URL is preferred",
+					repoLister: store.RepoStore(),
+					repo:       gitserver.Repo{Name: api.RepoName(repo.Name), URL: cloneURL},
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
-						Name: repo.Name,
+						Name: string(repo.Name),
 						URL:  cloneURL,
 					},
 				}
@@ -492,12 +431,12 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 			func() testCase {
 				repo := repo.Clone()
 				return testCase{
-					name:  "if missing, clone URL is set when stored",
-					store: store,
-					repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+					name:       "if missing, clone URL is set when stored",
+					repoLister: store.RepoStore(),
+					repo:       gitserver.Repo{Name: api.RepoName(repo.Name)},
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
-						Name: repo.Name,
+						Name: string(repo.Name),
 						URL:  repo.CloneURLs()[0],
 					},
 				}
@@ -509,7 +448,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 			ctx := context.Background()
 
 			t.Run(tc.name, func(t *testing.T) {
-				s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
+				s := &Server{Store: store, RepoLister: tc.repoLister, Scheduler: &fakeScheduler{}}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
 				cli := repoupdater.Client{URL: srv.URL}
@@ -581,10 +520,12 @@ func testServerRepoExternalServices(t *testing.T, store *internal.Store) func(t 
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			Metadata: new(github.Repository),
+			RepoFields: &types.RepoFields{
+				Metadata: new(github.Repository),
+			},
 		}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
 
-		if err := store.InsertRepos(ctx, repoNoSources, repoSources); err != nil {
+		if err := store.RepoStore().Create(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)
 		}
 
@@ -658,7 +599,7 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 			{
 				name:            "all cloned",
 				gitserverCloned: []string{"foobar"},
-				stored:          []*types.Repo{{Name: "foobar", Cloned: true}},
+				stored:          []*types.Repo{{Name: "foobar", RepoFields: &types.RepoFields{Cloned: true}}},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
 				},
@@ -679,7 +620,7 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 			},
 			{
 				name:            "subset cloned",
-				stored:          []*types.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
+				stored:          []*types.Repo{{Name: "foobar", RepoFields: &types.RepoFields{Cloned: true}}, {Name: "barfoo"}},
 				gitserverCloned: []string{"foobar"},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{
@@ -693,7 +634,7 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 			},
 			{
 				name:            "more cloned than stored",
-				stored:          []*types.Repo{{Name: "foobar", Cloned: true}},
+				stored:          []*types.Repo{{Name: "foobar", RepoFields: &types.RepoFields{Cloned: true}}},
 				gitserverCloned: []string{"foobar", "barfoo"},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
@@ -716,7 +657,7 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 			{
 				name:            "case insensitivity",
 				gitserverCloned: []string{"foobar"},
-				stored:          []*types.Repo{{Name: "FOOBar", Cloned: true}},
+				stored:          []*types.Repo{{Name: "FOOBar", RepoFields: &types.RepoFields{Cloned: true}}},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
 				},
@@ -724,7 +665,7 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 			{
 				name:            "case insensitivity to gitserver names",
 				gitserverCloned: []string{"FOOBar"},
-				stored:          []*types.Repo{{Name: "FOOBar", Cloned: true}},
+				stored:          []*types.Repo{{Name: "FOOBar", RepoFields: &types.RepoFields{Cloned: true}}},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
 				},
@@ -774,11 +715,11 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 						ServiceID:   "https://github.com/",
 					}
 					if r.Cloned {
-						cloned = append(cloned, r.Name)
+						cloned = append(cloned, string(r.Name))
 					}
 				}
 
-				err := store.InsertRepos(ctx, stored...)
+				err := store.RepoStore().Create(ctx, stored...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -788,7 +729,7 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 					for _, r := range stored {
 						ids = append(ids, r.ID)
 					}
-					err := store.DeleteRepos(ctx, ids...)
+					err := store.RepoStore().Delete(ctx, ids...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -805,14 +746,14 @@ func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testi
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
-					store = &storeWithErrors{
-						Store:        store,
+					repoLister := &repoListerWithErrors{
+						RepoStore:    store.RepoStore(),
 						ListReposErr: tc.listRepoErr,
 					}
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
+					_ = syncer.SyncExternalService(ctx, store, repoLister, store.ExternalServiceStore(), githubService.ID, time.Millisecond)
 				}
 
 				s := &Server{
@@ -868,12 +809,11 @@ func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	return svcs
 }
 
-func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) func(t *testing.T) {
+func testRepoLookup(sqlDB *sql.DB) func(t *testing.T, repoStore *internal.Store) func(t *testing.T) {
 	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
 			clock := dbtesting.NewFakeClock(time.Now(), 0)
-			now := clock.Now()
 
 			githubSource := types.ExternalService{
 				Kind:   extsvc.KindGitHub,
@@ -892,91 +832,9 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 				t.Fatal(err)
 			}
 
-			githubRepository := &types.Repo{
-				Name:        "github.com/foo/bar",
-				Description: "The description",
-				Archived:    false,
-				Fork:        false,
-				CreatedAt:   now,
-				UpdatedAt:   now,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: extsvc.TypeGitHub,
-					ServiceID:   "https://github.com/",
-				},
-				Sources: map[string]*types.SourceInfo{
-					githubSource.URN(): {
-						ID:       githubSource.URN(),
-						CloneURL: "git@github.com:foo/bar.git",
-					},
-				},
-				Metadata: &github.Repository{
-					ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					URL:           "github.com/foo/bar",
-					DatabaseID:    1234,
-					Description:   "The description",
-					NameWithOwner: "foo/bar",
-				},
-			}
-
-			awsCodeCommitRepository := &types.Repo{
-				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
-				Description: "The stripe-go lib",
-				Archived:    false,
-				Fork:        false,
-				CreatedAt:   now,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-					ServiceType: extsvc.TypeAWSCodeCommit,
-					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
-				},
-				Sources: map[string]*types.SourceInfo{
-					awsSource.URN(): {
-						ID:       awsSource.URN(),
-						CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-					},
-				},
-				Metadata: &awscodecommit.Repository{
-					ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
-					AccountID:    "999999999999",
-					ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-					Name:         "stripe-go",
-					Description:  "The stripe-go lib",
-					HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-					LastModified: &now,
-				},
-			}
-
-			gitlabRepository := &types.Repo{
-				Name:        "gitlab.com/gitlab-org/gitaly",
-				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-				URI:         "gitlab.com/gitlab-org/gitaly",
-				CreatedAt:   now,
-				UpdatedAt:   now,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "2009901",
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
-				},
-				Sources: map[string]*types.SourceInfo{
-					gitlabSource.URN(): {
-						ID:       gitlabSource.URN(),
-						CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
-					},
-				},
-				Metadata: &gitlab.Project{
-					ProjectCommon: gitlab.ProjectCommon{
-						ID:                2009901,
-						PathWithNamespace: "gitlab-org/gitaly",
-						Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-						WebURL:            "https://gitlab.com/gitlab-org/gitaly",
-						HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
-						SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
-					},
-					Visibility: "",
-					Archived:   false,
-				},
-			}
+			githubRepository := types.MakeGithubRepo(&githubSource)
+			awsCodeCommitRepository := types.MakeAWSCodeCommitRepo(&awsSource)
+			gitlabRepository := types.MakeGitlabRepo(&gitlabSource)
 
 			testCases := []struct {
 				name               string
@@ -1068,7 +926,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 							Commit: "github.com/foo/bar/commit/{commit}",
 						},
 					}},
-					assert: repos.Assert.ReposEqual(githubRepository),
+					assert: types.Assert.ReposEqual(githubRepository),
 				},
 				{
 					name: "found - GitHub.com on Sourcegraph.com already exists",
@@ -1106,7 +964,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 					},
 					result: &protocol.RepoLookupResult{ErrorNotFound: true},
 					err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
-					assert: repos.Assert.ReposEqual(),
+					assert: types.Assert.ReposEqual(),
 				},
 				{
 					name: "unauthorized - GitHub.com on Sourcegraph.com",
@@ -1118,7 +976,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 					},
 					result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
 					err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
-					assert: repos.Assert.ReposEqual(),
+					assert: types.Assert.ReposEqual(),
 				},
 				{
 					name: "temporarily unavailable - GitHub.com on Sourcegraph.com",
@@ -1130,7 +988,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 					},
 					result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
 					err:    fmt.Sprintf("repository temporarily unavailable (name=%s istemporary=%v)", api.RepoName("github.com/foo/bar"), true),
-					assert: repos.Assert.ReposEqual(),
+					assert: types.Assert.ReposEqual(),
 				},
 				{
 					name: "found - gitlab.com on Sourcegraph.com",
@@ -1157,7 +1015,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 						},
 						ExternalRepo: gitlabRepository.ExternalRepo,
 					}},
-					assert: repos.Assert.ReposEqual(gitlabRepository),
+					assert: types.Assert.ReposEqual(gitlabRepository),
 				},
 				{
 					name: "found - gitlab.com on Sourcegraph.com already exists",
@@ -1235,7 +1093,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 						},
 					}},
 					assertDelay: time.Second,
-					assert:      repos.Assert.ReposEqual(),
+					assert:      types.Assert.ReposEqual(),
 				},
 			}
 
@@ -1246,12 +1104,12 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 					ctx := context.Background()
 
 					rs := tc.stored.Clone()
-					err := store.InsertRepos(ctx, rs...)
+					err := store.RepoStore().Create(ctx, rs...)
 					if err != nil {
 						t.Fatal(err)
 					}
 					t.Cleanup(func() {
-						_, err := db.ExecContext(ctx, "DELETE FROM repo")
+						_, err := sqlDB.ExecContext(ctx, "DELETE FROM repo")
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1262,7 +1120,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 						for _, r := range tc.stored {
 							ids = append(ids, r.ID)
 						}
-						err := store.DeleteRepos(ctx, ids...)
+						err := store.RepoStore().Delete(ctx, ids...)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1309,7 +1167,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *internal.Store) fu
 						if tc.assertDelay != 0 {
 							time.Sleep(tc.assertDelay)
 						}
-						rs, err := store.ListRepos(ctx, *internal.StoreListReposArgs{})
+						rs, err := store.RepoStore().List(ctx, db.ReposListOptions{})
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1436,15 +1294,7 @@ func formatJSON(s string) string {
 type storeWithErrors struct {
 	*internal.Store
 
-	ListReposErr   error
 	UpsertReposErr error
-}
-
-func (s *storeWithErrors) ListRepos(ctx context.Context, args *internal.StoreListReposArgs) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.Store.ListRepos(ctx, args)
 }
 
 func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
@@ -1452,4 +1302,17 @@ func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo)
 		return s.UpsertReposErr
 	}
 	return s.Store.UpsertRepos(ctx, repos...)
+}
+
+type repoListerWithErrors struct {
+	*db.RepoStore
+
+	ListReposErr error
+}
+
+func (s *repoListerWithErrors) List(ctx context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
+	if s.ListReposErr != nil {
+		return nil, s.ListReposErr
+	}
+	return s.RepoStore.List(ctx, args)
 }

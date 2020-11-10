@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"sort"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -113,7 +113,7 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo *repos.Repo
+	repo *types.Repo
 
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
@@ -126,14 +126,15 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return nil
 	}
 
-	reposStore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
+	reposStore := db.NewRepoStoreWithDB(e.tx.Handle().DB())
+	esStore := db.NewExternalServicesStoreWithDB(e.tx.Handle().DB())
 
 	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	extSvc, err := loadExternalService(ctx, reposStore, e.repo)
+	extSvc, err := loadExternalService(ctx, esStore, e.repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to load external service")
 	}
@@ -203,7 +204,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -437,7 +438,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(repo *types.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -707,8 +708,8 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
 
-func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {
-	rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{id}})
+func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*types.Repo, error) {
+	rs, err := tx.List(ctx, db.ReposListOptions{IDs: []api.RepoID{id}})
 	if err != nil {
 		return nil, err
 	}
@@ -718,11 +719,11 @@ func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, er
 	return rs[0], nil
 }
 
-func loadExternalService(ctx context.Context, reposStore RepoStore, repo *repos.Repo) (*repos.ExternalService, error) {
-	var externalService *repos.ExternalService
-	args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
+func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo *types.Repo) (*types.ExternalService, error) {
+	var externalService *types.ExternalService
+	args := db.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()}
 
-	es, err := reposStore.ListExternalServices(ctx, args)
+	es, err := esStore.List(ctx, args)
 	if err != nil {
 		return nil, err
 	}

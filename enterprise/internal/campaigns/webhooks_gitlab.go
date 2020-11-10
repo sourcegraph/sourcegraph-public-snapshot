@@ -10,8 +10,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -21,8 +22,8 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *Store, repos repos.Store, now func() time.Time) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, repos, now, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *Store, services *db.ExternalServiceStore, now func() time.Time) *GitLabWebhook {
+	return &GitLabWebhook{&Webhook{store, services, now, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -98,13 +99,13 @@ var (
 //
 // On failure, errExternalServiceNotFound is returned if the ID doesn't match
 // any GitLab service.
-func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*repos.ExternalService, error) {
+func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*types.ExternalService, error) {
 	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
 	}
 
-	es, err := h.Repos.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+	es, err := h.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{
 		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})
@@ -129,7 +130,7 @@ type stateMergeRequestEvent interface {
 
 // handleEvent is essentially a router: it dispatches based on the event type
 // to perform whatever changeset action is appropriate for that event.
-func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalService, event interface{}) *httpError {
+func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event interface{}) *httpError {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
 
 	esID, err := extractExternalServiceID(extSvc)
@@ -256,7 +257,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	return nil
 }
 
-func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *repos.Repo) (*campaigns.Changeset, error) {
+func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
 	return tx.GetChangeset(ctx, GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
@@ -275,7 +276,7 @@ func gitlabToPR(project *gitlab.ProjectCommon, mr *gitlab.MergeRequest) PR {
 
 // validateGitLabSecret validates that the given secret matches one of the
 // webhooks in the external service.
-func validateGitLabSecret(extSvc *repos.ExternalService, secret string) (bool, error) {
+func validateGitLabSecret(extSvc *types.ExternalService, secret string) (bool, error) {
 	// An empty secret never succeeds.
 	if secret == "" {
 		return false, nil

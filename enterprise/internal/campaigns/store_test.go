@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 type clock interface {
@@ -22,7 +22,7 @@ type testClock struct {
 func (c *testClock) now() time.Time                { return c.t }
 func (c *testClock) add(d time.Duration) time.Time { c.t = c.t.Add(d); return c.t }
 
-type storeTestFunc func(*testing.T, context.Context, *Store, repos.Store, clock)
+type storeTestFunc func(*testing.T, context.Context, *Store, dbutil.DB, clock)
 
 // storeTest converts a storeTestFunc into a func(*testing.T) in which all
 // dependencies are set up and injected into the storeTestFunc.
@@ -37,8 +37,6 @@ func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 		tx := dbtest.NewTx(t, db)
 		s := NewStoreWithClock(tx, c.now)
 
-		rs := repos.NewDBStore(db, sql.TxOptions{})
-
-		f(t, context.Background(), s, rs, c)
+		f(t, context.Background(), s, tx, c)
 	}
 }

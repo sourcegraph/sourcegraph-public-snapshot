@@ -18,11 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -147,13 +147,13 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
+func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -162,25 +162,27 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalSe
 	}
 
 	// create a few external services
-	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+	if err := store.Upsert(context.Background(), &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
 	return &svc
 }
 
-func newGitHubTestRepo(name string, externalService *repos.ExternalService) *repos.Repo {
-	return &repos.Repo{
-		Name: name,
+func newGitHubTestRepo(name string, externalService *types.ExternalService) *types.Repo {
+	return &types.Repo{
+		Name: api.RepoName(name),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
-			externalService.URN(): {
-				ID:       externalService.URN(),
-				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
+		RepoFields: &types.RepoFields{
+			Sources: map[string]*types.SourceInfo{
+				externalService.URN(): {
+					ID:       externalService.URN(),
+					CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
+				},
 			},
 		},
 	}

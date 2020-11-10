@@ -21,9 +21,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	edb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -49,8 +51,9 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		repoStore := edb.NewRepoStoreWithDB(db)
+		esStore := edb.NewExternalServicesStoreWithDB(db)
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
 			Config: marshalJSON(t, &schema.GitHubConnection{
@@ -61,7 +64,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}),
 		}
 
-		err := repoStore.UpsertExternalServices(ctx, extSvc)
+		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -76,7 +79,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = repoStore.InsertRepos(ctx, githubRepo)
+		err = repoStore.Create(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,12 +131,12 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, changeset)
+		err = SyncChangeset(ctx, store, githubSrc, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(store, repoStore, clock)
+		hook := NewGitHubWebhook(store, esStore, clock)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -217,8 +220,9 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		repoStore := edb.NewRepoStoreWithDB(db)
+		esStore := edb.NewExternalServicesStoreWithDB(db)
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -231,7 +235,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}),
 		}
 
-		err := repoStore.UpsertExternalServices(ctx, extSvc)
+		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -250,7 +254,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal("repo not found")
 		}
 
-		err = repoStore.InsertRepos(ctx, bitbucketRepo)
+		err = repoStore.Create(ctx, bitbucketRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -309,13 +313,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			err = SyncChangeset(ctx, repoStore, store, bitbucketSource, bitbucketRepo, ch)
+			err = SyncChangeset(ctx, store, bitbucketSource, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(store, repoStore, clock, "testhook")
+		hook := NewBitbucketServerWebhook(store, esStore, clock, "testhook")
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {
@@ -383,14 +387,14 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	}
 }
 
-func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*repos.Repo, error) {
+func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*types.Repo, error) {
 	repoChan := make(chan repos.SourceResult)
 	go func() {
 		bitbucketSource.ListRepos(ctx, repoChan)
 		close(repoChan)
 	}()
 
-	var bitbucketRepo *repos.Repo
+	var bitbucketRepo *types.Repo
 	for result := range repoChan {
 		if result.Err != nil {
 			return nil, result.Err
@@ -398,7 +402,7 @@ func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSo
 		if result.Repo == nil {
 			continue
 		}
-		if result.Repo.Name == name {
+		if string(result.Repo.Name) == name {
 			bitbucketRepo = result.Repo
 		}
 	}

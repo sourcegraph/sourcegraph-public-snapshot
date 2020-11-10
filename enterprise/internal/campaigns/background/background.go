@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *campaigns.Store, repoStore repos.Store, cf *httpcli.Factory) {
+func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *campaigns.Store, cf *httpcli.Factory) {
 	sourcer := repos.NewSourcer(cf)
 
 	metrics := newMetrics()

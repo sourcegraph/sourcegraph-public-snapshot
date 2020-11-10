@@ -7,12 +7,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/campaignutils/overridable"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
-func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ dbutil.DB, clock clock) {
 	campaignSpecs := make([]*cmpgn.CampaignSpec, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {

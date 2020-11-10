@@ -14,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	edb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -23,7 +25,10 @@ import (
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
+func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, db dbutil.DB, clock clock) {
+	reposStore := edb.NewRepoStoreWithDB(db)
+	esStore := edb.NewExternalServicesStoreWithDB(db)
+
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -42,15 +47,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
+	repo := testRepo(t, esStore, extsvc.KindGitHub)
+	otherRepo := testRepo(t, esStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, esStore, extsvc.KindGitLab)
 
-	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
+	if err := reposStore.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
-	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
+	if err := reposStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1114,7 +1119,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 }
 
-func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
+func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, db dbutil.DB, clock clock) {
+	reposStore := edb.NewRepoStoreWithDB(db)
+	esStore := edb.NewExternalServicesStoreWithDB(db)
+
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1154,9 +1162,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	githubRepo := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
-	if err := reposStore.InsertRepos(ctx, githubRepo, gitlabRepo); err != nil {
+	githubRepo := testRepo(t, esStore, extsvc.KindGitHub)
+	gitlabRepo := testRepo(t, esStore, extsvc.KindGitLab)
+	if err := reposStore.Create(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 

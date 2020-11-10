@@ -2,13 +2,11 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -122,13 +120,11 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		}
 	}
 
-	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
 	rewirer := &changesetRewirer{
 		tx:       tx,
-		rstore:   rstore,
 		campaign: campaign,
 	}
 
@@ -152,7 +148,6 @@ type repoExternalID struct {
 type changesetRewirer struct {
 	campaign *campaigns.Campaign
 	tx       *Store
-	rstore   repos.Store
 
 	// These fields are populated by loadAssociations
 	changesets          campaigns.Changesets

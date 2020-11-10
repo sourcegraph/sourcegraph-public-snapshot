@@ -13,8 +13,11 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -28,6 +31,7 @@ import (
 // Server is a repoupdater server.
 type Server struct {
 	*internal.Store
+	RepoLister RepoLister
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	GithubDotComSource    interface {
@@ -63,6 +67,10 @@ type Server struct {
 	}
 }
 
+type RepoLister interface {
+	List(ctx context.Context, opt db.ReposListOptions) (results []*types.Repo, err error)
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
@@ -89,7 +97,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), *internal.StoreListReposArgs{
+	rs, err := s.RepoLister.List(r.Context(), db.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -110,11 +118,11 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := repos.db.ExternalServicesListOptions{
+	args := db.ExternalServicesListOptions{
 		IDs: svcIDs,
 	}
 
-	es, err := s.store.ExternalServiceStore().List(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -132,7 +140,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), *internal.StoreListReposArgs{
+	rs, err := s.Store.RepoStore().List(r.Context(), db.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -147,11 +155,11 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.db.ExternalServicesListOptions{
+	args := db.ExternalServicesListOptions{
 		Kinds: types.Repos(rs).Kinds(),
 	}
 
-	es, err := s.store.ExternalServiceStore().List(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -291,7 +299,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.ListRepos(ctx, *internal.StoreListReposArgs{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore().List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -310,7 +318,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
-		Name: repo.Name,
+		Name: string(repo.Name),
 		URL:  req.URL,
 	}, http.StatusOK, nil
 }
@@ -429,7 +437,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.ListRepos(ctx, *internal.StoreListReposArgs{
+	list, err := s.Store.RepoStore().List(ctx, db.ReposListOptions{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {

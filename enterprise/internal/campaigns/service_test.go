@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -484,7 +484,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			org, err := db.Orgs.Create(ctx, "test-org", nil)
+			org, err := edb.Orgs.Create(ctx, "test-org", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -503,7 +503,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Create org membership and try again
-			if _, err := db.OrgMembers.Create(ctx, org.ID, user.ID); err != nil {
+			if _, err := edb.OrgMembers.Create(ctx, org.ID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -679,7 +679,7 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			org, err := db.Orgs.Create(ctx, "org", nil)
+			org, err := edb.Orgs.Create(ctx, "org", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -702,7 +702,7 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			org, err := db.Orgs.Create(ctx, "org-no-access", nil)
+			org, err := edb.Orgs.Create(ctx, "org-no-access", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -756,7 +756,7 @@ func TestService(t *testing.T) {
 	})
 }
 
-var testUser = db.NewUser{
+var testUser = edb.NewUser{
 	Email:                 "thorsten@sourcegraph.com",
 	Username:              "thorsten",
 	DisplayName:           "thorsten",
@@ -773,7 +773,7 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 		u := testUser
 		u.Username = fmt.Sprintf("%s-%d", u.Username, count)
 
-		user, err := db.Users.Create(ctx, u)
+		user, err := edb.Users.Create(ctx, u)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -820,12 +820,13 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 	return changeset
 }
 
-func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	rstore := edb.NewRepoStoreWithDB(db)
+	esStore := edb.NewExternalServicesStoreWithDB(db)
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
@@ -833,19 +834,19 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 			Token: "SECRETTOKEN",
 		}),
 	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
+	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindGitHub)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		r := testRepo(t, esStore, extsvc.KindGitHub)
+		r.Sources = map[string]*types.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := rstore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -853,12 +854,13 @@ func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	return rs, ext
 }
 
-func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	rstore := edb.NewRepoStoreWithDB(db)
+	esStore := edb.NewExternalServicesStoreWithDB(db)
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -866,19 +868,19 @@ func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 			Token: "SECRETTOKEN",
 		}),
 	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
+	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindBitbucketServer)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		r := testRepo(t, esStore, extsvc.KindBitbucketServer)
+		r.Sources = map[string]*types.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := rstore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}

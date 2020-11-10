@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -11,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -31,10 +29,11 @@ func TestCampaignSpecResolver(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	reposStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, esStore))
+	if err := reposStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
@@ -121,7 +120,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						BaseRepository: apitest.Repository{
 							ID:   string(repoID),
-							Name: repo.Name,
+							Name: string(repo.Name),
 						},
 					},
 				},

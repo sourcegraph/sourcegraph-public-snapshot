@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -10,12 +9,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -31,11 +30,12 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "changeset-connection-resolver", true)
 
 	store := ee.NewStore(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	rstore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo, inaccessibleRepo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, esStore))
+	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, esStore))
+	if err := rstore.Create(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
 	ct.AuthzFilterRepos(t, inaccessibleRepo.ID)
@@ -119,17 +119,17 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		{
 			Typename:   "ExternalChangeset",
 			ID:         string(marshalChangesetID(changeset1.ID)),
-			Repository: apitest.Repository{Name: repo.Name},
+			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
 			ID:         string(marshalChangesetID(changeset2.ID)),
-			Repository: apitest.Repository{Name: repo.Name},
+			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
 			ID:         string(marshalChangesetID(changeset3.ID)),
-			Repository: apitest.Repository{Name: repo.Name},
+			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename: "HiddenExternalChangeset",

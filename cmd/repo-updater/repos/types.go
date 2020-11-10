@@ -84,13 +84,14 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 // We sync them all as we need to pick the most restrictive configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
 func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
-	var cursor int64
 	byURL := make(map[string]extsvc.RateLimitConfig)
 
+	cursor := db.LimitOffset{
+		Limit: int(r.limit),
+	}
 	for {
 		services, err := r.serviceLister.List(ctx, db.ExternalServicesListOptions{
-			Cursor: cursor,
-			Limit:  r.limit,
+			LimitOffset: &cursor,
 		})
 		if err != nil {
 			return errors.Wrap(err, "listing external services")
@@ -100,7 +101,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 			break
 		}
 
-		cursor = services[len(services)-1].ID
+		cursor.Offset += len(services)
 
 		for _, svc := range services {
 			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)

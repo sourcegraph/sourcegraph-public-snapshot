@@ -9,17 +9,22 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	edb "github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
-	repo := testRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := testRepo(t, rs, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, db dbutil.DB, clock clock) {
+	reposStore := edb.NewRepoStoreWithDB(db)
+	esStore := edb.NewExternalServicesStoreWithDB(db)
 
-	if err := rs.InsertRepos(ctx, repo); err != nil {
+	repo := testRepo(t, esStore, extsvc.KindGitHub)
+	deletedRepo := testRepo(t, esStore, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+
+	if err := reposStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
-	if err := rs.DeleteRepos(ctx, deletedRepo.ID); err != nil {
+	if err := reposStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 

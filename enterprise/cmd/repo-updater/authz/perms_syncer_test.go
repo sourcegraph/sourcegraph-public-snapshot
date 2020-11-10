@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -77,55 +77,11 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 }
 
 type mockReposStore struct {
-	listRepos func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error)
+	list func(context.Context, db.ReposListOptions) ([]*types.Repo, error)
 }
 
-func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
-	return nil, nil
-}
-
-func (s *mockReposStore) UpsertExternalServices(context.Context, ...*types.ExternalService) error {
-	return nil
-}
-
-func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
-	return s.listRepos(ctx, args)
-}
-
-func (s *mockReposStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	return nil, nil
-}
-
-func (s *mockReposStore) InsertRepos(context.Context, ...*types.Repo) error {
-	return nil
-}
-
-func (s *mockReposStore) DeleteRepos(context.Context, ...api.RepoID) error {
-	return nil
-}
-
-func (s *mockReposStore) UpsertRepos(context.Context, ...*types.Repo) error {
-	return nil
-}
-
-func (s *mockReposStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]types.SourceInfo) error {
-	return nil
-}
-
-func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
-	return nil
-}
-
-func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *mockReposStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *mockReposStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
-	return nil
+func (s *mockReposStore) List(ctx context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
+	return s.list(ctx, args)
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
@@ -162,9 +118,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}()
 
 	reposStore := &mockReposStore{
-		listRepos: func(_ context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
-			if !args.PrivateOnly {
-				return nil, errors.New("PrivateOnly want true but got false")
+		list: func(_ context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
+			if !args.OnlyPrivate {
+				return nil, errors.New("OnlyPrivate want true but got false")
 			}
 			return []*types.Repo{{ID: 1}}, nil
 		},
@@ -173,7 +129,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
+	s := NewPermsSyncer(nil, permsStore, clock, nil)
+	s.repoLister = reposStore
 
 	tests := []struct {
 		name     string
@@ -208,8 +165,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
-	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
-		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
+	newPermsSyncer := func(reposStore repositoryLister) *PermsSyncer {
+		syncer := NewPermsSyncer(nil, edb.NewPermsStore(nil, clock), clock, nil)
+		syncer.repoLister = reposStore
+		return syncer
 	}
 
 	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
@@ -223,7 +182,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		}()
 
 		reposStore := &mockReposStore{
-			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error) {
+			list: func(context.Context, db.ReposListOptions) ([]*types.Repo, error) {
 				return []*types.Repo{
 					{
 						ID:      1,
@@ -231,8 +190,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: "https://gitlab.com/",
 						},
-						Sources: map[string]*types.SourceInfo{
-							extsvc.URN(extsvc.TypeGitLab, 0): {},
+						RepoFields: &types.RepoFields{
+							Sources: map[string]*types.SourceInfo{
+								extsvc.URN(extsvc.TypeGitLab, 0): {},
+							},
 						},
 					},
 				}, nil
@@ -298,7 +259,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		}()
 
 		reposStore := &mockReposStore{
-			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error) {
+			list: func(context.Context, db.ReposListOptions) ([]*types.Repo, error) {
 				return []*types.Repo{
 					{
 						ID:      1,
@@ -306,8 +267,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: p1.ServiceID(),
 						},
-						Sources: map[string]*types.SourceInfo{
-							p1.URN(): {},
+						RepoFields: &types.RepoFields{
+							Sources: map[string]*types.SourceInfo{
+								p1.URN(): {},
+							},
 						},
 					},
 				}, nil
@@ -361,7 +324,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}()
 
 	reposStore := &mockReposStore{
-		listRepos: func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error) {
+		list: func(context.Context, db.ReposListOptions) ([]*types.Repo, error) {
 			return []*types.Repo{
 				{
 					ID:      1,
@@ -369,8 +332,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 					ExternalRepo: api.ExternalRepoSpec{
 						ServiceID: p.ServiceID(),
 					},
-					Sources: map[string]*types.SourceInfo{
-						p.URN(): {},
+					RepoFields: &types.RepoFields{
+						Sources: map[string]*types.SourceInfo{
+							p.URN(): {},
+						},
 					},
 				},
 			}, nil

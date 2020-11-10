@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
@@ -36,7 +36,7 @@ func main() {
 
 func enterpriseInit(
 	db *sql.DB,
-	repoStore repos.Store,
+	store *internal.Store,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
@@ -47,17 +47,17 @@ func enterpriseInit(
 
 	campaignsStore := campaigns.NewStoreWithClock(db, clock)
 
-	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
+	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, store.RepoStore(), store.ExternalServiceStore(), cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	campaignsBackground.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
+	campaignsBackground.StartBackgroundJobs(ctx, db, campaignsStore, cf)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := edb.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
+	permsSyncer := authz.NewPermsSyncer(store.RepoStore(), permsStore, clock, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {

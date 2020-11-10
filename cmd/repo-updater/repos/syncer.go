@@ -132,7 +132,8 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		return fmt.Errorf("expected internal.SyncJob, got %T", record)
 	}
 
-	return s.syncer.SyncExternalService(ctx, s.store.With(tx), sj.ExternalServiceID, s.minSyncInterval())
+	store := s.store.With(tx)
+	return s.syncer.SyncExternalService(ctx, store, store.RepoStore(), store.ExternalServiceStore(), sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if
@@ -164,8 +165,18 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 	s.enqueueSignal.Trigger()
 }
 
+type Store interface {
+	CountUserAddedRepos(ctx context.Context) (count uint64, err error)
+	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) (err error)
+	UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error)
+}
+
+type RepoLister interface {
+	List(ctx context.Context, opt db.ReposListOptions) (results []*types.Repo, err error)
+}
+
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, tx *internal.Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, repoLister RepoLister, esStore *db.ExternalServiceStore, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	if s.Logger != nil {
@@ -176,7 +187,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *internal.Store, ex
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
-	svc, err := tx.ExternalServiceStore().GetByID(ctx, externalServiceID)
+	svc, err := esStore.GetByID(ctx, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "fetching external service")
 	}
@@ -236,14 +247,14 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *internal.Store, ex
 
 	var storedServiceRepos types.Repos
 	// Fetch repos from our DB related to externalServiceID
-	if storedServiceRepos, err = tx.RepoStore().List(ctx, db.ReposListOptions{ExternalServiceID: externalServiceID}); err != nil {
+	if storedServiceRepos, err = repoLister.List(ctx, db.ReposListOptions{ExternalServiceID: externalServiceID}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
 	// Now fetch any possible name conflicts.
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting types.Repos
-	if conflicting, err = tx.RepoStore().List(ctx, db.ReposListOptions{Names: sourced.Names()}); err != nil {
+	if conflicting, err = repoLister.List(ctx, db.ReposListOptions{Names: sourced.Names()}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 	conflicting = conflicting.Filter(func(r *types.Repo) bool {
@@ -322,7 +333,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *internal.Store, ex
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = tx.ExternalServiceStore().Upsert(ctx, svc)
+	err = esStore.Upsert(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "upserting external service")
 	}
@@ -421,16 +432,13 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *internal.Store, sourcedRep
 	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
 	defer save(&diff, &err)
 
-	if tr, ok := store.(Transactor); ok {
-		var txs TxStore
-		if txs, err = tr.Transact(ctx); err != nil {
-			return errors.Wrap(err, "Syncer.SyncRepo.transact")
-		}
-		defer txs.Done(err)
-		store = txs
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "Syncer.SyncRepo.transact")
 	}
+	defer tx.Done(err)
 
-	diff, err = s.syncRepo(ctx, store, false, true, sourcedRepo)
+	diff, err = s.syncRepo(ctx, tx, false, true, sourcedRepo)
 	return err
 }
 
@@ -439,7 +447,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *internal.Store, sourcedRep
 func (s *Syncer) insertIfNew(ctx context.Context, store *internal.Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
-	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", sourcedRepo.Name)
+	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
 	defer save(&diff, &err)
 
 	diff, err = s.syncRepo(ctx, store, true, publicOnly, sourcedRepo)
@@ -452,12 +460,12 @@ func (s *Syncer) syncRepo(ctx context.Context, store *internal.Store, insertOnly
 	}
 
 	var storedSubset types.Repos
-	args := StoreListReposArgs{
-		Names:         []string{sourcedRepo.Name},
+	args := db.ReposListOptions{
+		Names:         []string{string(sourcedRepo.Name)},
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
 	}
-	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
+	if storedSubset, err = store.RepoStore().List(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.list-repos")
 	}
 
@@ -613,10 +621,10 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *inte
 		return
 	}
 
-	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
+	stored, err := store.RepoStore().List(ctx, db.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
-			s.Logger.Warn("initialUnmodifiedDiffFromstore *internal.Store.ListRepos", "error", err)
+			s.Logger.Warn("initialUnmodifiedDiffFromstore *internal.Store.RepoStore().List", "error", err)
 		}
 		return
 	}
@@ -675,6 +683,15 @@ func NewDiff(sourced, stored []*types.Repo) (diff Diff) {
 	return newDiff(nil, sourced, stored)
 }
 
+// pick deterministically chooses between a and b a repo to keep and
+// discard. It is used when resolving conflicts on sourced repositories.
+func pick(a *types.Repo, b *types.Repo) (keep, discard *types.Repo) {
+	if a.Less(b) {
+		return a, b
+	}
+	return b, a
+}
+
 func newDiff(svc *types.ExternalService, sourced, stored []*types.Repo) (diff Diff) {
 	// Sort sourced so we merge deterministically
 	sort.Sort(types.Repos(sourced))
@@ -694,7 +711,7 @@ func newDiff(svc *types.ExternalService, sourced, stored []*types.Repo) (diff Di
 	// (different external ID).
 	byName := make(map[string]*types.Repo, len(byID))
 	for _, r := range byID {
-		k := strings.ToLower(r.Name)
+		k := strings.ToLower(string(r.Name))
 		if old := byName[k]; old == nil {
 			byName[k] = r
 		} else {
@@ -835,7 +852,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 		took := s.Now().Sub(began).Seconds()
 
 		fields := make([]otlog.Field, 0, 7)
-		for state, repos := range map[string]Repos{
+		for state, repos := range map[string]types.Repos{
 			"added":      d.Added,
 			"modified":   d.Modified,
 			"deleted":    d.Deleted,

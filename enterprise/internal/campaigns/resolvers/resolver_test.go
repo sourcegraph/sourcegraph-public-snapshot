@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -86,10 +84,11 @@ func TestCreateCampaignSpec(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, username, true)
 
 	store := ee.NewStore(dbconn.Global)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	reposStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, esStore))
+	if err := reposStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -200,10 +199,11 @@ func TestCreateChangesetSpec(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "create-changeset-spec", true)
 
 	store := ee.NewStore(dbconn.Global)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	reposStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, esStore))
+	if err := reposStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -276,10 +276,11 @@ func TestApplyCampaign(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	reposStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, esStore))
+	if err := reposStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
