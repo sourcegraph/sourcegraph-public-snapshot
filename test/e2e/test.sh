@@ -11,9 +11,6 @@ test/setup-display.sh
 
 # ==========================
 
-asdf install
-yarn
-yarn generate
 pushd enterprise || exit
 ./cmd/server/pre-build.sh
 ./cmd/server/build.sh
