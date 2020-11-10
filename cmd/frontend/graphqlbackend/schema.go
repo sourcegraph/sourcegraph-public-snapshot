@@ -765,6 +765,19 @@ type Mutation {
         """
         actions: [MonitorActionInput!]!
     ): Monitor!
+    """
+    Set a code monitor to active/inactive.
+    """
+    toggleCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+    ): Monitor!
 }
 
 """

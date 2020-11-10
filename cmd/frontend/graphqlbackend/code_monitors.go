@@ -11,6 +11,7 @@ import (
 type CodeMonitorsResolver interface {
 	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
 	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
+	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -128,6 +129,11 @@ type CreateActionEmailArgs struct {
 	Header     string
 }
 
+type ToggleCodeMonitorArgs struct {
+	Id      graphql.ID
+	Enabled bool
+}
+
 var DefaultCodeMonitorsResolver = &defaultCodeMonitorsResolver{}
 
 var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available in enterprise")
@@ -140,5 +146,9 @@ func (d defaultCodeMonitorsResolver) Monitors(ctx context.Context, userID int32,
 }
 
 func (d defaultCodeMonitorsResolver) CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error) {
 	return nil, codeMonitorsOnlyInEnterprise
 }
