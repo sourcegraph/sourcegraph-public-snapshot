@@ -186,7 +186,7 @@ func TestRepos_Get(t *testing.T) {
 	}
 
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
 
@@ -249,7 +249,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 	}
 
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	want := mustCreate(ctx, t, &types.Repo{
 		Name: "r",
@@ -286,8 +286,7 @@ func TestRepos_List(t *testing.T) {
 	defer func() { MockAuthzFilter = nil }()
 
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
 
@@ -445,8 +444,7 @@ func TestRepos_List_fork(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Fork: false}})
 	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Fork: true}})
@@ -491,8 +489,7 @@ func TestRepos_List_cloned(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Cloned: false}})
 	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Cloned: true}})
@@ -608,8 +605,7 @@ func TestRepos_List_pagination(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
 		{Name: "r1"},
@@ -660,8 +656,7 @@ func TestRepos_List_query1(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
 		{Name: "abc/def"},
@@ -703,8 +698,7 @@ func TestRepos_List_query2(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
 		{Name: "a/def"},
@@ -749,8 +743,7 @@ func TestRepos_List_sort(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
 		{Name: "c/def"},
@@ -823,8 +816,7 @@ func TestRepos_List_patterns(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
 		{Name: "a/b"},
@@ -880,8 +872,7 @@ func TestRepos_List_queryPattern(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
 		{Name: "a/b"},
@@ -1007,7 +998,7 @@ func TestRepos_List_queryPattern(t *testing.T) {
 }
 
 func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
@@ -1031,7 +1022,7 @@ func TestRepos_createRepo(t *testing.T) {
 	}
 
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{
@@ -1160,7 +1151,7 @@ func TestRepos_createRepo_dupe(t *testing.T) {
 	}
 
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{Name: "a/b"})
