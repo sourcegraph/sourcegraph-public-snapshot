@@ -744,14 +744,26 @@ type Mutation {
     """
     createCodeMonitor(
         """
-        The namepsace represents the owener of the code monitor.
-        Owners can either be users or organziations.
+        The namespace represents the owner of the code monitor.
+        Owners can either be users or organizations.
         """
         namespace: ID!
         """
         A meaningful description of the code monitor.
         """
         description: String!
+        """
+        Whether the code monitor is enabled or not.
+        """
+        enabled: Boolean!
+        """
+        A trigger.
+        """
+        trigger: MonitorTriggerInput!
+        """
+        A list of actions.
+        """
+        actions: [MonitorActionInput!]!
     ): Monitor!
 }
 
@@ -3222,6 +3234,48 @@ enum EventStatus {
     PENDING
     SUCCESS
     ERROR
+}
+
+"""
+The input required to create a trigger.
+"""
+input MonitorTriggerInput {
+    """
+    The query string.
+    """
+    query: String!
+    }
+
+"""
+The input required to create an action.
+"""
+input MonitorActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEmailInput
+}
+
+"""
+The input required to create an email action.
+"""
+input MonitorEmailInput {
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled:    Boolean!
+    """
+    The priority of the email.
+    """
+    priority:   MonitorEmailPriority!
+    """
+    The recipients of the email.
+    """
+    recipients:  [ID!]!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header:     String!
 }
 
 """

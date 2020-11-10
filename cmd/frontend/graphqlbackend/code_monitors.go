@@ -108,6 +108,24 @@ type ListActionArgs struct {
 type CreateCodeMonitorArgs struct {
 	Namespace   graphql.ID
 	Description string
+	Enabled     bool
+	Trigger     *CreateTriggerArgs
+	Actions     []*CreateActionArgs
+}
+
+type CreateTriggerArgs struct {
+	Query string
+}
+
+type CreateActionArgs struct {
+	Email *CreateActionEmailArgs
+}
+
+type CreateActionEmailArgs struct {
+	Enabled    bool
+	Priority   string
+	Recipients []graphql.ID
+	Header     string
 }
 
 var DefaultCodeMonitorsResolver = &defaultCodeMonitorsResolver{}

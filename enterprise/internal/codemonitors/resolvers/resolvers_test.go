@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -40,10 +41,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 	clock := func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
 	}
-	r := Resolver{
-		db:    dbconn.Global,
-		clock: clock,
-	}
+	r := newResolverWithClock(dbconn.Global, clock)
 
 	want := &monitor{
 		id:              1,
@@ -63,12 +61,21 @@ func TestCreateCodeMonitor(t *testing.T) {
 	got, err := r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
 		Namespace:   ns,
 		Description: "banana",
+		Enabled:     true,
+		Trigger:     &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
+		Actions: []*graphqlbackend.CreateActionArgs{
+			{Email: &graphqlbackend.CreateActionEmailArgs{
+				Enabled:    false,
+				Priority:   "NORMAL",
+				Recipients: []graphql.ID{ns},
+				Header:     "test header",
+			}}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(want, got.(*monitor)) {
-		t.Fatalf("\ngot %+v,\nwant %+v", got, want)
+		t.Fatalf("\ngot:\t %+v,\nwant:\t %+v", got, want)
 	}
 }
 
