@@ -4,7 +4,13 @@ import { StreamingProgress } from './StreamingProgress'
 import { WebStory } from '../../../components/WebStory'
 import { Progress } from '../../stream'
 
-const { add } = storiesOf('web/search/results/streaming-progress/StreamingProgress', module)
+const { add } = storiesOf('web/search/results/streaming-progress/StreamingProgress', module).addParameters({
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+    },
+    chromatic: { viewports: [1200] },
+})
 
 add('0 results, in progress', () => {
     const progress: Progress = {
@@ -103,4 +109,48 @@ add('2 results from 2 repositories, complete, skipped with warning', () => {
     }
 
     return <WebStory>{() => <StreamingProgress progress={progress} />}</WebStory>
+})
+
+add('2 results from 2 repositories, complete, skipped with warning, popover open', () => {
+    const progress: Progress = {
+        done: true,
+        durationMs: 1500,
+        matchCount: 2,
+        repositoriesCount: 2,
+        skipped: [
+            {
+                reason: 'excluded-fork',
+                message: '',
+                severity: 'info',
+                title: '10k forked repositories excluded',
+                suggested: {
+                    title: 'include forked',
+                    queryExpression: 'fork:yes',
+                },
+            },
+            {
+                reason: 'excluded-archive',
+                message: '',
+                severity: 'info',
+                title: '60k archived repositories excluded',
+                suggested: {
+                    title: 'include archived',
+                    queryExpression: 'archived:yes',
+                },
+            },
+            {
+                reason: 'shard-timedout',
+                message:
+                    'Search timed out before some repositories could be search. Try reducing scope of your query with repo: or other filters.',
+                severity: 'warn',
+                title: 'Search timed out',
+                suggested: {
+                    title: 'increase timeout',
+                    queryExpression: 'timeout:2m',
+                },
+            },
+        ],
+    }
+
+    return <WebStory>{() => <StreamingProgress progress={progress} popoverOpen={true} />}</WebStory>
 })

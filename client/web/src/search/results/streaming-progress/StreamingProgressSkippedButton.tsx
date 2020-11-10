@@ -2,18 +2,23 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import * as React from 'react'
+import React, { useCallback, useState, useLayoutEffect, useMemo } from 'react'
 import { Button, Popover, PopoverBody } from 'reactstrap'
 import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingProgressProps> = ({
     progress = defaultProgress,
+    popoverOpen = false,
 }) => {
-    const [isOpen, setIsOpen] = React.useState(false)
-    const toggleOpen = React.useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
+    const [isOpen, setIsOpen] = useState(false)
+    const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 
-    const skippedWithWarning = progress.skipped.some(skipped => skipped.severity === 'warn')
+    useLayoutEffect(() => {
+        setIsOpen(popoverOpen)
+    }, [setIsOpen, popoverOpen])
+
+    const skippedWithWarning = useMemo(() => progress.skipped.some(skipped => skipped.severity === 'warn'), [progress])
 
     return (
         <>
@@ -42,7 +47,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
                         target="streaming-progress__skipped"
                         hideArrow={true}
                     >
-                        <PopoverBody>
+                        <PopoverBody className="streaming-progress__skipped__popover">
                             <StreamingProgressSkippedPopover progress={progress} />
                         </PopoverBody>
                     </Popover>

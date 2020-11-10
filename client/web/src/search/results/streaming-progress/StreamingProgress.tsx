@@ -5,6 +5,8 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 
 export interface StreamingProgressProps {
     progress?: Progress
+    popoverOpen?: boolean
+    onSearchAgain?: (additionalFilters: string[]) => void
 }
 
 export const defaultProgress: Progress = {
@@ -14,9 +16,9 @@ export const defaultProgress: Progress = {
     skipped: [],
 }
 
-export const StreamingProgress: React.FunctionComponent<StreamingProgressProps> = ({ progress = defaultProgress }) => (
+export const StreamingProgress: React.FunctionComponent<StreamingProgressProps> = props => (
     <div className="d-flex streaming-progress">
-        <StreamingProgressCount progress={progress} />
-        <StreamingProgressSkippedButton progress={progress} />
+        <StreamingProgressCount {...props} />
+        <StreamingProgressSkippedButton {...props} />
     </div>
 )
