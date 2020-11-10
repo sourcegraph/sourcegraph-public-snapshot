@@ -1,11 +1,11 @@
 import React from 'react'
-import { CreateCodeMonitoriPage } from './CreateCodeMonitoriPage'
+import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
 
-add('Example', () => <WebStory>{props => <CreateCodeMonitoriPage {...props} />}</WebStory>, {
+add('Example', () => <WebStory>{props => <CreateCodeMonitorPage {...props} />}</WebStory>, {
     design: {
         type: 'figma',
         url:
