@@ -1145,7 +1145,9 @@ type CampaignSpec implements Node {
     applyURL: String!
 
     """
-    When true, the viewing user can apply this spec.
+    When true, the viewing user can apply this spec. This does not mean the user has all
+    required credentials set or access to all repos, just that he owns this campaign
+    spec / can access it with write permissions.
     """
     viewerCanAdminister: Boolean!
 
@@ -1159,6 +1161,12 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    """
+    List of code hosts involved in this campaign spec the viewer has no credentials configured for.
+    This only includes code hosts targetted by type BRANCH changesets, as only those need credentials.
+    """
+    viewerNeedsCredentials: [String!]!
 }
 
 """

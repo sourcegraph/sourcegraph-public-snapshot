@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -199,4 +200,20 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 		httpFactory: r.httpFactory,
 		Campaign:    campaign,
 	}, nil
+}
+
+func (r *campaignSpecResolver) ViewerNeedsCredentials(ctx context.Context) ([]string, error) {
+	specs, _, err := r.store.ListChangesetSpecs(ctx, ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+	repoIDs := []api.RepoID{}
+	for _, spec := range specs {
+		if !spec.Spec.IsBranch() {
+			continue
+		}
+		repoIDs = append(repoIDs, spec.RepoID)
+	}
+
+	return nil, nil
 }
