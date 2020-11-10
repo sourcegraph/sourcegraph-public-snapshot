@@ -181,10 +181,11 @@ describe('Core functionality regression test suite', () => {
         await editSiteConfig(gqlClient, contents =>
             jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], true, formattingOptions)
         )
-        alwaysCleanupManager.add("Global setting", "usernamechanges", async () => {
-         await editSiteConfig(gqlClient, contents =>
-            jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
-         )})
+        alwaysCleanupManager.add('Global setting', 'usernamechanges', async () => {
+            await editSiteConfig(gqlClient, contents =>
+                jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
+            )
+        })
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
             selector: '.test-UserProfileFormFields__displayName',
