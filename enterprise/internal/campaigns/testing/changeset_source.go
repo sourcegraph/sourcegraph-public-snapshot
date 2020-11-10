@@ -71,7 +71,6 @@ type FakeChangesetSource struct {
 var _ repos.ChangesetSource = &FakeChangesetSource{}
 var _ repos.DraftChangesetSource = &FakeChangesetSource{}
 var _ repos.UserSource = &FakeChangesetSource{}
-var _ repos.UsernameSource = &FakeChangesetSource{}
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true

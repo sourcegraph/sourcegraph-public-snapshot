@@ -476,10 +476,22 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	usernameSource, ok := source.(repos.UsernameSource)
+	usernameSource, ok := source.(usernameSource)
 	if !ok {
 		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
 	}
 
 	return usernameSource.AuthenticatedUsername(ctx)
 }
+
+// A usernameSource can fetch the username associated with the credentials used
+// by the Source.
+// It's only used by FetchUsernameForBitbucketServerToken.
+type usernameSource interface {
+	// AuthenticatedUsername makes a request to the code host to fetch the
+	// username associated with the credentials.
+	// If no username could be determined an error is returned.
+	AuthenticatedUsername(ctx context.Context) (string, error)
+}
+
+var _ usernameSource = &repos.BitbucketServerSource{}

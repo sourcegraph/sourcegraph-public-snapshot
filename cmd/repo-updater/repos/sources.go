@@ -125,14 +125,6 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 }
 
-// A UsernameSource can fetch the username associated with the credentials used by the Source.
-type UsernameSource interface {
-	// AuthenticatedUsername makes a request to the code host to fetch the
-	// username associated with the credentials.
-	// If no username could be determined an error is returned.
-	AuthenticatedUsername(ctx context.Context) (string, error)
-}
-
 // UnsupportedAuthenticatorError is returned by WithAuthenticator if the
 // authenticator isn't supported on that code host.
 type UnsupportedAuthenticatorError struct {

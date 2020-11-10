@@ -49,4 +49,31 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 			t.Fatalf("Invalid code hosts returned. %s", diff)
 		}
 	})
+
+	t.Run("GetExternalServiceID", func(t *testing.T) {
+		for _, repo := range []*repos.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo} {
+			id, err := s.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
+				ExternalServiceType: repo.ExternalRepo.ServiceType,
+				ExternalServiceID:   repo.ExternalRepo.ServiceID,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			// We fetch the ExternalService and make sure that Type and URL match
+			es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+				IDs: []int64{id},
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if len(es) != 1 {
+				t.Fatalf("wrong number of external services: %d", len(es))
+			}
+			extSvc := es[0]
+			if have, want := extSvc.Kind, extsvc.TypeToKind(repo.ExternalRepo.ServiceType); have != want {
+				t.Fatalf("wrong external service kind. want=%q, have=%q", want, have)
+			}
+		}
+	})
 }
