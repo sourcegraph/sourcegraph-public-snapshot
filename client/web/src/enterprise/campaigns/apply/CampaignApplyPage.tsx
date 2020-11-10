@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -16,9 +16,9 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
-import { logEvent } from '../../../user/settings/backend'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
-export interface CampaignApplyPageProps extends ThemeProps {
+export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
     history: H.History
     location: H.Location
@@ -38,12 +38,17 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     history,
     location,
     isLightTheme,
+    telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
+
+    useEffect(() => {
+        telemetryService.logViewEvent('CampaignApplyPage')
+    }, [telemetryService])
 
     if (spec === undefined) {
         return (
@@ -55,8 +60,6 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     if (spec === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign spec not found" />
     }
-
-    logEvent('ViewCampaignApplyPage')
 
     return (
         <>
