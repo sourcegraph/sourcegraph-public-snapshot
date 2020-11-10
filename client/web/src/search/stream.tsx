@@ -409,12 +409,14 @@ const observeMessages = <T extends SearchEvent>(
         )
         .subscribe(observer)
 
+type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
+    type: EventType,
+    eventSource: EventSource,
+    observer: Subscriber<SearchEvent>
+) => Subscription
+
 const messageHandlers: {
-    [EventType in SearchEvent['type']]: (
-        type: EventType,
-        eventSource: EventSource,
-        observer: Subscriber<SearchEvent>
-    ) => Subscription
+    [EventType in SearchEvent['type']]: MessageHandler<EventType>
 } = {
     done: (type, eventSource, observer) =>
         fromEvent(eventSource, type).subscribe(() => {
@@ -461,7 +463,9 @@ export function search(
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
         for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
-            subscriptions.add(handleMessages(eventType as SearchEvent['type'], eventSource, observer))
+            subscriptions.add(
+                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+            )
         }
         return () => {
             subscriptions.unsubscribe()
