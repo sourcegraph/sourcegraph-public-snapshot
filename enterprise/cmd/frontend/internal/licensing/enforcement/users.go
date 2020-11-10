@@ -13,8 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-// NewPreCreateUserHook returns a PreCreateUserHook closure with the given UsersStore.
-func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
+// NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
+// that determines whether new user is allowed to be created.
+func NewBeforeCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 	return func(ctx context.Context) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
@@ -59,7 +60,8 @@ func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 	}
 }
 
-// NewAfterCreateUserHook returns a AfterCreateUserHook closure.
+// NewAfterCreateUserHook returns a AfterCreateUserHook closure that determines whether
+// a new user should be promoted to site admin based on the product license.
 func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) error {
 	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
 	if !licensing.EnforceTiers || envvar.SourcegraphDotComMode() {
@@ -87,8 +89,9 @@ func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) erro
 	}
 }
 
-// NewPreSetUserIsSiteAdmin returns a PreSetUserIsSiteAdmin closure.
-func NewPreSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
+// NewBeforeSetUserIsSiteAdmin returns a BeforeSetUserIsSiteAdmin closure that determines whether
+// non-site admin roles are allowed (i.e. revoke site admins) based on the product license.
+func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
 	if !licensing.EnforceTiers {
 		return nil
 	}

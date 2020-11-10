@@ -27,16 +27,16 @@ import (
 //
 // For a detailed overview of the schema, see schema.md.
 type users struct {
-	// PreCreateUser (if set) is a hook called before creating a new user in the DB by any means
+	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	PreCreateUser func(context.Context) error
+	BeforeCreateUser func(context.Context) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, tx dbutil.DB, user *types.User) error
-	// PreSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
+	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
-	PreSetUserIsSiteAdmin func(isSiteAdmin bool) error
+	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
 }
 
 // userNotFoundErr is the error that is returned when a user is not found.
@@ -226,9 +226,9 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		return nil, errCannotCreateUser{"site_already_initialized"}
 	}
 
-	// Run PreCreateUser hook.
-	if u.PreCreateUser != nil {
-		if err := u.PreCreateUser(ctx); err != nil {
+	// Run BeforeCreateUser hook.
+	if u.BeforeCreateUser != nil {
+		if err := u.BeforeCreateUser(ctx); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -541,8 +541,8 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
 	}
 
-	if u.PreSetUserIsSiteAdmin != nil {
-		if err := u.PreSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+	if u.BeforeSetUserIsSiteAdmin != nil {
+		if err := u.BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
 			return err
 		}
 	}

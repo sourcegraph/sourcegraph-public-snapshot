@@ -89,7 +89,7 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 			store := fakeStore{count: test.activeUserCount}
-			err := NewPreCreateUserHook(store)(context.Background())
+			err := NewBeforeCreateUserHook(store)(context.Background())
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}
@@ -228,7 +228,7 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			err := NewPreSetUserIsSiteAdmin()(test.isSiteAdmin)
+			err := NewBeforeSetUserIsSiteAdmin()(test.isSiteAdmin)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}
