@@ -10,7 +10,9 @@ export const CampaignCloseChangesetsListEmptyElement: React.FunctionComponent<{}
                 />
             </div>
             <h2 className="text-center">Congratulations</h2>
-            <h2 className="text-center font-weight-normal mb-4">All your changesets have been closed!</h2>
+            <h2 className="text-center font-weight-normal mb-4">
+                There are no open changesets remaining and you can safely close your campaign!
+            </h2>
         </div>
     </div>
 )
