@@ -114,8 +114,6 @@ func TestExternalServices(t *testing.T) {
 
 	ctx := context.Background()
 
-	// rcache.SetupForTest(t)
-
 	secret := "secret"
 	repoStore := repos.NewDBStore(db, sql.TxOptions{})
 	extSvc := &repos.ExternalService{
