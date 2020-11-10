@@ -53,4 +53,4 @@
   shell_commands:
     - |
        cd /sourcegraph
-       ./test/qa-upgrade/test.sh
+       ./test/upgrade/test.sh

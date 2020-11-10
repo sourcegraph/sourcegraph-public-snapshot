@@ -1,14 +1,14 @@
 env:
   VAGRANT_RUN_ENV: "CI"
 steps:
-- label: ':docker::arrow_right::chromium:'
+- label: ':docker::chromium: Sourcegraph QA'
   command:
     - .buildkite/vagrant-run.sh sourcegraph-qa-test
   artifact_paths: ./*.png;./*.mp4;./*.log
   agents:
     queue: 'baremetal'
 
-- label: ':docker::arrow_double_up:'
+- label: ':docker::arrow_double_up: Sourcegraph Upgrade'
   command:
   - .buildkite/vagrant-run.sh sourcegraph-upgrade
   timeout_in_minutes: 20
