@@ -19,7 +19,6 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 
@@ -27,7 +26,6 @@ export interface CampaignClosePageProps
     extends ThemeProps,
         TelemetryProps,
         PlatformContextProps,
-        BreadcrumbSetters,
         ExtensionsControllerProps {
     /**
      * The namespace ID.
@@ -59,7 +57,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     isLightTheme,
     platformContext,
     telemetryService,
-    useBreadcrumb,
     fetchCampaignByNamespace = _fetchCampaignByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -84,19 +81,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
             setTotalCount(connection.totalCount)
         },
         []
-    )
-
-    useBreadcrumb(
-        useMemo(
-            () =>
-                campaign
-                    ? {
-                          link: { to: campaign.url, label: campaign.name },
-                          key: 'CampaignClosePage',
-                      }
-                    : null,
-            [campaign]
-        )
     )
 
     // Is loading.

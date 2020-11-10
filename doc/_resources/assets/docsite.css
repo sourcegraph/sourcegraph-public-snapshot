@@ -109,6 +109,12 @@ nav.links a {
     border: 0;
 }
 
+/* Use to provide different videos for dark and light theme */
+.theme-light .theme-dark-only,
+.theme-dark .theme-light-only {
+    display: none !important;
+}
+
 /* FONTS */
 body {
     font-family: var(--base-font-family);
