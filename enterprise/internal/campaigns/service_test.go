@@ -752,6 +752,35 @@ func TestService(t *testing.T) {
 			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
+		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		// Create a fresh service for this test as to not mess with state
+		// possibly used by other tests.
+		testSvc := NewService(store, nil)
+		testSvc.sourcer = sourcer
+
+		rs, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+		repo := rs[0]
+
+		url := repo.ExternalRepo.ServiceID
+		extType := repo.ExternalRepo.ServiceType
+
+		username, err := testSvc.FetchUsernameForBitbucketServerToken(ctx, url, extType, "my-token")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !fakeSource.AuthenticatedUsernameCalled {
+			t.Errorf("service didn't call AuthenticatedUsername")
+		}
+
+		if have, want := username, fakeSource.Username; have != want {
+			t.Errorf("wrong username returned. want=%q, have=%q", want, have)
+		}
+	})
 }
 
 var testUser = db.NewUser{

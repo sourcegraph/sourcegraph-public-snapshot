@@ -737,6 +737,10 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 
 	// TODO: Do we want to validate the URL, or even if such an external service exists? Or better, would the DB have a constraint?
 
+	if args.Credential == "" {
+		return nil, errors.New("empty credential not allowed")
+	}
+
 	scope := db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   args.ExternalServiceURL,
@@ -753,8 +757,18 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		return nil, ErrDuplicateCredential{}
 	}
 
-	// For now, we only support OAuth bearer tokens.
-	a := &auth.OAuthBearerToken{Token: args.Credential}
+	var a auth.Authenticator
+	if kind == extsvc.KindBitbucketServer {
+		svc := ee.NewService(r.store, r.httpFactory)
+		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
+		if err != nil {
+			return nil, err
+		}
+		a = &auth.BasicAuth{Username: username, Password: args.Credential}
+	} else {
+		a = &auth.OAuthBearerToken{Token: args.Credential}
+	}
+
 	cred, err := db.UserCredentials.Create(ctx, scope, a)
 	if err != nil {
 		return nil, err

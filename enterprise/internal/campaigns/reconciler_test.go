@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 	"time"
 
@@ -1438,9 +1437,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	gitHubRepo := rs[0]
 
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	gitLabExtSvc := createGitLabExternalService(t, ctx, rstore)
-	gitLabRepo := createGitLabRepo(t, ctx, rstore, gitLabExtSvc)
+	gitLabRepos, _ := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	gitLabRepo := gitLabRepos[0]
+
+	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepo := bbsRepos[0]
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
@@ -1463,8 +1464,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				Token: "my-secret-github-token",
-				Type:  extsvc.TypeGitHub,
+				Username: "my-secret-github-token",
 			},
 		},
 		{
@@ -1472,8 +1472,17 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				Token: "my-secret-gitlab-token",
-				Type:  extsvc.TypeGitLab,
+				Username: "git",
+				Password: "my-secret-gitlab-token",
+			},
+		},
+		{
+			name:        "bitbucketServer BasicAuth",
+			repo:        bbsRepo,
+			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				Username: "fredwoard johnssen",
+				Password: "my-secret-bbs-token",
 			},
 		},
 	}

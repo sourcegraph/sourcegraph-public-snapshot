@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 func (s *Store) ListCodeHosts(ctx context.Context) ([]*campaigns.CodeHost, error) {
@@ -54,4 +55,44 @@ func scanCodeHost(c *campaigns.CodeHost, sc scanner) error {
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,
 	)
+}
+
+type GetExternalServiceIDOpts struct {
+	ExternalServiceType string
+	ExternalServiceID   string
+}
+
+func (s *Store) GetExternalServiceID(ctx context.Context, opts GetExternalServiceIDOpts) (int64, error) {
+	q := getExternalServiceIDQuery(opts)
+
+	id, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, ErrNoResults
+	}
+	return int64(id), nil
+}
+
+const getExternalServiceIDQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_codehost.go:GetExternalServiceID
+SELECT
+	external_services.id
+FROM external_services
+JOIN external_service_repos esr ON esr.external_service_id = external_services.id
+JOIN repo ON esr.repo_id = repo.id
+WHERE %s
+ORDER BY external_services.id ASC
+LIMIT 1
+`
+
+func getExternalServiceIDQuery(opts GetExternalServiceIDOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.external_service_type = %s", opts.ExternalServiceType),
+		sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID),
+		sqlf.Sprintf("external_services.deleted_at IS NULL"),
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+	return sqlf.Sprintf(getExternalServiceIDQueryFmtstr, sqlf.Join(preds, "AND"))
 }

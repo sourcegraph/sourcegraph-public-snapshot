@@ -23,6 +23,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -921,6 +922,37 @@ func TestAuth(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestClient_WithAuthenticator(t *testing.T) {
+	uri, err := url.Parse("https://bbs.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	old := &Client{
+		URL:       uri,
+		RateLimit: rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst),
+		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
+	}
+
+	newToken := &auth.OAuthBearerToken{Token: "new_token"}
+	newClient := old.WithAuthenticator(newToken)
+	if old == newClient {
+		t.Fatal("both clients have the same address")
+	}
+
+	if newClient.Auth != newToken {
+		t.Fatalf("auth: want %q but got %q", newToken, newClient.Auth)
+	}
+
+	if newClient.URL != old.URL {
+		t.Fatalf("url: want %q but got %q", old.URL, newClient.URL)
+	}
+
+	if newClient.RateLimit != old.RateLimit {
+		t.Fatalf("RateLimit: want %#v but got %#v", old.RateLimit, newClient.RateLimit)
+	}
 }
 
 func TestMain(m *testing.M) {

@@ -16,7 +16,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -293,32 +292,21 @@ func ensureRefPrefix(ref string) string {
 // updateRemoteURLForPush applies the given PushConfig to the remote URL,
 // returning the new remote URL.
 func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string, error) {
-	if push != nil && push.Token != "" {
-		u, err := url.Parse(remoteURL)
-		if err != nil {
-			return "", errors.Wrap(err, "parsing remote URL")
-		}
+	if push == nil {
+		return remoteURL, nil
 
-		switch push.Type {
-		case extsvc.TypeGitHub:
-			// GitHub wants the user to be the token.
-			u.User = url.User(push.Token)
-
-		case extsvc.TypeGitLab:
-			// GitLab wants the password to be the user token. It also appears
-			// to want "git" as the username if none is provided.
-			if u.User == nil {
-				u.User = url.UserPassword("git", push.Token)
-			} else {
-				u.User = url.UserPassword(u.User.Username(), push.Token)
-			}
-
-		default:
-			return "", errors.Errorf("cannot apply token to code host of type %s", push.Type)
-		}
-
-		return u.String(), nil
 	}
 
-	return remoteURL, nil
+	u, err := url.Parse(remoteURL)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing remote URL")
+	}
+
+	if push.Username != "" && push.Password == "" {
+		u.User = url.User(push.Username)
+	} else if push.Username != "" && push.Password != "" {
+		u.User = url.UserPassword(push.Username, push.Password)
+	}
+
+	return u.String(), nil
 }

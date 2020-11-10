@@ -17,15 +17,16 @@ type FakeChangesetSource struct {
 
 	authenticator auth.Authenticator
 
-	CreateDraftChangesetCalled bool
-	UndraftedChangesetsCalled  bool
-	CreateChangesetCalled      bool
-	UpdateChangesetCalled      bool
-	ListReposCalled            bool
-	ExternalServicesCalled     bool
-	LoadChangesetCalled        bool
-	CloseChangesetCalled       bool
-	ReopenChangesetCalled      bool
+	CreateDraftChangesetCalled  bool
+	UndraftedChangesetsCalled   bool
+	CreateChangesetCalled       bool
+	UpdateChangesetCalled       bool
+	ListReposCalled             bool
+	ExternalServicesCalled      bool
+	LoadChangesetCalled         bool
+	CloseChangesetCalled        bool
+	ReopenChangesetCalled       bool
+	AuthenticatedUsernameCalled bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -62,6 +63,9 @@ type FakeChangesetSource struct {
 
 	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
 	UndraftedChangesets []*repos.Changeset
+
+	// Username is the username returned by AuthenticatedUsername
+	Username string
 }
 
 var _ repos.ChangesetSource = &FakeChangesetSource{}
@@ -225,6 +229,11 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Chan
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
 	s.authenticator = a
 	return s, nil
+}
+
+func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	s.AuthenticatedUsernameCalled = true
+	return s.Username, nil
 }
 
 // FakeGitserverClient is a test implementation of the GitserverClient
