@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
@@ -51,7 +50,7 @@ func decodeCursor(rawEncoded string) (Cursor, error) {
 
 // DecodeOrCreateCursor decodes and returns the raw cursor, or creates a new initial page cursor
 // if a raw cursor is not supplied.
-func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, store store.Store, lsifStore lsifstore.Store) (Cursor, error) {
+func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, dbStore DBStore, lsifStore LSIFStore) (Cursor, error) {
 	if rawCursor != "" {
 		cursor, err := decodeCursor(rawCursor)
 		if err != nil {
@@ -61,7 +60,7 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 		return cursor, nil
 	}
 
-	dump, exists, err := store.GetDumpByID(context.Background(), uploadID)
+	dump, exists, err := dbStore.GetDumpByID(context.Background(), uploadID)
 	if err != nil {
 		return Cursor{}, errors.Wrap(err, "store.GetDumpByID")
 	}

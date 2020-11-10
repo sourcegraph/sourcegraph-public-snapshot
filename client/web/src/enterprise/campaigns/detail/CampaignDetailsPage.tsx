@@ -24,7 +24,6 @@ import { CampaignStatsCard } from './CampaignStatsCard'
 import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 
@@ -32,7 +31,6 @@ export interface CampaignDetailsPageProps
     extends ThemeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
-        BreadcrumbSetters,
         TelemetryProps {
     /**
      * The namespace ID.
@@ -69,7 +67,6 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     extensionsController,
     platformContext,
     telemetryService,
-    useBreadcrumb,
     fetchCampaignByNamespace = _fetchCampaignByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -88,19 +85,6 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
             [namespaceID, campaignName, fetchCampaignByNamespace]
-        )
-    )
-
-    useBreadcrumb(
-        useMemo(
-            () =>
-                campaign
-                    ? {
-                          element: <>{campaign.name}</>,
-                          key: 'CampaignDetailsPage',
-                      }
-                    : null,
-            [campaign]
         )
     )
 

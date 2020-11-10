@@ -59,3 +59,7 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	}
 	return context.WithValue(ctx, actorKey, a)
 }
+
+func WithInternalActor(ctx context.Context) context.Context {
+	return context.WithValue(ctx, actorKey, &Actor{Internal: true})
+}

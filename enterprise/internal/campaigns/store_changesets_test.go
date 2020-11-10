@@ -12,15 +12,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -42,9 +42,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
+	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
 
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
@@ -1154,8 +1154,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	githubRepo := testRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := testRepo(t, reposStore, extsvc.KindGitLab)
+	githubRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
 	if err := reposStore.InsertRepos(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}

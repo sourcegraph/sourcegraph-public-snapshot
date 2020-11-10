@@ -2,12 +2,10 @@ package worker
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -16,10 +14,10 @@ import (
 )
 
 func NewWorker(
-	s store.Store,
-	codeIntelDB *sql.DB,
+	dbStore DBStore,
+	lsifStore LSIFStore,
 	uploadStore uploadstore.Store,
-	gitserverClient gitserverClient,
+	gitserverClient GitserverClient,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	budgetMax int64,
@@ -29,18 +27,16 @@ func NewWorker(
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	handler := &handler{
-		store:           s,
+		dbStore:         dbStore,
+		lsifStore:       lsifStore,
 		uploadStore:     uploadStore,
 		gitserverClient: gitserverClient,
 		metrics:         metrics,
 		enableBudget:    budgetMax > 0,
 		budgetRemaining: budgetMax,
-		createStore: func(id int) lsifstore.Store {
-			return lsifstore.NewObserved(lsifstore.NewStore(codeIntelDB), observationContext)
-		},
 	}
 
-	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(s), handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(dbStore), handler, workerutil.WorkerOptions{
 		NumHandlers: numProcessorRoutines,
 		Interval:    pollInterval,
 		Metrics: workerutil.WorkerMetrics{

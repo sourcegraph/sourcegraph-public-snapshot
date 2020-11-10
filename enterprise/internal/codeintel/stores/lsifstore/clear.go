@@ -2,8 +2,12 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 var tableNames = []string{
@@ -14,7 +18,17 @@ var tableNames = []string{
 	"lsif_data_references",
 }
 
-func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
+func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
+	var stringIDs []string
+	for _, bundleID := range bundleIDs {
+		stringIDs = append(stringIDs, fmt.Sprintf("%d", bundleID))
+	}
+
+	ctx, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("bundelIDs", strings.Join(stringIDs, ", ")),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if len(bundleIDs) == 0 {
 		return nil
 	}

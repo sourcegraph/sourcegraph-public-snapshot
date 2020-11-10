@@ -232,7 +232,8 @@ SELECT
   deleted_at,
   last_sync_at,
   next_sync_at,
-  namespace_user_id
+  namespace_user_id,
+  unrestricted
 FROM external_services
 WHERE id > %s
 AND %s
@@ -1366,6 +1367,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&dbutil.NullTime{Time: &svc.LastSyncAt},
 		&dbutil.NullTime{Time: &svc.NextSyncAt},
 		&dbutil.NullInt32{N: &svc.NamespaceUserID},
+		&svc.Unrestricted,
 	)
 }
 

@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -24,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -57,7 +55,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Fatalf("user cannot be site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		spec := testCampaignSpec(author)
@@ -201,7 +199,7 @@ func TestService(t *testing.T) {
 	clock := func() time.Time { return now }
 
 	store := NewStoreWithClock(dbconn.Global, clock)
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -754,6 +752,35 @@ func TestService(t *testing.T) {
 			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
+		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		// Create a fresh service for this test as to not mess with state
+		// possibly used by other tests.
+		testSvc := NewService(store, nil)
+		testSvc.sourcer = sourcer
+
+		rs, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+		repo := rs[0]
+
+		url := repo.ExternalRepo.ServiceID
+		extType := repo.ExternalRepo.ServiceType
+
+		username, err := testSvc.FetchUsernameForBitbucketServerToken(ctx, url, extType, "my-token")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !fakeSource.AuthenticatedUsernameCalled {
+			t.Errorf("service didn't call AuthenticatedUsername")
+		}
+
+		if have, want := username, fakeSource.Username; have != want {
+			t.Errorf("wrong username returned. want=%q, have=%q", want, have)
+		}
+	})
 }
 
 var testUser = db.NewUser{
@@ -818,70 +845,4 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 	}
 
 	return changeset
-}
-
-func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
-	t.Helper()
-
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
-
-	ext := &repos.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: "SECRETTOKEN",
-		}),
-	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
-		t.Fatal(err)
-	}
-
-	var rs []*repos.Repo
-	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindGitHub)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-
-		rs = append(rs, r)
-	}
-
-	err := rstore.InsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return rs, ext
-}
-
-func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
-	t.Helper()
-
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
-
-	ext := &repos.ExternalService{
-		Kind:        extsvc.KindBitbucketServer,
-		DisplayName: "Bitbucket Server",
-		Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			Url:   "https://bitbucket.sourcegraph.com",
-			Token: "SECRETTOKEN",
-		}),
-	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
-		t.Fatal(err)
-	}
-
-	var rs []*repos.Repo
-	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindBitbucketServer)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-
-		rs = append(rs, r)
-	}
-
-	err := rstore.InsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return rs, ext
 }

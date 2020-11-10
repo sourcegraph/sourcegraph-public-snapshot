@@ -331,7 +331,7 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 }
 
 func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
-	args.UserID = int64(r.user.ID)
+	args.UserID = r.user.ID
 	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
 }
 
