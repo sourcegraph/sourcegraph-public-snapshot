@@ -5,7 +5,7 @@ import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import { Driver } from '../../../shared/src/testing/driver'
 import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { editSiteConfig, ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { setUserEmailVerified } from './util/api'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
@@ -15,8 +15,6 @@ import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { editSiteConfig } from './util/helpers'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -179,11 +177,11 @@ describe('Core functionality regression test suite', () => {
         const displayName = 'Test Display Name'
 
         await editSiteConfig(gqlClient, contents =>
-            jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], true, formattingOptions)
+            setProperty(contents, ['auth.enableUsernameChanges'], true, formattingOptions)
         )
         alwaysCleanupManager.add('Global setting', 'usernamechanges', async () => {
             await editSiteConfig(gqlClient, contents =>
-                jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
+                setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
             )
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
