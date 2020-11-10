@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
-set -x
-
 # shellcheck disable=SC1091
-set +x && source /root/.profile && set -x
+source /root/.profile
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
+
+set -x
 
 test/setup-deps.sh
 test/setup-display.sh
@@ -16,8 +16,11 @@ IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh 
 sleep 15
 go run test/init-server.go
 
+# Load variables set up by init-server, disabling `-x` to avoid printing variables
+set +x
 # shellcheck disable=SC1091
-set +x && source /root/.profile && set -x
+source /root/.profile
+set -x
 
 # Stop old Sourcegraph release
 docker container stop sourcegraph-old

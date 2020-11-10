@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
+source /root/.profile
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
+
 set -x
 
-# shellcheck disable=SC1091
-set +x && source /root/.profile && set -x
-
-bash test/setup-deps.sh
-bash test/setup-display.sh
+test/setup-deps.sh
+test/setup-display.sh
 
 # ==========================
 
@@ -23,11 +23,13 @@ IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image
 trap docker_logs exit
 
 sleep 15
-
 go run test/init-server.go
 
+# Load variables set up by init-server, disabling `-x` to avoid printing variables
+set +x
 # shellcheck disable=SC1091
-set +x && source /root/.profile && set -x
+source /root/.profile
+set -x
 
 pushd client/web || exit
 yarn run test:regression:core
