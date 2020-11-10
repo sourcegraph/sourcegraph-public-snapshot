@@ -175,7 +175,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                         )}
                     </div>
                     <small className="text-muted">
-                        What other actions would you like to do?
+                        What other actions would you like to do?{' '}
                         <a href="" target="_blank" rel="noopener">
                             {/* TODO: populate link */}
                             Share feedback.
@@ -183,60 +183,6 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     </small>
                 </div>
                 <div>
-                    <h3>Actions</h3>
-                    <p>Run any number of actions in response to an event</p>
-                    <div className="card p-3 my-3">
-                        {/* This should be its own component when you can add multiple email actions */}
-                        <a href="" onClick={toggleEmailNotificationForm} className="font-weight-bold">
-                            Send email notifications
-                        </a>
-                        <span className="text-muted">
-                            Deliver email notifications to specified recipients. Can customize delivery schedule and
-                            priority.
-                        </span>
-                        {showEmailNotificationForm && (
-                            <>
-                                <div className="mt-4">
-                                    Recipients
-                                    <input
-                                        type="text"
-                                        className="form-control my-2"
-                                        value={`${props.authenticatedUser?.email || ''} (you)`}
-                                        disabled={true}
-                                    />
-                                    <small className="text-muted">
-                                        Code monitors are currently limited to sending emails to your primary email
-                                        address.
-                                    </small>
-                                </div>
-                                <div className="mt-4">
-                                    Approved header
-                                    <input type="text" className="form-control my-2" />
-                                    <small className="text-muted">
-                                        Use the approved header to automatically approve the message in a read-only or
-                                        moderated mailing list.
-                                    </small>
-                                </div>
-                                <div className="flex my-4">
-                                    <Toggle
-                                        title="Enabled"
-                                        value={emailNotificationEnabled}
-                                        onToggle={toggleEmailNotificationEnabled}
-                                        className="mr-2"
-                                    />
-                                    Enabled
-                                </div>
-                                <div>
-                                    <button type="button" className="btn btn-outline-secondary mr-1">
-                                        Done
-                                    </button>
-                                    <button type="button" className="btn btn-outline-secondary">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
                     <div className="d-flex my-4">
                         <div>
                             <Toggle title="Active" value={active} onToggle={toggleActive} className="mr-2" />{' '}
