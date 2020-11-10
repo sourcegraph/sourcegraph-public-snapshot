@@ -88,6 +88,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "enableSmartQuery": {
+          "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"
