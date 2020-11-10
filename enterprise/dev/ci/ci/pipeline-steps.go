@@ -305,8 +305,9 @@ func copyEnv(keys ...string) map[string]string {
 	return m
 }
 
-// Build all relevant Docker images for Sourcegraph, given the current CI case (e.g., "tagged
-// release", "release branch", "master branch", etc.)
+// Build all relevant Docker images for Sourcegraph (for example, candidates and final
+// images), given the current CI case (e.g., "tagged release", "release branch",
+// "master branch", etc.)
 func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		if !final {
@@ -428,6 +429,10 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 	}
 }
 
+// candidateImageTag provides the tag for a candidate image built for this Buildkite run.
+//
+// Note that the availability of this image depends on whether a candidate gets built,
+// as determined in `addDockerImages()`.
 func candidateImageTag(c Config) string {
 	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
 	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)
