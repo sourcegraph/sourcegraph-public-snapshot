@@ -337,48 +337,96 @@ type onelineCommit struct {
 }
 
 // logOnelineBatchScanner wraps logOnelineScanner to batch up reads.
-func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize int, debounce time.Duration) func() ([]*onelineCommit, error) {
-	var finalErr error
-	return func() ([]*onelineCommit, error) {
+//
+// next will return at least 1 commit and at most maxBatchSize entries. After
+// debounce time it will return what has been batched so far (or wait until an
+// entry is available). The last response from next will return a non-nil
+// error.
+//
+// cleanup must be called when done. This function creates a goroutine to
+// batch up calls to scan.
+func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize int, debounce time.Duration) (next func() ([]*onelineCommit, error), cleanup func()) {
+	// done is closed to indicate cleaning up
+	done := make(chan struct{})
+	cleanup = func() {
+		close(done)
+	}
+
+	// We can't call scan with a timeout. So we start a goroutine which sends
+	// the output of scan down a channel. When done is closed, this goroutine
+	// will stop running.
+	type result struct {
+		commit *onelineCommit
+		err    error
+	}
+	// have a cap of maxBatchSize so we potentially have maxBatchSize ready to
+	// send.
+	resultC := make(chan result, maxBatchSize)
+	go func() {
+		for {
+			commit, err := scan()
+			select {
+			case resultC <- result{commit: commit, err: err}:
+			case <-done:
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	var err error
+	next = func() ([]*onelineCommit, error) {
 		// The previous call may have had an error but also had commits to
 		// return. In that case we didn't return the error, so need to return
 		// it now.
-		if finalErr != nil {
-			return nil, finalErr
+		if err != nil {
+			return nil, err
 		}
 
-		// Stop scanning if we haven't found maxBatchSize by deadline. Note:
-		// scan may block long past deadline. We accept this tradeoff for
-		// simplicity in our implementation.
-		deadline := time.Now().Add(debounce)
+		// Stop scanning if we haven't found maxBatchSize by deadline.
+		deadline := time.NewTimer(debounce)
+		defer deadline.Stop()
+
+		// We always want 1 result. Ignore deadline for the first result.
+		r := <-resultC
+		if r.err != nil {
+			err = r.err
+			return nil, r.err
+		}
 
 		// Add to commits until we hit maxBatchSize or we are passed
-		// deadline. If we encounter an error set finalErr
-		var commits []*onelineCommit
-		for {
-			commit, err := scan()
-			if err != nil {
-				finalErr = err
-				break
-			}
-			commits = append(commits, commit)
-			if len(commits) >= maxBatchSize || time.Now().After(deadline) {
-				break
+		// deadline. If we encounter an error set err.
+		commits := []*onelineCommit{r.commit}
+		timedout := false
+		for err == nil && len(commits) < maxBatchSize && !timedout {
+			select {
+			case r := <-resultC:
+				if r.err != nil {
+					err = r.err
+				} else {
+					commits = append(commits, r.commit)
+				}
+			case <-deadline.C:
+				timedout = true
 			}
 		}
 
 		if len(commits) > 0 {
-			// Note: finalErr can be non-nil here. The next call to this
-			// function will return finalErr.
+			// Note: err can be non-nil here. The next call to this
+			// function will return err.
 			return commits, nil
 		}
 
-		if finalErr == nil {
-			panic("finalErr should be set if commits is empty")
+		if err == nil {
+			panic("err should be set if commits is empty")
 		}
 
-		return nil, finalErr
+		return nil, err
 	}
+
+	return next, cleanup
 }
 
 // logOnelineScanner parses the commits from the reader of:

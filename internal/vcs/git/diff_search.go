@@ -179,9 +179,6 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	// We do a search with git log returning just the commits (and source sha).
 	onelineCmd, err := rawLogSearchCmd(ctx, repo, opt)
 	if err != nil {
@@ -199,7 +196,8 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		maxBatchSize = 100
 		debounce     = 10 * time.Millisecond
 	)
-	nextCommits := logOnelineBatchScanner(logOnelineScanner(onelineReader), maxBatchSize, debounce)
+	nextCommits, nextCommitsClose := logOnelineBatchScanner(logOnelineScanner(onelineReader), maxBatchSize, debounce)
+	defer nextCommitsClose()
 
 	// We then search each commit in batches to further filter the results.
 	complete = true
