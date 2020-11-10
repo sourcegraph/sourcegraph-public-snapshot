@@ -191,7 +191,7 @@ func insertRepo(t *testing.T, db *sql.DB, id int, name string) {
 }
 
 // insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t *testing.T, store Store, packageReferences []lsifstore.PackageReference) {
+func insertPackageReferences(t *testing.T, store *Store, packageReferences []lsifstore.PackageReference) {
 	if err := store.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}
@@ -340,7 +340,7 @@ func getStates(ids ...int) (map[int]string, error) {
 	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-// scanStates scans pairs of id/states from the return value of `*store.query`.
+// scanStates scans pairs of id/states from the return value of `*Store.query`.
 func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 	if queryErr != nil {
 		return nil, queryErr

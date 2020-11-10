@@ -44,6 +44,11 @@ type GithubSource struct {
 	originalHostname string
 }
 
+var _ Source = &GithubSource{}
+var _ UserSource = &GithubSource{}
+var _ DraftChangesetSource = &GithubSource{}
+var _ ChangesetSource = &GithubSource{}
+
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
@@ -124,6 +129,23 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}, nil
 }
 
+func (s GithubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("GithubSource", a)
+	}
+
+	sc := s
+	sc.v3Client = sc.v3Client.WithAuthenticator(a)
+	sc.v4Client = sc.v4Client.WithAuthenticator(a)
+	sc.searchClient = sc.searchClient.WithAuthenticator(a)
+
+	return &sc, nil
+}
+
 type githubResult struct {
 	err  error
 	repo *github.Repository
@@ -155,10 +177,6 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
-
-// Type guards.
-var _ ChangesetSource = GithubSource{}
-var _ DraftChangesetSource = GithubSource{}
 
 // CreateChangeset creates the given changeset on the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {

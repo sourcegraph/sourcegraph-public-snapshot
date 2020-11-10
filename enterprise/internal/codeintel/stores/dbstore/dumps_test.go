@@ -570,7 +570,7 @@ type FindClosestDumpsTestCase struct {
 	allOfIDs            []int
 }
 
-func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDumpsTestCase) {
+func testFindClosestDumps(t *testing.T, store *Store, testCases []FindClosestDumpsTestCase) {
 	for _, testCase := range testCases {
 		name := fmt.Sprintf(
 			"commit=%s file=%s rootMustEnclosePath=%v indexer=%s",

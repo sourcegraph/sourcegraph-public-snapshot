@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,8 +15,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type s3Store struct {
@@ -24,6 +27,7 @@ type s3Store struct {
 	manageBucket bool
 	client       s3API
 	uploader     s3Uploader
+	operations   *operations
 }
 
 var _ Store = &s3Store{}
@@ -45,7 +49,7 @@ func (c *S3Config) load(parent *env.BaseConfig) {
 }
 
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
-func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
+func newS3FromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
 	sess, err := session.NewSessionWithOptions(s3SessionOptions(config.Backend, config.S3))
 	if err != nil {
 		return nil, err
@@ -54,16 +58,17 @@ func newS3FromConfig(ctx context.Context, config *Config) (Store, error) {
 	s3Client := s3.New(sess)
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{s3manager.NewUploaderWithClient(s3Client)}
-	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket), nil
+	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket, operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, ttl time.Duration, manageBucket bool) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, ttl time.Duration, manageBucket bool, operations *operations) *s3Store {
 	return &s3Store{
 		bucket:       bucket,
 		ttl:          ttl,
 		manageBucket: manageBucket,
 		client:       client,
 		uploader:     uploader,
+		operations:   operations,
 	}
 }
 
@@ -101,7 +106,13 @@ func (s *s3Store) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *s3Store) Get(ctx context.Context, key string, skipBytes int64) (io.ReadCloser, error) {
+func (s *s3Store) Get(ctx context.Context, key string, skipBytes int64) (_ io.ReadCloser, err error) {
+	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("key", key),
+		log.Int64("skipBytes", skipBytes),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	var bytesRange *string
 	if skipBytes > 0 {
 		bytesRange = aws.String(fmt.Sprintf("bytes=%d-", skipBytes))
@@ -119,7 +130,12 @@ func (s *s3Store) Get(ctx context.Context, key string, skipBytes int64) (io.Read
 	return resp.Body, nil
 }
 
-func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {
+func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
+	ctx, endObservation := s.operations.upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	cr := &countingReader{r: r}
 
 	if err := s.uploader.Upload(ctx, &s3manager.UploadInput{
@@ -134,6 +150,12 @@ func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (int64, e
 }
 
 func (s *s3Store) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
+	ctx, endObservation := s.operations.compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("destination", destination),
+		log.String("sources", strings.Join(sources, ", ")),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	multipartUpload, err := s.client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(destination),
@@ -146,7 +168,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		if err == nil {
 			// Delete sources on success
 			if err := s.deleteSources(ctx, *multipartUpload.Bucket, sources); err != nil {
-				log15.Error("failed to delete source objects", "error", err)
+				log15.Error("Failed to delete source objects", "error", err)
 			}
 		} else {
 			// On failure, try to clean up copied then orphaned parts
@@ -155,7 +177,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 				Key:      multipartUpload.Key,
 				UploadId: multipartUpload.UploadId,
 			}); err != nil {
-				log15.Error("failed to abort multipart upload", "error", err)
+				log15.Error("Failed to abort multipart upload", "error", err)
 			}
 		}
 	}()
@@ -216,8 +238,13 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	return *obj.ContentLength, nil
 }
 
-func (s *s3Store) Delete(ctx context.Context, key string) error {
-	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
+	ctx, endObservation := s.operations.delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	_, err = s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	})

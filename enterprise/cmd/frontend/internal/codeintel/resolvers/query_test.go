@@ -6,17 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
-	apimocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api/mocks"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
 )
 
 func TestRanges(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockCodeIntelAPI := NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	// path can be translated for subsequent dumps
@@ -58,8 +55,8 @@ func TestRanges(t *testing.T) {
 	})
 
 	queryResolver := NewQueryResolver(
-		mockStore,
-		mockBundleStore,
+		mockDBStore,
+		mockLSIFStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -146,9 +143,9 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockCodeIntelAPI := NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	// position can be translated for subsequent dumps
@@ -195,8 +192,8 @@ func TestDefinitions(t *testing.T) {
 	})
 
 	queryResolver := NewQueryResolver(
-		mockStore,
-		mockBundleStore,
+		mockDBStore,
+		mockLSIFStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -250,17 +247,17 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockCodeIntelAPI := NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	testMoniker1 := lsifstore.MonikerData{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
 	testMoniker2 := lsifstore.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
 
 	// Cursor decoding
-	mockStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) { return store.Dump{ID: id}, true, nil })
-	mockBundleStore.MonikersByPositionFunc.SetDefaultReturn([][]lsifstore.MonikerData{{testMoniker1, testMoniker2}}, nil)
+	mockDBStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) { return store.Dump{ID: id}, true, nil })
+	mockLSIFStore.MonikersByPositionFunc.SetDefaultReturn([][]lsifstore.MonikerData{{testMoniker1, testMoniker2}}, nil)
 
 	// position can be translated for subsequent dumps
 	mockPositionAdjuster.AdjustPositionFunc.SetDefaultReturn("", lsifstore.Position{Line: 20, Character: 15}, true, nil)
@@ -323,8 +320,8 @@ func TestReferences(t *testing.T) {
 	})
 
 	queryResolver := NewQueryResolver(
-		mockStore,
-		mockBundleStore,
+		mockDBStore,
+		mockLSIFStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -424,9 +421,9 @@ func TestReferences(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockCodeIntelAPI := NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	// position can be translated for subsequent dumps
@@ -451,8 +448,8 @@ func TestHover(t *testing.T) {
 	})
 
 	queryResolver := NewQueryResolver(
-		mockStore,
-		mockBundleStore,
+		mockDBStore,
+		mockLSIFStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,
@@ -488,9 +485,9 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockCodeIntelAPI := NewMockCodeIntelAPI()
 	mockPositionAdjuster := NewMockPositionAdjuster()
 
 	// position can be translated for subsequent dumps
@@ -566,8 +563,8 @@ func TestDiagnostics(t *testing.T) {
 	})
 
 	queryResolver := NewQueryResolver(
-		mockStore,
-		mockBundleStore,
+		mockDBStore,
+		mockLSIFStore,
 		mockCodeIntelAPI,
 		mockPositionAdjuster,
 		50,

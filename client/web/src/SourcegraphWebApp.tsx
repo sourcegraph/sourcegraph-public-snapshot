@@ -426,6 +426,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                                     searchRequest={this.state.searchStreaming ? searchStream : search}
+                                    searchStreaming={this.state.searchStreaming}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}

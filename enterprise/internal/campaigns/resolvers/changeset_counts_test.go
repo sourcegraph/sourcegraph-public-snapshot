@@ -80,7 +80,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &repos.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 			Repos: []string{"sourcegraph/sourcegraph"},

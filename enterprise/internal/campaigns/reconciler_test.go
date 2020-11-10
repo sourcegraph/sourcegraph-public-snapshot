@@ -2,11 +2,13 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -17,7 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -37,7 +41,7 @@ func TestReconcilerProcess(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -818,10 +822,10 @@ func TestDeterminePlan(t *testing.T) {
 
 	store := NewStore(dbconn.Global)
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	githubRepo := rs[0]
 
-	rs, _ = createBbsTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ = ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := rs[0]
 
 	admin := createTestUser(ctx, t)
@@ -996,7 +1000,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -1197,7 +1201,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -1284,6 +1288,231 @@ func TestNamespaceURL(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if have := namespaceURL(tc.ns); have != tc.want {
 				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecutor_LoadAuthenticator(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user cannot be a site admin")
+	}
+
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	repo := rs[0]
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+
+	t.Run("imported changeset uses global token", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 0,
+			},
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by missing campaign", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 1234,
+			},
+			tx: store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user without credential", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by normal user without credential", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              admin.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+
+	t.Run("owned by normal user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              user.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+}
+
+func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	gitHubRepo := rs[0]
+
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	gitLabExtSvc := createGitLabExternalService(t, ctx, rstore)
+	gitLabRepo := createGitLabRepo(t, ctx, rstore, gitLabExtSvc)
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+
+	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+	plan := &plan{}
+	plan.AddOp(operationPush)
+
+	tests := []struct {
+		name           string
+		repo           *repos.Repo
+		credentials    auth.Authenticator
+		wantPushConfig *gitprotocol.PushConfig
+	}{
+		{
+			name:        "github OAuthBearerToken",
+			repo:        gitHubRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				Token: "my-secret-github-token",
+				Type:  extsvc.TypeGitHub,
+			},
+		},
+		{
+			name:        "gitlab OAuthBearerToken",
+			repo:        gitLabRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				Token: "my-secret-gitlab-token",
+				Type:  extsvc.TypeGitLab,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.credentials != nil {
+				if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+					Domain:              db.UserCredentialDomainCampaigns,
+					UserID:              admin.ID,
+					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
+					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
+				}, tt.credentials); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			ex := &executor{
+				ch: &campaigns.Changeset{
+					OwnedByCampaignID: campaign.ID,
+					RepoID:            tt.repo.ID,
+				},
+				spec: buildChangesetSpec(t, testSpecOpts{
+					headRef:    "my-branch",
+					published:  true,
+					commitDiff: "testdiff",
+				}),
+				sourcer:         sourcer,
+				gitserverClient: gitClient,
+				tx:              store,
+			}
+
+			err := ex.ExecutePlan(context.Background(), plan)
+			if err != nil {
+				t.Fatalf("executing plan failed: %s", err)
+			}
+
+			if diff := cmp.Diff(tt.wantPushConfig, gitClient.CreateCommitFromPatchReq.Push); diff != "" {
+				t.Errorf("unexpected push options:\n%s", diff)
 			}
 		})
 	}

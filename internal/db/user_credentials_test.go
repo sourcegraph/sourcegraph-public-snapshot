@@ -291,19 +291,6 @@ func TestUserCredentials_List(t *testing.T) {
 		}
 	})
 
-	t.Run("no options", func(t *testing.T) {
-		creds, next, err := UserCredentials.List(ctx, UserCredentialsListOpts{})
-		if err == nil {
-			t.Error("unexpected nil error")
-		}
-		if next != 0 {
-			t.Errorf("unexpected next: have=%d want=%d", next, 0)
-		}
-		if len(creds) != 0 {
-			t.Errorf("unexpected non-zero number of credentials: %v", creds)
-		}
-	})
-
 	for name, tc := range map[string]struct {
 		scope UserCredentialScope
 		want  *UserCredential
@@ -342,6 +329,7 @@ func TestUserCredentials_List(t *testing.T) {
 	}
 
 	for name, scope := range map[string]UserCredentialScope{
+		"no options":   {},
 		"domain only":  {Domain: UserCredentialDomainCampaigns},
 		"user ID only": {UserID: user.ID},
 		"domain and user ID": {

@@ -49,9 +49,9 @@ type QueryResolver interface {
 }
 
 type queryResolver struct {
-	store            store.Store
-	lsifStore        lsifstore.Store
-	codeIntelAPI     codeintelapi.CodeIntelAPI
+	dbStore          DBStore
+	lsifStore        LSIFStore
+	codeIntelAPI     CodeIntelAPI
 	positionAdjuster PositionAdjuster
 	repositoryID     int
 	commit           string
@@ -63,9 +63,9 @@ type queryResolver struct {
 // struct return queries for the given repository, commit, and path, and will query only the
 // bundles associated with the given dump objects.
 func NewQueryResolver(
-	store store.Store,
-	lsifStore lsifstore.Store,
-	codeIntelAPI codeintelapi.CodeIntelAPI,
+	dbStore DBStore,
+	lsifStore LSIFStore,
+	codeIntelAPI CodeIntelAPI,
 	positionAdjuster PositionAdjuster,
 	repositoryID int,
 	commit string,
@@ -73,7 +73,7 @@ func NewQueryResolver(
 	uploads []store.Dump,
 ) QueryResolver {
 	return &queryResolver{
-		store:            store,
+		dbStore:          dbStore,
 		lsifStore:        lsifStore,
 		codeIntelAPI:     codeIntelAPI,
 		positionAdjuster: positionAdjuster,
@@ -202,7 +202,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			continue
 		}
 
-		cursor, err := codeintelapi.DecodeOrCreateCursor(adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID, rawCursor, r.store, r.lsifStore)
+		cursor, err := codeintelapi.DecodeOrCreateCursor(adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID, rawCursor, r.dbStore, r.lsifStore)
 		if err != nil {
 			return nil, "", err
 		}
