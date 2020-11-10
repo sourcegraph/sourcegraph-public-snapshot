@@ -6,7 +6,6 @@ import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
-import { logEvent } from '../../../user/settings/backend'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 export interface CreateUpdateCampaignAlertProps extends TelemetryProps {
