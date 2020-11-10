@@ -4,10 +4,10 @@ import { StreamingProgressCount } from './StreamingProgressCount'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 
 export interface StreamingProgressProps {
-    progress: Progress
+    progress?: Progress
 }
 
-const defaultProgress: Progress = {
+export const defaultProgress: Progress = {
     done: true,
     durationMs: 0,
     matchCount: 0,

@@ -1,10 +1,12 @@
-import * as React from 'react'
-import CalculatorIcon from 'mdi-react/CalculatorIcon'
 import classNames from 'classnames'
+import CalculatorIcon from 'mdi-react/CalculatorIcon'
+import * as React from 'react'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { StreamingProgressProps } from './StreamingProgress'
+import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
 
-export const StreamingProgressCount: React.FunctionComponent<StreamingProgressProps> = ({ progress }) => (
+export const StreamingProgressCount: React.FunctionComponent<StreamingProgressProps> = ({
+    progress = defaultProgress,
+}) => (
     <div
         className={classNames('streaming-progress__count p-2 d-flex align-items-center', {
             'streaming-progress__count--in-progress': !progress.done,
