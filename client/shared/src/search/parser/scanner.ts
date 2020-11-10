@@ -82,15 +82,6 @@ export interface Keyword {
 }
 
 /**
- * Represents a sequence of tokens in a search query.
- */
-export interface Sequence {
-    type: 'sequence'
-    range: CharacterRange
-    members: Token[]
-}
-
-/**
  * Represents a quoted string in a search query.
  *
  * Example: "Conn".
@@ -129,7 +120,7 @@ export interface ClosingParen {
 
 export type Token = Whitespace | OpeningParen | ClosingParen | Keyword | Comment | Literal | Pattern | Filter | Quoted
 
-export type Term = Token | Sequence
+export type Term = Token | Token[]
 
 /**
  * Represents the failed result of running a {@link Scanner} on a search query.
@@ -158,7 +149,7 @@ export interface ScanSuccess<T = Term> {
     /**
      * The resulting term.
      */
-    token: T
+    term: T
 }
 
 /**
@@ -172,8 +163,8 @@ type Scanner<T = Term> = (input: string, start: number) => ScanResult<T>
  * Returns a {@link Scanner} that succeeds if zero or more tokens are scanned
  * by the given `scanToken` scanners.
  */
-const zeroOrMore = (scanToken: Scanner<Term>): Scanner<Sequence> => (input, start) => {
-    const members: Token[] = []
+const zeroOrMore = (scanToken: Scanner<Term>): Scanner<Token[]> => (input, start) => {
+    const tokens: Token[] = []
     let adjustedStart = start
     let end = start + 1
     while (input[adjustedStart] !== undefined) {
@@ -181,20 +172,18 @@ const zeroOrMore = (scanToken: Scanner<Term>): Scanner<Sequence> => (input, star
         if (result.type === 'error') {
             return result
         }
-        if (result.token.type === 'sequence') {
-            for (const member of result.token.members) {
-                members.push(member)
+        if (Array.isArray(result.term)) {
+            for (const token of result.term) {
+                tokens.push(token)
+                end = token.range.end
             }
         } else {
-            members.push(result.token)
+            tokens.push(result.term)
+            end = result.term.range.end
         }
-        end = result.token.range.end
         adjustedStart = end
     }
-    return {
-        type: 'success',
-        token: { type: 'sequence', members, range: { start, end } },
-    }
+    return { type: 'success', term: tokens }
 }
 
 /**
@@ -234,7 +223,7 @@ const quoted = (delimiter: string): Scanner<Quoted> => (input, start) => {
     return {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
-        token: { type: 'quoted', quotedValue: input.slice(start + 1, end), range: { start, end: end + 1 } },
+        term: { type: 'quoted', quotedValue: input.slice(start + 1, end), range: { start, end: end + 1 } },
     }
 }
 
@@ -248,7 +237,7 @@ const character = (character: string): Scanner<Literal> => (input, start) => {
     }
     return {
         type: 'success',
-        token: { type: 'literal', value: character, range: { start, end: start + 1 } },
+        term: { type: 'literal', value: character, range: { start, end: start + 1 } },
     }
 }
 
@@ -276,7 +265,7 @@ const scanToken = <T extends Term = Literal>(
         const range = { start, end: start + match[0].length }
         return {
             type: 'success',
-            token: output
+            term: output
                 ? typeof output === 'function'
                     ? output(input, range)
                     : output
@@ -334,25 +323,25 @@ const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: '
  * Returns a {@link Scanner} that succeeds if a token scanned by `scanToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
-const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanner<Sequence> => (input, start) => {
-    const members: Token[] = []
+const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanner<Token[]> => (input, start) => {
+    const tokens: Token[] = []
     const tokenResult = scanToken(input, start)
     if (tokenResult.type === 'error') {
         return tokenResult
     }
-    members.push(tokenResult.token)
-    let { end } = tokenResult.token.range
+    tokens.push(tokenResult.term)
+    let { end } = tokenResult.term.range
     if (input[end] !== undefined) {
         const separatorResult = scanNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
-        members.push(separatorResult.token)
-        end = separatorResult.token.range.end
+        tokens.push(separatorResult.term)
+        end = separatorResult.term.range.end
     }
     return {
         type: 'success',
-        token: { type: 'sequence', members, range: { start, end } },
+        term: tokens,
     }
 }
 
@@ -366,32 +355,32 @@ const filter: Scanner<Filter> = (input, start) => {
     if (scannedKeyword.type === 'error') {
         return scannedKeyword
     }
-    const scannedDelimiter = filterDelimiter(input, scannedKeyword.token.range.end)
+    const scannedDelimiter = filterDelimiter(input, scannedKeyword.term.range.end)
     if (scannedDelimiter.type === 'error') {
         return scannedDelimiter
     }
     const scannedValue =
-        input[scannedDelimiter.token.range.end] === undefined
+        input[scannedDelimiter.term.range.end] === undefined
             ? undefined
-            : filterValue(input, scannedDelimiter.token.range.end)
+            : filterValue(input, scannedDelimiter.term.range.end)
     if (scannedValue && scannedValue.type === 'error') {
         return scannedValue
     }
     return {
         type: 'success',
-        token: {
+        term: {
             type: 'filter',
-            range: { start, end: scannedValue ? scannedValue.token.range.end : scannedDelimiter.token.range.end },
-            filterType: scannedKeyword.token,
-            filterValue: scannedValue?.token,
-            negated: scannedKeyword.token.value.startsWith('-'),
+            range: { start, end: scannedValue ? scannedValue.term.range.end : scannedDelimiter.term.range.end },
+            filterType: scannedKeyword.term,
+            filterValue: scannedValue?.term,
+            negated: scannedKeyword.term.value.startsWith('-'),
         },
     }
 }
 
 const createPattern = (value: string, range: CharacterRange, kind: PatternKind): ScanSuccess<Pattern> => ({
     type: 'success',
-    token: {
+    term: {
         type: 'pattern',
         range,
         kind,
@@ -399,7 +388,7 @@ const createPattern = (value: string, range: CharacterRange, kind: PatternKind):
     },
 })
 
-const scanFilterOrKeyword = oneOf<Literal | Sequence>(filterKeyword, followedBy(keyword, whitespace))
+const scanFilterOrKeyword = oneOf<Literal | Token[]>(filterKeyword, followedBy(keyword, whitespace))
 const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyword(input, start).type !== 'success'
 
 /**
@@ -505,12 +494,12 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern
 const scanPattern = (kind: PatternKind): Scanner<Pattern> => (input, start) => {
     const balancedPattern = scanBalancedPattern(kind)(input, start)
     if (balancedPattern.type === 'success') {
-        return createPattern(balancedPattern.token.value, balancedPattern.token.range, kind)
+        return createPattern(balancedPattern.term.value, balancedPattern.term.range, kind)
     }
 
     const anyPattern = literal(input, start)
     if (anyPattern.type === 'success') {
-        return createPattern(anyPattern.token.value, anyPattern.token.range, kind)
+        return createPattern(anyPattern.term.value, anyPattern.term.range, kind)
     }
 
     return anyPattern
@@ -523,7 +512,7 @@ const whitespaceOrClosingParen = oneOf<Whitespace | ClosingParen>(whitespace, cl
  *
  * @param interpretComments Interpets C-style line comments for multiline queries.
  */
-const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<Sequence> => {
+const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<Token[]> => {
     const baseQuotedScanner = [quoted('"'), quoted("'")]
     const quotedScanner = kind === PatternKind.Regexp ? [quoted('/'), ...baseQuotedScanner] : baseQuotedScanner
 
@@ -551,7 +540,7 @@ export const scanSearchQuery = (
     query: string,
     interpretComments?: boolean,
     kind = PatternKind.Literal
-): ScanResult<Sequence> => {
+): ScanResult<Token[]> => {
     const scanner = createScanner(kind, interpretComments)
     return scanner(query, 0)
 }
