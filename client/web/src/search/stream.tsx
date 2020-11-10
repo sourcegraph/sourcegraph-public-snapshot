@@ -69,7 +69,7 @@ type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
  * An aggregate type representing a progress update.
  * Should be replaced when a new ones come in.
  */
-interface Progress {
+export interface Progress {
     /**
      * True if this is the final progress update for this stream
      */
