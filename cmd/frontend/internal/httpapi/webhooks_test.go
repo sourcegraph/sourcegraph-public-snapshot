@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -18,15 +16,21 @@ func TestDispatchSuccess(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	require.NoError(t, h.Dispatch(ctx, "test-event-1", nil, nil))
-	assert.True(t, called)
+	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
+		t.Errorf("Expected no error, got %s", err)
+	}
+	if !called {
+		t.Errorf("Expected called to be true, was false")
+	}
 }
 
 func TestDispatchNoHandler(t *testing.T) {
 	h := GithubWebhook{}
 	ctx := context.Background()
 	// no op
-	require.NoError(t, h.Dispatch(ctx, "test-event-1", nil, nil))
+	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
+		t.Errorf("Expected no error, got %s", err)
+	}
 }
 
 func TestDispatchSuccessMultiple(t *testing.T) {
@@ -42,8 +46,12 @@ func TestDispatchSuccessMultiple(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	require.NoError(t, h.Dispatch(ctx, "test-event-1", nil, nil))
-	assert.Equal(t, 2, called)
+	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
+		t.Errorf("Expected no error, got %s", err)
+	}
+	if called != 2 {
+		t.Errorf("Expected called to be 2, got %v", called)
+	}
 }
 
 func TestDispatchError(t *testing.T) {
@@ -59,6 +67,17 @@ func TestDispatchError(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	require.Error(t, h.Dispatch(ctx, "test-event-1", nil, nil))
-	assert.Equal(t, 1, called)
+	if err := h.Dispatch(ctx, "test-event-1", nil, nil); errString(err) != "oh dear" {
+		t.Errorf("Expected 'oh no', got %s", err)
+	}
+	if called != 1 {
+		t.Errorf("Expected called to be 1, got %v", called)
+	}
+}
+
+func errString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
