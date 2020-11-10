@@ -1,5 +1,5 @@
 /* eslint-disable id-length */
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
+import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber } from 'rxjs'
 import { defaultIfEmpty, map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
@@ -387,20 +387,55 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
     defaultIfEmpty(emptyGQLSearchResults)
 )
 
-const observeMessages = <T extends {}>(eventSource: EventSource, eventName: SearchEvent['type']): Observable<T> =>
-    fromEvent(eventSource, eventName).pipe(
-        map((event: Event) => {
-            if (!(event instanceof MessageEvent)) {
-                throw new TypeError(`internal error: expected MessageEvent in streaming search ${eventName}`)
-            }
-            try {
-                const parsedData = JSON.parse(event.data) as T
-                return parsedData
-            } catch {
-                throw new Error(`Could not parse ${eventName} message data in streaming search`)
-            }
-        })
-    )
+const observeMessages = <T extends SearchEvent>(
+    type: T['type'],
+    eventSource: EventSource,
+    observer: Subscriber<SearchEvent>
+): Subscription =>
+    fromEvent(eventSource, type)
+        .pipe(
+            map((event: Event) => {
+                if (!(event instanceof MessageEvent)) {
+                    throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
+                }
+                try {
+                    const parsedData = JSON.parse(event.data) as T['data']
+                    return parsedData
+                } catch {
+                    throw new Error(`Could not parse ${type} message data in streaming search`)
+                }
+            }),
+            map(data => ({ type, data } as T))
+        )
+        .subscribe(observer)
+
+type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
+    type: EventType,
+    eventSource: EventSource,
+    observer: Subscriber<SearchEvent>
+) => Subscription
+
+const messageHandlers: {
+    [EventType in SearchEvent['type']]: MessageHandler<EventType>
+} = {
+    done: (type, eventSource, observer) =>
+        fromEvent(eventSource, type).subscribe(() => {
+            observer.complete()
+            eventSource.close()
+        }),
+    error: (type, eventSource, observer) =>
+        fromEvent(eventSource, type).subscribe(error => {
+            observer.error(error)
+            eventSource.close()
+        }),
+    filematches: observeMessages,
+    symbolmatches: observeMessages,
+    repomatches: observeMessages,
+    commitmatches: observeMessages,
+    progress: observeMessages,
+    filters: observeMessages,
+    alert: observeMessages,
+}
 
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
@@ -427,53 +462,11 @@ export function search(
 
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
-        subscriptions.add(
-            observeMessages<FileMatch[]>(eventSource, 'filematches')
-                .pipe(map(matches => ({ type: 'filematches' as const, data: matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<FileSymbolMatch[]>(eventSource, 'symbolmatches')
-                .pipe(map(matches => ({ type: 'symbolmatches' as const, data: matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<RepositoryMatch[]>(eventSource, 'repomatches')
-                .pipe(map(matches => ({ type: 'repomatches' as const, data: matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<CommitMatch[]>(eventSource, 'commitmatches')
-                .pipe(map(matches => ({ type: 'commitmatches' as const, data: matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<Progress>(eventSource, 'progress')
-                .pipe(map(progress => ({ type: 'progress' as const, data: progress })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<Filter[]>(eventSource, 'filters')
-                .pipe(map(filters => ({ type: 'filters' as const, data: filters })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<Alert>(eventSource, 'alert')
-                .pipe(map(alert => ({ type: 'alert' as const, data: alert })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            fromEvent(eventSource, 'done').subscribe(() => {
-                observer.complete()
-                eventSource.close()
-            })
-        )
-        subscriptions.add(
-            fromEvent(eventSource, 'error').subscribe(error => {
-                observer.error(error)
-                eventSource.close()
-            })
-        )
+        for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
+            subscriptions.add(
+                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+            )
+        }
         return () => {
             subscriptions.unsubscribe()
             eventSource.close()
