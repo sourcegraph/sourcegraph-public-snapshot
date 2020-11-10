@@ -459,6 +459,9 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	return ids, nil
 }
 
+// AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
+// username belonging to the credentials associated with the
+// BitbucketServerSource.
 func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	return s.client.AuthenticatedUsername(ctx)
 }

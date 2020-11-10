@@ -1360,6 +1360,13 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	return nil, errors.New("existing PR not found")
 }
 
+// AuthenticatedUsername returns the username associated with the credentials
+// used by the client.
+// Since BitbucketServer doesn't offer an endpoint in their API to query the
+// currently-authenticated user, we send a request to list a single user on the
+// instance and then inspect the response headers in which BitbucketServer sets
+// the username in X-Ausername.
+// If no username is found in the response headers, an error is returned.
 func (c *Client) AuthenticatedUsername(ctx context.Context) (username string, err error) {
 	resp, err := c.send(ctx, "GET", "rest/api/1.0/users", url.Values{"limit": []string{"1"}}, nil, nil)
 	if err != nil {
