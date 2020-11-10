@@ -45,6 +45,12 @@ Less frequently used commands:
 
 - You can't access Sourcegraph. See [Troubleshooting ingress-nginx](https://kubernetes.github.io/ingress-nginx/troubleshooting/). If you followed our instructions the namespace of the ingress-controller is `ingress-nginx`.
 
+### Postgres specific errors
+
+-  Errors in the `pgsql` or `codeintel-db` pod logs about data directory permissions. 
+
+   Our database deployments contain [initContainers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to ensure that the mounted volumes have the correct permissions. If these containers fail to run you may experience this issues. You should manually exec into the postgres container and modify the permissions.  
+
 Any other issues? Contact us at [@srcgraph](https://twitter.com/srcgraph)
 or <mailto:support@sourcegraph.com>, or file issues on
 our [public issue tracker](https://github.com/sourcegraph/issues/issues).
