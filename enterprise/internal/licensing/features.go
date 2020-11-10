@@ -36,7 +36,7 @@ func Check(feature Feature) error {
 
 func checkFeature(info *Info, feature Feature) error {
 	if info == nil {
-		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
 
 	// Check if the feature is explicitly allowed via license tag.
@@ -49,7 +49,7 @@ func checkFeature(info *Info, feature Feature) error {
 		return false
 	}
 	if !info.Plan().HasFeature(feature) && !hasFeature(feature) {
-		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
 	}
 	return nil // feature is activated for current license
 }
@@ -66,7 +66,7 @@ func TestingSkipFeatureChecks() func() {
 	return func() { MockCheckFeature = nil }
 }
 
-func newFeatureNotActivatedError(message string) featureNotActivatedError {
+func NewFeatureNotActivatedError(message string) featureNotActivatedError {
 	e := errcode.NewPresentationError(message).(errcode.PresentationError)
 	return featureNotActivatedError{e}
 }
