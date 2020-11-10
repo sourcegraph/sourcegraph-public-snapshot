@@ -11,7 +11,12 @@ steps:
 - label: ':docker::arrow_double_up: Sourcegraph Upgrade'
   command:
   - .buildkite/vagrant-run.sh sourcegraph-upgrade
-  timeout_in_minutes: 20
   artifact_paths: ./*.png;./*.mp4;./*.log
+  agents:
+    queue: 'baremetal'
+
+- label: ':docker::brain: Code Intel'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
   agents:
     queue: 'baremetal'

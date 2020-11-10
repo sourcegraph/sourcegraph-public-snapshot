@@ -16,9 +16,3 @@ steps:
       - .buildkite/vagrant-run.sh sourcegraph-e2e || true
     agents:
       queue: 'baremetal'
-
-  - label: ':brain: Code Intel'
-    command:
-      - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
-    agents:
-      queue: 'baremetal'
