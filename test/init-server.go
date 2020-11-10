@@ -18,6 +18,8 @@ var (
 )
 
 func main() {
+	log.Println("Running initializer")
+
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
@@ -41,28 +43,32 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create token: ", err)
 	}
+	if token == "" {
+		log.Fatal("Failed to create token")
+	}
 
+	// Ensure site configuration is set up correctly
 	siteConfig, err := client.SiteConfiguration()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	siteConfig.ExternalURL = "http://127.0.0.1:7080"
-
-	err = client.UpdateSiteConfiguration(siteConfig)
-	if err != nil {
-		log.Fatal(err)
+	if siteConfig.ExternalURL != "http://127.0.0.1:7080" {
+		siteConfig.ExternalURL = "http://127.0.0.1:7080"
+		err = client.UpdateSiteConfiguration(siteConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
-
 	file, err := os.OpenFile("/root/.profile", os.O_APPEND|os.O_WRONLY, 0755)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 	if _, err := file.WriteString(envvar); err != nil {
 		log.Fatal(err)
 	}
 
+	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in /root/.profile")
 }
