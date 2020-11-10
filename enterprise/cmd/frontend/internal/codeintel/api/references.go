@@ -6,10 +6,12 @@ import (
 	"fmt"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // RemoteDumpLimit is the limit for fetching batches of remote dumps.
@@ -20,13 +22,20 @@ var ErrIllegalLimit = errors.New("limit must be positive")
 
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories.
-func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+func (api *CodeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) (_ []ResolvedLocation, _ Cursor, _ bool, err error) {
+	ctx, endObservation := api.operations.references.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if limit <= 0 {
 		return nil, Cursor{}, false, ErrIllegalLimit
 	}
 
 	rpr := &ReferencePageResolver{
-		store:           api.store,
+		dbStore:         api.dbStore,
 		lsifStore:       api.lsifStore,
 		repositoryID:    repositoryID,
 		commit:          commit,
@@ -38,8 +47,8 @@ func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commi
 }
 
 type ReferencePageResolver struct {
-	store           store.Store
-	lsifStore       lsifstore.Store
+	dbStore         DBStore
+	lsifStore       LSIFStore
 	repositoryID    int
 	commit          string
 	remoteDumpLimit int
@@ -88,7 +97,7 @@ func (s *ReferencePageResolver) dispatchCursorHandler(ctx context.Context, curso
 }
 
 func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
-	dump, exists, err := s.store.GetDumpByID(ctx, cursor.DumpID)
+	dump, exists, err := s.dbStore.GetDumpByID(ctx, cursor.DumpID)
 	if err != nil {
 		return nil, Cursor{}, false, pkgerrors.Wrap(err, "store.GetDumpByID")
 	}
@@ -133,7 +142,7 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 }
 
 func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
-	dump, exists, err := s.store.GetDumpByID(ctx, cursor.DumpID)
+	dump, exists, err := s.dbStore.GetDumpByID(ctx, cursor.DumpID)
 	if err != nil {
 		return nil, Cursor{}, false, pkgerrors.Wrap(err, "store.GetDumpByID")
 	}
@@ -251,7 +260,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 			continue
 		}
 
-		locations, count, err := lookupMoniker(s.store, s.lsifStore, cursor.DumpID, cursor.Path, "references", moniker, cursor.SkipResults, s.limit)
+		locations, count, err := lookupMoniker(s.dbStore, s.lsifStore, cursor.DumpID, cursor.Path, "references", moniker, cursor.SkipResults, s.limit)
 		if err != nil {
 			return nil, Cursor{}, false, err
 		}
@@ -279,7 +288,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 
 func (s *ReferencePageResolver) handleSameRepoCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	locations, newCursor, hasNewCursor, err := s.resolveLocationsViaReferencePager(ctx, cursor, func(ctx context.Context) (int, store.ReferencePager, error) {
-		totalCount, pager, err := s.store.SameRepoPager(ctx, s.repositoryID, s.commit, cursor.Scheme, cursor.Name, cursor.Version, s.remoteDumpLimit)
+		totalCount, pager, err := s.dbStore.SameRepoPager(ctx, s.repositoryID, s.commit, cursor.Scheme, cursor.Name, cursor.Version, s.remoteDumpLimit)
 		if err != nil {
 			return 0, nil, pkgerrors.Wrap(err, "store.SameRepoPager")
 		}
@@ -307,7 +316,7 @@ func (s *ReferencePageResolver) handleSameRepoCursor(ctx context.Context, cursor
 
 func (s *ReferencePageResolver) handleRemoteRepoCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	return s.resolveLocationsViaReferencePager(ctx, cursor, func(ctx context.Context) (int, store.ReferencePager, error) {
-		totalCount, pager, err := s.store.PackageReferencePager(ctx, cursor.Scheme, cursor.Name, cursor.Version, s.repositoryID, s.remoteDumpLimit)
+		totalCount, pager, err := s.dbStore.PackageReferencePager(ctx, cursor.Scheme, cursor.Name, cursor.Version, s.repositoryID, s.remoteDumpLimit)
 		if err != nil {
 			return 0, nil, pkgerrors.Wrap(err, "store.PackageReferencePager")
 		}
@@ -371,7 +380,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 			continue
 		}
 
-		dump, exists, err := s.store.GetDumpByID(ctx, batchDumpID)
+		dump, exists, err := s.dbStore.GetDumpByID(ctx, batchDumpID)
 		if err != nil {
 			return nil, Cursor{}, false, pkgerrors.Wrap(err, "store.GetDumpByID")
 		}

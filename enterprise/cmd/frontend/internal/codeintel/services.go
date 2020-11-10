@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -22,11 +23,11 @@ import (
 )
 
 var services struct {
-	store           store.Store
-	lsifStore       lsifstore.Store
+	dbStore         *store.Store
+	lsifStore       *lsifstore.Store
 	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
-	api             codeintelapi.CodeIntelAPI
+	api             *codeintelapi.CodeIntelAPI
 	err             error
 }
 
@@ -35,42 +36,48 @@ var once sync.Once
 func initServices(ctx context.Context) error {
 	once.Do(func() {
 		if err := config.UploadStoreConfig.Validate(); err != nil {
-			services.err = fmt.Errorf("failed to load config: %s", err)
+			services.err = fmt.Errorf("Failed to load config: %s", err)
 			return
 		}
 
+		// Initialize tracing/metrics
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		codeIntelDB := mustInitializeCodeIntelDatabase()
-		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		lsifStore := lsifstore.NewObserved(lsifstore.NewStore(codeIntelDB), observationContext)
+		// Connect to database
+		codeIntelDB := mustInitializeCodeIntelDB()
 
-		uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig)
+		// Initialize stores
+		dbStore := store.NewWithDB(dbconn.Global, observationContext)
+		lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
+
+		uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig, observationContext)
 		if err != nil {
-			log.Fatalf("failed to initialize upload store: %s", err)
+			log.Fatalf("Failed to initialize upload store: %s", err)
 		}
+		gitserverClient := gitserver.New(observationContext)
 
-		api := codeintelapi.NewObserved(codeintelapi.New(store, lsifStore, gitserver.DefaultClient), observationContext)
+		// Initialize internal codeintel API
+		api := codeintelapi.New(&api.DBStoreShim{dbStore}, lsifStore, &codeintelapi.GitserverClientShim{gitserverClient}, observationContext)
 
-		services.store = store
+		services.dbStore = dbStore
 		services.lsifStore = lsifStore
 		services.uploadStore = uploadStore
-		services.gitserverClient = gitserver.DefaultClient
+		services.gitserverClient = gitserverClient
 		services.api = api
 	})
 
 	return services.err
 }
 
-func mustInitializeCodeIntelDatabase() *sql.DB {
+func mustInitializeCodeIntelDB() *sql.DB {
 	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 

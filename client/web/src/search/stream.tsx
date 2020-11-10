@@ -14,6 +14,7 @@ export type SearchEvent =
     | { type: 'repomatches'; data: RepositoryMatch[] }
     | { type: 'commitmatches'; data: CommitMatch[] }
     | { type: 'symbolmatches'; data: FileSymbolMatch[] }
+    | { type: 'progress'; data: Progress }
     | { type: 'filters'; data: Filter[] }
     | { type: 'alert'; data: Alert }
     | { type: 'error'; data: Error }
@@ -63,6 +64,80 @@ interface CommitMatch {
 }
 
 type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
+
+/**
+ * An aggregate type representing a progress update.
+ * Should be replaced when a new ones come in.
+ */
+interface Progress {
+    /**
+     * True if this is the final progress update for this stream
+     */
+    done: boolean
+
+    /**
+     * The number of repositories matching the repo: filter. Is set once they
+     * are resolved.
+     */
+    repositoriesCount?: number
+
+    // The number of non-overlapping matches. If skipped is non-empty, then
+    // this is a lower bound.
+    matchCount: number
+
+    // Wall clock time in milliseconds for this search.
+    durationMs: number
+
+    /**
+     * A description of shards or documents that were skipped. This has a
+     * deterministic ordering. More important reasons will be listed first. If
+     * a search is repeated, the final skipped list will be the same.
+     * However, within a search stream when a new skipped reason is found, it
+     * may appear anywhere in the list.
+     */
+    skipped: Skipped[]
+}
+
+interface Skipped {
+    /**
+     * Why a document/shard/repository was skipped. We group counts by reason.
+     *
+     * - document-match-limit :: we found too many matches in a document, so we stopped searching it.
+     * - shard-match-limit :: we found too many matches in a shard/repository, so we stopped searching it.
+     * - repository-limit :: we did not search a repository because the set of repositories to search was too large.
+     * - shard-timeout :: we ran out of time before searching a shard/repository.
+     * - repository-cloning :: we could not search a repository because it is not cloned.
+     * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
+     * - excluded-fork :: we did not search a repository because it is a fork.
+     * - excluded-archive :: we did not search a repository because it is archived.
+     */
+    reason:
+        | 'document-match-limit'
+        | 'shard-match-limit'
+        | 'repository-limit'
+        | 'shard-timedout'
+        | 'repository-cloning'
+        | 'repository-missing'
+        | 'excluded-fork'
+        | 'excluded-archive'
+    /**
+     * A short message. eg 1,200 timed out.
+     */
+    title: string
+    /**
+     * A message to show the user. Usually includes information explaining the reason,
+     * count as well as a sample of the missing items.
+     */
+    message: string
+    severity: 'info' | 'warn'
+    /**
+     * a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
+     */
+    suggested?: {
+        title: string
+        queryExpression: string
+    }
+}
 
 interface Filter {
     value: string
@@ -198,6 +273,23 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     return gqlCommit as GQL.ICommitSearchResult
 }
 
+function setProgress(results: GQL.ISearchResults, progress: Progress): GQL.ISearchResults {
+    // The progress API doesn't have a way to extract lists of repos that were
+    // searched/cloning/missing/etc. We only have numbers, so we don't set those
+    // fields in the PoC.
+    const exact = progress.done && progress.skipped.length === 0
+    const hasSkippedLimitReason = progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
+    return {
+        ...results,
+        matchCount: progress.matchCount,
+        resultCount: progress.matchCount,
+        approximateResultCount: `${progress.matchCount}${exact ? '' : '+'}`,
+        limitHit: hasSkippedLimitReason,
+        repositoriesCount: progress.repositoriesCount || 0,
+        elapsedMilliseconds: progress.durationMs,
+    }
+}
+
 const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => ({
     __typename: 'SearchFilter',
     ...filter,
@@ -270,6 +362,10 @@ export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearc
                     // symbol matches are additive
                     results: results.results.concat(newEvent.data.map(toGQLSymbolMatch)),
                 }
+
+            case 'progress':
+                // progress updates replace
+                return setProgress(results, newEvent.data)
 
             case 'filters':
                 return {
@@ -349,6 +445,11 @@ export function search(
         subscriptions.add(
             observeMessages<CommitMatch[]>(eventSource, 'commitmatches')
                 .pipe(map(matches => ({ type: 'commitmatches' as const, data: matches })))
+                .subscribe(observer)
+        )
+        subscriptions.add(
+            observeMessages<Progress>(eventSource, 'progress')
+                .pipe(map(progress => ({ type: 'progress' as const, data: progress })))
                 .subscribe(observer)
         )
         subscriptions.add(

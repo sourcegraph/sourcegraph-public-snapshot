@@ -3,13 +3,16 @@ package uploadstore
 import (
 	"context"
 	"io"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"google.golang.org/api/option"
 )
 
@@ -19,6 +22,7 @@ type gcsStore struct {
 	manageBucket bool
 	config       GCSConfig
 	client       gcsAPI
+	operations   *operations
 }
 
 var _ Store = &gcsStore{}
@@ -36,22 +40,23 @@ func (c *GCSConfig) load(parent *env.BaseConfig) {
 }
 
 // newGCSFromConfig creates a new store backed by GCP storage.
-func newGCSFromConfig(ctx context.Context, config *Config) (Store, error) {
+func newGCSFromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
 	client, err := storage.NewClient(ctx, gcsClientOptions(config.GCS)...)
 	if err != nil {
 		return nil, err
 	}
 
-	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS), nil
+	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS, operations), nil
 }
 
-func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig) *gcsStore {
+func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig, operations *operations) *gcsStore {
 	return &gcsStore{
 		bucket:       bucket,
 		ttl:          ttl,
 		config:       config,
 		manageBucket: manageBucket,
 		client:       client,
+		operations:   operations,
 	}
 }
 
@@ -81,7 +86,13 @@ func (s *gcsStore) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *gcsStore) Get(ctx context.Context, key string, skipBytes int64) (io.ReadCloser, error) {
+func (s *gcsStore) Get(ctx context.Context, key string, skipBytes int64) (_ io.ReadCloser, err error) {
+	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("key", key),
+		log.Int64("skipBytes", skipBytes),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, skipBytes, -1)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
@@ -91,6 +102,11 @@ func (s *gcsStore) Get(ctx context.Context, key string, skipBytes int64) (io.Rea
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
+	ctx, endObservation := s.operations.upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -112,13 +128,19 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 }
 
 func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
+	ctx, endObservation := s.operations.compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("destination", destination),
+		log.String("sources", strings.Join(sources, ", ")),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	bucket := s.client.Bucket(s.bucket)
 
 	defer func() {
 		if err == nil {
 			// Delete sources on success
 			if err := s.deleteSources(ctx, bucket, sources); err != nil {
-				log15.Error("failed to delete source objects", "error", err)
+				log15.Error("Failed to delete source objects", "error", err)
 			}
 		}
 	}()
@@ -136,7 +158,12 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 	return attrs.Size, nil
 }
 
-func (s *gcsStore) Delete(ctx context.Context, key string) error {
+func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
+	ctx, endObservation := s.operations.delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return errors.Wrap(s.client.Bucket(s.bucket).Object(key).Delete(ctx), "failed to delete object")
 }
 

@@ -14,8 +14,8 @@ import (
 )
 
 type IndexScheduler struct {
-	store                       store.Store
-	gitserverClient             gitserverClient
+	dbStore                     DBStore
+	gitserverClient             GitserverClient
 	batchSize                   int
 	minimumTimeSinceLastEnqueue time.Duration
 	minimumSearchCount          int
@@ -27,8 +27,8 @@ type IndexScheduler struct {
 var _ goroutine.Handler = &IndexScheduler{}
 
 func NewIndexScheduler(
-	store store.Store,
-	gitserverClient gitserverClient,
+	dbStore DBStore,
+	gitserverClient GitserverClient,
 	batchSize int,
 	minimumTimeSinceLastEnqueue time.Duration,
 	minimumSearchCount int,
@@ -38,7 +38,7 @@ func NewIndexScheduler(
 	metrics Metrics,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &IndexScheduler{
-		store:                       store,
+		dbStore:                     dbStore,
 		gitserverClient:             gitserverClient,
 		batchSize:                   batchSize,
 		minimumTimeSinceLastEnqueue: minimumTimeSinceLastEnqueue,
@@ -50,12 +50,12 @@ func NewIndexScheduler(
 }
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {
-	configuredRepositoryIDs, err := s.store.GetRepositoriesWithIndexConfiguration(ctx)
+	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.GetRepositoriesWithIndexConfiguration")
 	}
 
-	indexableRepositories, err := s.store.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
+	indexableRepositories, err := s.dbStore.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
 		Limit:                       s.batchSize,
 		MinimumTimeSinceLastEnqueue: s.minimumTimeSinceLastEnqueue,
 		MinimumSearchCount:          s.minimumSearchCount,
@@ -90,12 +90,12 @@ func (s *IndexScheduler) HandleError(err error) {
 }
 
 func (s *IndexScheduler) queueIndex(ctx context.Context, repositoryID int) (err error) {
-	commit, err := s.gitserverClient.Head(ctx, s.store, repositoryID)
+	commit, err := s.gitserverClient.Head(ctx, s.dbStore, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
+	isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 	if err != nil {
 		return errors.Wrap(err, "store.IsQueued")
 	}
@@ -111,7 +111,7 @@ func (s *IndexScheduler) queueIndex(ctx context.Context, repositoryID int) (err 
 		return nil
 	}
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.Transact")
 	}
@@ -167,7 +167,7 @@ func (s *IndexScheduler) getIndexJobs(ctx context.Context, repositoryID int, com
 }
 
 func (s *IndexScheduler) getIndexJobsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
-	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
+	indexConfigurationRecord, ok, err := s.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "store.GetIndexConfigurationByRepositoryID")
 	}
@@ -188,7 +188,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInDatabase(ctx context.Con
 }
 
 func (s *IndexScheduler) getIndexJobsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
-	isConfigured, err := s.gitserverClient.FileExists(ctx, s.store, repositoryID, commit, "sourcegraph.yaml")
+	isConfigured, err := s.gitserverClient.FileExists(ctx, s.dbStore, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.FileExists")
 	}
@@ -196,7 +196,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInRepository(ctx context.C
 		return nil, false, nil
 	}
 
-	content, err := s.gitserverClient.RawContents(ctx, s.store, repositoryID, commit, "sourcegraph.yaml")
+	content, err := s.gitserverClient.RawContents(ctx, s.dbStore, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.RawContents")
 	}
@@ -214,7 +214,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInRepository(ctx context.C
 }
 
 func (s *IndexScheduler) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) (indexes []store.Index, _ bool, _ error) {
-	paths, err := s.gitserverClient.ListFiles(ctx, s.store, repositoryID, commit, inference.Patterns)
+	paths, err := s.gitserverClient.ListFiles(ctx, s.dbStore, repositoryID, commit, inference.Patterns)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.ListFiles")
 	}
