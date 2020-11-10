@@ -223,7 +223,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText('Verified', { wait: true })
     })
 
-    test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
+    test('2.2.3 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
         await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
