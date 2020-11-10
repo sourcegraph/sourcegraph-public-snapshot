@@ -15,6 +15,8 @@ import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { editSiteConfig } from './util/helpers'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -30,6 +32,7 @@ describe('Core functionality regression test suite', () => {
         'headless',
         'keepBrowser'
     )
+    const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -148,7 +151,7 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('2.2.2 User profile page', async () => {
+    test('2.2.2.1 User profile page with enableuserchanges=false', async () => {
         const aviURL =
             'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
         const displayName = 'Test Display Name'
@@ -164,8 +167,43 @@ describe('Core functionality regression test suite', () => {
             enterTextMethod: 'paste',
         })
         await driver.page.click('#test-EditUserProfileForm__save')
+        await delay(5000)
         await driver.findElementWithText(
             'Error: unable to change username because auth.enableUsernameChanges is false in site configuration'
+        )
+    })
+
+    test('2.2.2.2 User profile page with enableuserchanges=true', async () => {
+        const aviURL =
+            'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
+        const displayName = 'Test Display Name'
+
+        await editSiteConfig(gqlClient, contents =>
+            jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], true, formattingOptions)
+        )
+        alwaysCleanupManager.add("Global setting", "usernamechanges", async () => {
+         await editSiteConfig(gqlClient, contents =>
+            jsoncEdit.setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
+         )})
+        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
+        await driver.replaceText({
+            selector: '.test-UserProfileFormFields__displayName',
+            newText: displayName,
+        })
+        await driver.replaceText({
+            selector: '.test-UserProfileFormFields__avatarURL',
+            newText: aviURL,
+            enterTextMethod: 'paste',
+        })
+        await driver.page.click('#test-EditUserProfileForm__save')
+        await driver.page.reload()
+        await driver.page.waitForFunction(
+            displayName => {
+                const element = document.querySelector('.test-user-area-header__display-name')
+                return element?.textContent && element.textContent.trim() === displayName
+            },
+            undefined,
+            displayName
         )
     })
 
