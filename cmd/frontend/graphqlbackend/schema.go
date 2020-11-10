@@ -3244,7 +3244,7 @@ input MonitorTriggerInput {
     The query string.
     """
     query: String!
-    }
+}
 
 """
 The input required to create an action.
@@ -3263,19 +3263,19 @@ input MonitorEmailInput {
     """
     Whether the email action is enabled or not.
     """
-    enabled:    Boolean!
+    enabled: Boolean!
     """
     The priority of the email.
     """
-    priority:   MonitorEmailPriority!
+    priority: MonitorEmailPriority!
     """
     The recipients of the email.
     """
-    recipients:  [ID!]!
+    recipients: [ID!]!
     """
     Use header to automatically approve the message in a read-only or moderated mailing list.
     """
-    header:     String!
+    header: String!
 }
 
 """
