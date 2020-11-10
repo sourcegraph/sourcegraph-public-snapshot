@@ -7,8 +7,9 @@ import classNames from 'classnames'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { logEvent } from '../../../user/settings/backend'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
-export interface CreateUpdateCampaignAlertProps {
+export interface CreateUpdateCampaignAlertProps extends TelemetryProps {
     specID: string
     campaign: CampaignSpecFields['appliesToCampaign']
     viewerCanAdminister: boolean
@@ -20,6 +21,7 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
     campaign,
     viewerCanAdminister,
     history,
+    telemetryService,
 }) => {
     const campaignID = campaign?.id
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
@@ -33,11 +35,11 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                 ? await applyCampaign({ campaignSpec: specID, campaign: campaignID })
                 : await createCampaign({ campaignSpec: specID })
             history.push(campaign.url)
-            logEvent(`ViewCampaignPageAfter${campaignID ? 'Create' : 'Update'}`)
+            telemetryService.logViewEvent(`CampaignDetailsPageAfter${campaignID ? 'Create' : 'Update'}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [specID, setIsLoading, history, campaignID])
+    }, [specID, setIsLoading, history, campaignID, telemetryService])
     return (
         <>
             <div className="alert alert-info p-3 mb-3 d-block d-md-flex align-items-center body-lead">

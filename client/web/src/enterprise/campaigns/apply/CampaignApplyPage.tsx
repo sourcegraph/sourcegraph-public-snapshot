@@ -75,6 +75,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 specID={spec.id}
                 campaign={spec.appliesToCampaign}
                 viewerCanAdminister={spec.viewerCanAdminister}
+                telemetryService={telemetryService}
             />
             <CampaignDescription history={history} description={spec.description.description} />
             <ChangesetSpecList
