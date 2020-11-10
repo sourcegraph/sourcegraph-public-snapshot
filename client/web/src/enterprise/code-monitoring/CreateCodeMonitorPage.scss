@@ -7,4 +7,18 @@
             top: 1rem;
         }
     }
+
+    &__actions {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
+    }
+
+    &__triggers {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
+    }
 }

@@ -8,11 +8,24 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
+import classnames from 'classnames'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
 }
+
+interface FormCompletionSteps {
+    triggerCompleted: boolean
+    actionCompleted: boolean
+}
+
+interface CodeMonitorFields {
+    description: string
+    query: string
+    enabled: boolean
+}
+
 export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = props => {
     props.useBreadcrumb(
         useMemo(
@@ -23,6 +36,37 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
             []
         )
     )
+    const [codeMonitor, setCodeMonitor] = useState<CodeMonitorFields>({
+        description: '',
+        query: '',
+        enabled: true,
+    })
+
+    const onNameChange = useCallback(
+        (description: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, description })),
+        []
+    )
+    const onQueryChange = useCallback(
+        (query: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, query })),
+        []
+    )
+    const onEnabledChange = useCallback(
+        (enabled: boolean): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, enabled })),
+        []
+    )
+
+    const [formCompletion, setFormCompletion] = useState<FormCompletionSteps>({
+        triggerCompleted: false,
+        actionCompleted: false,
+    })
+
+    const setTriggerComlpeted = useCallback(() => {
+        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: true }))
+    }, [])
+
+    const setActionComlpeted = useCallback(() => {
+        setFormCompletion(previousState => ({ ...previousState, actionCompleted: true }))
+    }, [])
 
     const [showQueryForm, setShowQueryForm] = useState(false)
     const toggleQueryForm: React.MouseEventHandler = useCallback(event => {
@@ -41,11 +85,6 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         setEmailNotificationEnabled(enabled)
     }, [])
 
-    const [active, setActive] = useState(true)
-    const toggleActive: (active: boolean) => void = useCallback(active => {
-        setActive(active)
-    }, [])
-
     return (
         <div className="container mt-3 web-content">
             <PageTitle title="Create new code monitor" />
@@ -55,12 +94,17 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 {/* TODO: populate link */}
                 Learn more
             </a>
-            .
             <Form className="my-4">
                 <div className="flex mb-4">
                     Name
                     <div>
-                        <input type="text" className="form-control my-2" />
+                        <input
+                            type="text"
+                            className="form-control my-2"
+                            onChange={event => {
+                                onNameChange(event.target.value)
+                            }}
+                        />
                     </div>
                     <small className="text-muted">
                         Give it a short, descriptive name to reference events on Sourcegraph and in notifications. Do
@@ -82,19 +126,33 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     <small className="text-muted">Event history and configuration will not be shared.</small>
                 </div>
                 <hr className="my-4" />
-                <div className="mb-4">
+                <div className="create-monitor-page__triggers mb-4">
                     <h3>Trigger</h3>
                     <div className="card p-3 my-3">
-                        <a href="" onClick={toggleQueryForm} className="font-weight-bold">
-                            When there are new search results
-                        </a>
-                        <span className="text-muted">
-                            This trigger will fire when new search results are found for a given search query.
-                        </span>
-                        {showQueryForm && (
+                        {!formCompletion.triggerCompleted && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={toggleQueryForm}
+                                    className="btn btn-link font-weight-bold p-0 text-left"
+                                >
+                                    When there are new search results
+                                </button>
+                                <span className="text-muted">
+                                    This trigger will fire when new search results are found for a given search query.
+                                </span>
+                            </>
+                        )}
+                        {showQueryForm && !formCompletion.triggerCompleted && (
                             <>
                                 <div className="create-monitor-page__query-input">
-                                    <input type="text" className="form-control my-2" />
+                                    <input
+                                        type="text"
+                                        className="form-control my-2"
+                                        onChange={event => {
+                                            onQueryChange(event.target.value)
+                                        }}
+                                    />
                                     <a
                                         href=""
                                         target="_blank"
@@ -110,7 +168,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                                     <code className="bg-code">type:commit</code> search queries.
                                 </small>
                                 <div>
-                                    <button type="button" className="btn btn-outline-secondary mr-1">
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary mr-1"
+                                        onClick={setTriggerComlpeted}
+                                    >
                                         Continue
                                     </button>
                                     <button type="button" className="btn btn-outline-secondary">
@@ -119,8 +181,20 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                                 </div>
                             </>
                         )}
+                        {formCompletion.triggerCompleted && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={toggleQueryForm}
+                                    className="btn btn-link font-weight-bold p-0 text-left"
+                                >
+                                    When there are new search results
+                                </button>
+                                <code className="text-muted">{codeMonitor.query}</code>
+                            </>
+                        )}
                     </div>
-                    {!showQueryForm && (
+                    {!showQueryForm && !formCompletion.actionCompleted && (
                         <small className="text-muted">
                             {' '}
                             What other events would you like to monitor? {/* TODO: populate link */}
@@ -131,15 +205,26 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                         </small>
                     )}
                 </div>
-                <div>
+                <div
+                    className={classnames({
+                        'create-monitor-page__actions--disabled': !formCompletion.triggerCompleted,
+                    })}
+                >
                     <h3>Actions</h3>
                     <p>Run any number of actions in response to an event</p>
                     <div className="card p-3 my-3">
                         {/* This should be its own component when you can add multiple email actions */}
-                        <a href="" onClick={toggleEmailNotificationForm} className="font-weight-bold">
-                            Send email notifications
-                        </a>
-                        {showEmailNotificationForm && (
+                        {!formCompletion.actionCompleted && (
+                            <button
+                                type="button"
+                                onClick={toggleEmailNotificationForm}
+                                className="btn btn-link font-weight-bold p-0 text-left"
+                                disabled={!formCompletion.triggerCompleted}
+                            >
+                                Send email notifications
+                            </button>
+                        )}
+                        {showEmailNotificationForm && !formCompletion.actionCompleted && (
                             <>
                                 <div className="mt-4">
                                     Recipients
@@ -164,13 +249,30 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                                     Enabled
                                 </div>
                                 <div>
-                                    <button type="button" className="btn btn-outline-secondary mr-1">
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary mr-1"
+                                        onClick={setActionComlpeted}
+                                    >
                                         Done
                                     </button>
                                     <button type="button" className="btn btn-outline-secondary">
                                         Cancel
                                     </button>
                                 </div>
+                            </>
+                        )}
+                        {formCompletion.actionCompleted && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={toggleEmailNotificationForm}
+                                    className="btn btn-link font-weight-bold p-0 text-left"
+                                    disabled={!formCompletion.triggerCompleted}
+                                >
+                                    Send email notifications
+                                </button>
+                                <span className="text-muted">{props.authenticatedUser?.email}</span>
                             </>
                         )}
                     </div>
@@ -185,7 +287,12 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 <div>
                     <div className="d-flex my-4">
                         <div>
-                            <Toggle title="Active" value={active} onToggle={toggleActive} className="mr-2" />{' '}
+                            <Toggle
+                                title="Active"
+                                value={codeMonitor.enabled}
+                                onToggle={onEnabledChange}
+                                className="mr-2"
+                            />{' '}
                         </div>
                         <div className="flex-column">
                             <div>Active</div>
@@ -193,7 +300,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                         </div>
                     </div>
                     <div className="flex my-4">
-                        <button type="button" className="btn btn-primary mr-2">
+                        <button
+                            type="button"
+                            className="btn btn-primary mr-2"
+                            disabled={!formCompletion.actionCompleted}
+                        >
                             Create code monitor
                         </button>
                         <button type="button" className="btn btn-outline-secondary">
