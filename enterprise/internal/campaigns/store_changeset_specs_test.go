@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	edb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -17,9 +18,8 @@ import (
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, db dbutil.DB, clock clock) {
 	reposStore := edb.NewRepoStoreWithDB(db)
 	esStore := edb.NewExternalServicesStoreWithDB(db)
-
-	repo := testRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := testRepo(t, esStore, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
 	if err := reposStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)

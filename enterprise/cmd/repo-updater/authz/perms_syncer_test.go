@@ -19,6 +19,9 @@ import (
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.ScheduleUsers(context.Background(), 1)
 
@@ -35,6 +38,9 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 }
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.ScheduleRepos(context.Background(), 1)
 

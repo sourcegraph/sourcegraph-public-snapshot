@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	pkgerrors "github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // ErrNotFound occurs when data does not exist for a requested bundle.
@@ -29,13 +29,27 @@ func newRange(startLine, startCharacter, endLine, endCharacter int) Range {
 }
 
 // Exists determines if the path exists in the database.
-func (s *store) Exists(ctx context.Context, bundleID int, path string) (bool, error) {
+func (s *Store) Exists(ctx context.Context, bundleID int, path string) (_ bool, err error) {
+	ctx, endObservation := s.operations.exists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	_, exists, err := s.getDocumentData(ctx, bundleID, path)
 	return exists, pkgerrors.Wrap(err, "s.getDocumentData")
 }
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
-func (s *store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]CodeIntelligenceRange, error) {
+func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
+	ctx, endObservation := s.operations.ranges.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("startLine", startLine),
+		log.Int("endLine", endLine),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "s.getDocumentData")
@@ -104,7 +118,15 @@ func (s *store) Ranges(ctx context.Context, bundleID int, path string, startLine
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.
-func (s *store) Definitions(ctx context.Context, bundleID int, path string, line, character int) ([]Location, error) {
+func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line, character int) (_ []Location, err error) {
+	ctx, endObservation := s.operations.definitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	_, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "s.getRangeByPosition")
@@ -127,7 +149,15 @@ func (s *store) Definitions(ctx context.Context, bundleID int, path string, line
 }
 
 // References returns the set of locations referencing the symbol at the given position.
-func (s *store) References(ctx context.Context, bundleID int, path string, line, character int) ([]Location, error) {
+func (s *Store) References(ctx context.Context, bundleID int, path string, line, character int) (_ []Location, err error) {
+	ctx, endObservation := s.operations.references.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	_, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "s.getRangeByPosition")
@@ -151,7 +181,15 @@ func (s *store) References(ctx context.Context, bundleID int, path string, line,
 }
 
 // Hover returns the hover text of the symbol at the given position.
-func (s *store) Hover(ctx context.Context, bundleID int, path string, line, character int) (string, Range, bool, error) {
+func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ Range, _ bool, err error) {
+	ctx, endObservation := s.operations.hover.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	documentData, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
 	if err != nil || !exists {
 		return "", Range{}, false, pkgerrors.Wrap(err, "s.getRangeByPosition")
@@ -174,7 +212,15 @@ func (s *store) Hover(ctx context.Context, bundleID int, path string, line, char
 
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (s *store) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) ([]Diagnostic, int, error) {
+func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) (_ []Diagnostic, _ int, err error) {
+	ctx, endObservation := s.operations.diagnostics.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("prefix", prefix),
+		log.Int("skip", skip),
+		log.Int("take", take),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	paths, err := s.getPathsWithPrefix(ctx, bundleID, prefix)
 	if err != nil {
 		return nil, 0, pkgerrors.Wrap(err, "s.getPathsWithPrefix")
@@ -225,7 +271,15 @@ func (s *store) Diagnostics(ctx context.Context, bundleID int, prefix string, sk
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (s *store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]MonikerData, error) {
+func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]MonikerData, err error) {
+	ctx, endObservation := s.operations.monikersByPosition.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	documentData, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "s.getRangeByPosition")
@@ -252,19 +306,16 @@ func (s *store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (s *store) MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) (_ []Location, _ int, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "MonikerResults")
-	span.SetTag("bundleID", bundleID)
-	span.SetTag("tableName", tableName)
-	span.SetTag("scheme", scheme)
-	span.SetTag("identifier", identifier)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) (_ []Location, _ int, err error) {
+	ctx, endObservation := s.operations.monikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("tableName", tableName),
+		log.String("scheme", scheme),
+		log.String("identifier", identifier),
+		log.Int("skip", skip),
+		log.Int("take", take),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	var rows []LocationData
 	var totalCount int
@@ -295,7 +346,14 @@ func (s *store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 }
 
 // PackageInformation looks up package information data by identifier.
-func (s *store) PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (PackageInformationData, bool, error) {
+func (s *Store) PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ PackageInformationData, _ bool, err error) {
+	ctx, endObservation := s.operations.packageInformation.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.String("packageInformationID", packageInformationID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
 	if err != nil {
 		return PackageInformationData{}, false, pkgerrors.Wrap(err, "s.getDocumentData")
@@ -316,7 +374,7 @@ func (s *store) PackageInformation(ctx context.Context, bundleID int, path, pack
 }
 
 // hover returns the hover text locations for the given range.
-func (s *store) hover(ctx context.Context, bundleID int, path string, documentData DocumentData, r RangeData) (string, bool, error) {
+func (s *Store) hover(ctx context.Context, bundleID int, path string, documentData DocumentData, r RangeData) (string, bool, error) {
 	if r.HoverResultID == "" {
 		return "", false, nil
 	}
@@ -330,34 +388,12 @@ func (s *store) hover(ctx context.Context, bundleID int, path string, documentDa
 	return text, true, nil
 }
 
-func (s *store) getPathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "getPathsWithPrefix")
-	span.SetTag("bundleID", bundleID)
-	span.SetTag("prefix", prefix)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
+func (s *Store) getPathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
 	return s.PathsWithPrefix(ctx, bundleID, prefix)
 }
 
 // getDocumentData fetches and unmarshals the document data or the given path.
-func (s *store) getDocumentData(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "getDocumentData")
-	span.SetTag("bundleID", bundleID)
-	span.SetTag("path", path)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
+func (s *Store) getDocumentData(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
 	documentData, ok, err := s.ReadDocument(ctx, bundleID, path)
 	if err != nil {
 		return DocumentData{}, false, pkgerrors.Wrap(err, "store.ReadDocument")
@@ -367,7 +403,7 @@ func (s *store) getDocumentData(ctx context.Context, bundleID int, path string) 
 
 // getRangeByPosition returns the ranges the given position. The order of the output slice is "outside-in",
 // so that earlier ranges properly enclose later ranges.
-func (s *store) getRangeByPosition(ctx context.Context, bundleID int, path string, line, character int) (DocumentData, []RangeData, bool, error) {
+func (s *Store) getRangeByPosition(ctx context.Context, bundleID int, path string, line, character int) (DocumentData, []RangeData, bool, error) {
 	documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
 	if err != nil {
 		return DocumentData{}, nil, false, pkgerrors.Wrap(err, "s.getDocumentData")
@@ -380,7 +416,7 @@ func (s *store) getRangeByPosition(ctx context.Context, bundleID int, path strin
 }
 
 // locations returns the locations for the given definition or reference identifiers.
-func (s *store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][]Location, error) {
+func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][]Location, error) {
 	results, err := s.getResultsByIDs(ctx, bundleID, ids)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "s.getResultByID")
@@ -395,7 +431,7 @@ func (s *store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][
 }
 
 // getResultsByIDs fetches and unmarshals a definition or reference results for the given identifiers.
-func (s *store) getResultsByIDs(ctx context.Context, bundleID int, ids []ID) (map[ID][]DocumentPathRangeID, error) {
+func (s *Store) getResultsByIDs(ctx context.Context, bundleID int, ids []ID) (map[ID][]DocumentPathRangeID, error) {
 	xids := map[int]struct{}{}
 	for _, id := range ids {
 		index, err := s.resultChunkID(ctx, bundleID, id)
@@ -457,18 +493,7 @@ func (s *store) getResultsByIDs(ctx context.Context, bundleID int, ids []ID) (ma
 }
 
 // getResultChunkByID fetches and unmarshals the result chunk data with the given identifier.
-func (s *store) getResultChunkByID(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByID")
-	span.SetTag("bundleID", bundleID)
-	span.SetTag("id", id)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
+func (s *Store) getResultChunkByID(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
 	resultChunkData, ok, err := s.ReadResultChunk(ctx, bundleID, id)
 	if err != nil {
 		return ResultChunkData{}, false, pkgerrors.Wrap(err, "store.ReadResultChunk")
@@ -477,7 +502,7 @@ func (s *store) getResultChunkByID(ctx context.Context, bundleID int, id int) (_
 }
 
 // resultChunkID returns the identifier of the result chunk that contains the given identifier.
-func (s *store) resultChunkID(ctx context.Context, bundleID int, id ID) (int, error) {
+func (s *Store) resultChunkID(ctx context.Context, bundleID int, id ID) (int, error) {
 	// TODO(efritz) - keep a cache
 	meta, err := s.ReadMeta(ctx, bundleID)
 	if err != nil {
@@ -488,7 +513,7 @@ func (s *store) resultChunkID(ctx context.Context, bundleID int, id ID) (int, er
 }
 
 // convertRangesToLocations converts pairs of document paths and range identifiers to a list of locations.
-func (s *store) convertRangesToLocations(ctx context.Context, bundleID int, pairs map[ID][]DocumentPathRangeID) (map[ID][]Location, error) {
+func (s *Store) convertRangesToLocations(ctx context.Context, bundleID int, pairs map[ID][]DocumentPathRangeID) (map[ID][]Location, error) {
 	// We potentially have to open a lot of documents. Reduce possible pressure on the
 	// cache by ordering our queries so we only have to read and unmarshal each document
 	// once.

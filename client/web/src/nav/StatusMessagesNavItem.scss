@@ -7,6 +7,7 @@
         min-width: 22rem;
         max-width: 22rem;
         padding: 1rem 1rem 0 1rem;
+        user-select: text;
     }
     &__dropdown-menu-content {
         max-height: 50vh;

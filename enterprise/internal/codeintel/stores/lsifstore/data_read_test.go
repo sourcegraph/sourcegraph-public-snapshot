@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestReadWriteMeta(t *testing.T) {
@@ -15,7 +17,7 @@ func TestReadWriteMeta(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	if err := store.WriteMeta(ctx, 42, MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
@@ -37,7 +39,7 @@ func TestReadWriteDocument(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	expectedDocumentData := DocumentData{
 		Ranges: map[ID]RangeData{
@@ -85,7 +87,7 @@ func TestReadWriteResultChunk(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	expectedResultChunkData := ResultChunkData{
 		DocumentPaths: map[ID]string{
@@ -139,7 +141,7 @@ func TestReadWriteDefinitions(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	expectedDefinitions := []LocationData{
 		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
@@ -175,7 +177,7 @@ func TestReadWriteReferences(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	expectedReferences := []LocationData{
 		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
@@ -211,7 +213,7 @@ func TestPathsWithPrefix(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	ctx := context.Background()
-	store := testStore()
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	documentCh := make(chan KeyedDocumentData, 5)
 	documentCh <- KeyedDocumentData{Path: "foo"}        // exact

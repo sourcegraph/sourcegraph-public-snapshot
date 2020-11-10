@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
+source /root/.profile
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
+
 set -x
 
-curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-chmod +x /usr/local/bin/src
+test/setup-deps.sh
+
+# ==========================
 
 CONTAINER=sourcegraph-server
 
@@ -14,25 +18,22 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-asdf install
-yarn
-yarn generate
-pushd enterprise || exit
-./cmd/server/pre-build.sh
-./cmd/server/build.sh
-docker run -d -p 7080:7080 --name "$CONTAINER" "$IMAGE"
-popd || exit
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
-
 sleep 15
 
-pushd test/code-intel || exit
-go run main.go
-popd || exit
+go run test/init-server.go
 
+# Load variables set up by init-server, disabling `-x` to avoid printing variables
+set +x
 # shellcheck disable=SC1091
 source /root/.profile
+set -x
 
+echo "TEST: Checking Sourcegraph instance is accessible"
+curl -f http://localhost:7080
+curl -f http://localhost:7080/healthz
+echo "TEST: Running tests"
 pushd internal/cmd/precise-code-intel-tester || exit
 go build
 ./precise-code-intel-tester addrepos
@@ -41,3 +42,5 @@ go build
 sleep 10
 ./precise-code-intel-tester query
 popd || exit
+
+# ==========================

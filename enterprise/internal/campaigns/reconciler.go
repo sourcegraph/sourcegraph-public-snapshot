@@ -15,6 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -98,12 +101,33 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		delta: plan.delta,
 	}
 
-	return e.ExecutePlan(ctx, plan)
+	err = e.ExecutePlan(ctx, plan)
+	if errcode.IsTerminal(err) {
+		// We don't want to retry on terminal error so we don't return an error
+		// from this function and set the NumFailures so high that the changeset is
+		// not dequeued up again.
+		msg := err.Error()
+		e.ch.FailureMessage = &msg
+		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
+		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
+		return tx.UpdateChangeset(ctx, ch)
+	}
+
+	return err
 }
 
-// ErrPublishSameBranch is returned by publish changeset if a changeset with the same external branch
-// already exists in the database and is owned by another campaign.
-var ErrPublishSameBranch = errors.New("cannot create changeset on the same branch in multiple campaigns")
+// ErrPublishSameBranch is returned by publish changeset if a changeset with
+// the same external branch already exists in the database and is owned by
+// another campaign.
+// It is a terminal error that won't be fixed by retrying to publish the
+// changeset with the same spec.
+type ErrPublishSameBranch struct{}
+
+func (e ErrPublishSameBranch) Error() string {
+	return "cannot create changeset on the same branch in multiple campaigns"
+}
+
+func (e ErrPublishSameBranch) Terminal() bool { return true }
 
 type executor struct {
 	gitserverClient   GitserverClient
@@ -139,8 +163,14 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return errors.Wrap(err, "failed to load external service")
 	}
 
+	// Figure out which authenticator we should use to modify the changeset.
+	a, err := e.loadAuthenticator(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(e.repo, extSvc)
+	e.ccs, err = e.buildChangesetSource(e.repo, extSvc, a)
 	if err != nil {
 		return err
 	}
@@ -152,11 +182,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 			err = e.syncChangeset(ctx)
 
 		case operationImport:
-			var notFound bool
-			notFound, err = e.importChangeset(ctx)
-			if notFound {
-				upsertChangesetEvents = false
-			}
+			err = e.importChangeset(ctx)
 
 		case operationPush:
 			err = e.pushChangesetPatch(ctx)
@@ -204,7 +230,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService, auth auth.Authenticator) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -213,6 +239,21 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 		return nil, errors.New("invalid number of sources for external service")
 	}
 	src := sources[0]
+
+	if auth != nil {
+		// If auth == nil that means the user that applied that last
+		// campaign/changeset spec is a site-admin and we can fall back to the
+		// global credentials stored in extSvc.
+		ucs, ok := src.(repos.UserSource)
+		if !ok {
+			return nil, errors.Errorf("using user credentials on code host of repo %q is not implemented", repo.Name)
+		}
+
+		if src, err = ucs.WithAuthenticator(auth); err != nil {
+			return nil, errors.Wrapf(err, "unable to use this specific user credential on code host of repo %q", repo.Name)
+		}
+	}
+
 	ccs, ok := src.(repos.ChangesetSource)
 	if !ok {
 		return nil, errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
@@ -220,6 +261,62 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 
 	return ccs, nil
 }
+
+// loadAuthenticator determines the correct Authenticator to use when
+// reconciling the current changeset. It will return nil, nil if the code host's
+// global configuration should be used (ie the applying user is an admin and
+// doesn't have a credential configured for the code host, or the changeset
+// isn't owned by a campaign).
+func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
+	if e.ch.OwnedByCampaignID == 0 {
+		// Unowned changesets are imported, and therefore don't need to use a user
+		// credential, since reconciliation isn't a mutating process.
+		return nil, nil
+	}
+
+	// If the changeset is owned by a campaign, we want to reconcile using
+	// the user's credentials, which means we need to know which user last
+	// applied the owning campaign. Let's go find out.
+	campaign, err := loadCampaign(ctx, e.tx, e.ch.OwnedByCampaignID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load owning campaign")
+	}
+
+	cred, err := loadUserCredential(ctx, campaign.LastApplierID, e.repo)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			// We need to check if the user is an admin: if they are, then
+			// we can use the nil return from loadUserCredential() to fall
+			// back to the global credentials used for the code host. If
+			// not, then we need to error out.
+			user, err := loadUser(ctx, campaign.LastApplierID)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load user applying the campaign")
+			}
+
+			if user.SiteAdmin {
+				return nil, nil
+			}
+
+			return nil, ErrMissingCredentials{repo: string(e.repo.Name)}
+		}
+		return nil, errors.Wrap(err, "failed to load user credential")
+	}
+
+	return cred.Credential, nil
+}
+
+// ErrMissingCredentials is returned by loadAuthenticator if the user that
+// applied the last campaign/changeset spec doesn't have UserCredentials for
+// the given repository and is not a site-admin (so no fallback to the global
+// credentials is possible).
+type ErrMissingCredentials struct{ repo string }
+
+func (e ErrMissingCredentials) Error() string {
+	return fmt.Sprintf("user does not have a valid credential for repository %q", e.repo)
+}
+
+func (e ErrMissingCredentials) Terminal() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
@@ -233,11 +330,17 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	}
 
 	if existingSameBranch != nil && existingSameBranch.ID != e.ch.ID {
-		return ErrPublishSameBranch
+		return ErrPublishSameBranch{}
+	}
+
+	// Figure out which authenticator we should use to push the commits.
+	a, err := e.loadAuthenticator(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Create a commit and push it
-	opts, err := buildCommitOpts(e.repo, e.spec)
+	opts, err := buildCommitOpts(e.repo, e.spec, a)
 	if err != nil {
 		return err
 	}
@@ -314,26 +417,14 @@ func (e *executor) syncChangeset(ctx context.Context) error {
 	return nil
 }
 
-func (e *executor) importChangeset(ctx context.Context) (bool, error) {
+func (e *executor) importChangeset(ctx context.Context) error {
 	if err := e.loadChangeset(ctx); err != nil {
-		_, ok := err.(repos.ChangesetNotFoundError)
-		if !ok {
-			return false, err
-		}
-
-		// If we're importing and it can't be found, we want to mark the
-		// changeset as "dead" and never retry:
-
-		msg := err.Error()
-		e.ch.FailureMessage = &msg
-		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
-		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
-		return true, nil
+		return err
 	}
 
 	e.ch.Unsynced = false
 
-	return false, nil
+	return nil
 }
 
 func (e *executor) loadChangeset(ctx context.Context) error {
@@ -438,7 +529,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *types.Repo, spec *campaigns.ChangesetSpec) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(repo *types.Repo, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -459,6 +550,11 @@ func buildCommitOpts(repo *types.Repo, spec *campaigns.ChangesetSpec) (protocol.
 	}
 
 	commitAuthorEmail, err := desc.AuthorEmail()
+	if err != nil {
+		return opts, err
+	}
+
+	pushConf, err := buildPushConfig(repo.ExternalRepo.ServiceType, a)
 	if err != nil {
 		return opts, err
 	}
@@ -487,11 +583,59 @@ func buildCommitOpts(repo *types.Repo, spec *campaigns.ChangesetSpec) (protocol.
 		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
 		GitApplyArgs: []string{"-p0"},
-		Push:         true,
+		Push:         pushConf,
 	}
 
 	return opts, nil
 }
+
+func buildPushConfig(extSvcType string, a auth.Authenticator) (*protocol.PushConfig, error) {
+	pc := &protocol.PushConfig{}
+
+	switch av := a.(type) {
+	case *auth.OAuthBearerToken:
+		switch extSvcType {
+		case extsvc.TypeGitHub:
+			pc.Username = av.Token
+
+		case extsvc.TypeGitLab:
+			pc.Username = "git"
+			pc.Password = av.Token
+
+		case extsvc.TypeBitbucketServer:
+			return nil, errors.New("require username/token to push commits to BitbucketServer")
+		}
+
+	case *auth.BasicAuth:
+		switch extSvcType {
+		case extsvc.TypeGitHub, extsvc.TypeGitLab:
+			return nil, errors.New("need token to push commits to " + extSvcType)
+
+		case extsvc.TypeBitbucketServer:
+			pc.Username = av.Username
+			pc.Password = av.Password
+		}
+
+	case nil:
+		// This is OK: we'll just send an empty token and gitserver will use
+		// the credential stored in the clone URL of the repository.
+
+	default:
+		return nil, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
+	}
+
+	return pc, nil
+}
+
+// ErrNoPushCredentials is returned by buildCommitOpts if the credentials
+// cannot be used by git to authenticate a `git push`.
+type ErrNoPushCredentials struct{ credentialsType string }
+
+func (e ErrNoPushCredentials) Error() string {
+	return fmt.Sprintf("cannot use credentials of type %T to push commits", e.credentialsType)
+}
+
+func (e ErrNoPushCredentials) Terminal() bool { return true }
 
 // operation is an enum to distinguish between different reconciler operations.
 type operation string
@@ -789,6 +933,19 @@ func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset)
 		}
 	}
 	return
+}
+
+func loadUser(ctx context.Context, id int32) (*types.User, error) {
+	return db.Users.GetByID(ctx, id)
+}
+
+func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*db.UserCredential, error) {
+	return db.UserCredentials.GetByScope(ctx, db.UserCredentialScope{
+		Domain:              db.UserCredentialDomainCampaigns,
+		UserID:              userID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	})
 }
 
 func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {

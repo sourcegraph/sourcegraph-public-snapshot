@@ -703,7 +703,7 @@ type Mutation {
     """
     Create a new credential for the requesting user for the given code host.
     If another token for that code host already exists, an error with the error code
-    ErrDuplicateToken is returned.
+    ErrDuplicateCredential is returned.
     """
     createCampaignsCredential(
         """

@@ -11,14 +11,12 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   queryChangesets={[Function]}
-  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
-  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -964,14 +962,12 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   queryChangesets={[Function]}
-  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
-  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"

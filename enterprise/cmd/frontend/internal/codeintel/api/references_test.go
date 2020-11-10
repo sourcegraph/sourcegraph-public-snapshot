@@ -7,18 +7,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
 )
 
 func TestHandleSameDumpCursor(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []lsifstore.Location{
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
+	setmockLSIFStoreReferences(t, mockLSIFStore, 42, "main.go", 23, 34, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
@@ -31,8 +28,8 @@ func TestHandleSameDumpCursor(t *testing.T) {
 	})
 
 	rpr := &ReferencePageResolver{
-		store:        mockStore,
-		lsifStore:    mockBundleStore,
+		dbStore:      mockDBStore,
+		lsifStore:    mockLSIFStore,
 		repositoryID: 100,
 		commit:       testCommit,
 		limit:        5,
@@ -121,26 +118,26 @@ func TestHandleSameDumpCursor(t *testing.T) {
 }
 
 func TestHandleSameDumpMonikersCursor(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreReferences(t, mockBundleStore, 42, "main.go", 23, 34, []lsifstore.Location{
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
+	setmockLSIFStoreReferences(t, mockLSIFStore, 42, "main.go", 23, 34, []lsifstore.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
 	})
 
 	rpr := &ReferencePageResolver{
-		store:        mockStore,
-		lsifStore:    mockBundleStore,
+		dbStore:      mockDBStore,
+		lsifStore:    mockLSIFStore,
 		repositoryID: 100,
 		commit:       testCommit,
 		limit:        5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 0, 5, []lsifstore.Location{
+		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 42, "references", "gomod", "pad", 0, 5, []lsifstore.Location{
 			{DumpID: 42, Path: "foo.go", Range: testRange1},
 			{DumpID: 42, Path: "foo.go", Range: testRange2},
 			{DumpID: 42, Path: "bar.go", Range: testRange2},
@@ -187,7 +184,7 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 42, "references", "gomod", "pad", 5, 5, []lsifstore.Location{
+		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 42, "references", "gomod", "pad", 5, 5, []lsifstore.Location{
 			{DumpID: 42, Path: "baz.go", Range: testRange1},
 			{DumpID: 42, Path: "baz.go", Range: testRange2},
 		}, 7)
@@ -229,23 +226,23 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 }
 
 func TestHandleDefinitionMonikersCursor(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2})
-	setMockBundleStorePackageInformation(t, mockBundleStore, 42, "main.go", "1234", testPackageInformation)
-	setMockStoreGetPackage(t, mockStore, "gomod", "leftpad", "0.1.0", testDump2, true)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2})
+	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "main.go", "1234", testPackageInformation)
+	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", testDump2, true)
 
 	rpr := &ReferencePageResolver{
-		store:        mockStore,
-		lsifStore:    mockBundleStore,
+		dbStore:      mockDBStore,
+		lsifStore:    mockLSIFStore,
 		repositoryID: 100,
 		commit:       testCommit,
 		limit:        5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 0, 5, []lsifstore.Location{
+		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "references", "gomod", "pad", 0, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -290,7 +287,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "pad", 5, 5, []lsifstore.Location{
+		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "references", "gomod", "pad", 5, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 50, Path: "baz.go", Range: testRange3},
@@ -337,12 +334,12 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 }
 
 func TestHandleSameRepoCursor(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockReferencePager := mocks.NewMockReferencePager()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockReferencePager := NewMockReferencePager()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockStoreSameRepoPager(t, mockStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 5, 3, mockReferencePager)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
+	setMockDBStoreSameRepoPager(t, mockDBStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 5, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
@@ -350,7 +347,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 	})
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
+		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 51, Path: "baz.go", Range: testRange3},
@@ -359,8 +356,8 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		}, 10)
 
 		rpr := &ReferencePageResolver{
-			store:           mockStore,
-			lsifStore:       mockBundleStore,
+			dbStore:         mockDBStore,
+			lsifStore:       mockLSIFStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -411,9 +408,9 @@ func TestHandleSameRepoCursor(t *testing.T) {
 	})
 
 	t.Run("multiple pages", func(t *testing.T) {
-		setMultiMockBundleStoreMonikerResults(
+		setMultimockLSIFStoreMonikerResults(
 			t,
-			mockBundleStore,
+			mockLSIFStore,
 			monikerResultsSpec{
 				50, "references", "gomod", "bar", 0, 5,
 				[]lsifstore.Location{
@@ -440,8 +437,8 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		)
 
 		rpr := &ReferencePageResolver{
-			store:           mockStore,
-			lsifStore:       mockBundleStore,
+			dbStore:         mockDBStore,
+			lsifStore:       mockLSIFStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -488,24 +485,24 @@ func TestHandleSameRepoCursor(t *testing.T) {
 }
 
 func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockReferencePager := mocks.NewMockReferencePager()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockReferencePager := NewMockReferencePager()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockStoreSameRepoPager(t, mockStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 2, 3, mockReferencePager)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
+	setMockDBStoreSameRepoPager(t, mockDBStore, 100, testCommit, "gomod", "leftpad", "0.1.0", 2, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
+	setmockLSIFStoreMonikerResults(t, mockLSIFStore, 51, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
 
 	rpr := &ReferencePageResolver{
-		store:           mockStore,
-		lsifStore:       mockBundleStore,
+		dbStore:         mockDBStore,
+		lsifStore:       mockLSIFStore,
 		repositoryID:    100,
 		commit:          testCommit,
 		remoteDumpLimit: 2,
@@ -563,12 +560,12 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 //
 
 func TestHandleRemoteRepoCursor(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockReferencePager := mocks.NewMockReferencePager()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockReferencePager := NewMockReferencePager()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockStorePackageReferencePager(t, mockStore, "gomod", "leftpad", "0.1.0", 100, 5, 3, mockReferencePager)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
+	setMockDBStorePackageReferencePager(t, mockDBStore, "gomod", "leftpad", "0.1.0", 100, 5, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
@@ -576,7 +573,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 	})
 
 	t.Run("partial results", func(t *testing.T) {
-		setMockBundleStoreMonikerResults(t, mockBundleStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
+		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 			{DumpID: 50, Path: "foo.go", Range: testRange1},
 			{DumpID: 50, Path: "bar.go", Range: testRange2},
 			{DumpID: 51, Path: "baz.go", Range: testRange3},
@@ -585,8 +582,8 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		}, 10)
 
 		rpr := &ReferencePageResolver{
-			store:           mockStore,
-			lsifStore:       mockBundleStore,
+			dbStore:         mockDBStore,
+			lsifStore:       mockLSIFStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -637,9 +634,9 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 	})
 
 	t.Run("multiple pages", func(t *testing.T) {
-		setMultiMockBundleStoreMonikerResults(
+		setMultimockLSIFStoreMonikerResults(
 			t,
-			mockBundleStore,
+			mockLSIFStore,
 			monikerResultsSpec{
 				50, "references", "gomod", "bar", 0, 5,
 				[]lsifstore.Location{
@@ -666,8 +663,8 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		)
 
 		rpr := &ReferencePageResolver{
-			store:           mockStore,
-			lsifStore:       mockBundleStore,
+			dbStore:         mockDBStore,
+			lsifStore:       mockLSIFStore,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -703,24 +700,24 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 }
 
 func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
-	mockReferencePager := mocks.NewMockReferencePager()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockReferencePager := NewMockReferencePager()
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
-	setMockStorePackageReferencePager(t, mockStore, "gomod", "leftpad", "0.1.0", 100, 2, 3, mockReferencePager)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
+	setMockDBStorePackageReferencePager(t, mockDBStore, "gomod", "leftpad", "0.1.0", 100, 2, 3, mockReferencePager)
 	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []lsifstore.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
-	setMockBundleStoreMonikerResults(t, mockBundleStore, 51, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
+	setmockLSIFStoreMonikerResults(t, mockLSIFStore, 51, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
 
 	rpr := &ReferencePageResolver{
-		store:           mockStore,
-		lsifStore:       mockBundleStore,
+		dbStore:         mockDBStore,
+		lsifStore:       mockLSIFStore,
 		repositoryID:    100,
 		commit:          testCommit,
 		remoteDumpLimit: 2,

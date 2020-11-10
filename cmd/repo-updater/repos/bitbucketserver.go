@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -29,6 +30,10 @@ type BitbucketServerSource struct {
 	exclude excludeFunc
 	client  *bitbucketserver.Client
 }
+
+var _ Source = &BitbucketServerSource{}
+var _ UserSource = &BitbucketServerSource{}
+var _ ChangesetSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
@@ -85,7 +90,20 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 	s.listAllRepos(ctx, results)
 }
 
-var _ ChangesetSource = BitbucketServerSource{}
+func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken, *auth.BasicAuth, *bitbucketserver.SudoableOAuthClient:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
+	}
+
+	sc := s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+}
 
 // CreateChangeset creates the given *Changeset in the code host.
 func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
@@ -442,4 +460,11 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
+}
+
+// AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
+// username belonging to the credentials associated with the
+// BitbucketServerSource.
+func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	return s.client.AuthenticatedUsername(ctx)
 }

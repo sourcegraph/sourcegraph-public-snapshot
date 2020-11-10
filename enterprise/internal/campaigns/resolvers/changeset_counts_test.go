@@ -82,14 +82,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 			Repos: []string{"sourcegraph/sourcegraph"},
 		}),
 	}
 
-	err := repoStore.Upsert(ctx, githubExtSvc)
+	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}

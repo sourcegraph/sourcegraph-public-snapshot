@@ -1,16 +1,10 @@
 import React, { useEffect, useCallback } from 'react'
-import { queryCampaigns as _queryCampaigns, queryCampaignsByUser, queryCampaignsByOrg } from './backend'
+import { queryCampaigns as _queryCampaigns, queryCampaignsByNamespace } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps } from './CampaignNode'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import {
-    ListCampaign,
-    CampaignState,
-    Scalars,
-    CampaignsByUserVariables,
-    CampaignsByOrgVariables,
-} from '../../../graphql-operations'
+import { ListCampaign, CampaignState, Scalars, CampaignsByNamespaceVariables } from '../../../graphql-operations'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
@@ -85,48 +79,28 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     )
 }
 
-export interface UserCampaignListPageProps extends CampaignListPageProps {
-    userID: Scalars['ID']
+export interface NamespaceCampaignListPageProps extends CampaignListPageProps {
+    namespaceID: Scalars['ID']
 }
 
 /**
- * A list of all campaigns in a users namespace.
+ * A list of all campaigns in a namespace.
  */
-export const UserCampaignListPage: React.FunctionComponent<UserCampaignListPageProps> = ({ userID, ...props }) => {
+export const NamespaceCampaignListPage: React.FunctionComponent<NamespaceCampaignListPageProps> = ({
+    namespaceID,
+    ...props
+}) => {
     const queryConnection = useCallback(
-        (args: Partial<CampaignsByUserVariables>) =>
-            queryCampaignsByUser({
-                userID,
+        (args: Partial<CampaignsByNamespaceVariables>) =>
+            queryCampaignsByNamespace({
+                namespaceID,
                 first: args.first ?? null,
                 after: args.after ?? null,
                 // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
                 state: (args as { state: CampaignState | undefined }).state ?? null,
                 viewerCanAdminister: null,
             }),
-        [userID]
-    )
-    return <CampaignListPage {...props} displayNamespace={false} queryCampaigns={queryConnection} />
-}
-
-export interface OrgCampaignListPageProps extends CampaignListPageProps {
-    orgID: Scalars['ID']
-}
-
-/**
- * A list of all campaigns in an orgs namespace.
- */
-export const OrgCampaignListPage: React.FunctionComponent<OrgCampaignListPageProps> = ({ orgID, ...props }) => {
-    const queryConnection = useCallback(
-        (args: Partial<CampaignsByOrgVariables>) =>
-            queryCampaignsByOrg({
-                orgID,
-                first: args.first ?? null,
-                after: args.after ?? null,
-                // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
-                state: (args as { state: CampaignState | undefined }).state ?? null,
-                viewerCanAdminister: null,
-            }),
-        [orgID]
+        [namespaceID]
     )
     return <CampaignListPage {...props} displayNamespace={false} queryCampaigns={queryConnection} />
 }

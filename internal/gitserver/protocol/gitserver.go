@@ -176,8 +176,9 @@ type CreateCommitFromPatchRequest struct {
 	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
-	// Push specifies whether the target ref will be pushed to the code host
-	Push bool
+	// Push specifies whether the target ref will be pushed to the code host: if
+	// nil, no push will be attempted, if non-nil, a push will be attempted.
+	Push *PushConfig
 	// GitApplyArgs are the arguments that will be passed to `git apply` along
 	// with `--cached`.
 	GitApplyArgs []string
@@ -191,6 +192,20 @@ type PatchCommitInfo struct {
 	CommitterName  string
 	CommitterEmail string
 	Date           time.Time
+}
+
+// PushConfig provides the configuration required to push one or more commits to
+// a code host.
+type PushConfig struct {
+	// Username and Password, if set, provide the basic auth credentials to
+	// push the commit to the code host.
+	//
+	// It's possible to set only the Username field (which is how GitHub
+	// requires its access tokens to be used).
+	//
+	// If both fields are blank, the credentials stored in the remote URL of
+	// the origin in the git repository will be used.
+	Username, Password string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

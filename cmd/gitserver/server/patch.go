@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -66,6 +67,14 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
+	// Patch in the new token if needed.
+	remoteURL, err = updateRemoteURLForPush(req.Push, remoteURL)
+	if err != nil {
+		log15.Error("Failed to apply push options to the remote URL", "err", err)
+		resp.SetError(repo, "", "", errors.Wrap(err, "applying push options"))
+		return http.StatusInternalServerError, resp
+	}
+
 	redactor := newURLRedactor(remoteURL)
 	defer func() {
 		if resp.Error != nil {
@@ -123,7 +132,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		ref = tmp
 	}
 
-	if req.Push {
+	if req.Push != nil {
 		ref = ensureRefPrefix(ref)
 	}
 
@@ -241,7 +250,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
-	if req.Push {
+	if req.Push != nil {
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
@@ -278,4 +287,26 @@ func cleanUpTmpRepo(path string) {
 // Copied from git package to avoid cycle import when testing git package.
 func ensureRefPrefix(ref string) string {
 	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// updateRemoteURLForPush applies the given PushConfig to the remote URL,
+// returning the new remote URL.
+func updateRemoteURLForPush(push *protocol.PushConfig, remoteURL string) (string, error) {
+	if push == nil {
+		return remoteURL, nil
+
+	}
+
+	u, err := url.Parse(remoteURL)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing remote URL")
+	}
+
+	if push.Username != "" && push.Password == "" {
+		u.User = url.User(push.Username)
+	} else if push.Username != "" && push.Password != "" {
+		u.User = url.UserPassword(push.Username, push.Password)
+	}
+
+	return u.String(), nil
 }

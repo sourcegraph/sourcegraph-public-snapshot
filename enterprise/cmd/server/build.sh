@@ -9,5 +9,4 @@ export SERVER_PKG=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/enterprise/cm
 ./cmd/server/build.sh \
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend \
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater \
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager \
   github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker

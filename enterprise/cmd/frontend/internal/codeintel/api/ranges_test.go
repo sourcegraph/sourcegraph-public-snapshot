@@ -6,14 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestRanges(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 
 	sourceRanges := []lsifstore.CodeIntelligenceRange{
@@ -37,10 +36,10 @@ func TestRanges(t *testing.T) {
 		},
 	}
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreRanges(t, mockBundleStore, 42, "main.go", 10, 20, sourceRanges)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
+	setmockLSIFStoreRanges(t, mockLSIFStore, 42, "main.go", 10, 20, sourceRanges)
 
-	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
+	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	ranges, err := api.Ranges(context.Background(), "sub1/main.go", 10, 20, 42)
 	if err != nil {
 		t.Fatalf("expected error getting ranges: %s", err)
@@ -72,12 +71,12 @@ func TestRanges(t *testing.T) {
 }
 
 func TestRangesUnknownDump(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
-	setMockStoreGetDumpByID(t, mockStore, nil)
+	setMockDBStoreGetDumpByID(t, mockDBStore, nil)
 
-	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
+	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	if _, err := api.Ranges(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting ranges. want=%q have=%q", ErrMissingDump, err)
 	}

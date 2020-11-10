@@ -14,11 +14,12 @@ import (
 	s3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestS3Init(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, true)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, true, makeOperations(&observation.TestContext))
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err.Error())
 	}
@@ -41,7 +42,7 @@ func TestS3InitBucketExists(t *testing.T) {
 		s3Client := NewMockS3API()
 		s3Client.CreateBucketFunc.SetDefaultReturn(nil, awserr.New(code, "", nil))
 
-		client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, true)
+		client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, true, makeOperations(&observation.TestContext))
 		if err := client.Init(context.Background()); err != nil {
 			t.Fatalf("unexpected error initializing client: %s", err.Error())
 		}
@@ -62,7 +63,7 @@ func TestS3InitBucketExists(t *testing.T) {
 
 func TestS3UnmanagedInit(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err.Error())
 	}
@@ -81,7 +82,7 @@ func TestS3Get(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 	rc, err := client.Get(context.Background(), "test-key", 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
@@ -114,7 +115,7 @@ func TestS3GetSkipBytes(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 	rc, err := client.Get(context.Background(), "test-key", 20)
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
@@ -160,7 +161,7 @@ func TestS3Upload(t *testing.T) {
 		return nil
 	})
 
-	client := newS3WithClients(s3Client, uploaderClient, "test-bucket", time.Hour*24, false)
+	client := newS3WithClients(s3Client, uploaderClient, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
@@ -196,7 +197,7 @@ func TestS3Combine(t *testing.T) {
 
 	s3Client.HeadObjectFunc.SetDefaultReturn(&s3.HeadObjectOutput{ContentLength: aws.Int64(42)}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
@@ -298,7 +299,7 @@ func TestS3Delete(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
 	}
@@ -314,7 +315,7 @@ func TestS3Delete(t *testing.T) {
 
 func TestS3Lifecycle(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24*3, true)
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24*3, true, makeOperations(&observation.TestContext))
 
 	if lifecycle := client.lifecycle(); lifecycle == nil || len(lifecycle.Rules) != 2 {
 		t.Fatalf("unexpected lifecycle rules")

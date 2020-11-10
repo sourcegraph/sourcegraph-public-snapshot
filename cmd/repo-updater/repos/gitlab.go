@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -29,8 +30,14 @@ type GitLabSource struct {
 	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations reposource.NameTransformations
+	provider            *gitlab.ClientProvider
 	client              *gitlab.Client
 }
+
+var _ Source = &GitLabSource{}
+var _ UserSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
+var _ ChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -78,14 +85,32 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 		return nil, err
 	}
 
+	provider := gitlab.NewClientProvider(baseURL, cli)
+
 	return &GitLabSource{
 		svc:                 svc,
 		config:              c,
 		exclude:             exclude,
 		baseURL:             baseURL,
 		nameTransformations: nts,
-		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		provider:            provider,
+		client:              provider.GetPATClient(c.Token, ""),
 	}, nil
+}
+
+func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("GitLabSource", a)
+	}
+
+	sc := s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
@@ -151,7 +176,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
-	if s.config.Token == "" || !proj.RequiresAuthentication() {
+	if s.config.Token == "" {
 		return proj.HTTPURLToRepo
 	}
 	u, err := url.Parse(proj.HTTPURLToRepo)
@@ -304,9 +329,6 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 
 	return u.String(), nil
 }
-
-var _ ChangesetSource = &GitLabSource{}
-var _ DraftChangesetSource = &GitLabSource{}
 
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.

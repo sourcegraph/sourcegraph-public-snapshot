@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Store is an expiring key/value store backed by a managed blob store.
@@ -29,20 +31,20 @@ type Store interface {
 	Delete(ctx context.Context, key string) error
 }
 
-var storeConstructors = map[string]func(ctx context.Context, config *Config) (Store, error){
+var storeConstructors = map[string]func(ctx context.Context, config *Config, operations *operations) (Store, error){
 	"s3":    newS3FromConfig,
 	"minio": newS3FromConfig,
 	"gcs":   newGCSFromConfig,
 }
 
 // Create initialize a new store from the given configuration.
-func Create(ctx context.Context, config *Config) (Store, error) {
+func Create(ctx context.Context, config *Config, observationContext *observation.Context) (Store, error) {
 	newStore, ok := storeConstructors[config.Backend]
 	if !ok {
 		return nil, fmt.Errorf("unknown upload store backend '%s'", config.Backend)
 	}
 
-	store, err := newStore(ctx, config)
+	store, err := newStore(ctx, config, makeOperations(observationContext))
 	if err != nil {
 		return nil, err
 	}
