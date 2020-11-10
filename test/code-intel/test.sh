@@ -18,11 +18,7 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-pushd enterprise || exit
-./cmd/server/pre-build.sh
-./cmd/server/build.sh
-docker run -d -p 7080:7080 --name "$CONTAINER" "$IMAGE"
-popd || exit
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 

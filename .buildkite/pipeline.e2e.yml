@@ -22,5 +22,3 @@ steps:
       - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
     agents:
       queue: 'baremetal'
-    env:
-      IMAGE: qa-test-candidate

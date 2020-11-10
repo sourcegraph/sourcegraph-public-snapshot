@@ -21,8 +21,8 @@ docker_logs() {
 
 IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
-
 sleep 15
+
 go run test/init-server.go
 
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
