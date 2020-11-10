@@ -31,6 +31,10 @@ set +x
 source /root/.profile
 set -x
 
+echo "TEST: Checking Sourcegraph instance is accessible"
+curl -f http://localhost:7080
+curl -f http://localhost:7080/healthz
+echo "TEST: Running tests"
 pushd client/web || exit
 yarn run test:regression:core
 yarn run test:regression:integrations

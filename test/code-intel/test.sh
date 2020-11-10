@@ -30,6 +30,10 @@ set +x
 source /root/.profile
 set -x
 
+echo "TEST: Checking Sourcegraph instance is accessible"
+curl -f http://localhost:7080
+curl -f http://localhost:7080/healthz
+echo "TEST: Running tests"
 pushd internal/cmd/precise-code-intel-tester || exit
 go build
 ./precise-code-intel-tester addrepos
