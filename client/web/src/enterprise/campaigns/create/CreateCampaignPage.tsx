@@ -1,8 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIconFlushLeft } from '../icons'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
 import combySample from './samples/comby.campaign.yaml'
@@ -46,16 +45,12 @@ const samples: Sample[] = [
     { name: 'minimal.campaign.yaml', file: minimalSample },
 ]
 
-export interface CreateCampaignPageProps extends BreadcrumbSetters {
+export interface CreateCampaignPageProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username'>
 }
 
-export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({
-    authenticatedUser,
-    useBreadcrumb,
-}) => {
+export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ authenticatedUser }) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
-    useBreadcrumb(useMemo(() => ({ element: <>Create campaign</>, key: 'createCampaignPage' }), []))
     return (
         <>
             <PageTitle title="Create campaign" />
