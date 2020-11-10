@@ -6,6 +6,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
+import { logEvent } from '../../../user/settings/backend'
 
 export interface CreateUpdateCampaignAlertProps {
     specID: string
@@ -32,6 +33,7 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                 ? await applyCampaign({ campaignSpec: specID, campaign: campaignID })
                 : await createCampaign({ campaignSpec: specID })
             history.push(campaign.url)
+            logEvent(`ViewCampaignPageAfter${campaignID ? 'Create' : 'Update'}`)
         } catch (error) {
             setIsLoading(error)
         }

@@ -16,6 +16,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
+import { logEvent } from '../../../user/settings/backend'
 
 export interface CampaignApplyPageProps extends ThemeProps {
     specID: string
@@ -54,6 +55,8 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     if (spec === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign spec not found" />
     }
+
+    logEvent('ViewCampaignApplyPage')
 
     return (
         <>
